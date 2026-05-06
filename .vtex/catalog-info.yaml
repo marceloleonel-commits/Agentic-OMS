@@ -1,0 +1,15 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: vertical-distributed-order-management-dom
+  description: |
+    vertical-distributed-order-management-dom
+  annotations:
+    github.com/project-slug: vtex/vertical-distributed-order-management-dom
+    backstage.io/techdocs-ref: dir:../
+    vtex.com/application-id: R38MGT6V
+spec:
+  type: other
+  lifecycle: experimental
+  owner: te-0051
+  dependsOn: []
