@@ -27,7 +27,7 @@ The pressure on DOM is structural, not cyclical. Four forces are reshaping what 
 |------|--------|---------|
 | GPM | Julia Grisi Lolato | julia.lolato@vtex.com |
 | PM — Delivery Promise & Order Allocation | Camila Vidal | camila.vidal@vtex.com |
-| PM — Fulfillment | Carolina Rodrigues | carolina.rodrigues@vtex.com |
+| PM — Fulfillment | Carolina Tourinho | carolina.rodrigues@vtex.com |
 | PM — Order Management | Marcelo Leonel | marcelo.leonel@vtex.com |
 | PM — Pick and Pack | Sayonara Soares | sayonara.soares@vtex.com |
 | Engineering Senior Manager | Bruno Alves | bruno.alves@vtex.com |
@@ -85,7 +85,7 @@ Seamless order management system that expands the availability of products and m
 |--------|-------------|-----|
 | [Delivery Promise](modules/delivery-promise/delivery-promise.md) | Pre-purchase availability engine — accurate delivery dates and methods indexed across storefront, search, and checkout | Camila Vidal |
 | [Order Allocation](modules/order-allocation/order-allocation.md) | Post-purchase routing engine — selects the optimal supplier combination to fulfill orders at lowest cost-to-serve | Camila Vidal |
-| [Fulfillment](modules/fulfillment/fulfillment.md) | Delivery options configuration, fulfillment pricing, supplier management, and operational capacity | Carolina Rodrigues |
+| [Fulfillment](modules/fulfillment/fulfillment.md) | Delivery options configuration, fulfillment pricing, supplier management, and operational capacity | Carolina Tourinho |
 | [Order Management](modules/order-management/order-management.md) | OMS core — order lifecycle, modifications, returns, agentic workflows, and lifecycle management | Marcelo Leonel |
 | [Pick and Pack](modules/pick-and-pack/pick-and-pack.md) | In-store and warehouse fulfillment operations — mobile picking, packing workflows, and grocery Tier 1 expansion | Sayonara Soares |
 
