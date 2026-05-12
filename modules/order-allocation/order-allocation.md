@@ -6,13 +6,35 @@
 | **GPM** | [Julia Grisi Lolato](mailto:julia.lolato@vtex.com) |
 | **PM** | [Camila Vidal](mailto:camila.vidal@vtex.com) |
 | **EM** | [Eduardo Andrade](mailto:eduardo.andrade@vtex.com) |
+| **PD** | [Malu Viana](mailto:malu.viana@vtex.com) |
 | **Status** | Active |
+| **Waitlist** | [roadmap.vtex.com/waitlist/order-allocation-agent](https://roadmap.vtex.com/waitlist/order-allocation-agent) |
 
 ---
 
 ## What This Module Is
 
 Order Allocation is VTEX's post-purchase routing engine. After an order is placed, it selects the optimal combination of suppliers — warehouses, stores, or external sellers — to fulfill each item while meeting the delivery promise at the lowest possible cost-to-serve. The allocation process runs asynchronously after order placement by default, decoupling it from the synchronous checkout flow, and can be triggered at any point in the order lifecycle to reallocate when disruptions occur. The 3-year direction is to evolve from fixed allocation logic into an Objective-Based Allocation Agent: merchants express their goal in natural language, the agent converts it into cost parameters and weights, simulates outcomes on historical orders, and deploys without manual rule management.
+
+---
+
+## Problems This Module Solves
+
+1. **Allocation is not oriented to minimize cost-to-serve.** The current model has no support for merchant-defined objectives like cost optimization, inventory turnover, or split minimization. Competitors (Manhattan, Blue Yonder, IBM Sterling, KIBO) offer this natively. TFG and C&A have explicitly cited this gap as a migration risk to external OMS solutions.
+2. **No sourcing rules per customer profile or product classification.** Merchants with complex omnichannel operations (Grupo Soma — 20% of sales from external sellers needing allocation participation) cannot define advanced sourcing logic without customization. Container Store selected a competitor partly due to VTEX's insufficient sourcing rules.
+3. **Allocation is a black box.** Merchants cannot understand, simulate, or predict the allocation outcome. There is no impact preview, no A/B testing for allocation logic, and no transparency into why a supplier was selected.
+4. **Synchronous allocation blocks checkout.** Real-time pricing calls and external seller protocol dependencies at checkout cause orders to fail entirely when upstream systems are unavailable — not just slower.
+5. **No reallocation during the order lifecycle.** When disruptions occur (stockout, payment delay, carrier failure), allocation cannot be re-run automatically — requiring manual merchant intervention.
+
+---
+
+## Goals
+
+- Commit a valid, fulfillable allocation at checkout with zero post-purchase cancellations due to stock unavailability
+- Minimize fulfillment cost across split shipments, carrier selection, and sourcing distance without violating SLA targets
+- Support high-density seller whitelabel architectures (pharmacy chains, franchise networks) where store proximity is a relevant tiebreaker
+- Provide a real-time synchronous decision engine that resolves allocation within checkout latency constraints
+- Enable asynchronous re-allocation for post-purchase optimization and exception handling
 
 ---
 
@@ -28,18 +50,12 @@ Order Allocation is VTEX's post-purchase routing engine. After an order is place
 
 ---
 
-## Problems This Module Solves
-
-1. **Allocation is not oriented to minimize cost-to-serve.** The current model has no support for merchant-defined objectives like cost optimization, inventory turnover, or split minimization. Competitors (Manhattan, Blue Yonder, IBM Sterling, KIBO) offer this natively. TFG and C&A have explicitly cited this gap as a migration risk to external OMS solutions.
-2. **No sourcing rules per customer profile or product classification.** Merchants with complex omnichannel operations (Grupo Soma — 20% of sales from external sellers needing allocation participation) cannot define advanced sourcing logic without customization. Container Store selected a competitor partly due to VTEX's insufficient sourcing rules.
-3. **Allocation is a black box.** Merchants cannot understand, simulate, or predict the allocation outcome. There is no impact preview, no A/B testing for allocation logic, and no transparency into why a supplier was selected.
-4. **Synchronous allocation blocks checkout.** Real-time pricing calls and external seller protocol dependencies at checkout cause orders to fail entirely when upstream systems are unavailable — not just slower.
-5. **No reallocation during the order lifecycle.** When disruptions occur (stockout, payment delay, carrier failure), allocation cannot be re-run automatically — requiring manual merchant intervention.
-
----
-
 ## Features
 
 | Feature | Description | Status |
 |---------|-------------|--------|
-| [Async Purchase](async-purchase/product-vision.md) | Resilient purchase flow that decouples checkout from synchronous external dependencies — order completes even when logistics APIs are unavailable | Active — Closed Beta H2 2025 |
+| [Asynchronous Purchase](asynchronous-purchase/product-vision.md) | Resilient purchase flow that decouples checkout from synchronous external dependencies — order completes even when logistics APIs are unavailable | Active — Alpha · Closed Beta target end H1 2026 |
+| [Order Allocation Agent](order-allocation-agent/product-vision.md) | AI agent that translates merchant objectives into allocation parameters, simulates outcomes, and autonomously publishes strategies | Active |
+| [Cost Minimization Solver](cost-minimization-solver/product-vision.md) | Selects the lowest-cost feasible seller combination per order across freight, commissions, taxes, handling, and operational costs | Active |
+| [Asynchronous Order Allocation](asynchronous-order-allocation/product-vision.md) | Post-purchase allocation engine decoupled from checkout — enables reallocation on disruptions without blocking the purchase flow | Active |
+| [Synchronous Order Allocation](synchronous-order-allocation/product-vision.md) | Real-time allocation committed at checkout; includes distance optimization as a tiebreaker for seller whitelabel architectures | Active |

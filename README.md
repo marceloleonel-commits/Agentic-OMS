@@ -37,6 +37,11 @@ The pressure on DOM is structural, not cyclical. Four forces are reshaping what 
 | EM — Fulfillment | Ronan Cruz | ronan.cruz@vtex.com |
 | Design Journey Lead | Fernanda Colodetti | fernanda.colodetti@vtex.com |
 | Designer — Fulfillment | Amanda Vilar | amanda.vilar@vtex.com |
+| Designer — Order Management | Jackeline Dinizo | jackeline.dinizo@vtex.com |
+| Designer — Order Management | Luiz Costa | luiz.costa@vtex.com |
+| Designer — Order Allocation | Malu Viana | malu.viana@vtex.com |
+| Designer — Pick and Pack | Santiago Nocua | santiago.chavez@vtex.com |
+| PM — Order Management | Vanessa Borges | vanessa.borges@vtex.com |
 
 ---
 

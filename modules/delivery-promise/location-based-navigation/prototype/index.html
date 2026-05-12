@@ -1,0 +1,1258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Manual Location Input — Prototype</title>
+<style>
+/* ─── Reset ──────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f2f2f2; color: #1a1a1a; }
+button { cursor: pointer; border: none; font-family: inherit; }
+input, select { font-family: inherit; }
+a { text-decoration: none; color: #1D3AE8; font-size: 13px; }
+a:hover { text-decoration: underline; }
+
+/* ─── Proto bar ──────────────────────────────────────────────────────────── */
+.proto-bar {
+  position: sticky; top: 0; z-index: 2000;
+  background: #0f172a; color: #fff;
+  display: flex; align-items: center; gap: 16px;
+  padding: 9px 18px; font-size: 12px;
+  box-shadow: 0 2px 10px rgba(0,0,0,.5);
+  flex-wrap: wrap;
+}
+.proto-label { font-weight: 700; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; opacity: .6; white-space: nowrap; }
+.proto-group { display: flex; align-items: center; gap: 7px; }
+.proto-group > label { opacity: .5; font-size: 10px; text-transform: uppercase; letter-spacing: .06em; white-space: nowrap; }
+.proto-tabs { display: flex; border-radius: 5px; overflow: hidden; border: 1px solid rgba(255,255,255,.18); }
+.proto-tabs button {
+  background: transparent; color: rgba(255,255,255,.6);
+  padding: 5px 11px; font-size: 11px; font-weight: 500;
+  border-right: 1px solid rgba(255,255,255,.18); transition: all .15s;
+}
+.proto-tabs button:last-child { border-right: none; }
+.proto-tabs button.active { background: #3B5BDB; color: #fff; }
+.proto-tabs button:hover:not(.active) { background: rgba(255,255,255,.1); color: #fff; }
+.proto-reset {
+  margin-left: auto; background: rgba(255,255,255,.1); color: #fff;
+  padding: 5px 12px; border-radius: 5px; font-size: 11px; font-weight: 600;
+}
+.proto-reset:hover { background: rgba(255,255,255,.2); }
+.proto-divider { width: 1px; height: 20px; background: rgba(255,255,255,.15); }
+
+/* ─── Store ──────────────────────────────────────────────────────────────── */
+.store { background: #f2f2f2; min-height: 100vh; position: relative; }
+.store.locked { overflow: hidden; pointer-events: none; }
+.store.locked .store-header,
+.store.locked .hero,
+.store.locked .products-section,
+
+.store.locked .bottom-strip { filter: brightness(.85); }
+
+/* ─── Header ─────────────────────────────────────────────────────────────── */
+.store-header { background: #fff; box-shadow: 0 1px 0 #e8e8e8; position: relative; z-index: 100; pointer-events: all; }
+.header-top { display: flex; align-items: center; padding: 13px 28px; gap: 16px; }
+.brand { font-size: 20px; font-weight: 800; color: #1D3AE8; white-space: nowrap; flex-shrink: 0; }
+.search-wrap {
+  flex: 1; max-width: 440px; margin: 0 auto;
+  display: flex; align-items: center;
+  border: 1.5px solid #d0d0d0; border-radius: 3px; background: #fff;
+}
+.search-wrap input { flex: 1; border: none; background: transparent; padding: 8px 12px; font-size: 13px; outline: none; color: #555; }
+.search-wrap .si { padding: 0 12px; color: #888; display: flex; align-items: center; }
+.search-wrap .si svg { width: 16px; height: 16px; }
+.header-actions { display: flex; align-items: center; gap: 18px; font-size: 12px; color: #444; flex-shrink: 0; }
+.header-actions span { display: flex; align-items: center; gap: 4px; cursor: pointer; white-space: nowrap; }
+.header-actions svg { width: 16px; height: 16px; }
+
+.header-nav { display: flex; align-items: center; padding: 0 28px; justify-content: space-between; }
+.nav-links { display: flex; gap: 28px; }
+.nav-links a { display: block; padding: 11px 0; font-size: 12px; color: #333; cursor: pointer; border-bottom: 2px solid transparent; transition: all .15s; }
+.nav-links a:hover, .nav-links a.active-nav { color: #1D3AE8; border-color: #1D3AE8; text-decoration: none; }
+
+.loc-trigger {
+  font-size: 12px; font-weight: 600; color: #1D3AE8;
+  cursor: pointer; padding: 11px 0; white-space: nowrap;
+  display: flex; align-items: center; gap: 4px; transition: opacity .15s;
+}
+.loc-trigger:hover { opacity: .75; }
+.loc-trigger svg { width: 13px; height: 13px; }
+
+/* ─── Location input shared ──────────────────────────────────────────────── */
+.loc-sub-text { font-size: 13px; color: #555; line-height: 1.5; margin-bottom: 14px; }
+.loc-sub-text a { font-size: 13px; }
+
+.zip-wrap {
+  display: flex; align-items: center;
+  border: 1.5px solid #ccc; border-radius: 4px; background: #fff;
+  transition: border-color .15s; overflow: hidden;
+}
+.zip-wrap:focus-within { border-color: #1D3AE8; }
+.zip-wrap.error { border-color: #DC2626; }
+.zip-wrap input {
+  flex: 1; border: none; background: transparent;
+  padding: 11px 13px; font-size: 14px; color: #1a1a1a; outline: none;
+}
+.zip-wrap input::placeholder { color: #aaa; }
+.zip-wrap .clear-x {
+  background: none; padding: 0 10px; color: #bbb;
+  font-size: 16px; display: none; line-height: 1; transition: color .15s;
+}
+.zip-wrap .clear-x:hover { color: #666; }
+.zip-wrap .clear-x.show { display: block; }
+.error-msg { font-size: 12px; color: #DC2626; margin-top: 5px; display: none; }
+.error-msg.show { display: block; }
+
+.loc-select {
+  width: 100%; padding: 11px 13px; font-size: 14px;
+  border: 1.5px solid #ccc; border-radius: 4px; background: #fff;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='7' viewBox='0 0 10 7'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 12px center;
+  color: #1a1a1a; outline: none; cursor: pointer; transition: border-color .15s;
+}
+.loc-select:focus { border-color: #1D3AE8; }
+.loc-select:disabled { background-color: #f8f8f8; color: #bbb; cursor: not-allowed; }
+
+.continue-btn {
+  background: #1D3AE8; color: #fff; font-weight: 700; font-size: 13px;
+  letter-spacing: .06em; text-transform: uppercase;
+  padding: 11px 18px; border-radius: 4px; white-space: nowrap;
+  transition: background .15s; flex-shrink: 0;
+}
+.continue-btn:hover:not(:disabled) { background: #1630c8; }
+.continue-btn:disabled { opacity: .4; cursor: not-allowed; }
+.continue-btn.fw { width: 100%; margin-top: 10px; padding: 13px; }
+
+.use-loc-btn {
+  display: flex; align-items: center; gap: 6px;
+  background: none; color: #1D3AE8; font-size: 13px; font-weight: 500;
+  padding: 8px 0; transition: opacity .15s; margin-top: 2px;
+}
+.use-loc-btn:hover { opacity: .7; }
+.use-loc-btn svg.pin { width: 15px; height: 15px; flex-shrink: 0; }
+.spinner-ring {
+  width: 13px; height: 13px; flex-shrink: 0;
+  border: 2px solid #1D3AE8; border-top-color: transparent;
+  border-radius: 50%; animation: spin .7s linear infinite; display: none;
+}
+.use-loc-btn.loading .spinner-ring { display: block; }
+.use-loc-btn.loading .pin { display: none; }
+.use-loc-btn.loading span { color: #888; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.sub-section { display: none; margin-top: 10px; animation: fd .2s ease; }
+.sub-section.show { display: block; }
+@keyframes fd { from { opacity:0; transform:translateY(-5px); } to { opacity:1; transform:translateY(0); } }
+
+/* ─── Popover ────────────────────────────────────────────────────────────── */
+.popover {
+  position: absolute; top: 98px; right: 28px;
+  width: 360px; background: #fff;
+  border-radius: 6px; border: 1px solid #ddd;
+  box-shadow: 0 8px 28px rgba(0,0,0,.13);
+  z-index: 400; padding: 18px;
+  display: none; pointer-events: all;
+}
+.popover.open { display: block; animation: fd .18s ease; }
+
+/* ─── Mandatory modal ────────────────────────────────────────────────────── */
+.overlay {
+  position: fixed; inset: 0; z-index: 800;
+  background: rgba(0,0,0,.52); backdrop-filter: blur(3px);
+  display: none; align-items: center; justify-content: center;
+  pointer-events: all;
+}
+.overlay.open { display: flex; animation: fadein .2s ease; }
+@keyframes fadein { from { opacity:0; } to { opacity:1; } }
+.modal-box {
+  background: #fff; border-radius: 10px;
+  width: 500px; max-width: 92vw; padding: 34px 38px;
+  animation: mdin .22s ease;
+}
+@keyframes mdin { from { opacity:0; transform:scale(.96) translateY(8px); } to { opacity:1; transform:scale(1) translateY(0); } }
+.modal-title { font-size: 20px; font-weight: 700; margin-bottom: 6px; }
+.modal-close {
+  position: absolute; top: 16px; right: 18px;
+  background: none; font-size: 22px; color: #888; line-height: 1;
+}
+.modal-close:hover { color: #333; }
+
+/* ─── Unavailable modal ──────────────────────────────────────────────────── */
+.unavail-box {
+  background: #fff; border-radius: 10px;
+  width: 440px; max-width: 92vw; padding: 40px 38px;
+  text-align: center; position: relative;
+  animation: mdin .22s ease;
+}
+.unavail-icon { font-size: 38px; margin-bottom: 14px; }
+.unavail-title { font-size: 19px; font-weight: 700; margin-bottom: 8px; }
+.unavail-sub { font-size: 14px; color: #666; margin-bottom: 24px; }
+.enter-another {
+  background: #1D3AE8; color: #fff; font-weight: 700; font-size: 13px;
+  letter-spacing: .06em; text-transform: uppercase;
+  padding: 13px 28px; border-radius: 4px; width: 100%;
+  transition: background .15s;
+}
+.enter-another:hover { background: #1630c8; }
+
+/* ─── Hero ───────────────────────────────────────────────────────────────── */
+.hero {
+  background: #fff; min-height: 380px; position: relative;
+  display: flex; align-items: center; padding: 0 60px;
+  overflow: hidden;
+}
+.hero-text { position: relative; z-index: 2; max-width: 250px; }
+.hero-eye { font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: #888; margin-bottom: 12px; }
+.hero-h1 { font-size: 62px; font-weight: 800; line-height: .9; margin-bottom: 24px; }
+.hero-cta {
+  background: #1D3AE8; color: #fff; font-size: 12px; font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase; padding: 13px 34px;
+  border-radius: 2px; transition: background .15s;
+}
+.hero-cta:hover { background: #1630c8; }
+.hero-stage {
+  position: absolute; right: 0; top: 0; bottom: 0; width: 62%;
+  display: flex; align-items: flex-end; padding-bottom: 0;
+  gap: 18px; justify-content: center; padding: 16px 32px 0;
+}
+/* CSS objects */
+.o-bell { width: 88px; height: 160px; background: linear-gradient(155deg,#e0d8d0,#b8b0a8); border-radius: 46% 46% 8px 8px / 55% 55% 8px 8px; align-self: flex-end; margin-bottom: 16px; position: relative; }
+.o-bell::after { content:''; position:absolute; top:45%; left:50%; transform:translate(-50%,-50%); width:26px; height:46px; background:linear-gradient(150deg,#c0b8b0,#908880); border-radius:3px; }
+.o-hand { width: 52px; height: 140px; background: linear-gradient(180deg,#242424,#111); clip-path: polygon(28% 0%,72% 0%,82% 28%,92% 26%,94% 40%,82% 44%,76% 100%,24% 100%,18% 44%,6% 40%,8% 26%,18% 28%); align-self: flex-end; margin-bottom: 12px; }
+.o-books { width: 120px; height: 40px; align-self: flex-end; margin-bottom: 28px; }
+.o-books::before { content:''; display:block; width:100%; height:22px; background:#f0f0f0; border-radius:2px; margin-bottom:3px; box-shadow:0 2px 0 #e0e0e0; }
+.o-books::after { content:''; display:block; width:80%; height:15px; background:#f8c0c8; border-radius:2px; }
+.o-vase-g { width: 100px; height: 176px; background: linear-gradient(155deg,#c0bdb8,#8a8780); border-radius: 28% 28% 38% 38% / 18% 18% 48% 48%; align-self: flex-end; }
+.o-vase-b { width: 72px; height: 148px; background: linear-gradient(155deg,#383532,#181512); border-radius: 24% 24% 34% 34% / 14% 14% 44% 44%; align-self: flex-end; margin-bottom: 8px; }
+.o-plant { width: 80px; height: 120px; align-self: flex-end; position: relative; }
+.o-plant::before { content:''; position:absolute; bottom:0; left:50%; transform:translateX(-50%); width:10px; height:40px; background:#9B8B6A; border-radius:2px; }
+.o-plant::after { content:'🌿'; position:absolute; bottom:32px; left:50%; transform:translateX(-50%); font-size:38px; }
+.hero-dots { position:absolute; bottom:14px; left:50%; transform:translateX(-50%); display:flex; gap:6px; }
+.hero-dot { width:8px; height:8px; border-radius:50%; background:#ccc; }
+.hero-dot.active { background:#DC2626; }
+.hero-arrow { position:absolute; top:50%; transform:translateY(-50%); font-size:22px; color:#999; cursor:pointer; background:none; padding:0 10px; }
+.hero-arrow:hover { color:#444; }
+.hero-arrow.left { left:0; }
+.hero-arrow.right { right:0; }
+
+/* ─── Products ───────────────────────────────────────────────────────────── */
+.products-section { padding: 40px 28px; }
+.sec-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
+.sec-title { font-size:20px; font-weight:700; }
+.loc-active-banner {
+  display: none; align-items: center; gap: 7px;
+  background: #EEF2FF; border: 1px solid #C7D2FE;
+  padding: 7px 12px; border-radius: 5px; font-size: 12px; color: #3730A3;
+}
+.loc-active-banner.show { display: flex; }
+.loc-active-banner svg { width: 13px; height: 13px; flex-shrink: 0; }
+.product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
+.pcard {
+  background: #fff; border-radius: 6px; overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,.07);
+  transition: transform .2s, box-shadow .2s, opacity .35s;
+  cursor: pointer;
+}
+.pcard:hover { transform:translateY(-2px); box-shadow:0 5px 18px rgba(0,0,0,.11); }
+.pcard.unavail { opacity: .38; pointer-events: none; }
+.pcard.unavail .pimg::after {
+  content: 'Not available for your location';
+  position:absolute; inset:0; background:rgba(0,0,0,.48); color:#fff;
+  font-size:11px; font-weight:600; display:flex; align-items:center;
+  justify-content:center; text-align:center; padding:10px;
+}
+.pimg { height: 190px; position:relative; display:flex; align-items:center; justify-content:center; font-size:64px; overflow:hidden; }
+.pinfo { padding: 12px 14px 16px; }
+.pname { font-size:13px; font-weight:600; margin-bottom:3px; }
+.pbrand { font-size:11px; color:#888; margin-bottom:8px; }
+.pprice { font-size:15px; font-weight:700; }
+.pdel { display:none; font-size:10px; color:#15803D; background:#DCFCE7; padding:2px 7px; border-radius:3px; margin-top:7px; width:fit-content; font-weight:600; }
+.pdel.show { display:block; }
+
+
+/* ─── Bottom strip ───────────────────────────────────────────────────────── */
+.bottom-strip { background:#142032; display:flex; justify-content:space-around; align-items:center; padding:18px 28px; gap:12px; }
+.strip-item { display:flex; flex-direction:column; align-items:center; gap:7px; font-size:11px; color:rgba(255,255,255,.8); }
+.strip-item svg { width:26px; height:26px; opacity:.8; }
+
+/* ─── Example chips ─────────────────────────────────────────────────────── */
+.examples-row {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  margin-top: 10px;
+}
+.examples-label { font-size: 11px; color: #aaa; white-space: nowrap; }
+.example-chip {
+  background: #f0f4ff; border: 1px solid #c7d2fe; color: #3730A3;
+  font-size: 11px; font-weight: 500; padding: 3px 9px; border-radius: 12px;
+  cursor: pointer; transition: all .15s; white-space: nowrap;
+}
+.example-chip:hover { background: #3B5BDB; border-color: #3B5BDB; color: #fff; }
+
+/* ─── Toast ──────────────────────────────────────────────────────────────── */
+.toast {
+  position:fixed; bottom:22px; left:50%; transform:translateX(-50%) translateY(16px);
+  background:#111; color:#fff; font-size:12px; font-weight:500;
+  padding:10px 20px; border-radius:6px; z-index:3000;
+  opacity:0; transition:all .28s; pointer-events:none; white-space:nowrap;
+}
+.toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<!-- ═══ PROTO CONTROLS ═══════════════════════════════════════════════════ -->
+<div class="proto-bar">
+  <span class="proto-label">🎛 Prototype</span>
+  <div class="proto-divider"></div>
+
+  <div class="proto-group">
+    <label>Pattern</label>
+    <div class="proto-tabs" id="pattern-tabs">
+      <button class="active" onclick="setPattern('zip-num')">ZIP numérico</button>
+      <button onclick="setPattern('zip-alpha')">ZIP alfanumérico</button>
+      <button onclick="setPattern('zip-sub')">ZIP + Colonia</button>
+      <button onclick="setPattern('cascade2')">Cascade 2 níveis</button>
+      <button onclick="setPattern('cascade3')">Cascade 3 níveis</button>
+    </div>
+  </div>
+  <div class="proto-divider"></div>
+  <div class="proto-group">
+    <label>Country</label>
+    <div class="proto-tabs" id="country-tabs">
+      <!-- populated by renderCountryTabs() -->
+    </div>
+  </div>
+
+  <div class="proto-divider"></div>
+
+  <div class="proto-group">
+    <label>Mode</label>
+    <div class="proto-tabs" id="mode-tabs">
+      <button class="active" onclick="setMode('optional')">Not mandatory</button>
+      <button onclick="setMode('mandatory')">Mandatory</button>
+    </div>
+  </div>
+
+
+
+  <button class="proto-reset" onclick="resetAll()">↺ Reset</button>
+</div>
+
+<!-- ═══ STORE ════════════════════════════════════════════════════════════ -->
+<div class="store" id="store">
+
+  <!-- Header -->
+  <header class="store-header" id="store-header">
+    <div class="header-top">
+      <div class="brand">Store Theme</div>
+      <div class="search-wrap">
+        <input type="text" placeholder="Search!" />
+        <span class="si"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></span>
+      </div>
+      <div class="header-actions">
+        <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg> EN</span>
+        <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> SIGN IN</span>
+        <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg></span>
+      </div>
+    </div>
+    <nav class="header-nav">
+      <div class="nav-links">
+        <a>Apparel &amp; Accessories</a>
+        <a class="active-nav">Home &amp; Decor</a>
+        <a>More</a>
+      </div>
+      <div class="loc-trigger" id="loc-trigger" onclick="onTriggerClick()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        <span id="trigger-label">Enter a location</span>
+      </div>
+    </nav>
+  </header>
+
+  <!-- Popover -->
+  <div class="popover" id="popover">
+    <div id="popover-body"></div>
+  </div>
+
+  <!-- Mandatory overlay -->
+  <div class="overlay" id="mand-overlay">
+    <div class="modal-box" style="position:relative">
+      <div class="modal-title">Enter a location</div>
+      <p class="loc-sub-text" id="modal-sub" style="margin-bottom:16px">Offers and delivery options vary based on region.</p>
+      <div id="modal-body"></div>
+    </div>
+  </div>
+
+  <!-- Unavailable overlay -->
+  <div class="overlay" id="unavail-overlay">
+    <div class="unavail-box">
+      <button class="modal-close" onclick="closeUnavail()">×</button>
+      <div class="unavail-icon">🚫</div>
+      <div class="unavail-title">Store unavailable in region</div>
+      <p class="unavail-sub" id="unavail-msg">There are no products available for this location.</p>
+      <button class="enter-another" onclick="closeUnavailAndReopen()">ENTER ANOTHER LOCATION</button>
+    </div>
+  </div>
+
+  <!-- Hero -->
+  <section class="hero" id="hero-section">
+    <button class="hero-arrow left">‹</button>
+    <div class="hero-text">
+      <p class="hero-eye">New Section</p>
+      <h1 class="hero-h1">Decoration</h1>
+      <button class="hero-cta">EXPLORE</button>
+    </div>
+    <div class="hero-stage">
+      <div class="o-bell"></div>
+      <div class="o-hand"></div>
+      <div class="o-books"></div>
+      <div class="o-vase-g"></div>
+      <div class="o-vase-b"></div>
+      <div class="o-plant"></div>
+    </div>
+    <div class="hero-dots">
+      <div class="hero-dot active"></div>
+      <div class="hero-dot"></div>
+      <div class="hero-dot"></div>
+    </div>
+    <button class="hero-arrow right">›</button>
+  </section>
+
+  <!-- Home products -->
+  <section class="products-section" id="home-products">
+    <div class="sec-head">
+      <h2 class="sec-title">New Arrivals</h2>
+      <div class="loc-active-banner" id="home-banner">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        <span id="home-banner-text">Showing products available for your location</span>
+      </div>
+    </div>
+    <div class="product-grid" id="home-grid"></div>
+  </section>
+
+  <!-- Bottom strip -->
+  <div class="bottom-strip">
+    <div class="strip-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="3" width="15" height="13" rx="2"/><path d="M16 8h4l3 5v3h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>Shipping</div>
+    <div class="strip-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>One day delivery!</div>
+    <div class="strip-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>Pick up in store</div>
+    <div class="strip-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>Exclusive deals</div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- ═══ SCRIPT ════════════════════════════════════════════════════════════ -->
+<script>
+/* ─── Country configs ────────────────────────────────────────────────────── */
+const COUNTRIES = {
+  US: { name:'United States', flag:'🇺🇸', type:'zip', placeholder:'e.g. 10017', hint:'ZIP Code (5 digits)', maxLen:5, numeric:true,
+        validate: v => /^\d{5}$/.test(v.trim()),
+        format: v => v.replace(/\D/g,'').slice(0,5) },
+  BR: { name:'Brazil', flag:'🇧🇷', type:'zip', placeholder:'e.g. 01310-100', hint:'CEP (8 digits)', maxLen:9, numeric:true,
+        validate: v => /^\d{5}-?\d{3}$/.test(v.trim()),
+        format: v => { const d=v.replace(/\D/g,'').slice(0,8); return d.length>5?d.slice(0,5)+'-'+d.slice(5):d; } },
+  UK: { name:'United Kingdom', flag:'🇬🇧', type:'zip', placeholder:'e.g. SW1A 2AA', hint:'Postcode (alphanumeric)', maxLen:8, numeric:false, alpha:true,
+        validate: v => /^[A-Z]{1,2}\d[A-Z\d]?\s?\d[A-Z]{2}$/i.test(v.trim()),
+        format: v => v.replace(/[^A-Za-z0-9\s]/g,'').slice(0,8).toUpperCase() },
+  AR: { name:'Argentina', flag:'🇦🇷', type:'zip', placeholder:'e.g. 1406', hint:'Código Postal (4 dígitos)', maxLen:4, numeric:true,
+        validate: v => /^\d{4}$/.test(v.trim()),
+        format: v => v.replace(/\D/g,'').slice(0,4) },
+  CA: { name:'Canada', flag:'🇨🇦', type:'zip', placeholder:'e.g. M5V 3A8', hint:'Postal Code (alphanumeric)', maxLen:7, numeric:false, alpha:true,
+        validate: v => /^[A-Z]\d[A-Z]\s?\d[A-Z]\d$/i.test(v.trim()),
+        format: v => { const d=v.replace(/[^A-Za-z0-9]/g,'').slice(0,6).toUpperCase(); return d.length>3?d.slice(0,3)+' '+d.slice(3):d; } },
+  MX: { name:'Mexico', flag:'🇲🇽', type:'zip+sub', placeholder:'e.g. 06600', hint:'Código Postal + Colonia', maxLen:5, numeric:true,
+        validate: v => /^\d{5}$/.test(v.trim()),
+        format: v => v.replace(/\D/g,'').slice(0,5) },
+  FR: { name:'France', flag:'🇫🇷', type:'zip', placeholder:'e.g. 75001', hint:'Code Postal (5 chiffres)', maxLen:5, numeric:true,
+        validate: v => /^\d{5}$/.test(v.trim()),
+        format: v => v.replace(/\D/g,'').slice(0,5) },
+  ES: { name:'Spain',       flag:'🇪🇸', type:'zip', placeholder:'e.g. 28013',   hint:'Código Postal (5 dígitos)', maxLen:5, numeric:true, validate:v=>/^\d{5}$/.test(v.trim()), format:v=>v.replace(/\D/g,'').slice(0,5) },
+  PT: { name:'Portugal',    flag:'🇵🇹', type:'zip', placeholder:'e.g. 1000-001', hint:'Código Postal (xxxx-xxx)', maxLen:8, numeric:true, validate:v=>/^\d{4}-?\d{3}$/.test(v.trim()), format:v=>{ const d=v.replace(/\D/g,'').slice(0,7); return d.length>4?d.slice(0,4)+'-'+d.slice(4):d; } },
+  IT: { name:'Italy',       flag:'🇮🇹', type:'zip', placeholder:'e.g. 00100',   hint:'CAP (5 cifre)', maxLen:5, numeric:true, validate:v=>/^\d{5}$/.test(v.trim()), format:v=>v.replace(/\D/g,'').slice(0,5) },
+  UY: { name:'Uruguay',     flag:'🇺🇾', type:'zip', placeholder:'e.g. 11000',   hint:'Código Postal (5 dígitos)', maxLen:5, numeric:true, validate:v=>/^\d{5}$/.test(v.trim()), format:v=>v.replace(/\D/g,'').slice(0,5) },
+  CL: { name:'Chile',       flag:'🇨🇱', type:'cascade2', levels:['Región','Comuna'] },
+  CO: { name:'Colombia',    flag:'🇨🇴', type:'cascade2', levels:['Departamento','Municipio'] },
+  EC: { name:'Ecuador',     flag:'🇪🇨', type:'cascade2', levels:['Provincia','Cantón'] },
+  VE: { name:'Venezuela',   flag:'🇻🇪', type:'cascade2', levels:['Estado','Municipio'] },
+  DO: { name:'Dom. Republic',flag:'🇩🇴', type:'cascade2', levels:['Provincia','Municipio'] },
+  PY: { name:'Paraguay',    flag:'🇵🇾', type:'cascade2', levels:['Departamento','Ciudad'] },
+  BO: { name:'Bolivia',     flag:'🇧🇴', type:'cascade3', levels:['Departamento','Provincia','Ciudad'] },
+  PE: { name:'Peru',        flag:'🇵🇪', type:'cascade3', levels:['Departamento','Provincia','Distrito'] },
+};
+
+/* ─── Data ───────────────────────────────────────────────────────────────── */
+const COLONIAS = {
+  '06600':['Juárez','Tabacalera','Santa María la Ribera','Guerrero'],
+  '01000':['San Ángel','Chimalistac','Altavista','Florida'],
+  '11560':['Polanco','Los Morales','Bosques de Chapultepec'],
+  '03100':['Del Valle','Narvarte','Álamos'],
+};
+
+const COMMUNES = {
+  '75001':['Paris 1er','Paris 2e','Paris 3e','Paris 4e'],
+  '75008':['Paris 8e','Paris 17e'],
+  '69001':['Lyon 1er','Lyon 2e','Lyon 3e'],
+  '13001':['Marseille 1er','Marseille 2e','Marseille 6e'],
+  '33000':['Bordeaux Centre','Bordeaux Saint-Michel'],
+};
+
+const COLOMBIA = {
+  'Cundinamarca':['Bogotá','Soacha','Zipaquirá','Facatativá'],
+  'Antioquia':['Medellín','Bello','Itagüí','Envigado'],
+  'Valle del Cauca':['Cali','Buenaventura','Palmira','Tuluá'],
+  'Atlántico':['Barranquilla','Soledad','Malambo'],
+  'Bolívar':['Cartagena','Magangué','Turbaco'],
+  'Santander':['Bucaramanga','Floridablanca','Girón'],
+};
+
+// Bolivia: THREE_LEVELS (address-form postalCodeFrom: THREE_LEVELS)
+// Departamento → Provincia → Ciudad
+const BOLIVIA = {
+  'La Paz': {
+    'Murillo':    ['La Paz','El Alto'],
+    'Ingavi':     ['Viacha','Guaqui'],
+    'Manco Kapac':['Copacabana'],
+    'Omasuyos':   ['Achacachi'],
+  },
+  'Cochabamba': {
+    'Cercado':    ['Cochabamba'],
+    'Quillacollo':['Quillacollo','Tiquipaya'],
+    'Sacaba':     ['Sacaba'],
+  },
+  'Santa Cruz': {
+    'Andrés Ibáñez':['Santa Cruz de la Sierra'],
+    'Warnes':        ['Warnes','Montero'],
+  },
+  'Tarija': {
+    'Cercado':   ['Tarija'],
+    'Gran Chaco':['Yacuiba','Bermejo'],
+  },
+  'Oruro': {
+    'Cercado': ['Oruro'],
+    'Pantaleón Dalence':['Huanuni'],
+  },
+  'Potosí': {
+    'Tomás Frías':['Potosí'],
+    'Antonio Quijarro':['Uyuni'],
+  },
+  'Chuquisaca': {
+    'Oropeza':['Sucre'],
+  },
+  'Beni': {
+    'Cercado':['Trinidad'],
+    'Vaca Díez':['Riberalta'],
+  },
+  'Pando': {
+    'Nicolás Suárez':['Cobija'],
+  },
+};
+
+const ECUADOR = {
+  'Pichincha':  ['Quito','Rumiñahui','Mejía','Pedro Moncayo'],
+  'Guayas':     ['Guayaquil','Samborondón','Durán','Milagro'],
+  'Azuay':      ['Cuenca','Girón','Gualaceo'],
+  'Manabí':     ['Portoviejo','Manta','El Carmen'],
+  'El Oro':     ['Machala','Pasaje','Santa Rosa'],
+};
+const VENEZUELA = {
+  'Distrito Capital': ['Libertador'],
+  'Miranda':          ['Chacao','Sucre','Baruta','El Hatillo'],
+  'Carabobo':         ['Valencia','San Diego','Naguanabo'],
+  'Zulia':            ['Maracaibo','San Francisco','Cabimas'],
+  'Aragua':           ['Girardot','Maracay','Sucre'],
+};
+const DOMINICAN = {
+  'Distrito Nacional': ['Santo Domingo de Guzmán'],
+  'Santo Domingo':     ['SD Este','SD Norte','SD Oeste','Boca Chica'],
+  'Santiago':          ['Santiago de los Caballeros','Tamboril','Villa González'],
+  'La Altagracia':     ['Higüey','San Rafael del Yuma'],
+  'Puerto Plata':      ['Puerto Plata','Sosúa'],
+};
+const PARAGUAY = {
+  'Central':     ['Asunción','Luque','San Lorenzo','Fernando de la Mora','Lambaré'],
+  'Alto Paraná': ['Ciudad del Este','Hernandarias','Presidente Franco'],
+  'Cordillera':  ['Caacupé','Altos','Tobatí'],
+  'Guairá':      ['Villarrica','Coronel Martínez'],
+  'Itapúa':      ['Encarnación','Fram','Bella Vista'],
+};
+const PERU = {
+  'Lima':        { 'Lima':['Lima','Miraflores','San Isidro','Surco','Barranco'], 'Callao':['Callao','Bellavista','La Perla'] },
+  'Arequipa':    { 'Arequipa':['Arequipa','Cayma','Cerro Colorado','Yanahuara'], 'Camaná':['Camaná','Samuel Pastor'] },
+  'Cusco':       { 'Cusco':['Cusco','San Sebastián','San Jerónimo','Santiago'], 'Urubamba':['Urubamba','Ollantaytambo'] },
+  'La Libertad': { 'Trujillo':['Trujillo','La Esperanza','El Porvenir','Víctor Larco'], 'Ascope':['Ascope','Casa Grande'] },
+};
+const CHILE_REGIONS = {
+  'Región Metropolitana': ['Santiago','Providencia','Las Condes','Ñuñoa','La Florida','Maipú'],
+  'Valparaíso':           ['Valparaíso','Viña del Mar','Quilpué','Villa Alemana'],
+  'Biobío':               ['Concepción','Talcahuano','San Pedro de la Paz','Chiguayante'],
+  'La Araucanía':         ['Temuco','Padre Las Casas','Villarrica'],
+  'Coquimbo':             ['La Serena','Coquimbo','Ovalle'],
+};
+
+const CASCADE_DATA = { CL:CHILE_REGIONS, CO:COLOMBIA, EC:ECUADOR, VE:VENEZUELA, DO:DOMINICAN, PY:PARAGUAY, BO:BOLIVIA, PE:PERU };
+
+const PATTERNS = {
+  'zip-num':    { label:'ZIP numérico',    countries:['BR','US','ES','PT','FR','IT','UY','AR'] },
+  'zip-alpha':  { label:'ZIP alfanumérico',countries:['CA','UK'] },
+  'zip-sub':    { label:'ZIP + Colonia',   countries:['MX'] },
+  'cascade2':   { label:'Cascade 2 níveis',countries:['CL','CO','EC','VE','DO','PY'] },
+  'cascade3':   { label:'Cascade 3 níveis',countries:['BO','PE'] },
+};
+
+/* Known valid zip codes that have products */
+const VALID_ZONES = {
+  US:['10001','10017','10018','90210','92010','33139'],
+  BR:['01310-100','04538-133','22031-110','80230-901'],
+  CA:['M5V 3A8','K1A 0A6','V6B 2W9','H3A 1A1'],
+  UK:['SW1A 2AA','EC1A 1BB','W1A 0AX','M1 1AE','E1W 1LD'],
+  AR:['1406','1425','1640','5000'],
+  MX:['06600','01000','11560','03100'],
+  FR:['75001','75008','69001','13001','33000'],
+  ES:['28013','08001','41001','46001'],
+  PT:['1000-001','4000-001','3000-001','8000-001'],
+  IT:['00100','20121','80100','50121'],
+  UY:['11000','11300','11500','20000'],
+  CL: null, // cascade — always valid when completed
+  CO: null, // cascade — always valid when completed
+  EC: null,
+  VE: null,
+  DO: null,
+  PY: null,
+  BO: null, // cascade — always valid when completed
+  PE: null,
+};
+
+/* Clickable example inputs per country */
+const EXAMPLES = {
+  US: { type:'zip', codes:['10001','10017','90210','33139'] },
+  BR: { type:'zip', codes:['01310-100','04538-133','22031-110'] },
+  CA: { type:'zip', codes:['M5V 3A8','K1A 0A6','V6B 2W9'] },
+  UK: { type:'zip', codes:['SW1A 2AA','EC1A 1BB','W1A 0AX'] },
+  AR: { type:'zip', codes:['1406','1425','1640'] },
+  MX: { type:'zip+sub', codes:[{cp:'06600',col:'Juárez'},{cp:'11560',col:'Polanco'},{cp:'03100',col:'Del Valle'}] },
+  FR: { type:'zip', codes:['75001','75008','69001','13001'] },
+  CO: { type:'cascade', codes:[{l1:'Cundinamarca',l2:'Bogotá'},{l1:'Antioquia',l2:'Medellín'},{l1:'Valle del Cauca',l2:'Cali'}] },
+  ES: { type:'zip', codes:['28013','08001','41001'] },
+  PT: { type:'zip', codes:['1000-001','4000-001','3000-001'] },
+  IT: { type:'zip', codes:['00100','20121','80100'] },
+  UY: { type:'zip', codes:['11000','11300','20000'] },
+  CL: { type:'cascade', codes:[{l1:'Región Metropolitana',l2:'Santiago'},{l1:'Valparaíso',l2:'Viña del Mar'},{l1:'Biobío',l2:'Concepción'}] },
+  EC: { type:'cascade', codes:[{l1:'Pichincha',l2:'Quito'},{l1:'Guayas',l2:'Guayaquil'}] },
+  VE: { type:'cascade', codes:[{l1:'Distrito Capital',l2:'Libertador'},{l1:'Miranda',l2:'Chacao'}] },
+  DO: { type:'cascade', codes:[{l1:'Distrito Nacional',l2:'Santo Domingo de Guzmán'},{l1:'Santo Domingo',l2:'SD Este'}] },
+  PY: { type:'cascade', codes:[{l1:'Central',l2:'Asunción'},{l1:'Alto Paraná',l2:'Ciudad del Este'}] },
+  BO: { type:'cascade', codes:[{l1:'La Paz',l2:'Murillo',l3:'La Paz'},{l1:'Santa Cruz',l2:'Andrés Ibáñez',l3:'Santa Cruz de la Sierra'},{l1:'Cochabamba',l2:'Cercado',l3:'Cochabamba'}] },
+  PE: { type:'cascade', codes:[{l1:'Lima',l2:'Lima',l3:'Miraflores'},{l1:'Arequipa',l2:'Arequipa',l3:'Arequipa'}] },
+};
+
+const PRODUCTS = [
+  {id:1, name:'Ceramic Arc Vase',    brand:'Maison',     price:'$89',  emoji:'🏺', bg:'#E8E0D8', zones:['all']},
+  {id:2, name:'Sculptural Hand',     brand:'Atelier',    price:'$145', emoji:'🖐️', bg:'#2A2A2A', tc:'#fff', zones:['zone-a','zone-c']},
+  {id:3, name:'Bell Jar Display',    brand:'Nordic',     price:'$67',  emoji:'🔔', bg:'#D0CCC4', zones:['all']},
+  {id:4, name:'Matte Pot Set',       brand:'Terra',      price:'$120', emoji:'🪴', bg:'#C8D4B8', zones:['all']},
+  {id:5, name:'Marble Tray',         brand:'Lux',        price:'$55',  emoji:'🪨', bg:'#E0DCE0', zones:['zone-a','zone-b']},
+  {id:6, name:'Woven Basket',        brand:'Rattan Co.', price:'$78',  emoji:'🧺', bg:'#D4C4A8', zones:['all']},
+  {id:7, name:'Geometric Candle',    brand:'Lumière',    price:'$34',  emoji:'🕯️', bg:'#F0E8D8', zones:['all']},
+  {id:8, name:'Terracotta Bowl',     brand:'Clay Studio',price:'$48',  emoji:'🥣', bg:'#C8A888', zones:['zone-b','zone-c']},
+];
+
+function getZone(zoneKey) {
+  if (!zoneKey) return null;
+  const k = zoneKey.toLowerCase();
+  if (['10017','10018','sw1a 2aa','sw1a2aa','c1406cor','01310-100'].some(x=>k.includes(x.toLowerCase())||k===x.toLowerCase())) return 'zone-b';
+  if (['10001','90210','ec1a 1bb','c1425bme','04538-133'].some(x=>k.toLowerCase().includes(x.toLowerCase()))) return 'zone-a';
+  return 'zone-c';
+}
+
+/* ─── State ──────────────────────────────────────────────────────────────── */
+const S = { country:'BR', pattern:'zip-num', mode:'optional', view:'home', location:null, popoverOpen:false };
+
+/* ─── Init ───────────────────────────────────────────────────────────────── */
+window.addEventListener('DOMContentLoaded', () => {
+  renderCountryTabs('zip-num');
+  setCountry('BR');
+  applyMode();
+});
+
+document.addEventListener('click', e => {
+  const pop = document.getElementById('popover');
+  const trig = document.getElementById('loc-trigger');
+  if (S.popoverOpen && !pop.contains(e.target) && !trig.contains(e.target)) closePopover();
+});
+
+/* ─── Controls ───────────────────────────────────────────────────────────── */
+function setPattern(p) {
+  S.pattern = p;
+  document.querySelectorAll('#pattern-tabs button').forEach(b => {
+    const m = b.getAttribute('onclick')?.match(/setPattern\('([\w-]+)'\)/);
+    if (m) b.classList.toggle('active', m[1]===p);
+  });
+  const first = PATTERNS[p].countries[0];
+  renderCountryTabs(p);
+  setCountry(first);
+}
+function renderCountryTabs(p) {
+  const countries = PATTERNS[p].countries;
+  document.getElementById('country-tabs').innerHTML = countries.map((c,i) =>
+    `<button class="${i===0?'active':''}" onclick="setCountry('${c}')">${COUNTRIES[c].flag} ${c}</button>`
+  ).join('');
+}
+function setCountry(c) {
+  S.country = c;
+  document.querySelectorAll('#country-tabs button').forEach(b=>{
+    const m = b.getAttribute('onclick')?.match(/setCountry\('(\w+)'\)/);
+    if (m) b.classList.toggle('active', m[1]===c);
+  });
+  resetAll();
+}
+function setMode(m) {
+  S.mode = m;
+  document.querySelectorAll('#mode-tabs button').forEach((b,i)=>{
+    b.classList.toggle('active',['optional','mandatory'][i]===m);
+  });
+  S.location = null; closePopover();
+  applyMode(); renderTrigger(); renderGrid();
+}
+function resetAll() {
+  S.location = null; S.popoverOpen = false;
+  closePopover();
+  document.getElementById('unavail-overlay').classList.remove('open');
+  applyMode(); renderTrigger(); renderGrid();
+}
+
+/* ─── Mode ───────────────────────────────────────────────────────────────── */
+function applyMode() {
+  const store = document.getElementById('store');
+  const overlay = document.getElementById('mand-overlay');
+  if (S.mode==='mandatory' && !S.location) {
+    store.classList.add('locked');
+    overlay.classList.add('open');
+    renderInputInto('modal-body','modal');
+    updateModalSub();
+  } else {
+    store.classList.remove('locked');
+    overlay.classList.remove('open');
+  }
+  // Auto-open popover on home/plp for optional
+  if (S.mode==='optional' && !S.location) {
+    setTimeout(() => openPopover(), 400);
+  }
+}
+function updateModalSub() {
+  const cfg = COUNTRIES[S.country];
+  const isCascadeOnly = cfg.type==='cascade2' || cfg.type==='cascade3';
+  document.getElementById('modal-sub').innerHTML =
+    `Offers and delivery options vary based on region. ${!isCascadeOnly?`<a href="#" onclick="return false">I don't know my postal code</a>`:''}`;
+}
+
+/* ─── Trigger ────────────────────────────────────────────────────────────── */
+function renderTrigger() {
+  const lbl = document.getElementById('trigger-label');
+  lbl.textContent = S.location ? S.location.label : 'Enter a location';
+}
+function onTriggerClick() {
+  if (S.mode==='mandatory' && !S.location) return;
+  S.popoverOpen ? closePopover() : openPopover();
+}
+
+/* ─── Popover ────────────────────────────────────────────────────────────── */
+function openPopover() {
+  const pop = document.getElementById('popover');
+  pop.classList.add('open');
+  S.popoverOpen = true;
+  renderInputInto('popover-body','popover');
+}
+function closePopover() {
+  document.getElementById('popover').classList.remove('open');
+  S.popoverOpen = false;
+}
+
+/* ─── Render input ───────────────────────────────────────────────────────── */
+function renderInputInto(containerId, ctx) {
+  const el = document.getElementById(containerId);
+  const cfg = COUNTRIES[S.country];
+  let html = '';
+
+  if (cfg.type==='zip' || cfg.type==='zip+sub' || cfg.type==='zip+commune') {
+    const codeName = {BR:'CEP',UK:'postcode',AR:'postal code',FR:'code postal',CA:'postal code',ES:'código postal',PT:'código postal',IT:'codice postale',UY:'código postal',MX:'código postal'}[S.country]||'postal code';
+    const dontKnow = `<a href="#" onclick="return false">Don't know my ${codeName}</a>`;
+    html += `<p class="loc-sub-text">Offers and delivery options vary based on region. ${dontKnow}</p>`;
+  }
+
+  if (cfg.type==='zip') {
+    const exChips = (EXAMPLES[S.country]?.codes||[]).map(c=>`<button class="example-chip" onclick="fillExample('${ctx}','${c}')">${c}</button>`).join('');
+    html += `
+      <div style="display:flex;gap:8px;align-items:flex-start">
+        <div style="flex:1">
+          <div class="zip-wrap" id="${ctx}-wrap">
+            <input id="${ctx}-zip" placeholder="${cfg.placeholder}" maxlength="${cfg.maxLen}"
+              oninput="onZipInput('${ctx}')" onblur="validateZip('${ctx}')"
+              onkeydown="onZipKey(event,'${ctx}')" />
+            <button class="clear-x" id="${ctx}-clr" onclick="clearInp('${ctx}')">✕</button>
+          </div>
+          <div class="error-msg" id="${ctx}-err">This postal code is not valid</div>
+        </div>
+        <button class="continue-btn" id="${ctx}-cont" onclick="confirmZip('${ctx}')" disabled>CONTINUE</button>
+      </div>
+      <div class="examples-row"><span class="examples-label">Try:</span>${exChips}</div>
+      <button class="use-loc-btn" id="${ctx}-geo" onclick="useMyLoc('${ctx}')">
+        <svg class="pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        <div class="spinner-ring"></div>
+        <span>Use my location</span>
+      </button>`;
+  }
+
+  if (cfg.type==='zip+sub') {
+    const mxEx = EXAMPLES.MX.codes;
+    const mxChips = mxEx.map(e=>`<button class="example-chip" onclick="fillMXExample('${ctx}','${e.cp}','${e.col}')">${e.cp} — ${e.col}</button>`).join('');
+    html += `
+      <div>
+        <div class="zip-wrap" id="${ctx}-wrap">
+          <input id="${ctx}-zip" placeholder="${cfg.placeholder}" maxlength="${cfg.maxLen}"
+            oninput="onMXInput('${ctx}')" onblur="validateZip('${ctx}')"
+            onkeydown="onZipKey(event,'${ctx}')" />
+          <button class="clear-x" id="${ctx}-clr" onclick="clearInp('${ctx}')">✕</button>
+        </div>
+        <div class="error-msg" id="${ctx}-err">This postal code is not valid</div>
+        <div class="sub-section" id="${ctx}-sub">
+          <select class="loc-select" style="margin-top:10px" id="${ctx}-col" onchange="onColChange('${ctx}')">
+            <option value="">Select your Colonia</option>
+          </select>
+        </div>
+      </div>
+      <div class="examples-row" style="margin-top:8px"><span class="examples-label">Try:</span>${mxChips}</div>
+      <div style="display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap">
+        <button class="use-loc-btn" id="${ctx}-geo" onclick="useMyLoc('${ctx}')">
+          <svg class="pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          <div class="spinner-ring"></div>
+          <span>Use my location</span>
+        </button>
+        <button class="continue-btn" id="${ctx}-cont" onclick="confirmMX('${ctx}')" disabled>CONTINUE</button>
+      </div>`;
+  }
+
+  if (cfg.type==='zip+commune') {
+    const frEx = EXAMPLES.FR.codes;
+    const frChips = frEx.map(e=>`<button class="example-chip" onclick="fillFRExample('${ctx}','${e.cp}','${e.city}')">${e.cp} — ${e.city}</button>`).join('');
+    html += `
+      <div>
+        <div class="zip-wrap" id="${ctx}-wrap">
+          <input id="${ctx}-zip" placeholder="${cfg.placeholder}" maxlength="${cfg.maxLen}"
+            oninput="onFRInput('${ctx}')" onblur="validateZip('${ctx}')"
+            onkeydown="onZipKey(event,'${ctx}')" />
+          <button class="clear-x" id="${ctx}-clr" onclick="clearInp('${ctx}')">✕</button>
+        </div>
+        <div class="error-msg" id="${ctx}-err">This postal code is not valid</div>
+        <div class="sub-section" id="${ctx}-sub">
+          <select class="loc-select" style="margin-top:10px" id="${ctx}-com" onchange="onComChange('${ctx}')">
+            <option value="">Select your commune</option>
+          </select>
+        </div>
+      </div>
+      <div class="examples-row" style="margin-top:8px"><span class="examples-label">Try:</span>${frChips}</div>
+      <div style="display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap">
+        <button class="use-loc-btn" id="${ctx}-geo" onclick="useMyLoc('${ctx}')">
+          <svg class="pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          <div class="spinner-ring"></div>
+          <span>Use my location</span>
+        </button>
+        <button class="continue-btn" id="${ctx}-cont" onclick="confirmFR('${ctx}')" disabled>CONTINUE</button>
+      </div>`;
+  }
+
+  if (cfg.type==='cascade2') {
+    const data = CASCADE_DATA[S.country];
+    const [l1Label, l2Label] = cfg.levels;
+    const ex = (EXAMPLES[S.country]?.codes||[]).map(e=>
+      `<button class="example-chip" onclick="fillCascadeExample('${ctx}','${e.l1}','${e.l2}')">${e.l2}, ${e.l1}</button>`
+    ).join('');
+    const opts = Object.keys(data).map(d=>`<option value="${d}">${d}</option>`).join('');
+    html += `
+      <p class="loc-sub-text">Offers and delivery options vary based on region.</p>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <select class="loc-select" id="${ctx}-l1" onchange="onCascadeL1('${ctx}')">
+          <option value="">Select ${l1Label}</option>${opts}
+        </select>
+        <select class="loc-select" id="${ctx}-l2" disabled onchange="onCascadeL2('${ctx}')">
+          <option value="">Select ${l2Label}</option>
+        </select>
+      </div>
+      <div class="examples-row" style="margin-top:8px"><span class="examples-label">Try:</span>${ex}</div>
+      <div style="display:flex;align-items:center;gap:10px;margin-top:12px;flex-wrap:wrap">
+        <button class="use-loc-btn" id="${ctx}-geo" onclick="useMyLoc('${ctx}')">
+          <svg class="pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          <div class="spinner-ring"></div><span>Use my location</span>
+        </button>
+        <button class="continue-btn" id="${ctx}-cont" onclick="confirmCascade('${ctx}')" disabled>CONTINUE</button>
+      </div>`;
+  }
+
+  if (cfg.type==='cascade3') {
+    const data = CASCADE_DATA[S.country];
+    const [l1Label, l2Label, l3Label] = cfg.levels;
+    const ex = (EXAMPLES[S.country]?.codes||[]).map(e=>
+      `<button class="example-chip" onclick="fillCascadeExample('${ctx}','${e.l1||e.dept}','${e.l2||e.prov}','${e.l3||e.city}')">${e.l3||e.city}, ${e.l1||e.dept}</button>`
+    ).join('');
+    const opts = Object.keys(data).map(d=>`<option value="${d}">${d}</option>`).join('');
+    html += `
+      <p class="loc-sub-text">Offers and delivery options vary based on region.</p>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <select class="loc-select" id="${ctx}-l1" onchange="onCascadeL1('${ctx}')">
+          <option value="">Select ${l1Label}</option>${opts}
+        </select>
+        <select class="loc-select" id="${ctx}-l2" disabled onchange="onCascadeL2('${ctx}')">
+          <option value="">Select ${l2Label}</option>
+        </select>
+        <select class="loc-select" id="${ctx}-l3" disabled onchange="onCascadeL3('${ctx}')">
+          <option value="">Select ${l3Label}</option>
+        </select>
+      </div>
+      <div class="examples-row" style="margin-top:8px"><span class="examples-label">Try:</span>${ex}</div>
+      <div style="display:flex;align-items:center;gap:10px;margin-top:12px;flex-wrap:wrap">
+        <button class="use-loc-btn" id="${ctx}-geo" onclick="useMyLoc('${ctx}')">
+          <svg class="pin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          <div class="spinner-ring"></div><span>Use my location</span>
+        </button>
+        <button class="continue-btn" id="${ctx}-cont" onclick="confirmCascade('${ctx}')" disabled>CONTINUE</button>
+      </div>`;
+  }
+
+
+  el.innerHTML = html;
+}
+
+/* ─── ZIP interactions ───────────────────────────────────────────────────── */
+function onZipInput(ctx) {
+  const cfg = COUNTRIES[S.country];
+  const inp = document.getElementById(`${ctx}-zip`);
+  const raw = inp.value;
+  const fmt = cfg.format ? cfg.format(raw) : raw;
+  if (inp.value !== fmt) { inp.value = fmt; }
+  const has = fmt.length > 0;
+  document.getElementById(`${ctx}-clr`).classList.toggle('show', has);
+  document.getElementById(`${ctx}-wrap`).classList.remove('error');
+  document.getElementById(`${ctx}-err`).classList.remove('show');
+  document.getElementById(`${ctx}-cont`).disabled = !cfg.validate(fmt);
+}
+function onZipKey(e, ctx) { if (e.key==='Enter') { validateZip(ctx); confirmZip(ctx); } }
+function validateZip(ctx) {
+  const cfg = COUNTRIES[S.country];
+  const val = document.getElementById(`${ctx}-zip`)?.value || '';
+  if (val.length===0) return;
+  const ok = cfg.validate(val);
+  document.getElementById(`${ctx}-wrap`)?.classList.toggle('error', !ok);
+  document.getElementById(`${ctx}-err`)?.classList.toggle('show', !ok);
+  if (!ok) document.getElementById(`${ctx}-cont`).disabled = true;
+}
+function clearInp(ctx) {
+  const inp = document.getElementById(`${ctx}-zip`);
+  if (inp) inp.value = '';
+  document.getElementById(`${ctx}-clr`).classList.remove('show');
+  document.getElementById(`${ctx}-cont`).disabled = true;
+  document.getElementById(`${ctx}-wrap`)?.classList.remove('error');
+  document.getElementById(`${ctx}-err`)?.classList.remove('show');
+  const sub = document.getElementById(`${ctx}-sub`);
+  if (sub) sub.classList.remove('show');
+  inp?.focus();
+}
+function confirmZip(ctx) {
+  const cfg = COUNTRIES[S.country];
+  const val = document.getElementById(`${ctx}-zip`).value.trim();
+  if (!cfg.validate(val)) { validateZip(ctx); return; }
+  trySetLocation({ label: formatLocationLabel(val), zone: val.replace(/\s/g,''), rawZip: val }, ctx);
+}
+
+/* ─── Mexico ─────────────────────────────────────────────────────────────── */
+function onMXInput(ctx) {
+  const inp = document.getElementById(`${ctx}-zip`);
+  const val = inp.value.replace(/\D/g,'').slice(0,5);
+  inp.value = val;
+  document.getElementById(`${ctx}-clr`).classList.toggle('show', val.length>0);
+  document.getElementById(`${ctx}-wrap`).classList.remove('error');
+  document.getElementById(`${ctx}-err`).classList.remove('show');
+  const sub = document.getElementById(`${ctx}-sub`);
+  const col = document.getElementById(`${ctx}-col`);
+  const cont = document.getElementById(`${ctx}-cont`);
+  if (val.length===5) {
+    const opts = COLONIAS[val] || ['Centro','Norte','Sur','Reforma'];
+    col.innerHTML = `<option value="">Select your Colonia</option>${opts.map(c=>`<option value="${c}">${c}</option>`).join('')}`;
+    sub.classList.add('show');
+    if (opts.length===1) { col.value=opts[0]; cont.disabled=false; } else { cont.disabled=true; }
+  } else {
+    sub.classList.remove('show');
+    cont.disabled = true;
+  }
+}
+function onColChange(ctx) {
+  document.getElementById(`${ctx}-cont`).disabled = !document.getElementById(`${ctx}-col`).value;
+}
+function confirmMX(ctx) {
+  const cp = document.getElementById(`${ctx}-zip`).value.trim();
+  const col = document.getElementById(`${ctx}-col`).value;
+  if (!cp || !col) return;
+  trySetLocation({ label:`${cp} — ${col}`, zone:`${cp}-${col}`, rawZip:cp }, ctx);
+}
+
+/* ─── Generic cascade handlers ────────────────────────────────────────────── */
+function onCascadeL1(ctx) {
+  const cfg = COUNTRIES[S.country];
+  const data = CASCADE_DATA[S.country];
+  const l1 = document.getElementById(`${ctx}-l1`).value;
+  const l2El = document.getElementById(`${ctx}-l2`);
+  const l3El = document.getElementById(`${ctx}-l3`); // may not exist (cascade2)
+  const cont = document.getElementById(`${ctx}-cont`);
+  if (l1 && data[l1]) {
+    const d = data[l1];
+    const isNested = typeof Object.values(d)[0] === 'object';
+    if (isNested) {
+      // cascade3: l1→l2 are keys, l2→l3 are arrays
+      const l2Keys = Object.keys(d);
+      l2El.innerHTML = `<option value="">Select ${cfg.levels[1]}</option>${l2Keys.map(k=>`<option value="${k}">${k}</option>`).join('')}`;
+    } else {
+      // cascade2: l1→l2 are arrays
+      l2El.innerHTML = `<option value="">Select ${cfg.levels[1]}</option>${d.map(c=>`<option value="${c}">${c}</option>`).join('')}`;
+    }
+    l2El.disabled = false;
+  } else {
+    l2El.innerHTML = `<option value="">Select ${cfg.levels[1]}</option>`; l2El.disabled = true;
+  }
+  if (l3El) { l3El.innerHTML = `<option value="">Select ${cfg.levels[2]}</option>`; l3El.disabled = true; }
+  cont.disabled = true;
+}
+function onCascadeL2(ctx) {
+  const cfg = COUNTRIES[S.country];
+  const data = CASCADE_DATA[S.country];
+  const l1 = document.getElementById(`${ctx}-l1`).value;
+  const l2 = document.getElementById(`${ctx}-l2`).value;
+  const l3El = document.getElementById(`${ctx}-l3`);
+  const cont = document.getElementById(`${ctx}-cont`);
+  if (cfg.type === 'cascade2') {
+    cont.disabled = !l2;
+  } else if (cfg.type === 'cascade3' && l3El) {
+    if (l1 && l2 && data[l1]?.[l2]) {
+      const cities = data[l1][l2];
+      l3El.innerHTML = `<option value="">Select ${cfg.levels[2]}</option>${cities.map(c=>`<option value="${c}">${c}</option>`).join('')}`;
+      l3El.disabled = false;
+    } else {
+      l3El.innerHTML = `<option value="">Select ${cfg.levels[2]}</option>`; l3El.disabled = true;
+    }
+    cont.disabled = true;
+  }
+}
+function onCascadeL3(ctx) {
+  document.getElementById(`${ctx}-cont`).disabled = !document.getElementById(`${ctx}-l3`).value;
+}
+function confirmCascade(ctx) {
+  const cfg = COUNTRIES[S.country];
+  const l1 = document.getElementById(`${ctx}-l1`).value;
+  const l2 = document.getElementById(`${ctx}-l2`)?.value;
+  const l3 = document.getElementById(`${ctx}-l3`)?.value;
+  if (!l1 || !l2) return;
+  if (cfg.type==='cascade3' && !l3) return;
+  const label = cfg.type==='cascade3' ? `${l3}, ${l1}` : `${l2}, ${l1}`;
+  const zone = cfg.type==='cascade3' ? `${S.country}-${l1}-${l2}-${l3}` : `${S.country}-${l2}`;
+  trySetLocation({ label, zone }, ctx);
+}
+
+
+/* ─── France (zip + commune) ─────────────────────────────────────────────── */
+function onFRInput(ctx) {
+  const cfg = COUNTRIES.FR;
+  const inp = document.getElementById(`${ctx}-zip`);
+  const val = inp.value.replace(/\D/g,'').slice(0,5);
+  inp.value = val;
+  document.getElementById(`${ctx}-clr`).classList.toggle('show', val.length>0);
+  document.getElementById(`${ctx}-wrap`).classList.remove('error');
+  document.getElementById(`${ctx}-err`).classList.remove('show');
+  const sub = document.getElementById(`${ctx}-sub`);
+  const com = document.getElementById(`${ctx}-com`);
+  const cont = document.getElementById(`${ctx}-cont`);
+  if (val.length===5 && cfg.validate(val)) {
+    const opts = COMMUNES[val] || ['Centre','Nord','Sud','Est'];
+    com.innerHTML = `<option value="">Select your commune</option>${opts.map(c=>`<option value="${c}">${c}</option>`).join('')}`;
+    sub.classList.add('show');
+    if (opts.length===1) { com.value=opts[0]; cont.disabled=false; } else { cont.disabled=true; }
+  } else { sub.classList.remove('show'); cont.disabled=true; }
+}
+function onComChange(ctx) {
+  document.getElementById(`${ctx}-cont`).disabled = !document.getElementById(`${ctx}-com`).value;
+}
+function confirmFR(ctx) {
+  const cp = document.getElementById(`${ctx}-zip`).value.trim();
+  const com = document.getElementById(`${ctx}-com`).value;
+  if (!cp || !com) return;
+  trySetLocation({ label:`${cp} — ${com}`, zone:`${cp}-${com}`, rawZip:cp }, ctx);
+}
+function fillFRExample(ctx, cp, city) {
+  const inp = document.getElementById(`${ctx}-zip`);
+  if (!inp) return;
+  inp.value = cp;
+  onFRInput(ctx);
+  setTimeout(() => {
+    const com = document.getElementById(`${ctx}-com`);
+    if (com && city) { com.value = city; onComChange(ctx); }
+  }, 60);
+}
+
+
+/* ─── Use my location ────────────────────────────────────────────────────── */
+const GEO_MOCK = {
+  US:{ label:'New York, 10017',       zone:'10017',         rawZip:'10017'      },
+  BR:{ label:'São Paulo, 01310-100',  zone:'01310-100',     rawZip:'01310-100'  },
+  CA:{ label:'Toronto, M5V 3A8',       zone:'M5V3A8',         rawZip:'M5V 3A8'    },
+  UK:{ label:'London, SW1A 2AA',      zone:'SW1A2AA',       rawZip:'SW1A 2AA'   },
+  AR:{ label:'Buenos Aires, 1406',     zone:'AR-1406',        rawZip:'1406'       },
+  MX:{ label:'06600 — Juárez',        zone:'06600-Juárez',   rawZip:'06600'      },
+  FR:{ label:'75001 — Paris 1er',     zone:'75001-Paris1er', rawZip:'75001'      },
+  ES:{ label:'Madrid, 28013',       zone:'28013',     rawZip:'28013'    },
+  PT:{ label:'Lisboa, 1000-001',    zone:'1000-001',  rawZip:'1000-001' },
+  IT:{ label:'Roma, 00100',         zone:'00100',     rawZip:'00100'    },
+  UY:{ label:'Montevideo, 11000',   zone:'11000',     rawZip:'11000'    },
+  CL:{ label:'Santiago, Región Metropolitana', zone:'CL-Región Metropolitana-Santiago' },
+  CO:{ label:'Bogotá, Cundinamarca',  zone:'CO-Bogotá'                  },
+  EC:{ label:'Quito, Pichincha',    zone:'EC-Quito'                     },
+  VE:{ label:'Caracas, Libertador', zone:'VE-Libertador'                },
+  DO:{ label:'Santo Domingo',       zone:'DO-SDomingo'                  },
+  PY:{ label:'Asunción, Central',   zone:'PY-Asuncion'                  },
+  BO:{ label:'La Paz, Murillo, La Paz', zone:'BO-La Paz-Murillo-La Paz' },
+  PE:{ label:'Miraflores, Lima',    zone:'PE-Lima-Lima-Miraflores'      },
+};
+function useMyLoc(ctx) {
+  const btn = document.getElementById(`${ctx}-geo`);
+  btn.classList.add('loading');
+  setTimeout(() => {
+    btn.classList.remove('loading');
+    trySetLocation(GEO_MOCK[S.country], ctx);
+  }, 1400);
+}
+
+/* ─── Location logic ─────────────────────────────────────────────────────── */
+function formatLocationLabel(zip) {
+  const names = {
+    '10001':'New York, 10001','10017':'New York, 10017','90210':'Beverly Hills, 90210',
+    '92010':'Carlsbad, 92010','10018':'New York, 10018','33139':'Miami Beach, 33139',
+    '01310-100':'São Paulo, 01310-100','04538-133':'São Paulo, 04538-133','22031-110':'Rio de Janeiro, 22031-110',
+    'M5V 3A8':'Toronto, M5V 3A8','K1A 0A6':'Ottawa, K1A 0A6','V6B 2W9':'Vancouver, V6B 2W9','H3A 1A1':'Montréal, H3A 1A1',
+    'SW1A 2AA':'London, SW1A 2AA','EC1A 1BB':'London, EC1A 1BB','W1A 0AX':'London, W1A 0AX','M1 1AE':'Manchester, M1 1AE',
+    '1406':'Buenos Aires, 1406','1425':'Buenos Aires, 1425','1640':'Tigre, 1640','5000':'Córdoba, 5000',
+  };
+  return names[zip] || zip;
+}
+
+/* ─── Fill example helpers ───────────────────────────────────────────────── */
+function fillExample(ctx, val) {
+  const cfg = COUNTRIES[S.country];
+  const inp = document.getElementById(`${ctx}-zip`);
+  if (!inp) return;
+  inp.value = cfg.format ? cfg.format(val) : val;
+  onZipInput(ctx);
+  inp.focus();
+}
+
+function fillMXExample(ctx, cp, col) {
+  const inp = document.getElementById(`${ctx}-zip`);
+  if (!inp) return;
+  inp.value = cp;
+  onMXInput(ctx);
+  setTimeout(() => {
+    const colEl = document.getElementById(`${ctx}-col`);
+    if (colEl && col) { colEl.value = col; onColChange(ctx); }
+  }, 60);
+}
+
+function fillCascadeExample(ctx, l1, l2OrCity, l3) {
+  // works for both cascade2 (l1, l2) and cascade3 (l1, l2, l3)
+  const l1El = document.getElementById(`${ctx}-l1`);
+  if (!l1El) return;
+  l1El.value = l1;
+  onCascadeL1(ctx);
+  setTimeout(() => {
+    const l2El = document.getElementById(`${ctx}-l2`);
+    if (l2El) { l2El.value = l2OrCity; onCascadeL2(ctx); }
+    if (l3) setTimeout(() => {
+      const l3El = document.getElementById(`${ctx}-l3`);
+      if (l3El) { l3El.value = l3; onCascadeL3(ctx); }
+    }, 60);
+  }, 60);
+}
+
+function isZipAvailable(rawZip) {
+  const validList = VALID_ZONES[S.country];
+  if (!validList) return true; // cascade — always valid
+  const norm = (v) => v.replace(/\s/g,'').toUpperCase();
+  return validList.some(v => norm(v)===norm(rawZip));
+}
+
+function trySetLocation(loc, ctx) {
+  // Check if this zip has products
+  if (loc.rawZip && !isZipAvailable(loc.rawZip)) {
+    closePopover();
+    document.getElementById('mand-overlay').classList.remove('open');
+    document.getElementById('store').classList.remove('locked');
+    const codeLabel = {BR:'CEP',UK:'postcode',CA:'postal code',AR:'postal code',FR:'code postal'}[S.country]||'ZIP';
+    document.getElementById('unavail-msg').textContent =
+      `There are no products available for ${codeLabel} ${loc.rawZip}.`;
+    document.getElementById('unavail-overlay').classList.add('open');
+    return;
+  }
+  setLocation(loc);
+}
+
+function setLocation(loc) {
+  S.location = loc;
+  closePopover();
+  document.getElementById('mand-overlay').classList.remove('open');
+  document.getElementById('store').classList.remove('locked');
+  renderTrigger();
+  renderGrid();
+  showToast(`📍 Location set: ${loc.label}`);
+}
+
+function closeUnavail() { document.getElementById('unavail-overlay').classList.remove('open'); }
+function closeUnavailAndReopen() {
+  closeUnavail();
+  setTimeout(() => openPopover(), 100);
+  // Clear the input in popover after reopening
+  setTimeout(() => {
+    const inp = document.getElementById('popover-zip');
+    if (inp) { inp.value=''; clearInp('popover'); }
+  }, 200);
+}
+
+/* ─── Products ───────────────────────────────────────────────────────────── */
+function renderGrid() {
+  const grid = document.getElementById('home-grid');
+  const banner = document.getElementById('home-banner');
+  const bannerTxt = document.getElementById('home-banner-text');
+  const zone = getZone(S.location?.zone);
+
+  if (S.location) { banner.classList.add('show'); bannerTxt.textContent=`Showing products available for ${S.location.label}`; }
+  else { banner.classList.remove('show'); }
+
+  grid.innerHTML = PRODUCTS.map(p => {
+    const avail = !S.location || p.zones.includes('all') || p.zones.includes(zone);
+    return `
+      <div class="pcard ${!avail?'unavail':''}">
+        <div class="pimg" style="background:${p.bg};color:${p.tc||'#1a1a1a'}">${p.emoji}</div>
+        <div class="pinfo">
+          <div class="pname">${p.name}</div>
+          <div class="pbrand">${p.brand}</div>
+          <div class="pprice">${p.price}</div>
+          <div class="pdel ${S.location&&avail?'show':''}">✓ Delivers to your location</div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+
+/* ─── Toast ──────────────────────────────────────────────────────────────── */
+let _tt;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(_tt); _tt = setTimeout(()=>t.classList.remove('show'), 3000);
+}
+</script>
+</body>
+</html>
