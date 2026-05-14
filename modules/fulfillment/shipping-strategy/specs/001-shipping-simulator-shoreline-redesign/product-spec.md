@@ -118,6 +118,88 @@ A logistics manager at Road Runners prefers to use the simulator in English. The
 
 ---
 
+## API Mapping
+
+This section maps each UI area to the specific API calls required. All calls are made from the frontend unless otherwise noted.
+
+### Form — Input resolution
+
+| Field / Behavior | API | Method | Key response fields |
+|---|---|---|---|
+| Sales channel list | `/api/catalog_system/pub/saleschannel/list` | GET | `Id`, `Name`, `IsActive` |
+| Country, currency, symbol auto-resolution | `/api/catalog_system/pub/saleschannel/{salesChannelId}` | GET | `CountryCode`, `CurrencyCode`, `CurrencySymbol` |
+| Seller list | `/seller-register/pvt/sellers` | GET | `id`, `name`, `isActive` |
+| Seller × sales channel validation | `/seller-register/pvt/sellers/{sellerId}/sales-channel/mapping` | GET | Array of mapped sales channel IDs |
+| SKU search by name / ID / EAN / ref | `/api/catalog_system/pub/products/search?fq=skuId:{id}` or `?ft={query}` | GET | `productId`, `skuId`, `nameComplete`, `ean`, `referenceId`, `variations` |
+
+### Simulation
+
+| Feature | API | Method | Notes |
+|---|---|---|---|
+| Run simulation | `/api/logistics/pvt/shipping/calculate` | POST | Core simulation endpoint. Requires: `items[]` (skuId, quantity, price, dimensions), `destination.zipCode`, `destination.country`, `salesChannel`, `sellerId` |
+
+**Request body reference:**
+```json
+{
+  "items": [
+    { "id": "skuId", "quantity": 1, "price": 1000, "dimension": { "weight": 100, "height": 10, "width": 10, "length": 10 } }
+  ],
+  "destination": { "zipCode": "22041-001", "country": "BRA" },
+  "salesChannel": "1",
+  "sellerId": "drogariaspacheco"
+}
+```
+
+### Results — Delivery options
+
+| Result field | Source | API field |
+|---|---|---|
+| Carrier name | Simulation response | `logisticsInfo[n].slas[n].name` |
+| Freight price (formatted with correct currency) | Simulation response + SC API | `slas[n].price` · currency from `CurrencyCode` / `CurrencySymbol` |
+| Estimated delivery (days) | Simulation response | `slas[n].shippingEstimate` |
+| Transit time | Simulation response | `slas[n].transitTime` |
+| Processing time (warehouse handling) | Simulation response | `slas[n].pickupStoreInfo` or `slas[n].deliveryWindow` |
+| Works on weekends | Simulation response | `slas[n].availableDeliveryWindows` — check for Saturday/Sunday slots |
+| Warehouse → dock → carrier route | Simulation response | `logisticsInfo[n].warehouseId`, `logisticsInfo[n].dockId`, `slas[n].deliveryChannel` |
+
+### Results — Rejected carriers
+
+| Result field | Source | API field |
+|---|---|---|
+| Rejected carrier name | Simulation response | `logisticsInfo[n].carriersNotChosenList[n].name` |
+| Rejection reason (human-readable) | Simulation response | `carriersNotChosenList[n].reasonCode` → mapped to string (codes 1–13) |
+| Carrier active/inactive status | Simulation response | `carriersNotChosenList[n].active` |
+
+> No additional API call required. Reason codes are already present in the simulation response. This is a frontend-only display change.
+
+### Results — Inventory status
+
+| Result field | Source | API | Notes |
+|---|---|---|---|
+| Stock availability per item | Inventory API | `GET /api/logistics/pvt/inventory/items/{skuId}/warehouses` | `totalQuantity` per warehouse. Only needed to distinguish "no stock" from "no coverage" in error states. Not required if the simulation response already surfaces `inventoryDetails`. |
+
+### Results — Error states
+
+See [`api-error-diagnostics.md`](./api-error-diagnostics.md) for the full decision tree. Summary:
+
+| Error | Data source | Additional call needed? |
+|---|---|---|
+| ZIP outside coverage | Reason codes in simulation response (code 6 or 7) | No |
+| All carriers excluded (weight/dims) | Reason codes in simulation response (codes 1–5) | No |
+| No stock in seller's warehouses | `GET /api/logistics/pvt/inventory/items/{skuId}/warehouses` | Yes — 1 call per SKU |
+| Logistics configuration error | Multi-API traversal (docks, carriers, policies) | Out of scope for this MMR |
+
+### Results — Store pickup
+
+| Result field | Source | API field |
+|---|---|---|
+| Pickup point name | Simulation response | `logisticsInfo[n].slas[n].pickupStoreInfo.friendlyName` |
+| Pickup point address | Simulation response | `slas[n].pickupStoreInfo.address` |
+| Pickup SLA / estimated time | Simulation response | `slas[n].shippingEstimate` (where `deliveryChannel = "pickup-in-point"`) |
+| Pickup price | Simulation response | `slas[n].price` |
+
+---
+
 ## Assumptions
 
 - The `GET /api/catalog_system/pub/saleschannel/{salesChannelId}` endpoint reliably returns `CurrencyCode`, `CurrencySymbol`, and `CountryCode` for all active sales channels.
