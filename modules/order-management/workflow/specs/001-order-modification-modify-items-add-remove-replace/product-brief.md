@@ -8,7 +8,7 @@
 | **Eng Champion** | Túlio Araújo |
 | **Status** | Draft |
 | **Expected Release** | MVP 2026-Q2 |
-| **Availability** | Closed Beta |
+| **Availability** | General Availability |
 | **Access** | API (MVP) · OMS Admin UI (MLP) |
 | **Mode** | B2C & B2B |
 
