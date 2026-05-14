@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shipping Simulator — VTEX Admin</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif; background: #f4f4f4; color: #142032; font-size: 14px; display: flex; height: 100vh; overflow: hidden; }
+
+/* ── Sidebar ── */
+.sidebar { width: 192px; background: #fff; border-right: 1px solid #E7E9EE; display: flex; flex-direction: column; flex-shrink: 0; }
+.sidebar-header { padding: 14px 16px 12px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #E7E9EE; }
+.sidebar-nav { padding: 6px 0; flex: 1; overflow-y: auto; }
+.nav-group-label { padding: 8px 16px 3px; font-size: 11px; font-weight: 600; color: #A1AAB7; text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; justify-content: space-between; }
+.nav-item { display: flex; align-items: center; padding: 6px 16px; font-size: 12.5px; color: #4a4a4a; cursor: pointer; text-decoration: none; }
+.nav-item:hover { background: #f7f7f9; }
+.nav-item.active { color: #134cd8; font-weight: 600; background: #edf0fc; }
+.nav-sub .nav-item { padding: 5px 16px 5px 24px; font-size: 12px; }
+
+/* ── Main ── */
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+/* ── Topbar ── */
+.topbar { height: 50px; background: #fff; border-bottom: 1px solid #E7E9EE; display: flex; align-items: center; padding: 0 18px; gap: 10px; flex-shrink: 0; }
+.topbar-hamburger { color: #5B6E84; font-size: 17px; cursor: pointer; }
+.topbar-account { font-size: 13px; font-weight: 500; color: #142032; }
+.topbar-search { flex: 1; max-width: 320px; display: flex; align-items: center; gap: 8px; background: #F8F7FC; border: 1px solid #E7E9EE; border-radius: 6px; padding: 6px 12px; color: #A1AAB7; font-size: 13px; margin: 0 auto; }
+.topbar-right { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+.topbar-btn { font-size: 12px; color: #5B6E84; cursor: pointer; display: flex; align-items: center; gap: 4px; padding: 5px 8px; border-radius: 5px; border: none; background: none; }
+.topbar-btn:hover { background: #F8F7FC; }
+.topbar-avatar { width: 28px; height: 28px; border-radius: 50%; background: #F71963; color: #fff; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+
+/* ── Client toggle ── */
+.client-toggle { display: flex; align-items: center; background: #142032; border-radius: 22px; padding: 3px; gap: 2px; box-shadow: 0 2px 8px rgba(20,32,50,0.22); }
+.client-btn { display: flex; align-items: center; gap: 5px; padding: 5px 13px; border-radius: 18px; border: none; cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.15s; background: transparent; color: rgba(255,255,255,0.45); white-space: nowrap; }
+.client-btn .flag { font-size: 14px; }
+.client-btn.active { background: #F71963; color: #fff; box-shadow: 0 1px 4px rgba(247,25,99,0.35); }
+.client-btn:not(.active):hover { color: rgba(255,255,255,0.8); }
+
+/* ── Content ── */
+.content { flex: 1; overflow-y: auto; padding: 22px 28px 48px; }
+.page-breadcrumb { font-size: 12px; color: #A1AAB7; margin-bottom: 5px; }
+.page-breadcrumb a { color: #134cd8; text-decoration: none; }
+.page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+.page-title { font-size: 20px; font-weight: 600; }
+.back-link { font-size: 12px; color: #134cd8; text-decoration: none; }
+
+/* ── Card ── */
+.card { background: #fff; border: 1px solid #E7E9EE; border-radius: 8px; padding: 22px; margin-bottom: 14px; }
+.card-section-title { font-size: 13px; font-weight: 600; color: #142032; margin-bottom: 14px; padding-bottom: 9px; border-bottom: 1px solid #F8F7FC; }
+
+/* ── Form ── */
+.form-row { display: flex; gap: 14px; margin-bottom: 14px; flex-wrap: wrap; }
+.form-group { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 130px; }
+label { font-size: 12px; font-weight: 500; color: #5B6E84; }
+.req { color: #F71963; margin-left: 2px; }
+.opt { color: #A1AAB7; font-weight: 400; font-size: 11px; margin-left: 3px; }
+.input-wrap { position: relative; }
+.input { height: 36px; border: 1px solid #E7E9EE; border-radius: 6px; padding: 0 12px; font-size: 13px; color: #142032; background: #fff; width: 100%; outline: none; appearance: none; transition: border-color 0.15s, box-shadow 0.15s; }
+.input:focus { border-color: #134cd8; box-shadow: 0 0 0 3px rgba(19,76,216,0.08); }
+.input::placeholder { color: #A1AAB7; }
+select.input { padding-right: 28px; cursor: pointer; }
+.sel-arrow { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); pointer-events: none; color: #A1AAB7; font-size: 10px; }
+.ctx-badge { display: inline-flex; align-items: center; gap: 5px; background: #edf0fc; color: #134cd8; border-radius: 4px; padding: 3px 9px; font-size: 11px; font-weight: 600; margin-top: 3px; }
+
+/* ── Seller combobox ── */
+.combo-wrap { position: relative; }
+.combo-input { height: 36px; border: 1px solid #E7E9EE; border-radius: 6px; padding: 0 30px 0 12px; font-size: 13px; color: #142032; width: 100%; outline: none; transition: border-color 0.15s, box-shadow 0.15s; }
+.combo-input:focus { border-color: #134cd8; box-shadow: 0 0 0 3px rgba(19,76,216,0.08); }
+.combo-input::placeholder { color: #A1AAB7; }
+.combo-clear { position: absolute; right: 9px; top: 50%; transform: translateY(-50%); color: #A1AAB7; cursor: pointer; font-size: 13px; line-height: 1; display: none; background: none; border: none; }
+.combo-clear:hover { color: #F71963; }
+.combo-dropdown { position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: #fff; border: 1px solid #E7E9EE; border-radius: 6px; box-shadow: 0 6px 20px rgba(20,32,50,0.10); z-index: 300; max-height: 220px; overflow-y: auto; }
+.combo-opt { padding: 9px 12px; cursor: pointer; border-bottom: 1px solid #F8F7FC; }
+.combo-opt:last-child { border-bottom: none; }
+.combo-opt:hover { background: #F0F4FF; }
+.combo-opt-name { font-size: 13px; font-weight: 500; color: #142032; }
+.combo-opt-id { font-size: 11px; color: #A1AAB7; font-family: 'SF Mono','Fira Mono',monospace; margin-top: 2px; }
+.combo-selected-badge { background: #F0F4FF; border: 1px solid #c5d0f5; border-radius: 6px; padding: 7px 10px; display: flex; align-items: center; justify-content: space-between; }
+.combo-sel-name { font-size: 13px; font-weight: 500; color: #142032; }
+.combo-sel-id { font-size: 11px; color: #A1AAB7; font-family: 'SF Mono','Fira Mono',monospace; margin-top: 2px; }
+.combo-sel-clear { color: #A1AAB7; cursor: pointer; font-size: 13px; background: none; border: none; }
+.combo-sel-clear:hover { color: #F71963; }
+.combo-empty { padding: 10px 12px; font-size: 12px; color: #A1AAB7; text-align: center; }
+
+/* ── SKU search ── */
+.sku-wrapper { position: relative; }
+.sku-dd { position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: #fff; border: 1px solid #E7E9EE; border-radius: 6px; box-shadow: 0 6px 20px rgba(20,32,50,0.10); z-index: 200; overflow: hidden; }
+.sku-opt { padding: 10px 12px; cursor: pointer; border-bottom: 1px solid #F8F7FC; }
+.sku-opt:last-child { border-bottom: none; }
+.sku-opt:hover { background: #F0F4FF; }
+.sku-opt-name { font-size: 13px; font-weight: 500; color: #142032; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.sku-opt-meta { font-size: 11px; color: #A1AAB7; margin-top: 3px; display: flex; gap: 10px; flex-wrap: wrap; }
+.tag-kit { background: #FFE0EF; color: #F71963; padding: 1px 6px; border-radius: 3px; font-size: 10px; font-weight: 700; }
+.sku-chip { background: #F0F4FF; border: 1px solid #c5d0f5; border-radius: 6px; padding: 7px 10px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.sku-chip-name { font-size: 13px; font-weight: 500; color: #142032; }
+.sku-chip-meta { font-size: 11px; color: #A1AAB7; margin-top: 1px; }
+.sku-chip-clear { color: #A1AAB7; cursor: pointer; font-size: 13px; flex-shrink: 0; background: none; border: none; }
+.sku-chip-clear:hover { color: #F71963; }
+
+/* ── Item row ── */
+.item-row { display: flex; gap: 10px; align-items: flex-end; margin-bottom: 12px; }
+.item-row .fg-sku { flex: 3; position: relative; }
+.item-row .fg-qty { flex: 0 0 88px; }
+.item-row .fg-price { flex: 0 0 110px; }
+.btn-remove { width: 36px; height: 36px; border: 1px solid #E7E9EE; border-radius: 6px; background: #fff; color: #A1AAB7; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; transition: all 0.15s; }
+.btn-remove:hover { border-color: #F71963; color: #F71963; }
+.check-row { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
+.check-row input { accent-color: #134cd8; width: 14px; height: 14px; cursor: pointer; }
+.check-row label { font-size: 12.5px; color: #5B6E84; cursor: pointer; margin: 0; }
+.divider { height: 1px; background: #F8F7FC; margin: 18px 0; }
+
+/* ── Error ── */
+.error-box { background: #fff5f8; border: 1px solid #F71963; border-radius: 6px; padding: 10px 14px; margin-bottom: 14px; font-size: 13px; display: none; align-items: flex-start; gap: 8px; }
+.error-box.show { display: flex; }
+.error-icon { color: #F71963; flex-shrink: 0; }
+
+/* ── Buttons ── */
+.btn-primary { height: 36px; padding: 0 20px; background: #134cd8; color: #fff; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; }
+.btn-primary:hover { background: #0f3fb5; }
+.btn-secondary { height: 36px; padding: 0 16px; background: #fff; color: #5B6E84; border: 1px solid #E7E9EE; border-radius: 6px; font-size: 13px; cursor: pointer; }
+.btn-secondary:hover { background: #F8F7FC; }
+.btn-link { background: none; border: none; color: #134cd8; font-size: 12.5px; font-weight: 500; cursor: pointer; padding: 0; display: flex; align-items: center; gap: 4px; }
+
+/* ── Section divider ── */
+.section-divider { display: flex; align-items: center; gap: 10px; margin: 16px 0 10px; }
+.section-divider-label { font-size: 11px; font-weight: 600; color: #A1AAB7; text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; }
+.section-divider-line { flex: 1; height: 1px; background: #E7E9EE; }
+
+/* ── Results header ── */
+.results-header-row { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.results-title { font-size: 14px; font-weight: 600; }
+.results-count { background: #134cd8; color: #fff; border-radius: 10px; padding: 1px 9px; font-size: 11px; font-weight: 600; }
+.results-subtitle { font-size: 12px; color: #A1AAB7; margin-bottom: 14px; }
+
+/* ── SLA table ── */
+.sla-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.sla-table th { background: #F8F7FC; font-size: 11px; font-weight: 600; color: #A1AAB7; text-transform: uppercase; letter-spacing: 0.04em; padding: 8px 12px; text-align: left; border-bottom: 1px solid #E7E9EE; }
+.sla-table th:last-child { width: 130px; }
+.sla-row td { padding: 11px 12px; border-bottom: 1px solid #F8F7FC; vertical-align: middle; color: #142032; }
+.sla-row:last-of-type td { border-bottom: none; }
+.sla-carrier-col { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.sla-carrier-name { font-weight: 600; font-size: 13px; }
+.type-badge { border-radius: 4px; padding: 2px 7px; font-size: 11px; font-weight: 500; background: #E7E9EE; color: #5B6E84; }
+.type-badge.express { background: #FFF3CD; color: #856404; }
+.weekend-badge { border-radius: 4px; padding: 2px 7px; font-size: 11px; font-weight: 500; background: #E8F4FD; color: #0069B4; border: 1px solid #B3D9F7; }
+.sla-price { font-weight: 600; }
+.sla-deadline { font-size: 13px; }
+.sla-deadline-sub { font-size: 11px; color: #A1AAB7; margin-top: 2px; }
+.sla-qty { font-size: 13px; color: #5B6E84; }
+.btn-details { background: none; border: none; color: #134cd8; font-size: 13px; font-weight: 400; font-family: inherit; cursor: pointer; display: flex; align-items: center; gap: 4px; white-space: nowrap; }
+.btn-details:hover { color: #0f3fb5; }
+.btn-details svg { transition: transform 0.2s; }
+.btn-details.open svg { transform: rotate(180deg); }
+
+/* ── Detail panel ── */
+.sla-details-row td { padding: 0; border-bottom: 1px solid #E7E9EE; }
+.details-panel { padding: 14px 16px; background: #F8F7FC; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.detail-block { }
+.detail-block-title { font-size: 10.5px; font-weight: 600; color: #A1AAB7; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+.route-chain { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 12.5px; }
+.route-node { background: #fff; border: 1px solid #E7E9EE; border-radius: 4px; padding: 3px 9px; color: #142032; font-size: 12px; }
+.route-arrow { color: #A1AAB7; font-size: 11px; }
+.calc-row { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; padding: 3px 0; border-bottom: 1px solid #E7E9EE; }
+.calc-row:last-child { border-bottom: none; font-weight: 600; color: #142032; }
+.calc-label { color: #5B6E84; }
+.calc-val { color: #142032; font-weight: 500; }
+.detail-meta-row { display: flex; gap: 16px; margin-top: 4px; flex-wrap: wrap; }
+.detail-meta-item { font-size: 12px; }
+.detail-meta-label { color: #A1AAB7; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600; }
+.detail-meta-val { color: #142032; margin-top: 2px; font-family: 'SF Mono','Fira Mono',monospace; font-size: 11.5px; }
+
+/* ── Excluded row ── */
+.sla-excluded-row td { padding: 9px 12px; border-bottom: 1px solid #F8F7FC; }
+.sla-excluded-row:last-child td { border-bottom: none; }
+.excluded-carrier { display: flex; align-items: center; gap: 8px; color: #A1AAB7; }
+.excluded-name { font-weight: 500; font-size: 13px; }
+.excluded-reason { font-size: 12px; color: #A1AAB7; }
+.excluded-x { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; border-radius: 50%; background: #E7E9EE; flex-shrink: 0; }
+
+/* ── Pickup cards ── */
+.pickup-table { width: 100%; border-collapse: collapse; }
+.pickup-table th { text-align: left; font-size: 11px; font-weight: 600; color: #A1AAB7; text-transform: uppercase; letter-spacing: .04em; padding: 0 12px 10px; border-bottom: 1px solid #E7E9EE; }
+.pickup-table th:not(:first-child) { text-align: right; }
+.pickup-table td { padding: 13px 12px; border-bottom: 1px solid #F3F4F6; vertical-align: top; }
+.pickup-table tr:last-child td { border-bottom: none; }
+.pickup-store-name { font-size: 13px; font-weight: 600; color: #142032; }
+.pickup-meta { display: flex; align-items: flex-start; gap: 5px; font-size: 12px; color: #5B6E84; margin-top: 3px; }
+.pickup-meta svg { flex-shrink: 0; margin-top: 1px; }
+.pickup-price { font-size: 14px; font-weight: 700; color: #142032; text-align: right; }
+.pickup-date { font-size: 12px; color: #5B6E84; text-align: right; margin-top: 2px; }
+.pickup-label { font-size: 12px; color: #134cd8; font-weight: 500; text-align: right; }
+
+/* ── Icon helpers ── */
+.icon { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+
+.hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 73 18" width="62" height="15">
+      <path d="M0,0 H3.5 L8,13.5 L12.5,0 H16 L8,18 Z" fill="#F71963"/>
+      <path d="M19,0 H35 V3.5 H29 V18 H25 V3.5 H19 Z" fill="#F71963"/>
+      <path d="M38,0 H54 V3.5 H42 V7 H52 V10.5 H42 V14.5 H54 V18 H38 Z" fill="#F71963"/>
+      <polygon points="57,0 60.5,0 73,18 69.5,18" fill="#F71963"/>
+      <polygon points="73,0 69.5,0 57,18 60.5,18" fill="#F71963"/>
+    </svg>
+    <span style="font-size:11.5px;color:#A1AAB7" id="sidebar-acct"></span>
+  </div>
+  <nav class="sidebar-nav">
+    <a class="nav-item" href="#"><span data-i18n="nav-dashboards">Dashboards</span></a>
+    <a class="nav-item" href="#"><span data-i18n="nav-orders">Pedidos</span></a>
+    <a class="nav-item" href="#"><span data-i18n="nav-catalog">Catálogo</span></a>
+    <a class="nav-item" href="#"><span data-i18n="nav-promos">Promoções</span></a>
+    <a class="nav-item" href="#"><span data-i18n="nav-storefront">Storefront</span></a>
+    <div class="nav-group-label"><span data-i18n="nav-shipping-group">Envio</span> <span>∧</span></div>
+    <div class="nav-sub">
+      <a class="nav-item" href="#"><span data-i18n="nav-strategy">Estratégia de envio</span></a>
+      <a class="nav-item" href="#"><span data-i18n="nav-capacity">Capacidade de entrega</span></a>
+      <a class="nav-item" href="#"><span data-i18n="nav-pickup">Pontos de retirada</span></a>
+      <a class="nav-item" href="#"><span data-i18n="nav-rates">Tarifas de envio</span></a>
+      <a class="nav-item active" href="#"><span data-i18n="nav-simulator">Simulador de envio</span></a>
+      <a class="nav-item" href="#"><span data-i18n="nav-options">Opções de envio</span></a>
+      <a class="nav-item" href="#"><span data-i18n="nav-opcap">Capacidade operacional</span></a>
+    </div>
+    <a class="nav-item" href="#"><span data-i18n="nav-marketplace">Marketplace</span></a>
+    <a class="nav-item" href="#"><span data-i18n="nav-apps">Aplicativos</span></a>
+    <a class="nav-item" href="#"><span data-i18n="nav-settings">Configurações da loja</span></a>
+  </nav>
+</aside>
+
+<!-- Main -->
+<div class="main">
+  <header class="topbar">
+    <span class="topbar-hamburger">☰</span>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 73 18" width="48" height="12">
+      <path d="M0,0 H3.5 L8,13.5 L12.5,0 H16 L8,18 Z" fill="#F71963"/>
+      <path d="M19,0 H35 V3.5 H29 V18 H25 V3.5 H19 Z" fill="#F71963"/>
+      <path d="M38,0 H54 V3.5 H42 V7 H52 V10.5 H42 V14.5 H54 V18 H38 Z" fill="#F71963"/>
+      <polygon points="57,0 60.5,0 73,18 69.5,18" fill="#F71963"/>
+      <polygon points="73,0 69.5,0 57,18 60.5,18" fill="#F71963"/>
+    </svg>
+    <span class="topbar-account" id="topbar-acct"></span>
+    <div class="topbar-search">
+      <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><circle cx="6" cy="6" r="4.5" stroke="#A1AAB7" stroke-width="1.5"/><path d="M10 10l2.5 2.5" stroke="#A1AAB7" stroke-width="1.5" stroke-linecap="round"/></svg>
+      <span style="color:#A1AAB7;font-size:13px" data-i18n="search-hint">Buscar VTEX</span>
+    </div>
+    <div class="topbar-right">
+      <div class="client-toggle">
+        <button class="client-btn active" id="btn-pt" onclick="setClient('pt')">
+          <span class="flag">🇧🇷</span> Drogarias Pacheco
+        </button>
+        <button class="client-btn" id="btn-en" onclick="setClient('en')">
+          <span class="flag">🇺🇸</span> Road Runners
+        </button>
+      </div>
+      <button class="topbar-btn">Copilot</button>
+      <button class="topbar-btn" data-i18n="topbar-visit">Visite a loja</button>
+      <button class="topbar-btn" data-i18n="topbar-help">Ajuda</button>
+      <div class="topbar-avatar">C</div>
+    </div>
+  </header>
+
+  <div class="content">
+    <div class="page-breadcrumb">
+      <a href="#" data-i18n="bc-shipping">Envio</a> › <span data-i18n="bc-simulator">Simulador de envio</span>
+    </div>
+    <div class="page-header">
+      <h1 class="page-title" data-i18n="page-title">Simulador de envio</h1>
+      <a class="back-link" href="#" data-i18n="back-link">← Voltar à Estratégia de Envio</a>
+    </div>
+
+    <!-- Form -->
+    <div class="card">
+      <div class="card-section-title" data-i18n="section-context">Contexto da simulação</div>
+      <div class="form-row">
+        <!-- Sales Channel -->
+        <div class="form-group">
+          <label><span data-i18n="lbl-sc">Política comercial</span><span class="req">*</span></label>
+          <div class="input-wrap">
+            <select class="input" id="sel-sc" onchange="onScChange()"></select>
+            <span class="sel-arrow">▾</span>
+          </div>
+          <div class="ctx-badge hidden" id="ctx-badge"><span id="ctx-val"></span></div>
+        </div>
+        <!-- Seller combobox -->
+        <div class="form-group">
+          <label><span data-i18n="lbl-seller">Seller</span><span class="req">*</span></label>
+          <div class="combo-wrap" id="seller-combo">
+            <div id="seller-input-state">
+              <div style="position:relative">
+                <input class="combo-input" id="seller-search" oninput="onSellerSearch()" onfocus="onSellerFocus()" data-i18n-ph="seller-ph">
+                <button class="combo-clear" id="seller-search-clear" onclick="clearSellerSearch()">✕</button>
+              </div>
+              <div class="combo-dropdown hidden" id="seller-dd"></div>
+            </div>
+            <div class="combo-selected-badge hidden" id="seller-selected">
+              <div>
+                <div class="combo-sel-name" id="seller-sel-name"></div>
+                <div class="combo-sel-id" id="seller-sel-id"></div>
+              </div>
+              <button class="combo-sel-clear" onclick="clearSellerSelection()">✕</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+      <div class="card-section-title" data-i18n="section-items">Itens</div>
+
+      <div class="error-box" id="err-box">
+        <svg class="error-icon" width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="#F71963" stroke-width="1.5"/><path d="M8 5v4" stroke="#F71963" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="11.5" r=".75" fill="#F71963"/></svg>
+        <span id="err-msg"></span>
+      </div>
+
+      <div id="sku-rows"></div>
+      <div style="margin-bottom:12px">
+        <button class="btn-link" onclick="addRow()">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 2v10M2 7h10" stroke="#134cd8" stroke-width="1.5" stroke-linecap="round"/></svg>
+          <span data-i18n="btn-add">Adicionar item</span>
+        </button>
+      </div>
+      <div class="check-row">
+        <input type="checkbox" id="chk-individual">
+        <label for="chk-individual" data-i18n="lbl-individual">Simular itens individualmente</label>
+      </div>
+
+      <div class="divider"></div>
+      <div class="card-section-title" data-i18n="section-dest">Destino</div>
+      <div class="form-row">
+        <div class="form-group" style="max-width:175px">
+          <label><span data-i18n="lbl-zip">Código postal</span><span class="req">*</span></label>
+          <input class="input" id="zip-input" oninput="fmtZip(this)">
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:4px">
+        <button class="btn-primary" onclick="simulate()" data-i18n="btn-simulate">Simular envio</button>
+        <button class="btn-secondary" onclick="resetForm()" data-i18n="btn-clear">Limpar</button>
+      </div>
+    </div>
+
+    <!-- Results -->
+    <div class="card hidden" id="results-card">
+      <div class="results-header-row">
+        <span class="results-title" data-i18n="res-title">Opções de envio disponíveis</span>
+        <span class="results-count" id="res-count">4</span>
+      </div>
+      <div class="results-subtitle" data-i18n="res-subtitle">Melhores opções segundo custo-benefício</div>
+
+      <!-- Delivery section -->
+      <div class="section-divider">
+        <span class="section-divider-label" data-i18n="lbl-delivery-section">Entrega em domicílio</span>
+        <span class="section-divider-line"></span>
+      </div>
+      <table class="sla-table">
+        <thead>
+          <tr>
+            <th data-i18n="col-carrier">Transportadora</th>
+            <th data-i18n="col-price">Tarifa de envio</th>
+            <th data-i18n="col-deadline">Prazo de entrega</th>
+            <th data-i18n="col-qty">Qtd. disponível</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="sla-tbody"></tbody>
+      </table>
+
+      <!-- Pickup section -->
+      <div class="section-divider" style="margin-top:20px">
+        <span class="section-divider-label" data-i18n="lbl-pickup-section">Retirada em loja</span>
+        <span class="section-divider-line"></span>
+      </div>
+      <div id="pickup-list"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// SVG icons (no emojis)
+const ICON = {
+  pin: `<svg width="12" height="14" viewBox="0 0 12 14" fill="none"><path d="M6 0a5 5 0 00-5 5c0 3.5 5 9 5 9s5-5.5 5-9a5 5 0 00-5-5zm0 7a2 2 0 110-4 2 2 0 010 4z" fill="#5B6E84"/></svg>`,
+  clock: `<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="5.5" stroke="#5B6E84" stroke-width="1.2"/><path d="M6.5 4v3l2 1.5" stroke="#5B6E84" stroke-width="1.2" stroke-linecap="round"/></svg>`,
+  globe: `<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="5.5" stroke="#134cd8" stroke-width="1.2"/><path d="M6.5 1C5 3 4.5 5 4.5 6.5s.5 3.5 2 5.5M6.5 1c1.5 2 2 4 2 5.5s-.5 3.5-2 5.5M1 6.5h11" stroke="#134cd8" stroke-width="1.2"/></svg>`,
+  chevron: `<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+  store: `<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M1 5.5L2.5 2h8L12 5.5" stroke="#134cd8" stroke-width="1.2" stroke-linecap="round"/><path d="M1 5.5h11v6a.5.5 0 01-.5.5h-10A.5.5 0 011 11.5V5.5z" stroke="#134cd8" stroke-width="1.2"/><rect x="4.5" y="8" width="4" height="4" rx=".5" stroke="#134cd8" stroke-width="1.2"/></svg>`
+};
+
+// ── Data ──────────────────────────────────────────────────────────────────────
+const DATA = {
+  pt: {
+    account: 'drogariaspacheco',
+    sc: [
+      { v:'1', label:'1 — Ecommerce BR', country:'BRA', currency:'BRL', symbol:'R$' },
+      { v:'2', label:'2 — Ecommerce PT', country:'PRT', currency:'EUR', symbol:'€' }
+    ],
+    sellers: [
+      { v:'drogariaspacheco',         name:'Drogarias Pacheco',          note:'conta principal' },
+      { v:'drogariaspachecobotafogo', name:'Drogarias Pacheco Botafogo', note:'' },
+      { v:'drogariaspachecobarra',    name:'Drogarias Pacheco Barra',    note:'' },
+      { v:'drogariaspachecotiuca',    name:'Drogarias Pacheco Tiuca',    note:'' },
+      { v:'drogariaspachecomeier',    name:'Drogarias Pacheco Méier',    note:'' }
+    ],
+    sellerScMap: {
+      'drogariaspacheco':'1,2', 'drogariaspachecobotafogo':'1',
+      'drogariaspachecobarra':'1,2', 'drogariaspachecotiuca':'1', 'drogariaspachecomeier':'1'
+    },
+    skus: [
+      { name:'Dipirona Sódica 500mg 20 comp.', meta:'SKU 1234 · EAN 7891234561001 · Ref. DIP500-20' },
+      { name:'Dipirona Sódica 500mg 50 comp.', meta:'SKU 1235 · EAN 7891234561018 · Ref. DIP500-50' },
+      { name:'Vitamina C 1000mg 60 comp.',     meta:'SKU 2001 · EAN 7891234562001 · Ref. VITC-60' },
+      { name:'Protetor Solar FPS 50 120ml',    meta:'SKU 3100 · EAN 7891234563100 · Ref. PROT-50' },
+      { name:'Kit Vitaminas A+D (combo)',       meta:'SKU 9901 · EAN 7891234569001 · Ref. KIT-VITAD', kit:true }
+    ],
+    zipPh:'00000-000', zipMax:9,
+    // Fields sourced directly from the simulate API response
+    slas: [
+      {
+        name:'Correios PAC', type:'Padrão', typeClass:'',
+        price:'R$ 12,90', qty:'38 unidades',
+        shippingEstimate:'7 dias úteis', arrivalDate:'22 mai 2026',
+        transitTime:'2 dias úteis', processingTime:'5 dias úteis',
+        warehouseName:'CD São Paulo', warehouseId:'cd-sao-paulo',
+        dockName:'Doca Centro', dockId:'doca-centro', courierId:'correios-pac',
+        postalRange:'01000-000 a 99999-999', weightRange:'0 – 30.000 g'
+      },
+      {
+        name:'Correios SEDEX', type:'Expresso', typeClass:'express',
+        price:'R$ 28,50', qty:'12 unidades',
+        shippingEstimate:'2 dias úteis', arrivalDate:'17 mai 2026',
+        transitTime:'1 dia útil', processingTime:'1 dia útil',
+        warehouseName:'CD Rio de Janeiro', warehouseId:'cd-rio-de-janeiro',
+        dockName:'Doca Sul', dockId:'doca-sul', courierId:'correios-sedex',
+        postalRange:'01000-000 a 05999-999', weightRange:'0 – 15.000 g'
+      },
+      {
+        name:'Jadlog Flash Sábado', type:'Expresso', typeClass:'express',
+        price:'R$ 19,90', qty:'5 unidades',
+        shippingEstimate:'1 dia útil', arrivalDate:'16 mai 2026 (sáb)',
+        transitTime:'1 dia', processingTime:'—',
+        warehouseName:'CD Campinas', warehouseId:'cd-campinas',
+        dockName:'Doca Interior', dockId:'doca-interior', courierId:'jadlog-flash',
+        postalRange:'01000-000 a 05999-999', weightRange:'0 – 10.000 g',
+        worksOnWeekends: true
+      }
+    ],
+    excluded: [
+      { name:'Total Express',  type:'Padrão', typeClass:'', reason:'Não atende este CEP' },
+      { name:'Jadlog Package', type:'Padrão', typeClass:'', reason:'Peso do item excede o limite da transportadora' }
+    ],
+    pickups: [
+      {
+        storeName:'Drogarias Pacheco Botafogo',
+        address:'Rua das Laranjeiras, 234 — Botafogo, Rio de Janeiro - RJ',
+        hours:'Seg – Sex: 08h às 20h  |  Sáb: 09h às 18h',
+        readyDate:'16 mai 2026', readyLabel:'Disponível amanhã', price:'Grátis'
+      },
+      {
+        storeName:'Drogarias Pacheco Barra',
+        address:'Av. das Américas, 500 — Barra da Tijuca, Rio de Janeiro - RJ',
+        hours:'Seg – Dom: 08h às 22h',
+        readyDate:'17 mai 2026', readyLabel:'Disponível em 2 dias', price:'Grátis'
+      }
+    ],
+    i18n: {
+      'nav-dashboards':'Dashboards','nav-orders':'Pedidos','nav-catalog':'Catálogo',
+      'nav-promos':'Promoções','nav-storefront':'Storefront','nav-shipping-group':'Envio',
+      'nav-strategy':'Estratégia de envio','nav-capacity':'Capacidade de entrega',
+      'nav-pickup':'Pontos de retirada','nav-rates':'Tarifas de envio',
+      'nav-simulator':'Simulador de envio','nav-options':'Opções de envio',
+      'nav-opcap':'Capacidade operacional','nav-marketplace':'Marketplace',
+      'nav-apps':'Aplicativos','nav-settings':'Configurações da loja',
+      'search-hint':'Buscar VTEX','topbar-visit':'Visite a loja','topbar-help':'Ajuda',
+      'bc-shipping':'Envio','bc-simulator':'Simulador de envio',
+      'page-title':'Simulador de envio','back-link':'← Voltar à Estratégia de Envio',
+      'section-context':'Contexto da simulação','lbl-sc':'Política comercial',
+      'seller-ph':'Buscar por nome ou ID do seller...','lbl-seller':'Seller',
+      'section-items':'Itens','lbl-sku':'Produto / SKU',
+      'sku-ph':'Nome do produto, ID do SKU, EAN...','lbl-qty-field':'Quantidade',
+      'lbl-price':'Preço','lbl-opt':'(opcional)','btn-add':'Adicionar item',
+      'lbl-individual':'Simular itens individualmente',
+      'section-dest':'Destino','lbl-zip':'Código postal',
+      'btn-simulate':'Simular envio','btn-clear':'Limpar',
+      'res-title':'Opções de envio disponíveis',
+      'res-subtitle':'Melhores opções segundo custo-benefício',
+      'lbl-delivery-section':'Entrega em domicílio',
+      'lbl-pickup-section':'Retirada em loja',
+      'col-carrier':'Transportadora','col-price':'Tarifa de envio',
+      'col-deadline':'Prazo de entrega','col-qty':'Qtd. disponível',
+      'btn-show-details':'Mostrar detalhes','btn-hide-details':'Ocultar detalhes',
+      'lbl-route':'Rota logística',
+      'lbl-calc':'Cálculo do prazo',
+      'lbl-transit':'Trânsito (transportadora)',
+      'lbl-processing':'Processamento (warehouse + doca)',
+      'lbl-estimate-date':'Data estimada',
+      'lbl-postal':'Faixa de CEP','lbl-weight':'Faixa de peso',
+      'pickup-badge':'Retirada em loja',
+      'lbl-ready':'Disponível para retirada',
+      'lbl-address':'Endereço','lbl-hours':'Horário',
+      'col-pickup-store':'Ponto de retirada','col-pickup-hours':'Horário de funcionamento','col-pickup-price':'Custo','col-pickup-avail':'Disponibilidade',
+      'weekend-badge':'Opera aos sábados',
+      'sc-err': s => `${s} não está associado à política comercial selecionada.`
+    }
+  },
+  en: {
+    account: 'roadrunners',
+    sc: [
+      { v:'1', label:'1 — US Ecommerce',     country:'USA', currency:'USD', symbol:'$' },
+      { v:'2', label:'2 — Canada Ecommerce', country:'CAN', currency:'CAD', symbol:'CA$' }
+    ],
+    sellers: [
+      { v:'roadrunners',          name:'Road Runners',            note:'main account' },
+      { v:'roadrunnersandiego',   name:'Road Runner San Diego',   note:'' },
+      { v:'roadrunnerlosangeles', name:'Road Runner Los Angeles', note:'' },
+      { v:'roadrunnerseattle',    name:'Road Runner Seattle',     note:'' },
+      { v:'roadrunnerhouston',    name:'Road Runner Houston',     note:'' }
+    ],
+    sellerScMap: {
+      'roadrunners':'1,2', 'roadrunnersandiego':'1',
+      'roadrunnerlosangeles':'1,2', 'roadrunnerseattle':'1', 'roadrunnerhouston':'1'
+    },
+    skus: [
+      { name:'Running Shoes Air X — Size 10',  meta:'SKU 5001 · EAN 0123456789001 · Ref. SHOE-AIRX-10' },
+      { name:'Running Shoes Air X — Size 11',  meta:'SKU 5002 · EAN 0123456789002 · Ref. SHOE-AIRX-11' },
+      { name:'Compression Socks Pro — Medium', meta:'SKU 5010 · EAN 0123456789010 · Ref. SOCK-PRO-M' },
+      { name:'Hydration Vest 10L',             meta:'SKU 5020 · EAN 0123456789020 · Ref. VEST-10L' },
+      { name:'Kit Trail Runner Starter Pack',  meta:'SKU 5099 · EAN 0123456789099 · Ref. KIT-TRAIL', kit:true }
+    ],
+    zipPh:'00000', zipMax:5,
+    slas: [
+      {
+        name:'UPS Ground', type:'Standard', typeClass:'',
+        price:'$ 8.90', qty:'42 units',
+        shippingEstimate:'5 business days', arrivalDate:'May 22, 2026',
+        transitTime:'2 business days', processingTime:'3 business days',
+        warehouseName:'Warehouse Los Angeles', warehouseId:'wh-los-angeles',
+        dockName:'Dock West', dockId:'dock-west', courierId:'ups-ground',
+        postalRange:'00000 – 99999', weightRange:'0 – 30,000 g'
+      },
+      {
+        name:'FedEx Express', type:'Express', typeClass:'express',
+        price:'$ 24.50', qty:'18 units',
+        shippingEstimate:'2 business days', arrivalDate:'May 17, 2026',
+        transitTime:'1 business day', processingTime:'1 business day',
+        warehouseName:'Warehouse Seattle', warehouseId:'wh-seattle',
+        dockName:'Dock North', dockId:'dock-north', courierId:'fedex-express',
+        postalRange:'00000 – 95999', weightRange:'0 – 15,000 g'
+      },
+      {
+        name:'FedEx Saturday Delivery', type:'Express', typeClass:'express',
+        price:'$ 32.00', qty:'7 units',
+        shippingEstimate:'1 business day', arrivalDate:'May 16, 2026 (Sat)',
+        transitTime:'1 day', processingTime:'—',
+        warehouseName:'Warehouse Los Angeles', warehouseId:'wh-los-angeles',
+        dockName:'Dock West', dockId:'dock-west', courierId:'fedex-saturday',
+        postalRange:'00000 – 95999', weightRange:'0 – 15,000 g',
+        worksOnWeekends: true
+      }
+    ],
+    excluded: [
+      { name:'USPS Priority',  type:'Standard', typeClass:'', reason:'Does not deliver to this ZIP code' },
+      { name:'OnTrac Economy', type:'Standard', typeClass:'', reason:'Item weight exceeds carrier limit' }
+    ],
+    pickups: [
+      {
+        storeName:'Road Runner San Diego',
+        address:'2500 El Cajon Blvd, San Diego, CA 92104',
+        hours:'Mon – Fri: 9 AM – 8 PM  |  Sat: 10 AM – 6 PM',
+        readyDate:'May 16, 2026', readyLabel:'Ready tomorrow', price:'Free'
+      },
+      {
+        storeName:'Road Runner Los Angeles',
+        address:'800 W Olympic Blvd, Los Angeles, CA 90015',
+        hours:'Mon – Sun: 9 AM – 9 PM',
+        readyDate:'May 17, 2026', readyLabel:'Ready in 2 days', price:'Free'
+      }
+    ],
+    i18n: {
+      'nav-dashboards':'Dashboards','nav-orders':'Orders','nav-catalog':'Catalog',
+      'nav-promos':'Promotions','nav-storefront':'Storefront','nav-shipping-group':'Shipping',
+      'nav-strategy':'Shipping strategy','nav-capacity':'Delivery capacity',
+      'nav-pickup':'Pickup points','nav-rates':'Shipping rates',
+      'nav-simulator':'Shipping simulator','nav-options':'Delivery options',
+      'nav-opcap':'Operational capacity','nav-marketplace':'Marketplace',
+      'nav-apps':'Apps','nav-settings':'Store settings',
+      'search-hint':'Search VTEX','topbar-visit':'Visit store','topbar-help':'Help',
+      'bc-shipping':'Shipping','bc-simulator':'Shipping simulator',
+      'page-title':'Shipping Simulator','back-link':'← Back to Shipping Strategy',
+      'section-context':'Simulation context','lbl-sc':'Sales channel',
+      'seller-ph':'Search by seller name or ID...','lbl-seller':'Seller',
+      'section-items':'Items','lbl-sku':'Product / SKU',
+      'sku-ph':'Product name, SKU ID, EAN...','lbl-qty-field':'Quantity',
+      'lbl-price':'Price','lbl-opt':'(optional)','btn-add':'Add item',
+      'lbl-individual':'Simulate items individually',
+      'section-dest':'Destination','lbl-zip':'ZIP code',
+      'btn-simulate':'Simulate shipping','btn-clear':'Clear',
+      'res-title':'Available shipping options',
+      'res-subtitle':'Best options by cost-benefit',
+      'lbl-delivery-section':'Home delivery',
+      'lbl-pickup-section':'Store pickup',
+      'col-carrier':'Carrier','col-price':'Shipping rate',
+      'col-deadline':'Delivery time','col-qty':'Available qty',
+      'btn-show-details':'Show details','btn-hide-details':'Hide details',
+      'lbl-route':'Logistics route',
+      'lbl-calc':'Delivery time breakdown',
+      'lbl-transit':'Transit (carrier)',
+      'lbl-processing':'Processing (warehouse + dock)',
+      'lbl-estimate-date':'Estimated delivery',
+      'lbl-postal':'Postal code range','lbl-weight':'Weight range',
+      'pickup-badge':'Store pickup',
+      'lbl-ready':'Ready for pickup',
+      'lbl-address':'Address','lbl-hours':'Hours',
+      'col-pickup-store':'Pickup location','col-pickup-hours':'Store hours','col-pickup-price':'Cost','col-pickup-avail':'Availability',
+      'weekend-badge':'Operates on Saturdays',
+      'sc-err': s => `${s} is not associated with the selected sales channel.`
+    }
+  }
+};
+
+let client = 'pt';
+let rowCount = 0;
+let selectedSkus = {};
+let selectedSeller = null;
+let openDetails = new Set();
+
+function init() { setClient('pt'); }
+
+function setClient(c) {
+  client = c;
+  document.getElementById('btn-pt').classList.toggle('active', c === 'pt');
+  document.getElementById('btn-en').classList.toggle('active', c === 'en');
+  applyI18n();
+  buildScSelect();
+  buildSellerList();
+  resetForm();
+}
+
+function applyI18n() {
+  const i = DATA[client].i18n;
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const k = el.getAttribute('data-i18n');
+    if (typeof i[k] === 'string') el.textContent = i[k];
+  });
+  document.querySelectorAll('[data-i18n-ph]').forEach(el => {
+    const k = el.getAttribute('data-i18n-ph');
+    if (typeof i[k] === 'string') el.placeholder = i[k];
+  });
+  const d = DATA[client];
+  document.getElementById('sidebar-acct').textContent = d.account;
+  document.getElementById('topbar-acct').textContent = d.account;
+  document.getElementById('seller-search').placeholder = d.i18n['seller-ph'];
+  document.getElementById('zip-input').placeholder = d.zipPh;
+  document.getElementById('zip-input').maxLength = d.zipMax;
+}
+
+// ── Sales Channel ─────────────────────────────────────────────────────────────
+function buildScSelect() {
+  const sel = document.getElementById('sel-sc');
+  const i = DATA[client].i18n;
+  sel.innerHTML = `<option value="">${i['lbl-sc']}</option>`;
+  DATA[client].sc.forEach(o => {
+    const opt = document.createElement('option');
+    opt.value = o.v; opt.textContent = o.label;
+    opt.dataset.country = o.country; opt.dataset.currency = o.currency; opt.dataset.symbol = o.symbol;
+    sel.appendChild(opt);
+  });
+}
+function onScChange() {
+  const sel = document.getElementById('sel-sc');
+  const opt = sel.options[sel.selectedIndex];
+  const badge = document.getElementById('ctx-badge');
+  if (opt.dataset.country) {
+    document.getElementById('ctx-val').textContent = `${opt.dataset.country} · ${opt.dataset.currency} (${opt.dataset.symbol})`;
+    badge.classList.remove('hidden');
+  } else badge.classList.add('hidden');
+}
+
+// ── Seller combobox ───────────────────────────────────────────────────────────
+function buildSellerList() {
+  selectedSeller = null;
+  document.getElementById('seller-input-state').classList.remove('hidden');
+  document.getElementById('seller-selected').classList.add('hidden');
+  document.getElementById('seller-search').value = '';
+  document.getElementById('seller-dd').classList.add('hidden');
+  document.getElementById('seller-search-clear').style.display = 'none';
+}
+function onSellerFocus() { renderSellerDropdown(''); document.getElementById('seller-dd').classList.remove('hidden'); }
+function onSellerSearch() {
+  const q = document.getElementById('seller-search').value;
+  document.getElementById('seller-search-clear').style.display = q ? 'block' : 'none';
+  renderSellerDropdown(q);
+  document.getElementById('seller-dd').classList.remove('hidden');
+}
+function renderSellerDropdown(q) {
+  const dd = document.getElementById('seller-dd');
+  const sellers = DATA[client].sellers;
+  const filtered = q ? sellers.filter(s => s.name.toLowerCase().includes(q.toLowerCase()) || s.v.includes(q.toLowerCase())) : sellers;
+  if (!filtered.length) { dd.innerHTML = `<div class="combo-empty">Nenhum seller encontrado</div>`; return; }
+  dd.innerHTML = '';
+  filtered.forEach(s => {
+    const div = document.createElement('div');
+    div.className = 'combo-opt';
+    div.innerHTML = `<div class="combo-opt-name">${s.name}${s.note ? ` <span style="color:#A1AAB7;font-weight:400;font-size:11px">(${s.note})</span>` : ''}</div><div class="combo-opt-id">${s.v}</div>`;
+    div.onclick = () => pickSeller(s);
+    dd.appendChild(div);
+  });
+}
+function pickSeller(s) {
+  selectedSeller = s;
+  document.getElementById('seller-input-state').classList.add('hidden');
+  document.getElementById('seller-selected').classList.remove('hidden');
+  document.getElementById('seller-sel-name').textContent = s.name + (s.note ? ` (${s.note})` : '');
+  document.getElementById('seller-sel-id').textContent = s.v;
+  document.getElementById('seller-dd').classList.add('hidden');
+}
+function clearSellerSearch() {
+  document.getElementById('seller-search').value = '';
+  document.getElementById('seller-search-clear').style.display = 'none';
+  document.getElementById('seller-dd').classList.add('hidden');
+}
+function clearSellerSelection() {
+  selectedSeller = null;
+  document.getElementById('seller-input-state').classList.remove('hidden');
+  document.getElementById('seller-selected').classList.add('hidden');
+  document.getElementById('seller-search').value = '';
+  document.getElementById('seller-search-clear').style.display = 'none';
+}
+
+// ── SKU rows ──────────────────────────────────────────────────────────────────
+function addRow() {
+  rowCount++;
+  const id = rowCount;
+  const d = DATA[client];
+  const container = document.getElementById('sku-rows');
+  const row = document.createElement('div');
+  row.className = 'item-row'; row.id = `row-${id}`;
+  row.innerHTML = `
+    <div class="fg-sku form-group">
+      ${id===1?`<label>${d.i18n['lbl-sku']}<span class="req">*</span></label>`:''}
+      <div class="sku-wrapper" id="sku-w-${id}">
+        <input class="input" id="sku-inp-${id}" placeholder="${d.i18n['sku-ph']}" oninput="onSkuInput(${id})" autocomplete="off">
+        <div class="sku-dd hidden" id="sku-dd-${id}"></div>
+        <div class="sku-chip hidden" id="sku-chip-${id}">
+          <div style="flex:1"><div class="sku-chip-name" id="chip-name-${id}"></div><div class="sku-chip-meta" id="chip-meta-${id}"></div></div>
+          <button class="sku-chip-clear" onclick="clearSku(${id})">✕</button>
+        </div>
+      </div>
+    </div>
+    <div class="fg-qty form-group">
+      ${id===1?`<label>${d.i18n['lbl-qty-field']}<span class="req">*</span></label>`:''}
+      <input class="input" type="number" value="1" min="1">
+    </div>
+    <div class="fg-price form-group">
+      ${id===1?`<label>${d.i18n['lbl-price']}<span class="opt">${d.i18n['lbl-opt']}</span></label>`:''}
+      <input class="input" type="text" placeholder="0,00">
+    </div>
+    ${id>1?`<button class="btn-remove" onclick="removeRow(${id})">✕</button>`:'<div style="width:36px"></div>'}
+  `;
+  container.appendChild(row);
+}
+function removeRow(id) { document.getElementById(`row-${id}`).remove(); delete selectedSkus[id]; }
+function onSkuInput(id) {
+  const inp = document.getElementById(`sku-inp-${id}`);
+  const dd = document.getElementById(`sku-dd-${id}`);
+  if (inp.value.length < 1) { dd.classList.add('hidden'); return; }
+  dd.innerHTML = '';
+  DATA[client].skus.forEach(s => {
+    const item = document.createElement('div');
+    item.className = 'sku-opt';
+    item.innerHTML = `<div class="sku-opt-name">${s.name}${s.kit?'<span class="tag-kit">KIT</span>':''}</div><div class="sku-opt-meta"><span>${s.meta.split(' · ').join('</span><span>')}</span></div>`;
+    item.onclick = () => pickSku(id, s);
+    dd.appendChild(item);
+  });
+  dd.classList.remove('hidden');
+}
+function pickSku(id, s) {
+  selectedSkus[id] = s;
+  document.getElementById(`sku-inp-${id}`).classList.add('hidden');
+  document.getElementById(`sku-dd-${id}`).classList.add('hidden');
+  document.getElementById(`chip-name-${id}`).innerHTML = s.name + (s.kit?'<span class="tag-kit" style="margin-left:6px">KIT</span>':'');
+  document.getElementById(`chip-meta-${id}`).textContent = s.meta;
+  document.getElementById(`sku-chip-${id}`).classList.remove('hidden');
+}
+function clearSku(id) {
+  delete selectedSkus[id];
+  const inp = document.getElementById(`sku-inp-${id}`);
+  inp.value = ''; inp.classList.remove('hidden');
+  document.getElementById(`sku-chip-${id}`).classList.add('hidden');
+  document.getElementById(`sku-dd-${id}`).classList.add('hidden');
+}
+
+function fmtZip(el) {
+  if (client === 'pt') {
+    let v = el.value.replace(/\D/g,'').slice(0,8);
+    if (v.length > 5) v = v.slice(0,5)+'-'+v.slice(5);
+    el.value = v;
+  }
+}
+
+// ── Simulate ──────────────────────────────────────────────────────────────────
+function simulate() {
+  const d = DATA[client];
+  const i = d.i18n;
+  const scVal = document.getElementById('sel-sc').value;
+  const errBox = document.getElementById('err-box');
+
+  if (selectedSeller && scVal) {
+    const allowed = (d.sellerScMap[selectedSeller.v] || '').split(',');
+    if (!allowed.includes(scVal)) {
+      document.getElementById('err-msg').textContent = i['sc-err'](selectedSeller.name);
+      errBox.classList.add('show');
+      document.getElementById('results-card').classList.add('hidden');
+      return;
+    }
+  }
+  errBox.classList.remove('show');
+  openDetails.clear();
+  buildResults(d, i);
+  document.getElementById('results-card').classList.remove('hidden');
+  setTimeout(() => document.getElementById('results-card').scrollIntoView({behavior:'smooth',block:'start'}), 60);
+}
+
+// ── Build results ─────────────────────────────────────────────────────────────
+function buildResults(d, i) {
+  document.getElementById('res-count').textContent = d.slas.length + d.pickups.length;
+
+  const tbody = document.getElementById('sla-tbody');
+  tbody.innerHTML = '';
+
+  // Delivery SLA rows
+  d.slas.forEach((sla, idx) => {
+    const hasKit = Object.values(selectedSkus).some(s => s.kit);
+    const detailId = `detail-${idx}`;
+
+    // Main row
+    const tr = document.createElement('tr');
+    tr.className = 'sla-row';
+    tr.id = `sla-row-${idx}`;
+    tr.innerHTML = `
+      <td>
+        <div class="sla-carrier-col">
+          <span class="sla-carrier-name">${sla.name}</span>
+          <span class="type-badge ${sla.typeClass}">${sla.type}</span>
+        </div>
+      </td>
+      <td><span class="sla-price">${sla.price}</span></td>
+      <td>
+        <div class="sla-deadline">${sla.shippingEstimate}</div>
+        <div class="sla-deadline-sub">${sla.arrivalDate}</div>
+      </td>
+      <td><span class="sla-qty">${sla.qty}</span></td>
+      <td>
+        <button class="btn-details" id="btn-${idx}" onclick="toggleDetails(${idx})">
+          ${i['btn-show-details']} ${ICON.chevron}
+        </button>
+      </td>`;
+    tbody.appendChild(tr);
+
+    // Detail row (hidden by default)
+    const trDetail = document.createElement('tr');
+    trDetail.className = 'sla-details-row hidden';
+    trDetail.id = detailId;
+
+    const processingTime = sla.processingTime || '—';
+    const kitExtra = hasKit ? `
+      <div class="detail-block" style="grid-column:1/-1">
+        <div class="detail-block-title">${i['lbl-postal']} / ${i['lbl-weight']}</div>
+        <div class="detail-meta-row">
+          <div class="detail-meta-item">
+            <div class="detail-meta-label">${i['lbl-postal']}</div>
+            <div class="detail-meta-val">${sla.postalRange}</div>
+          </div>
+          <div class="detail-meta-item">
+            <div class="detail-meta-label">${i['lbl-weight']}</div>
+            <div class="detail-meta-val">${sla.weightRange}</div>
+          </div>
+        </div>
+      </div>` : '';
+
+    trDetail.innerHTML = `<td colspan="5">
+      <div class="details-panel">
+        <div class="detail-block">
+          <div class="detail-block-title">${i['lbl-route']}</div>
+          <div class="route-chain">
+            <span class="route-node">
+              ${sla.warehouseName}
+              <span style="color:#A1AAB7;font-size:10.5px;font-family:'SF Mono','Fira Mono',monospace;margin-left:4px">${sla.warehouseId}</span>
+            </span>
+            <span class="route-arrow">→</span>
+            <span class="route-node">
+              ${sla.dockName}
+              <span style="color:#A1AAB7;font-size:10.5px;font-family:'SF Mono','Fira Mono',monospace;margin-left:4px">${sla.dockId}</span>
+            </span>
+            <span class="route-arrow">→</span>
+            <span class="route-node">${sla.name}</span>
+          </div>
+        </div>
+        <div class="detail-block">
+          <div class="detail-block-title">${i['lbl-calc']}</div>
+          <div class="calc-row">
+            <span class="calc-label">${i['lbl-transit']}</span>
+            <span class="calc-val">${sla.transitTime}</span>
+          </div>
+          <div class="calc-row">
+            <span class="calc-label">${i['lbl-processing']}</span>
+            <span class="calc-val">${processingTime}</span>
+          </div>
+          <div class="calc-row">
+            <span class="calc-label">${i['lbl-estimate-date']}</span>
+            <span class="calc-val">${sla.arrivalDate}</span>
+          </div>
+          ${sla.worksOnWeekends ? `<div class="calc-row"><span class="calc-label">${i['weekend-badge']}</span><span class="calc-val" style="color:#0069B4">✓</span></div>` : ''}
+        </div>
+        ${kitExtra}
+      </div>
+    </td>`;
+    tbody.appendChild(trDetail);
+  });
+
+  // Excluded carriers
+  d.excluded.forEach(ex => {
+    const tr = document.createElement('tr');
+    tr.className = 'sla-excluded-row';
+    tr.innerHTML = `
+      <td>
+        <div class="excluded-carrier">
+          <span class="excluded-x">
+            <svg width="8" height="8" viewBox="0 0 8 8" fill="none"><path d="M1 1l6 6M7 1L1 7" stroke="#A1AAB7" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </span>
+          <span class="excluded-name">${ex.name}</span>
+          <span class="type-badge ${ex.typeClass}" style="opacity:.6">${ex.type}</span>
+        </div>
+      </td>
+      <td colspan="3" class="excluded-reason">${ex.reason}</td>
+      <td></td>`;
+    tbody.appendChild(tr);
+  });
+
+  // Pickup cards
+  const pickupList = document.getElementById('pickup-list');
+  pickupList.innerHTML = '';
+  const tbl = document.createElement('table');
+  tbl.className = 'pickup-table';
+  tbl.innerHTML = `<thead><tr>
+    <th>${i['col-pickup-store']}</th>
+    <th>${i['col-pickup-hours']}</th>
+    <th>${i['col-pickup-price']}</th>
+    <th>${i['col-pickup-avail']}</th>
+  </tr></thead><tbody></tbody>`;
+  const pickupTbody = tbl.querySelector('tbody');
+  d.pickups.forEach(p => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>
+        <div class="pickup-store-name">${p.storeName}</div>
+        <div class="pickup-meta">${ICON.pin} ${p.address}</div>
+      </td>
+      <td><div class="pickup-meta" style="margin-top:0">${ICON.clock} ${p.hours}</div></td>
+      <td><div class="pickup-price">${p.price}</div></td>
+      <td>
+        <div class="pickup-date">${p.readyDate}</div>
+        <div class="pickup-label">${p.readyLabel}</div>
+      </td>`;
+    pickupTbody.appendChild(tr);
+  });
+  pickupList.appendChild(tbl);
+}
+
+function toggleDetails(idx) {
+  const row = document.getElementById(`detail-${idx}`);
+  const btn = document.getElementById(`btn-${idx}`);
+  const i = DATA[client].i18n;
+  const isOpen = !row.classList.contains('hidden');
+  row.classList.toggle('hidden', isOpen);
+  btn.classList.toggle('open', !isOpen);
+  btn.innerHTML = `${isOpen ? i['btn-show-details'] : i['btn-hide-details']} ${ICON.chevron}`;
+}
+
+function resetForm() {
+  document.getElementById('sel-sc').selectedIndex = 0;
+  document.getElementById('ctx-badge').classList.add('hidden');
+  document.getElementById('zip-input').value = '';
+  document.getElementById('err-box').classList.remove('show');
+  document.getElementById('results-card').classList.add('hidden');
+  document.getElementById('sku-rows').innerHTML = '';
+  rowCount = 0; selectedSkus = {}; openDetails.clear();
+  buildSellerList();
+  addRow();
+}
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('.combo-wrap')) document.getElementById('seller-dd').classList.add('hidden');
+  if (!e.target.closest('.sku-wrapper')) document.querySelectorAll('.sku-dd').forEach(d => d.classList.add('hidden'));
+});
+
+init();
+</script>
+</body>
+</html>
