@@ -1,12 +1,12 @@
-# Product Brief — Subscription Membership Free Trial
+# **Product Brief — Subscription Membership Free Trial**
 
 
-| Field                | Value                          |
+| **Field**            | **Value**                      |
 | -------------------- | ------------------------------ |
 | **Module**           | Order-management               |
 | **Pillar**           | Order modification             |
-| **PM**               | Marcelo Leonel da Costa        |
-| **Eng Champion**     | Tulio                          |
+| **PM**               | Vanessa dos Santos Borges      |
+| **Eng Champion**     | Gustavo Melim                  |
 | **Status**           | Draft                          |
 | **Expected Release** | MVP 2026-Q2                    |
 | **Availability**     | Closed Beta                    |
@@ -16,7 +16,7 @@
 
 ---
 
-## MMR
+## **MMR**
 
 **Title:** Subscription Membership Free Trial — Configurable Trial Period for Membership Plans
 
@@ -33,7 +33,7 @@
 
 ---
 
-## Scope
+## **Scope**
 
 **In scope:**
 
@@ -50,6 +50,4 @@
 - Feed/webhook notification on subscription creation for the headless approach (no originating order exists)
 
 **Not in scope:** CL entity (Master Data) direct integration for subscriber discount calculation in Alternative 1 — pricing calculations are expected to be handled by updating the Subscription model itself; Admin UI and MyOrders UI changes for the initial MVP API scope; non-membership standard product subscriptions without a trial period; digital products and services (physical-goods membership plans only in initial scope); complete financial/accounting ledger integration — OMS orchestrates financial intent while PSPs and ERPs remain systems of record for financial postings; replacing existing subscription flows unrelated to membership free trial.
-
----
 
