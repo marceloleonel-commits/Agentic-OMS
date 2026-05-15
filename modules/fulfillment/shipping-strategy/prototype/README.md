@@ -33,6 +33,41 @@ A conversational AI-native experience where merchants interact with a shipping s
 | 514551 | Wrong currency displayed in simulator | Classic UI |
 | 1382356 | Empty postal/weight range for kit SKUs | Classic UI |
 
+## Why HTML — and What That Means for Shoreline
+
+Both prototypes are self-contained HTML files, not Raccoon/React apps. This is intentional: the goal is to validate product flow and UX before any engineering investment. Building in Raccoon would require scaffolding, `vtex link`, a dev account, and typed mocks before a single screen could be shown. HTML allows iterating in hours and opening directly in the browser with no build step.
+
+**What was done to stay close to Shoreline:**
+The CSS tokens (colors, border-radius, focus rings, spacing, typography) were manually aligned to what Shoreline components render. The visual result is nearly identical to the real components.
+
+**What the prototype does NOT guarantee:**
+Accessibility behavior, exact prop/variant APIs, and runtime design system integration. Those are the responsibility of the production implementation.
+
+**Shoreline component map — HTML element → production component:**
+
+| HTML element / class | Shoreline component | Notes |
+|---|---|---|
+| `.btn-primary` | `Button variant="primary"` | Blue, height 32px, border-radius 4px |
+| `.btn-secondary` | `Button variant="secondary"` | Outlined, same sizing |
+| `.btn-link` | `Button variant="tertiary"` or `Link` | Text-only, no border |
+| `.input` | `Input` | Border `#B4B9C2`, focus ring `#0C2DCC` |
+| `select.input` | `Select` + `SelectItem` | Dropdown pattern |
+| `.combo-input` + `.combo-dropdown` | `Combobox` (`ComboboxInput`, `ComboboxItem`, `ComboboxList`, `ComboboxPopover`) | Seller search + SKU search |
+| `.type-badge` (gray) | `Tag color="gray"` | Shipping type: Standard/Padrão |
+| `.type-badge.express` | `Tag color="orange"` | Shipping type: Express |
+| `.weekend-badge` | `Tag color="blue"` | Works on weekends indicator |
+| `.results-count` | `Tag color="blue"` | Result count pill |
+| `.error-box` | `Alert variant="critical"` | Left 4px border, `#FFF1F3` bg |
+| `.sla-table` | `Table` + `TableHeader` + `TableBody` + `TableRow` + `TableCell` | SLA results table |
+| Toast (restore recent) | `toast()` from `@vtex/shoreline` | Floating feedback |
+| Delivery / Pickup tabs | `TabProvider` + `TabList` + `Tab` + `TabPanel` | Result sections |
+| Form label + field group | `Field` + `Label` + `FieldDescription` | Input grouping |
+
+**Elements without a direct Shoreline equivalent (custom):**
+Sidebar nav, client/language toggle pill, SKU chip selection state, expandable SLA detail panel, recent simulations bar. These will need custom design decisions during implementation.
+
+---
+
 ## Shared Logic Cross-Reference
 
 Both prototypes are self-contained HTML files (no external JS dependencies) to ensure they work when opened locally via `file://`. This means some logic is intentionally duplicated. The table below maps shared concepts so that the implementation team does not rebuild them independently.

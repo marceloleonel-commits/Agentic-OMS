@@ -107,6 +107,92 @@ The chain to validate: **warehouse → dock → carrier → shipping policy → 
 
 ---
 
+## Scenario 5 — Carrier not connected to any dock
+
+This is a **configuration error** specific to the carrier layer. The carrier is active and properly registered, but has no dock linked to it — so the logistics routing engine has nowhere to hand off the shipment and silently drops the carrier from the simulation.
+
+Unlike Scenario 4 (general configuration error), this case is narrow and detectable with a single, targeted API call.
+
+**Detection — primary path:**
+
+```
+GET /api/logistics/pvt/configuration/carriers/{carrierId}
+```
+
+Check the response for the `docks` array (or equivalent field depending on API version):
+- `docks: []` or absent → carrier has no dock configured → root cause confirmed
+- `docks: [{dockId, ...}]` → carrier has docks → look elsewhere for the root cause
+
+**Confirmation path (if carrier API does not surface docks directly):**
+
+```
+GET /api/logistics/pvt/configuration/docks
+```
+
+Filter the response for docks that list the carrier in their `carriers` or `shippingRates` array. If no dock references the carrier, the carrier is effectively orphaned.
+
+**Required inputs:**
+- `carrierId` — available from `carriersNotChosenList[n].id` in the simulation response (pvt version)
+
+**Proposed UI message:**
+```
+"Braspress foi desconsiderada pois não está conectada a nenhuma doca.
+Acesse Configurações de Logística → Docas para vincular esta transportadora."
+```
+
+**Why this matters:** This is a silent misconfiguration — the carrier appears active in the carrier registry but never shows up in any simulation. Without this diagnostic, operators assume the carrier doesn't cover the region, when in fact it's a wiring issue that's fixable in 30 seconds.
+
+---
+
+## Scenario 6 — Dock not linked to any warehouse
+
+The shipping policy is connected to a dock, and the dock is active — but the dock has no warehouse associated with it. The logistics engine has no inventory source to route the shipment from, so the carrier is silently dropped.
+
+This is distinct from Scenario 5 (carrier has no dock): here the carrier-dock chain is intact, but the dock-warehouse link is missing.
+
+**Detection:**
+
+```
+GET /api/logistics/pvt/configuration/docks/{dockId}
+```
+
+Check the `warehouseDocks` or `warehouses` field in the response:
+- `warehouseDocks: []` or absent → dock has no warehouse linked → root cause confirmed
+- `warehouseDocks: [{warehouseId, ...}]` → dock is linked → look elsewhere
+
+**How to get `dockId`:**
+The simulation response (pvt version) includes `logisticsInfo[n].dockId` for active SLAs. For excluded carriers, `dockId` is not directly surfaced — it must be looked up via the carrier's shipping policy:
+
+```
+GET /api/logistics/pvt/configuration/shipping-policies
+→ find the policy linked to the carrier
+→ read policy.docks[n].dockId
+→ call GET /api/logistics/pvt/configuration/docks/{dockId}
+```
+
+**Full detection chain for this scenario:**
+
+```
+carrier (excluded) 
+  → GET /api/logistics/pvt/configuration/carriers/{carrierId}
+  → find linked shipping policy
+  → GET /api/logistics/pvt/configuration/shipping-policies/{policyId}
+  → get dockId from policy.docks[]
+  → GET /api/logistics/pvt/configuration/docks/{dockId}
+  → check warehouseDocks[] → empty = root cause confirmed
+```
+
+**Proposed UI message:**
+```
+"TNT Mercúrio foi desconsiderada pois a doca '[Doca X]' vinculada à política de envio
+não está associada a nenhum armazém. Acesse Configurações de Logística → Docas
+e associe um armazém para restaurar esta rota."
+```
+
+**Why this matters:** This is the most deceptive configuration error — every individual component (carrier, policy, dock) appears active and correctly configured when inspected in isolation. The break is in the dock-warehouse link, which is only visible when traversing the full chain. Operators typically only discover it by accident or after support escalation.
+
+---
+
 ## Implementation priority
 
 | Priority | Scenario | Effort | Value |
@@ -114,7 +200,9 @@ The chain to validate: **warehouse → dock → carrier → shipping policy → 
 | 1 | Surfacing existing reason codes (Scenario 3) | Low — frontend only | High — already in the response |
 | 2 | ZIP coverage error (Scenario 1) | Low — reason codes cover it | High — most common user-facing error |
 | 3 | No stock (Scenario 2) | Medium — 1 extra API call per SKU | High — differentiates from coverage issue |
-| 4 | Configuration error (Scenario 4) | High — multi-API traversal | Low for simulator; better as separate tool |
+| 4 | Carrier not connected to any dock (Scenario 5) | Low — 1 extra API call per excluded carrier | High — silent misconfiguration, easy fix |
+| 5 | Dock not linked to any warehouse (Scenario 6) | High — 3–4 API calls, full chain traversal | High — most invisible misconfiguration; hardest to debug manually |
+| 6 | Configuration error (Scenario 4) | High — multi-API traversal | Low for simulator; better as separate tool |
 
 ---
 
@@ -132,4 +220,12 @@ The chain to validate: **warehouse → dock → carrier → shipping policy → 
 
 // State 4: All carriers excluded (reason codes present)
 "X transportadoras foram avaliadas, mas todas foram desconsideradas. [Ver motivos]"
+
+// State 5: Carrier not connected to any dock (reason code 14 / no dock in carrier config)
+"[Carrier] foi desconsiderada pois não está conectada a nenhuma doca.
+Acesse Configurações de Logística → Docas para vincular esta transportadora."
+
+// State 6: Dock not linked to any warehouse (reason code 15 / warehouseDocks empty)
+"[Carrier] foi desconsiderada pois a doca '[Doca X]' não está associada a nenhum armazém.
+Acesse Configurações de Logística → Docas e associe um armazém para restaurar esta rota."
 ```

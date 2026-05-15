@@ -15,7 +15,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans
 .nav-group-label { padding: 8px 16px 3px; font-size: 11px; font-weight: 600; color: #A1AAB7; text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; justify-content: space-between; }
 .nav-item { display: flex; align-items: center; padding: 6px 16px; font-size: 12.5px; color: #4a4a4a; cursor: pointer; text-decoration: none; }
 .nav-item:hover { background: #f7f7f9; }
-.nav-item.active { color: #134cd8; font-weight: 600; background: #edf0fc; }
+.nav-item.active { color: #0C2DCC; font-weight: 600; background: #EEF1FF; }
 .nav-sub .nav-item { padding: 5px 16px 5px 24px; font-size: 12px; }
 
 /* ── Main ── */
@@ -77,18 +77,19 @@ label { font-size: 12px; font-weight: 500; color: #5B6E84; }
 .req { color: #F71963; margin-left: 2px; }
 .opt { color: #A1AAB7; font-weight: 400; font-size: 11px; margin-left: 3px; }
 .input-wrap { position: relative; }
-.input { height: 36px; border: 1px solid #E7E9EE; border-radius: 6px; padding: 0 12px; font-size: 13px; color: #142032; background: #fff; width: 100%; outline: none; appearance: none; transition: border-color 0.15s, box-shadow 0.15s; }
-.input:focus { border-color: #134cd8; box-shadow: 0 0 0 3px rgba(19,76,216,0.08); }
-.input::placeholder { color: #A1AAB7; }
+/* Shoreline: Input component */
+.input { height: 36px; border: 1px solid #B4B9C2; border-radius: 4px; padding: 0 12px; font-size: 14px; color: #142032; background: #fff; width: 100%; outline: none; appearance: none; transition: border-color 0.15s, box-shadow 0.15s; font-family: inherit; }
+.input:focus { border-color: #0C2DCC; box-shadow: 0 0 0 2px rgba(12,45,204,0.16); }
+.input::placeholder { color: #8C95A0; }
 select.input { padding-right: 28px; cursor: pointer; }
 .sel-arrow { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); pointer-events: none; color: #A1AAB7; font-size: 10px; }
 .ctx-badge { display: inline-flex; align-items: center; gap: 5px; background: #edf0fc; color: #134cd8; border-radius: 4px; padding: 3px 9px; font-size: 11px; font-weight: 600; margin-top: 3px; }
 
 /* ── Seller combobox ── */
 .combo-wrap { position: relative; }
-.combo-input { height: 36px; border: 1px solid #E7E9EE; border-radius: 6px; padding: 0 30px 0 12px; font-size: 13px; color: #142032; width: 100%; outline: none; transition: border-color 0.15s, box-shadow 0.15s; }
-.combo-input:focus { border-color: #134cd8; box-shadow: 0 0 0 3px rgba(19,76,216,0.08); }
-.combo-input::placeholder { color: #A1AAB7; }
+.combo-input { height: 36px; border: 1px solid #B4B9C2; border-radius: 4px; padding: 0 30px 0 12px; font-size: 14px; color: #142032; width: 100%; outline: none; transition: border-color 0.15s, box-shadow 0.15s; font-family: inherit; }
+.combo-input:focus { border-color: #0C2DCC; box-shadow: 0 0 0 2px rgba(12,45,204,0.16); }
+.combo-input::placeholder { color: #8C95A0; }
 .combo-clear { position: absolute; right: 9px; top: 50%; transform: translateY(-50%); color: #A1AAB7; cursor: pointer; font-size: 13px; line-height: 1; display: none; background: none; border: none; }
 .combo-clear:hover { color: #F71963; }
 .combo-dropdown { position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: #fff; border: 1px solid #E7E9EE; border-radius: 6px; box-shadow: 0 6px 20px rgba(20,32,50,0.10); z-index: 300; max-height: 220px; overflow-y: auto; }
@@ -131,17 +132,18 @@ select.input { padding-right: 28px; cursor: pointer; }
 .check-row label { font-size: 12.5px; color: #5B6E84; cursor: pointer; margin: 0; }
 .divider { height: 1px; background: #F8F7FC; margin: 18px 0; }
 
-/* ── Error ── */
-.error-box { background: #fff5f8; border: 1px solid #F71963; border-radius: 6px; padding: 10px 14px; margin-bottom: 14px; font-size: 13px; display: none; align-items: flex-start; gap: 8px; }
+/* Shoreline: Alert variant="critical" */
+.error-box { background: #FFF1F3; border: 1px solid #F71963; border-left: 4px solid #F71963; border-radius: 4px; padding: 10px 14px; margin-bottom: 14px; font-size: 14px; display: none; align-items: flex-start; gap: 8px; color: #142032; }
 .error-box.show { display: flex; }
 .error-icon { color: #F71963; flex-shrink: 0; }
 
-/* ── Buttons ── */
-.btn-primary { height: 36px; padding: 0 20px; background: #134cd8; color: #fff; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; }
-.btn-primary:hover { background: #0f3fb5; }
-.btn-secondary { height: 36px; padding: 0 16px; background: #fff; color: #5B6E84; border: 1px solid #E7E9EE; border-radius: 6px; font-size: 13px; cursor: pointer; }
-.btn-secondary:hover { background: #F8F7FC; }
-.btn-link { background: none; border: none; color: #134cd8; font-size: 12.5px; font-weight: 500; cursor: pointer; padding: 0; display: flex; align-items: center; gap: 4px; }
+/* ── Buttons — Shoreline: Button variant="primary" / "secondary" / tertiary ── */
+.btn-primary { height: 32px; padding: 0 16px; background: #0C2DCC; color: #fff; border: 1px solid transparent; border-radius: 4px; font-size: 14px; font-weight: 500; cursor: pointer; font-family: inherit; transition: background 0.15s; }
+.btn-primary:hover { background: #0927b3; }
+.btn-primary:focus-visible { outline: 2px solid #0C2DCC; outline-offset: 2px; }
+.btn-secondary { height: 32px; padding: 0 16px; background: #fff; color: #142032; border: 1px solid #B4B9C2; border-radius: 4px; font-size: 14px; font-weight: 500; cursor: pointer; font-family: inherit; transition: background 0.15s; }
+.btn-secondary:hover { background: #F0F2F5; }
+.btn-link { background: none; border: none; color: #0C2DCC; font-size: 13px; font-weight: 500; cursor: pointer; padding: 0; display: flex; align-items: center; gap: 4px; font-family: inherit; }
 
 /* ── Section divider ── */
 .section-divider { display: flex; align-items: center; gap: 10px; margin: 16px 0 10px; }
@@ -151,26 +153,28 @@ select.input { padding-right: 28px; cursor: pointer; }
 /* ── Results header ── */
 .results-header-row { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
 .results-title { font-size: 14px; font-weight: 600; }
-.results-count { background: #134cd8; color: #fff; border-radius: 10px; padding: 1px 9px; font-size: 11px; font-weight: 600; }
+/* Shoreline: Tag color="blue" */
+.results-count { background: #DBEAFE; color: #1E40AF; border-radius: 10px; padding: 1px 9px; font-size: 12px; font-weight: 600; }
 .results-subtitle { font-size: 12px; color: #A1AAB7; margin-bottom: 14px; }
 
-/* ── SLA table ── */
-.sla-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-.sla-table th { background: #F8F7FC; font-size: 11px; font-weight: 600; color: #A1AAB7; text-transform: uppercase; letter-spacing: 0.04em; padding: 8px 12px; text-align: left; border-bottom: 1px solid #E7E9EE; }
+/* ── SLA table — Shoreline: Table + TableHeader + TableBody + TableRow + TableCell ── */
+.sla-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.sla-table th { background: #F8F7FC; font-size: 11px; font-weight: 600; color: #8C95A0; text-transform: uppercase; letter-spacing: 0.06em; padding: 8px 12px; text-align: left; border-bottom: 1px solid #E2E5E9; }
 .sla-table th:last-child { width: 130px; }
-.sla-row td { padding: 11px 12px; border-bottom: 1px solid #F8F7FC; vertical-align: middle; color: #142032; }
+.sla-row td { padding: 12px 12px; border-bottom: 1px solid #F0F2F5; vertical-align: middle; color: #142032; }
 .sla-row:last-of-type td { border-bottom: none; }
 .sla-carrier-col { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.sla-carrier-name { font-weight: 600; font-size: 13px; }
-.type-badge { border-radius: 4px; padding: 2px 7px; font-size: 11px; font-weight: 500; background: #E7E9EE; color: #5B6E84; }
-.type-badge.express { background: #FFF3CD; color: #856404; }
-.weekend-badge { border-radius: 4px; padding: 2px 7px; font-size: 11px; font-weight: 500; background: #E8F4FD; color: #0069B4; border: 1px solid #B3D9F7; }
+.sla-carrier-name { font-weight: 500; font-size: 14px; }
+/* Shoreline: Tag component — color="gray" / "orange" / "blue" */
+.type-badge { border-radius: 4px; padding: 2px 8px; font-size: 12px; font-weight: 500; background: #EBEDF0; color: #4A5568; display: inline-flex; align-items: center; }
+.type-badge.express { background: #FEF3C7; color: #92400E; }
+.weekend-badge { border-radius: 4px; padding: 2px 8px; font-size: 12px; font-weight: 500; background: #DBEAFE; color: #1E40AF; display: inline-flex; align-items: center; }
 .sla-price { font-weight: 600; }
 .sla-deadline { font-size: 13px; }
 .sla-deadline-sub { font-size: 11px; color: #A1AAB7; margin-top: 2px; }
 .sla-qty { font-size: 13px; color: #5B6E84; }
-.btn-details { background: none; border: none; color: #134cd8; font-size: 13px; font-weight: 400; font-family: inherit; cursor: pointer; display: flex; align-items: center; gap: 4px; white-space: nowrap; }
-.btn-details:hover { color: #0f3fb5; }
+.btn-details { background: none; border: none; color: #0C2DCC; font-size: 13px; font-weight: 400; font-family: inherit; cursor: pointer; display: flex; align-items: center; gap: 4px; white-space: nowrap; }
+.btn-details:hover { color: #0927b3; }
 .btn-details svg { transition: transform 0.2s; }
 .btn-details.open svg { transform: rotate(180deg); }
 
@@ -437,7 +441,7 @@ const DATA = {
       { v:'drogariaspacheco',         name:'Drogarias Pacheco',          note:'conta principal' },
       { v:'drogariaspachecobotafogo', name:'Drogarias Pacheco Botafogo', note:'' },
       { v:'drogariaspachecobarra',    name:'Drogarias Pacheco Barra',    note:'' },
-      { v:'drogariaspachecotiuca',    name:'Drogarias Pacheco Tiuca',    note:'' },
+      { v:'drogariaspachecotiuca',    name:'Drogarias Pacheco Tijuca',    note:'' },
       { v:'drogariaspachecomeier',    name:'Drogarias Pacheco Méier',    note:'' }
     ],
     sellerScMap: {
@@ -485,12 +489,14 @@ const DATA = {
     ],
     excluded: [
       { name:'Total Express',  type:'Padrão', typeClass:'', reason:'Não atende este CEP' },
-      { name:'Jadlog Package', type:'Padrão', typeClass:'', reason:'Transportadora inativa' }
+      { name:'Jadlog Package', type:'Padrão', typeClass:'', reason:'Transportadora inativa' },
+      { name:'Braspress',    type:'Padrão', typeClass:'', reason:'Transportadora não está conectada a nenhuma doca' },
+      { name:'TNT Mercúrio', type:'Padrão', typeClass:'', reason:'Doca não está vinculada a nenhum estoque/armazém' }
     ],
     pickups: [
       {
         storeName:'Drogarias Pacheco Botafogo',
-        address:'Rua das Laranjeiras, 234 — Botafogo, Rio de Janeiro - RJ',
+        address:'Rua São Clemente, 123 — Botafogo, Rio de Janeiro - RJ',
         hours:'Seg – Sex: 08h às 20h  |  Sáb: 09h às 18h',
         readyDate:'16 mai 2026', readyLabel:'Disponível amanhã', price:'Grátis'
       },
@@ -600,7 +606,9 @@ const DATA = {
     ],
     excluded: [
       { name:'USPS Priority',  type:'Standard', typeClass:'', reason:'Does not deliver to this ZIP code' },
-      { name:'OnTrac Economy', type:'Standard', typeClass:'', reason:'Item weight exceeds carrier limit' }
+      { name:'OnTrac Economy', type:'Standard', typeClass:'', reason:'Item weight exceeds carrier limit' },
+      { name:'Estes Express',  type:'Standard', typeClass:'', reason:'Carrier is not connected to any dock' },
+      { name:'Old Dominion',   type:'Standard', typeClass:'', reason:'Dock is not linked to any warehouse/inventory location' }
     ],
     pickups: [
       {

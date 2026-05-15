@@ -372,6 +372,8 @@ const REJECTION_REASONS = {
     11:'Preço do item fora da faixa da transportadora',
     12:'Transportadora não opera neste horário',
     13:'Modo de envio do item não suportado',
+    14:'Transportadora não está conectada a nenhuma doca',
+    15:'Doca não está vinculada a nenhum estoque/armazém',
   },
   en: {
     1:'Cannot split items into multiple packages',
@@ -387,6 +389,8 @@ const REJECTION_REASONS = {
     11:'Item price outside carrier range',
     12:'Carrier not operating at this time',
     13:'Item shipping mode not supported',
+    14:'Carrier is not connected to any dock',
+    15:'Dock is not linked to any warehouse/inventory location',
   }
 };
 
@@ -450,12 +454,14 @@ const DATA = {
     excluded: [
       {name:'Total Express',  type:'Padrão', typeClass:'',      reasonCode:8,  active:true},
       {name:'Jadlog Package', type:'Padrão', typeClass:'',      reasonCode:10, active:false},
+      {name:'Braspress',      type:'Padrão', typeClass:'',      reasonCode:14, active:true},
+      {name:'TNT Mercúrio',   type:'Padrão', typeClass:'',      reasonCode:15, active:true},
       {name:'Azul Cargo',     type:'Padrão', typeClass:'',      reasonCode:10, active:false,
        docks:['Doca Centro (doca-centro)','Doca Sul (doca-sul)'], policy:'Política Azul Cargo Nacional'}
     ],
     pickups: [
       {storeName:'Drogarias Pacheco Botafogo',
-       address:'Rua das Laranjeiras, 234 — Botafogo, Rio de Janeiro - RJ',
+       address:'Rua São Clemente, 123 — Botafogo, Rio de Janeiro - RJ',
        hours:'Seg – Sex: 08h às 20h  |  Sáb: 09h às 18h',
        readyDate:'16 mai 2026', readyLabel:'Disponível amanhã', price:'Grátis'},
       {storeName:'Drogarias Pacheco Barra',
@@ -479,7 +485,7 @@ const DATA = {
       'suggest-2-title':'Começar simulação',          'suggest-2-desc':'Introdução rápida',             'suggest-2-text':'Como faço para começar uma simulação?',
       'suggest-3-title':'Simular envio',              'suggest-3-desc':'Cole SKU, CEP e seller',        'suggest-3-text':'Quero simular o envio do SKU 1234, CEP 22241-000, seller drogariaspachecobotafogo, PC 1',
       'col-carrier':'Transportadora','col-price':'Tarifa','col-deadline':'Prazo','col-qty':'Qtd. disponível',
-      'col-pickup-store':'Ponto de retirada','col-pickup-hours':'Horário','col-pickup-price':'Custo','col-pickup-avail':'Disponibilidade',
+      'col-pickup-store':'Loja','col-pickup-hours':'Horário','col-pickup-price':'Custo','col-pickup-avail':'Disponibilidade',
       'btn-show-details':'Mostrar detalhes','btn-hide-details':'Ocultar detalhes',
       'lbl-logistics':'Logística','lbl-costs':'Custos','lbl-time':'Tempo',
       'lbl-warehouse':'Estoque','lbl-dock':'Doca','lbl-transit':'Trânsito','lbl-total':'Total',
@@ -593,6 +599,8 @@ const DATA = {
     excluded: [
       {name:'USPS Priority', type:'Standard',typeClass:'',reasonCode:8,  active:true},
       {name:'OnTrac Economy',type:'Standard',typeClass:'',reasonCode:2,  active:true},
+      {name:'Estes Express', type:'Standard',typeClass:'',reasonCode:14, active:true},
+      {name:'Old Dominion',  type:'Standard',typeClass:'',reasonCode:15, active:true},
       {name:'DHL Freight',   type:'Standard',typeClass:'',reasonCode:10, active:false,
        docks:['East Dock (dock-east)','West Dock (dock-west)'], policy:'DHL Freight National Policy'}
     ],
@@ -622,7 +630,7 @@ const DATA = {
       'suggest-2-title':'Get started',          'suggest-2-desc':'Quick introduction',            'suggest-2-text':'How do I start a simulation?',
       'suggest-3-title':'Simulate shipping',    'suggest-3-desc':'Paste SKU, ZIP and seller',     'suggest-3-text':'I want to simulate shipping for SKU 5001, ZIP 90210, seller roadrunnersandiego, SC 1',
       'col-carrier':'Carrier','col-price':'Rate','col-deadline':'Delivery time','col-qty':'Available qty',
-      'col-pickup-store':'Pickup location','col-pickup-hours':'Hours','col-pickup-price':'Cost','col-pickup-avail':'Availability',
+      'col-pickup-store':'Store','col-pickup-hours':'Hours','col-pickup-price':'Cost','col-pickup-avail':'Availability',
       'btn-show-details':'Show details','btn-hide-details':'Hide details',
       'lbl-logistics':'Logistics','lbl-costs':'Costs','lbl-time':'Time',
       'lbl-warehouse':'Warehouse','lbl-dock':'Dock','lbl-transit':'Transit','lbl-total':'Total',
@@ -1363,7 +1371,7 @@ function appendResultCard(d, i, slas, pickups, excluded, filterLabel) {
       <div class="result-meta-block">
         <div class="result-section-label">${i['address-title']} <span class="result-section-line"></span></div>
         <div class="meta-val">${addr.street}, ${addr.neighborhood}</div>
-        <div class="meta-val-sub">${addr.city} - ${addr.state} · ${addr.postalCode}</div>
+        <div class="meta-val-sub">${addr.city} - ${addr.state} · ${state.zip || addr.postalCode}</div>
       </div>
       <div class="result-meta-block">
         <div class="result-section-label">${i['products-title']} <span class="result-section-line"></span></div>
