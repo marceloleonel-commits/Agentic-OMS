@@ -83,7 +83,7 @@ This MMR replaces the current simulator with a Shoreline-based experience that r
 ### Not in scope
 - **Checkout simulation** — The VTEX checkout simulation (`POST /api/checkout/pub/orderForms/simulation`) is intentionally excluded. Although it resolves some logistics parameters as a side effect, it is a different API with a different contract: it requires a full cart payload, applies pricing rules, promotions, and payment conditions, and is scoped to a buyer session. Using it here would significantly increase implementation complexity without improving the core value of this tool, which is logistics-level diagnostics. This simulator is explicitly backed by `POST /api/logistics/pvt/shipping/calculate`, which exposes full carrier-level detail (rejection reasons, route breakdown, warehouse/dock chain) that the checkout simulation does not surface. The right scope for this MMR is: **improve the logistics simulation experience as-is, with seller selection and proper error handling** — not to replicate checkout behavior.
 - Saving or exporting simulation results
-- Agentic UI track (separate development path)
+- Agentic UI track (separate development path) — note: the agentic prototype includes carrier activation/deactivation as a conversational action, which is intentionally out of scope for the classic UI MMR but documented as a capability of the agentic track
 
 ---
 

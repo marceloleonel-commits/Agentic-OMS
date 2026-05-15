@@ -763,15 +763,54 @@ function addRow() {
   container.appendChild(row);
 }
 function removeRow(id) { document.getElementById(`row-${id}`).remove(); delete selectedSkus[id]; }
+function scoreSkuMatch(s, q) {
+  // Returns a relevance score: higher = more relevant. -1 = no match.
+  const lq = q.toLowerCase().trim();
+  if (!lq) return -1;
+  const nameLow  = s.name.toLowerCase();
+  const metaLow  = s.meta.toLowerCase();
+  // Exact name start — highest priority
+  if (nameLow.startsWith(lq))      return 100;
+  // Every word in query appears in name
+  const words = lq.split(/\s+/);
+  if (words.every(w => nameLow.includes(w))) return 80;
+  // Partial name match (any word)
+  if (words.some(w => nameLow.includes(w)))  return 60;
+  // SKU ID / EAN / Ref exact token match in meta
+  if (metaLow.includes(lq))                  return 90;
+  // Any meta word matches
+  if (words.some(w => metaLow.includes(w)))  return 40;
+  return -1;
+}
+
+function highlightMatch(text, q) {
+  if (!q) return text;
+  const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return text.replace(new RegExp(`(${escaped})`, 'gi'), '<mark style="background:#FFE0EF;color:#142032;border-radius:2px;padding:0 1px">$1</mark>');
+}
+
 function onSkuInput(id) {
   const inp = document.getElementById(`sku-inp-${id}`);
-  const dd = document.getElementById(`sku-dd-${id}`);
-  if (inp.value.length < 1) { dd.classList.add('hidden'); return; }
+  const dd  = document.getElementById(`sku-dd-${id}`);
+  const q   = inp.value;
+  if (q.length < 1) { dd.classList.add('hidden'); return; }
+  // Score, filter (score > -1) and sort by relevance descending
+  const results = DATA[client].skus
+    .map(s => ({ s, score: scoreSkuMatch(s, q) }))
+    .filter(r => r.score > -1)
+    .sort((a, b) => b.score - a.score);
+  if (results.length === 0) {
+    dd.innerHTML = `<div class="sku-opt" style="color:#A1AAB7;cursor:default">${client==='pt'?'Nenhum resultado encontrado':'No results found'}</div>`;
+    dd.classList.remove('hidden');
+    return;
+  }
   dd.innerHTML = '';
-  DATA[client].skus.forEach(s => {
+  results.forEach(({ s }) => {
     const item = document.createElement('div');
     item.className = 'sku-opt';
-    item.innerHTML = `<div class="sku-opt-name">${s.name}${s.kit?'<span class="tag-kit">KIT</span>':''}</div><div class="sku-opt-meta"><span>${s.meta.split(' · ').join('</span><span>')}</span></div>`;
+    const highlightedName = highlightMatch(s.name, q);
+    const metaParts = s.meta.split(' · ').map(p => `<span>${highlightMatch(p, q)}</span>`).join('');
+    item.innerHTML = `<div class="sku-opt-name">${highlightedName}${s.kit?'<span class="tag-kit">KIT</span>':''}</div><div class="sku-opt-meta">${metaParts}</div>`;
     item.onclick = () => pickSku(id, s);
     dd.appendChild(item);
   });

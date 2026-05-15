@@ -110,6 +110,11 @@ A logistics manager at Road Runners prefers to use the simulator in English. The
 - **FR-013**: Results MUST show a route analysis summary when no freight options are available, explaining the root cause (stock → route → location → capacity).
 - **FR-014**: Operational capacity constraints MUST be shown inline with the affected delivery option when `operationalCapacity.status` is `dock_time_increased` or `removed_from_quotation`.
 
+**Agentic UI track only**
+- **FR-019**: The agentic UI MUST allow the operator to request carrier activation or deactivation through natural language (e.g., "activate this carrier", "ativar a Azul Cargo").
+- **FR-020**: Before executing a carrier activation or deactivation, the agent MUST display: the carrier name, the connected shipping policy, and all docks linked to that policy. Execution MUST be blocked until the operator provides explicit confirmation.
+- **FR-021**: The agent MUST never activate or deactivate a carrier without a clear, affirmative confirmation message from the operator in the same conversation turn.
+
 **Prototype-specific**
 - **FR-015**: The prototype MUST include a language toggle (PT-BR / EN) in the top-right corner of the interface.
 - **FR-016**: In PT-BR mode, all UI text, labels, and example data MUST be in Brazilian Portuguese.

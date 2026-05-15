@@ -37,6 +37,11 @@ body{font-family:'Inter',sans-serif;background:#F8F7FC;color:#142032;display:fle
 .client-toggle button{background:none;border:none;border-radius:5px;padding:4px 10px;font-size:12px;font-weight:500;color:#A1AAB7;cursor:pointer;font-family:inherit;transition:all .15s;white-space:nowrap}
 .client-toggle button.active{background:#fff;color:#142032}
 
+/* ── Quick replies ── */
+.quick-replies{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.qr-btn{background:#fff;border:1px solid #E7E9EE;border-radius:20px;padding:5px 12px;font-size:12px;font-weight:500;color:#142032;cursor:pointer;font-family:inherit;transition:border-color .15s,background .15s}
+.qr-btn:hover{border-color:#F71963;background:#FFF3F6;color:#F71963}
+
 /* ── Content ── */
 .content{flex:1;display:flex;flex-direction:column;overflow:hidden}
 
@@ -256,8 +261,8 @@ body{font-family:'Inter',sans-serif;background:#F8F7FC;color:#142032;display:fle
     </div>
     <div class="topbar-right">
       <div class="client-toggle">
-        <button id="btn-pt" onclick="setClient('pt')" class="active">🇧🇷 Drogarias Pacheco</button>
-        <button id="btn-en" onclick="setClient('en')">🇺🇸 Road Runners</button>
+        <button id="btn-pt" onclick="setClient('pt')" class="active">🇧🇷 PT</button>
+        <button id="btn-en" onclick="setClient('en')">🇺🇸 EN</button>
       </div>
       <button class="topbar-btn">Copilot</button>
       <button class="topbar-btn" data-i18n="topbar-visit">Visite a loja</button>
@@ -430,7 +435,8 @@ const DATA = {
     excluded: [
       {name:'Total Express',  type:'Padrão', typeClass:'',      reasonCode:8,  active:true},
       {name:'Jadlog Package', type:'Padrão', typeClass:'',      reasonCode:2,  active:true},
-      {name:'Azul Cargo',     type:'Padrão', typeClass:'',      reasonCode:10, active:false}
+      {name:'Azul Cargo',     type:'Padrão', typeClass:'',      reasonCode:10, active:false,
+       docks:['Doca Centro (doca-centro)','Doca Sul (doca-sul)'], policy:'Política Azul Cargo Nacional'}
     ],
     pickups: [
       {storeName:'Drogarias Pacheco Botafogo',
@@ -480,7 +486,13 @@ const DATA = {
       'ask-sku':'Qual produto quer simular? Cole o SKU ID, EAN ou nome.',
       'ask-zip':'Qual o CEP de destino?',
       'confirm-sim':'Simulando envio com os parâmetros informados…',
-      'refine-hint':'Você pode refinar: <code>só o SEDEX</code> · <code>2 unidades</code> · <code>por que a Total Express foi desconsiderada?</code> · <code>nova simulação</code>',
+      'refine-hint': () => 'O que quer fazer agora?' + quickReplies([
+        {label:'Só o SEDEX', text:'só o SEDEX'},
+        {label:'2 unidades', text:'2 unidades'},
+        {label:'Por que a Total Express foi desconsiderada?', text:'por que a Total Express foi desconsiderada?'},
+        {label:'Mais barata', text:'mais barata'},
+        {label:'Nova simulação', text:'nova simulação'},
+      ]),
       'reset-done':'Simulação limpa. Pode começar uma nova.',
       'cheapest-pre':'A opção mais barata é <strong>',
       'cheapest-mid':'</strong> com <strong>',
@@ -494,6 +506,10 @@ const DATA = {
       'list-rejected-title':'Transportadoras desconsideradas nesta simulação:',
       'qty-update':'Quantidade atualizada para <strong>',
       'qty-update-suf':'</strong>. Os prazos e tarifas não mudam — essa informação é refletida na lógica de estoque da API real.',
+      'activate-confirm': (name, policy, docks) => `Você quer ativar a transportadora <strong>${name}</strong>?<br><br>Essa transportadora está vinculada à política de envio <strong>${policy}</strong>, que está conectada às seguintes docas:<br>${docks.map(d=>`• ${d}`).join('<br>')}<br><br>Confirme explicitamente para prosseguir: <em>"pode ativar"</em>`,
+      'activate-success': (name, policy, docks) => `Transportadora <strong>${name}</strong> ativada com sucesso.<br><br>Política de envio: <strong>${policy}</strong><br>Docas afetadas:<br>${docks.map(d=>`• ${d}`).join('<br>')}`,
+      'activate-not-found': 'Nenhuma transportadora inativa encontrada para ativar nesta simulação.',
+      'activate-denied': 'Operação cancelada. A transportadora não foi ativada.',
       'input-ph':'Cole ou descreva o que quer simular... Ex: SKU 1234, CEP 22241-000, seller drogariaspachecobotafogo, PC 1',
       'input-hint':'Dica: cole de uma vez —',
       'btn-send':'Enviar',
@@ -562,7 +578,8 @@ const DATA = {
     excluded: [
       {name:'USPS Priority', type:'Standard',typeClass:'',reasonCode:8,  active:true},
       {name:'OnTrac Economy',type:'Standard',typeClass:'',reasonCode:2,  active:true},
-      {name:'DHL Freight',   type:'Standard',typeClass:'',reasonCode:10, active:false}
+      {name:'DHL Freight',   type:'Standard',typeClass:'',reasonCode:10, active:false,
+       docks:['East Dock (dock-east)','West Dock (dock-west)'], policy:'DHL Freight National Policy'}
     ],
     pickups: [
       {storeName:'Road Runner San Diego',
@@ -612,7 +629,13 @@ const DATA = {
       'ask-sku':'Which product? Paste a SKU ID, EAN, or product name.',
       'ask-zip':'What is the destination ZIP code?',
       'confirm-sim':'Simulating shipping with the provided parameters…',
-      'refine-hint':'You can refine: <code>FedEx only</code> · <code>2 units</code> · <code>why was USPS excluded?</code> · <code>new simulation</code>',
+      'refine-hint': () => 'What would you like to do next?' + quickReplies([
+        {label:'FedEx only', text:'FedEx only'},
+        {label:'2 units', text:'2 units'},
+        {label:'Why was DHL excluded?', text:'why was DHL Freight excluded?'},
+        {label:'Cheapest option', text:'cheapest'},
+        {label:'New simulation', text:'new simulation'},
+      ]),
       'reset-done':'Simulation cleared. You can start a new one.',
       'cheapest-pre':'The cheapest option is <strong>',
       'cheapest-mid':'</strong> at <strong>',
@@ -626,6 +649,10 @@ const DATA = {
       'list-rejected-title':'Carriers excluded in this simulation:',
       'qty-update':'Quantity updated to <strong>',
       'qty-update-suf':'</strong>. Rates and deadlines remain the same — actual quantity affects stock logic in the real API response.',
+      'activate-confirm': (name, policy, docks) => `Do you want to activate the carrier <strong>${name}</strong>?<br><br>This carrier is linked to the shipping policy <strong>${policy}</strong>, which is connected to the following docks:<br>${docks.map(d=>`• ${d}`).join('<br>')}<br><br>Explicitly confirm to proceed: <em>"go ahead and activate"</em>`,
+      'activate-success': (name, policy, docks) => `Carrier <strong>${name}</strong> successfully activated.<br><br>Shipping policy: <strong>${policy}</strong><br>Affected docks:<br>${docks.map(d=>`• ${d}`).join('<br>')}`,
+      'activate-not-found': 'No inactive carrier found to activate in this simulation.',
+      'activate-denied': 'Operation cancelled. The carrier was not activated.',
       'input-ph':'Paste or describe what you want to simulate... Ex: SKU 5001, ZIP 90210, roadrunners, SC 1',
       'input-hint':'Tip: paste everything at once —',
       'btn-send':'Send',
@@ -641,6 +668,9 @@ const DATA = {
 let client = 'pt';
 let state = {sc:null, seller:null, skus:[], zip:null, qty:1, simulated:false};
 let pendingParam = null; // which param the agent last asked for
+let pendingActivation = null; // carrier pending explicit activation confirmation
+let pendingSkuConfirm = null; // array of SKU matches awaiting user selection
+let pendingSkuType = null; // 'id' | 'ean' | 'name' — which input type the user chose
 let detailCtr = 0;
 let currentExcluded = [];
 
@@ -651,6 +681,8 @@ function setClient(c) {
   client = c;
   state = {sc:null, seller:null, skus:[], zip:null, qty:1, simulated:false};
   pendingParam = null;
+  pendingSkuType = null;
+  pendingSkuConfirm = null;
   document.getElementById('btn-pt').classList.toggle('active', c==='pt');
   document.getElementById('btn-en').classList.toggle('active', c==='en');
   const d = DATA[c]; const i = d.i18n;
@@ -699,6 +731,8 @@ function showHome() {
   document.getElementById('chat-wrap').innerHTML = '';
   state = {sc:null, seller:null, skus:[], zip:null, qty:1, simulated:false};
   pendingParam = null;
+  pendingSkuType = null;
+  pendingSkuConfirm = null;
 }
 
 function showThread() {
@@ -773,7 +807,7 @@ function hideTyping() {
   if (el) el.remove();
 }
 
-function agentRespond(html, delay=400) {
+function agentRespond(html, delay=800) {
   return new Promise(r => {
     showTyping();
     setTimeout(() => { hideTyping(); appendMsg('agent', html); r(); }, delay);
@@ -850,22 +884,47 @@ function resolveFromContext(param, text, d) {
   }
 
   if (param === 'sku') {
-    // try normal parse first
-    let sku = null;
-    d.skus.forEach(s => {
-      const id = (s.meta.match(/SKU (\d+)/)||[])[1];
-      if (id && text.includes(id)) sku = s;
-    });
-    if (!sku) d.skus.forEach(s => {
-      const words = s.name.toLowerCase().split(' ').filter(w=>w.length>3);
-      if (words.some(w => t.includes(w))) sku = s;
-    });
-    if (sku) return {sku};
-    // Accept any input as SKU — use first mock as stand-in, label with typed ID
-    if (text.trim().length > 0) {
-      const fallback = {...d.skus[0]};
-      fallback._typedId = text.trim();
-      fallback.name = d.skus[0].name + ` (ID: ${text.trim()})`;
+    const val = text.trim();
+
+    // If user chose a specific input type, resolve accordingly
+    if (pendingSkuType === 'id') {
+      const found = d.skus.find(s => {
+        const id = (s.meta.match(/SKU (\d+)/)||[])[1]||'';
+        return id === val || s.meta.includes(val);
+      });
+      pendingSkuType = null;
+      if (found) return {sku: found};
+      const fallback = {...d.skus[0], _typedId: val, name: d.skus[0].name + ` (ID: ${val})`};
+      return {sku: fallback};
+    }
+
+    if (pendingSkuType === 'ean') {
+      const found = d.skus.find(s => {
+        const ean = (s.meta.match(/EAN (\d+)/)||[])[1]||'';
+        return ean === val || s.meta.includes(val);
+      });
+      pendingSkuType = null;
+      if (found) return {sku: found};
+      const fallback = {...d.skus[0], _typedId: val, name: d.skus[0].name + ` (EAN: ${val})`};
+      return {sku: fallback};
+    }
+
+    if (pendingSkuType === 'name') {
+      pendingSkuType = null;
+      const matches = d.skus.filter(s => s.name.toLowerCase().includes(val.toLowerCase()));
+      if (matches.length === 1) return {sku: matches[0]};
+      if (matches.length > 1) return {skuAmbiguous: matches};
+      const fallback = {...d.skus[0], _typedId: val, name: d.skus[0].name + ` (busca: ${val})`};
+      return {sku: fallback};
+    }
+
+    // No type selected — try full match
+    const matches = findSkuMatches(text, d);
+    if (matches.length === 1) return {sku: matches[0]};
+    if (matches.length > 1) return {skuAmbiguous: matches};
+    // Accept any input as a typed SKU ID — use first mock as stand-in
+    if (val.length > 0) {
+      const fallback = {...d.skus[0], _typedId: val, name: d.skus[0].name + ` (ID: ${val})`};
       return {sku: fallback};
     }
     return null;
@@ -900,6 +959,12 @@ function detectRefinement(text) {
   }
   if (/exclu|desconsider|por que|porque|why/i.test(t)) return {type:'list-excluded'};
 
+  // Activation request — check for inactive carriers
+  if (/ativ(a|ar|e)|activ(ate|ation)/i.test(t)) {
+    const inactive = d.excluded.find(e => !e.active);
+    if (inactive) return {type:'activate-request', carrier: inactive};
+  }
+
   for (const sla of d.slas) {
     const words = sla.name.toLowerCase().split(' ');
     if (words.some(w => w.length>3 && t.includes(w))) return {type:'filter-carrier', sla};
@@ -909,8 +974,96 @@ function detectRefinement(text) {
 }
 
 // ── Flow ──────────────────────────────────────────────────────────────────────
+function isCapabilitiesQuestion(text) {
+  return /capacidade|capacidades|o que você (pode|faz|consegue)|what can you|help me with|como (você|vc) (pode|funciona)|what do you do/i.test(text);
+}
+
 async function processMessage(text) {
   const d = DATA[client]; const i = d.i18n;
+
+  // Capabilities question — respond with summary, don't enter simulation flow
+  if (isCapabilitiesQuestion(text)) {
+    const isBR = client === 'pt';
+    const html = isBR
+      ? `Posso te ajudar com:<br><br>
+         <strong>Simular frete</strong> — informe SKU, CEP, seller e sales channel (pode colar tudo de uma vez ou ir informando um por vez).<br><br>
+         <strong>Detalhar resultados</strong> — mostro prazo, custo, rota warehouse → doca → transportadora e breakdown de tempo e custo por etapa.<br><br>
+         <strong>Explicar transportadoras desconsideradas</strong> — digo por que cada carrier foi excluído da simulação (cobertura de CEP, limite de peso, carrier inativo, etc.).<br><br>
+         <strong>Ativar ou desativar transportadoras</strong> — se uma transportadora estiver inativa, posso ativá-la para você mediante confirmação explícita. Antes de ativar, mostro a política de envio e as docas conectadas que serão afetadas.<br><br>
+         <strong>Refinar após simular</strong> — posso filtrar por transportadora específica, mostrar a opção mais barata, atualizar quantidade ou iniciar uma nova simulação.<br><br>
+         <strong>Retirada em loja</strong> — mostro opções de pickup point junto com as opções de entrega domiciliar.<br><br>
+         Para começar, pode colar os parâmetros ou descrever o que quer simular.`
+      : `Here's what I can help you with:<br><br>
+         <strong>Simulate shipping</strong> — provide a SKU, ZIP code, seller and sales channel (paste everything at once or one at a time).<br><br>
+         <strong>Break down results</strong> — I show deadline, cost, warehouse → dock → carrier route and a time/cost breakdown per leg.<br><br>
+         <strong>Explain excluded carriers</strong> — I tell you why each carrier was dropped from the simulation (ZIP coverage, weight limit, inactive carrier, etc.).<br><br>
+         <strong>Activate or deactivate carriers</strong> — if a carrier is inactive, I can activate it for you upon explicit confirmation. Before activating, I'll show you the connected shipping policy and docks that will be affected.<br><br>
+         <strong>Refine after simulating</strong> — filter by specific carrier, find the cheapest option, update quantity, or start a new simulation.<br><br>
+         <strong>Store pickup</strong> — I surface pickup point options alongside home delivery.<br><br>
+         To get started, paste your parameters or describe what you want to simulate.`;
+    await agentRespond(html, 900);
+    return;
+  }
+
+  // Pending activation confirmation
+  if (pendingActivation) {
+    const confirmPT = /pode ativar|confirmo|confirma|sim|yes|go ahead|proceed/i.test(text);
+    const denyPT = /não|nao|cancel|abort|não ativar/i.test(text);
+    if (confirmPT) {
+      const c = pendingActivation;
+      pendingActivation = null;
+      c.active = true;
+      await agentRespond(i['activate-success'](c.name, c.policy, c.docks), 900);
+      return;
+    } else if (denyPT) {
+      pendingActivation = null;
+      await agentRespond(i['activate-denied'], 700);
+      return;
+    }
+  }
+
+  // SKU type selector — user clicked SKU ID / EAN / Nome
+  if (pendingParam === 'sku' && !pendingSkuType) {
+    const t = text.trim().toLowerCase();
+    if (/^sku\s*id$/i.test(text.trim())) {
+      pendingSkuType = 'id';
+      await agentRespond(client==='pt' ? 'Qual o SKU ID do produto?' : 'What is the SKU ID?', 600);
+      return;
+    }
+    if (/^ean$/i.test(text.trim())) {
+      pendingSkuType = 'ean';
+      await agentRespond(client==='pt' ? 'Qual o EAN do produto?' : 'What is the product EAN?', 600);
+      return;
+    }
+    if (/^(buscar pelo nome|search by name|nome|name)$/i.test(text.trim())) {
+      pendingSkuType = 'name';
+      await agentRespond(client==='pt' ? 'Qual o nome do produto que quer buscar?' : 'What is the product name you want to search?', 600);
+      return;
+    }
+  }
+
+  // SKU disambiguation — user is choosing from a list
+  if (pendingSkuConfirm) {
+    const t = text.trim().toLowerCase();
+    // try to match by number (1, 2, 3...) or by name/id fragment
+    let picked = null;
+    const numM = text.match(/^(\d)$/);
+    if (numM) { picked = pendingSkuConfirm[parseInt(numM[1])-1] || null; }
+    if (!picked) picked = pendingSkuConfirm.find(s => {
+      const id = (s.meta.match(/SKU (\d+)/)||[])[1]||'';
+      return text.includes(id) || s.name.toLowerCase().includes(t) || t.includes(s.name.toLowerCase().split(' ')[1]||'');
+    });
+    if (picked) {
+      state.skus = [picked];
+      pendingSkuConfirm = null;
+      pendingParam = null;
+      renderCtxBar();
+      const missing = getMissing(d, i);
+      if (missing) { await agentRespond(missing, 700); return; }
+      await runSimulation(d, i);
+      return;
+    }
+  }
 
   if (state.simulated) {
     const ref = detectRefinement(text);
@@ -921,6 +1074,26 @@ async function processMessage(text) {
   if (pendingParam) {
     const resolved = resolveFromContext(pendingParam, text, d);
     if (resolved) {
+      if (resolved.skuAmbiguous) {
+        // Multiple matches — ask user to disambiguate
+        pendingSkuConfirm = resolved.skuAmbiguous;
+        pendingParam = null;
+        const isBR = client === 'pt';
+        const intro = isBR
+          ? `Encontrei ${resolved.skuAmbiguous.length} produtos com "<strong>${text.trim()}</strong>". Qual você quer simular?`
+          : `Found ${resolved.skuAmbiguous.length} products matching "<strong>${text.trim()}</strong>". Which one do you want to simulate?`;
+        const options = resolved.skuAmbiguous.map((s, idx) => {
+          const id = (s.meta.match(/SKU (\d+)/)||[])[1]||'?';
+          const ean = (s.meta.match(/EAN (\d+)/)||[])[1]||'—';
+          return `<div style="margin:6px 0"><strong>${idx+1}.</strong> ${s.name}<br><span style="color:#5B6E84;font-size:12px">${s.meta}</span></div>`;
+        }).join('');
+        const qr = quickReplies(resolved.skuAmbiguous.map((s,idx)=>({
+          label: `${idx+1}. ${s.name.split(' ').slice(0,3).join(' ')}`,
+          text: (s.meta.match(/SKU (\d+)/)||[])[1] || s.name
+        })));
+        await agentRespond(intro + '<br>' + options + qr, 900);
+        return;
+      }
       if (resolved.sc && !state.sc)            state.sc = resolved.sc;
       if (resolved.seller && !state.seller)    state.seller = resolved.seller;
       if (resolved.sku && !state.skus.length)  state.skus = [resolved.sku];
@@ -948,9 +1121,37 @@ async function processMessage(text) {
   }
 
   const missing = getMissing(d, i);
-  if (missing) { await agentRespond(missing, 350); return; }
+  if (missing) { await agentRespond(missing, 900); return; }
 
   await runSimulation(d, i);
+}
+
+function quickReplies(items) {
+  return `<div class="quick-replies">${items.map(it => {
+    const safe = it.text.replace(/"/g, '&quot;');
+    return `<button class="qr-btn" data-qr="${safe}" onclick="sendDirect(this.dataset.qr)">${it.label}</button>`;
+  }).join('')}</div>`;
+}
+
+function sendDirect(text) {
+  showThread();
+  appendMsg('user', text);
+  processMessage(text);
+}
+
+function findSkuMatches(text, d) {
+  const t = text.toLowerCase().trim();
+  const matches = [];
+  d.skus.forEach(s => {
+    const id = (s.meta.match(/SKU (\d+)/)||[])[1] || '';
+    const ean = (s.meta.match(/EAN (\d+)/)||[])[1] || '';
+    const words = s.name.toLowerCase().split(' ').filter(w=>w.length>3);
+    if ((id && text.includes(id)) || (ean && text.includes(ean)) ||
+        words.some(w => t.includes(w))) {
+      matches.push(s);
+    }
+  });
+  return matches;
 }
 
 function getMissing(d, i) {
@@ -962,11 +1163,15 @@ function getMissing(d, i) {
     pendingParam = 'seller';
     // Show only first 2 examples + hint that there are more
     const examples = d.sellers.slice(0,2).map(s=>`<code>${s.v}</code> — ${s.name}`).join('<br>');
-    return i['ask-seller'] + '<br>' + examples + '<br><span style="color:#A1AAB7;font-size:12px">…ou cole qualquer ID do seller diretamente</span>';
+    const sellerHint = client === 'pt' ? '…ou cole qualquer ID do seller diretamente' : '…or paste any seller ID directly';
+    return i['ask-seller'] + '<br>' + examples + `<br><span style="color:#5B6E84;font-size:13px">${sellerHint}</span>`;
   }
   if (!state.skus.length) {
     pendingParam = 'sku';
-    return i['ask-sku'];
+    const skuQR = client === 'pt'
+      ? quickReplies([{label:'SKU ID', text:'SKU ID'},{label:'EAN', text:'EAN'},{label:'Buscar pelo nome', text:'nome'}])
+      : quickReplies([{label:'SKU ID', text:'SKU ID'},{label:'EAN', text:'EAN'},{label:'Search by name', text:'name'}]);
+    return i['ask-sku'] + skuQR;
   }
   if (!state.zip) {
     pendingParam = 'zip';
@@ -983,7 +1188,7 @@ async function runSimulation(d, i) {
     <strong>${i['pill-sc']}:</strong> ${state.sc.label} &nbsp;·&nbsp;
     <strong>${i['pill-seller']}:</strong> ${state.seller.name}<br>
     <strong>${i['pill-sku']}:</strong> ${sku.name}${kitTag}<br>
-    <strong>${i['pill-zip']}:</strong> ${state.zip} &nbsp;·&nbsp; Qtd: ${state.qty}`, 300);
+    <strong>${i['pill-zip']}:</strong> ${state.zip} &nbsp;·&nbsp; Qtd: ${state.qty}`, 700);
 
   await new Promise(r => setTimeout(r, 600));
   showTyping();
@@ -994,8 +1199,18 @@ async function runSimulation(d, i) {
   currentExcluded = d.excluded;
   renderCtxBar();
   appendResultCard(d, i, d.slas, d.pickups, d.excluded);
-  await new Promise(r => setTimeout(r, 300));
-  appendMsg('agent', i['refine-hint']);
+  await new Promise(r => setTimeout(r, 700));
+  // Build dynamic refine hint with one button per excluded carrier + new simulation
+  const isBR = client === 'pt';
+  const refineLabel = isBR ? 'O que quer fazer agora?' : 'What would you like to do next?';
+  const newSimLabel = isBR ? 'Nova simulação' : 'New simulation';
+  const whyPrefix = isBR ? 'Por que ' : 'Why was ';
+  const whySuffix = isBR ? ' foi desconsiderada?' : ' excluded?';
+  const excludedBtns = d.excluded.map(ex => ({
+    label: whyPrefix + ex.name + whySuffix,
+    text: whyPrefix + ex.name + whySuffix
+  }));
+  appendMsg('agent', refineLabel + quickReplies([...excludedBtns, {label: newSimLabel, text: newSimLabel}]));
 }
 
 // ── Result card ───────────────────────────────────────────────────────────────
@@ -1244,13 +1459,21 @@ async function handleRefinement(ref, d, i) {
   }
   if (ref.type === 'explain-excluded') {
     const rr = REJECTION_REASONS[client];
-    await agentRespond(i['explain-rejected-pre'] + ref.carrier.name + i['explain-rejected-mid'] + ' <strong>' + rr[ref.carrier.reasonCode] + '</strong>.', 350);
+    await agentRespond(i['explain-rejected-pre'] + ref.carrier.name + i['explain-rejected-mid'] + ' <strong>' + rr[ref.carrier.reasonCode] + '</strong>.', 900);
     return;
   }
   if (ref.type === 'list-excluded') {
     const rr = REJECTION_REASONS[client];
     const list = d.excluded.map(ex => `• <strong>${ex.name}</strong>: ${rr[ex.reasonCode]}`).join('<br>');
-    await agentRespond(i['list-rejected-title'] + '<br>' + list, 350);
+    await agentRespond(i['list-rejected-title'] + '<br>' + list, 900);
+    return;
+  }
+
+  if (ref.type === 'activate-request') {
+    const c = ref.carrier;
+    if (!c.docks) { await agentRespond(i['activate-not-found'], 700); return; }
+    pendingActivation = c;
+    await agentRespond(i['activate-confirm'](c.name, c.policy, c.docks), 900);
     return;
   }
 }
