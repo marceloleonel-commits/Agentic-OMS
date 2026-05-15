@@ -434,7 +434,7 @@ const DATA = {
     ],
     excluded: [
       {name:'Total Express',  type:'Padrão', typeClass:'',      reasonCode:8,  active:true},
-      {name:'Jadlog Package', type:'Padrão', typeClass:'',      reasonCode:2,  active:true},
+      {name:'Jadlog Package', type:'Padrão', typeClass:'',      reasonCode:10, active:false},
       {name:'Azul Cargo',     type:'Padrão', typeClass:'',      reasonCode:10, active:false,
        docks:['Doca Centro (doca-centro)','Doca Sul (doca-sul)'], policy:'Política Azul Cargo Nacional'}
     ],
@@ -961,7 +961,8 @@ function detectRefinement(text) {
 
   // Activation request — check for inactive carriers
   if (/ativ(a|ar|e)|activ(ate|ation)/i.test(t)) {
-    const inactive = d.excluded.find(e => !e.active);
+    // Prefer inactive carriers with dock/policy info (activatable); fall back to any inactive
+    const inactive = d.excluded.find(e => !e.active && e.docks) || d.excluded.find(e => !e.active);
     if (inactive) return {type:'activate-request', carrier: inactive};
   }
 
