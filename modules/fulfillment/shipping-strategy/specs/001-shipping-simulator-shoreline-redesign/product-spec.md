@@ -87,6 +87,8 @@ A logistics manager at Road Runners prefers to use the simulator in English. The
 
 ---
 
+---
+
 ## Requirements *(mandatory)*
 
 ### Functional Requirements
@@ -114,6 +116,10 @@ A logistics manager at Road Runners prefers to use the simulator in English. The
 - **FR-019**: The agentic UI MUST allow the operator to request carrier activation or deactivation through natural language (e.g., "activate this carrier", "ativar a Azul Cargo").
 - **FR-020**: Before executing a carrier activation or deactivation, the agent MUST display: the carrier name, the connected shipping policy, and all docks linked to that policy. Execution MUST be blocked until the operator provides explicit confirmation.
 - **FR-021**: The agent MUST never activate or deactivate a carrier without a clear, affirmative confirmation message from the operator in the same conversation turn.
+
+**Recent simulations**
+- Fully specified in [`003-shipping-simulator-recent-simulations`](../../003-shipping-simulator-recent-simulations/product-spec.md). Requirements for this feature are not duplicated here.
+
 
 **Prototype-specific**
 - **FR-015**: The prototype MUST include a language toggle (PT-BR / EN) in the top-right corner of the interface.

@@ -51,7 +51,15 @@ body{font-family:'Inter',sans-serif;background:#F8F7FC;color:#142032;display:fle
 .agent-avatar-lg{width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#F71963,#d41455);color:#fff;font-size:22px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-bottom:16px;box-shadow:0 4px 16px rgba(247,25,99,.2)}
 .agent-home-title{font-size:22px;font-weight:700;color:#142032;margin-bottom:6px}
 .agent-home-subtitle{font-size:14px;color:#5B6E84;max-width:460px;line-height:1.55}
-.suggestions-row{display:flex;gap:12px;margin-bottom:28px;flex-wrap:wrap;justify-content:center;max-width:680px}
+.suggestions-row{display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;justify-content:center;max-width:680px}
+.recents-section{width:100%;max-width:680px;margin-bottom:24px}
+.recents-section-title{font-size:11px;font-weight:600;color:#A1AAB7;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.recents-chips{display:flex;flex-direction:column;gap:6px}
+.recent-chip{display:flex;align-items:center;justify-content:space-between;background:#fff;border:1px solid #E7E9EE;border-radius:8px;padding:9px 14px;cursor:pointer;text-align:left;transition:border-color .12s,background .12s}
+.recent-chip:hover{border-color:#F71963;background:#FFF3F6}
+.recent-chip-main{font-size:13px;font-weight:500;color:#142032}
+.recent-chip-meta{font-size:11px;color:#A1AAB7;margin-top:2px;display:flex;gap:8px;flex-wrap:wrap}
+.recent-chip-time{font-size:11px;color:#A1AAB7;white-space:nowrap;flex-shrink:0}
 .suggestion-card{background:#fff;border:1px solid #E7E9EE;border-radius:10px;padding:12px 16px;cursor:pointer;text-align:left;min-width:180px;max-width:210px;transition:border-color .15s,box-shadow .15s;flex:1}
 .suggestion-card:hover{border-color:#FFC4DD;box-shadow:0 2px 8px rgba(247,25,99,.08)}
 .suggestion-title{font-size:13px;font-weight:600;color:#142032;margin-bottom:3px}
@@ -277,6 +285,13 @@ body{font-family:'Inter',sans-serif;background:#F8F7FC;color:#142032;display:fle
       <div class="agent-avatar-lg" id="home-avatar">A</div>
       <div class="agent-home-title" id="home-title">Olá, sou o Shipping Simulator Agent!</div>
       <div class="agent-home-subtitle" id="home-subtitle">Estou aqui para ajudar você a simular fretes, verificar disponibilidade e entender por que transportadoras foram desconsideradas.</div>
+    </div>
+    <div class="recents-section" id="recents-section" style="display:none">
+      <div class="recents-section-title">
+        <svg width="12" height="12" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="5.5" stroke="#A1AAB7" stroke-width="1.2"/><path d="M6.5 4v3l2 1.5" stroke="#A1AAB7" stroke-width="1.2" stroke-linecap="round"/></svg>
+        <span id="recents-label">Últimas simulações</span>
+      </div>
+      <div class="recents-chips" id="recents-chips"></div>
     </div>
     <div class="suggestions-row" id="suggestions-row"></div>
     <div class="home-input-wrap">
@@ -674,6 +689,105 @@ let pendingSkuType = null; // 'id' | 'ean' | 'name' — which input type the use
 let detailCtr = 0;
 let currentExcluded = [];
 
+// ── Recent simulations ────────────────────────────────────────────────────────
+const MAX_RECENTS = 5;
+const TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
+let recentSims = [];
+
+function recentsKey() {
+  // vtex_sim_recents_{accountName}_{userId}
+  // Prototype: client context acts as user identity proxy
+  return `vtex_sim_recents_${DATA[client].account}_demo_user`;
+}
+function loadRecents() {
+  try {
+    const raw = localStorage.getItem(recentsKey());
+    if (!raw) return [];
+    return JSON.parse(raw).filter(r => (Date.now() - r.ts) < TTL_MS);
+  } catch(e) { return []; }
+}
+function persistRecents() {
+  try { localStorage.setItem(recentsKey(), JSON.stringify(recentSims)); }
+  catch(e) { /* quota exceeded — fail silently */ }
+}
+const MOCK_RECENT_SIMS = {
+  pt: [
+    {sc:'1 — Ecommerce BR', seller:'Drogarias Pacheco Botafogo', sku:'Vitamina C 1000mg 60 comp.', zip:'01310-100', qty:2, ts: Date.now()-1000*60*52},
+    {sc:'1 — Ecommerce BR', seller:'Drogarias Pacheco',          sku:'Dipirona Sódica 500mg 20 comp.', zip:'22241-000', qty:1, ts: Date.now()-1000*60*60*4},
+    {sc:'2 — Ecommerce RJ', seller:'Drogarias Pacheco Barra',    sku:'Protetor Solar FPS 50 120ml', zip:'22070-010', qty:1, ts: Date.now()-1000*60*60*27},
+  ],
+  en: [
+    {sc:'1 — US Ecommerce',     seller:'Road Runner San Diego',   sku:'Running Shoe X Pro', zip:'92101', qty:1, ts: Date.now()-1000*60*38},
+    {sc:'2 — Canada Ecommerce', seller:'Road Runner Los Angeles', sku:'Trail Vest Lite',    zip:'90210', qty:2, ts: Date.now()-1000*60*60*6},
+  ]
+};
+
+function fmtRelTime(ts) {
+  const m = Math.floor((Date.now()-ts)/60000);
+  const h = Math.floor(m/60), d = Math.floor(h/24);
+  if (m<1)  return client==='pt'?'agora mesmo':'just now';
+  if (m<60) return client==='pt'?`há ${m} min`:`${m}m ago`;
+  if (h<24) return client==='pt'?`há ${h}h`:`${h}h ago`;
+  return client==='pt'?`há ${d}d`:`${d}d ago`;
+}
+
+function initRecentSims() {
+  const stored = loadRecents();
+  recentSims = stored.length ? stored : [...MOCK_RECENT_SIMS[client]];
+  if (!stored.length) persistRecents(); // seed localStorage with mock data
+  renderRecentSims();
+}
+
+function renderRecentSims() {
+  const isBR = client === 'pt';
+  const section = document.getElementById('recents-section');
+  const chips   = document.getElementById('recents-chips');
+  const label   = document.getElementById('recents-label');
+  label.textContent = isBR ? 'Últimas simulações' : 'Recent simulations';
+  if (!recentSims.length) { section.style.display = 'none'; return; }
+  section.style.display = 'block';
+  chips.innerHTML = recentSims.map((r,idx) => `
+    <div class="recent-chip" onclick="restoreRecentSim(${idx})">
+      <div>
+        <div class="recent-chip-main">${r.sku}${r.qty>1?` <span style="font-size:11px;color:#5B6E84">×${r.qty}</span>`:''} <span style="font-size:11px;font-weight:400;color:#5B6E84">· ${r.zip}</span></div>
+        <div class="recent-chip-meta"><span>${r.seller}</span><span>·</span><span>${r.sc}</span></div>
+      </div>
+      <span class="recent-chip-time">${fmtRelTime(r.ts)}</span>
+    </div>`).join('');
+}
+
+function saveRecentSim() {
+  if (!state.simulated || !state.skus.length) return;
+  const entry = {
+    sc: state.sc?.label || '—',
+    seller: state.seller?.name || '—',
+    sku: state.skus.map(s=>s.name).join(', '),
+    zip: state.zip || '—',
+    qty: state.qty,
+    ts: Date.now()
+  };
+  recentSims = recentSims.filter(r => !(r.sku===entry.sku && r.zip===entry.zip && r.seller===entry.seller));
+  recentSims.unshift(entry);
+  if (recentSims.length > MAX_RECENTS) recentSims = recentSims.slice(0, MAX_RECENTS);
+  persistRecents();
+}
+
+function restoreRecentSim(idx) {
+  const r = recentSims[idx];
+  const isBR = client === 'pt';
+  const d = DATA[client];
+  const seller = d.sellers.find(s => s.name === r.seller) || d.sellers[0];
+  const sc = d.sc.find(s => s.label === r.sc) || d.sc[0];
+  const sku = d.skus.find(s => r.sku.includes(s.name.split(' ')[0])) || d.skus[0];
+  state = {sc, seller, skus:[sku], zip:r.zip, qty:r.qty, simulated:false};
+  showThread();
+  appendMsg('user', isBR
+    ? `Restaurar: ${r.sku} · CEP ${r.zip} · ${r.seller}`
+    : `Restore: ${r.sku} · ZIP ${r.zip} · ${r.seller}`);
+  renderCtxBar();
+  setTimeout(() => runSimulation(d, d.i18n), 700);
+}
+
 // ── Init ──────────────────────────────────────────────────────────────────────
 function init() { setClient('pt'); }
 
@@ -695,6 +809,7 @@ function setClient(c) {
   document.getElementById('home-send-label').textContent = i['btn-send'];
   document.getElementById('thread-send-label').textContent = i['btn-send'];
   buildHomeView(d, i);
+  initRecentSims();
   showHome();
 }
 
@@ -1197,6 +1312,7 @@ async function runSimulation(d, i) {
   hideTyping();
 
   state.simulated = true;
+  saveRecentSim();
   currentExcluded = d.excluded;
   renderCtxBar();
   appendResultCard(d, i, d.slas, d.pickups, d.excluded);
