@@ -45,10 +45,13 @@ This can lead to customer churn, missed upsell opportunities, and difficulties t
 ### 3. Opportunity size
 
 **What should we focus on?** The primary audience for VTEX Pick and Pack is large and medium-sized retailers with physical stores who want to leverage the omnichannel experience, where rising cost pressures, tight margins and offline with online inventory management are critical points. Any merchant fulfilling from physical store can be benefitted by VTEX Pick and Pack, due to the nature of the issues listed above; however, our Ideal Customer Profile includes the following segments, in order of relevance: 1. groceries and 2. pharma, due to the need for fast deliveries, order changes and managing high assortment levels; and 3. fashion, which deals with high store footprint and the pressure to operate more efficiently with the current labour capacity. 
+
 Smaller operations (<5 orders/store/day, less than 5 stores per merchant) are not included since the need for a fulfillment software is reduced due to the low complexity and costs of order handling. We want to prioritize opportunities from both store front (which may synergize with Sales App) and backrooms, plus darkstores or mid-sized warehouses. Larger warehouses or distribution centers (>5k orders/day/location) are not our target audience, since the complex needs of operating in this scale with multiple hardwares and highly specific software business rules are already addressed in the market with established WMS or ERP systems.
+
 We can split the size of the opportunity into some key groups (TAM breakdown can be found in the Appendix tab): 
 i. current VTEX customer base in the segments listed above - The TAM (Total Addressable Market) of upselling is USD 28 million of ACV; 
 ii. new VTEX logos with Omnichannel strategy or a new revenue stream with a standalone DOM offer bundled with Pick and Pack. A large share of the market still relies on outdated, homegrown OMS solutions or heavily customized ERP connectors that no longer scale, and they fail to provide near real-time, omnichannel inventory visibility at the critical moments that influence cart abandonment. [14] For new Omnichannel logos or a standalone DOM (groceries, pharma and fashion), the TAM is USD 133 million of ACV.
+
 Given that VTEX Pick and Pack still has some gaps to address, based on the High-Level Phasing plan we should focus first on Groceries with the development of Phase 2. Fashion should come next with Phase 3, while Phase 4 will strengthen our Pharma value proposition. Detailed ACV by region can be found in Add-ons Strategy Review file.
 
 ### 4. Use Cases
