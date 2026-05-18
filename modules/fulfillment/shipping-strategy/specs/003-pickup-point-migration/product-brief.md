@@ -31,8 +31,6 @@ The result: merchants with stores or DCs beyond 50km from a shopper cannot surfa
 
 **This is especially damaging for B2B operations, particularly in countries with large territories such as Brazil, the United States, and Canada.** In B2B commerce, buyers frequently travel significant distances to pick up orders at distribution centers, fulfillment hubs, or partner locations — often across cities or even states. The purchase decision is driven by product availability, price, and the total cost of the operation, not by proximity. A buyer placing a large order of construction materials, industrial equipment, or wholesale goods routinely travels 100–300km to a DC because the freight cost for those items is prohibitive. The 50km limit has no basis in this business model: it silently removes the pickup option from checkout, forcing the buyer to either pay for long-distance freight or abandon the order entirely. For B2B merchants like RONA and Mazda, this is a direct and measurable revenue loss.
 
-
-
 ---
 
 ## Reasons to Act Now
