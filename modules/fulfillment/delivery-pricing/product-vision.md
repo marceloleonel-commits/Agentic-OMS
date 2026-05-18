@@ -1,9 +1,9 @@
 [Product Vision]: 3-Year Delivery Pricing — Fulfillment Price Control
 
-| Status | Draft | Owner(s) | [Carolina Rodrigues](mailto:carolina.rodrigues@vtex.com) |
+| Status | Draft | Owner(s) | [Carolina Tourinho](mailto:carolina.rodrigues@vtex.com) |
 |---|---|---|---|
 | Last Updated | May 2026 | Approver(s) | [Julia Grisi Lolato](mailto:julia.lolato@vtex.com) |
-| Created | May 2026 | Author(s) | [Carolina Rodrigues](mailto:carolina.rodrigues@vtex.com) |
+| Created | May 2026 | Author(s) | [Carolina Tourinho](mailto:carolina.rodrigues@vtex.com) |
 |  |  | Channel | #dom-product-vertical |
 
 ---

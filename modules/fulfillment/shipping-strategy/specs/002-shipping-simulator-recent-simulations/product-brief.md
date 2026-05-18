@@ -4,7 +4,7 @@
 |---|---|
 | **Module** | Fulfillment |
 | **Feature** | shipping-strategy |
-| **PM** | Carol Tourinho |
+| **PM** | Carolina Tourinho |
 | **Eng Champion** | TBD |
 | **Status** | Under definition |
 | **Expected Release** | TBD |

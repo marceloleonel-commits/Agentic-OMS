@@ -4,7 +4,7 @@
 |---|---|
 | **Pillar** | Accurate availability · Lowest cost-to-serve |
 | **GPM** | [Julia Grisi Lolato](mailto:julia.lolato@vtex.com) |
-| **PM** | [Carolina Rodrigues](mailto:carolina.rodrigues@vtex.com) |
+| **PM** | [Carolina Tourinho](mailto:carolina.rodrigues@vtex.com) |
 | **EM** | [Ronan Cruz](mailto:ronan.cruz@vtex.com) |
 | **Status** | Active |
 

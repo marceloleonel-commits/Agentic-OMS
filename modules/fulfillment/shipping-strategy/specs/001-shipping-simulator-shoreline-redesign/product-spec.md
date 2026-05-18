@@ -1,5 +1,18 @@
 # Product Spec — Shipping Simulator: Shoreline Redesign with Logistics Visibility
 
+## App Identity
+
+| Field | Value |
+|---|---|
+| **App name** | `admin-shipping-simulation` |
+| **Vendor** | `vtex` |
+| **Proposed admin route** | `/admin/shipping-simulation` |
+| **Current legacy route** | `/admin/logistics#/freight-simulation` (hash-based, Knockout.js) |
+| **Builders required** | `admin`, `react`, `node` |
+| **Migration note** | The legacy route should redirect to `/admin/shipping-simulation` on GA. The two routes may coexist during the transition period. No change to the URL is required for the prototype — this applies to the production Raccoon app. |
+
+---
+
 ## Clarifications
 
 - Q: Should the sales channel dropdown show only active sales channels? → A: Yes. Only active sales channels should be listed.
@@ -218,6 +231,38 @@ See [`api-error-diagnostics.md`](./api-error-diagnostics.md) for the full decisi
 - The existing simulation API (`/api/logistics/pvt/shipping/estimate`) returns the `freightSimulatedForAi` structure with `carriersNotChosenList`, `inventoryDetails`, `routeAnalysis`, and `operationalCapacity` as documented.
 - Kit metadata fields (postal code range, weight range) require investigation to determine if the fix is purely frontend (rendering) or requires a backend change. Engineering input needed.
 - The prototype uses mocked data and does not make real API calls.
+
+---
+
+## Raccoon Implementation Notes
+
+### Component mapping
+The full HTML element → Shoreline component mapping is documented in [`prototype/README.md → Shoreline component map`](../../../prototype/README.md). The table below covers only the production-specific additions not captured in the prototype.
+
+| UI area | Raccoon / Shoreline component | Notes |
+|---|---|---|
+| Page shell | `Page` + `PageHeader` + `PageContent` | Standard Raccoon layout — do not build a custom shell |
+| Admin nav entry | `NavItem` in `sidebar.json` | Route: `/admin/shipping-simulation`, icon: `ShippingFast` (or closest available) |
+| Recent simulations | `Drawer` or collapsible `Section` | Triggered from a secondary action in the header; see spec `003-shipping-simulator-recent-simulations` |
+| Carrier rejection detail | `Tooltip` or expandable `TableRow` | Inline in the results table; no modal required |
+| Confirmation dialog (agentic carrier activation) | `Modal` with `ModalHeader`, `ModalBody`, `ModalFooter` | Required before any carrier activate/deactivate action per FR-020 and FR-021 |
+
+### Shared component across both tracks
+Both the classic UI and the agentic UI render the same simulation results. The prototype has this as duplicated markup. In production, extract as a shared component:
+
+```tsx
+<ShippingResultsTable
+  slas={slas}
+  pickups={pickups}
+  rejectedCarriers={rejectedCarriers}
+  currency={{ code: currencyCode, symbol: currencySymbol }}
+/>
+```
+
+The agentic UI additionally needs `<RejectedCarriersModal />` inline in the chat response. The classic UI renders it as a collapsible section below the SLA table.
+
+### Why `carriersNotChosenList` is a frontend-only change
+The simulation API (`POST /api/logistics/pvt/shipping/calculate`, pvt version) already returns `carriersNotChosenList` with `reasonCode` per excluded carrier. The legacy Knockout.js simulator receives this data and silently discards it. Surfacing rejection reasons is a **frontend-only change** — no backend work required.
 
 ---
 

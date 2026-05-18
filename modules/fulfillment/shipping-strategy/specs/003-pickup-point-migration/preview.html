@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SS-003 · Pickup Point Radius Removal + Proximity Display</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: #F8F7FC; color: #142032; font-size: 14px; line-height: 1.6; }
+
+  /* Layout */
+  .page { max-width: 900px; margin: 0 auto; padding: 40px 24px 80px; }
+
+  /* Doc tabs */
+  .tabs { display: flex; gap: 4px; margin-bottom: 32px; border-bottom: 2px solid #E7E9EE; }
+  .tab { padding: 10px 20px; font-size: 13px; font-weight: 500; color: #5B6E84; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all .15s; }
+  .tab:hover { color: #142032; }
+  .tab.active { color: #F71963; border-bottom-color: #F71963; }
+  .doc { display: none; }
+  .doc.active { display: block; }
+
+  /* Header */
+  .doc-header { background: #fff; border: 1px solid #E7E9EE; border-radius: 10px; padding: 28px 32px; margin-bottom: 28px; }
+  .doc-tag { display: inline-flex; align-items: center; gap: 6px; background: #FFE0EF; color: #F71963; font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 20px; letter-spacing: .04em; text-transform: uppercase; margin-bottom: 12px; }
+  .doc-title { font-size: 22px; font-weight: 700; color: #142032; margin-bottom: 8px; line-height: 1.3; }
+  .doc-subtitle { font-size: 13px; color: #5B6E84; }
+
+  /* Metadata table */
+  .meta-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .meta-table td { padding: 7px 12px; border-bottom: 1px solid #E7E9EE; vertical-align: top; }
+  .meta-table td:first-child { font-weight: 600; color: #5B6E84; width: 200px; white-space: nowrap; }
+  .meta-table tr:last-child td { border-bottom: none; }
+
+  /* Sections */
+  .section { background: #fff; border: 1px solid #E7E9EE; border-radius: 10px; padding: 24px 32px; margin-bottom: 16px; }
+  .section-title { font-size: 13px; font-weight: 700; color: #F71963; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+  .section-title::after { content: ''; flex: 1; height: 1px; background: #FFE0EF; }
+
+  h2 { font-size: 16px; font-weight: 700; color: #142032; margin: 0 0 14px; }
+  h3 { font-size: 14px; font-weight: 600; color: #142032; margin: 20px 0 10px; }
+  h3:first-child { margin-top: 0; }
+  p { color: #142032; margin-bottom: 12px; }
+  p:last-child { margin-bottom: 0; }
+
+  ul, ol { padding-left: 20px; margin-bottom: 12px; }
+  li { margin-bottom: 6px; color: #142032; }
+  li:last-child { margin-bottom: 0; }
+
+  strong { font-weight: 600; }
+  em { font-style: italic; color: #5B6E84; }
+  code { font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; background: #F8F7FC; border: 1px solid #E7E9EE; border-radius: 4px; padding: 1px 5px; color: #142032; }
+
+  pre { background: #142032; color: #E7E9EE; border-radius: 8px; padding: 16px 20px; font-size: 12px; font-family: 'SF Mono', 'Fira Code', monospace; overflow-x: auto; margin: 12px 0; line-height: 1.5; }
+  pre code { background: none; border: none; padding: 0; color: inherit; font-size: inherit; }
+
+  blockquote { border-left: 3px solid #F71963; background: #FFF3F6; padding: 12px 16px; border-radius: 0 6px 6px 0; margin: 12px 0; }
+  blockquote p { color: #142032; font-style: italic; margin: 0; }
+  blockquote p + p { margin-top: 4px; font-style: normal; font-size: 12px; color: #5B6E84; }
+
+  /* Tables */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 12px 0; }
+  th { background: #F8F7FC; font-weight: 600; color: #5B6E84; padding: 8px 12px; text-align: left; border-bottom: 2px solid #E7E9EE; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+  td { padding: 8px 12px; border-bottom: 1px solid #E7E9EE; vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #FFF3F6; }
+
+  /* MMR box */
+  .mmr-box { background: linear-gradient(135deg, #FFE0EF 0%, #FFF3F6 100%); border: 1px solid #FFC4DD; border-radius: 8px; padding: 20px 24px; margin-bottom: 0; }
+  .mmr-label { font-size: 10px; font-weight: 700; color: #F71963; text-transform: uppercase; letter-spacing: .08em; margin-bottom: 8px; }
+  .mmr-title { font-size: 16px; font-weight: 700; color: #142032; margin-bottom: 10px; }
+  .mmr-desc { font-size: 13px; color: #5B6E84; line-height: 1.6; }
+
+  /* User story */
+  .us-card { border: 1px solid #E7E9EE; border-radius: 8px; padding: 16px 20px; margin-bottom: 12px; }
+  .us-card:last-child { margin-bottom: 0; }
+  .us-id { display: inline-block; background: #142032; color: #fff; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 4px; margin-bottom: 10px; }
+  .us-card h4 { font-size: 13px; font-weight: 600; color: #142032; margin-bottom: 10px; }
+  .us-narrative { background: #F8F7FC; border-radius: 6px; padding: 10px 14px; margin-bottom: 10px; font-size: 13px; color: #5B6E84; }
+  .us-narrative span { display: block; margin-bottom: 3px; }
+  .us-narrative span:last-child { margin-bottom: 0; }
+  .ac-label { font-size: 11px; font-weight: 700; color: #5B6E84; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 6px; }
+
+  /* FR list */
+  .fr-item { display: flex; gap: 12px; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid #F8F7FC; }
+  .fr-item:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: none; }
+  .fr-id { flex-shrink: 0; background: #FFC4DD; color: #F71963; font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 4px; height: fit-content; margin-top: 1px; }
+  .fr-body strong { font-size: 13px; color: #142032; display: block; margin-bottom: 4px; }
+  .fr-body p { font-size: 13px; color: #5B6E84; margin: 0; }
+
+  /* Constraint table */
+  .constraint-tag { display: inline-block; background: #FFF3F6; border: 1px solid #FFC4DD; color: #F71963; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 4px; }
+
+  /* Priority pills */
+  .pill { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 20px; }
+  .pill-high { background: #FFE0EF; color: #F71963; }
+  .pill-medium { background: #E7E9EE; color: #5B6E84; }
+  .pill-low { background: #F8F7FC; color: #A1AAB7; }
+
+  /* Step cards */
+  .steps { display: grid; gap: 10px; }
+  .step { display: flex; gap: 14px; align-items: flex-start; padding: 14px; background: #F8F7FC; border-radius: 8px; }
+  .step-num { flex-shrink: 0; width: 28px; height: 28px; background: #F71963; color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; }
+  .step-body strong { display: block; font-size: 13px; color: #142032; margin-bottom: 3px; }
+  .step-body p { font-size: 12px; color: #5B6E84; margin: 0; }
+
+  /* Out of scope */
+  .oos-list { display: grid; gap: 6px; }
+  .oos-item { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; color: #5B6E84; }
+  .oos-item::before { content: '—'; color: #A1AAB7; flex-shrink: 0; }
+
+  /* PM data */
+  .resolved-badge { display: inline-flex; align-items: center; gap: 4px; background: #def7e6; color: #0a7a3b; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 20px; margin-bottom: 8px; }
+
+  a { color: #F71963; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  hr { border: none; border-top: 1px solid #E7E9EE; margin: 20px 0; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <div class="tab active" onclick="showTab('brief')">Product Brief</div>
+    <div class="tab" onclick="showTab('spec')">Product Spec</div>
+  </div>
+
+  <!-- ══════════════════════════════════════════
+       PRODUCT BRIEF
+  ══════════════════════════════════════════ -->
+  <div id="brief" class="doc active">
+
+    <div class="doc-header">
+      <div class="doc-tag">SS-003 · Product Brief</div>
+      <div class="doc-title">Pickup Point Radius Removal + Proximity Display</div>
+      <div class="doc-subtitle">Fulfillment → Shipping Strategy · Under definition</div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Metadata</div>
+      <table class="meta-table">
+        <tr><td>Module</td><td>Fulfillment</td></tr>
+        <tr><td>Feature</td><td>Shipping Strategy</td></tr>
+        <tr><td>PM</td><td>Carolina Tourinho</td></tr>
+        <tr><td>Eng Champion</td><td>TBD</td></tr>
+        <tr><td>Status</td><td>Under definition</td></tr>
+        <tr><td>Expected Release</td><td>TBD</td></tr>
+        <tr><td>Mode</td><td>B2C &amp; B2B</td></tr>
+      </table>
+    </div>
+
+    <div class="section">
+      <div class="section-title">MMR</div>
+      <div class="mmr-box">
+        <div class="mmr-label">Minimally Marketable Release</div>
+        <div class="mmr-title">Pickup Point Radius — Infrastructure Migration to Unlock Scale</div>
+        <div class="mmr-desc">With this release, shoppers will see all eligible pickup points regardless of distance — not just those within the current ~50km platform limit. Merchants will no longer need to open a support request to VTEX to increase the pickup point radius for their account. This is enabled by migrating the Pickup Point data layer off MasterData, eliminating the architectural root cause of the radius constraint and unblocking orders that today are silently lost because the nearest pickup option is just beyond our technical limit.</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Motivation</div>
+      <h3>The constraint is ours, not the merchant's</h3>
+      <p>The ~50km pickup point limit does not reflect any business rule. It exists because MasterData geo-radius queries become cost-prohibitive above that threshold at scale. VTEX created this limit to protect our own infrastructure — and has been passing it to merchants as if it were a product decision ever since.</p>
+      <p>The result: merchants with stores or DCs beyond 50km from a shopper cannot surface those locations at checkout. The shopper sees no pickup option, no error, no explanation — and either abandons the cart or completes the purchase through another channel outside VTEX.</p>
+      <p><strong>This is especially damaging for B2B operations, particularly in countries with large territories such as Brazil, the United States, and Canada.</strong> In B2B commerce, buyers frequently travel significant distances to pick up orders at distribution centers, fulfillment hubs, or partner locations — often across cities or even states. The purchase decision is driven by product availability, price, and total cost of the operation, not by proximity. A buyer placing a large order of construction materials, industrial equipment, or wholesale goods routinely travels 100–300km to a DC because freight cost for those items is prohibitive. The 50km limit has no basis in this business model: it silently removes the pickup option from checkout, forcing the buyer to either pay for long-distance freight or abandon the order entirely. For B2B merchants like RONA and Mazda, this is a direct and measurable revenue loss.</p>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Reasons to Act Now</div>
+      <div class="fr-item">
+        <div class="fr-id">1</div>
+        <div class="fr-body">
+          <strong>Company direction: move off MasterData to robust, scalable databases.</strong>
+          <p>VTEX has made a strategic decision to migrate all products off MasterData. Pickup Points is one of the last remaining modules still dependent on it. Staying means operating on legacy infrastructure with reduced support and growing friction as the rest of the platform evolves.</p>
+        </div>
+      </div>
+      <div class="fr-item">
+        <div class="fr-id">2</div>
+        <div class="fr-body">
+          <strong>Cost effectiveness: we can run this better for less.</strong>
+          <p>The current MasterData infrastructure for Pickup Points costs approximately ~US$7,600/month, growing with the pickup point base. A more robust database handles geo-radius queries at any distance without the constraints that made the 50km limit necessary — better solution, less spend.</p>
+        </div>
+      </div>
+      <div class="fr-item">
+        <div class="fr-id">3</div>
+        <div class="fr-body">
+          <strong>Strategic alignment with VTEX's growth.</strong>
+          <p>As VTEX expands its footprint across large-territory markets, pickup points become increasingly relevant. The 50km limit is a direct blocker for merchants with distributed networks. Removing it is a prerequisite for making pickup a viable channel as the platform scales.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Scope</div>
+      <ul>
+        <li>Migrate Pickup Point entity off MasterData to a new data layer (engineering study required; storage decision owned by engineering).</li>
+        <li>Remove the ~50km <code>maxDistance</code> limit, allowing the API to return up to 300 pickup points regardless of distance.</li>
+        <li>Remove the radius configuration step from the Admin frontend.</li>
+        <li>Preserve all existing pickup point data and backward compatibility.</li>
+        <li>Execute a progressive rollout. Migration plan — phasing, rollback strategy, validation criteria — defined by engineering as part of the technical study.</li>
+      </ul>
+      <hr>
+      <h3>Not in Scope</h3>
+      <div class="oos-list">
+        <div class="oos-item">Merchant-configurable radius &gt; 50km — future capability, separate spec.</div>
+        <div class="oos-item">Pickup point creation or management flows beyond the radius removal.</div>
+        <div class="oos-item">Resolution of the 10k PUP API response cap — separate follow-up.</div>
+        <div class="oos-item">International coverage — Brazil only at launch.</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Target Audience</div>
+      <table>
+        <tr><th>Field</th><th>Value</th></tr>
+        <tr><td>Tier</td><td>All tiers</td></tr>
+        <tr><td>Merchant Profile</td><td>Omnichannel retailers, merchants with large physical networks or low-density store coverage</td></tr>
+        <tr><td>Anchor merchants</td><td>RONA, Arcaplanet, Mazda</td></tr>
+        <tr><td>Persona</td><td>Shopper (primary impact); Logistics Configurator (eliminates manual radius increase requests)</td></tr>
+        <tr><td>Pain</td><td>Valid pickup points silently excluded from checkout due to a platform-level distance constraint unrelated to any business rule</td></tr>
+      </table>
+    </div>
+
+  </div><!-- /brief -->
+
+
+  <!-- ══════════════════════════════════════════
+       PRODUCT SPEC
+  ══════════════════════════════════════════ -->
+  <div id="spec" class="doc">
+
+    <div class="doc-header">
+      <div class="doc-tag">SS-003 · Product Spec</div>
+      <div class="doc-title">Pickup Point Radius Removal</div>
+      <div class="doc-subtitle">Fulfillment → Shipping Strategy · Draft · May 2026</div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Metadata</div>
+      <table>
+        <tr><td><strong>Spec ID</strong></td><td>SS-003</td></tr>
+        <tr><td><strong>Module</strong></td><td>Fulfillment → Shipping Strategy</td></tr>
+        <tr><td><strong>Feature Area</strong></td><td>Pickup Points</td></tr>
+        <tr><td><strong>Author</strong></td><td>Carolina Tourinho</td></tr>
+        <tr><td><strong>Status</strong></td><td>Draft</td></tr>
+        <tr><td><strong>Infrastructure dependency</strong></td><td>Mandatory migration of the Pickup Point data layer off MasterData. Target database to be defined by engineering. This spec cannot ship without the migration.</td></tr>
+        <tr><td><strong>Source documents</strong></td><td>2026 DOM On Site deck; Customer Need — RONA; Arcaplanet; Mazda</td></tr>
+      </table>
+    </div>
+
+    <div class="section">
+      <div class="section-title">MMR</div>
+      <div class="mmr-box">
+        <div class="mmr-label">Minimally Marketable Release</div>
+        <div class="mmr-title">Pickup Point Radius Removal</div>
+        <div class="mmr-desc">With this release, shoppers will see all eligible pickup points regardless of distance — not just those within the current ~50km platform limit — up to the existing API cap of 300 results. Merchants will no longer need to open a support request to VTEX to increase the pickup point radius. This is enabled by migrating the Pickup Point data layer off MasterData, eliminating the architectural root cause of the radius constraint. The radius configuration step is removed from the Admin setup flow — unblocking orders that today are silently lost because the nearest pickup option is just beyond our technical limit.</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Clarifications</div>
+      <ul>
+        <li><strong>The primary deliverable is an infrastructure migration.</strong> The migration to a scalable data layer — selected by engineering after a technical study — is the prerequisite for everything else in this spec.</li>
+        <li><strong>This spec addresses two coupled problems:</strong> (1) the hard 50km radius limit that hides valid pickup points from shoppers in checkout, and (2) the merchant-facing radius configuration step that should be eliminated from the setup journey.</li>
+        <li><strong>The 50km limit is a MasterData constraint, not a product decision.</strong> Removing it requires migrating off MasterData first. Cost-driven (~US$7,600/month recurring).</li>
+        <li><strong>Current behavior:</strong> up to 300 pickup points ordered by proximity, filtered to ~50km radius. ZIP-to-coordinate conversion, proximity ordering, and the <code>distance</code> field already exist. Points beyond ~50km are silently excluded.</li>
+        <li><strong>Target behavior:</strong> same 300 pickup points, same proximity ordering, same API contract — with no distance ceiling on <code>maxDistance</code>. New <code>distanceKm</code> field added to each entry.</li>
+        <li><strong>A second coupled constraint:</strong> the Shipping API returns up to 10k PUPs per call including inactive ones. Accounts with &gt;10k PUPs risk incomplete Delivery Promise indexation. Out of scope — follow-up spec.</li>
+      </ul>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Problem Statement</div>
+
+      <h3>Why Now — MasterData Cost and the Company-Wide Migration</h3>
+      <p>VTEX is migrating all products off MasterData. Pickup Points is one of the last modules still on it. The cost today is <strong>~US$7,600/month</strong>, recurring and growing as the pickup point base expands. This cost is being transferred to our team as the service owner.</p>
+      <p>This is not a future risk — it is an active, increasing expense with no upside to staying. Every other VTEX product that has moved off MasterData has gained query reliability, scalability, and cost reduction.</p>
+      <p>This migration is the forcing function that makes the product improvements in this spec possible. We are not migrating databases to ship a nicer UI — we are migrating because we have to, and we are using that migration to fix the radius constraint that has been blocking revenue.</p>
+
+      <h3>The 50km Limit — Our Technical Constraint, Their Business Problem</h3>
+      <p>Today, any merchant who needs a radius above 50km must open a request and wait for PM analysis before VTEX manually increases it. This process exists entirely because of <strong>our own technical limitations</strong> — not because 50km is the right business rule for anyone.</p>
+      <p><strong>The consequences are real and documented:</strong></p>
+      <ul>
+        <li><strong>Merchants lose orders</strong> from shoppers whose nearest pickup point is beyond 50km. The shopper sees no pickup option in checkout — no error, no explanation — and either abandons or buys elsewhere.</li>
+        <li><strong>High-ticket and heavy items</strong>: long-distance delivery is too expensive; buyers are willing to travel 80–150km to a store or DC to avoid freight cost. The radius hides that option.</li>
+        <li><strong>Low store density regions</strong>, such as Brazil, the United States, and Canada: a single flagship or DC naturally serves a much larger geographic area. The 50km circle excludes most of its real catchment.</li>
+      </ul>
+      <blockquote>
+        <p>"The core issue is the fixed ~50km pickup radius, which hides valid stores that customers would realistically use, so they never appear in checkout."</p>
+        <p>— Customer Need, RONA and Arcaplanet</p>
+      </blockquote>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Vision</div>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <strong>Migrate Pickup Point data off MasterData</strong>
+            <p>Engineering owns the database selection; the migration is the prerequisite for everything else in this spec.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <strong>Remove the radius configuration from the Admin frontend</strong>
+            <p>Merchants should not be required to define a radius when setting up a pickup point shipping policy.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <strong>Surface the nearest eligible pickup points at checkout</strong>
+            <p>Proximity-ordered, not radius-filtered — respecting the existing 300 pickup point API response limit.</p>
+          </div>
+        </div>
+      </div>
+      <p style="margin-top:14px; font-style:italic; color:#5B6E84; font-size:13px;">"I enter my ZIP and see the closest pickup options, however far they are." — not just options within an arbitrary 50km ceiling.</p>
+    </div>
+
+    <div class="section">
+      <div class="section-title">User Stories</div>
+
+      <div class="us-card">
+        <div class="us-id">US-01</div>
+        <h4>Software Engineer Migrates Pickup Point Data Layer Off MasterData (prerequisite)</h4>
+        <div class="us-narrative">
+          <span><strong>As</strong> a software engineer,</span>
+          <span><strong>I want</strong> to evaluate candidate databases, run comparative tests, and execute a migration plan for the Pickup Point data layer off MasterData,</span>
+          <span><strong>So that</strong> the architectural root cause of the 50km constraint is eliminated and the platform can scale at lower cost and higher reliability.</span>
+        </div>
+        <div class="ac-label">Acceptance Criteria</div>
+        <ul>
+          <li>Engineering produces a comparative study covering query performance, infrastructure cost, operational complexity, and migration risk.</li>
+          <li>A migration plan is defined with phasing, rollback strategy, and validation criteria at each stage.</li>
+          <li>Existing pickup point data is fully preserved with no data loss.</li>
+          <li>All existing shipping policies and storefront integrations continue to function without modification.</li>
+        </ul>
+      </div>
+
+      <div class="us-card">
+        <div class="us-id">US-02</div>
+        <h4>Shopper Beyond 50km Sees Valid Pickup Options</h4>
+        <div class="us-narrative">
+          <span><strong>As</strong> a shopper whose nearest pickup point is 80km away,</span>
+          <span><strong>I want</strong> to see that pickup point as an option at checkout,</span>
+          <span><strong>So that</strong> I can choose to travel there instead of paying for long-distance delivery on a heavy or high-ticket item.</span>
+        </div>
+        <div class="ac-label">Acceptance Criteria</div>
+        <ul>
+          <li>Pickup points beyond 50km from the shopper's ZIP centroid are eligible and returned in the checkout response.</li>
+          <li>There is no platform-level distance ceiling that excludes pickup points based on km.</li>
+          <li>The shopper sees pickup points ordered by ascending proximity.</li>
+        </ul>
+      </div>
+
+      <div class="us-card">
+        <div class="us-id">US-03</div>
+        <h4>Merchant No Longer Configures Radius</h4>
+        <div class="us-narrative">
+          <span><strong>As</strong> a Logistics Configurator setting up a new pickup point,</span>
+          <span><strong>I want</strong> to skip the radius definition step entirely,</span>
+          <span><strong>So that</strong> I don't have to reason about which ZIP codes the pickup point should serve — the system handles proximity automatically.</span>
+        </div>
+        <div class="ac-label">Acceptance Criteria</div>
+        <ul>
+          <li>The radius configuration field is removed from the pickup point shipping policy setup flow in the Admin.</li>
+          <li>Existing configurations continue to work without any merchant action.</li>
+          <li>The pickup point setup journey is reduced from 7 steps to 6 or fewer.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Functional Requirements</div>
+      <div class="fr-item">
+        <div class="fr-id">FR-001</div>
+        <div class="fr-body">
+          <strong>Remove the ~50km maxDistance Ceiling</strong>
+          <p>Post-migration, <code>maxDistance</code> on <code>_searchsellers</code> must not be capped at ~50km. Returns up to 300 pickup points ordered by ascending proximity.</p>
+        </div>
+      </div>
+      <div class="fr-item">
+        <div class="fr-id">FR-002</div>
+        <div class="fr-body">
+          <strong>Remove Radius Configuration from Admin</strong>
+          <p>The radius definition step must be removed from the pickup point shipping policy setup flow.</p>
+        </div>
+      </div>
+      <div class="fr-item">
+        <div class="fr-id">FR-003</div>
+        <div class="fr-body">
+          <strong>Preserve Existing Merchant Configurations</strong>
+          <p>All existing shipping policies and pickup point configurations must continue to work without any merchant action post-migration.</p>
+        </div>
+      </div>
+      <div class="fr-item">
+        <div class="fr-id">FR-004</div>
+        <div class="fr-body">
+          <strong>Backward Compatibility</strong>
+          <p>All changes are additive and transparent to API consumers. Existing storefronts, integrations, and shipping policies must continue to function without modification.</p>
+        </div>
+      </div>
+      <div class="fr-item">
+        <div class="fr-id">FR-005</div>
+        <div class="fr-body">
+          <strong>Documentation Review</strong>
+          <p>Update <a href="https://help.vtex.com/docs/tutorials/pickup-points">help.vtex.com/docs/tutorials/pickup-points</a> and close <a href="https://community.vtex.com/t/request-to-increase-pickup-point-radius/42497">the community radius request thread</a> before shipping.</p>
+        </div>
+      </div>
+      <div class="fr-item">
+        <div class="fr-id">FR-006</div>
+        <div class="fr-body">
+          <strong>Account Mapping (pre-launch prerequisite)</strong>
+          <p>Produce a mapping of all accounts with active PUPs segmented by: (a) radius manually increased >50km and (b) accounts at the 50km default with meaningful shopper ZIP coverage beyond 50km.</p>
+        </div>
+      </div>
+      <div class="fr-item">
+        <div class="fr-id">FR-007</div>
+        <div class="fr-body">
+          <strong>Observability (hard requirement)</strong>
+          <p><strong>Cohort A</strong> — accounts with radius already manually increased (FR-006 cohort):</p>
+          <table style="margin:8px 0;">
+            <tr><th>Indicator</th><th>What it measures</th></tr>
+            <tr><td>% orders <code>pickup-in-point</code> (pre/post)</td><td>Behavioral change even for accounts above 50km</td></tr>
+            <tr><td>Distance distribution of selected PUPs (pre/post)</td><td>Whether distribution shifts further out</td></tr>
+          </table>
+          <p><strong>Cohort B</strong> — accounts at 50km default:</p>
+          <table style="margin:8px 0;">
+            <tr><th>Indicator</th><th>What it measures</th></tr>
+            <tr><td>% orders <code>pickup-in-point</code> (pre/post)</td><td>Primary signal: did pickup adoption increase?</td></tr>
+            <tr><td>Distance distribution of selected PUPs (pre/post)</td><td>% orders where selected PUP was >50km from shopper ZIP</td></tr>
+            <tr><td>Pickup offer rate at checkout (pre/post)</td><td>% sessions with at least one pickup option shown</td></tr>
+          </table>
+          <p><strong>Infrastructure:</strong> API latency P50/P95/P99 on <code>_searchsellers</code> (pre/post).</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Revenue Impact Measurement Framework</div>
+      <p style="margin-bottom:8px;color:#142032;font-size:13px;">Core hypothesis: <strong>removing the radius limit unlocks orders that today are either abandoned or completed outside VTEX.</strong></p>
+      <p style="margin-bottom:16px;color:#5B6E84;font-size:13px;">The practical approach is to use the cohort we already have: <strong style="color:#142032;">accounts (and their sellers) that requested a manual radius increase from VTEX</strong> — i.e., units with a confirmed, documented constraint today.</p>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-body">
+            <strong>Build the cohort (pre-launch)</strong>
+            <p>Using the Product Support data (35 requests, 25 executions in 2025), identify all accounts and sellers that received a manually increased radius. These are the units we track.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-body">
+            <strong>Establish baseline per seller (pre-launch)</strong>
+            <p>For each seller in the cohort, record: % of sessions where at least one pickup option was shown, % of orders with <code>selectedDeliveryChannel=pickup-in-point</code>, and distance distribution of the pickup points currently surfaced.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-body">
+            <strong>Post-launch tracking (per seller)</strong>
+            <p>After removing the limit, track the same indicators. Did more sessions surface a pickup option? Did more orders close via pickup? Did the distance distribution shift — are shoppers now selecting PUPs that were previously hidden?</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <div class="step-body">
+            <strong>Interpret and report</strong>
+            <p>A lift in pickup offer rate and conversion for the cohort is the signal that the radius was the binding constraint. This is the most credible data point for leadership: it is based on accounts with a confirmed, documented need — not a modeled estimate.</p>
+          </div>
+        </div>
+      </div>
+      <blockquote style="margin-top:16px;">
+        <p><strong>Example:</strong> Mazda is a parent account with multiple sellers, each with a manually increased radius. The cohort is those sellers — not just the parent account. We track each seller individually before and after the limit removal.</p>
+      </blockquote>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Infrastructure Dependency</div>
+      <table>
+        <tr><th>Constraint</th><th>Root Cause</th><th>Resolution</th></tr>
+        <tr><td><span class="constraint-tag">~50km radius ceiling</span></td><td>MasterData query cost above that threshold</td><td>Migrate to scalable data layer; queries become cost-stable at any distance</td></tr>
+        <tr><td><span class="constraint-tag">~US$7,600/month</span></td><td>MasterData storage + query pricing, growing with PUP count</td><td>Cost eliminated or significantly reduced post-migration</td></tr>
+        <tr><td><span class="constraint-tag">10k PUP cap</span></td><td>MasterData + API pagination limit; inactive PUPs consume quota</td><td>Out of scope — follow-up spec</td></tr>
+      </table>
+      <p style="margin-top:12px;font-size:13px;color:#5B6E84;">Engineering owns the database selection. This spec is intentionally storage-layer agnostic.</p>
+    </div>
+
+    <div class="section">
+      <div class="section-title">API Changes</div>
+      <p><strong>No breaking changes.</strong></p>
+      <p><strong>Backend change:</strong> remove the ~50km <code>maxDistance</code> ceiling on:</p>
+      <pre><code>GET /api/logistics/pvt/configuration/pickuppoints/_searchsellers
+    ?lat={lat}&lon={lon}&maxDistance={maxDistance}&an={account}</code></pre>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Non-Functional Requirements</div>
+      <div class="fr-item">
+        <div class="fr-id">NFR-001</div>
+        <div class="fr-body"><strong>Performance</strong><p>Proximity sorting and ZIP centroid resolution must add no more than 100ms to the delivery options API response time (P95). Centroid resolution must be in-memory or cached.</p></div>
+      </div>
+      <div class="fr-item">
+        <div class="fr-id">NFR-002</div>
+        <div class="fr-body"><strong>Accuracy</strong><p>Straight-line (geodesic) distance from ZIP centroid is sufficient. Turn-by-turn routing is out of scope.</p></div>
+      </div>
+      <div class="fr-item">
+        <div class="fr-id">NFR-003</div>
+        <div class="fr-body"><strong>Coverage</strong><p>ZIP centroid resolution must cover 100% of Brazilian ZIP codes at launch.</p></div>
+      </div>
+      <div class="fr-item">
+        <div class="fr-id">NFR-004</div>
+        <div class="fr-body"><strong>Backward Compatibility</strong><p>No breaking changes to the existing delivery options API contract. New fields are additive.</p></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Out of Scope</div>
+      <div class="oos-list">
+        <div class="oos-item">Merchant-configurable radius &gt; 50km — future capability, separate spec.</div>
+        <div class="oos-item">Coverage by polygon or region — future capability.</div>
+        <div class="oos-item">10k PUP API cap — follow-up spec.</div>
+        <div class="oos-item">International ZIP codes — BR only at launch.</div>
+        <div class="oos-item">Shopper GPS / device location — proximity calculated from ZIP entered at checkout.</div>
+        <div class="oos-item">Pickup point creation or management — admin flows not modified except removal of the radius step.</div>
+        <div class="oos-item">Infrastructure migration decision — database selection owned by engineering.</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">PM Data — Resolved</div>
+      <div class="resolved-badge">✓ Resolved</div>
+      <p><strong>Volume of manual radius increase requests (2025):</strong> In 2025 we had 35 requests and 25 executions.</p>
+      <p style="color:#5B6E84;font-size:13px;">Source: Product Support dashboard — <code>[Logistics] Monthly Created Tickets</code>, filter: <code>Logistics::Pickup points::Settings::Distance</code>.</p>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Open Questions</div>
+      <table>
+        <tr><th>#</th><th>Question</th><th>Owner</th><th>Priority</th></tr>
+        <tr>
+          <td>1</td>
+          <td>What database candidates are being evaluated (US-01)? What is the expected timeline for the study and the migration?</td>
+          <td>Engineering</td>
+          <td><span class="pill pill-high">High</span></td>
+        </tr>
+        <tr>
+          <td>2</td>
+          <td>Do current PUP records in production have lat/lon coordinates populated at sufficient coverage? If not, what is the data remediation plan?</td>
+          <td>Engineering</td>
+          <td><span class="pill pill-high">High</span></td>
+        </tr>
+        <tr>
+          <td>3</td>
+          <td>Post-migration, does the 300 pickup point response limit remain in place — but now we are able to return all 300 nearest results regardless of distance, with no silent exclusions due to the 50km cap?</td>
+          <td>Engineering + Carol</td>
+          <td><span class="pill pill-medium">Medium</span></td>
+        </tr>
+      </table>
+    </div>
+
+  </div><!-- /spec -->
+
+</div>
+
+<script>
+function showTab(id) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.doc').forEach(d => d.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelector(`.tab[onclick="showTab('${id}')"]`).classList.add('active');
+}
+</script>
+</body>
+</html>

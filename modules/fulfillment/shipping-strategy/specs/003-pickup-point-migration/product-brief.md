@@ -1,0 +1,74 @@
+# Product Brief — Pickup Point Migration
+
+| Field | Value |
+|---|---|
+| **Module** | Fulfillment |
+| **Feature** | shipping-strategy |
+| **PM** | Carolina Tourinho |
+| **Eng Champion** | TBD |
+| **Status** | Under definition |
+| **Expected Release** | TBD |
+| **Availability** | TBD |
+| **Mode** | B2C & B2B |
+
+---
+
+## MMR
+
+**Title:** Pickup Point Radius — Infrastructure Migration to Unlock Scale
+
+**Description:** With this release, shoppers will see all eligible pickup points regardless of distance — not just those within the current ~50km platform limit. Merchants will no longer need to open a support request to VTEX to increase the pickup point radius for their account. This is enabled by migrating the Pickup Point data layer off MasterData, eliminating the architectural root cause of the radius constraint and unblocking orders that today are silently lost because the nearest pickup option is just beyond our technical limit.
+
+---
+
+## Motivation
+
+### The constraint is ours, not the merchant's
+
+The ~50km pickup point limit does not reflect any business rule. It exists because MasterData geo-radius queries become cost-prohibitive above that threshold at scale. VTEX created this limit to protect our own infrastructure — and has been passing it to merchants as if it were a product decision ever since.
+
+The result: merchants with stores or DCs beyond 50km from a shopper cannot surface those locations at checkout. The shopper sees no pickup option, no error, no explanation — and either abandons the cart or completes the purchase through another channel outside VTEX.
+
+**This is especially damaging for B2B operations, particularly in countries with large territories such as Brazil, the United States, and Canada.** In B2B commerce, buyers frequently travel significant distances to pick up orders at distribution centers, fulfillment hubs, or partner locations — often across cities or even states. The purchase decision is driven by product availability, price, and the total cost of the operation, not by proximity. A buyer placing a large order of construction materials, industrial equipment, or wholesale goods routinely travels 100–300km to a DC because the freight cost for those items is prohibitive. The 50km limit has no basis in this business model: it silently removes the pickup option from checkout, forcing the buyer to either pay for long-distance freight or abandon the order entirely. For B2B merchants like RONA and Mazda, this is a direct and measurable revenue loss.
+
+
+
+---
+
+## Reasons to Act Now
+
+**1. Company direction: move off MasterData to robust, scalable databases.**
+VTEX has made a strategic decision to migrate all products off MasterData to more reliable, scalable, and maintainable data layers. Pickup Points is one of the last remaining modules still dependent on MasterData. Staying is not a neutral choice — it means operating on a legacy infrastructure that the rest of the company is actively moving away from, with reduced support, limited optimization opportunities, and growing friction as the rest of the platform evolves.
+
+**2. Cost effectiveness: we can run this better for less.**
+The current MasterData infrastructure for Pickup Points costs approximately ~US$7,600/month, a recurring expense that grows as the pickup point base expands. This is not just a cost line — it is a cost for a solution with known architectural limitations. A more robust database can handle geo-radius queries at any distance without the constraints that made the 50km limit necessary in the first place, and do so at a lower or comparable cost. The migration is an opportunity to improve performance, remove limitations, and reduce spend simultaneously.
+
+**3. Strategic alignment with VTEX's B2B growth.**
+VTEX is actively investing in B2B commerce — including the development of Buyer Portal and a broader suite of B2B capabilities. As VTEX expands its B2B footprint, pickup points become increasingly relevant: B2B buyers operate across large geographic areas, and DC-based pickup is a standard fulfillment model in many industries. The 50km limit is a direct blocker for this segment. Removing it is a prerequisite for making pickup a viable channel in VTEX's B2B offering as it scales.
+
+---
+
+## Scope
+
+- Migrate Pickup Point entity off MasterData to a new data layer (engineering study required; storage decision owned by engineering based on performance, cost, and operational complexity analysis).
+- Remove the ~50km `maxDistance` limit, allowing the API to return up to 300 pickup points regardless of distance.
+- Remove the radius configuration step from the Admin frontend — merchants should no longer be required to define a radius when setting up a pickup point shipping policy.
+- Preserve all existing pickup point data and backward compatibility for existing shipping policies and storefronts.
+- Execute a progressive and careful rollout. The migration plan — including phasing, rollback strategy, and validation criteria at each stage — is to be defined by engineering as part of the technical study (US-01).
+
+## Not in Scope
+
+- Merchant-configurable radius > 50km (self-service radius management) — future capability, separate spec.
+- Pickup point creation or management flows in the Admin beyond the radius configuration removal.
+- Resolution of the 10k PUP API response cap — known constraint, separate follow-up.
+- International coverage — Brazil only at launch.
+
+---
+
+## Target Audience
+
+- **Tier:** All tiers
+- **Merchant Profile:** Omnichannel retailers, B2B operations, merchants with large physical networks or low-density store coverage
+- **Anchor merchants:** RONA, Arcaplanet, Mazda
+- **Persona:** Shopper (primary impact); Logistics Configurator (eliminates manual radius increase requests to VTEX)
+- **Pain:** Valid pickup points silently excluded from checkout due to a platform-level distance constraint unrelated to any business rule

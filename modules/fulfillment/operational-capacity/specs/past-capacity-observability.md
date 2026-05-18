@@ -8,7 +8,7 @@
 | **Module** | Fulfillment → Operational Capacity |
 | **Phase** | Phase 2 — Full Observability, Value Metrics + API Access |
 | **Vision Reference** | `product-vision.md` → Phase 2, Key Capabilities 1, 2, 3 |
-| **Author** | Carol Tourinho |
+| **Author** | Carolina Tourinho |
 | **Status** | Draft |
 | **Created** | May 2026 |
 | **Personas** | Ecommerce Manager, Operations Manager, Fulfillment Manager |
