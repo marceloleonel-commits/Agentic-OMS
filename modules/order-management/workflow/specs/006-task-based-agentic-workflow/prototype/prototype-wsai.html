@@ -493,6 +493,142 @@ tbody td{padding:10px 14px;font-size:13px;vertical-align:middle}
 .integ-card-desc{font-size:11.5px;color:#666;line-height:1.4}
 .integ-var{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:3px;padding:1px 5px;font-size:10px;color:#15803d;font-family:monospace}
 
+/* ── AI TEAM DRAWER ── */
+.ai-team-backdrop{display:none;position:fixed;inset:0;z-index:299;background:rgba(15,17,21,.25)}
+.ai-team-backdrop.open{display:block}
+.ai-team-drawer{position:fixed;top:0;right:-480px;width:460px;height:100vh;background:#fff;box-shadow:-4px 0 40px rgba(0,0,0,.15);z-index:300;display:flex;flex-direction:column;transition:right .25s cubic-bezier(.4,0,.2,1);border-left:1px solid #e5e7eb}
+.ai-team-drawer.open{right:0}
+.atd-header{padding:16px 20px;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;gap:10px;flex-shrink:0}
+.atd-title{font-size:15px;font-weight:700;color:#111827;flex:1}
+.atd-open-ext{display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:6px;background:#2563eb;color:#fff;font-size:12px;font-weight:600;cursor:pointer;border:none;font-family:inherit;white-space:nowrap}
+.atd-open-ext:hover{background:#1d4ed8}
+.atd-close{width:28px;height:28px;border-radius:6px;border:none;background:transparent;cursor:pointer;display:grid;place-items:center;color:#9ca3af;font-size:18px;line-height:1}
+.atd-close:hover{background:#f3f4f6;color:#374151}
+.atd-tabs{display:flex;border-bottom:1px solid #f0f0f0;padding:0 20px;flex-shrink:0}
+.atd-tab{padding:10px 4px;margin-right:20px;font-size:13px;font-weight:500;color:#9ca3af;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;display:flex;align-items:center;gap:6px;transition:color .1s}
+.atd-tab:hover{color:#374151}
+.atd-tab.active{color:#111827;border-bottom-color:#2563eb;font-weight:600}
+.atd-tab-count{background:#f3f4f6;color:#6b7280;font-size:11px;font-weight:700;padding:1px 6px;border-radius:10px}
+.atd-tab.active .atd-tab-count{background:#eff6ff;color:#2563eb}
+.atd-tab-new{background:#7c3aed;color:#fff;font-size:9px;font-weight:700;letter-spacing:.3px;padding:1px 5px;border-radius:4px;text-transform:uppercase}
+.atd-body{flex:1;overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:0}
+.atd-body::-webkit-scrollbar{width:4px}
+.atd-body::-webkit-scrollbar-thumb{background:#e0e0e0;border-radius:2px}
+.atd-tab-panel{display:none}
+.atd-tab-panel.active{display:block}
+.atd-section-label{font-size:10px;font-weight:700;color:#9ca3af;letter-spacing:.6px;text-transform:uppercase;padding:8px 0 8px;margin-bottom:4px}
+.atd-agent-card{display:flex;align-items:flex-start;gap:12px;padding:14px 16px;background:#fff;border:1px solid #e9ecef;border-radius:10px;margin-bottom:10px;cursor:pointer;transition:border-color .15s,box-shadow .15s}
+.atd-agent-card:hover{border-color:#2563eb;box-shadow:0 2px 10px rgba(37,99,235,.1)}
+.atd-agent-avatar{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:21px;flex-shrink:0}
+.atd-agent-name{font-size:13px;font-weight:600;color:#111827;margin-bottom:2px}
+.atd-agent-meta{font-size:11.5px;color:#9ca3af}
+.atd-agent-stat{display:flex;align-items:center;gap:5px;margin-top:6px;font-size:11px;color:#6b7280}
+.atd-agent-status-dot{width:7px;height:7px;border-radius:50%;background:#10b981;flex-shrink:0}
+.atd-chevron{color:#d1d5db;margin-left:auto;font-size:16px;flex-shrink:0;align-self:center}
+.atd-ext-tile{display:flex;align-items:flex-start;gap:14px;padding:14px 16px;background:#fff;border:1px solid #e9ecef;border-radius:10px;margin-bottom:10px;cursor:pointer;transition:border-color .15s,box-shadow .15s}
+.atd-ext-tile:hover{border-color:#2563eb;box-shadow:0 2px 10px rgba(37,99,235,.1)}
+.atd-ext-icon{width:38px;height:38px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;background:#f3f4f6}
+.atd-ext-title{font-size:13px;font-weight:600;color:#111827;margin-bottom:3px}
+.atd-ext-desc{font-size:11.5px;color:#6b7280;line-height:1.5}
+.atd-ext-stat{font-size:11px;color:#9ca3af;margin-top:5px}
+.atd-review-badge{display:inline-flex;align-items:center;gap:3px;padding:1px 6px;border-radius:4px;background:#fef9c3;color:#854d0e;border:1px solid #fde68a;font-size:10px;font-weight:700;margin-left:4px}
+
+/* ── EXTENSIBILITY WORKSPACE SCREEN ── */
+#screen-extensibility{padding:0;overflow:hidden}
+#screen-extensibility.active{display:flex;flex-direction:column}
+.ext-ws-header{padding:13px 24px;background:#fff;border-bottom:1px solid #e0e0e0;display:flex;align-items:center;gap:6px;flex-shrink:0}
+.ext-crumb-btn{font-size:13px;color:#9ca3af;cursor:pointer;background:none;border:none;font-family:inherit;padding:0}
+.ext-crumb-btn:hover{color:#374151;text-decoration:underline}
+.ext-crumb-sep{color:#d1d5db;font-size:13px;margin:0 2px}
+.ext-crumb-cur{font-size:13px;font-weight:600;color:#111827}
+.ext-ws-body{flex:1;display:flex;overflow:hidden}
+.ext-ws-nav{width:210px;min-width:210px;background:#f9fafb;border-right:1px solid #e9ecef;padding:14px 0;display:flex;flex-direction:column;overflow-y:auto;flex-shrink:0}
+.ext-nav-section{font-size:10px;font-weight:700;color:#9ca3af;letter-spacing:.6px;text-transform:uppercase;padding:12px 18px 5px}
+.ext-nav-item{display:flex;align-items:center;gap:8px;padding:8px 18px;font-size:13px;color:#6b7280;cursor:pointer;border-left:3px solid transparent;transition:all .1s}
+.ext-nav-item:hover{background:#f3f4f6;color:#374151}
+.ext-nav-item.active{color:#2563eb;font-weight:600;background:#eff6ff;border-left-color:#2563eb}
+.ext-nav-count{margin-left:auto;background:#e5e7eb;border-radius:10px;padding:1px 6px;font-size:10.5px;color:#6b7280;font-weight:700}
+.ext-nav-item.active .ext-nav-count{background:#dbeafe;color:#2563eb}
+.ext-ws-content{flex:1;overflow-y:auto;padding:24px 28px;background:#fff}
+.ext-ws-content::-webkit-scrollbar{width:4px}
+.ext-ws-content::-webkit-scrollbar-thumb{background:#e0e0e0;border-radius:2px}
+.ext-page-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.ext-page-title{font-size:17px;font-weight:700;color:#111827}
+.ext-rule-row{display:flex;align-items:flex-start;gap:12px;padding:14px 16px;background:#fff;border:1px solid #e9ecef;border-radius:10px;margin-bottom:10px;cursor:pointer;transition:border-color .15s}
+.ext-rule-row:hover{border-color:#2563eb;box-shadow:0 1px 6px rgba(37,99,235,.08)}
+.ext-rule-ref{font-family:ui-monospace,monospace;font-size:10.5px;font-weight:700;color:#9ca3af;background:#f3f4f6;border:1px solid #e5e7eb;padding:2px 7px;border-radius:4px;flex-shrink:0;align-self:flex-start;margin-top:1px}
+.ext-rule-agent-tag{font-size:11px;color:#7c3aed;font-weight:600;margin-bottom:4px}
+.ext-rule-title{font-size:13px;font-weight:600;color:#111827;margin-bottom:3px}
+.ext-rule-desc{font-size:12px;color:#6b7280;line-height:1.5}
+.ext-rule-chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.ext-chip{padding:2px 8px;border-radius:4px;font-size:11px;border:1px solid #e5e7eb;background:#f9fafb;color:#6b7280}
+.ext-chip.active{background:#f0fdf4;color:#16a34a;border-color:#bbf7d0}
+.ext-chip.inactive{background:#fef2f2;color:#dc2626;border-color:#fecaca}
+.ext-mem-card{padding:14px 16px;background:#fff;border:1px solid #e9ecef;border-radius:10px;margin-bottom:10px}
+.ext-mem-title{font-size:13px;font-weight:600;color:#111827;margin-bottom:4px}
+.ext-mem-desc{font-size:12px;color:#6b7280;line-height:1.5}
+.ext-mem-meta{font-size:11px;color:#9ca3af;margin-top:8px;display:flex;align-items:center;gap:10px}
+.ext-conn-card{display:flex;align-items:flex-start;gap:14px;padding:14px 16px;background:#fff;border:1px solid #e9ecef;border-radius:10px;margin-bottom:10px}
+.ext-conn-icon{width:38px;height:38px;border-radius:8px;background:#f3f4f6;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.ext-conn-name{font-size:13px;font-weight:600;color:#111827;margin-bottom:2px}
+.ext-conn-desc{font-size:12px;color:#6b7280}
+.ext-conn-status{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0}
+.ext-overview-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px}
+.ext-ov-card{background:#fff;border:1px solid #e9ecef;border-radius:10px;padding:16px 18px;cursor:pointer;transition:border-color .15s,box-shadow .15s}
+.ext-ov-card:hover{border-color:#2563eb;box-shadow:0 2px 10px rgba(37,99,235,.08)}
+.ext-ov-icon{font-size:22px;margin-bottom:10px}
+.ext-ov-title{font-size:13px;font-weight:700;color:#111827;margin-bottom:4px}
+.ext-ov-desc{font-size:12px;color:#6b7280;line-height:1.45;margin-bottom:10px}
+.ext-ov-stat{font-size:11.5px;color:#9ca3af}
+
+/* ── INITIATIVES TABLE (AIW style) ── */
+.ini-filter-tabs{display:flex;border-bottom:1px solid #e9ecef;margin-bottom:16px}
+.ini-filter-tab{display:flex;align-items:center;gap:6px;padding:9px 14px;font-size:13px;font-weight:500;color:#9ca3af;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;white-space:nowrap;transition:color .1s}
+.ini-filter-tab:hover{color:#374151}
+.ini-filter-tab.active{color:#111827;border-bottom-color:#2563eb;font-weight:600}
+.ini-filter-tab .tab-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.ini-filter-tab .tab-count{background:#f3f4f6;color:#9ca3af;font-size:11px;font-weight:700;padding:1px 6px;border-radius:10px}
+.ini-filter-tab.active .tab-count{background:#eff6ff;color:#2563eb}
+.init-table{width:100%;border-collapse:collapse}
+.init-table thead th{padding:10px 14px;text-align:left;font-size:11px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:.5px;background:#f9fafb;border-bottom:1px solid #f3f4f6;white-space:nowrap}
+.init-table tbody tr{border-bottom:1px solid #f3f4f6;cursor:pointer;transition:background .1s}
+.init-table tbody tr:last-child{border-bottom:none}
+.init-table tbody tr:hover td{background:#fafafa}
+.init-table tbody td{padding:12px 14px;vertical-align:middle}
+.init-id-chip{font-family:ui-monospace,monospace;font-size:11px;color:#9ca3af;background:#f3f4f6;border:1px solid #e5e7eb;padding:2px 7px;border-radius:4px}
+.init-title{font-size:13px;font-weight:500;color:#111827}
+.init-sev{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600}
+.init-sev.high{background:#fef2f2;color:#dc2626;border:1px solid #fecaca}
+.init-sev.medium{background:#fffbeb;color:#d97706;border:1px solid #fde68a}
+.init-sev.low{background:#f3f4f6;color:#9ca3af;border:1px solid #e5e7eb}
+.init-status-dot{width:8px;height:8px;border-radius:50%;display:inline-block;flex-shrink:0}
+.init-status-dot.attention{background:#2563eb}
+.init-status-dot.active{background:#22c55e}
+.init-status-dot.triage{background:transparent;border:1.5px dashed #9ca3af;display:inline-block}
+.ini-muted{font-size:12px;color:#9ca3af}
+
+/* ── ASSISTANT SCREEN (new layout) ── */
+#screen-assistant{padding:0;overflow:hidden}
+#screen-assistant.active{display:flex;flex-direction:column}
+.assist-topbar{padding:14px 28px;background:#fff;border-bottom:1px solid #e9ecef;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.assist-topbar-title{font-size:17px;font-weight:700;color:#111827}
+.assist-topbar-sub{font-size:12px;color:#6b7280;margin-top:2px}
+.assist-body{flex:1;overflow-y:auto;padding:24px 28px}
+.assist-body::-webkit-scrollbar{width:8px}
+.assist-body::-webkit-scrollbar-thumb{background:#e0e0e0;border-radius:4px}
+.assist-composer{background:#fff;border:1px solid #e9ecef;border-radius:12px;padding:14px 16px;margin-bottom:24px;box-shadow:0 1px 4px rgba(0,0,0,.05)}
+.assist-composer-input{width:100%;border:none;outline:none;font-size:14px;font-family:'Inter',sans-serif;color:#111827;background:transparent;line-height:1.5}
+.assist-composer-input::placeholder{color:#9ca3af}
+.assist-composer-footer{display:flex;align-items:center;justify-content:space-between;margin-top:12px;padding-top:10px;border-top:1px solid #f3f4f6}
+.assist-composer-agent{display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:#374151}
+.assist-composer-send{display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:7px;background:#2563eb;border:none;cursor:pointer;font-size:13px;font-weight:600;color:#fff;font-family:inherit}
+.assist-composer-send:hover{background:#1d4ed8}
+.assist-section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.assist-section-title{font-size:14px;font-weight:600;color:#111827}
+.assist-chips-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.assist-chip{padding:7px 14px;border:1px solid #e9ecef;border-radius:20px;background:#fff;font-size:12px;color:#374151;cursor:pointer;transition:border-color .1s,background .1s;white-space:nowrap}
+.assist-chip:hover{border-color:#2563eb;background:#eff6ff;color:#2563eb}
+
 /* ── WORKFLOW CHAIN (pagamento → padrão → troca) ── */
 .badge-return{background:#faf5ff;color:#7c3aed;border:1px solid #e9d5ff}
 .wf-sec-header{display:flex;align-items:center;gap:7px;margin:12px 0 6px;padding-top:12px;border-top:1px solid #f0f0f0}
@@ -535,6 +671,40 @@ tbody td{padding:10px 14px;font-size:13px;vertical-align:middle}
 /* Side panel wider for edit */
 #side-panel{width:360px;min-width:360px}
 #side-panel.closed{width:0;min-width:0}
+
+/* ── WORKFLOW TYPE BADGES ── */
+.badge-bopis{background:#e0f7fa;color:#00695c;border:1px solid #80cbc4}
+.badge-sfs{background:#fff3e0;color:#e65100;border:1px solid #ffcc02}
+.badge-virtual{background:#f3e5f5;color:#7b1fa2;border:1px solid #ce93d8}
+.badge-subscription{background:#ede7f6;color:#4527a0;border:1px solid #b39ddb}
+/* ── USER-CREATED WORKFLOW BADGE ── */
+.wfl-user-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 9px;border-radius:20px;font-size:10.5px;font-weight:600;background:#fffbeb;color:#92400e;border:1px solid #fde68a}
+.wfl-card.user-created{border-color:#fde68a;border-width:2px}
+.wfl-card.user-created:hover{border-color:#f59e0b}
+/* ── NEW WORKFLOW MODAL (AI creation) ── */
+.wf-create-modal{background:#fff;border-radius:16px;width:min(880px,95vw);max-height:88vh;display:flex;flex-direction:column;box-shadow:0 24px 64px rgba(0,0,0,.2);overflow:hidden}
+.wf-create-layout{flex:1;display:flex;overflow:hidden;min-height:0}
+.wf-create-chat{width:380px;min-width:280px;border-right:1px solid #f0f4f8;display:flex;flex-direction:column;background:#fff;flex-shrink:0}
+.wf-create-preview{flex:1;overflow-y:auto;padding:24px;background:#f8f9fa;display:flex;flex-direction:column;gap:16px}
+.wf-create-header{padding:16px 20px;border-bottom:1px solid #f0f4f8;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.wf-preview-card{background:#fff;border:1px solid #e9ecef;border-radius:12px;padding:18px 20px;display:flex;flex-direction:column;gap:10px;box-shadow:0 1px 4px rgba(0,0,0,.05)}
+.wf-preview-field{display:flex;flex-direction:column;gap:3px}
+.wf-preview-label{font-size:10.5px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.4px}
+.wf-preview-value{font-size:13px;color:#111827;font-weight:500}
+.wf-preview-value.empty{color:#d1d5db;font-style:italic;font-weight:400}
+.wf-preview-steps{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.wf-preview-step-chip{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:11.5px;background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8;font-weight:500}
+.wf-existing-list{display:flex;flex-direction:column;gap:6px;margin-top:4px}
+.wf-existing-item{display:flex;align-items:center;gap:10px;padding:10px 12px;background:#fff;border:1px solid #e9ecef;border-radius:8px;cursor:pointer;transition:all .15s}
+.wf-existing-item:hover{border-color:#2563eb;background:#eff6ff}
+/* ── PICK AND PACK NATIVE INTEGRATION ── */
+.pnp-card{background:#fff7ed;border:2px solid #fed7aa;border-radius:8px;padding:12px 14px;margin-top:4px}
+.pnp-card-header{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.pnp-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:10.5px;font-weight:700;background:#fff7ed;color:#c2410c;border:1px solid #fed7aa}
+.pnp-events{display:flex;flex-direction:column;gap:4px}
+.pnp-event-row{display:flex;align-items:center;gap:8px;font-size:11.5px;padding:3px 0}
+.pnp-event-name{font-family:monospace;background:#f9f9f9;border:1px solid #e0e0e0;border-radius:3px;padding:1px 6px;color:#1a1a1a;font-size:11px}
+.pnp-event-desc{color:#888;flex:1}
 </style>
 </head>
 <body>
@@ -553,7 +723,7 @@ tbody td{padding:10px 14px;font-size:13px;vertical-align:middle}
     <input type="text" placeholder="Buscar...">
   </div>
   <div class="global-nav-right">
-    <button class="nav-action">Minha equipe de IA</button>
+    <button class="nav-action" onclick="openAITeamDrawer()">Minha equipe de IA</button>
     <div class="user-avatar">M</div>
   </div>
 </nav>
@@ -591,225 +761,303 @@ tbody td{padding:10px 14px;font-size:13px;vertical-align:middle}
 
     <!-- ══ SCREEN: ASSISTANT HOME ══ -->
     <div class="screen active" id="screen-assistant">
-      <div class="page-header">
+      <!-- Topbar -->
+      <div class="assist-topbar">
         <div>
-          <h1 class="page-title">Meu Assistente</h1>
-          <div style="font-size:12.5px;color:#6b7280;margin-top:3px">Gestão de pedidos e workflows de operação</div>
+          <div class="assist-topbar-title">VTEX Meu Assistente</div>
+          <div class="assist-topbar-sub">Gestão de pedidos e workflows de operação</div>
         </div>
+        <button class="btn btn-primary" onclick="openAITeamDrawer()" style="gap:7px">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><circle cx="8" cy="5" r="2.5"/><path d="M3 14c0-2.8 2.2-4.5 5-4.5s5 1.7 5 4.5"/></svg>
+          Minha equipe de IA
+          <svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="2" width="9" height="9"><path d="M2 9L8 5 2 1"/></svg>
+        </button>
       </div>
 
-      <div class="stats-bar">
-        <span class="stats-label">Receita</span>
-        <div class="stats-group">
-          <div class="stats-item"><span class="stats-period">Total</span><span class="stats-value">R$ 153.133,87</span></div>
-          <div class="stats-item"><span class="stats-period">Crescimento</span><span class="stats-value">4,3%</span><span class="stats-delta delta-pos">▲</span></div>
-        </div>
-        <div class="stats-divider"></div>
-        <span class="stats-label">Pedidos</span>
-        <div class="stats-group">
-          <div class="stats-item"><span class="stats-period">Total</span><span class="stats-value">409.938</span></div>
-          <div class="stats-item"><span class="stats-period">Variação</span><span class="stats-value">1,1%</span><span class="stats-delta delta-neg">▼</span></div>
-        </div>
-        <div class="stats-divider"></div>
-        <span class="stats-label">Ticket Médio</span>
-        <div class="stats-group">
-          <div class="stats-item"><span class="stats-period">Valor</span><span class="stats-value">R$ 167,12</span></div>
-        </div>
-        <div class="stats-divider"></div>
-        <span class="stats-label">Taxa de Conversão</span>
-        <div class="stats-group">
-          <div class="stats-item"><span class="stats-period">Sessões</span><span class="stats-value">4,1%</span></div>
-        </div>
-      </div>
-
-      <div style="margin-top:28px">
-        <div style="font-size:14px;font-weight:600;color:#111827;margin-bottom:14px">Recursos disponíveis</div>
-        <div class="assist-cards-grid">
-
-          <!-- Card: Todos os Pedidos -->
-          <div class="assist-card" onclick="showScreen('orders')">
-            <div class="assist-card-top">
-              <span class="assist-badge-active">Ativo</span>
-              <span class="assist-badge-type">Pedidos</span>
-            </div>
-            <div class="assist-card-title">Todos os pedidos</div>
-            <div class="assist-card-desc">Gerencie e monitore pedidos em tempo real. Visualize status, workflows por item e fluxos de troca e devolução.</div>
-            <div class="assist-card-tags">
-              <span class="assist-tag">GESTÃO DE PEDIDOS</span>
-              <span class="assist-tag">WORKFLOW</span>
-              <span class="assist-tag">STATUS</span>
-            </div>
-            <div style="font-size:11px;color:#9ca3af;margin-top:10px">4.256 pedidos ativos hoje</div>
+      <div class="assist-body">
+        <!-- KPI bar -->
+        <div class="stats-bar" style="margin-bottom:22px">
+          <span class="stats-label">Receita</span>
+          <div class="stats-group">
+            <div class="stats-item"><span class="stats-period">Total</span><span class="stats-value">R$ 153.133,87</span></div>
+            <div class="stats-item"><span class="stats-period">Crescimento</span><span class="stats-value">4,3%</span><span class="stats-delta delta-pos">▲</span></div>
           </div>
-
-          <!-- Card: Workflow Board -->
-          <div class="assist-card" onclick="showScreen('workflow-list')">
-            <div class="assist-card-top">
-              <span class="assist-badge-config">Configuração</span>
-              <span class="assist-badge-type">Workflow</span>
-            </div>
-            <div class="assist-card-title">Workflow Board</div>
-            <div class="assist-card-desc">Configure as etapas de execução de tarefas por tipo de pedido, com integração a agentes AI e ferramentas MCP.</div>
-            <div class="assist-card-tags">
-              <span class="assist-tag">AUTOMAÇÃO</span>
-              <span class="assist-tag">ETAPAS</span>
-              <span class="assist-tag">MCP</span>
-            </div>
-            <div style="font-size:11px;color:#9ca3af;margin-top:10px">3 workflows · 5 etapas configuradas</div>
+          <div class="stats-divider"></div>
+          <span class="stats-label">Pedidos</span>
+          <div class="stats-group">
+            <div class="stats-item"><span class="stats-period">Total</span><span class="stats-value">409.938</span></div>
+            <div class="stats-item"><span class="stats-period">Variação</span><span class="stats-value">1,1%</span><span class="stats-delta delta-neg">▼</span></div>
           </div>
-
-          <!-- Card: Agente de Orquestração -->
-          <div class="assist-card" onclick="showScreen('agent-config')">
-            <div class="assist-card-top">
-              <span class="assist-badge-ai">AI Agent</span>
-              <span class="assist-badge-type">Orquestração</span>
-            </div>
-            <div class="assist-card-title">Agente de Orquestração</div>
-            <div class="assist-card-desc">Configure o agente AI que monitora workflows, resolve exceções automaticamente e cria tarefas para operadores.</div>
-            <div class="assist-card-tags">
-              <span class="assist-tag">AI</span>
-              <span class="assist-tag">EXCEÇÕES</span>
-              <span class="assist-tag">SLA</span>
-            </div>
-            <div style="font-size:11px;color:#9ca3af;margin-top:10px">Ativo · 4.256 pedidos monitorados</div>
+          <div class="stats-divider"></div>
+          <span class="stats-label">Ticket Médio</span>
+          <div class="stats-group">
+            <div class="stats-item"><span class="stats-period">Valor</span><span class="stats-value">R$ 167,12</span></div>
           </div>
+          <div class="stats-divider"></div>
+          <span class="stats-label">Conversão</span>
+          <div class="stats-group">
+            <div class="stats-item"><span class="stats-period">Taxa</span><span class="stats-value">4,1%</span></div>
+          </div>
+        </div>
 
+        <!-- Chat composer -->
+        <div class="assist-composer">
+          <input class="assist-composer-input" placeholder="Mensagem para Meu Assistente..." id="assist-main-input" onkeydown="if(event.key==='Enter')handleAssistantMessage()">
+          <div class="assist-composer-footer">
+            <div class="assist-composer-agent">
+              <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" width="12" height="12" style="color:#9ca3af"><path d="M7 1v12M1 7h12"/></svg>
+              🤖 Meu Assistente
+            </div>
+            <button class="assist-composer-send" onclick="handleAssistantMessage()">
+              <svg viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="2" width="13" height="13"><path d="M14 2L2 8l4 2 2 4 6-12z"/></svg>
+              Enviar
+            </button>
+          </div>
         </div>
-      </div>
 
-      <!-- Chat input -->
-      <div class="assist-chat-wrap">
-        <div style="display:flex;align-items:center;gap:8px">
-          <input class="assist-chat-input" placeholder="Mensagem para Meu Assistente...">
-          <button class="cm-send" style="background:#2563eb;flex-shrink:0" onclick="showScreen('orders')">
-            <svg viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="2" width="13" height="13"><path d="M14 2L2 8l4 2 2 4 6-12z"/></svg>
-          </button>
+        <!-- Quick chips -->
+        <div class="assist-chips-row">
+          <button class="assist-chip" onclick="document.getElementById('assist-main-input').value='Como está o desempenho da operação hoje?'">Como está o desempenho hoje?</button>
+          <button class="assist-chip" onclick="document.getElementById('assist-main-input').value='Quais pedidos estão parados acima do SLA?'">Pedidos acima do SLA</button>
+          <button class="assist-chip" onclick="document.getElementById('assist-main-input').value='Ver workflows configurados'">Ver workflows</button>
+          <button class="assist-chip" onclick="openAITeamDrawer()">Configurar agente de IA</button>
         </div>
-        <div style="display:flex;align-items:center;gap:8px;margin-top:10px;padding-top:10px;border-top:1px solid #f3f4f6">
-          <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" width="12" height="12" style="color:#9ca3af"><path d="M7 1v12M1 7h12"/></svg>
-          <span style="font-size:12px;font-weight:600;color:#374151">🤖 Meu Assistente</span>
+
+        <!-- Orders section -->
+        <div class="assist-section-head" style="margin-top:8px">
+          <div class="assist-section-title">Pedidos</div>
+          <span class="pagination-info">1 — 30 de 4.256 pedidos</span>
         </div>
-      </div>
-      <div class="assist-chip-row">
-        <button class="assist-chip" onclick="showScreen('orders')">Como está o desempenho da operação?</button>
-        <button class="assist-chip" onclick="showScreen('workflow-list')">Ver configuração de workflows</button>
-        <button class="assist-chip" onclick="showScreen('agent-config')">Configurar agente de orquestração</button>
+
+        <div class="search-filter-row">
+          <div class="search-box">
+            <svg class="search-box-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="7" cy="7" r="5"/><line x1="11" y1="11" x2="15" y2="15"/></svg>
+            <input type="text" placeholder="Buscar por Número de Pedido, CPF, Nome do Cliente...">
+          </div>
+          <div class="filter-chip ai-badge">
+            <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><circle cx="7" cy="7" r="5"/></svg>
+            Filtros AI <span class="badge-num">13</span>
+          </div>
+          <div class="filter-chip">Status: Em processamento +2 <svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="2" width="10" height="10"><path d="M2 4l3 3 3-3"/></svg></div>
+          <div class="filter-chip">Criado: Últimos 30 dias <svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="2" width="10" height="10"><path d="M2 4l3 3 3-3"/></svg></div>
+        </div>
+
+        <div class="table-wrap">
+          <div class="table-toolbar">
+            <span class="table-toolbar-title">Pedidos</span>
+            <button class="btn btn-secondary btn-sm" id="task-tree-toggle" onclick="toggleTaskTree()" style="margin-left:auto">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M2 4h3v3H2zM7 2h3v3H7zM7 8h3v3H7zM2 10h3v2H2z"/><path d="M5 5.5h2M5 11h2M10 3.5h2v9h-2"/></svg>
+              Mostrar Tarefas
+            </button>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Status</th>
+                <th>Processamento</th>
+                <th>ID do pedido ⇅</th>
+                <th>Data ⇅</th>
+                <th>Cliente</th>
+                <th>Itens</th>
+                <th>Valor ⇅</th>
+                <th>Origem</th>
+                <th>Pagamento</th>
+                <th class="task-tree-col hidden" id="task-tree-header-col">Tarefas</th>
+              </tr>
+            </thead>
+            <tbody id="orders-tbody"></tbody>
+          </table>
+        </div>
       </div>
     </div>
 
     <!-- ══ SCREEN: CHATS ══ -->
     <!-- ══ SCREEN: INITIATIVES ══ -->
     <div class="screen" id="screen-initiatives">
-      <div class="page-header">
-        <div style="display:flex;align-items:center;gap:10px">
+      <div class="page-header" style="margin-bottom:16px">
+        <div>
           <h1 class="page-title">Minhas Iniciativas</h1>
-          <span style="font-size:12px;font-weight:700;background:#f3f4f6;color:#6b7280;padding:2px 8px;border-radius:10px">4</span>
         </div>
         <div class="page-header-actions">
-          <button class="btn btn-primary" onclick="showScreen('workflow-list')">
+          <button class="btn btn-primary">
             <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M7 1v12M1 7h12"/></svg>
             Criar iniciativa
           </button>
         </div>
       </div>
 
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0">
-        <div class="ini-tabs">
-          <div class="ini-tab active">Todas</div>
-          <div class="ini-tab">Participantes</div>
-          <div class="ini-tab">Principais</div>
-        </div>
-        <div style="display:flex;gap:4px;margin-bottom:1px">
-          <button style="width:30px;height:30px;border:1px solid #e9ecef;border-radius:6px;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#6b7280">
-            <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" width="13" height="13"><path d="M1 2h12M1 7h12M1 12h12"/></svg>
-          </button>
-          <button style="width:30px;height:30px;border:1px solid #e9ecef;border-radius:6px;background:#f9fafb;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#374151">
-            <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" width="13" height="13"><rect x="1" y="1" width="5" height="5" rx="1"/><rect x="8" y="1" width="5" height="5" rx="1"/><rect x="1" y="8" width="5" height="5" rx="1"/><rect x="8" y="8" width="5" height="5" rx="1"/></svg>
-          </button>
+      <!-- Tabs -->
+      <div class="ini-filter-tabs">
+        <div class="ini-filter-tab active" onclick="filterInitiatives('all',this)">Todas as iniciativas <span class="tab-count">8</span></div>
+        <div class="ini-filter-tab" onclick="filterInitiatives('attention',this)"><span class="tab-dot" style="background:#2563eb"></span> Precisa de atenção <span class="tab-count">3</span></div>
+        <div class="ini-filter-tab" onclick="filterInitiatives('active',this)"><span class="tab-dot" style="background:#22c55e"></span> Ativa <span class="tab-count">1</span></div>
+        <div class="ini-filter-tab" onclick="filterInitiatives('triage',this)"><span class="tab-dot" style="border:1.5px dashed #9ca3af;background:transparent;width:7px;height:7px;border-radius:50%;display:inline-block"></span> Triagem <span class="tab-count">4</span></div>
+        <div class="ini-filter-tab" onclick="filterInitiatives('completed',this)">
+          <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><path d="M2 6l3 3 5-5"/></svg>
+          Concluída <span class="tab-count">0</span>
         </div>
       </div>
 
-      <!-- Swimlane: Ativo -->
-      <div class="ini-swimlane">
-        <div class="ini-sw-header" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display==='none'?'block':'none'">
-          <svg class="ini-sw-chevron open" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M2 4l3 3 3-3"/></svg>
-          <span class="ini-sw-name">Ativo</span>
-          <span class="ini-sw-count">0</span>
-        </div>
-        <div class="ini-sw-body">
-          <div class="ini-empty">Nenhuma iniciativa neste grupo</div>
-        </div>
-      </div>
+      <!-- Table -->
+      <div class="table-wrap">
+        <table class="init-table">
+          <thead>
+            <tr>
+              <th style="width:42%">Iniciativa</th>
+              <th>Objetivo</th>
+              <th>Métrica</th>
+              <th>Data</th>
+              <th>Líder</th>
+            </tr>
+          </thead>
+          <tbody id="initiatives-tbody">
 
-      <!-- Swimlane: Triagem -->
-      <div class="ini-swimlane">
-        <div class="ini-sw-header" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display==='none'?'block':'none'">
-          <svg class="ini-sw-chevron open" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M2 4l3 3 3-3"/></svg>
-          <span class="ini-sw-name">Triagem</span>
-          <span class="ini-sw-count">4</span>
-        </div>
-        <div class="ini-sw-body">
-          <table class="ini-table">
-            <thead>
-              <tr>
-                <th>Iniciativa</th>
-                <th>Tipo</th>
-                <th>Reportado em</th>
-                <th>Líder</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr onclick="showScreen('workflow-list')">
-                <td>
-                  <div class="ini-row-id">WF-00</div>
-                  <div class="ini-row-title">Workflow Board — Visão geral</div>
-                </td>
-                <td><span class="ini-badge-config">Configuração</span></td>
-                <td><span class="ini-date">18 de mai., 09:46</span></td>
-                <td><span class="ini-leader">—</span></td>
-              </tr>
-              <tr onclick="openWorkflow('standard')">
-                <td>
-                  <div class="ini-row-id">WF-01</div>
-                  <div class="ini-row-title">Workflow Padrão</div>
-                </td>
-                <td><span class="ini-badge-active">Ativo</span></td>
-                <td><span class="ini-date">18 de mai., 09:46</span></td>
-                <td><span class="ini-leader">—</span></td>
-              </tr>
-              <tr onclick="openWorkflow('returns')">
-                <td>
-                  <div class="ini-row-id">WF-02</div>
-                  <div class="ini-row-title">Troca e Devolução</div>
-                </td>
-                <td><span class="ini-badge-active">Ativo</span></td>
-                <td><span class="ini-date">18 de mai., 09:46</span></td>
-                <td><span class="ini-leader">—</span></td>
-              </tr>
-              <tr onclick="openWorkflow('payment')">
-                <td>
-                  <div class="ini-row-id">WF-03</div>
-                  <div class="ini-row-title">Aprovação de Pagamento</div>
-                </td>
-                <td><span class="ini-badge-ai">AI Agent</span></td>
-                <td><span class="ini-date">18 de mai., 09:46</span></td>
-                <td><span class="ini-leader">—</span></td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+            <!-- IN-DOM-001: Pedidos parados acima do SLA -->
+            <tr data-status="attention" class="ini-row">
+              <td>
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                  <span class="init-status-dot attention"></span>
+                  <span class="init-id-chip">IN-DOM-001</span>
+                  <span class="init-sev high"><span style="width:5px;height:5px;border-radius:50%;background:currentColor;display:inline-block"></span> Alta</span>
+                  <span class="init-title">Pedidos parados nos status por mais tempo que o indicado nas configurações</span>
+                </div>
+              </td>
+              <td><span class="ini-muted">Monitoramento de SLA</span></td>
+              <td>
+                <span style="color:#2563eb;font-size:12.5px;font-weight:500;display:inline-flex;align-items:center;gap:3px">
+                  <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><path d="M2 10l8-8M10 2H4M10 2v6"/></svg>
+                  SLA rate
+                </span>
+              </td>
+              <td><span class="ini-muted">Mai 19</span></td>
+              <td><div style="width:24px;height:24px;border-radius:50%;background:#e11d48;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff">M</div></td>
+            </tr>
 
-      <!-- Swimlane: Concluído -->
-      <div class="ini-swimlane">
-        <div class="ini-sw-header" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display==='none'?'block':'none'">
-          <svg class="ini-sw-chevron open" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M2 4l3 3 3-3"/></svg>
-          <span class="ini-sw-name">Concluído</span>
-          <span class="ini-sw-count">0</span>
-        </div>
-        <div class="ini-sw-body">
-          <div class="ini-empty">Nenhuma iniciativa neste grupo</div>
-        </div>
+            <!-- IN-DOM-002: Troca e devolução -->
+            <tr data-status="active" class="ini-row">
+              <td>
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                  <span class="init-status-dot active"></span>
+                  <span class="init-id-chip">IN-DOM-002</span>
+                  <span class="init-sev medium"><span style="width:5px;height:5px;border-radius:50%;background:currentColor;display:inline-block"></span> Média</span>
+                  <span class="init-title">Pedidos pendentes de troca e devolução</span>
+                </div>
+              </td>
+              <td><span class="ini-muted">Operações — Returns</span></td>
+              <td><span class="ini-muted">—</span></td>
+              <td><span class="ini-muted">Mai 18</span></td>
+              <td><div style="width:24px;height:24px;border-radius:50%;background:#0891b2;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff">A</div></td>
+            </tr>
+
+            <!-- IN-DOM-003: Risco de SLA de entrega -->
+            <tr data-status="attention" class="ini-row">
+              <td>
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                  <span class="init-status-dot attention"></span>
+                  <span class="init-id-chip">IN-DOM-003</span>
+                  <span class="init-sev high"><span style="width:5px;height:5px;border-radius:50%;background:currentColor;display:inline-block"></span> Alta</span>
+                  <span class="init-title">Pedidos com risco de entrega de SLA</span>
+                </div>
+              </td>
+              <td><span class="ini-muted">Fulfillment — Entrega</span></td>
+              <td>
+                <span style="color:#2563eb;font-size:12.5px;font-weight:500;display:inline-flex;align-items:center;gap:3px">
+                  <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><path d="M2 10l8-8M10 2H4M10 2v6"/></svg>
+                  On-time rate
+                </span>
+              </td>
+              <td><span class="ini-muted">Mai 19</span></td>
+              <td><div style="width:24px;height:24px;border-radius:50%;background:#059669;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff">R</div></td>
+            </tr>
+
+            <!-- IN-DOM-004: Amazon pagamento parado -->
+            <tr data-status="attention" class="ini-row">
+              <td>
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                  <span class="init-status-dot attention"></span>
+                  <span class="init-id-chip">IN-DOM-004</span>
+                  <span class="init-sev high"><span style="width:5px;height:5px;border-radius:50%;background:currentColor;display:inline-block"></span> Alta</span>
+                  <span class="init-title">Pedidos do Marketplace Amazon parados em aprovação de pagamento por mais de 2h</span>
+                </div>
+              </td>
+              <td><span class="ini-muted">Marketplace — Amazon</span></td>
+              <td>
+                <span style="color:#2563eb;font-size:12.5px;font-weight:500;display:inline-flex;align-items:center;gap:3px">
+                  <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><path d="M2 10l8-8M10 2H4M10 2v6"/></svg>
+                  Approval rate
+                </span>
+              </td>
+              <td><span class="ini-muted">Mai 19</span></td>
+              <td><div style="width:24px;height:24px;border-radius:50%;background:#d97706;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff">J</div></td>
+            </tr>
+
+
+            <!-- IN-DOM-005: Regra — Pedido travado em Separação -->
+            <tr data-status="triage" class="ini-row">
+              <td>
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                  <span class="init-status-dot triage"></span>
+                  <span class="init-id-chip">IN-DOM-005</span>
+                  <span class="init-sev high"><span style="width:5px;height:5px;border-radius:50%;background:currentColor;display:inline-block"></span> Alta</span>
+                  <span class="init-title">SE: Pedido travado há &gt; 8h em Separação → Escalar para gerente de operações</span>
+                </div>
+              </td>
+              <td><span class="ini-muted">Agente — Regra customizada</span></td>
+              <td><span class="ini-muted">—</span></td>
+              <td><span class="ini-muted">Mai 19</span></td>
+              <td><div style="width:24px;height:24px;border-radius:50%;background:#7c3aed;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff">AI</div></td>
+            </tr>
+
+            <!-- IN-DOM-006: Regra — Pedido de alto valor -->
+            <tr data-status="triage" class="ini-row">
+              <td>
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                  <span class="init-status-dot triage"></span>
+                  <span class="init-id-chip">IN-DOM-006</span>
+                  <span class="init-sev high"><span style="width:5px;height:5px;border-radius:50%;background:currentColor;display:inline-block"></span> Alta</span>
+                  <span class="init-title">SE: Valor do pedido &gt; R$ 5.000 → Requer confirmação humana antes de avançar</span>
+                </div>
+              </td>
+              <td><span class="ini-muted">Agente — Regra customizada</span></td>
+              <td><span class="ini-muted">—</span></td>
+              <td><span class="ini-muted">Mai 19</span></td>
+              <td><div style="width:24px;height:24px;border-radius:50%;background:#7c3aed;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff">AI</div></td>
+            </tr>
+
+            <!-- IN-DOM-007: Regra — Supplier sem capacidade -->
+            <tr data-status="triage" class="ini-row">
+              <td>
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                  <span class="init-status-dot triage"></span>
+                  <span class="init-id-chip">IN-DOM-007</span>
+                  <span class="init-sev medium"><span style="width:5px;height:5px;border-radius:50%;background:currentColor;display:inline-block"></span> Média</span>
+                  <span class="init-title">SE: Supplier sem capacidade há &gt; 2h → Sugerir realocação automaticamente</span>
+                </div>
+              </td>
+              <td><span class="ini-muted">Agente — Regra customizada</span></td>
+              <td><span class="ini-muted">—</span></td>
+              <td><span class="ini-muted">Mai 19</span></td>
+              <td><div style="width:24px;height:24px;border-radius:50%;background:#7c3aed;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff">AI</div></td>
+            </tr>
+
+            <!-- IN-DOM-008: Regra — Devolução de baixo valor -->
+            <tr data-status="triage" class="ini-row">
+              <td>
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                  <span class="init-status-dot triage"></span>
+                  <span class="init-id-chip">IN-DOM-008</span>
+                  <span class="init-sev low"><span style="width:5px;height:5px;border-radius:50%;background:currentColor;display:inline-block"></span> Baixa</span>
+                  <span class="init-title">SE: Valor de devolução &lt; R$ 200 → Reembolso automático sem auditoria manual</span>
+                </div>
+              </td>
+              <td><span class="ini-muted">Agente — Regra customizada</span></td>
+              <td><span class="ini-muted">—</span></td>
+              <td><span class="ini-muted">Mai 19</span></td>
+              <td><div style="width:24px;height:24px;border-radius:50%;background:#7c3aed;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff">AI</div></td>
+            </tr>
+
+          </tbody>
+        </table>
       </div>
     </div>
 
@@ -826,77 +1074,13 @@ tbody td{padding:10px 14px;font-size:13px;vertical-align:middle}
       </div>
     </div>
 
-    <!-- ══ SCREEN: ORDERS ══ -->
-    <div class="screen" id="screen-orders">
-      <div class="page-header">
-        <h1 class="page-title">Todos os pedidos</h1>
-        <div class="page-header-actions">
-          <button class="btn btn-primary">
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M8 2v10M4 8l4 4 4-4"/><path d="M2 14h12"/></svg>
-            Exportar
-          </button>
-        </div>
-      </div>
-      <div class="stats-bar">
-        <span class="stats-label">Total de pedidos</span>
-        <div class="stats-group">
-          <div class="stats-item"><span class="stats-period">Hoje</span><span class="stats-value">1.185</span></div>
-          <div class="stats-item"><span class="stats-period">Ontem</span><span class="stats-value">1.190</span><span class="stats-delta delta-neg">-0%</span></div>
-          <div class="stats-item"><span class="stats-period">Últimos 7 dias</span><span class="stats-value">1.182</span><span class="stats-delta delta-pos">0%</span></div>
-        </div>
-        <div class="stats-divider"></div>
-        <span class="stats-label">Vendas em BRL</span>
-        <div class="stats-group">
-          <div class="stats-item"><span class="stats-period">Vendas</span><span class="stats-value">4.256</span></div>
-          <div class="stats-item"><span class="stats-period">Ticket médio</span><span class="stats-value">R$ 35,98</span></div>
-          <div class="stats-item"><span class="stats-period">Receita</span><span class="stats-value">R$ 153.133,87</span></div>
-        </div>
-      </div>
-      <div class="search-filter-row">
-        <div class="search-box">
-          <svg class="search-box-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="7" cy="7" r="5"/><line x1="11" y1="11" x2="15" y2="15"/></svg>
-          <input type="text" placeholder="Buscar por Número de Pedido, CPF, Nome do Cliente...">
-        </div>
-        <div class="filter-chip ai-badge">
-          <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><circle cx="7" cy="7" r="5"/></svg>
-          Filtros AI (beta) <span class="badge-num">13</span>
-        </div>
-        <div class="filter-chip">Status: Em processamento +2 <svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="2" width="10" height="10"><path d="M2 4l3 3 3-3"/></svg></div>
-        <div class="filter-chip">Criado: Últimos 30 dias <svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="2" width="10" height="10"><path d="M2 4l3 3 3-3"/></svg></div>
-        <span class="pagination-info">1 — 30 de 4256 pedidos</span>
-      </div>
-      <div class="table-wrap">
-        <div class="table-toolbar">
-          <span class="table-toolbar-title">Pedidos</span>
-          <button class="btn btn-secondary btn-sm" id="task-tree-toggle" onclick="toggleTaskTree()" style="margin-left:auto">
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M2 4h3v3H2zM7 2h3v3H7zM7 8h3v3H7zM2 10h3v2H2z"/><path d="M5 5.5h2M5 11h2M10 3.5h2v9h-2"/></svg>
-            Mostrar Tarefas
-          </button>
-        </div>
-        <table>
-          <thead>
-            <tr>
-              <th>Status</th>
-              <th>Processamento</th>
-              <th>ID do pedido ⇅</th>
-              <th>Data ⇅</th>
-              <th>Cliente</th>
-              <th>Itens</th>
-              <th>Valor ⇅</th>
-              <th>Origem</th>
-              <th>Pagamento</th>
-              <th class="task-tree-col hidden" id="task-tree-header-col">Tarefas</th>
-            </tr>
-          </thead>
-          <tbody id="orders-tbody"></tbody>
-        </table>
-      </div>
-    </div>
+    <!-- ══ SCREEN: ORDERS (redirect to assistant) ══ -->
+    <div class="screen" id="screen-orders" style="display:none"></div>
 
     <!-- ══ SCREEN: ORDER DETAIL ══ -->
     <div class="screen" id="screen-detail">
       <div class="detail-header">
-        <button class="back-btn" onclick="showScreen('orders')">
+        <button class="back-btn" onclick="showScreen('assistant')">
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M10 4L6 8l4 4"/></svg>
           Voltar
         </button>
@@ -981,7 +1165,7 @@ tbody td{padding:10px 14px;font-size:13px;vertical-align:middle}
           <div style="font-size:12.5px;color:#888;margin-top:3px">Gerencie os workflows de pedidos da sua operação</div>
         </div>
         <div class="page-header-actions">
-          <button class="btn btn-primary">
+          <button class="btn btn-primary" onclick="openNewWorkflowModal()">
             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M8 2v12M2 8h12"/></svg>
             Novo Workflow
           </button>
@@ -1129,6 +1313,10 @@ tbody td{padding:10px 14px;font-size:13px;vertical-align:middle}
               <div class="toggle-row"><div><div class="toggle-label">Workflow Padrão</div><div class="toggle-sub">5 etapas · 4.256 pedidos ativos</div></div><button class="toggle-switch on" id="wf-cov-standard" onclick="this.classList.toggle('on');this.classList.toggle('off')"></button></div>
               <div class="toggle-row"><div><div class="toggle-label">Troca e Devolução</div><div class="toggle-sub">5 etapas · 83 pedidos ativos</div></div><button class="toggle-switch on" id="wf-cov-returns" onclick="this.classList.toggle('on');this.classList.toggle('off')"></button></div>
               <div class="toggle-row"><div><div class="toggle-label">Aprovação de Pagamento</div><div class="toggle-sub">4 etapas · 12 pedidos ativos</div></div><button class="toggle-switch off" id="wf-cov-payment" onclick="this.classList.toggle('on');this.classList.toggle('off')"></button></div>
+              <div class="toggle-row"><div><div class="toggle-label">BOPIS — Retirada na Loja</div><div class="toggle-sub">4 etapas · 127 pedidos ativos</div></div><button class="toggle-switch on" id="wf-cov-bopis" onclick="this.classList.toggle('on');this.classList.toggle('off')"></button></div>
+              <div class="toggle-row"><div><div class="toggle-label">Ship-from-Store</div><div class="toggle-sub">5 etapas · 48 pedidos ativos</div></div><button class="toggle-switch on" id="wf-cov-sfs" onclick="this.classList.toggle('on');this.classList.toggle('off')"></button></div>
+              <div class="toggle-row"><div><div class="toggle-label">Produto Virtual</div><div class="toggle-sub">3 etapas · 312 pedidos ativos</div></div><button class="toggle-switch on" id="wf-cov-virtual" onclick="this.classList.toggle('on');this.classList.toggle('off')"></button></div>
+              <div class="toggle-row"><div><div class="toggle-label">Assinatura Recorrente</div><div class="toggle-sub">4 etapas · 891 pedidos ativos · <span style="color:#92400e;font-size:10.5px;font-weight:600">✏️ Seu workflow</span></div></div><button class="toggle-switch on" id="wf-cov-subscription" onclick="this.classList.toggle('on');this.classList.toggle('off')"></button></div>
             </div>
             <div style="border-top:1px solid #f0f0f0;padding-top:12px;margin-top:4px">
               <div class="slider-wrap">
@@ -1145,17 +1333,7 @@ tbody td{padding:10px 14px;font-size:13px;vertical-align:middle}
             </div>
           </div>
 
-          <!-- 4. Regras Customizadas -->
-          <div class="settings-card orch-card" id="ocard-rules">
-            <div class="settings-card-title" style="justify-content:space-between">
-              <span><span class="sc-title-icon">📏</span> Regras Customizadas</span>
-              <button class="btn btn-secondary btn-sm" onclick="addRuleViaChat()" style="font-size:11.5px;padding:4px 10px">+ Nova Regra</button>
-            </div>
-            <div style="font-size:12px;color:#888;margin-top:-6px">Defina condições específicas que o agente deve seguir além do comportamento padrão. Regras são avaliadas em ordem de prioridade.</div>
-            <div id="custom-rules-list"></div>
-          </div>
-
-          <!-- 5. Atividade Recente -->
+          <!-- 4. Atividade Recente -->
           <div class="settings-card orch-card" id="ocard-activity" style="padding-bottom:12px">
             <div class="settings-card-title"><span class="sc-title-icon">📋</span> Atividade Recente</div>
             <div class="agent-event"><div class="agent-event-icon" style="background:#fef9c3">⚠️</div><div style="flex:1"><div class="agent-event-title">Pedido 68948228 — Separação travada</div><div class="agent-event-sub">Parada há 3h. Agente sugeriu CD Rio de Janeiro como alternativa.</div></div><div class="agent-event-time">12 min</div></div>
@@ -1228,6 +1406,9 @@ tbody td{padding:10px 14px;font-size:13px;vertical-align:middle}
             <div>
               <div style="font-size:12px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Tipo de entrega</div>
               <div class="checkbox-row"><input type="checkbox" id="r-all" checked><label for="r-all">Todos os tipos</label></div>
+              <div class="checkbox-row"><input type="checkbox" id="r-bopis"><label for="r-bopis">BOPIS (retirada na loja)</label></div>
+              <div class="checkbox-row"><input type="checkbox" id="r-sfs"><label for="r-sfs">Ship-from-store</label></div>
+              <div class="checkbox-row"><input type="checkbox" id="r-virtual"><label for="r-virtual">Produto virtual</label></div>
             </div>
             <div>
               <div style="font-size:12px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Canal de venda</div>
@@ -1248,8 +1429,187 @@ tbody td{padding:10px 14px;font-size:13px;vertical-align:middle}
       </div>
     </div>
 
+    <!-- ══ SCREEN: EXTENSIBILITY WORKSPACE ══ -->
+    <div class="screen" id="screen-extensibility">
+      <div class="ext-ws-header">
+        <button class="ext-crumb-btn" onclick="openAITeamDrawer()">Minha equipe de IA</button>
+        <span class="ext-crumb-sep">/</span>
+        <span class="ext-crumb-cur" id="ext-crumb-cur">Extensibilidade</span>
+      </div>
+      <div class="ext-ws-body">
+        <!-- Left nav -->
+        <div class="ext-ws-nav">
+          <div class="ext-nav-section">Workspace</div>
+          <div style="font-size:12px;font-weight:700;color:#374151;padding:4px 18px 8px;letter-spacing:-.1px">Extensibilidade</div>
+          <div class="ext-nav-item active" id="ext-nav-overview" onclick="extNavSelect('overview',this)">
+            <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" width="13" height="13"><rect x="1" y="1" width="5" height="5" rx="1"/><rect x="8" y="1" width="5" height="5" rx="1"/><rect x="1" y="8" width="5" height="5" rx="1"/><rect x="8" y="8" width="5" height="5" rx="1"/></svg>
+            Visão geral
+          </div>
+          <div class="ext-nav-item" id="ext-nav-rules" onclick="extNavSelect('rules',this)">
+            <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" width="13" height="13"><rect x="2" y="1" width="10" height="12" rx="1"/><path d="M4 5h6M4 8h6M4 11h4"/></svg>
+            Regras
+            <span class="ext-nav-count">5</span>
+          </div>
+          <div class="ext-nav-item" id="ext-nav-memory" onclick="extNavSelect('memory',this)">
+            <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" width="13" height="13"><circle cx="7" cy="7" r="5"/><path d="M7 4v3l2 1.5"/></svg>
+            Memória
+            <span class="ext-nav-count" style="background:#fef9c3;color:#854d0e;border:1px solid #fde68a">2</span>
+          </div>
+          <div class="ext-nav-section" style="margin-top:8px">Contextual</div>
+          <div class="ext-nav-item" id="ext-nav-connectors" onclick="extNavSelect('connectors',this)">
+            <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" width="13" height="13"><path d="M2 7h10M9 4l3 3-3 3"/></svg>
+            Conectores
+            <span class="ext-nav-count">4</span>
+          </div>
+          <div class="ext-nav-section" style="margin-top:8px">Sistêmico</div>
+          <div class="ext-nav-item" id="ext-nav-permissions" onclick="extNavSelect('permissions',this)">
+            <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" width="13" height="13"><rect x="4" y="6" width="6" height="7" rx="1"/><path d="M5 6V4.5a2 2 0 014 0V6"/></svg>
+            Permissões
+          </div>
+        </div>
+
+        <!-- Content area -->
+        <div class="ext-ws-content" id="ext-ws-content">
+          <!-- Content injected by extNavSelect() -->
+        </div>
+      </div>
+    </div>
+
   </div>
 </div>
+
+<!-- ══ AI TEAM DRAWER ══ -->
+<div class="ai-team-backdrop" id="ai-team-backdrop" onclick="closeAITeamDrawer()"></div>
+<div class="ai-team-drawer" id="ai-team-drawer">
+  <div class="atd-header">
+    <span class="atd-title">Minha equipe de IA</span>
+    <button class="atd-open-ext" onclick="openExtensibilityWorkspace('overview')">
+      Abrir workspace de extensibilidade
+      <svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="2" width="9" height="9"><path d="M2 9L8 5 2 1"/></svg>
+    </button>
+    <button class="atd-close" onclick="closeAITeamDrawer()">×</button>
+  </div>
+  <div class="atd-tabs">
+    <div class="atd-tab active" id="atd-tab-agents" onclick="switchAITeamTab('agents')">
+      Agentes <span class="atd-tab-count">2</span>
+    </div>
+    <div class="atd-tab" id="atd-tab-ext" onclick="switchAITeamTab('ext')">
+      Extensibilidade <span class="atd-tab-new">NOVO</span>
+    </div>
+  </div>
+  <div class="atd-body">
+
+    <!-- AGENTS TAB -->
+    <div class="atd-tab-panel active" id="atd-panel-agents">
+      <div class="atd-section-label">Agentes configurados</div>
+
+      <!-- Order Management Agent -->
+      <div class="atd-agent-card" onclick="closeAITeamDrawer();showScreen('agent-config')">
+        <div class="atd-agent-avatar" style="background:#e0f2fe">🤖</div>
+        <div style="flex:1;min-width:0">
+          <div class="atd-agent-name">Agente de Orquestração</div>
+          <div class="atd-agent-meta">Order Management · Exceções e SLA</div>
+          <div class="atd-agent-stat">
+            <span class="atd-agent-status-dot"></span>
+            Ativo · 4.256 pedidos monitorados · Confiança 75%
+          </div>
+        </div>
+        <div class="atd-chevron">›</div>
+      </div>
+
+      <!-- Workflow Builder Agent -->
+      <div class="atd-agent-card" onclick="closeAITeamDrawer();openNewWorkflowModal()">
+        <div class="atd-agent-avatar" style="background:#faf5ff">⚙️</div>
+        <div style="flex:1;min-width:0">
+          <div class="atd-agent-name">Agente de Workflow</div>
+          <div class="atd-agent-meta">Criação e configuração de workflows</div>
+          <div class="atd-agent-stat">
+            <span class="atd-agent-status-dot"></span>
+            Ativo · 7 workflows criados
+          </div>
+        </div>
+        <div class="atd-chevron">›</div>
+      </div>
+
+      <div class="atd-section-label" style="margin-top:8px">Acesso rápido</div>
+      <div style="display:flex;flex-direction:column;gap:6px">
+        <button onclick="closeAITeamDrawer();showScreen('workflow-list')" style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:#fff;border:1px solid #e9ecef;border-radius:8px;cursor:pointer;text-align:left;font-family:inherit;transition:border-color .15s" onmouseover="this.style.borderColor='#2563eb'" onmouseout="this.style.borderColor='#e9ecef'">
+          <span style="font-size:16px">📋</span>
+          <span style="font-size:13px;font-weight:500;color:#374151">Workflow Board</span>
+          <span style="margin-left:auto;color:#d1d5db;font-size:14px">›</span>
+        </button>
+        <button onclick="closeAITeamDrawer();showScreen('agent-config')" style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:#fff;border:1px solid #e9ecef;border-radius:8px;cursor:pointer;text-align:left;font-family:inherit;transition:border-color .15s" onmouseover="this.style.borderColor='#2563eb'" onmouseout="this.style.borderColor='#e9ecef'">
+          <span style="font-size:16px">🎯</span>
+          <span style="font-size:13px;font-weight:500;color:#374151">Configurações do Agente</span>
+          <span style="margin-left:auto;color:#d1d5db;font-size:14px">›</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- EXTENSIBILITY TAB -->
+    <div class="atd-tab-panel" id="atd-panel-ext">
+      <div style="font-size:12.5px;color:#6b7280;line-height:1.6;margin-bottom:16px">
+        Extensibilidade torna seus agentes adaptados ao seu negócio — codifique regras inegociáveis, deixe os agentes aprenderem com sua equipe e conecte os sistemas que já têm a verdade.
+      </div>
+
+      <!-- Regras do agente -->
+      <div class="atd-ext-tile" onclick="openExtensibilityWorkspace('rules')">
+        <div class="atd-ext-icon" style="background:#eff6ff">
+          <svg viewBox="0 0 18 18" fill="none" stroke="#2563eb" stroke-width="1.8" width="17" height="17"><rect x="3" y="2" width="12" height="14" rx="2"/><path d="M6 6h6M6 9h6M6 12h4"/></svg>
+        </div>
+        <div style="flex:1;min-width:0">
+          <div class="atd-ext-title">Regras do agente</div>
+          <div class="atd-ext-desc">Regras inegociáveis que cada agente deve seguir</div>
+          <div class="atd-ext-stat">5 ativas · 184 diagnósticos suprimidos em 30d</div>
+        </div>
+        <div class="atd-chevron">›</div>
+      </div>
+
+      <!-- Memória -->
+      <div class="atd-ext-tile" onclick="openExtensibilityWorkspace('memory')">
+        <div class="atd-ext-icon" style="background:#faf5ff">
+          <svg viewBox="0 0 18 18" fill="none" stroke="#7c3aed" stroke-width="1.8" width="17" height="17"><circle cx="9" cy="9" r="6"/><path d="M9 6v3l2 2"/></svg>
+        </div>
+        <div style="flex:1;min-width:0">
+          <div class="atd-ext-title">Memória <span class="atd-review-badge">2 para revisar</span></div>
+          <div class="atd-ext-desc">Padrões capturados dos seus edits e feedbacks</div>
+          <div class="atd-ext-stat">2 aprendidos este mês</div>
+        </div>
+        <div class="atd-chevron">›</div>
+      </div>
+
+      <!-- Conectores -->
+      <div class="atd-ext-tile" onclick="openExtensibilityWorkspace('connectors')">
+        <div class="atd-ext-icon" style="background:#ecfdf5">
+          <svg viewBox="0 0 18 18" fill="none" stroke="#059669" stroke-width="1.8" width="17" height="17"><path d="M3 9h12M9 3l4 6-4 6"/></svg>
+        </div>
+        <div style="flex:1;min-width:0">
+          <div class="atd-ext-title">Conectores e integrações</div>
+          <div class="atd-ext-desc">Onde seus dados vivem — WMS, ERP, PIM, Marketplaces</div>
+          <div class="atd-ext-stat">4 conectados · 3 fontes mapeadas</div>
+        </div>
+        <div class="atd-chevron">›</div>
+      </div>
+
+      <!-- Permissões -->
+      <div class="atd-ext-tile" onclick="openExtensibilityWorkspace('permissions')">
+        <div class="atd-ext-icon" style="background:#fff7ed">
+          <svg viewBox="0 0 18 18" fill="none" stroke="#d97706" stroke-width="1.8" width="17" height="17"><rect x="5" y="8" width="8" height="8" rx="1"/><path d="M7 8V6a2 2 0 014 0v2"/></svg>
+        </div>
+        <div style="flex:1;min-width:0">
+          <div class="atd-ext-title">Permissões e auditoria</div>
+          <div class="atd-ext-desc">Quem pode fazer o quê e histórico completo de ações</div>
+          <div class="atd-ext-stat">2 agentes · 3 escopos · 48 eventos</div>
+        </div>
+        <div class="atd-chevron">›</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══ SCREEN: EXTENSIBILITY WORKSPACE ══ -->
+<!-- (injected into app-body via JS — appended before modals) -->
 
 <!-- MODALS -->
 <div class="modal-overlay" id="modal-delete">
@@ -1317,6 +1677,85 @@ tbody td{padding:10px 14px;font-size:13px;vertical-align:middle}
   </div>
 </div>
 
+<div class="modal-overlay" id="modal-new-workflow">
+  <div class="wf-create-modal">
+    <div class="wf-create-header">
+      <div>
+        <div style="font-size:15px;font-weight:700;color:#111827">Novo Workflow</div>
+        <div style="font-size:12px;color:#9ca3af;margin-top:2px">O assistente vai ajudar a criar ou alterar um workflow</div>
+      </div>
+      <button onclick="closeModal('modal-new-workflow')" style="border:none;background:transparent;cursor:pointer;color:#9ca3af;font-size:20px;line-height:1;padding:2px 6px">×</button>
+    </div>
+    <div class="wf-create-layout">
+      <!-- LEFT: AI Chat -->
+      <div class="wf-create-chat">
+        <div style="padding:12px 14px;border-bottom:1px solid #f0f4f8;display:flex;align-items:center;gap:10px;flex-shrink:0">
+          <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#2563eb);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">🤖</div>
+          <div>
+            <div style="font-size:12.5px;font-weight:600;color:#111827">Assistente de Workflow</div>
+            <div style="font-size:11px;color:#9ca3af">AI · Modo criação</div>
+          </div>
+        </div>
+        <div class="orch-chat-msgs" id="wfc-msgs" style="flex:1;padding:14px;gap:8px"></div>
+        <div id="wfc-sugg-wrap" style="padding:4px 12px 6px;display:flex;flex-wrap:wrap;gap:4px;min-height:28px"></div>
+        <div style="padding:8px 12px 12px;display:flex;gap:6px;align-items:center;border-top:1px solid #f0f4f8;flex-shrink:0">
+          <input class="cm-input" id="wfc-input" placeholder="Responda ou descreva…" onkeydown="if(event.key==='Enter')sendWfcChat()">
+          <button class="cm-send" onclick="sendWfcChat()" style="background:#2563eb">
+            <svg viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="2" width="13" height="13"><path d="M14 2L2 8l4 2 2 4 6-12z"/></svg>
+          </button>
+        </div>
+      </div>
+      <!-- RIGHT: Preview -->
+      <div class="wf-create-preview" id="wfc-preview">
+        <div style="font-size:11px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Prévia do workflow</div>
+        <div class="wf-preview-card" id="wfc-preview-card">
+          <div class="wf-preview-field">
+            <span class="wf-preview-label">Nome</span>
+            <span class="wf-preview-value empty" id="wfc-prev-name">Aguardando...</span>
+          </div>
+          <div class="wf-preview-field">
+            <span class="wf-preview-label">Descrição</span>
+            <span class="wf-preview-value empty" id="wfc-prev-desc">Aguardando...</span>
+          </div>
+          <div class="wf-preview-field">
+            <span class="wf-preview-label">Acionamento</span>
+            <span class="wf-preview-value empty" id="wfc-prev-trigger">Aguardando...</span>
+          </div>
+          <div class="wf-preview-field">
+            <span class="wf-preview-label">Etapas</span>
+            <div class="wf-preview-steps" id="wfc-prev-steps">
+              <span style="font-size:12px;color:#d1d5db;font-style:italic">Nenhuma etapa ainda</span>
+            </div>
+          </div>
+          <div class="wf-preview-field" id="wfc-prev-pnp-row" style="display:none">
+            <span class="wf-preview-label">Integração nativa</span>
+            <div class="pnp-card" style="margin-top:4px">
+              <div class="pnp-card-header">
+                <span style="font-size:18px">🔧</span>
+                <div>
+                  <div style="font-size:12.5px;font-weight:700;color:#c2410c">VTEX Pick and Pack</div>
+                  <div style="font-size:11px;color:#888">Injeção nativa de eventos de fulfillment no OMS</div>
+                </div>
+                <span class="pnp-badge" style="margin-left:auto">Nativo VTEX</span>
+              </div>
+              <div class="pnp-events">
+                <div class="pnp-event-row"><span class="pnp-event-name">pnp.itemSeparado</span><span class="pnp-event-desc">Item separado pelo operador</span></div>
+                <div class="pnp-event-row"><span class="pnp-event-name">pnp.itemConferido</span><span class="pnp-event-desc">Conferência de qualidade concluída</span></div>
+                <div class="pnp-event-row"><span class="pnp-event-name">pnp.pacoteEmbalado</span><span class="pnp-event-desc">Pacote embalado e etiquetado</span></div>
+                <div class="pnp-event-row"><span class="pnp-event-name">pnp.handoffCarrier</span><span class="pnp-event-desc">Handoff ao carrier registrado</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:8px">
+          <button class="btn btn-secondary" onclick="closeModal('modal-new-workflow')">Cancelar</button>
+          <button class="btn btn-primary" id="wfc-save-btn" disabled onclick="saveNewWorkflow()" style="opacity:.5;cursor:not-allowed">Criar Workflow</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
 // ══════════════════════════════════════════
 // DATA
@@ -1345,6 +1784,14 @@ const ORDERS = [
   { id:'1631818946200-01', short:'68946200', date:'13/05/2026 - 10:55', client:'Diego Ferreira', items:2, total:'R$ 155,00', origin:'Loja própria', orderStatus:'processed', tasks:[
     {n:'Separação',s:'done'},{n:'Conferência',s:'done'},{n:'Embalagem',s:'done'},{n:'Expedição',s:'done'}] },
   { id:'1631808945900-01', short:'68945900', date:'13/05/2026 - 10:12', client:'Juliana Santos', items:3, total:'R$ 220,00', origin:'Marketplace', orderStatus:'canceled', tasks:[] },
+  { id:'1631780944300-01', short:'68944300', date:'13/05/2026 - 08:14', client:'Gustavo Fonseca', items:1, total:'R$ 299,90', origin:'Loja própria', orderStatus:'processing', workflowType:'bopis', tasks:[
+    {n:'Confirmação',s:'done'},{n:'Separação',s:'done'},{n:'Notificação',s:'active'},{n:'Retirada',s:'waiting'}] },
+  { id:'1631770944100-01', short:'68944100', date:'13/05/2026 - 07:50', client:'Beatriz Alves', items:2, total:'R$ 620,00', origin:'Loja própria', orderStatus:'processing', workflowType:'sfs', tasks:[
+    {n:'Estoque',s:'done'},{n:'Separação',s:'active'},{n:'NF',s:'waiting'},{n:'Coleta',s:'waiting'},{n:'Entrega',s:'waiting'}] },
+  { id:'1631760943900-01', short:'68943900', date:'13/05/2026 - 07:22', client:'Thiago Rocha', items:1, total:'R$ 49,90', origin:'Marketplace', orderStatus:'processing', workflowType:'virtual', tasks:[
+    {n:'Validação',s:'done'},{n:'Licença',s:'active'},{n:'Envio',s:'waiting'}] },
+  { id:'1631750943700-01', short:'68943700', date:'13/05/2026 - 06:45', client:'Camila Souza', items:3, total:'R$ 187,00', origin:'Loja própria', orderStatus:'processing', workflowType:'subscription', tasks:[
+    {n:'Assinatura',s:'done'},{n:'Cobrança',s:'done'},{n:'Separação',s:'active'},{n:'Entrega',s:'waiting'}] },
 ];
 
 // Per-order item details
@@ -1430,6 +1877,7 @@ const WORKFLOW_DEFS = [
   {
     id:'wf-standard', name:'Workflow Padrão', icon:'📦', color:'#0c6fcd', orderCount:4256,
     description:'Fluxo padrão para pedidos de entrega convencional', dependencies:[],
+    userCreated: false,
     tasks:[
       {id:'t1',name:'Separação de Itens',supplier:'CD São Paulo',category:'Todos',color:'#0c6fcd',active:true,
         actions:['validarEstoque','ReservarEstoque'],script:null,externalApi:null,
@@ -1459,6 +1907,7 @@ const WORKFLOW_DEFS = [
   {
     id:'wf-returns', name:'Troca e Devolução', icon:'↩️', color:'#7c3aed', orderCount:83,
     description:'Fluxo para pedidos de devolução e troca de produtos', dependencies:['wf-standard'],
+    userCreated: false,
     tasks:[
       {id:'r1',name:'Solicitação Recebida',supplier:'Atendimento',category:'Todos',color:'#7c3aed',active:true},
       {id:'r2',name:'Análise do Motivo',supplier:'QA Team',category:'Todos',color:'#6366f1',active:true},
@@ -1474,6 +1923,7 @@ const WORKFLOW_DEFS = [
   {
     id:'wf-payment', name:'Aprovação de Pagamento', icon:'💳', color:'#059669', orderCount:12,
     description:'Fluxo de aprovação manual para pedidos B2B acima de R$ 10.000', dependencies:[],
+    userCreated: false,
     tasks:[
       {id:'p1',name:'Validação do Comprador',supplier:'Financeiro',category:'B2B',color:'#059669',active:true},
       {id:'p2',name:'Análise de Crédito',supplier:'Financeiro',category:'B2B',color:'#0891b2',active:true},
@@ -1485,6 +1935,56 @@ const WORKFLOW_DEFS = [
       {id:'pe3',from:'p3',to:'p4',active:true},
     ],
   },
+  {
+    id:'wf-bopis', name:'BOPIS — Retirada na Loja', icon:'🏪', color:'#0891b2', orderCount:127,
+    description:'Pedidos comprados online e retirados em loja física (Buy Online, Pick Up In Store)', dependencies:[],
+    userCreated: false,
+    tasks:[
+      {id:'b1',name:'Confirmação de Disponibilidade',supplier:'Loja Física BH',category:'Todos',color:'#0891b2',active:true,actions:[],script:null,externalApi:null,contextOutput:[]},
+      {id:'b2',name:'Separação na Loja',supplier:'Loja Física BH',category:'Todos',color:'#0c6fcd',active:true,actions:['enviar_email'],script:null,externalApi:null,contextOutput:[]},
+      {id:'b3',name:'Notificação ao Cliente',supplier:'Atendimento',category:'Todos',color:'#6366f1',active:true,actions:['enviar_email'],script:null,externalApi:null,contextOutput:[]},
+      {id:'b4',name:'Check-in de Retirada',supplier:'Loja Física BH',category:'Todos',color:'#059669',active:true,actions:[],script:null,externalApi:null,contextOutput:[]},
+    ],
+    edges:[{id:'be1',from:'b1',to:'b2',active:true},{id:'be2',from:'b2',to:'b3',active:true},{id:'be3',from:'b3',to:'b4',active:true}],
+  },
+  {
+    id:'wf-sfs', name:'Ship-from-Store', icon:'🏬', color:'#d97706', orderCount:48,
+    description:'Pedidos expedidos diretamente de lojas físicas para o endereço do cliente', dependencies:[],
+    userCreated: false,
+    tasks:[
+      {id:'s1',name:'Verificação de Estoque na Loja',supplier:'Loja Física BH',category:'Todos',color:'#d97706',active:true,actions:['validarEstoque'],script:null,externalApi:null,contextOutput:['validarEstoque.disponivel','validarEstoque.ok']},
+      {id:'s2',name:'Separação e Embalagem',supplier:'Loja Física BH',category:'Todos',color:'#0891b2',active:true,actions:[],script:null,externalApi:null,contextOutput:[]},
+      {id:'s3',name:'Emissão de NF',supplier:'Financeiro',category:'Todos',color:'#059669',active:true,actions:['CapturarPagamento'],script:null,externalApi:{url:'https://api.nfe.io/v1/nota',method:'POST',responseMapping:[{key:'nf_numero',path:'data.number'}]},contextOutput:['api_nfe.nf_numero']},
+      {id:'s4',name:'Coleta pelo Carrier',supplier:'Transportadora XYZ',category:'Todos',color:'#6366f1',active:true,actions:['AlterarSellerPedido'],script:null,externalApi:null,contextOutput:[]},
+      {id:'s5',name:'Entrega ao Cliente',supplier:'Transportadora XYZ',category:'Todos',color:'#0c6fcd',active:true,actions:['enviar_email'],script:null,externalApi:null,contextOutput:[]},
+    ],
+    edges:[{id:'se1',from:'s1',to:'s2',active:true},{id:'se2',from:'s2',to:'s3',active:true},{id:'se3',from:'s3',to:'s4',active:true},{id:'se4',from:'s4',to:'s5',active:true}],
+  },
+  {
+    id:'wf-virtual', name:'Produto Virtual', icon:'⚡', color:'#7c3aed', orderCount:312,
+    description:'Ativação e entrega de produtos digitais — licenças, códigos de software, conteúdo digital', dependencies:[],
+    userCreated: false,
+    tasks:[
+      {id:'v1',name:'Validação do Pedido',supplier:'Financeiro',category:'Produto Virtual',color:'#7c3aed',active:true,actions:['CapturarPagamento'],script:null,externalApi:null,contextOutput:[]},
+      {id:'v2',name:'Geração de Licença / Código',supplier:'Sistema de Licenças',category:'Produto Virtual',color:'#6366f1',active:true,actions:[],script:'// Geração de chave de licença\nconst pedidoId = context.pedido_id || "";\ncontext.licenca_key = `LIC-${pedidoId}-${Date.now().toString(36).toUpperCase()}`;\ncontext.licenca_expira = new Date(Date.now()+365*86400000).toISOString();\ncontext.licenca_pronta = true;',externalApi:null,contextOutput:['licenca_key','licenca_expira']},
+      {id:'v3',name:'Envio ao Cliente',supplier:'Atendimento',category:'Produto Virtual',color:'#059669',active:true,actions:['enviar_email'],script:null,externalApi:null,contextOutput:[]},
+    ],
+    edges:[{id:'ve1',from:'v1',to:'v2',active:true},{id:'ve2',from:'v2',to:'v3',active:true}],
+  },
+  {
+    id:'wf-subscription', name:'Assinatura Recorrente', icon:'🔄', color:'#6366f1', orderCount:891,
+    description:'Renovação automática de pedidos recorrentes — assinaturas e reposição programada', dependencies:[],
+    userCreated: true,
+    createdBy: 'Você',
+    createdAt: '10/05/2026',
+    tasks:[
+      {id:'sub1',name:'Verificação de Assinatura Ativa',supplier:'Financeiro',category:'Assinatura',color:'#6366f1',active:true,actions:[],script:'// Verifica status da assinatura\ncontext.assinatura_ok = context.assinatura_status === "ativa";\ncontext.proximo_ciclo = context.ciclo_atual + 1;',externalApi:null,contextOutput:['assinatura_ok','proximo_ciclo']},
+      {id:'sub2',name:'Cobrança Recorrente',supplier:'Financeiro',category:'Assinatura',color:'#059669',active:true,actions:['CapturarPagamento'],script:null,externalApi:null,contextOutput:[]},
+      {id:'sub3',name:'Separação e Expedição',supplier:'CD São Paulo',category:'Assinatura',color:'#0891b2',active:true,actions:['validarEstoque','ReservarEstoque'],script:null,externalApi:null,contextOutput:[]},
+      {id:'sub4',name:'Confirmação de Entrega',supplier:'Transportadora XYZ',category:'Assinatura',color:'#0c6fcd',active:true,actions:['enviar_email'],script:null,externalApi:null,contextOutput:[]},
+    ],
+    edges:[{id:'sube1',from:'sub1',to:'sub2',active:true},{id:'sube2',from:'sub2',to:'sub3',active:true},{id:'sube3',from:'sub3',to:'sub4',active:true}],
+  },
 ];
 
 let currentWorkflowId = null;
@@ -1495,7 +1995,298 @@ let WF_EDGES = [];
 // NAVIGATION
 // ══════════════════════════════════════════
 
+// ══════════════════════════════════════════
+// AI TEAM DRAWER
+// ══════════════════════════════════════════
+function openAITeamDrawer() {
+  document.getElementById('ai-team-drawer').classList.add('open');
+  document.getElementById('ai-team-backdrop').classList.add('open');
+}
+function closeAITeamDrawer() {
+  document.getElementById('ai-team-drawer').classList.remove('open');
+  document.getElementById('ai-team-backdrop').classList.remove('open');
+}
+function switchAITeamTab(tab) {
+  ['agents','ext'].forEach(t => {
+    document.getElementById('atd-tab-' + t).classList.toggle('active', t === tab);
+    document.getElementById('atd-panel-' + t).classList.toggle('active', t === tab);
+  });
+}
+
+// ══════════════════════════════════════════
+// EXTENSIBILITY WORKSPACE
+// ══════════════════════════════════════════
+function openExtensibilityWorkspace(section) {
+  closeAITeamDrawer();
+  showScreen('extensibility');
+  extNavSelect(section, document.getElementById('ext-nav-' + section));
+}
+
+function extNavSelect(section, el) {
+  // Update nav highlight
+  document.querySelectorAll('.ext-nav-item').forEach(n => n.classList.remove('active'));
+  if (el) el.classList.add('active');
+  // Update breadcrumb
+  const labels = {overview:'Visão geral', rules:'Regras', memory:'Memória', connectors:'Conectores', permissions:'Permissões'};
+  const crumb = document.getElementById('ext-crumb-cur');
+  if (crumb) crumb.textContent = labels[section] || 'Extensibilidade';
+  // Render content
+  const content = document.getElementById('ext-ws-content');
+  if (!content) return;
+  const htmls = {
+    overview: `
+      <div class="ext-page-head">
+        <div class="ext-page-title">Extensibilidade</div>
+        <button class="btn btn-primary btn-sm">+ Nova regra</button>
+      </div>
+      <div style="font-size:13px;color:#6b7280;margin-bottom:20px">Codifique regras inegociáveis, ensine padrões ao agente e conecte os sistemas que já têm a verdade sobre a sua operação.</div>
+      <div class="ext-overview-grid">
+        <div class="ext-ov-card" onclick="extNavSelect('rules',document.getElementById('ext-nav-rules'))">
+          <div class="ext-ov-icon">📋</div>
+          <div class="ext-ov-title">Regras do agente</div>
+          <div class="ext-ov-desc">Regras não-negociáveis que cada agente deve seguir ao tomar decisões</div>
+          <div class="ext-ov-stat" style="color:#16a34a;font-weight:600">5 ativas · 184 diagnósticos suprimidos (30d)</div>
+        </div>
+        <div class="ext-ov-card" onclick="extNavSelect('memory',document.getElementById('ext-nav-memory'))">
+          <div class="ext-ov-icon">🧠</div>
+          <div class="ext-ov-title">Memória</div>
+          <div class="ext-ov-desc">Padrões capturados a partir dos seus edits e feedbacks operacionais</div>
+          <div class="ext-ov-stat" style="color:#854d0e;font-weight:600">2 para revisar este mês</div>
+        </div>
+        <div class="ext-ov-card" onclick="extNavSelect('connectors',document.getElementById('ext-nav-connectors'))">
+          <div class="ext-ov-icon">🔌</div>
+          <div class="ext-ov-title">Conectores e integrações</div>
+          <div class="ext-ov-desc">Integre WMS, ERP, marketplaces e eventos nativos VTEX ao agente</div>
+          <div class="ext-ov-stat" style="color:#059669;font-weight:600">4 conectados · 3 fontes de verdade</div>
+        </div>
+        <div class="ext-ov-card" onclick="extNavSelect('permissions',document.getElementById('ext-nav-permissions'))">
+          <div class="ext-ov-icon">🔒</div>
+          <div class="ext-ov-title">Permissões e auditoria</div>
+          <div class="ext-ov-desc">Controle quem pode configurar o agente e audite todas as ações</div>
+          <div class="ext-ov-stat" style="color:#6b7280;font-weight:600">2 agentes · 3 escopos · 48 eventos</div>
+        </div>
+      </div>`,
+
+    rules: `
+      <div class="ext-page-head">
+        <div class="ext-page-title">Regras do agente</div>
+        <button class="btn btn-primary btn-sm" onclick="addRuleViaChat()">+ Nova regra</button>
+      </div>
+      <div style="font-size:13px;color:#6b7280;margin-bottom:20px">Regras não-negociáveis que o agente deve seguir ao tomar decisões. Regras são avaliadas em ordem de prioridade.</div>
+
+      <div class="ext-rule-row">
+        <span class="ext-rule-ref">R-001</span>
+        <div style="flex:1;min-width:0">
+          <div class="ext-rule-agent-tag">Agente de Orquestração</div>
+          <div class="ext-rule-title">Nunca cancelar pedido automaticamente sem aprovação humana</div>
+          <div class="ext-rule-desc">Se o agente identificar que um pedido deve ser cancelado (ex: estoque indisponível, fraude), deve criar uma task manual para o operador — nunca agir sozinho.</div>
+          <div class="ext-rule-chips"><span class="ext-chip active">Ativa</span><span class="ext-chip">Cancelamento</span><span class="ext-chip">Segurança</span></div>
+        </div>
+      </div>
+      <div class="ext-rule-row">
+        <span class="ext-rule-ref">R-002</span>
+        <div style="flex:1;min-width:0">
+          <div class="ext-rule-agent-tag">Agente de Orquestração</div>
+          <div class="ext-rule-title">Ignorar pedidos com tag "teste" no monitoramento de SLA</div>
+          <div class="ext-rule-desc">Pedidos marcados como teste não devem ser incluídos nos alertas de SLA ou nas métricas de desempenho do agente.</div>
+          <div class="ext-rule-chips"><span class="ext-chip active">Ativa</span><span class="ext-chip">SLA</span><span class="ext-chip">Filtro</span></div>
+        </div>
+      </div>
+      <div class="ext-rule-row">
+        <span class="ext-rule-ref">R-003</span>
+        <div style="flex:1;min-width:0">
+          <div class="ext-rule-agent-tag">Agente de Orquestração</div>
+          <div class="ext-rule-title">Pedidos Amazon: aguardar 2h antes de escalar pagamento</div>
+          <div class="ext-rule-desc">Pedidos do marketplace Amazon têm latência natural de aprovação de pagamento. O agente deve aguardar 2 horas antes de criar alerta ou escalar para operador.</div>
+          <div class="ext-rule-chips"><span class="ext-chip active">Ativa</span><span class="ext-chip">Amazon</span><span class="ext-chip">Pagamento</span></div>
+        </div>
+      </div>
+      <div class="ext-rule-row">
+        <span class="ext-rule-ref">R-004</span>
+        <div style="flex:1;min-width:0">
+          <div class="ext-rule-agent-tag">Agente de Workflow</div>
+          <div class="ext-rule-title">Novos workflows criados ficam em triagem por padrão</div>
+          <div class="ext-rule-desc">Workflows criados via agente AI devem ser marcados como "triagem" e exigir aprovação explícita do gestor antes de serem ativados para novos pedidos.</div>
+          <div class="ext-rule-chips"><span class="ext-chip active">Ativa</span><span class="ext-chip">Workflow</span><span class="ext-chip">Governança</span></div>
+        </div>
+      </div>
+      <div class="ext-rule-row">
+        <span class="ext-rule-ref">R-005</span>
+        <div style="flex:1;min-width:0">
+          <div class="ext-rule-agent-tag">Agente de Orquestração</div>
+          <div class="ext-rule-title">Assinaturas recorrentes: reprocessar automaticamente se falha no pagamento</div>
+          <div class="ext-rule-desc">Para pedidos do workflow de Assinatura Recorrente, o agente pode re-tentar cobrança até 3 vezes (intervalo de 24h) antes de escalar para o operador.</div>
+          <div class="ext-rule-chips"><span class="ext-chip active">Ativa</span><span class="ext-chip">Assinatura</span><span class="ext-chip">Pagamento</span></div>
+        </div>
+      </div>`,
+
+    memory: `
+      <div class="ext-page-head">
+        <div class="ext-page-title">Memória</div>
+        <div style="display:flex;gap:8px">
+          <span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:6px;background:#fef9c3;color:#854d0e;font-size:12px;font-weight:600;border:1px solid #fde68a">2 para revisar</span>
+        </div>
+      </div>
+      <div style="font-size:13px;color:#6b7280;margin-bottom:20px">Padrões que o agente capturou a partir dos seus edits, feedbacks e decisões de operação. Revise e aprove antes de ativar.</div>
+
+      <div style="font-size:12px;font-weight:700;color:#854d0e;background:#fefce8;border:1px solid #fde68a;border-radius:8px;padding:10px 14px;margin-bottom:14px;display:flex;align-items:center;gap:8px">
+        <span>⚠️</span> 2 memórias aguardando sua revisão
+        <button class="btn btn-secondary btn-sm" style="margin-left:auto">Revisar todas</button>
+      </div>
+
+      <div class="ext-mem-card" style="border-color:#fde68a">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+          <div class="ext-mem-title">Padrão: pedidos BOPIS com atraso na separação</div>
+          <span style="padding:2px 7px;border-radius:4px;font-size:11px;font-weight:600;background:#fef9c3;color:#854d0e;border:1px solid #fde68a">Para revisar</span>
+        </div>
+        <div class="ext-mem-desc">O agente identificou que pedidos BOPIS frequentemente travam na etapa de Separação às sextas-feiras. Sugere criar alerta automático para esse padrão.</div>
+        <div class="ext-mem-meta">
+          <span>🤖 Agente de Orquestração</span>
+          <span>·</span>
+          <span>Aprendido em 17 de mai. 2026</span>
+          <button class="btn btn-primary btn-sm" style="margin-left:auto">Aprovar</button>
+          <button class="btn btn-secondary btn-sm">Ignorar</button>
+        </div>
+      </div>
+      <div class="ext-mem-card" style="border-color:#fde68a">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+          <div class="ext-mem-title">Padrão: escalar pagamento Amazon para ops nos fins de semana</div>
+          <span style="padding:2px 7px;border-radius:4px;font-size:11px;font-weight:600;background:#fef9c3;color:#854d0e;border:1px solid #fde68a">Para revisar</span>
+        </div>
+        <div class="ext-mem-desc">Nos fins de semana, pedidos Amazon parados em pagamento por mais de 4h (e não 2h) costumam ser aprovados na segunda-feira. O agente sugere ajustar o threshold para fins de semana.</div>
+        <div class="ext-mem-meta">
+          <span>🤖 Agente de Orquestração</span>
+          <span>·</span>
+          <span>Aprendido em 19 de mai. 2026</span>
+          <button class="btn btn-primary btn-sm" style="margin-left:auto">Aprovar</button>
+          <button class="btn btn-secondary btn-sm">Ignorar</button>
+        </div>
+      </div>`,
+
+    connectors: `
+      <div class="ext-page-head">
+        <div class="ext-page-title">Conectores e integrações</div>
+        <button class="btn btn-primary btn-sm">+ Novo conector</button>
+      </div>
+      <div style="font-size:13px;color:#6b7280;margin-bottom:20px">Sistemas conectados ao agente de orquestração como fontes de verdade e destinos de ação.</div>
+
+      <div class="ext-conn-card">
+        <div class="ext-conn-icon">🔧</div>
+        <div style="flex:1">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px">
+            <div class="ext-conn-name">VTEX Pick and Pack</div>
+            <span class="ext-conn-status">● Conectado</span>
+            <span style="font-size:10.5px;font-weight:700;background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;padding:1px 7px;border-radius:4px">Nativo VTEX</span>
+          </div>
+          <div class="ext-conn-desc">Injeção de eventos de fulfillment: pnp.itemSeparado · pnp.itemConferido · pnp.pacoteEmbalado · pnp.handoffCarrier</div>
+        </div>
+      </div>
+      <div class="ext-conn-card">
+        <div class="ext-conn-icon">📦</div>
+        <div style="flex:1">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px">
+            <div class="ext-conn-name">WMS — CD São Paulo</div>
+            <span class="ext-conn-status">● Conectado</span>
+          </div>
+          <div class="ext-conn-desc">GET /estoque · POST /reserva · POST /separacao — endpoint: wms.ops.internal/v2</div>
+        </div>
+      </div>
+      <div class="ext-conn-card">
+        <div class="ext-conn-icon">📄</div>
+        <div style="flex:1">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px">
+            <div class="ext-conn-name">API NFe.io — Nota Fiscal</div>
+            <span class="ext-conn-status">● Conectado</span>
+          </div>
+          <div class="ext-conn-desc">POST /v1/nota — mapeamento: data.number → nf_numero · data.accessKey → nf_chave</div>
+        </div>
+      </div>
+      <div class="ext-conn-card">
+        <div class="ext-conn-icon">🚚</div>
+        <div style="flex:1">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:2px">
+            <div class="ext-conn-name">Transportadora XYZ — Cotação</div>
+            <span class="ext-conn-status">● Conectado</span>
+          </div>
+          <div class="ext-conn-desc">POST /cotacao — mapeamento: result.delivery_days → prazo_entrega · result.cost → custo_frete</div>
+        </div>
+      </div>`,
+
+    permissions: `
+      <div class="ext-page-head">
+        <div class="ext-page-title">Permissões e auditoria</div>
+      </div>
+      <div style="font-size:13px;color:#6b7280;margin-bottom:20px">Controle quem pode configurar o agente, criar regras e alterar workflows — com log completo de ações.</div>
+
+      <div style="background:#fff;border:1px solid #e9ecef;border-radius:10px;overflow:hidden;margin-bottom:20px">
+        <div style="padding:12px 16px;background:#f9fafb;border-bottom:1px solid #f3f4f6;display:flex;justify-content:space-between">
+          <span style="font-size:12px;font-weight:700;color:#374151">AGENTE / ESCOPO</span>
+          <span style="font-size:12px;font-weight:700;color:#374151">PERMISSÕES</span>
+        </div>
+        <div style="padding:12px 16px;border-bottom:1px solid #f3f4f6;display:flex;align-items:center;gap:10px">
+          <span style="font-size:16px">🤖</span>
+          <div><div style="font-size:13px;font-weight:600;color:#111827">Agente de Orquestração</div><div style="font-size:11.5px;color:#9ca3af">Escopo: Workflow de pedidos</div></div>
+          <div style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap">
+            <span style="padding:2px 8px;border-radius:4px;font-size:11px;background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe">Ler pedidos</span>
+            <span style="padding:2px 8px;border-radius:4px;font-size:11px;background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe">Criar tasks</span>
+            <span style="padding:2px 8px;border-radius:4px;font-size:11px;background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe">Alterar status</span>
+          </div>
+        </div>
+        <div style="padding:12px 16px;display:flex;align-items:center;gap:10px">
+          <span style="font-size:16px">⚙️</span>
+          <div><div style="font-size:13px;font-weight:600;color:#111827">Agente de Workflow</div><div style="font-size:11.5px;color:#9ca3af">Escopo: Configuração de workflows</div></div>
+          <div style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap">
+            <span style="padding:2px 8px;border-radius:4px;font-size:11px;background:#eff6ff;color:#2563eb;border:1px solid #bfdbfe">Criar workflows</span>
+            <span style="padding:2px 8px;border-radius:4px;font-size:11px;background:#f5f3ff;color:#7c3aed;border:1px solid #ddd6fe">Aprovar regras</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="font-size:13px;font-weight:600;color:#111827;margin-bottom:10px">Auditoria — Últimos eventos</div>
+      <div style="background:#fff;border:1px solid #e9ecef;border-radius:10px;overflow:hidden">
+        ${[
+          {icon:'📋',title:'Regra R-003 criada',sub:'Agente de Orquestração · criada por Marcelo',time:'2h atrás'},
+          {icon:'⚙️',title:'Workflow "Assinatura Recorrente" ativado',sub:'Agente de Workflow · aprovado por Marcelo',time:'18/05'},
+          {icon:'🎯',title:'Confiança mínima alterada para 75%',sub:'Agente de Orquestração · alterado por Marcelo',time:'17/05'},
+          {icon:'🔌',title:'Conector WMS conectado',sub:'Agente de Workflow · configurado por Marcelo',time:'15/05'},
+        ].map((e,i,arr) => `<div style="display:flex;align-items:flex-start;gap:10px;padding:12px 16px${i<arr.length-1?';border-bottom:1px solid #f3f4f6':''}">
+          <div style="width:30px;height:30px;border-radius:50%;background:#f3f4f6;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0">${e.icon}</div>
+          <div style="flex:1"><div style="font-size:12.5px;font-weight:600;color:#111827">${e.title}</div><div style="font-size:11.5px;color:#9ca3af;margin-top:2px">${e.sub}</div></div>
+          <div style="font-size:11px;color:#9ca3af;white-space:nowrap">${e.time}</div>
+        </div>`).join('')}
+      </div>`
+  };
+  content.innerHTML = htmls[section] || htmls.overview;
+}
+
+// ══════════════════════════════════════════
+// INITIATIVE FILTER
+// ══════════════════════════════════════════
+function filterInitiatives(status, tabEl) {
+  document.querySelectorAll('.ini-filter-tab').forEach(t => t.classList.remove('active'));
+  if (tabEl) tabEl.classList.add('active');
+  document.querySelectorAll('#initiatives-tbody .ini-row').forEach(row => {
+    const show = status === 'all' || row.dataset.status === status;
+    row.style.display = show ? '' : 'none';
+  });
+}
+
+// ══════════════════════════════════════════
+// ASSISTANT MESSAGE HANDLER
+// ══════════════════════════════════════════
+function handleAssistantMessage() {
+  const input = document.getElementById('assist-main-input');
+  const text = (input ? input.value : '').trim().toLowerCase();
+  if (!text) return;
+  if (text.includes('workflow') || text.includes('configurar')) { showScreen('workflow-list'); }
+  else if (text.includes('agente')) { showScreen('agent-config'); }
+  else if (text.includes('iniciativa')) { showScreen('initiatives'); }
+  if (input) input.value = '';
+}
+
 function showScreen(name) {
+  // Redirect orders to assistant (orders are embedded in assistant screen)
+  if (name === 'orders') name = 'assistant';
   document.querySelectorAll('.screen').forEach(s => { s.classList.remove('active'); s.style.display = ''; });
   const el = document.getElementById('screen-' + name);
   if (!el) return;
@@ -1503,11 +2294,16 @@ function showScreen(name) {
   if (name === 'workflow') el.style.display = 'flex';
   if (name === 'agent-config') { el.style.display = 'flex'; initOrchChat(); }
   if (name === 'assistant') el.style.display = 'flex';
+  if (name === 'extensibility') el.style.display = 'flex';
 
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-  const isWorkflow = name === 'workflow' || name === 'workflow-list' || name === 'workflow-settings' || name === 'initiatives';
+  const isWorkflow = name === 'workflow' || name === 'workflow-list' || name === 'workflow-settings';
+  const isInitiatives = name === 'initiatives';
   const isChats = name === 'chats';
-  if (isWorkflow) {
+  if (isWorkflow || name === 'extensibility') {
+    const n = document.getElementById('nav-assistant');
+    if (n) n.classList.add('active');
+  } else if (isInitiatives) {
     const n = document.getElementById('nav-initiatives');
     if (n) n.classList.add('active');
   } else if (isChats) {
@@ -1527,17 +2323,21 @@ function renderWorkflowList() {
   const grid = document.getElementById('wfl-grid');
   if (!grid) return;
   grid.innerHTML = WORKFLOW_DEFS.map(wf => `
-    <div class="wfl-card" onclick="openWorkflow('${wf.id}')">
+    <div class="wfl-card${wf.userCreated?' user-created':''}" onclick="openWorkflow('${wf.id}')">
       <div class="wfl-card-header">
         <div class="wfl-icon" style="background:${wf.color}20">${wf.icon}</div>
         <div style="flex:1;min-width:0">
-          <div class="wfl-name">${wf.name}</div>
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">
+            <div class="wfl-name" style="margin-bottom:0">${wf.name}</div>
+            ${wf.userCreated ? `<span class="wfl-user-badge">✏️ Criado por você</span>` : ''}
+          </div>
           <div class="wfl-desc">${wf.description}</div>
         </div>
       </div>
       <div class="wfl-meta">
         <div class="wfl-meta-item"><span class="wfl-meta-label">Pedidos ativos</span><span class="wfl-meta-val">${wf.orderCount.toLocaleString('pt-BR')}</span></div>
         <div class="wfl-meta-item"><span class="wfl-meta-label">Etapas</span><span class="wfl-meta-val">${wf.tasks.length}</span></div>
+        ${wf.userCreated && wf.createdAt ? `<div class="wfl-meta-item"><span class="wfl-meta-label">Criado em</span><span class="wfl-meta-val" style="font-size:12px;font-weight:500">${wf.createdAt}</span></div>` : ''}
       </div>
       <div class="wfl-card-footer">
         <div class="wfl-status"><div class="wfl-status-dot"></div>Ativo</div>
@@ -2039,7 +2839,7 @@ function sendEditChat() {
 
 function processEditIntent(text) {
   const lower = text.toLowerCase();
-  const idleSuggs = ['Renomear','Trocar supplier','Configurar ações','Integração MCP','Agente AI Workspace','Salvar e fechar'];
+  const idleSuggs = ['Renomear','Trocar supplier','Configurar ações','Pick and Pack','Integração MCP','Agente AI Workspace','Salvar e fechar'];
 
   if (lower === 'salvar e fechar' || lower === 'salvar') { applyEditDraft(); return; }
 
@@ -2131,6 +2931,8 @@ function processEditIntent(text) {
     } else if (lower.includes('categoria') || lower.includes('produto')) {
       editChatState = 'category';
       setTimeout(() => { addCMsg('ai', `Categoria atual: "${editDraft.category}". Qual a nova?`); renderCSuggs(['Todos os produtos','Eletrônicos','Moda e Calçados','Alimentos','B2B']); }, 350);
+    } else if (lower.includes('pick and pack') || lower.includes('pick & pack') || lower.includes('pnp') || lower.includes('fulfillment')) {
+      showPickAndPackPanel();
     } else if (lower.includes('mcp') || lower === 'integração mcp' || lower === 'integracao mcp') {
       showMcpSelector();
     } else if (lower.includes('workspace') || lower === 'agente ai workspace' || lower === 'agente ai') {
@@ -2252,6 +3054,52 @@ function applyEditDraft() {
 }
 
 function setTaskColor(id, color) { const t = WF_TASKS.find(t => t.id===id); if(t){t.color=color;renderWorkflowBoard();} }
+
+// ── Pick and Pack Native Integration ──
+function showPickAndPackPanel() {
+  setTimeout(() => {
+    const msgs = document.getElementById('cm-msgs'); if (!msgs) return;
+    const div = document.createElement('div');
+    div.className = 'pnp-card';
+    div.style.cssText = 'margin-top:4px';
+    div.innerHTML = `
+      <div class="pnp-card-header">
+        <span style="font-size:20px">🔧</span>
+        <div>
+          <div style="font-size:13px;font-weight:700;color:#c2410c">VTEX Pick and Pack</div>
+          <div style="font-size:11.5px;color:#888">Integração nativa — eventos de fulfillment injetados diretamente no OMS</div>
+        </div>
+        <span class="pnp-badge" style="margin-left:auto">Nativo VTEX</span>
+      </div>
+      <div style="font-size:12px;color:#555;margin-bottom:8px">Selecione os eventos que esta etapa deve receber do Pick and Pack:</div>
+      <div class="pnp-events">
+        <div class="pnp-event-row"><input type="checkbox" id="pnp-sep" checked style="accent-color:#c2410c"><label for="pnp-sep" style="cursor:pointer;flex:1;display:flex;align-items:center;gap:8px"><span class="pnp-event-name">pnp.itemSeparado</span><span class="pnp-event-desc">Item separado pelo operador</span></label></div>
+        <div class="pnp-event-row"><input type="checkbox" id="pnp-conf" checked style="accent-color:#c2410c"><label for="pnp-conf" style="cursor:pointer;flex:1;display:flex;align-items:center;gap:8px"><span class="pnp-event-name">pnp.itemConferido</span><span class="pnp-event-desc">Conferência de qualidade concluída</span></label></div>
+        <div class="pnp-event-row"><input type="checkbox" id="pnp-pack" checked style="accent-color:#c2410c"><label for="pnp-pack" style="cursor:pointer;flex:1;display:flex;align-items:center;gap:8px"><span class="pnp-event-name">pnp.pacoteEmbalado</span><span class="pnp-event-desc">Pacote embalado e etiquetado</span></label></div>
+        <div class="pnp-event-row"><input type="checkbox" id="pnp-hand" style="accent-color:#c2410c"><label for="pnp-hand" style="cursor:pointer;flex:1;display:flex;align-items:center;gap:8px"><span class="pnp-event-name">pnp.handoffCarrier</span><span class="pnp-event-desc">Handoff ao carrier registrado</span></label></div>
+      </div>
+      <button onclick="confirmPickAndPack()" style="margin-top:10px;width:100%;padding:8px;background:#c2410c;color:#fff;border:none;border-radius:6px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit">Ativar integração Pick and Pack</button>`;
+    msgs.appendChild(div); msgs.scrollTop = msgs.scrollHeight;
+    renderCSuggs([]);
+  }, 350);
+}
+
+function confirmPickAndPack() {
+  const draft = getActiveDraft();
+  const events = [];
+  if (document.getElementById('pnp-sep')?.checked) events.push('pnp.itemSeparado');
+  if (document.getElementById('pnp-conf')?.checked) events.push('pnp.itemConferido');
+  if (document.getElementById('pnp-pack')?.checked) events.push('pnp.pacoteEmbalado');
+  if (document.getElementById('pnp-hand')?.checked) events.push('pnp.handoffCarrier');
+  draft.pickAndPackEvents = events;
+  if (activePanel === 'edit') refreshEditPreview();
+  addCMsg('user', 'Ativar Pick and Pack');
+  setTimeout(() => {
+    addCMsg('ai', `✓ Pick and Pack ativado com ${events.length} evento${events.length!==1?'s':''}:\n${events.map(e=>`• ${e}`).join('\n')}\n\nEventos do Pick and Pack serão injetados diretamente na linha do tempo do pedido no OMS — sem integração genérica, como eventos nativos VTEX.\n\nMais alguma configuração?`);
+    if (activePanel === 'edit') renderCSuggs(['Configurar ações','MCP','Salvar e fechar']);
+    else renderCSuggs(['Criar agora','Configurar ações']);
+  }, 350);
+}
 
 // ── MCP Selector ──
 function showMcpSelector() {
@@ -2873,8 +3721,7 @@ function processOrchIntent(text) {
     orchRuleDraft = null;
     orchChatState = 'idle';
     renderCustomRules();
-    highlightOrchCard('ocard-rules');
-    addOrchMsg('ai', 'Regra criada com sucesso! ✅\n\nEla já aparece no painel de Regras Customizadas à direita. Você pode ativá-la ou desativá-la pelo toggle.\n\nPosso ajudar com mais alguma configuração?');
+    addOrchMsg('ai', 'Regra criada com sucesso! ✅\n\nEla foi adicionada como iniciativa em Triagem em "Minhas Iniciativas". Você pode revisá-la e ativá-la por lá.\n\nPosso ajudar com mais alguma configuração?');
     renderOrchSuggs(['Definir outra regra', 'Ajustar confiança', 'Configurar SLA', 'Pronto!']);
     return;
   }
@@ -3003,6 +3850,239 @@ function deleteOrchRule(id) {
 
 function saveAgentConfig() {
   showSuccessModal('Configurações salvas!', 'O agente foi atualizado e está monitorando os workflows ativos.');
+}
+
+// ══════════════════════════════════════════
+// NEW WORKFLOW MODAL (AI creation)
+// ══════════════════════════════════════════
+
+let wfChatState = 'intent';
+let wfDraft = {name:'', desc:'', trigger:'auto', steps:[], pickAndPack:false};
+
+function openNewWorkflowModal() {
+  wfChatState = 'intent';
+  wfDraft = {name:'', desc:'', trigger:'auto', steps:[], pickAndPack:false};
+  const overlay = document.getElementById('modal-new-workflow');
+  overlay.classList.add('open');
+  const msgs = document.getElementById('wfc-msgs');
+  if (msgs) msgs.innerHTML = '';
+  updateWfcPreview();
+  const saveBtn = document.getElementById('wfc-save-btn');
+  if (saveBtn) { saveBtn.disabled = true; saveBtn.style.opacity = '.5'; saveBtn.style.cursor = 'not-allowed'; }
+  setTimeout(() => {
+    addWfcMsg('ai', 'Olá! Sou o assistente de configuração de workflows. 👋\n\nVocê quer criar um workflow novo ou alterar um existente?');
+    renderWfcSuggs(['Criar workflow novo', 'Alterar existente']);
+  }, 200);
+}
+
+function addWfcMsg(who, text) {
+  const msgs = document.getElementById('wfc-msgs'); if (!msgs) return;
+  const div = document.createElement('div');
+  div.className = `cm-msg cm-${who}`;
+  div.textContent = text;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function renderWfcSuggs(arr) {
+  const wrap = document.getElementById('wfc-sugg-wrap'); if (!wrap) return;
+  wrap.innerHTML = arr.map(s => `<span class="cm-suggestion" onclick="handleWfcSugg('${s}')">${s}</span>`).join('');
+}
+
+function handleWfcSugg(text) {
+  addWfcMsg('user', text);
+  document.getElementById('wfc-sugg-wrap').innerHTML = '';
+  processWfcChat(text);
+}
+
+function sendWfcChat() {
+  const inp = document.getElementById('wfc-input'); if (!inp) return;
+  const text = inp.value.trim(); if (!text) return;
+  inp.value = '';
+  addWfcMsg('user', text);
+  document.getElementById('wfc-sugg-wrap').innerHTML = '';
+  processWfcChat(text);
+}
+
+function processWfcChat(text) {
+  const lower = text.toLowerCase().trim();
+
+  if (wfChatState === 'intent') {
+    if (lower.includes('alterar') || lower.includes('editar') || lower.includes('existente') || lower.includes('modificar')) {
+      wfChatState = 'choose-existing';
+      setTimeout(() => {
+        addWfcMsg('ai', 'Escolha o workflow que deseja alterar:');
+        const msgs = document.getElementById('wfc-msgs'); if (!msgs) return;
+        const div = document.createElement('div');
+        div.className = 'wf-existing-list';
+        div.innerHTML = WORKFLOW_DEFS.map(wf => `
+          <div class="wf-existing-item" onclick="selectExistingWf('${wf.id}')">
+            <span style="font-size:20px">${wf.icon}</span>
+            <div style="flex:1">
+              <div style="font-size:13px;font-weight:600;color:#111827">${wf.name}</div>
+              <div style="font-size:11.5px;color:#9ca3af">${wf.tasks.length} etapas · ${wf.orderCount.toLocaleString('pt-BR')} pedidos ativos</div>
+            </div>
+            ${wf.userCreated ? '<span class="wfl-user-badge" style="flex-shrink:0">✏️ Seu</span>' : ''}
+          </div>`).join('');
+        msgs.appendChild(div);
+        msgs.scrollTop = msgs.scrollHeight;
+      }, 350);
+    } else {
+      wfChatState = 'name';
+      setTimeout(() => {
+        addWfcMsg('ai', 'Ótimo! Vamos criar um workflow novo.\n\nQual será o nome do workflow?\n\nExemplos: "Entrega Expressa", "BOPIS Farmácias", "B2B Grandes Contas"');
+        renderWfcSuggs(['BOPIS Farmácias', 'Entrega Expressa', 'B2B Grandes Contas']);
+      }, 350);
+    }
+
+  } else if (wfChatState === 'name') {
+    wfDraft.name = text;
+    updateWfcPreview();
+    wfChatState = 'desc';
+    setTimeout(() => {
+      addWfcMsg('ai', `Nome: "${text}" ✓\n\nAgora descreva brevemente o propósito deste workflow. O que ele resolve?`);
+      renderWfcSuggs([]);
+    }, 350);
+
+  } else if (wfChatState === 'desc') {
+    wfDraft.desc = text;
+    updateWfcPreview();
+    wfChatState = 'trigger';
+    setTimeout(() => {
+      addWfcMsg('ai', 'Descrição salva ✓\n\nComo este workflow é acionado?');
+      renderWfcSuggs(['Automaticamente para novos pedidos', 'Manualmente pelo operador', 'Por solicitação do cliente']);
+    }, 350);
+
+  } else if (wfChatState === 'trigger') {
+    if (lower.includes('automati') || lower.includes('auto') || lower.includes('novos pedidos')) {
+      wfDraft.trigger = 'Automaticamente para novos pedidos';
+    } else if (lower.includes('manual') || lower.includes('operador')) {
+      wfDraft.trigger = 'Manualmente pelo operador';
+    } else if (lower.includes('cliente') || lower.includes('solicit')) {
+      wfDraft.trigger = 'Por solicitação do cliente';
+    } else {
+      wfDraft.trigger = text;
+    }
+    updateWfcPreview();
+    wfChatState = 'pnp';
+    setTimeout(() => {
+      addWfcMsg('ai', `Acionamento: "${wfDraft.trigger}" ✓\n\nEste workflow envolve operações físicas de fulfillment (separação, embalagem, expedição)?\n\nSe sim, posso ativar a integração nativa com o VTEX Pick and Pack, que injeta eventos de fulfillment diretamente na linha do tempo do pedido no OMS — sem integrações genéricas.`);
+      renderWfcSuggs(['Sim, ativar Pick and Pack', 'Não, pular']);
+    }, 350);
+
+  } else if (wfChatState === 'pnp') {
+    if (lower.includes('sim') || lower.includes('ativar') || lower.includes('pick')) {
+      wfDraft.pickAndPack = true;
+      updateWfcPreview();
+      setTimeout(() => {
+        addWfcMsg('ai', '✓ Pick and Pack ativado! Eventos de fulfillment serão injetados nativamente no OMS.\n\nAgora descreva as etapas do workflow, uma por vez.\n\nDigite "pronto" quando terminar.');
+        renderWfcSuggs(['Recebimento do pedido', 'Verificação de estoque', 'Separação', 'Embalagem', 'Expedição']);
+        wfChatState = 'steps';
+      }, 350);
+    } else {
+      wfDraft.pickAndPack = false;
+      updateWfcPreview();
+      setTimeout(() => {
+        addWfcMsg('ai', 'Ok! Agora descreva as etapas do workflow, uma por vez.\n\nDigite "pronto" quando terminar.');
+        renderWfcSuggs(['Recebimento do pedido', 'Verificação de estoque', 'Separação', 'Aprovação', 'Expedição']);
+        wfChatState = 'steps';
+      }, 350);
+    }
+
+  } else if (wfChatState === 'steps') {
+    if (['pronto','ok','fim','finalizar','feito','concluir'].includes(lower)) {
+      if (wfDraft.steps.length === 0) {
+        setTimeout(() => { addWfcMsg('ai', 'Adicione pelo menos uma etapa antes de finalizar.'); }, 350);
+        return;
+      }
+      wfChatState = 'confirm';
+      updateWfcPreview();
+      const saveBtn = document.getElementById('wfc-save-btn');
+      if (saveBtn) { saveBtn.disabled = false; saveBtn.style.opacity = '1'; saveBtn.style.cursor = 'pointer'; }
+      setTimeout(() => {
+        addWfcMsg('ai', `Perfeito! Aqui está o resumo:\n\n📋 ${wfDraft.name}\n📝 ${wfDraft.desc}\n⚡ ${wfDraft.trigger}\n${wfDraft.pickAndPack ? '🔧 Pick and Pack ativado\n' : ''}📌 Etapas: ${wfDraft.steps.join(' → ')}\n\nClique em "Criar Workflow" para adicionar ao board.`);
+        renderWfcSuggs(['Adicionar mais etapas', 'Criar agora']);
+      }, 350);
+    } else {
+      wfDraft.steps.push(text);
+      updateWfcPreview();
+      setTimeout(() => {
+        addWfcMsg('ai', `✓ "${text}" adicionada! (${wfDraft.steps.length} etapa${wfDraft.steps.length!==1?'s':''})\n\nPróxima etapa, ou "pronto" para finalizar.`);
+        renderWfcSuggs(['Pronto', 'Conferência', 'Embalagem', 'Expedição', 'Nota Fiscal']);
+      }, 350);
+    }
+
+  } else if (wfChatState === 'confirm') {
+    if (lower.includes('adicionar') || lower.includes('mais etapa')) {
+      wfChatState = 'steps';
+      setTimeout(() => { addWfcMsg('ai', 'Ok! Qual a próxima etapa?'); renderWfcSuggs([]); }, 350);
+    } else if (lower.includes('criar') || lower === 'criar agora') {
+      saveNewWorkflow();
+    }
+  }
+}
+
+function selectExistingWf(id) {
+  closeModal('modal-new-workflow');
+  openWorkflowSettings(id);
+}
+
+function updateWfcPreview() {
+  const nameEl = document.getElementById('wfc-prev-name');
+  const descEl = document.getElementById('wfc-prev-desc');
+  const trigEl = document.getElementById('wfc-prev-trigger');
+  const stepsEl = document.getElementById('wfc-prev-steps');
+  const pnpRow = document.getElementById('wfc-prev-pnp-row');
+  if (nameEl) { nameEl.textContent = wfDraft.name || 'Aguardando...'; nameEl.className = 'wf-preview-value' + (wfDraft.name ? '' : ' empty'); }
+  if (descEl) { descEl.textContent = wfDraft.desc || 'Aguardando...'; descEl.className = 'wf-preview-value' + (wfDraft.desc ? '' : ' empty'); }
+  if (trigEl) { trigEl.textContent = wfDraft.trigger || 'Aguardando...'; trigEl.className = 'wf-preview-value' + (wfDraft.trigger ? '' : ' empty'); }
+  if (stepsEl) {
+    stepsEl.innerHTML = wfDraft.steps.length
+      ? wfDraft.steps.map((s,i) => `<span class="wf-preview-step-chip">${i+1}. ${s}</span>`).join('')
+      : '<span style="font-size:12px;color:#d1d5db;font-style:italic">Nenhuma etapa ainda</span>';
+  }
+  if (pnpRow) pnpRow.style.display = wfDraft.pickAndPack ? 'flex' : 'none';
+}
+
+function saveNewWorkflow() {
+  if (!wfDraft.name) return;
+  const colors = ['#2563eb','#7c3aed','#0891b2','#059669','#d97706','#6366f1'];
+  const icons = ['📦','🏪','🏬','⚡','🔄','🎯','📋'];
+  const newWf = {
+    id: 'wf-custom-' + Date.now(),
+    name: wfDraft.name,
+    icon: icons[Math.floor(Math.random()*icons.length)],
+    color: colors[Math.floor(Math.random()*colors.length)],
+    orderCount: 0,
+    description: wfDraft.desc,
+    dependencies: [],
+    userCreated: true,
+    createdBy: 'Você',
+    createdAt: new Date().toLocaleDateString('pt-BR'),
+    tasks: wfDraft.steps.map((s,i) => ({
+      id: 'cu'+Date.now()+i,
+      name: s,
+      supplier: 'A definir',
+      category: 'Todos',
+      color: colors[i % colors.length],
+      active: true,
+      actions: wfDraft.pickAndPack ? ['validarEstoque'] : [],
+      script: null,
+      externalApi: null,
+      contextOutput: [],
+      pickAndPackEvents: wfDraft.pickAndPack ? ['pnp.itemSeparado','pnp.itemConferido','pnp.pacoteEmbalado'] : [],
+    })),
+    edges: wfDraft.steps.slice(0,-1).map((_,i) => ({
+      id:'ce'+Date.now()+i,
+      from:'cu'+Date.now()+i,
+      to:'cu'+Date.now()+(i+1),
+      active:true,
+    })),
+  };
+  WORKFLOW_DEFS.push(newWf);
+  closeModal('modal-new-workflow');
+  showScreen('workflow-list');
+  setTimeout(() => showSuccessModal('Workflow criado!', `"${newWf.name}" foi adicionado ao Workflow Board.`), 200);
 }
 
 // ══════════════════════════════════════════
