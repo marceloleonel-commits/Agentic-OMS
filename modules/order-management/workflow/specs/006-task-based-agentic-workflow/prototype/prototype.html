@@ -486,6 +486,40 @@ tbody td{padding:10px 14px;font-size:13px;vertical-align:middle}
 /* Side panel wider for edit */
 #side-panel{width:360px;min-width:360px}
 #side-panel.closed{width:0;min-width:0}
+
+/* ── WORKFLOW TYPE BADGES ── */
+.badge-bopis{background:#e0f7fa;color:#00695c;border:1px solid #80cbc4}
+.badge-sfs{background:#fff3e0;color:#e65100;border:1px solid #ffcc02}
+.badge-virtual{background:#f3e5f5;color:#7b1fa2;border:1px solid #ce93d8}
+.badge-subscription{background:#ede7f6;color:#4527a0;border:1px solid #b39ddb}
+/* ── USER-CREATED WORKFLOW BADGE ── */
+.wfl-user-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 9px;border-radius:20px;font-size:10.5px;font-weight:600;background:#fffbeb;color:#92400e;border:1px solid #fde68a}
+.wfl-card.user-created{border-color:#fde68a;border-width:2px}
+.wfl-card.user-created:hover{border-color:#f59e0b}
+/* ── NEW WORKFLOW MODAL (AI creation) ── */
+.wf-create-modal{background:#fff;border-radius:12px;width:min(880px,95vw);max-height:88vh;display:flex;flex-direction:column;box-shadow:0 24px 64px rgba(0,0,0,.2);overflow:hidden}
+.wf-create-layout{flex:1;display:flex;overflow:hidden;min-height:0}
+.wf-create-chat{width:380px;min-width:280px;border-right:1px solid #f0f0f0;display:flex;flex-direction:column;background:#fff;flex-shrink:0}
+.wf-create-preview{flex:1;overflow-y:auto;padding:24px;background:#fafafa;display:flex;flex-direction:column;gap:16px}
+.wf-create-header{padding:14px 20px;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.wf-preview-card{background:#fff;border:1px solid #e8e8e8;border-radius:10px;padding:18px 20px;display:flex;flex-direction:column;gap:10px}
+.wf-preview-field{display:flex;flex-direction:column;gap:3px}
+.wf-preview-label{font-size:10.5px;font-weight:700;color:#aaa;text-transform:uppercase;letter-spacing:.4px}
+.wf-preview-value{font-size:13px;color:#1a1a1a;font-weight:500}
+.wf-preview-value.empty{color:#ccc;font-style:italic;font-weight:400}
+.wf-preview-steps{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.wf-preview-step-chip{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:11.5px;background:#f0f7ff;border:1px solid #bfdbfe;color:#1d4ed8;font-weight:500}
+.wf-existing-list{display:flex;flex-direction:column;gap:6px;margin-top:4px}
+.wf-existing-item{display:flex;align-items:center;gap:10px;padding:10px 12px;background:#fff;border:1px solid #e0e0e0;border-radius:8px;cursor:pointer;transition:all .15s}
+.wf-existing-item:hover{border-color:#0c6fcd;background:#f0f7ff}
+/* ── PICK AND PACK NATIVE INTEGRATION ── */
+.pnp-card{background:#fff7ed;border:2px solid #fed7aa;border-radius:8px;padding:12px 14px;margin-top:4px}
+.pnp-card-header{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.pnp-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:10.5px;font-weight:700;background:#fff7ed;color:#c2410c;border:1px solid #fed7aa}
+.pnp-events{display:flex;flex-direction:column;gap:4px}
+.pnp-event-row{display:flex;align-items:center;gap:8px;font-size:11.5px;padding:3px 0}
+.pnp-event-name{font-family:monospace;background:#f9f9f9;border:1px solid #e0e0e0;border-radius:3px;padding:1px 6px;color:#1a1a1a;font-size:11px}
+.pnp-event-desc{color:#888;flex:1}
 </style>
 </head>
 <body>
@@ -701,7 +735,7 @@ tbody td{padding:10px 14px;font-size:13px;vertical-align:middle}
           <div style="font-size:12.5px;color:#888;margin-top:3px">Gerencie os workflows de pedidos da sua operação</div>
         </div>
         <div class="page-header-actions">
-          <button class="btn btn-primary">
+          <button class="btn btn-primary" onclick="openNewWorkflowModal()">
             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M8 2v12M2 8h12"/></svg>
             Novo Workflow
           </button>
@@ -736,7 +770,6 @@ tbody td{padding:10px 14px;font-size:13px;vertical-align:middle}
           <button class="btn btn-primary btn-sm" onclick="openCreatePanel()">+ Nova Etapa</button>
         </div>
       </div>
-      <div class="wf-flow-bar" id="wf-flow-bar"></div>
       <div class="wf-board-wrap">
         <div class="wf-board-scroll" id="wf-board-scroll"></div>
         <div class="side-panel closed" id="side-panel">
@@ -849,6 +882,10 @@ tbody td{padding:10px 14px;font-size:13px;vertical-align:middle}
               <div class="toggle-row"><div><div class="toggle-label">Workflow Padrão</div><div class="toggle-sub">5 etapas · 4.256 pedidos ativos</div></div><button class="toggle-switch on" id="wf-cov-standard" onclick="this.classList.toggle('on');this.classList.toggle('off')"></button></div>
               <div class="toggle-row"><div><div class="toggle-label">Troca e Devolução</div><div class="toggle-sub">5 etapas · 83 pedidos ativos</div></div><button class="toggle-switch on" id="wf-cov-returns" onclick="this.classList.toggle('on');this.classList.toggle('off')"></button></div>
               <div class="toggle-row"><div><div class="toggle-label">Aprovação de Pagamento</div><div class="toggle-sub">4 etapas · 12 pedidos ativos</div></div><button class="toggle-switch off" id="wf-cov-payment" onclick="this.classList.toggle('on');this.classList.toggle('off')"></button></div>
+              <div class="toggle-row"><div><div class="toggle-label">BOPIS — Retirada na Loja</div><div class="toggle-sub">4 etapas · 127 pedidos ativos</div></div><button class="toggle-switch on" id="wf-cov-bopis" onclick="this.classList.toggle('on');this.classList.toggle('off')"></button></div>
+              <div class="toggle-row"><div><div class="toggle-label">Ship-from-Store</div><div class="toggle-sub">5 etapas · 48 pedidos ativos</div></div><button class="toggle-switch on" id="wf-cov-sfs" onclick="this.classList.toggle('on');this.classList.toggle('off')"></button></div>
+              <div class="toggle-row"><div><div class="toggle-label">Produto Virtual</div><div class="toggle-sub">3 etapas · 312 pedidos ativos</div></div><button class="toggle-switch on" id="wf-cov-virtual" onclick="this.classList.toggle('on');this.classList.toggle('off')"></button></div>
+              <div class="toggle-row"><div><div class="toggle-label">Assinatura Recorrente</div><div class="toggle-sub">4 etapas · 891 pedidos ativos · <span style="color:#92400e;font-size:10.5px;font-weight:600">✏️ Seu workflow</span></div></div><button class="toggle-switch on" id="wf-cov-subscription" onclick="this.classList.toggle('on');this.classList.toggle('off')"></button></div>
             </div>
             <div style="border-top:1px solid #f0f0f0;padding-top:12px;margin-top:4px">
               <div class="slider-wrap">
@@ -1040,6 +1077,85 @@ tbody td{padding:10px 14px;font-size:13px;vertical-align:middle}
   </div>
 </div>
 
+<div class="modal-overlay" id="modal-new-workflow">
+  <div class="wf-create-modal">
+    <div class="wf-create-header">
+      <div>
+        <div style="font-size:15px;font-weight:700;color:#1a1a1a">Novo Workflow</div>
+        <div style="font-size:12px;color:#888;margin-top:2px">O assistente vai ajudar a criar ou alterar um workflow</div>
+      </div>
+      <button onclick="closeModal('modal-new-workflow')" style="border:none;background:transparent;cursor:pointer;color:#888;font-size:20px;line-height:1;padding:2px 6px">×</button>
+    </div>
+    <div class="wf-create-layout">
+      <!-- LEFT: AI Chat -->
+      <div class="wf-create-chat">
+        <div style="padding:12px 14px;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;gap:10px;flex-shrink:0">
+          <div style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,#7c3aed,#0c6fcd);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">🤖</div>
+          <div>
+            <div style="font-size:12.5px;font-weight:600;color:#1a1a1a">Assistente de Workflow</div>
+            <div style="font-size:11px;color:#888">AI · Modo criação</div>
+          </div>
+        </div>
+        <div class="orch-chat-msgs" id="wfc-msgs" style="flex:1;padding:14px;gap:8px"></div>
+        <div id="wfc-sugg-wrap" style="padding:4px 12px 6px;display:flex;flex-wrap:wrap;gap:4px;min-height:28px"></div>
+        <div style="padding:8px 12px 12px;display:flex;gap:6px;align-items:center;border-top:1px solid #f0f0f0;flex-shrink:0">
+          <input class="cm-input" id="wfc-input" placeholder="Responda ou descreva…" onkeydown="if(event.key==='Enter')sendWfcChat()">
+          <button class="cm-send" onclick="sendWfcChat()">
+            <svg viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="2" width="13" height="13"><path d="M14 2L2 8l4 2 2 4 6-12z"/></svg>
+          </button>
+        </div>
+      </div>
+      <!-- RIGHT: Preview -->
+      <div class="wf-create-preview" id="wfc-preview">
+        <div style="font-size:12px;font-weight:600;color:#aaa;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Prévia do workflow</div>
+        <div class="wf-preview-card" id="wfc-preview-card">
+          <div class="wf-preview-field">
+            <span class="wf-preview-label">Nome</span>
+            <span class="wf-preview-value empty" id="wfc-prev-name">Aguardando...</span>
+          </div>
+          <div class="wf-preview-field">
+            <span class="wf-preview-label">Descrição</span>
+            <span class="wf-preview-value empty" id="wfc-prev-desc">Aguardando...</span>
+          </div>
+          <div class="wf-preview-field">
+            <span class="wf-preview-label">Acionamento</span>
+            <span class="wf-preview-value empty" id="wfc-prev-trigger">Aguardando...</span>
+          </div>
+          <div class="wf-preview-field">
+            <span class="wf-preview-label">Etapas</span>
+            <div class="wf-preview-steps" id="wfc-prev-steps">
+              <span style="font-size:12px;color:#ccc;font-style:italic">Nenhuma etapa ainda</span>
+            </div>
+          </div>
+          <div class="wf-preview-field" id="wfc-prev-pnp-row" style="display:none">
+            <span class="wf-preview-label">Integração nativa</span>
+            <div class="pnp-card" style="margin-top:4px">
+              <div class="pnp-card-header">
+                <span style="font-size:18px">🔧</span>
+                <div>
+                  <div style="font-size:12.5px;font-weight:700;color:#c2410c">VTEX Pick and Pack</div>
+                  <div style="font-size:11px;color:#888">Injeção nativa de eventos de fulfillment no OMS</div>
+                </div>
+                <span class="pnp-badge" style="margin-left:auto">Nativo VTEX</span>
+              </div>
+              <div class="pnp-events">
+                <div class="pnp-event-row"><span class="pnp-event-name">pnp.itemSeparado</span><span class="pnp-event-desc">Item separado pelo operador</span></div>
+                <div class="pnp-event-row"><span class="pnp-event-name">pnp.itemConferido</span><span class="pnp-event-desc">Conferência de qualidade concluída</span></div>
+                <div class="pnp-event-row"><span class="pnp-event-name">pnp.pacoteEmbalado</span><span class="pnp-event-desc">Pacote embalado e etiquetado</span></div>
+                <div class="pnp-event-row"><span class="pnp-event-name">pnp.handoffCarrier</span><span class="pnp-event-desc">Handoff ao carrier registrado</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:8px">
+          <button class="btn btn-secondary" onclick="closeModal('modal-new-workflow')">Cancelar</button>
+          <button class="btn btn-primary" id="wfc-save-btn" disabled onclick="saveNewWorkflow()" style="opacity:.5;cursor:not-allowed">Criar Workflow</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
 // ══════════════════════════════════════════
 // DATA
@@ -1068,6 +1184,14 @@ const ORDERS = [
   { id:'1631818946200-01', short:'68946200', date:'13/05/2026 - 10:55', client:'Diego Ferreira', items:2, total:'R$ 155,00', origin:'Loja própria', orderStatus:'processed', tasks:[
     {n:'Separação',s:'done'},{n:'Conferência',s:'done'},{n:'Embalagem',s:'done'},{n:'Expedição',s:'done'}] },
   { id:'1631808945900-01', short:'68945900', date:'13/05/2026 - 10:12', client:'Juliana Santos', items:3, total:'R$ 220,00', origin:'Marketplace', orderStatus:'canceled', tasks:[] },
+  { id:'1631780944300-01', short:'68944300', date:'13/05/2026 - 08:14', client:'Gustavo Fonseca', items:1, total:'R$ 299,90', origin:'Loja própria', orderStatus:'processing', workflowType:'bopis', tasks:[
+    {n:'Confirmação',s:'done'},{n:'Separação',s:'done'},{n:'Notificação',s:'active'},{n:'Retirada',s:'waiting'}] },
+  { id:'1631770944100-01', short:'68944100', date:'13/05/2026 - 07:50', client:'Beatriz Alves', items:2, total:'R$ 620,00', origin:'Loja própria', orderStatus:'processing', workflowType:'sfs', tasks:[
+    {n:'Estoque',s:'done'},{n:'Separação',s:'active'},{n:'NF',s:'waiting'},{n:'Coleta',s:'waiting'},{n:'Entrega',s:'waiting'}] },
+  { id:'1631760943900-01', short:'68943900', date:'13/05/2026 - 07:22', client:'Thiago Rocha', items:1, total:'R$ 49,90', origin:'Marketplace', orderStatus:'processing', workflowType:'virtual', tasks:[
+    {n:'Validação',s:'done'},{n:'Licença',s:'active'},{n:'Envio',s:'waiting'}] },
+  { id:'1631750943700-01', short:'68943700', date:'13/05/2026 - 06:45', client:'Camila Souza', items:3, total:'R$ 187,00', origin:'Loja própria', orderStatus:'processing', workflowType:'subscription', tasks:[
+    {n:'Assinatura',s:'done'},{n:'Cobrança',s:'done'},{n:'Separação',s:'active'},{n:'Entrega',s:'waiting'}] },
 ];
 
 // Per-order item details
@@ -1153,26 +1277,35 @@ const WORKFLOW_DEFS = [
   {
     id:'wf-standard', name:'Workflow Padrão', icon:'📦', color:'#0c6fcd', orderCount:4256,
     description:'Fluxo padrão para pedidos de entrega convencional', dependencies:[],
+    userCreated: false,
     tasks:[
-      {id:'t1',name:'Separação de Itens',supplier:'CD São Paulo',category:'Todos',color:'#0c6fcd',active:true,
-        actions:['validarEstoque','ReservarEstoque'],script:null,externalApi:null,
-        contextOutput:['validarEstoque.disponivel','validarEstoque.qtd_reservada','validarEstoque.ok']},
-      {id:'t2',name:'Conferência de Qualidade',supplier:'QA Team',category:'Eletrônicos',color:'#7c3aed',active:true,
-        actions:['enviar_email'],script:null,externalApi:null,
-        contextOutput:[]},
-      {id:'t3',name:'Embalagem',supplier:'CD São Paulo',category:'Todos',color:'#0891b2',active:true,
-        actions:['validarEstoque','AlterarItemPedido'],script:null,externalApi:null,
-        contextOutput:[]},
-      {id:'t4',name:'Nota Fiscal',supplier:'Financeiro',category:'Todos',color:'#059669',active:true,
-        actions:['CapturarPagamento'],script:null,
-        externalApi:{url:'https://api.nfe.io/v1/nota',method:'POST',
-          responseMapping:[{key:'nf_numero',path:'data.number'},{key:'nf_chave',path:'data.accessKey'}]},
-        contextOutput:['CapturarPagamento.captura_id','api_nfe.nf_numero','api_nfe.nf_chave']},
-      {id:'t5',name:'Expedição',supplier:'Transportadora XYZ',category:'Todos',color:'#d97706',active:true,
-        actions:['enviar_email','AlterarSellerPedido'],script:null,
-        externalApi:{url:'https://api.transportadora.com/cotacao',method:'POST',
-          responseMapping:[{key:'prazo_entrega',path:'result.delivery_days'},{key:'custo_frete',path:'result.cost'}]},
-        contextOutput:['api_cotacao.prazo_entrega','api_cotacao.custo_frete']},
+      {id:'t1', name:'Separação de Itens', color:'#0c6fcd', tasks:[
+        {id:'t1_0',name:'Separação de Itens',supplier:'CD São Paulo',category:'Todos',active:true,
+          actions:['validarEstoque','ReservarEstoque'],script:null,externalApi:null,
+          contextOutput:['validarEstoque.disponivel','validarEstoque.qtd_reservada','validarEstoque.ok']}
+      ]},
+      {id:'t2', name:'Conferência de Qualidade', color:'#7c3aed', tasks:[
+        {id:'t2_0',name:'Conferência de Qualidade',supplier:'QA Team',category:'Eletrônicos',active:true,
+          actions:['enviar_email'],script:null,externalApi:null,contextOutput:[]}
+      ]},
+      {id:'t3', name:'Embalagem', color:'#0891b2', tasks:[
+        {id:'t3_0',name:'Embalagem',supplier:'CD São Paulo',category:'Todos',active:true,
+          actions:['validarEstoque','AlterarItemPedido'],script:null,externalApi:null,contextOutput:[]}
+      ]},
+      {id:'t4', name:'Nota Fiscal', color:'#059669', tasks:[
+        {id:'t4_0',name:'Nota Fiscal',supplier:'Financeiro',category:'Todos',active:true,
+          actions:['CapturarPagamento'],script:null,
+          externalApi:{url:'https://api.nfe.io/v1/nota',method:'POST',
+            responseMapping:[{key:'nf_numero',path:'data.number'},{key:'nf_chave',path:'data.accessKey'}]},
+          contextOutput:['CapturarPagamento.captura_id','api_nfe.nf_numero','api_nfe.nf_chave']}
+      ]},
+      {id:'t5', name:'Expedição', color:'#d97706', tasks:[
+        {id:'t5_0',name:'Expedição',supplier:'Transportadora XYZ',category:'Todos',active:true,
+          actions:['enviar_email','AlterarSellerPedido'],script:null,
+          externalApi:{url:'https://api.transportadora.com/cotacao',method:'POST',
+            responseMapping:[{key:'prazo_entrega',path:'result.delivery_days'},{key:'custo_frete',path:'result.cost'}]},
+          contextOutput:['api_cotacao.prazo_entrega','api_cotacao.custo_frete']}
+      ]},
     ],
     edges:[
       {id:'e1',from:'t1',to:'t2',active:true},{id:'e2',from:'t2',to:'t3',active:true},
@@ -1182,12 +1315,23 @@ const WORKFLOW_DEFS = [
   {
     id:'wf-returns', name:'Troca e Devolução', icon:'↩️', color:'#7c3aed', orderCount:83,
     description:'Fluxo para pedidos de devolução e troca de produtos', dependencies:['wf-standard'],
+    userCreated: false,
     tasks:[
-      {id:'r1',name:'Solicitação Recebida',supplier:'Atendimento',category:'Todos',color:'#7c3aed',active:true},
-      {id:'r2',name:'Análise do Motivo',supplier:'QA Team',category:'Todos',color:'#6366f1',active:true},
-      {id:'r3',name:'Coleta do Item',supplier:'Transportadora XYZ',category:'Todos',color:'#0891b2',active:true},
-      {id:'r4',name:'Inspeção de Qualidade',supplier:'QA Team',category:'Todos',color:'#059669',active:true},
-      {id:'r5',name:'Reembolso / Troca',supplier:'Financeiro',category:'Todos',color:'#d97706',active:true},
+      {id:'r1', name:'Solicitação Recebida', color:'#7c3aed', tasks:[
+        {id:'r1_0',name:'Solicitação Recebida',supplier:'Atendimento',category:'Todos',active:true,actions:[],script:null,externalApi:null,contextOutput:[]}
+      ]},
+      {id:'r2', name:'Análise do Motivo', color:'#6366f1', tasks:[
+        {id:'r2_0',name:'Análise do Motivo',supplier:'QA Team',category:'Todos',active:true,actions:[],script:null,externalApi:null,contextOutput:[]}
+      ]},
+      {id:'r3', name:'Coleta do Item', color:'#0891b2', tasks:[
+        {id:'r3_0',name:'Coleta do Item',supplier:'Transportadora XYZ',category:'Todos',active:true,actions:[],script:null,externalApi:null,contextOutput:[]}
+      ]},
+      {id:'r4', name:'Inspeção de Qualidade', color:'#059669', tasks:[
+        {id:'r4_0',name:'Inspeção de Qualidade',supplier:'QA Team',category:'Todos',active:true,actions:[],script:null,externalApi:null,contextOutput:[]}
+      ]},
+      {id:'r5', name:'Reembolso / Troca', color:'#d97706', tasks:[
+        {id:'r5_0',name:'Reembolso / Troca',supplier:'Financeiro',category:'Todos',active:true,actions:[],script:null,externalApi:null,contextOutput:[]}
+      ]},
     ],
     edges:[
       {id:'re1',from:'r1',to:'r2',active:true},{id:'re2',from:'r2',to:'r3',active:true},
@@ -1197,16 +1341,107 @@ const WORKFLOW_DEFS = [
   {
     id:'wf-payment', name:'Aprovação de Pagamento', icon:'💳', color:'#059669', orderCount:12,
     description:'Fluxo de aprovação manual para pedidos B2B acima de R$ 10.000', dependencies:[],
+    userCreated: false,
     tasks:[
-      {id:'p1',name:'Validação do Comprador',supplier:'Financeiro',category:'B2B',color:'#059669',active:true},
-      {id:'p2',name:'Análise de Crédito',supplier:'Financeiro',category:'B2B',color:'#0891b2',active:true},
-      {id:'p3',name:'Aprovação do Gestor',supplier:'Gestão',category:'B2B',color:'#6366f1',active:true},
-      {id:'p4',name:'Captura do Pagamento',supplier:'Financeiro',category:'B2B',color:'#d97706',active:true},
+      {id:'p1', name:'Validação do Comprador', color:'#059669', tasks:[
+        {id:'p1_0',name:'Validação do Comprador',supplier:'Financeiro',category:'B2B',active:true,actions:[],script:null,externalApi:null,contextOutput:[]}
+      ]},
+      {id:'p2', name:'Análise de Crédito', color:'#0891b2', tasks:[
+        {id:'p2_0',name:'Análise de Crédito',supplier:'Financeiro',category:'B2B',active:true,actions:[],script:null,externalApi:null,contextOutput:[]}
+      ]},
+      {id:'p3', name:'Aprovação do Gestor', color:'#6366f1', tasks:[
+        {id:'p3_0',name:'Aprovação do Gestor',supplier:'Gestão',category:'B2B',active:true,actions:[],script:null,externalApi:null,contextOutput:[]}
+      ]},
+      {id:'p4', name:'Captura do Pagamento', color:'#d97706', tasks:[
+        {id:'p4_0',name:'Captura do Pagamento',supplier:'Financeiro',category:'B2B',active:true,actions:[],script:null,externalApi:null,contextOutput:[]}
+      ]},
     ],
     edges:[
       {id:'pe1',from:'p1',to:'p2',active:true},{id:'pe2',from:'p2',to:'p3',active:true},
       {id:'pe3',from:'p3',to:'p4',active:true},
     ],
+  },
+  {
+    id:'wf-bopis', name:'BOPIS — Retirada na Loja', icon:'🏪', color:'#0891b2', orderCount:127,
+    description:'Pedidos comprados online e retirados em loja física (Buy Online, Pick Up In Store)', dependencies:[],
+    userCreated: false,
+    tasks:[
+      {id:'b1', name:'Confirmação de Disponibilidade', color:'#0891b2', tasks:[
+        {id:'b1_0',name:'Confirmação de Disponibilidade',supplier:'Loja Física BH',category:'Todos',active:true,actions:[],script:null,externalApi:null,contextOutput:[]}
+      ]},
+      {id:'b2', name:'Separação na Loja', color:'#0c6fcd', tasks:[
+        {id:'b2_0',name:'Separação na Loja',supplier:'Loja Física BH',category:'Todos',active:true,actions:['enviar_email'],script:null,externalApi:null,contextOutput:[]}
+      ]},
+      {id:'b3', name:'Notificação ao Cliente', color:'#6366f1', tasks:[
+        {id:'b3_0',name:'Notificação ao Cliente',supplier:'Atendimento',category:'Todos',active:true,actions:['enviar_email'],script:null,externalApi:null,contextOutput:[]}
+      ]},
+      {id:'b4', name:'Check-in de Retirada', color:'#059669', tasks:[
+        {id:'b4_0',name:'Check-in de Retirada',supplier:'Loja Física BH',category:'Todos',active:true,actions:[],script:null,externalApi:null,contextOutput:[]}
+      ]},
+    ],
+    edges:[{id:'be1',from:'b1',to:'b2',active:true},{id:'be2',from:'b2',to:'b3',active:true},{id:'be3',from:'b3',to:'b4',active:true}],
+  },
+  {
+    id:'wf-sfs', name:'Ship-from-Store', icon:'🏬', color:'#d97706', orderCount:48,
+    description:'Pedidos expedidos diretamente de lojas físicas para o endereço do cliente', dependencies:[],
+    userCreated: false,
+    tasks:[
+      {id:'s1', name:'Verificação de Estoque na Loja', color:'#d97706', tasks:[
+        {id:'s1_0',name:'Verificação de Estoque na Loja',supplier:'Loja Física BH',category:'Todos',active:true,actions:['validarEstoque'],script:null,externalApi:null,contextOutput:['validarEstoque.disponivel','validarEstoque.ok']}
+      ]},
+      {id:'s2', name:'Separação e Embalagem', color:'#0891b2', tasks:[
+        {id:'s2_0',name:'Separação e Embalagem',supplier:'Loja Física BH',category:'Todos',active:true,actions:[],script:null,externalApi:null,contextOutput:[]}
+      ]},
+      {id:'s3', name:'Emissão de NF', color:'#059669', tasks:[
+        {id:'s3_0',name:'Emissão de NF',supplier:'Financeiro',category:'Todos',active:true,actions:['CapturarPagamento'],script:null,externalApi:{url:'https://api.nfe.io/v1/nota',method:'POST',responseMapping:[{key:'nf_numero',path:'data.number'}]},contextOutput:['api_nfe.nf_numero']}
+      ]},
+      {id:'s4', name:'Coleta pelo Carrier', color:'#6366f1', tasks:[
+        {id:'s4_0',name:'Coleta pelo Carrier',supplier:'Transportadora XYZ',category:'Todos',active:true,actions:['AlterarSellerPedido'],script:null,externalApi:null,contextOutput:[]}
+      ]},
+      {id:'s5', name:'Entrega ao Cliente', color:'#0c6fcd', tasks:[
+        {id:'s5_0',name:'Entrega ao Cliente',supplier:'Transportadora XYZ',category:'Todos',active:true,actions:['enviar_email'],script:null,externalApi:null,contextOutput:[]}
+      ]},
+    ],
+    edges:[{id:'se1',from:'s1',to:'s2',active:true},{id:'se2',from:'s2',to:'s3',active:true},{id:'se3',from:'s3',to:'s4',active:true},{id:'se4',from:'s4',to:'s5',active:true}],
+  },
+  {
+    id:'wf-virtual', name:'Produto Virtual', icon:'⚡', color:'#7c3aed', orderCount:312,
+    description:'Ativação e entrega de produtos digitais — licenças, códigos de software, conteúdo digital', dependencies:[],
+    userCreated: false,
+    tasks:[
+      {id:'v1', name:'Validação do Pedido', color:'#7c3aed', tasks:[
+        {id:'v1_0',name:'Validação do Pedido',supplier:'Financeiro',category:'Produto Virtual',active:true,actions:['CapturarPagamento'],script:null,externalApi:null,contextOutput:[]}
+      ]},
+      {id:'v2', name:'Geração de Licença / Código', color:'#6366f1', tasks:[
+        {id:'v2_0',name:'Geração de Licença / Código',supplier:'Sistema de Licenças',category:'Produto Virtual',active:true,actions:[],script:'// Geração de chave de licença\nconst pedidoId = context.pedido_id || "";\ncontext.licenca_key = `LIC-${pedidoId}-${Date.now().toString(36).toUpperCase()}`;\ncontext.licenca_expira = new Date(Date.now()+365*86400000).toISOString();\ncontext.licenca_pronta = true;',externalApi:null,contextOutput:['licenca_key','licenca_expira']}
+      ]},
+      {id:'v3', name:'Envio ao Cliente', color:'#059669', tasks:[
+        {id:'v3_0',name:'Envio ao Cliente',supplier:'Atendimento',category:'Produto Virtual',active:true,actions:['enviar_email'],script:null,externalApi:null,contextOutput:[]}
+      ]},
+    ],
+    edges:[{id:'ve1',from:'v1',to:'v2',active:true},{id:'ve2',from:'v2',to:'v3',active:true}],
+  },
+  {
+    id:'wf-subscription', name:'Assinatura Recorrente', icon:'🔄', color:'#6366f1', orderCount:891,
+    description:'Renovação automática de pedidos recorrentes — assinaturas e reposição programada', dependencies:[],
+    userCreated: true,
+    createdBy: 'Você',
+    createdAt: '10/05/2026',
+    tasks:[
+      {id:'sub1', name:'Verificação de Assinatura Ativa', color:'#6366f1', tasks:[
+        {id:'sub1_0',name:'Verificação de Assinatura Ativa',supplier:'Financeiro',category:'Assinatura',active:true,actions:[],script:'// Verifica status da assinatura\ncontext.assinatura_ok = context.assinatura_status === "ativa";\ncontext.proximo_ciclo = context.ciclo_atual + 1;',externalApi:null,contextOutput:['assinatura_ok','proximo_ciclo']}
+      ]},
+      {id:'sub2', name:'Cobrança Recorrente', color:'#059669', tasks:[
+        {id:'sub2_0',name:'Cobrança Recorrente',supplier:'Financeiro',category:'Assinatura',active:true,actions:['CapturarPagamento'],script:null,externalApi:null,contextOutput:[]}
+      ]},
+      {id:'sub3', name:'Separação e Expedição', color:'#0891b2', tasks:[
+        {id:'sub3_0',name:'Separação e Expedição',supplier:'CD São Paulo',category:'Assinatura',active:true,actions:['validarEstoque','ReservarEstoque'],script:null,externalApi:null,contextOutput:[]}
+      ]},
+      {id:'sub4', name:'Confirmação de Entrega', color:'#0c6fcd', tasks:[
+        {id:'sub4_0',name:'Confirmação de Entrega',supplier:'Transportadora XYZ',category:'Assinatura',active:true,actions:['enviar_email'],script:null,externalApi:null,contextOutput:[]}
+      ]},
+    ],
+    edges:[{id:'sube1',from:'sub1',to:'sub2',active:true},{id:'sube2',from:'sub2',to:'sub3',active:true},{id:'sube3',from:'sub3',to:'sub4',active:true}],
   },
 ];
 
@@ -1244,17 +1479,21 @@ function renderWorkflowList() {
   const grid = document.getElementById('wfl-grid');
   if (!grid) return;
   grid.innerHTML = WORKFLOW_DEFS.map(wf => `
-    <div class="wfl-card" onclick="openWorkflow('${wf.id}')">
+    <div class="wfl-card${wf.userCreated?' user-created':''}" onclick="openWorkflow('${wf.id}')">
       <div class="wfl-card-header">
         <div class="wfl-icon" style="background:${wf.color}20">${wf.icon}</div>
         <div style="flex:1;min-width:0">
-          <div class="wfl-name">${wf.name}</div>
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">
+            <div class="wfl-name" style="margin-bottom:0">${wf.name}</div>
+            ${wf.userCreated ? `<span class="wfl-user-badge">✏️ Criado por você</span>` : ''}
+          </div>
           <div class="wfl-desc">${wf.description}</div>
         </div>
       </div>
       <div class="wfl-meta">
         <div class="wfl-meta-item"><span class="wfl-meta-label">Pedidos ativos</span><span class="wfl-meta-val">${wf.orderCount.toLocaleString('pt-BR')}</span></div>
         <div class="wfl-meta-item"><span class="wfl-meta-label">Etapas</span><span class="wfl-meta-val">${wf.tasks.length}</span></div>
+        ${wf.userCreated && wf.createdAt ? `<div class="wfl-meta-item"><span class="wfl-meta-label">Criado em</span><span class="wfl-meta-val" style="font-size:12px;font-weight:500">${wf.createdAt}</span></div>` : ''}
       </div>
       <div class="wfl-card-footer">
         <div class="wfl-status"><div class="wfl-status-dot"></div>Ativo</div>
@@ -1570,8 +1809,15 @@ let editChatState = 'idle', editDraft = {}, activePanel = 'create';
 let chatStep = 0, newTaskDraft = {};
 
 function renderWorkflowBoard() {
-  renderFlowBar();
   renderKanban();
+}
+
+function findSubTask(taskId) {
+  for (const stage of WF_TASKS) {
+    const task = (stage.tasks || []).find(t => t.id === taskId);
+    if (task) return { stage, task };
+  }
+  return null;
 }
 
 function renderFlowBar() {
@@ -1590,9 +1836,9 @@ function renderFlowBar() {
 function renderKanban() {
   const scroll = document.getElementById('wf-board-scroll');
   let html = '';
-  WF_TASKS.forEach((task, i) => {
+  WF_TASKS.forEach((stage, i) => {
     if (i > 0) {
-      const edge = WF_EDGES.find(e => e.from === WF_TASKS[i-1].id && e.to === task.id);
+      const edge = WF_EDGES.find(e => e.from === WF_TASKS[i-1].id && e.to === stage.id);
       const eActive = edge ? edge.active : true;
       const eId = edge ? edge.id : null;
       html += `<div class="col-connector">
@@ -1601,37 +1847,42 @@ function renderKanban() {
         <div class="connector-badge ${eActive?'':'inactive'}" ${eId?`onclick="openEdgeModal('${eId}')"`:''}>${eActive?'Ativa':'Inativa'}</div>
       </div>`;
     }
-    const isSel = selectedTaskId === task.id;
-    html += `<div class="kanban-col" id="col-${task.id}" ondragover="event.preventDefault();dragOverCol('${task.id}')" ondrop="dropOnCol('${task.id}')" ondragleave="dragLeaveCol('${task.id}')">
-      <div class="kanban-col-header">
-        <div class="col-num" style="background:${task.color}">${i+1}</div>
-        <span class="col-title" title="${task.name}">${task.name}</span>
-        <button class="col-menu-btn" onclick="editTask('${task.id}')">⋯</button>
-      </div>
-      <div class="kanban-col-body">
-        <div class="task-card ${isSel?'selected':''}" id="card-${task.id}" draggable="true" ondragstart="dragStart(event,'${task.id}')" ondragend="dragEnd(event)" onclick="selectTask('${task.id}')">
-          <div class="card-top">
-            <div class="card-name">${task.name}</div>
-            <div class="card-actions-row">
-              <button class="card-btn" title="Editar" onclick="event.stopPropagation();editTask('${task.id}')"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M9 2l3 3L4 13H1v-3L9 2z"/></svg></button>
-              <button class="card-btn" title="Dividir em duas etapas" onclick="event.stopPropagation();openSplitPanel('${task.id}')" style="font-size:12px;font-weight:700">✂</button>
-              <button class="card-btn danger" title="Excluir" onclick="event.stopPropagation();deleteTask('${task.id}')"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M2 4h10M5 4V2h4v2M5 6v5M9 6v5M3 4l1 8h6l1-8"/></svg></button>
-            </div>
-          </div>
-          <div class="card-tags">
-            <span class="card-tag tag-supplier">${task.supplier}</span>
-            <span class="card-tag tag-category">${task.category}</span>
-          </div>
-          <div class="card-footer">
-            ${i > 0 ? `<span class="card-dep"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" width="10" height="10"><path d="M2 6h8M7 3l3 3-3 3"/></svg> ${WF_TASKS[i-1].name}</span>` : `<span class="card-dep" style="color:#22c55e">Tarefa inicial</span>`}
-            <div style="display:flex;align-items:center;gap:4px">
-              ${task.mcpConfig ? `<span title="MCP: ${task.mcpConfig.serverName}" style="font-size:9px;padding:1px 5px;border-radius:3px;background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;font-weight:600;line-height:1.6">MCP</span>` : ''}
-              ${task.agentConfig ? `<span title="${task.agentConfig.agentName}" style="font-size:11px;line-height:1">${task.agentConfig.agentIcon}</span>` : ''}
-              <div class="card-status-dot" style="background:${task.active?'#22c55e':'#ef4444'}" title="${task.active?'Ativa':'Inativa'}"></div>
-            </div>
+    const stageTasks = stage.tasks || [];
+    let cardsHtml = '';
+    stageTasks.forEach(task => {
+      const isSel = selectedTaskId === task.id;
+      cardsHtml += `<div class="task-card ${isSel?'selected':''}" id="card-${task.id}" draggable="true" ondragstart="dragStart(event,'${stage.id}')" ondragend="dragEnd(event)" onclick="selectTask('${task.id}')">
+        <div class="card-top">
+          <div class="card-name">${task.name}</div>
+          <div class="card-actions-row">
+            <button class="card-btn" title="Editar" onclick="event.stopPropagation();editTask('${task.id}')"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M9 2l3 3L4 13H1v-3L9 2z"/></svg></button>
+            <button class="card-btn" title="Dividir em duas tarefas" onclick="event.stopPropagation();openSplitPanel('${task.id}')" style="font-size:12px;font-weight:700">✂</button>
+            <button class="card-btn danger" title="Excluir" onclick="event.stopPropagation();deleteTask('${task.id}')"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M2 4h10M5 4V2h4v2M5 6v5M9 6v5M3 4l1 8h6l1-8"/></svg></button>
           </div>
         </div>
-        <div class="add-task-card" onclick="openCreatePanelAt(${i+1})">
+        <div class="card-tags">
+          <span class="card-tag tag-supplier">${task.supplier||''}</span>
+          <span class="card-tag tag-category">${task.category||''}</span>
+        </div>
+        <div class="card-footer">
+          ${i > 0 ? `<span class="card-dep"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" width="10" height="10"><path d="M2 6h8M7 3l3 3-3 3"/></svg> ${WF_TASKS[i-1].name}</span>` : `<span class="card-dep" style="color:#22c55e">Tarefa inicial</span>`}
+          <div style="display:flex;align-items:center;gap:4px">
+            ${task.mcpConfig ? `<span title="MCP: ${task.mcpConfig.serverName}" style="font-size:9px;padding:1px 5px;border-radius:3px;background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;font-weight:600;line-height:1.6">MCP</span>` : ''}
+            ${task.agentConfig ? `<span title="${task.agentConfig.agentName}" style="font-size:11px;line-height:1">${task.agentConfig.agentIcon}</span>` : ''}
+            <div class="card-status-dot" style="background:${task.active?'#22c55e':'#ef4444'}" title="${task.active?'Ativa':'Inativa'}"></div>
+          </div>
+        </div>
+      </div>`;
+    });
+    html += `<div class="kanban-col" id="col-${stage.id}" ondragover="event.preventDefault();dragOverCol('${stage.id}')" ondrop="dropOnCol('${stage.id}')" ondragleave="dragLeaveCol('${stage.id}')">
+      <div class="kanban-col-header">
+        <div class="col-num" style="background:${stage.color}">${i+1}</div>
+        <span class="col-title" title="${stage.name}">${stage.name}</span>
+        <button class="col-menu-btn" onclick="renameStage('${stage.id}')">⋯</button>
+      </div>
+      <div class="kanban-col-body">
+        ${cardsHtml}
+        <div class="add-task-card" onclick="addTaskToStage('${stage.id}')">
           <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M7 2v10M2 7h10"/></svg>
           Adicionar aqui
         </div>
@@ -1678,19 +1929,63 @@ function confirmReorder() {
 // ── Select / Edit (Agentic) ──
 function selectTask(id) { selectedTaskId = id; editTask(id); }
 function selectTaskFromPill(id) {
-  selectTask(id);
-  const col = document.getElementById('col-'+id);
+  const found = findSubTask(id);
+  if (found) { selectedTaskId = id; editTask(id); }
+  const col = document.getElementById('col-'+(found ? found.stage.id : id));
   if (col) col.scrollIntoView({behavior:'smooth',inline:'center',block:'nearest'});
 }
 
+// ── Add task to existing stage ──
+function addTaskToStage(stageId) {
+  activePanel = 'create';
+  chatStep = 0;
+  newTaskDraft = { stageId, name:'', supplier:'', category:'', mcpConfig:null, agentConfig:null };
+  document.getElementById('sp-title').textContent = 'Nova Tarefa com AI';
+  document.getElementById('sp-body').innerHTML = `
+    <div class="cm-msgs" id="cm-msgs"></div>
+    <div class="cm-suggestions" id="cm-suggestions"></div>
+    <div class="task-preview-mini" id="task-preview-mini">
+      <strong>Preview</strong>
+      <div class="tpm-row" id="prev-name">Nome: —</div>
+      <div class="tpm-row" id="prev-sup">Supplier: —</div>
+      <div class="tpm-row" id="prev-cat">Categoria: —</div>
+    </div>
+    <div class="cm-input-row">
+      <input class="cm-input" id="cm-input" placeholder="Digite..." onkeydown="if(event.key==='Enter')sendChat()">
+      <button class="cm-send" onclick="sendChat()"><svg viewBox="0 0 16 16" stroke="white" stroke-width="2" fill="none" width="13" height="13"><path d="M2 8l12-6-4 12-3-4-5-2z"/></svg></button>
+    </div>`;
+  document.getElementById('sp-footer').innerHTML = `
+    <button class="btn btn-secondary" style="flex:1;justify-content:center" onclick="closeSidePanel()">Cancelar</button>
+    <button class="btn btn-primary" id="create-btn" style="flex:1;justify-content:center;opacity:.4;cursor:not-allowed" disabled onclick="createSubTask()">Criar Tarefa</button>`;
+  openSidePanel();
+  setTimeout(() => { addCMsg('ai', chatFlows[0].ai); renderCSuggs(chatFlows[0].sugg); }, 200);
+}
+
+function createSubTask() {
+  const stage = WF_TASKS.find(s => s.id === newTaskDraft.stageId); if (!stage) return;
+  const newId = 't' + Date.now();
+  stage.tasks.push({
+    id: newId, name: newTaskDraft.name || 'Nova Tarefa',
+    supplier: newTaskDraft.supplier || 'A definir',
+    category: newTaskDraft.category || 'Todos',
+    active: true, actions:[], script:null, externalApi:null,
+    mcpConfig: newTaskDraft.mcpConfig || null,
+    agentConfig: newTaskDraft.agentConfig || null,
+    contextOutput:[]
+  });
+  closeSidePanel(); renderWorkflowBoard();
+  showSuccessModal('Tarefa criada!', `"${newTaskDraft.name || 'Nova Tarefa'}" foi adicionada à etapa.`);
+}
+
 function editTask(id) {
-  const task = WF_TASKS.find(t => t.id === id); if (!task) return;
+  const found = findSubTask(id); if (!found) return;
+  const task = found.task;
   selectedTaskId = id;
   activePanel = 'edit';
   editChatState = 'idle';
   editDraft = {
     name: task.name, supplier: task.supplier, category: task.category,
-    color: task.color, active: task.active !== false,
+    color: found.stage.color, active: task.active !== false,
     actions: [...(task.actions||[])],
     script: task.script !== undefined ? task.script : null,
     externalApi: task.externalApi ? {
@@ -1723,7 +2018,7 @@ function editTask(id) {
     if (task.agentConfig) greeting += `\n• Agente AI: ${task.agentConfig.agentIcon} ${task.agentConfig.agentName}`;
     greeting += '\n\nO que deseja alterar?';
     addCMsg('ai', greeting);
-    renderCSuggs(['Renomear','Trocar supplier','Configurar ações','Integração MCP','Agente AI Workspace','Script customizado']);
+    renderCSuggs(['Renomear','Trocar supplier','Configurar ações','Pick and Pack','Integração MCP','Agente AI Workspace','Script customizado']);
   }, 200);
 }
 
@@ -1756,7 +2051,7 @@ function sendEditChat() {
 
 function processEditIntent(text) {
   const lower = text.toLowerCase();
-  const idleSuggs = ['Renomear','Trocar supplier','Configurar ações','Integração MCP','Agente AI Workspace','Salvar e fechar'];
+  const idleSuggs = ['Renomear','Trocar supplier','Configurar ações','Pick and Pack','Integração MCP','Agente AI Workspace','Salvar e fechar'];
 
   if (lower === 'salvar e fechar' || lower === 'salvar') { applyEditDraft(); return; }
 
@@ -1841,13 +2136,15 @@ function processEditIntent(text) {
     // idle — intent detection
     if (lower.includes('renomear') || lower === 'nome' || (lower.includes('nome') && lower.includes('mudar'))) {
       editChatState = 'rename';
-      setTimeout(() => { addCMsg('ai', `Qual será o novo nome da etapa "${editDraft.name}"?`); }, 350);
+      setTimeout(() => { addCMsg('ai', `Qual será o novo nome da tarefa "${editDraft.name}"?`); }, 350);
     } else if (lower.includes('supplier') || lower.includes('trocar supplier') || lower.includes('time') || lower.includes('responsável') || lower.includes('responsavel')) {
       editChatState = 'supplier';
       setTimeout(() => { addCMsg('ai', `Supplier atual: "${editDraft.supplier}". Qual o novo?`); renderCSuggs(['CD São Paulo','CD Rio de Janeiro','QA Team','Financeiro','Transportadora XYZ']); }, 350);
     } else if (lower.includes('categoria') || lower.includes('produto')) {
       editChatState = 'category';
       setTimeout(() => { addCMsg('ai', `Categoria atual: "${editDraft.category}". Qual a nova?`); renderCSuggs(['Todos os produtos','Eletrônicos','Moda e Calçados','Alimentos','B2B']); }, 350);
+    } else if (lower.includes('pick and pack') || lower.includes('pick & pack') || lower.includes('pnp') || lower.includes('fulfillment') || lower.includes('separação pick') || lower.includes('separacao pick')) {
+      showPickAndPackPanel();
     } else if (lower.includes('mcp') || lower === 'integração mcp' || lower === 'integracao mcp') {
       showMcpSelector();
     } else if (lower.includes('workspace') || lower === 'agente ai workspace' || lower === 'agente ai') {
@@ -1953,11 +2250,11 @@ function generateScript(description) {
 }
 
 function applyEditDraft() {
-  const task = WF_TASKS.find(t => t.id === selectedTaskId); if (!task) return;
+  const found = findSubTask(selectedTaskId); if (!found) return;
+  const task = found.task;
   task.name        = editDraft.name;
   task.supplier    = editDraft.supplier;
   task.category    = editDraft.category;
-  task.color       = editDraft.color;
   task.active      = editDraft.active;
   task.actions     = editDraft.actions ? [...editDraft.actions] : [];
   task.script      = editDraft.script !== undefined ? editDraft.script : null;
@@ -1965,10 +2262,56 @@ function applyEditDraft() {
   task.mcpConfig   = editDraft.mcpConfig || null;
   task.agentConfig = editDraft.agentConfig || null;
   closeSidePanel(); renderWorkflowBoard();
-  showSuccessModal('Etapa atualizada!', `"${task.name}" foi salva com as novas configurações.`);
+  showSuccessModal('Tarefa atualizada!', `"${task.name}" foi salva com as novas configurações.`);
 }
 
-function setTaskColor(id, color) { const t = WF_TASKS.find(t => t.id===id); if(t){t.color=color;renderWorkflowBoard();} }
+function setTaskColor(id, color) { const found = findSubTask(id); if(found){found.task.color=color;renderWorkflowBoard();} }
+
+// ── Pick and Pack Native Integration ──
+function showPickAndPackPanel() {
+  setTimeout(() => {
+    const msgs = document.getElementById('cm-msgs'); if (!msgs) return;
+    const div = document.createElement('div');
+    div.className = 'pnp-card';
+    div.style.cssText = 'margin-top:4px';
+    div.innerHTML = `
+      <div class="pnp-card-header">
+        <span style="font-size:20px">🔧</span>
+        <div>
+          <div style="font-size:13px;font-weight:700;color:#c2410c">VTEX Pick and Pack</div>
+          <div style="font-size:11.5px;color:#888">Integração nativa — eventos de fulfillment injetados diretamente no OMS</div>
+        </div>
+        <span class="pnp-badge" style="margin-left:auto">Nativo VTEX</span>
+      </div>
+      <div style="font-size:12px;color:#555;margin-bottom:8px">Selecione os eventos que esta etapa deve receber do Pick and Pack:</div>
+      <div class="pnp-events">
+        <div class="pnp-event-row"><input type="checkbox" id="pnp-sep" checked style="accent-color:#c2410c"><label for="pnp-sep" style="cursor:pointer;flex:1;display:flex;align-items:center;gap:8px"><span class="pnp-event-name">pnp.itemSeparado</span><span class="pnp-event-desc">Item separado pelo operador</span></label></div>
+        <div class="pnp-event-row"><input type="checkbox" id="pnp-conf" checked style="accent-color:#c2410c"><label for="pnp-conf" style="cursor:pointer;flex:1;display:flex;align-items:center;gap:8px"><span class="pnp-event-name">pnp.itemConferido</span><span class="pnp-event-desc">Conferência de qualidade concluída</span></label></div>
+        <div class="pnp-event-row"><input type="checkbox" id="pnp-pack" checked style="accent-color:#c2410c"><label for="pnp-pack" style="cursor:pointer;flex:1;display:flex;align-items:center;gap:8px"><span class="pnp-event-name">pnp.pacoteEmbalado</span><span class="pnp-event-desc">Pacote embalado e etiquetado</span></label></div>
+        <div class="pnp-event-row"><input type="checkbox" id="pnp-hand" style="accent-color:#c2410c"><label for="pnp-hand" style="cursor:pointer;flex:1;display:flex;align-items:center;gap:8px"><span class="pnp-event-name">pnp.handoffCarrier</span><span class="pnp-event-desc">Handoff ao carrier registrado</span></label></div>
+      </div>
+      <button onclick="confirmPickAndPack()" style="margin-top:10px;width:100%;padding:8px;background:#c2410c;color:#fff;border:none;border-radius:6px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit">Ativar integração Pick and Pack</button>`;
+    msgs.appendChild(div); msgs.scrollTop = msgs.scrollHeight;
+    renderCSuggs([]);
+  }, 350);
+}
+
+function confirmPickAndPack() {
+  const draft = getActiveDraft();
+  const events = [];
+  if (document.getElementById('pnp-sep')?.checked) events.push('pnp.itemSeparado');
+  if (document.getElementById('pnp-conf')?.checked) events.push('pnp.itemConferido');
+  if (document.getElementById('pnp-pack')?.checked) events.push('pnp.pacoteEmbalado');
+  if (document.getElementById('pnp-hand')?.checked) events.push('pnp.handoffCarrier');
+  draft.pickAndPackEvents = events;
+  if (activePanel === 'edit') refreshEditPreview();
+  addCMsg('user', 'Ativar Pick and Pack');
+  setTimeout(() => {
+    addCMsg('ai', `✓ Pick and Pack ativado com ${events.length} evento${events.length!==1?'s':''}:\n${events.map(e=>`• ${e}`).join('\n')}\n\nEventos do Pick and Pack serão injetados diretamente na linha do tempo do pedido no OMS — sem integração genérica, como eventos nativos VTEX.\n\nMais alguma configuração?`);
+    if (activePanel === 'edit') renderCSuggs(['Configurar ações','MCP','Salvar e fechar']);
+    else renderCSuggs(['Criar agora','Configurar ações']);
+  }, 350);
+}
 
 // ── MCP Selector ──
 function showMcpSelector() {
@@ -2072,13 +2415,18 @@ function selectAgentWs(agentId) {
   }, 350);
 }
 function deleteTask(id) {
-  const t = WF_TASKS.find(t => t.id===id); pendingDeleteId = id;
-  document.getElementById('del-name').textContent = t ? t.name : '';
+  const found = findSubTask(id); pendingDeleteId = id;
+  document.getElementById('del-name').textContent = found ? found.task.name : '';
   openModal('modal-delete');
 }
 function confirmDelete() {
-  WF_TASKS = WF_TASKS.filter(t => t.id !== pendingDeleteId);
-  WF_EDGES = WF_EDGES.filter(e => e.from !== pendingDeleteId && e.to !== pendingDeleteId);
+  const found = findSubTask(pendingDeleteId); if (found) {
+    found.stage.tasks = found.stage.tasks.filter(t => t.id !== pendingDeleteId);
+    if (found.stage.tasks.length === 0) {
+      WF_TASKS = WF_TASKS.filter(s => s.id !== found.stage.id);
+      WF_EDGES = WF_EDGES.filter(e => e.from !== found.stage.id && e.to !== found.stage.id);
+    }
+  }
   closeModal('modal-delete'); closeSidePanel(); renderWorkflowBoard();
 }
 
@@ -2086,9 +2434,10 @@ function confirmDelete() {
 let splitTaskId = null, splitDraft = {}, splitStep = 0;
 
 function openSplitPanel(taskId) {
-  const task = WF_TASKS.find(t => t.id === taskId); if (!task) return;
+  const found = findSubTask(taskId); if (!found) return;
+  const task = found.task;
   activePanel = 'split'; splitTaskId = taskId; splitDraft = { name1:'', name2:'' }; splitStep = 0;
-  document.getElementById('sp-title').textContent = '✂ Dividir Etapa com AI';
+  document.getElementById('sp-title').textContent = '✂ Dividir Tarefa com AI';
   document.getElementById('sp-body').innerHTML = `
     <div style="padding:10px 12px;background:#fef9c3;border:1px solid #fde68a;border-radius:6px;font-size:12px;color:#854d0e;margin-bottom:4px">
       <strong>Dividindo:</strong> ${task.name}
@@ -2107,14 +2456,14 @@ function openSplitPanel(taskId) {
     <button class="btn btn-secondary" style="flex:1;justify-content:center" onclick="closeSidePanel()">Cancelar</button>
     <button class="btn btn-primary" id="split-btn" style="flex:1;justify-content:center;opacity:.4;cursor:not-allowed" disabled onclick="requestSplitConfirm()">Confirmar Divisão</button>`;
   openSidePanel();
-  setTimeout(() => addCMsg('ai', `Vou ajudar a dividir "${task.name}" em duas etapas.\n\nComo você quer chamar a primeira parte?`), 200);
+  setTimeout(() => addCMsg('ai', `Vou ajudar a dividir "${task.name}" em duas tarefas dentro desta etapa.\n\nComo você quer chamar a primeira parte?`), 200);
 }
 
 function sendSplitChat() {
   const input = document.getElementById('cm-input'); if (!input) return;
   const text = input.value.trim(); if (!text) return;
   input.value = ''; addCMsg('user', text);
-  const task = WF_TASKS.find(t => t.id === splitTaskId);
+  const task = findSubTask(splitTaskId)?.task;
   if (splitStep === 0) {
     splitDraft.name1 = text; splitStep = 1;
     const p1 = document.getElementById('prev-part1');
@@ -2124,8 +2473,9 @@ function sendSplitChat() {
     splitDraft.name2 = text; splitStep = 2;
     const p2 = document.getElementById('prev-part2');
     if (p2) p2.innerHTML = `2ª parte: <span>${text}</span>`;
+    const found2 = findSubTask(splitTaskId);
     setTimeout(() => {
-      addCMsg('ai', `Perfeito! O workflow ficará assim:\n• "${splitDraft.name1}" → "${splitDraft.name2}"\n\nAmbas herdarão o supplier "${task?.supplier}" e podem ser editadas depois. Confirmar a divisão?`);
+      addCMsg('ai', `Perfeito! A etapa ficará assim:\n• "${splitDraft.name1}"\n• "${splitDraft.name2}"\n\nAmbas herdarão o supplier "${found2?.task?.supplier}" e podem ser editadas depois. Confirmar a divisão?`);
       const btn = document.getElementById('split-btn');
       if (btn) { btn.disabled=false; btn.style.opacity='1'; btn.style.cursor='pointer'; }
     }, 450);
@@ -2133,8 +2483,9 @@ function sendSplitChat() {
 }
 
 function requestSplitConfirm() {
+  const found = findSubTask(splitTaskId);
   document.getElementById('modal-split-body').innerHTML =
-    `Dividir <strong>${WF_TASKS.find(t=>t.id===splitTaskId)?.name}</strong> em:<br><br>
+    `Dividir <strong>${found?.task?.name}</strong> em:<br><br>
      <strong>1ª parte:</strong> ${splitDraft.name1}<br>
      <strong>2ª parte:</strong> ${splitDraft.name2}`;
   openModal('modal-split-confirm');
@@ -2142,21 +2493,42 @@ function requestSplitConfirm() {
 
 function confirmSplit() {
   closeModal('modal-split-confirm');
-  const task = WF_TASKS.find(t => t.id === splitTaskId); if (!task) return;
-  const idx = WF_TASKS.findIndex(t => t.id === splitTaskId);
-  const colors = ['#0c6fcd','#7c3aed','#0891b2','#059669','#d97706','#6366f1','#0f766e','#dc2626'];
+  const found = findSubTask(splitTaskId); if (!found) return;
+  const { stage, task } = found;
+  const idx = stage.tasks.findIndex(t => t.id === splitTaskId);
   const newId1 = 't' + Date.now(), newId2 = 't' + (Date.now() + 1);
-  const task1 = { id:newId1, name:splitDraft.name1, supplier:task.supplier, category:task.category, color:task.color, active:true };
-  const task2 = { id:newId2, name:splitDraft.name2, supplier:task.supplier, category:task.category, color:colors[(idx+1)%colors.length], active:true };
-  WF_TASKS.splice(idx, 1, task1, task2);
-  WF_EDGES.forEach(e => {
-    if (e.to   === splitTaskId) e.to   = newId1;
-    if (e.from === splitTaskId) e.from = newId2;
-  });
-  WF_EDGES.push({ id:'e'+Date.now(), from:newId1, to:newId2, active:true });
+  const task1 = { ...task, id: newId1, name: splitDraft.name1 };
+  const task2 = { ...task, id: newId2, name: splitDraft.name2 };
+  stage.tasks.splice(idx, 1, task1, task2);
   closeSidePanel();
   renderWorkflowBoard();
-  showSuccessModal('Etapa dividida!', `"${task.name}" foi dividida em "${splitDraft.name1}" e "${splitDraft.name2}".`);
+  showSuccessModal('Tarefa dividida!', `"${task.name}" foi dividida em "${splitDraft.name1}" e "${splitDraft.name2}" dentro da mesma etapa.`);
+}
+
+// ── Rename stage ──
+function renameStage(stageId) {
+  const stage = WF_TASKS.find(s => s.id === stageId); if (!stage) return;
+  activePanel = 'rename';
+  document.getElementById('sp-title').textContent = 'Renomear Etapa';
+  document.getElementById('sp-body').innerHTML = `
+    <div style="padding:12px 0 4px">
+      <label style="font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:6px">Nome da etapa</label>
+      <input id="rename-input" class="cm-input" style="width:100%;box-sizing:border-box" value="${stage.name.replace(/"/g,'&quot;')}" placeholder="Nome da etapa" onkeydown="if(event.key==='Enter')applyRenameStage('${stageId}')">
+    </div>`;
+  document.getElementById('sp-footer').innerHTML = `
+    <button class="btn btn-secondary" style="flex:1;justify-content:center" onclick="closeSidePanel()">Cancelar</button>
+    <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="applyRenameStage('${stageId}')">Salvar</button>`;
+  openSidePanel();
+  setTimeout(() => { const inp = document.getElementById('rename-input'); if(inp){inp.focus();inp.select();} }, 100);
+}
+
+function applyRenameStage(stageId) {
+  const stage = WF_TASKS.find(s => s.id === stageId); if (!stage) return;
+  const input = document.getElementById('rename-input');
+  const newName = input ? input.value.trim() : '';
+  if (!newName) return;
+  stage.name = newName;
+  closeSidePanel(); renderWorkflowBoard();
 }
 
 // ── Create panel ──
@@ -2250,13 +2622,27 @@ function updatePreviewMini() {
 }
 function createTask() {
   const colors = ['#0c6fcd','#7c3aed','#0891b2','#059669','#d97706','#6366f1','#0f766e','#dc2626'];
-  const newT = {id:'t'+Date.now(), name:newTaskDraft.name||'Nova Etapa', supplier:newTaskDraft.supplier||'A definir', category:newTaskDraft.category||'Todos', color:colors[WF_TASKS.length%colors.length], active:true, mcpConfig:newTaskDraft.mcpConfig||null, agentConfig:newTaskDraft.agentConfig||null};
+  const stageId = 't' + Date.now();
+  const taskId  = stageId + '_0';
+  const stageName = newTaskDraft.name || 'Nova Etapa';
+  const newStage = {
+    id: stageId, name: stageName, color: colors[WF_TASKS.length % colors.length],
+    tasks: [{
+      id: taskId, name: stageName,
+      supplier: newTaskDraft.supplier || 'A definir',
+      category: newTaskDraft.category || 'Todos',
+      active: true, actions:[], script:null, externalApi:null,
+      mcpConfig: newTaskDraft.mcpConfig || null,
+      agentConfig: newTaskDraft.agentConfig || null,
+      contextOutput:[]
+    }]
+  };
   const pos = typeof newTaskDraft.position==='number' ? newTaskDraft.position : WF_TASKS.length;
-  WF_TASKS.splice(pos, 0, newT);
-  if (pos > 0) WF_EDGES.push({id:'e'+Date.now(), from:WF_TASKS[pos-1].id, to:newT.id, active:true});
-  if (pos < WF_TASKS.length-1) WF_EDGES.push({id:'e'+(Date.now()+1), from:newT.id, to:WF_TASKS[pos+1].id, active:true});
+  WF_TASKS.splice(pos, 0, newStage);
+  if (pos > 0) WF_EDGES.push({id:'e'+Date.now(), from:WF_TASKS[pos-1].id, to:newStage.id, active:true});
+  if (pos < WF_TASKS.length-1) WF_EDGES.push({id:'e'+(Date.now()+1), from:newStage.id, to:WF_TASKS[pos+1].id, active:true});
   closeSidePanel(); renderWorkflowBoard();
-  showSuccessModal('Etapa criada!', `"${newT.name}" foi adicionada ao workflow.`);
+  showSuccessModal('Etapa criada!', `"${stageName}" foi adicionada ao workflow.`);
 }
 
 // ── Edge modal ──
@@ -2720,6 +3106,244 @@ function deleteOrchRule(id) {
 
 function saveAgentConfig() {
   showSuccessModal('Configurações salvas!', 'O agente foi atualizado e está monitorando os workflows ativos.');
+}
+
+// ══════════════════════════════════════════
+// NEW WORKFLOW MODAL (AI creation)
+// ══════════════════════════════════════════
+
+let wfChatState = 'intent';
+let wfDraft = {name:'', desc:'', trigger:'auto', steps:[], pickAndPack:false};
+let wfStepBuffer = [];
+let wfCollectingSteps = false;
+
+function openNewWorkflowModal() {
+  wfChatState = 'intent';
+  wfDraft = {name:'', desc:'', trigger:'auto', steps:[], pickAndPack:false};
+  wfStepBuffer = [];
+  wfCollectingSteps = false;
+  const overlay = document.getElementById('modal-new-workflow');
+  overlay.classList.add('open');
+  const msgs = document.getElementById('wfc-msgs');
+  if (msgs) msgs.innerHTML = '';
+  updateWfcPreview();
+  const saveBtn = document.getElementById('wfc-save-btn');
+  if (saveBtn) { saveBtn.disabled = true; saveBtn.style.opacity = '.5'; saveBtn.style.cursor = 'not-allowed'; }
+  setTimeout(() => {
+    addWfcMsg('ai', 'Olá! Sou o assistente de configuração de workflows. 👋\n\nVocê quer **criar um workflow novo** ou **alterar um existente**?');
+    renderWfcSuggs(['Criar workflow novo', 'Alterar existente']);
+  }, 200);
+}
+
+function addWfcMsg(who, text) {
+  const msgs = document.getElementById('wfc-msgs'); if (!msgs) return;
+  const div = document.createElement('div');
+  div.className = `cm-msg cm-${who}`;
+  div.textContent = text;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function renderWfcSuggs(arr) {
+  const wrap = document.getElementById('wfc-sugg-wrap'); if (!wrap) return;
+  wrap.innerHTML = arr.map(s => `<span class="cm-suggestion" onclick="handleWfcSugg('${s}')">${s}</span>`).join('');
+}
+
+function handleWfcSugg(text) {
+  addWfcMsg('user', text);
+  document.getElementById('wfc-sugg-wrap').innerHTML = '';
+  processWfcChat(text);
+}
+
+function sendWfcChat() {
+  const inp = document.getElementById('wfc-input'); if (!inp) return;
+  const text = inp.value.trim(); if (!text) return;
+  inp.value = '';
+  addWfcMsg('user', text);
+  document.getElementById('wfc-sugg-wrap').innerHTML = '';
+  processWfcChat(text);
+}
+
+function processWfcChat(text) {
+  const lower = text.toLowerCase().trim();
+
+  if (wfChatState === 'intent') {
+    if (lower.includes('alterar') || lower.includes('editar') || lower.includes('existente') || lower.includes('modificar')) {
+      wfChatState = 'choose-existing';
+      setTimeout(() => {
+        addWfcMsg('ai', 'Escolha o workflow que deseja alterar:');
+        const msgs = document.getElementById('wfc-msgs'); if (!msgs) return;
+        const div = document.createElement('div');
+        div.className = 'wf-existing-list';
+        div.innerHTML = WORKFLOW_DEFS.map(wf => `
+          <div class="wf-existing-item" onclick="selectExistingWf('${wf.id}')">
+            <span style="font-size:20px">${wf.icon}</span>
+            <div style="flex:1">
+              <div style="font-size:13px;font-weight:600;color:#1a1a1a">${wf.name}</div>
+              <div style="font-size:11.5px;color:#888">${wf.tasks.length} etapas · ${wf.orderCount.toLocaleString('pt-BR')} pedidos ativos</div>
+            </div>
+            ${wf.userCreated ? '<span class="wfl-user-badge" style="flex-shrink:0">✏️ Seu</span>' : ''}
+          </div>`).join('');
+        msgs.appendChild(div);
+        msgs.scrollTop = msgs.scrollHeight;
+      }, 350);
+    } else {
+      wfChatState = 'name';
+      setTimeout(() => {
+        addWfcMsg('ai', 'Ótimo! Vamos criar um workflow novo.\n\nQual será o nome do workflow?\n\nExemplos: "Entrega Expressa", "BOPIS Farmácias", "B2B Grandes Contas"');
+        renderWfcSuggs(['BOPIS Farmácias', 'Entrega Expressa', 'B2B Grandes Contas']);
+      }, 350);
+    }
+
+  } else if (wfChatState === 'name') {
+    wfDraft.name = text;
+    updateWfcPreview();
+    wfChatState = 'desc';
+    setTimeout(() => {
+      addWfcMsg('ai', `Nome: "${text}" ✓\n\nAgora descreva brevemente o propósito deste workflow. O que ele resolve?`);
+      renderWfcSuggs([]);
+    }, 350);
+
+  } else if (wfChatState === 'desc') {
+    wfDraft.desc = text;
+    updateWfcPreview();
+    wfChatState = 'trigger';
+    setTimeout(() => {
+      addWfcMsg('ai', `Descrição salva ✓\n\nComo este workflow é acionado?`);
+      renderWfcSuggs(['Automaticamente para novos pedidos', 'Manualmente pelo operador', 'Por solicitação do cliente']);
+    }, 350);
+
+  } else if (wfChatState === 'trigger') {
+    if (lower.includes('automati') || lower.includes('auto') || lower.includes('novos pedidos')) {
+      wfDraft.trigger = 'Automaticamente para novos pedidos';
+    } else if (lower.includes('manual') || lower.includes('operador')) {
+      wfDraft.trigger = 'Manualmente pelo operador';
+    } else if (lower.includes('cliente') || lower.includes('solicit')) {
+      wfDraft.trigger = 'Por solicitação do cliente';
+    } else {
+      wfDraft.trigger = text;
+    }
+    updateWfcPreview();
+    wfChatState = 'pnp';
+    setTimeout(() => {
+      addWfcMsg('ai', `Acionamento: "${wfDraft.trigger}" ✓\n\nEste workflow envolve operações físicas de fulfillment (separação, embalagem, expedição)?\n\nSe sim, posso ativar a integração nativa com o **VTEX Pick and Pack**, que injeta eventos de fulfillment diretamente na linha do tempo do pedido — sem integrações genéricas.`);
+      renderWfcSuggs(['Sim, ativar Pick and Pack', 'Não, pular']);
+    }, 350);
+
+  } else if (wfChatState === 'pnp') {
+    if (lower.includes('sim') || lower.includes('ativar') || lower.includes('pick')) {
+      wfDraft.pickAndPack = true;
+      updateWfcPreview();
+      setTimeout(() => {
+        addWfcMsg('ai', '✓ Pick and Pack ativado! Eventos de fulfillment serão injetados nativamente no OMS.\n\nAgora descreva as etapas do workflow, uma por vez.\n\nExemplo: "Verificação de estoque" ou "Embalagem na loja"\n\nDigite "pronto" quando terminar.');
+        renderWfcSuggs(['Recebimento do pedido', 'Verificação de estoque', 'Separação', 'Embalagem', 'Expedição']);
+        wfChatState = 'steps';
+      }, 350);
+    } else {
+      wfDraft.pickAndPack = false;
+      updateWfcPreview();
+      setTimeout(() => {
+        addWfcMsg('ai', 'Ok! Agora descreva as etapas do workflow, uma por vez.\n\nExemplo: "Verificação de estoque" ou "Aprovação do gestor"\n\nDigite "pronto" quando terminar.');
+        renderWfcSuggs(['Recebimento do pedido', 'Verificação de estoque', 'Separação', 'Aprovação', 'Expedição']);
+        wfChatState = 'steps';
+      }, 350);
+    }
+
+  } else if (wfChatState === 'steps') {
+    if (['pronto','ok','fim','finalizar','feito','concluir'].includes(lower)) {
+      if (wfDraft.steps.length === 0) {
+        setTimeout(() => { addWfcMsg('ai', 'Adicione pelo menos uma etapa antes de finalizar.'); }, 350);
+        return;
+      }
+      wfChatState = 'confirm';
+      updateWfcPreview();
+      const saveBtn = document.getElementById('wfc-save-btn');
+      if (saveBtn) { saveBtn.disabled = false; saveBtn.style.opacity = '1'; saveBtn.style.cursor = 'pointer'; }
+      setTimeout(() => {
+        addWfcMsg('ai', `Perfeito! Aqui está o resumo do workflow:\n\n📋 ${wfDraft.name}\n📝 ${wfDraft.desc}\n⚡ ${wfDraft.trigger}\n${wfDraft.pickAndPack ? '🔧 Pick and Pack ativado\n' : ''}📌 Etapas: ${wfDraft.steps.join(' → ')}\n\nClique em "Criar Workflow" para adicionar ao board, ou continue editando.`);
+        renderWfcSuggs(['Adicionar mais etapas', 'Criar agora']);
+      }, 350);
+    } else {
+      wfDraft.steps.push(text);
+      updateWfcPreview();
+      setTimeout(() => {
+        addWfcMsg('ai', `✓ "${text}" adicionada! (${wfDraft.steps.length} etapa${wfDraft.steps.length!==1?'s':''})\n\nPróxima etapa, ou "pronto" para finalizar.`);
+        renderWfcSuggs(['Pronto', 'Conferência', 'Embalagem', 'Expedição', 'Nota Fiscal']);
+      }, 350);
+    }
+
+  } else if (wfChatState === 'confirm') {
+    if (lower.includes('adicionar') || lower.includes('mais etapa') || lower.includes('step')) {
+      wfChatState = 'steps';
+      setTimeout(() => { addWfcMsg('ai', 'Ok! Qual a próxima etapa?'); renderWfcSuggs([]); }, 350);
+    } else if (lower.includes('criar') || lower === 'criar agora') {
+      saveNewWorkflow();
+    }
+  }
+}
+
+function selectExistingWf(id) {
+  closeModal('modal-new-workflow');
+  openWorkflowSettings(id);
+}
+
+function updateWfcPreview() {
+  const nameEl = document.getElementById('wfc-prev-name');
+  const descEl = document.getElementById('wfc-prev-desc');
+  const trigEl = document.getElementById('wfc-prev-trigger');
+  const stepsEl = document.getElementById('wfc-prev-steps');
+  const pnpRow = document.getElementById('wfc-prev-pnp-row');
+
+  if (nameEl) { nameEl.textContent = wfDraft.name || 'Aguardando...'; nameEl.className = 'wf-preview-value' + (wfDraft.name ? '' : ' empty'); }
+  if (descEl) { descEl.textContent = wfDraft.desc || 'Aguardando...'; descEl.className = 'wf-preview-value' + (wfDraft.desc ? '' : ' empty'); }
+  if (trigEl) { trigEl.textContent = wfDraft.trigger || 'Aguardando...'; trigEl.className = 'wf-preview-value' + (wfDraft.trigger ? '' : ' empty'); }
+  if (stepsEl) {
+    stepsEl.innerHTML = wfDraft.steps.length
+      ? wfDraft.steps.map((s,i) => `<span class="wf-preview-step-chip">${i+1}. ${s}</span>`).join('')
+      : '<span style="font-size:12px;color:#ccc;font-style:italic">Nenhuma etapa ainda</span>';
+  }
+  if (pnpRow) pnpRow.style.display = wfDraft.pickAndPack ? 'flex' : 'none';
+}
+
+function saveNewWorkflow() {
+  if (!wfDraft.name) return;
+  const colors = ['#0c6fcd','#7c3aed','#0891b2','#059669','#d97706','#6366f1'];
+  const icons = ['📦','🏪','🏬','⚡','🔄','🎯','📋'];
+  const newWf = {
+    id: 'wf-custom-' + Date.now(),
+    name: wfDraft.name,
+    icon: icons[Math.floor(Math.random()*icons.length)],
+    color: colors[Math.floor(Math.random()*colors.length)],
+    orderCount: 0,
+    description: wfDraft.desc,
+    dependencies: [],
+    userCreated: true,
+    createdBy: 'Você',
+    createdAt: new Date().toLocaleDateString('pt-BR'),
+    tasks: wfDraft.steps.map((s,i) => ({
+      id: 'cu'+Date.now()+i,
+      name: s,
+      supplier: 'A definir',
+      category: 'Todos',
+      color: colors[i % colors.length],
+      active: true,
+      actions: wfDraft.pickAndPack ? ['validarEstoque'] : [],
+      script: null,
+      externalApi: null,
+      contextOutput: [],
+      pickAndPackEvents: wfDraft.pickAndPack ? ['pnp.itemSeparado','pnp.itemConferido','pnp.pacoteEmbalado'] : [],
+    })),
+    edges: wfDraft.steps.slice(0,-1).map((_,i) => ({
+      id:'ce'+Date.now()+i,
+      from:'cu'+Date.now()+i,
+      to:'cu'+Date.now()+(i+1),
+      active:true,
+    })),
+  };
+  WORKFLOW_DEFS.push(newWf);
+  closeModal('modal-new-workflow');
+  showScreen('workflow-list');
+  setTimeout(() => showSuccessModal('Workflow criado!', `"${newWf.name}" foi adicionado ao Workflow Board. Clique em "Abrir" para configurar as etapas em detalhe.`), 200);
 }
 
 // ══════════════════════════════════════════
