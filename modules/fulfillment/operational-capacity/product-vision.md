@@ -8,7 +8,7 @@
 | **Solution** | B2C / Omnichannel |
 | **Module** | Fulfillment → Operational Capacity |
 | **Persona(s)** | Ecommerce Manager, Operations Manager, Fulfillment Manager |
-| **Author** | Carol Tourinho |
+| **Author** | Carolina Tourinho |
 | **Status** | Draft |
 | **Created** | May 2026 |
 | **Vision Horizon** | 2026–2028 (3 years) |
@@ -288,4 +288,4 @@ An agent can only act on data it can read. Without a structured API, event log, 
 
 | Date | Author | Change |
 |---|---|---|
-| May 2026 | Carol Tourinho | Initial draft |
+| May 2026 | Carolina Tourinho | Initial draft |

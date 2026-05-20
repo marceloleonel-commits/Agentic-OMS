@@ -6,7 +6,7 @@
 |---|---|
 | **Module** | Inventory Management |
 | **Status** | Beta (feature-toggle gated) |
-| **Author** | Carol Tourinho |
+| **Author** | Carolina Tourinho |
 | **Created** | May 2026 |
 | **Source doc** | [[Fulfillment] Batch Inventory Updates](https://docs.google.com/document/d/1ZdAd2aE9hzOqI767hFP8n8P9go8HQ7Pzpxl5emrnu2o) |
 
@@ -334,4 +334,4 @@ This spec documents the feature as shipped in beta.
 
 | Date | Author | Change |
 |---|---|---|
-| May 2026 | Carol Tourinho | Initial spec from beta API documentation |
+| May 2026 | Carolina Tourinho | Initial spec from beta API documentation |

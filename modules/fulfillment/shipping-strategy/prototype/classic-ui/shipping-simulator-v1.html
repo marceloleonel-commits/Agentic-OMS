@@ -15,7 +15,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans
 .nav-group-label { padding: 8px 16px 3px; font-size: 11px; font-weight: 600; color: #A1AAB7; text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; justify-content: space-between; }
 .nav-item { display: flex; align-items: center; padding: 6px 16px; font-size: 12.5px; color: #4a4a4a; cursor: pointer; text-decoration: none; }
 .nav-item:hover { background: #f7f7f9; }
-.nav-item.active { color: #134cd8; font-weight: 600; background: #edf0fc; }
+.nav-item.active { color: #0C2DCC; font-weight: 600; background: #EEF1FF; }
 .nav-sub .nav-item { padding: 5px 16px 5px 24px; font-size: 12px; }
 
 /* ── Main ── */
@@ -41,6 +41,26 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans
 /* ── Content ── */
 .content { flex: 1; overflow-y: auto; padding: 22px 28px 48px; }
 .page-breadcrumb { font-size: 12px; color: #A1AAB7; margin-bottom: 5px; }
+
+/* ── Recent simulations ── */
+.recents-bar { background: #fff; border: 1px solid #E7E9EE; border-radius: 8px; margin-bottom: 16px; overflow: hidden; }
+.recents-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; cursor: pointer; user-select: none; }
+.recents-header:hover { background: #F8F7FC; }
+.recents-title { font-size: 12px; font-weight: 600; color: #5B6E84; text-transform: uppercase; letter-spacing: .05em; display: flex; align-items: center; gap: 6px; }
+.recents-badge { background: #F71963; color: #fff; border-radius: 10px; font-size: 10px; font-weight: 700; padding: 1px 6px; }
+.recents-chevron { color: #A1AAB7; font-size: 11px; transition: transform .2s; }
+.recents-chevron.open { transform: rotate(180deg); }
+.recents-body { display: none; padding: 0 14px 12px; }
+.recents-body.open { display: block; }
+.recents-list { display: flex; flex-direction: column; gap: 6px; }
+.recent-item { display: flex; align-items: center; justify-content: space-between; padding: 9px 12px; border-radius: 6px; border: 1px solid #E7E9EE; cursor: pointer; background: #fff; transition: background .12s; }
+.recent-item:hover { background: #FFF3F6; border-color: #F71963; }
+.recent-item-left { display: flex; flex-direction: column; gap: 3px; }
+.recent-item-title { font-size: 13px; font-weight: 500; color: #142032; }
+.recent-item-meta { font-size: 11px; color: #A1AAB7; display: flex; gap: 8px; flex-wrap: wrap; }
+.recent-item-time { font-size: 11px; color: #A1AAB7; white-space: nowrap; flex-shrink: 0; }
+.recent-item-restore { font-size: 11px; color: #134cd8; cursor: pointer; border: none; background: none; padding: 0; font-family: inherit; }
+.recents-empty { font-size: 12px; color: #A1AAB7; padding: 8px 0; font-style: italic; }
 .page-breadcrumb a { color: #134cd8; text-decoration: none; }
 .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
 .page-title { font-size: 20px; font-weight: 600; }
@@ -57,18 +77,19 @@ label { font-size: 12px; font-weight: 500; color: #5B6E84; }
 .req { color: #F71963; margin-left: 2px; }
 .opt { color: #A1AAB7; font-weight: 400; font-size: 11px; margin-left: 3px; }
 .input-wrap { position: relative; }
-.input { height: 36px; border: 1px solid #E7E9EE; border-radius: 6px; padding: 0 12px; font-size: 13px; color: #142032; background: #fff; width: 100%; outline: none; appearance: none; transition: border-color 0.15s, box-shadow 0.15s; }
-.input:focus { border-color: #134cd8; box-shadow: 0 0 0 3px rgba(19,76,216,0.08); }
-.input::placeholder { color: #A1AAB7; }
+/* Shoreline: Input component */
+.input { height: 36px; border: 1px solid #B4B9C2; border-radius: 4px; padding: 0 12px; font-size: 14px; color: #142032; background: #fff; width: 100%; outline: none; appearance: none; transition: border-color 0.15s, box-shadow 0.15s; font-family: inherit; }
+.input:focus { border-color: #0C2DCC; box-shadow: 0 0 0 2px rgba(12,45,204,0.16); }
+.input::placeholder { color: #8C95A0; }
 select.input { padding-right: 28px; cursor: pointer; }
 .sel-arrow { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); pointer-events: none; color: #A1AAB7; font-size: 10px; }
 .ctx-badge { display: inline-flex; align-items: center; gap: 5px; background: #edf0fc; color: #134cd8; border-radius: 4px; padding: 3px 9px; font-size: 11px; font-weight: 600; margin-top: 3px; }
 
 /* ── Seller combobox ── */
 .combo-wrap { position: relative; }
-.combo-input { height: 36px; border: 1px solid #E7E9EE; border-radius: 6px; padding: 0 30px 0 12px; font-size: 13px; color: #142032; width: 100%; outline: none; transition: border-color 0.15s, box-shadow 0.15s; }
-.combo-input:focus { border-color: #134cd8; box-shadow: 0 0 0 3px rgba(19,76,216,0.08); }
-.combo-input::placeholder { color: #A1AAB7; }
+.combo-input { height: 36px; border: 1px solid #B4B9C2; border-radius: 4px; padding: 0 30px 0 12px; font-size: 14px; color: #142032; width: 100%; outline: none; transition: border-color 0.15s, box-shadow 0.15s; font-family: inherit; }
+.combo-input:focus { border-color: #0C2DCC; box-shadow: 0 0 0 2px rgba(12,45,204,0.16); }
+.combo-input::placeholder { color: #8C95A0; }
 .combo-clear { position: absolute; right: 9px; top: 50%; transform: translateY(-50%); color: #A1AAB7; cursor: pointer; font-size: 13px; line-height: 1; display: none; background: none; border: none; }
 .combo-clear:hover { color: #F71963; }
 .combo-dropdown { position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: #fff; border: 1px solid #E7E9EE; border-radius: 6px; box-shadow: 0 6px 20px rgba(20,32,50,0.10); z-index: 300; max-height: 220px; overflow-y: auto; }
@@ -111,17 +132,18 @@ select.input { padding-right: 28px; cursor: pointer; }
 .check-row label { font-size: 12.5px; color: #5B6E84; cursor: pointer; margin: 0; }
 .divider { height: 1px; background: #F8F7FC; margin: 18px 0; }
 
-/* ── Error ── */
-.error-box { background: #fff5f8; border: 1px solid #F71963; border-radius: 6px; padding: 10px 14px; margin-bottom: 14px; font-size: 13px; display: none; align-items: flex-start; gap: 8px; }
+/* Shoreline: Alert variant="critical" */
+.error-box { background: #FFF1F3; border: 1px solid #F71963; border-left: 4px solid #F71963; border-radius: 4px; padding: 10px 14px; margin-bottom: 14px; font-size: 14px; display: none; align-items: flex-start; gap: 8px; color: #142032; }
 .error-box.show { display: flex; }
 .error-icon { color: #F71963; flex-shrink: 0; }
 
-/* ── Buttons ── */
-.btn-primary { height: 36px; padding: 0 20px; background: #134cd8; color: #fff; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; }
-.btn-primary:hover { background: #0f3fb5; }
-.btn-secondary { height: 36px; padding: 0 16px; background: #fff; color: #5B6E84; border: 1px solid #E7E9EE; border-radius: 6px; font-size: 13px; cursor: pointer; }
-.btn-secondary:hover { background: #F8F7FC; }
-.btn-link { background: none; border: none; color: #134cd8; font-size: 12.5px; font-weight: 500; cursor: pointer; padding: 0; display: flex; align-items: center; gap: 4px; }
+/* ── Buttons — Shoreline: Button variant="primary" / "secondary" / tertiary ── */
+.btn-primary { height: 32px; padding: 0 16px; background: #0C2DCC; color: #fff; border: 1px solid transparent; border-radius: 4px; font-size: 14px; font-weight: 500; cursor: pointer; font-family: inherit; transition: background 0.15s; }
+.btn-primary:hover { background: #0927b3; }
+.btn-primary:focus-visible { outline: 2px solid #0C2DCC; outline-offset: 2px; }
+.btn-secondary { height: 32px; padding: 0 16px; background: #fff; color: #142032; border: 1px solid #B4B9C2; border-radius: 4px; font-size: 14px; font-weight: 500; cursor: pointer; font-family: inherit; transition: background 0.15s; }
+.btn-secondary:hover { background: #F0F2F5; }
+.btn-link { background: none; border: none; color: #0C2DCC; font-size: 13px; font-weight: 500; cursor: pointer; padding: 0; display: flex; align-items: center; gap: 4px; font-family: inherit; }
 
 /* ── Section divider ── */
 .section-divider { display: flex; align-items: center; gap: 10px; margin: 16px 0 10px; }
@@ -131,26 +153,28 @@ select.input { padding-right: 28px; cursor: pointer; }
 /* ── Results header ── */
 .results-header-row { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
 .results-title { font-size: 14px; font-weight: 600; }
-.results-count { background: #134cd8; color: #fff; border-radius: 10px; padding: 1px 9px; font-size: 11px; font-weight: 600; }
+/* Shoreline: Tag color="blue" */
+.results-count { background: #DBEAFE; color: #1E40AF; border-radius: 10px; padding: 1px 9px; font-size: 12px; font-weight: 600; }
 .results-subtitle { font-size: 12px; color: #A1AAB7; margin-bottom: 14px; }
 
-/* ── SLA table ── */
-.sla-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-.sla-table th { background: #F8F7FC; font-size: 11px; font-weight: 600; color: #A1AAB7; text-transform: uppercase; letter-spacing: 0.04em; padding: 8px 12px; text-align: left; border-bottom: 1px solid #E7E9EE; }
+/* ── SLA table — Shoreline: Table + TableHeader + TableBody + TableRow + TableCell ── */
+.sla-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.sla-table th { background: #F8F7FC; font-size: 11px; font-weight: 600; color: #8C95A0; text-transform: uppercase; letter-spacing: 0.06em; padding: 8px 12px; text-align: left; border-bottom: 1px solid #E2E5E9; }
 .sla-table th:last-child { width: 130px; }
-.sla-row td { padding: 11px 12px; border-bottom: 1px solid #F8F7FC; vertical-align: middle; color: #142032; }
+.sla-row td { padding: 12px 12px; border-bottom: 1px solid #F0F2F5; vertical-align: middle; color: #142032; }
 .sla-row:last-of-type td { border-bottom: none; }
 .sla-carrier-col { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-.sla-carrier-name { font-weight: 600; font-size: 13px; }
-.type-badge { border-radius: 4px; padding: 2px 7px; font-size: 11px; font-weight: 500; background: #E7E9EE; color: #5B6E84; }
-.type-badge.express { background: #FFF3CD; color: #856404; }
-.weekend-badge { border-radius: 4px; padding: 2px 7px; font-size: 11px; font-weight: 500; background: #E8F4FD; color: #0069B4; border: 1px solid #B3D9F7; }
+.sla-carrier-name { font-weight: 500; font-size: 14px; }
+/* Shoreline: Tag component — color="gray" / "orange" / "blue" */
+.type-badge { border-radius: 4px; padding: 2px 8px; font-size: 12px; font-weight: 500; background: #EBEDF0; color: #4A5568; display: inline-flex; align-items: center; }
+.type-badge.express { background: #FEF3C7; color: #92400E; }
+.weekend-badge { border-radius: 4px; padding: 2px 8px; font-size: 12px; font-weight: 500; background: #DBEAFE; color: #1E40AF; display: inline-flex; align-items: center; }
 .sla-price { font-weight: 600; }
 .sla-deadline { font-size: 13px; }
 .sla-deadline-sub { font-size: 11px; color: #A1AAB7; margin-top: 2px; }
 .sla-qty { font-size: 13px; color: #5B6E84; }
-.btn-details { background: none; border: none; color: #134cd8; font-size: 13px; font-weight: 400; font-family: inherit; cursor: pointer; display: flex; align-items: center; gap: 4px; white-space: nowrap; }
-.btn-details:hover { color: #0f3fb5; }
+.btn-details { background: none; border: none; color: #0C2DCC; font-size: 13px; font-weight: 400; font-family: inherit; cursor: pointer; display: flex; align-items: center; gap: 4px; white-space: nowrap; }
+.btn-details:hover { color: #0927b3; }
 .btn-details svg { transition: transform 0.2s; }
 .btn-details.open svg { transform: rotate(180deg); }
 
@@ -273,6 +297,21 @@ select.input { padding-right: 28px; cursor: pointer; }
     <div class="page-header">
       <h1 class="page-title" data-i18n="page-title">Simulador de envio</h1>
       <a class="back-link" href="#" data-i18n="back-link">← Voltar à Estratégia de Envio</a>
+    </div>
+
+    <!-- Recent simulations -->
+    <div class="recents-bar" id="recents-bar">
+      <div class="recents-header" onclick="toggleRecents()">
+        <div class="recents-title">
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="5.5" stroke="#5B6E84" stroke-width="1.2"/><path d="M6.5 4v3l2 1.5" stroke="#5B6E84" stroke-width="1.2" stroke-linecap="round"/></svg>
+          <span data-i18n="recents-title">Últimas simulações</span>
+          <span class="recents-badge" id="recents-badge">0</span>
+        </div>
+        <span class="recents-chevron" id="recents-chevron">▾</span>
+      </div>
+      <div class="recents-body" id="recents-body">
+        <div class="recents-list" id="recents-list"></div>
+      </div>
     </div>
 
     <!-- Form -->
@@ -402,7 +441,7 @@ const DATA = {
       { v:'drogariaspacheco',         name:'Drogarias Pacheco',          note:'conta principal' },
       { v:'drogariaspachecobotafogo', name:'Drogarias Pacheco Botafogo', note:'' },
       { v:'drogariaspachecobarra',    name:'Drogarias Pacheco Barra',    note:'' },
-      { v:'drogariaspachecotiuca',    name:'Drogarias Pacheco Tiuca',    note:'' },
+      { v:'drogariaspachecotiuca',    name:'Drogarias Pacheco Tijuca',    note:'' },
       { v:'drogariaspachecomeier',    name:'Drogarias Pacheco Méier',    note:'' }
     ],
     sellerScMap: {
@@ -450,12 +489,14 @@ const DATA = {
     ],
     excluded: [
       { name:'Total Express',  type:'Padrão', typeClass:'', reason:'Não atende este CEP' },
-      { name:'Jadlog Package', type:'Padrão', typeClass:'', reason:'Peso do item excede o limite da transportadora' }
+      { name:'Jadlog Package', type:'Padrão', typeClass:'', reason:'Transportadora inativa' },
+      { name:'Braspress',    type:'Padrão', typeClass:'', reason:'Transportadora não está conectada a nenhuma doca' },
+      { name:'TNT Mercúrio', type:'Padrão', typeClass:'', reason:'Doca não está vinculada a nenhum estoque/armazém' }
     ],
     pickups: [
       {
         storeName:'Drogarias Pacheco Botafogo',
-        address:'Rua das Laranjeiras, 234 — Botafogo, Rio de Janeiro - RJ',
+        address:'Rua São Clemente, 123 — Botafogo, Rio de Janeiro - RJ',
         hours:'Seg – Sex: 08h às 20h  |  Sáb: 09h às 18h',
         readyDate:'16 mai 2026', readyLabel:'Disponível amanhã', price:'Grátis'
       },
@@ -485,6 +526,8 @@ const DATA = {
       'lbl-individual':'Simular itens individualmente',
       'section-dest':'Destino','lbl-zip':'Código postal',
       'btn-simulate':'Simular envio','btn-clear':'Limpar',
+      'recents-title':'Últimas simulações','recents-empty':'Nenhuma simulação salva ainda. Execute uma simulação para começar.',
+      'recents-restore':'Restaurar',
       'res-title':'Opções de envio disponíveis',
       'res-subtitle':'Melhores opções segundo custo-benefício',
       'lbl-delivery-section':'Entrega em domicílio',
@@ -563,7 +606,9 @@ const DATA = {
     ],
     excluded: [
       { name:'USPS Priority',  type:'Standard', typeClass:'', reason:'Does not deliver to this ZIP code' },
-      { name:'OnTrac Economy', type:'Standard', typeClass:'', reason:'Item weight exceeds carrier limit' }
+      { name:'OnTrac Economy', type:'Standard', typeClass:'', reason:'Item weight exceeds carrier limit' },
+      { name:'Estes Express',  type:'Standard', typeClass:'', reason:'Carrier is not connected to any dock' },
+      { name:'Old Dominion',   type:'Standard', typeClass:'', reason:'Dock is not linked to any warehouse/inventory location' }
     ],
     pickups: [
       {
@@ -598,6 +643,8 @@ const DATA = {
       'lbl-individual':'Simulate items individually',
       'section-dest':'Destination','lbl-zip':'ZIP code',
       'btn-simulate':'Simulate shipping','btn-clear':'Clear',
+      'recents-title':'Recent simulations','recents-empty':'No simulations saved yet. Run a simulation to get started.',
+      'recents-restore':'Restore',
       'res-title':'Available shipping options',
       'res-subtitle':'Best options by cost-benefit',
       'lbl-delivery-section':'Home delivery',
@@ -637,6 +684,7 @@ function setClient(c) {
   buildScSelect();
   buildSellerList();
   resetForm();
+  initRecents();
 }
 
 function applyI18n() {
@@ -763,15 +811,54 @@ function addRow() {
   container.appendChild(row);
 }
 function removeRow(id) { document.getElementById(`row-${id}`).remove(); delete selectedSkus[id]; }
+function scoreSkuMatch(s, q) {
+  // Returns a relevance score: higher = more relevant. -1 = no match.
+  const lq = q.toLowerCase().trim();
+  if (!lq) return -1;
+  const nameLow  = s.name.toLowerCase();
+  const metaLow  = s.meta.toLowerCase();
+  // Exact name start — highest priority
+  if (nameLow.startsWith(lq))      return 100;
+  // Every word in query appears in name
+  const words = lq.split(/\s+/);
+  if (words.every(w => nameLow.includes(w))) return 80;
+  // Partial name match (any word)
+  if (words.some(w => nameLow.includes(w)))  return 60;
+  // SKU ID / EAN / Ref exact token match in meta
+  if (metaLow.includes(lq))                  return 90;
+  // Any meta word matches
+  if (words.some(w => metaLow.includes(w)))  return 40;
+  return -1;
+}
+
+function highlightMatch(text, q) {
+  if (!q) return text;
+  const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return text.replace(new RegExp(`(${escaped})`, 'gi'), '<mark style="background:#FFE0EF;color:#142032;border-radius:2px;padding:0 1px">$1</mark>');
+}
+
 function onSkuInput(id) {
   const inp = document.getElementById(`sku-inp-${id}`);
-  const dd = document.getElementById(`sku-dd-${id}`);
-  if (inp.value.length < 1) { dd.classList.add('hidden'); return; }
+  const dd  = document.getElementById(`sku-dd-${id}`);
+  const q   = inp.value;
+  if (q.length < 1) { dd.classList.add('hidden'); return; }
+  // Score, filter (score > -1) and sort by relevance descending
+  const results = DATA[client].skus
+    .map(s => ({ s, score: scoreSkuMatch(s, q) }))
+    .filter(r => r.score > -1)
+    .sort((a, b) => b.score - a.score);
+  if (results.length === 0) {
+    dd.innerHTML = `<div class="sku-opt" style="color:#A1AAB7;cursor:default">${client==='pt'?'Nenhum resultado encontrado':'No results found'}</div>`;
+    dd.classList.remove('hidden');
+    return;
+  }
   dd.innerHTML = '';
-  DATA[client].skus.forEach(s => {
+  results.forEach(({ s }) => {
     const item = document.createElement('div');
     item.className = 'sku-opt';
-    item.innerHTML = `<div class="sku-opt-name">${s.name}${s.kit?'<span class="tag-kit">KIT</span>':''}</div><div class="sku-opt-meta"><span>${s.meta.split(' · ').join('</span><span>')}</span></div>`;
+    const highlightedName = highlightMatch(s.name, q);
+    const metaParts = s.meta.split(' · ').map(p => `<span>${highlightMatch(p, q)}</span>`).join('');
+    item.innerHTML = `<div class="sku-opt-name">${highlightedName}${s.kit?'<span class="tag-kit">KIT</span>':''}</div><div class="sku-opt-meta">${metaParts}</div>`;
     item.onclick = () => pickSku(id, s);
     dd.appendChild(item);
   });
@@ -822,6 +909,7 @@ function simulate() {
   buildResults(d, i);
   document.getElementById('results-card').classList.remove('hidden');
   setTimeout(() => document.getElementById('results-card').scrollIntoView({behavior:'smooth',block:'start'}), 60);
+  saveCurrentSimulation();
 }
 
 // ── Build results ─────────────────────────────────────────────────────────────
@@ -913,7 +1001,7 @@ function buildResults(d, i) {
             <span class="calc-label">${i['lbl-estimate-date']}</span>
             <span class="calc-val">${sla.arrivalDate}</span>
           </div>
-          ${sla.worksOnWeekends ? `<div class="calc-row"><span class="calc-label">${i['weekend-badge']}</span><span class="calc-val" style="color:#0069B4">✓</span></div>` : ''}
+          ${sla.worksOnWeekends ? `<div class="calc-row"><span class="calc-label">${i['weekend-badge']}</span><span class="calc-val"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2.5 7L5.5 10L11.5 4" stroke="#142032" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div>` : ''}
         </div>
         ${kitExtra}
       </div>
@@ -996,6 +1084,155 @@ document.addEventListener('click', e => {
   if (!e.target.closest('.combo-wrap')) document.getElementById('seller-dd').classList.add('hidden');
   if (!e.target.closest('.sku-wrapper')) document.querySelectorAll('.sku-dd').forEach(d => d.classList.add('hidden'));
 });
+
+// ── Recent simulations ────────────────────────────────────────────────────────
+const MAX_RECENTS = 5;
+const TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days in milliseconds
+let recentSimulations = [];
+
+// User-scoped localStorage key — in production this would use the real VTEX user ID
+// In the prototype, client context ('pt'/'en') acts as a proxy for user identity
+function recentsStorageKey() {
+  // Format: vtex_sim_recents_{accountName}_{userId}
+  // Prototype mock: vtex_sim_recents_{client}_demo_user
+  return `vtex_sim_recents_${DATA[client].account}_demo_user`;
+}
+
+function loadRecentsFromStorage() {
+  try {
+    const raw = localStorage.getItem(recentsStorageKey());
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    // Filter out entries older than 30 days
+    return parsed.filter(r => (Date.now() - r.ts) < TTL_MS);
+  } catch (e) { return []; }
+}
+
+function saveRecentsToStorage(entries) {
+  try {
+    localStorage.setItem(recentsStorageKey(), JSON.stringify(entries));
+  } catch (e) { /* storage quota exceeded — fail silently */ }
+}
+
+// Mock data — pre-populated past simulations
+const MOCK_RECENTS = {
+  pt: [
+    { sc:'1 — Ecommerce BR', seller:'Drogarias Pacheco Botafogo', sku:'Vitamina C 1000mg 60 comp.', zip:'01310-100', qty:2, ts: Date.now() - 1000*60*47 },
+    { sc:'1 — Ecommerce BR', seller:'Drogarias Pacheco',          sku:'Dipirona Sódica 500mg 20 comp.', zip:'22241-000', qty:1, ts: Date.now() - 1000*60*60*3 },
+    { sc:'2 — Ecommerce RJ', seller:'Drogarias Pacheco Barra',    sku:'Protetor Solar FPS 50 120ml', zip:'22070-010', qty:1, ts: Date.now() - 1000*60*60*26 },
+  ],
+  en: [
+    { sc:'1 — US Ecommerce',     seller:'Road Runner San Diego',   sku:'Running Shoe X Pro', zip:'92101', qty:1, ts: Date.now() - 1000*60*32 },
+    { sc:'2 — Canada Ecommerce', seller:'Road Runner Los Angeles', sku:'Trail Vest Lite',    zip:'90210', qty:2, ts: Date.now() - 1000*60*60*5 },
+  ]
+};
+
+function initRecents() {
+  const stored = loadRecentsFromStorage();
+  // Use stored entries if they exist; otherwise seed with mock data for demo purposes
+  recentSimulations = stored.length ? stored : [...MOCK_RECENTS[client]];
+  if (!stored.length) saveRecentsToStorage(recentSimulations); // persist mock seed
+  renderRecents();
+}
+
+function formatRelativeTime(ts) {
+  const diff = Date.now() - ts;
+  const m = Math.floor(diff / 60000);
+  const h = Math.floor(m / 60);
+  const d = Math.floor(h / 24);
+  if (m < 1)  return client === 'pt' ? 'agora mesmo' : 'just now';
+  if (m < 60) return client === 'pt' ? `há ${m} min` : `${m}m ago`;
+  if (h < 24) return client === 'pt' ? `há ${h}h` : `${h}h ago`;
+  return client === 'pt' ? `há ${d}d` : `${d}d ago`;
+}
+
+function renderRecents() {
+  const i = DATA[client].i18n;
+  const list = document.getElementById('recents-list');
+  const badge = document.getElementById('recents-badge');
+  badge.textContent = recentSimulations.length;
+  if (!recentSimulations.length) {
+    list.innerHTML = `<div class="recents-empty">${i['recents-empty']}</div>`;
+    return;
+  }
+  list.innerHTML = recentSimulations.map((r, idx) => `
+    <div class="recent-item" onclick="restoreRecent(${idx})">
+      <div class="recent-item-left">
+        <div class="recent-item-title">${r.sku}${r.qty > 1 ? ` <span style="font-size:11px;color:#5B6E84;">×${r.qty}</span>` : ''}</div>
+        <div class="recent-item-meta">
+          <span>${r.zip}</span>
+          <span>·</span>
+          <span>${r.seller}</span>
+          <span>·</span>
+          <span>${r.sc}</span>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;flex-shrink:0">
+        <span class="recent-item-time">${formatRelativeTime(r.ts)}</span>
+        <button class="recent-item-restore" onclick="event.stopPropagation();restoreRecent(${idx})">${i['recents-restore']} →</button>
+      </div>
+    </div>`).join('');
+}
+
+function toggleRecents() {
+  const body = document.getElementById('recents-body');
+  const chevron = document.getElementById('recents-chevron');
+  const isOpen = body.classList.contains('open');
+  body.classList.toggle('open', !isOpen);
+  chevron.classList.toggle('open', !isOpen);
+}
+
+function saveCurrentSimulation() {
+  const d = DATA[client];
+  const scEl = document.getElementById('sel-sc');
+  const scLabel = scEl.options[scEl.selectedIndex]?.text || '';
+  const skuNames = Object.values(selectedSkus).map(s => s.name);
+  if (!skuNames.length) return;
+  const zip = document.getElementById('zip-input').value;
+  const qty = parseInt(document.getElementById('qty-inp-1')?.value || 1);
+  const entry = {
+    sc: scLabel,
+    seller: selectedSeller?.name || '—',
+    sku: skuNames.join(', '),
+    zip,
+    qty,
+    ts: Date.now()
+  };
+  // Avoid exact duplicates (same sku+zip+seller)
+  recentSimulations = recentSimulations.filter(r => !(r.sku === entry.sku && r.zip === entry.zip && r.seller === entry.seller));
+  recentSimulations.unshift(entry);
+  if (recentSimulations.length > MAX_RECENTS) recentSimulations = recentSimulations.slice(0, MAX_RECENTS);
+  saveRecentsToStorage(recentSimulations);
+  renderRecents();
+  // Auto-open the recents bar to show the saved entry
+  document.getElementById('recents-body').classList.add('open');
+  document.getElementById('recents-chevron').classList.add('open');
+}
+
+function restoreRecent(idx) {
+  const r = recentSimulations[idx];
+  // Restore ZIP
+  document.getElementById('zip-input').value = r.zip;
+  // Scroll to form and highlight ZIP
+  document.getElementById('zip-input').focus();
+  // Show a subtle toast
+  showRestoreToast(r);
+}
+
+function showRestoreToast(r) {
+  let toast = document.getElementById('restore-toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'restore-toast';
+    toast.style.cssText = 'position:fixed;bottom:24px;right:24px;background:#142032;color:#fff;padding:10px 16px;border-radius:8px;font-size:12px;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,0.18);transition:opacity .3s';
+    document.body.appendChild(toast);
+  }
+  const isBR = client === 'pt';
+  toast.textContent = isBR ? `Simulação restaurada: ${r.sku} · ${r.zip}` : `Simulation restored: ${r.sku} · ${r.zip}`;
+  toast.style.opacity = '1';
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => { toast.style.opacity = '0'; }, 2800);
+}
 
 init();
 </script>

@@ -1,0 +1,1638 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shipping Simulator Agent — VTEX Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:#F8F7FC;color:#142032;display:flex;height:100vh;overflow:hidden;font-size:14px}
+
+/* ── Sidebar ── */
+.sidebar{width:220px;background:#fff;border-right:1px solid #E7E9EE;display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
+.sidebar-header{padding:18px 16px 14px;border-bottom:1px solid #E7E9EE}
+.sidebar-search{margin:10px 10px 6px}
+.sidebar-search input{width:100%;background:#F8F7FC;border:1px solid #E7E9EE;border-radius:6px;padding:6px 10px;font-size:12px;color:#5B6E84;font-family:inherit;outline:none}
+.nav-group{padding:8px 0;border-bottom:1px solid #E7E9EE}
+.nav-group-label{font-size:10px;font-weight:600;color:#A1AAB7;text-transform:uppercase;letter-spacing:.06em;padding:6px 16px 4px}
+.nav-item{display:flex;align-items:center;gap:8px;padding:6px 16px;font-size:13px;color:#5B6E84;cursor:pointer;text-decoration:none}
+.nav-item:hover{background:#F8F7FC;color:#142032}
+.nav-item.active{background:#FFF3F6;color:#F71963;font-weight:500}
+.nav-dot{width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0}
+
+/* ── Main ── */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+
+/* ── Topbar ── */
+.topbar{background:#fff;border-bottom:1px solid #E7E9EE;height:52px;display:flex;align-items:center;padding:0 20px;gap:12px;flex-shrink:0}
+.topbar-left{display:flex;align-items:center;gap:8px;flex:1}
+.topbar-search-bar{display:flex;align-items:center;gap:6px;background:#F8F7FC;border:1px solid #E7E9EE;border-radius:6px;padding:5px 10px;font-size:12px;color:#A1AAB7;width:220px}
+.topbar-right{display:flex;align-items:center;gap:8px}
+.topbar-btn{background:none;border:1px solid #E7E9EE;border-radius:6px;padding:5px 10px;font-size:12px;color:#5B6E84;cursor:pointer;font-family:inherit}
+.topbar-btn:hover{background:#F8F7FC}
+.topbar-avatar{width:28px;height:28px;border-radius:50%;background:#F71963;color:#fff;font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center}
+.client-toggle{display:flex;background:#142032;border-radius:7px;padding:3px;gap:2px}
+.client-toggle button{background:none;border:none;border-radius:5px;padding:4px 10px;font-size:12px;font-weight:500;color:#A1AAB7;cursor:pointer;font-family:inherit;transition:all .15s;white-space:nowrap}
+.client-toggle button.active{background:#fff;color:#142032}
+
+/* ── Quick replies ── */
+.quick-replies{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.qr-btn{background:#fff;border:1px solid #E7E9EE;border-radius:20px;padding:5px 12px;font-size:12px;font-weight:500;color:#142032;cursor:pointer;font-family:inherit;transition:border-color .15s,background .15s}
+.qr-btn:hover{border-color:#F71963;background:#FFF3F6;color:#F71963}
+
+/* ── Content ── */
+.content{flex:1;display:flex;flex-direction:column;overflow:hidden}
+
+/* ── HOME STATE (AgentHome) ── */
+.home-view{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 24px 24px;overflow:hidden}
+.agent-home{display:flex;flex-direction:column;align-items:center;text-align:center;margin-bottom:32px}
+.agent-avatar-lg{width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#F71963,#d41455);color:#fff;font-size:22px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-bottom:16px;box-shadow:0 4px 16px rgba(247,25,99,.2)}
+.agent-home-title{font-size:22px;font-weight:700;color:#142032;margin-bottom:6px}
+.agent-home-subtitle{font-size:14px;color:#5B6E84;max-width:460px;line-height:1.55}
+.suggestions-row{display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;justify-content:center;max-width:680px}
+.recents-section{width:100%;max-width:680px;margin-bottom:24px}
+.recents-section-title{font-size:11px;font-weight:600;color:#A1AAB7;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.recents-chips{display:flex;flex-direction:column;gap:6px}
+.recent-chip{display:flex;align-items:center;justify-content:space-between;background:#fff;border:1px solid #E7E9EE;border-radius:8px;padding:9px 14px;cursor:pointer;text-align:left;transition:border-color .12s,background .12s}
+.recent-chip:hover{border-color:#F71963;background:#FFF3F6}
+.recent-chip-main{font-size:13px;font-weight:500;color:#142032}
+.recent-chip-meta{font-size:11px;color:#A1AAB7;margin-top:2px;display:flex;gap:8px;flex-wrap:wrap}
+.recent-chip-time{font-size:11px;color:#A1AAB7;white-space:nowrap;flex-shrink:0}
+.suggestion-card{background:#fff;border:1px solid #E7E9EE;border-radius:10px;padding:12px 16px;cursor:pointer;text-align:left;min-width:180px;max-width:210px;transition:border-color .15s,box-shadow .15s;flex:1}
+.suggestion-card:hover{border-color:#FFC4DD;box-shadow:0 2px 8px rgba(247,25,99,.08)}
+.suggestion-title{font-size:13px;font-weight:600;color:#142032;margin-bottom:3px}
+.suggestion-desc{font-size:12px;color:#5B6E84}
+.home-input-wrap{width:100%;max-width:640px}
+
+/* ── THREAD STATE ── */
+.thread-view{flex:1;display:flex;flex-direction:column;overflow:hidden;padding:0 24px 0}
+.thread-topbar{display:flex;align-items:center;gap:10px;padding:12px 0 10px;flex-shrink:0;border-bottom:1px solid #F3F4F6;margin-bottom:12px}
+.btn-back{background:none;border:none;color:#5B6E84;cursor:pointer;font-size:12px;font-family:inherit;display:flex;align-items:center;gap:5px;padding:4px 0}
+.btn-back:hover{color:#F71963}
+.ctx-bar{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.ctx-pill{display:inline-flex;align-items:center;gap:4px;border-radius:20px;padding:3px 10px;font-size:12px;font-weight:500;border:1px solid transparent}
+.ctx-pill.empty{background:#F8F7FC;border-color:#E7E9EE;color:#A1AAB7}
+.ctx-pill.filled{background:#FFF3F6;border-color:#FFC4DD;color:#142032}
+.ctx-pill .lbl{color:#F71963;font-weight:600;margin-right:2px}
+.ctx-clear-btn{background:none;border:none;color:#A1AAB7;cursor:pointer;font-size:13px;line-height:1;padding:0 0 0 3px;font-family:inherit}
+.ctx-clear-btn:hover{color:#F71963}
+.chat-wrap{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:14px;padding-bottom:4px;scroll-behavior:smooth}
+
+/* ── Messages ── */
+.msg{display:flex;gap:10px}
+.msg.agent{align-self:flex-start;max-width:800px}
+.msg.user{align-self:flex-end;flex-direction:row-reverse;max-width:520px}
+.msg-avatar{width:30px;height:30px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;margin-top:2px}
+.agent .msg-avatar{background:#F71963;color:#fff}
+.user .msg-avatar{background:#E7E9EE;color:#5B6E84}
+.msg-body{display:flex;flex-direction:column;gap:4px}
+.msg-bubble{padding:10px 14px;border-radius:10px;font-size:13px;line-height:1.6}
+.agent .msg-bubble{background:#fff;border:1px solid #E7E9EE;border-radius:2px 10px 10px 10px;color:#142032}
+.user .msg-bubble{background:#F8F7FC;border:1px solid #E7E9EE;border-radius:10px 2px 10px 10px;color:#142032}
+.msg-bubble code{background:#F8F7FC;border:1px solid #E7E9EE;border-radius:3px;padding:1px 5px;font-family:'SF Mono','Fira Mono',monospace;font-size:11.5px}
+.msg-bubble strong{color:#142032}
+.msg-time{font-size:11px;color:#A1AAB7}
+.agent .msg-time{padding-left:2px}
+.user .msg-time{text-align:right;padding-right:2px}
+
+/* Typing */
+.typing-bubble{display:flex;align-items:center;gap:5px;padding:12px 14px;background:#fff;border:1px solid #E7E9EE;border-radius:2px 10px 10px 10px}
+.typing-dot{width:6px;height:6px;border-radius:50%;background:#C0C8D2;animation:blink 1.2s infinite}
+.typing-dot:nth-child(2){animation-delay:.2s}
+.typing-dot:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,80%,100%{opacity:.25}40%{opacity:1}}
+
+/* ── Input area (shared) ── */
+.input-area{background:#fff;border:1px solid #E7E9EE;border-radius:10px;transition:border-color .15s}
+.home-input-wrap .input-area{margin:0}
+.thread-view .input-area{margin:10px 0 14px;flex-shrink:0}
+.input-area:focus-within{border-color:#A1AAB7}
+.input-textarea{width:100%;border:none;outline:none;resize:none;font-family:inherit;font-size:13px;color:#142032;padding:12px 14px 4px;min-height:52px;max-height:120px;background:transparent;line-height:1.55}
+.input-textarea::placeholder{color:#A1AAB7}
+.input-footer{display:flex;align-items:center;justify-content:space-between;padding:4px 10px 8px}
+.input-hint{font-size:11px;color:#A1AAB7}
+.input-hint code{background:#F8F7FC;border:1px solid #E7E9EE;border-radius:3px;padding:1px 4px;font-family:'SF Mono','Fira Mono',monospace;font-size:10.5px}
+.btn-send{background:#F71963;color:#fff;border:none;border-radius:7px;padding:7px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px}
+.btn-send:hover{background:#d41455}
+.btn-send:disabled{background:#E7E9EE;color:#A1AAB7;cursor:not-allowed}
+
+/* ── Result card ── */
+.result-card{background:#fff;border:1px solid #E7E9EE;border-radius:8px;overflow:hidden;width:720px;max-width:100%;margin-top:6px}
+.result-card-header{padding:11px 14px;border-bottom:1px solid #F3F4F6;display:flex;align-items:center;justify-content:space-between}
+.result-card-title{font-size:13px;font-weight:600;color:#142032}
+.result-count-badge{font-size:12px;color:#5B6E84}
+.result-section-label{font-size:11px;font-weight:600;color:#A1AAB7;text-transform:uppercase;letter-spacing:.04em;padding:10px 14px 4px;display:flex;align-items:center;gap:8px}
+.result-section-line{flex:1;height:1px;background:#F3F4F6}
+
+/* Address + Products meta */
+.result-meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:0;border-bottom:1px solid #F3F4F6}
+.result-meta-block{padding:10px 14px}
+.result-meta-block+.result-meta-block{border-left:1px solid #F3F4F6}
+.meta-label{font-size:11px;color:#A1AAB7;font-weight:500;margin-bottom:2px}
+.meta-val{font-size:12px;color:#142032;font-weight:500}
+.meta-val-sub{font-size:11px;color:#5B6E84}
+.sku-chip-inline{display:inline-flex;align-items:center;gap:5px;background:#F8F7FC;border:1px solid #E7E9EE;border-radius:5px;padding:3px 8px;font-size:12px;color:#142032;margin-top:3px}
+.tag-kit{background:#FFF3F6;color:#F71963;border:1px solid #FFC4DD;border-radius:3px;padding:1px 5px;font-size:10px;font-weight:700;letter-spacing:.04em}
+
+/* SLA table */
+.sla-table{width:100%;border-collapse:collapse}
+.sla-table th{text-align:left;font-size:11px;font-weight:600;color:#A1AAB7;text-transform:uppercase;letter-spacing:.04em;padding:6px 14px 8px;border-bottom:1px solid #E7E9EE}
+.sla-table td{padding:10px 14px;border-bottom:1px solid #F3F4F6;vertical-align:middle}
+.sla-table tr:last-child td{border-bottom:none}
+.sla-carrier-col{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.sla-carrier-name{font-size:13px;font-weight:600;color:#142032}
+.type-badge{border-radius:4px;padding:2px 7px;font-size:11px;font-weight:500;background:#E7E9EE;color:#5B6E84}
+.type-badge.express{background:#FFF3CD;color:#856404}
+.sla-price{font-size:14px;font-weight:700;color:#142032}
+.sla-deadline{font-size:13px;font-weight:600;color:#142032}
+.sla-deadline-sub{font-size:11px;color:#5B6E84}
+.sla-qty{font-size:12px;color:#5B6E84}
+.btn-details{background:none;border:none;color:#134cd8;font-size:13px;font-weight:400;font-family:inherit;cursor:pointer;display:flex;align-items:center;gap:4px;white-space:nowrap}
+.btn-details:hover{color:#0f3fb5}
+.btn-details svg{transition:transform .2s}
+.btn-details.open svg{transform:rotate(180deg)}
+.sla-details-row{display:none}
+.sla-details-row.open{display:table-row}
+
+/* Details panel — 3-col: Logística / Custos / Tempo */
+.details-panel{display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;background:#FAFBFC;border-top:1px solid #F3F4F6}
+.detail-col{padding:12px 14px;border-right:1px solid #F3F4F6}
+.detail-col:last-child{border-right:none}
+.detail-col-title{font-size:10px;font-weight:700;color:#A1AAB7;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}
+.calc-row{display:flex;justify-content:space-between;align-items:flex-start;font-size:12px;margin-bottom:5px;gap:8px}
+.calc-label{color:#5B6E84;flex-shrink:0}
+.calc-val{color:#142032;font-weight:500;text-align:right}
+.route-chain{display:flex;flex-direction:column;gap:4px}
+.route-node{font-size:12px;color:#142032;background:#F8F7FC;border:1px solid #E7E9EE;border-radius:4px;padding:3px 8px;display:flex;align-items:center;gap:6px}
+.route-node-sub{font-size:10.5px;color:#A1AAB7;font-family:'SF Mono','Fira Mono',monospace}
+.route-arrow{color:#A1AAB7;font-size:11px;padding-left:6px}
+.detail-kit-row{grid-column:1/-1;border-top:1px solid #F3F4F6;padding:10px 14px;display:flex;gap:24px;background:#FAFBFC}
+.detail-kit-label{font-size:11px;color:#A1AAB7;margin-bottom:2px}
+.detail-kit-val{font-size:12px;color:#142032;font-weight:500}
+
+/* Rejected carriers button + modal */
+.btn-rejected{background:none;border:1px solid #E7E9EE;border-radius:6px;padding:6px 12px;font-size:12px;font-weight:500;color:#5B6E84;cursor:pointer;font-family:inherit;margin:10px 14px 12px;display:inline-flex;align-items:center;gap:5px}
+.btn-rejected:hover{background:#F8F7FC;border-color:#A1AAB7}
+.modal-overlay{position:fixed;inset:0;background:rgba(20,32,50,.4);z-index:1000;display:flex;align-items:center;justify-content:center}
+.modal-overlay.hidden{display:none}
+.modal-box{background:#fff;border-radius:12px;width:560px;max-height:80vh;display:flex;flex-direction:column;box-shadow:0 16px 48px rgba(20,32,50,.18)}
+.modal-header{padding:16px 20px;border-bottom:1px solid #E7E9EE;display:flex;align-items:center;justify-content:space-between}
+.modal-title{font-size:15px;font-weight:700;color:#142032}
+.modal-close{background:none;border:none;color:#A1AAB7;cursor:pointer;font-size:18px;line-height:1;padding:0;font-family:inherit}
+.modal-close:hover{color:#142032}
+.modal-search{padding:12px 16px;border-bottom:1px solid #F3F4F6}
+.modal-search input{width:100%;border:1px solid #E7E9EE;border-radius:7px;padding:7px 12px;font-size:13px;font-family:inherit;outline:none;color:#142032;background:#F8F7FC}
+.modal-search input:focus{border-color:#A1AAB7}
+.modal-body{overflow-y:auto;flex:1}
+.modal-section-label{font-size:11px;font-weight:600;color:#A1AAB7;text-transform:uppercase;letter-spacing:.04em;padding:10px 16px 6px}
+.rejected-item{padding:10px 16px;border-bottom:1px solid #F3F4F6;display:flex;align-items:flex-start;gap:10px}
+.rejected-item:last-child{border-bottom:none}
+.rejected-x{width:18px;height:18px;border-radius:50%;background:#E7E9EE;flex-shrink:0;display:flex;align-items:center;justify-content:center;margin-top:1px}
+.rejected-name{font-size:13px;font-weight:600;color:#142032}
+.rejected-reason-text{font-size:12px;color:#5B6E84;margin-top:2px}
+.tag-inactive{background:#E7E9EE;color:#5B6E84;border-radius:3px;padding:1px 6px;font-size:10px;font-weight:600;letter-spacing:.04em;margin-left:6px}
+
+/* Pickup table */
+.pickup-table{width:100%;border-collapse:collapse}
+.pickup-table th{text-align:left;font-size:11px;font-weight:600;color:#A1AAB7;text-transform:uppercase;letter-spacing:.04em;padding:6px 14px 8px;border-bottom:1px solid #E7E9EE}
+.pickup-table th:not(:first-child){text-align:right}
+.pickup-table td{padding:10px 14px;border-bottom:1px solid #F3F4F6;vertical-align:top}
+.pickup-table tr:last-child td{border-bottom:none}
+.pickup-store-name{font-size:13px;font-weight:600;color:#142032}
+.pickup-meta{display:flex;align-items:flex-start;gap:5px;font-size:12px;color:#5B6E84;margin-top:3px}
+.pickup-meta svg{flex-shrink:0;margin-top:1px}
+.pickup-price{font-size:14px;font-weight:700;color:#142032;text-align:right}
+.pickup-date{font-size:12px;color:#5B6E84;text-align:right;margin-top:2px}
+.pickup-label{font-size:12px;color:#134cd8;font-weight:500;text-align:right}
+
+.hidden{display:none!important}
+</style>
+</head><body>
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 73 18" width="62" height="15">
+      <path d="M0,0 H3.5 L8,13.5 L12.5,0 H16 L8,18 Z" fill="#F71963"/>
+      <path d="M19,0 H35 V3.5 H29 V18 H25 V3.5 H19 Z" fill="#F71963"/>
+      <path d="M38,0 H54 V3.5 H42 V7 H52 V10.5 H42 V14.5 H54 V18 H38 Z" fill="#F71963"/>
+      <polygon points="57,0 60.5,0 73,18 69.5,18" fill="#F71963"/>
+      <polygon points="73,0 69.5,0 57,18 60.5,18" fill="#F71963"/>
+    </svg>
+    <span style="font-size:11.5px;color:#A1AAB7" id="sidebar-acct"></span>
+  </div>
+  <div class="sidebar-search">
+    <input type="text" placeholder="Buscar VTEX" data-i18n-ph="search-hint">
+  </div>
+  <div class="nav-group">
+    <div class="nav-group-label">Principal</div>
+    <a class="nav-item" href="#"><span class="nav-dot"></span><span data-i18n="nav-dashboards">Dashboards</span></a>
+    <a class="nav-item" href="#"><span class="nav-dot"></span><span data-i18n="nav-orders">Pedidos</span></a>
+    <a class="nav-item" href="#"><span class="nav-dot"></span><span data-i18n="nav-catalog">Catálogo</span></a>
+    <a class="nav-item" href="#"><span class="nav-dot"></span><span data-i18n="nav-promos">Promoções</span></a>
+    <a class="nav-item" href="#"><span class="nav-dot"></span><span data-i18n="nav-storefront">Storefront</span></a>
+  </div>
+  <div class="nav-group">
+    <div class="nav-group-label" data-i18n="nav-shipping-group">Envio</div>
+    <a class="nav-item" href="#"><span class="nav-dot"></span><span data-i18n="nav-strategy">Estratégia de envio</span></a>
+    <a class="nav-item" href="#"><span class="nav-dot"></span><span data-i18n="nav-capacity">Capacidade de entrega</span></a>
+    <a class="nav-item" href="#"><span class="nav-dot"></span><span data-i18n="nav-pickup">Pontos de retirada</span></a>
+    <a class="nav-item" href="#"><span class="nav-dot"></span><span data-i18n="nav-rates">Tarifas de envio</span></a>
+    <a class="nav-item active" href="#"><span class="nav-dot"></span><span data-i18n="nav-simulator">Simulador de envio</span></a>
+    <a class="nav-item" href="#"><span class="nav-dot"></span><span data-i18n="nav-options">Opções de envio</span></a>
+    <a class="nav-item" href="#"><span class="nav-dot"></span><span data-i18n="nav-opcap">Capacidade operacional</span></a>
+  </div>
+  <div class="nav-group">
+    <a class="nav-item" href="#"><span class="nav-dot"></span><span data-i18n="nav-marketplace">Marketplace</span></a>
+    <a class="nav-item" href="#"><span class="nav-dot"></span><span data-i18n="nav-apps">Aplicativos</span></a>
+    <a class="nav-item" href="#"><span class="nav-dot"></span><span data-i18n="nav-settings">Configurações da loja</span></a>
+  </div>
+</aside>
+
+<!-- Main -->
+<div class="main">
+  <header class="topbar">
+    <div class="topbar-left">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 73 18" width="48" height="12">
+        <path d="M0,0 H3.5 L8,13.5 L12.5,0 H16 L8,18 Z" fill="#F71963"/>
+        <path d="M19,0 H35 V3.5 H29 V18 H25 V3.5 H19 Z" fill="#F71963"/>
+        <path d="M38,0 H54 V3.5 H42 V7 H52 V10.5 H42 V14.5 H54 V18 H38 Z" fill="#F71963"/>
+        <polygon points="57,0 60.5,0 73,18 69.5,18" fill="#F71963"/>
+        <polygon points="73,0 69.5,0 57,18 60.5,18" fill="#F71963"/>
+      </svg>
+      <div class="topbar-search-bar">
+        <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="5.5" cy="5.5" r="4.5" stroke="#A1AAB7" stroke-width="1.2"/><path d="M9 9l2.5 2.5" stroke="#A1AAB7" stroke-width="1.2" stroke-linecap="round"/></svg>
+        <span data-i18n="search-hint">Buscar VTEX</span>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div class="client-toggle">
+        <button id="btn-pt" onclick="setClient('pt')" class="active">🇧🇷 PT</button>
+        <button id="btn-en" onclick="setClient('en')">🇺🇸 EN</button>
+      </div>
+      <button class="topbar-btn">Copilot</button>
+      <button class="topbar-btn" data-i18n="topbar-visit">Visite a loja</button>
+      <button class="topbar-btn" data-i18n="topbar-help">Ajuda</button>
+      <div class="topbar-avatar">C</div>
+    </div>
+  </header>
+
+  <!-- HOME VIEW -->
+  <div class="home-view" id="home-view">
+    <div class="agent-home">
+      <div class="agent-avatar-lg" id="home-avatar">A</div>
+      <div class="agent-home-title" id="home-title">Olá, sou o Shipping Simulator Agent!</div>
+      <div class="agent-home-subtitle" id="home-subtitle">Estou aqui para ajudar você a simular fretes, verificar disponibilidade e entender por que transportadoras foram desconsideradas.</div>
+    </div>
+    <div class="recents-section" id="recents-section" style="display:none">
+      <div class="recents-section-title">
+        <svg width="12" height="12" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="5.5" stroke="#A1AAB7" stroke-width="1.2"/><path d="M6.5 4v3l2 1.5" stroke="#A1AAB7" stroke-width="1.2" stroke-linecap="round"/></svg>
+        <span id="recents-label">Últimas simulações</span>
+      </div>
+      <div class="recents-chips" id="recents-chips"></div>
+    </div>
+    <div class="suggestions-row" id="suggestions-row"></div>
+    <div class="home-input-wrap">
+      <div class="input-area">
+        <textarea class="input-textarea" id="home-input" rows="2" onkeydown="onKey(event,'home')"></textarea>
+        <div class="input-footer">
+          <span class="input-hint" id="home-hint"></span>
+          <button class="btn-send" onclick="sendHome()">
+            <span id="home-send-label">Enviar</span>
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 7h12M7 1l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- THREAD VIEW -->
+  <div class="thread-view hidden" id="thread-view">
+    <div class="thread-topbar">
+      <button class="btn-back" onclick="goHome()">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 2L3 7l6 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span data-i18n="nav-simulator">Simulador de envio</span>
+      </button>
+      <span style="color:#E7E9EE">|</span>
+      <div class="ctx-bar" id="ctx-bar"></div>
+    </div>
+    <div class="chat-wrap" id="chat-wrap"></div>
+    <div class="input-area">
+      <textarea class="input-textarea" id="thread-input" rows="2" onkeydown="onKey(event,'thread')"></textarea>
+      <div class="input-footer">
+        <span class="input-hint" id="thread-hint"></span>
+        <button class="btn-send" id="btn-send-thread" onclick="sendThread()">
+          <span id="thread-send-label">Enviar</span>
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 7h12M7 1l6 6-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Rejected carriers modal -->
+<div class="modal-overlay hidden" id="rejected-modal" onclick="closeModal(event)">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span class="modal-title" id="modal-title">Transportadoras desconsideradas</span>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-search">
+      <input type="text" id="modal-search-input" oninput="filterModal()" placeholder="Buscar transportadora">
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+  </div>
+</div>
+
+<script>
+// ── Icons ─────────────────────────────────────────────────────────────────────
+const ICON = {
+  pin: `<svg width="12" height="14" viewBox="0 0 12 14" fill="none"><path d="M6 0a5 5 0 00-5 5c0 3.5 5 9 5 9s5-5.5 5-9a5 5 0 00-5-5zm0 7a2 2 0 110-4 2 2 0 010 4z" fill="#5B6E84"/></svg>`,
+  clock: `<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="5.5" stroke="#5B6E84" stroke-width="1.2"/><path d="M6.5 4v3l2 1.5" stroke="#5B6E84" stroke-width="1.2" stroke-linecap="round"/></svg>`,
+  chevron: `<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+  x: `<svg width="8" height="8" viewBox="0 0 8 8"><path d="M1 1l6 6M7 1L1 7" stroke="#A1AAB7" stroke-width="1.5" stroke-linecap="round"/></svg>`,
+};
+
+// ── DATA ──────────────────────────────────────────────────────────────────────
+// Rejection reason codes (from dev's messages.json)
+const REJECTION_REASONS = {
+  pt: {
+    1:'Não é possível dividir itens em múltiplos pacotes',
+    2:'Peso do item excede o limite da transportadora',
+    3:'Dimensões do item excedem o limite da transportadora',
+    4:'Peso do kit/pacote excede o limite',
+    5:'Restrição de dimensão específica violada',
+    6:'Dimensões do kit/pacote excedem o limite',
+    7:'Nenhuma janela de entrega disponível',
+    8:'Não entrega neste código postal',
+    9:'Outra transportadora foi escolhida (maior prioridade)',
+    10:'Transportadora inativa/desabilitada',
+    11:'Preço do item fora da faixa da transportadora',
+    12:'Transportadora não opera neste horário',
+    13:'Modo de envio do item não suportado',
+    14:'Transportadora não está conectada a nenhuma doca',
+    15:'Doca não está vinculada a nenhum estoque/armazém',
+  },
+  en: {
+    1:'Cannot split items into multiple packages',
+    2:'Item weight exceeds carrier limit',
+    3:'Item dimensions exceed carrier limit',
+    4:'Kit/bundle weight exceeds limit',
+    5:'Specific dimension constraint violated',
+    6:'Kit/bundle dimensions exceed limit',
+    7:'No delivery windows available',
+    8:'Does not deliver to this postal code',
+    9:'Another carrier was chosen (higher priority)',
+    10:'Carrier inactive/disabled',
+    11:'Item price outside carrier range',
+    12:'Carrier not operating at this time',
+    13:'Item shipping mode not supported',
+    14:'Carrier is not connected to any dock',
+    15:'Dock is not linked to any warehouse/inventory location',
+  }
+};
+
+const DATA = {
+  pt: {
+    account: 'drogariaspacheco',
+    sc: [
+      {v:'1', label:'1 — Ecommerce BR', country:'BRA', currency:'BRL', symbol:'R$'},
+      {v:'2', label:'2 — Ecommerce PT', country:'PRT', currency:'EUR',  symbol:'€'}
+    ],
+    sellers: [
+      {v:'drogariaspacheco',         name:'Drogarias Pacheco',          note:'conta principal'},
+      {v:'drogariaspachecobotafogo', name:'Drogarias Pacheco Botafogo', note:''},
+      {v:'drogariaspachecobarra',    name:'Drogarias Pacheco Barra',    note:''},
+      {v:'drogariaspachecotiuca',    name:'Drogarias Pacheco Tijuca',   note:''},
+      {v:'drogariaspachecomeier',    name:'Drogarias Pacheco Méier',    note:''}
+    ],
+    sellerScMap: {
+      'drogariaspacheco':'1,2','drogariaspachecobotafogo':'1',
+      'drogariaspachecobarra':'1,2','drogariaspachecotiuca':'1','drogariaspachecomeier':'1'
+    },
+    skus: [
+      {name:'Dipirona Sódica 500mg 20 comp.', meta:'SKU 1234 · EAN 7891234561001 · Ref. DIP500-20',
+       dim:{w:120,h:3,l:8,c:8}},
+      {name:'Dipirona Sódica 500mg 50 comp.', meta:'SKU 1235 · EAN 7891234561018 · Ref. DIP500-50',
+       dim:{w:250,h:5,l:8,c:8}},
+      {name:'Vitamina C 1000mg 60 comp.',     meta:'SKU 2001 · EAN 7891234562001 · Ref. VITC-60',
+       dim:{w:180,h:6,l:7,c:7}},
+      {name:'Protetor Solar FPS 50 120ml',    meta:'SKU 3100 · EAN 7891234563100 · Ref. PROT-50',
+       dim:{w:320,h:14,l:5,c:5}},
+      {name:'Kit Vitaminas A+D (combo)',       meta:'SKU 9901 · EAN 7891234569001 · Ref. KIT-VITAD',
+       dim:{w:340,h:10,l:15,c:12}, kit:true}
+    ],
+    resolvedAddress: {
+      postalCode:'22241-000', street:'Rua Voluntários da Pátria',
+      neighborhood:'Botafogo', city:'Rio de Janeiro', state:'RJ'
+    },
+    slas: [
+      {name:'Correios PAC',    type:'Padrão',  typeClass:'',       price:'R$ 12,90', qty:'38 unidades',
+       shippingEstimate:'7 dias úteis', arrivalDate:'22 mai 2026',
+       transitTime:'2 dias úteis', dockTime:'1 dia útil', warehouseTime:'4 dias úteis',
+       absoluteCost:'R$ 8,50', freightPctWeight:'0%', freightPctPrice:'0%', warehouseToDockCost:'R$ 4,40',
+       warehouseName:'CD São Paulo',    warehouseId:'cd-sao-paulo',
+       dockName:'Doca Centro',          dockId:'doca-centro',      courierId:'correios-pac',
+       postalRange:'01000-000 a 99999-999', weightRange:'0 – 30.000 g'},
+      {name:'Correios SEDEX',  type:'Expresso',typeClass:'express',price:'R$ 28,50', qty:'12 unidades',
+       shippingEstimate:'2 dias úteis', arrivalDate:'17 mai 2026',
+       transitTime:'1 dia útil',  dockTime:'4h',            warehouseTime:'1 dia útil',
+       absoluteCost:'R$ 22,00',freightPctWeight:'3%', freightPctPrice:'0%', warehouseToDockCost:'R$ 6,50',
+       warehouseName:'CD Rio de Janeiro',warehouseId:'cd-rio-de-janeiro',
+       dockName:'Doca Sul',             dockId:'doca-sul',         courierId:'correios-sedex',
+       postalRange:'01000-000 a 05999-999', weightRange:'0 – 15.000 g'},
+      {name:'Jadlog Flash Sábado',type:'Expresso',typeClass:'express',price:'R$ 19,90',qty:'5 unidades',
+       shippingEstimate:'1 dia útil', arrivalDate:'16 mai 2026 (sáb)',
+       transitTime:'1 dia', dockTime:'2h', warehouseTime:'—',
+       absoluteCost:'R$ 19,90',freightPctWeight:'0%',freightPctPrice:'0%',warehouseToDockCost:'—',
+       warehouseName:'CD Campinas',     warehouseId:'cd-campinas',
+       dockName:'Doca Interior',        dockId:'doca-interior',    courierId:'jadlog-flash',
+       postalRange:'01000-000 a 05999-999', weightRange:'0 – 10.000 g', worksOnWeekends:true}
+    ],
+    excluded: [
+      {name:'Total Express',  type:'Padrão', typeClass:'',      reasonCode:8,  active:true},
+      {name:'Jadlog Package', type:'Padrão', typeClass:'',      reasonCode:10, active:false},
+      {name:'Braspress',      type:'Padrão', typeClass:'',      reasonCode:14, active:true},
+      {name:'TNT Mercúrio',   type:'Padrão', typeClass:'',      reasonCode:15, active:true},
+      {name:'Azul Cargo',     type:'Padrão', typeClass:'',      reasonCode:10, active:false,
+       docks:['Doca Centro (doca-centro)','Doca Sul (doca-sul)'], policy:'Política Azul Cargo Nacional'}
+    ],
+    pickups: [
+      {storeName:'Drogarias Pacheco Botafogo',
+       address:'Rua São Clemente, 123 — Botafogo, Rio de Janeiro - RJ',
+       hours:'Seg – Sex: 08h às 20h  |  Sáb: 09h às 18h',
+       readyDate:'16 mai 2026', readyLabel:'Disponível amanhã', price:'Grátis'},
+      {storeName:'Drogarias Pacheco Barra',
+       address:'Av. das Américas, 500 — Barra da Tijuca, Rio de Janeiro - RJ',
+       hours:'Seg – Dom: 08h às 22h',
+       readyDate:'17 mai 2026', readyLabel:'Disponível em 2 dias', price:'Grátis'}
+    ],
+    i18n: {
+      'nav-dashboards':'Dashboards','nav-orders':'Pedidos','nav-catalog':'Catálogo',
+      'nav-promos':'Promoções','nav-storefront':'Storefront','nav-shipping-group':'Envio',
+      'nav-strategy':'Estratégia de envio','nav-capacity':'Capacidade de entrega',
+      'nav-pickup':'Pontos de retirada','nav-rates':'Tarifas de envio',
+      'nav-simulator':'Simulador de envio','nav-options':'Opções de envio',
+      'nav-opcap':'Capacidade operacional','nav-marketplace':'Marketplace',
+      'nav-apps':'Aplicativos','nav-settings':'Configurações da loja',
+      'search-hint':'Buscar VTEX','topbar-visit':'Visite a loja','topbar-help':'Ajuda',
+      'agent-name':'Shipping Simulator Agent',
+      'agent-title':'Olá, sou o Shipping Simulator Agent!',
+      'agent-subtitle':'Estou aqui para ajudar você a simular fretes, verificar disponibilidade e entender por que transportadoras foram desconsideradas.',
+      'suggest-1-title':'O que você pode fazer?',     'suggest-1-desc':'Conheça minhas capacidades',    'suggest-1-text':'Com o que você pode me ajudar?',
+      'suggest-2-title':'Começar simulação',          'suggest-2-desc':'Introdução rápida',             'suggest-2-text':'Como faço para começar uma simulação?',
+      'suggest-3-title':'Simular envio',              'suggest-3-desc':'Cole SKU, CEP e seller',        'suggest-3-text':'Quero simular o envio do SKU 1234, CEP 22241-000, seller drogariaspachecobotafogo, PC 1',
+      'col-carrier':'Transportadora','col-price':'Tarifa','col-deadline':'Prazo','col-qty':'Qtd. disponível',
+      'col-pickup-store':'Loja','col-pickup-hours':'Horário','col-pickup-price':'Custo','col-pickup-avail':'Disponibilidade',
+      'btn-show-details':'Mostrar detalhes','btn-hide-details':'Ocultar detalhes',
+      'lbl-logistics':'Logística','lbl-costs':'Custos','lbl-time':'Tempo',
+      'lbl-warehouse':'Estoque','lbl-dock':'Doca','lbl-transit':'Trânsito','lbl-total':'Total',
+      'lbl-absolute':'Absoluto','lbl-pct-weight':'% por peso','lbl-pct-price':'% por valor','lbl-wh-dock-cost':'Estoque → Doca',
+      'lbl-postal':'Faixa de CEP','lbl-weight':'Faixa de peso',
+      'weekend-badge':'Opera aos sábados',
+      'result-title':'Resultado da Simulação',
+      'result-delivery':'Melhores opções de entrega','result-pickup':'Retirada em loja',
+      'result-rejected-btn': n => `(${n}) transportadoras desconsideradas`,
+      'modal-title':'Transportadoras desconsideradas',
+      'modal-search-ph':'Buscar transportadora',
+      'modal-active-section':'Transportadoras ativas desconsideradas',
+      'modal-inactive-section':'Transportadoras inativas',
+      'tag-inactive':'Inativa',
+      'address-title':'Endereço de destino','products-title':'Produtos',
+      'pill-sc':'PC','pill-seller':'Seller','pill-sku':'SKU','pill-zip':'CEP',
+      'ask-sc':'Qual a política comercial? Opções disponíveis:',
+      'ask-seller':'Qual o seller? Pode colar o ID diretamente:',
+      'ask-sku':'Qual produto quer simular? Cole o SKU ID, EAN ou nome.',
+      'ask-zip':'Qual o CEP de destino?',
+      'confirm-sim':'Simulando envio com os parâmetros informados…',
+      'refine-hint': () => 'O que quer fazer agora?' + quickReplies([
+        {label:'Só o SEDEX', text:'só o SEDEX'},
+        {label:'2 unidades', text:'2 unidades'},
+        {label:'Por que a Total Express foi desconsiderada?', text:'por que a Total Express foi desconsiderada?'},
+        {label:'Mais barata', text:'mais barata'},
+        {label:'Nova simulação', text:'nova simulação'},
+      ]),
+      'reset-done':'Simulação limpa. Pode começar uma nova.',
+      'cheapest-pre':'A opção mais barata é <strong>',
+      'cheapest-mid':'</strong> com <strong>',
+      'cheapest-suf':'</strong>.',
+      'sc-err-pre':'O seller <strong>',
+      'sc-err-suf':'</strong> não está associado à política comercial selecionada. Tente outra combinação.',
+      'filter-carrier':'Mostrando apenas',
+      'carrier-not-found':'Transportadora não encontrada nos resultados. Disponíveis:',
+      'explain-rejected-pre':'A transportadora <strong>',
+      'explain-rejected-mid':'</strong> foi desconsiderada. Motivo:',
+      'list-rejected-title':'Transportadoras desconsideradas nesta simulação:',
+      'qty-update':'Quantidade atualizada para <strong>',
+      'qty-update-suf':'</strong>. Os prazos e tarifas não mudam — essa informação é refletida na lógica de estoque da API real.',
+      'activate-confirm': (name, policy, docks) => `Você quer ativar a transportadora <strong>${name}</strong>?<br><br>Essa transportadora está vinculada à política de envio <strong>${policy}</strong>, que está conectada às seguintes docas:<br>${docks.map(d=>`• ${d}`).join('<br>')}<br><br>Confirme explicitamente para prosseguir: <em>"pode ativar"</em>`,
+      'activate-success': (name, policy, docks) => `Transportadora <strong>${name}</strong> ativada com sucesso.<br><br>Política de envio: <strong>${policy}</strong><br>Docas afetadas:<br>${docks.map(d=>`• ${d}`).join('<br>')}`,
+      'activate-not-found': 'Nenhuma transportadora inativa encontrada para ativar nesta simulação.',
+      'activate-denied': 'Operação cancelada. A transportadora não foi ativada.',
+      'input-ph':'Cole ou descreva o que quer simular... Ex: SKU 1234, CEP 22241-000, seller drogariaspachecobotafogo, PC 1',
+      'input-hint':'Dica: cole de uma vez —',
+      'btn-send':'Enviar',
+      'back':'← Voltar',
+      'agent-label':'A','user-label':'C',
+      'dim-weight':'Peso:','dim-h':'A:','dim-w':'L:','dim-l':'C:',
+      'sc-err': s => `${s} não está associado à política comercial selecionada.`
+    }
+  },
+  en: {
+    account: 'roadrunners',
+    sc: [
+      {v:'1', label:'1 — US Ecommerce',     country:'USA', currency:'USD', symbol:'$'},
+      {v:'2', label:'2 — Canada Ecommerce', country:'CAN', currency:'CAD', symbol:'CA$'}
+    ],
+    sellers: [
+      {v:'roadrunners',          name:'Road Runners',           note:'main account'},
+      {v:'roadrunnersandiego',   name:'Road Runner San Diego',  note:''},
+      {v:'roadrunnerlosangeles', name:'Road Runner Los Angeles',note:''},
+      {v:'roadrunnerseattle',    name:'Road Runner Seattle',    note:''},
+      {v:'roadrunnerhouston',    name:'Road Runner Houston',    note:''}
+    ],
+    sellerScMap: {
+      'roadrunners':'1,2','roadrunnersandiego':'1',
+      'roadrunnerlosangeles':'1,2','roadrunnerseattle':'1','roadrunnerhouston':'1'
+    },
+    skus: [
+      {name:'Running Shoes Air X — Size 10', meta:'SKU 5001 · EAN 0123456789001 · Ref. SHOE-AIRX-10',
+       dim:{w:850,h:13,l:32,c:19}},
+      {name:'Running Shoes Air X — Size 11', meta:'SKU 5002 · EAN 0123456789002 · Ref. SHOE-AIRX-11',
+       dim:{w:900,h:13,l:33,c:20}},
+      {name:'Compression Socks Pro — Medium',meta:'SKU 5010 · EAN 0123456789010 · Ref. SOCK-PRO-M',
+       dim:{w:120,h:4,l:12,c:8}},
+      {name:'Hydration Vest 10L',            meta:'SKU 5020 · EAN 0123456789020 · Ref. VEST-10L',
+       dim:{w:680,h:8,l:35,c:25}},
+      {name:'Kit Trail Runner Starter Pack', meta:'SKU 5099 · EAN 0123456789099 · Ref. KIT-TRAIL',
+       dim:{w:1620,h:20,l:40,c:30}, kit:true}
+    ],
+    resolvedAddress: {
+      postalCode:'90210', street:'Beverly Drive',
+      neighborhood:'Beverly Hills', city:'Beverly Hills', state:'CA'
+    },
+    slas: [
+      {name:'UPS Ground',    type:'Standard',typeClass:'',      price:'$ 8.90', qty:'42 units',
+       shippingEstimate:'5 business days', arrivalDate:'May 22, 2026',
+       transitTime:'2 business days', dockTime:'4h', warehouseTime:'3 business days',
+       absoluteCost:'$ 5.00',freightPctWeight:'2%',freightPctPrice:'0%',warehouseToDockCost:'$ 3.90',
+       warehouseName:'Warehouse Los Angeles', warehouseId:'wh-los-angeles',
+       dockName:'Dock West', dockId:'dock-west', courierId:'ups-ground',
+       postalRange:'00000 – 99999', weightRange:'0 – 30,000 g'},
+      {name:'FedEx Express', type:'Express', typeClass:'express',price:'$ 24.50',qty:'18 units',
+       shippingEstimate:'2 business days', arrivalDate:'May 17, 2026',
+       transitTime:'1 business day', dockTime:'4h', warehouseTime:'1 business day',
+       absoluteCost:'$ 18.00',freightPctWeight:'5%',freightPctPrice:'0%',warehouseToDockCost:'$ 6.50',
+       warehouseName:'Warehouse Seattle',      warehouseId:'wh-seattle',
+       dockName:'Dock North',dockId:'dock-north',courierId:'fedex-express',
+       postalRange:'00000 – 95999', weightRange:'0 – 15,000 g'},
+      {name:'FedEx Saturday Delivery',type:'Express',typeClass:'express',price:'$ 32.00',qty:'7 units',
+       shippingEstimate:'1 business day', arrivalDate:'May 16, 2026 (Sat)',
+       transitTime:'1 day', dockTime:'2h', warehouseTime:'—',
+       absoluteCost:'$ 32.00',freightPctWeight:'0%',freightPctPrice:'0%',warehouseToDockCost:'—',
+       warehouseName:'Warehouse Los Angeles',   warehouseId:'wh-los-angeles',
+       dockName:'Dock West',dockId:'dock-west',courierId:'fedex-saturday',
+       postalRange:'00000 – 95999', weightRange:'0 – 15,000 g', worksOnWeekends:true}
+    ],
+    excluded: [
+      {name:'USPS Priority', type:'Standard',typeClass:'',reasonCode:8,  active:true},
+      {name:'OnTrac Economy',type:'Standard',typeClass:'',reasonCode:2,  active:true},
+      {name:'Estes Express', type:'Standard',typeClass:'',reasonCode:14, active:true},
+      {name:'Old Dominion',  type:'Standard',typeClass:'',reasonCode:15, active:true},
+      {name:'DHL Freight',   type:'Standard',typeClass:'',reasonCode:10, active:false,
+       docks:['East Dock (dock-east)','West Dock (dock-west)'], policy:'DHL Freight National Policy'}
+    ],
+    pickups: [
+      {storeName:'Road Runner San Diego',
+       address:'2500 El Cajon Blvd, San Diego, CA 92104',
+       hours:'Mon – Fri: 9 AM – 8 PM  |  Sat: 10 AM – 6 PM',
+       readyDate:'May 16, 2026', readyLabel:'Ready tomorrow', price:'Free'},
+      {storeName:'Road Runner Los Angeles',
+       address:'800 W Olympic Blvd, Los Angeles, CA 90015',
+       hours:'Mon – Sun: 9 AM – 9 PM',
+       readyDate:'May 17, 2026', readyLabel:'Ready in 2 days', price:'Free'}
+    ],
+    i18n: {
+      'nav-dashboards':'Dashboards','nav-orders':'Orders','nav-catalog':'Catalog',
+      'nav-promos':'Promotions','nav-storefront':'Storefront','nav-shipping-group':'Shipping',
+      'nav-strategy':'Shipping strategy','nav-capacity':'Delivery capacity',
+      'nav-pickup':'Pickup points','nav-rates':'Shipping rates',
+      'nav-simulator':'Shipping simulator','nav-options':'Delivery options',
+      'nav-opcap':'Operational capacity','nav-marketplace':'Marketplace',
+      'nav-apps':'Apps','nav-settings':'Store settings',
+      'search-hint':'Search VTEX','topbar-visit':'Visit store','topbar-help':'Help',
+      'agent-name':'Shipping Simulator Agent',
+      'agent-title':'Hi, I\'m the Shipping Simulator Agent!',
+      'agent-subtitle':'I\'m here to help you simulate freight, check availability, and understand why carriers were excluded.',
+      'suggest-1-title':'What can you do?',     'suggest-1-desc':'Learn my capabilities',         'suggest-1-text':'What can you help me with?',
+      'suggest-2-title':'Get started',          'suggest-2-desc':'Quick introduction',            'suggest-2-text':'How do I start a simulation?',
+      'suggest-3-title':'Simulate shipping',    'suggest-3-desc':'Paste SKU, ZIP and seller',     'suggest-3-text':'I want to simulate shipping for SKU 5001, ZIP 90210, seller roadrunnersandiego, SC 1',
+      'col-carrier':'Carrier','col-price':'Rate','col-deadline':'Delivery time','col-qty':'Available qty',
+      'col-pickup-store':'Store','col-pickup-hours':'Hours','col-pickup-price':'Cost','col-pickup-avail':'Availability',
+      'btn-show-details':'Show details','btn-hide-details':'Hide details',
+      'lbl-logistics':'Logistics','lbl-costs':'Costs','lbl-time':'Time',
+      'lbl-warehouse':'Warehouse','lbl-dock':'Dock','lbl-transit':'Transit','lbl-total':'Total',
+      'lbl-absolute':'Absolute','lbl-pct-weight':'% by weight','lbl-pct-price':'% by price','lbl-wh-dock-cost':'Warehouse → Dock',
+      'lbl-postal':'Postal code range','lbl-weight':'Weight range',
+      'weekend-badge':'Operates on Saturdays',
+      'result-title':'Simulation Results',
+      'result-delivery':'Best delivery options','result-pickup':'Store pickup',
+      'result-rejected-btn': n => `(${n}) carriers excluded`,
+      'modal-title':'Excluded carriers',
+      'modal-search-ph':'Search carrier',
+      'modal-active-section':'Active carriers excluded',
+      'modal-inactive-section':'Inactive carriers',
+      'tag-inactive':'Inactive',
+      'address-title':'Delivery address','products-title':'Products',
+      'pill-sc':'SC','pill-seller':'Seller','pill-sku':'SKU','pill-zip':'ZIP',
+      'ask-sc':'Which sales channel? Available options:',
+      'ask-seller':'Which seller? You can paste the seller ID:',
+      'ask-sku':'Which product? Paste a SKU ID, EAN, or product name.',
+      'ask-zip':'What is the destination ZIP code?',
+      'confirm-sim':'Simulating shipping with the provided parameters…',
+      'refine-hint': () => 'What would you like to do next?' + quickReplies([
+        {label:'FedEx only', text:'FedEx only'},
+        {label:'2 units', text:'2 units'},
+        {label:'Why was DHL excluded?', text:'why was DHL Freight excluded?'},
+        {label:'Cheapest option', text:'cheapest'},
+        {label:'New simulation', text:'new simulation'},
+      ]),
+      'reset-done':'Simulation cleared. You can start a new one.',
+      'cheapest-pre':'The cheapest option is <strong>',
+      'cheapest-mid':'</strong> at <strong>',
+      'cheapest-suf':'</strong>.',
+      'sc-err-pre':'Seller <strong>',
+      'sc-err-suf':'</strong> is not associated with the selected sales channel. Try a different combination.',
+      'filter-carrier':'Showing only',
+      'carrier-not-found':'Carrier not found in results. Available:',
+      'explain-rejected-pre':'Carrier <strong>',
+      'explain-rejected-mid':'</strong> was excluded. Reason:',
+      'list-rejected-title':'Carriers excluded in this simulation:',
+      'qty-update':'Quantity updated to <strong>',
+      'qty-update-suf':'</strong>. Rates and deadlines remain the same — actual quantity affects stock logic in the real API response.',
+      'activate-confirm': (name, policy, docks) => `Do you want to activate the carrier <strong>${name}</strong>?<br><br>This carrier is linked to the shipping policy <strong>${policy}</strong>, which is connected to the following docks:<br>${docks.map(d=>`• ${d}`).join('<br>')}<br><br>Explicitly confirm to proceed: <em>"go ahead and activate"</em>`,
+      'activate-success': (name, policy, docks) => `Carrier <strong>${name}</strong> successfully activated.<br><br>Shipping policy: <strong>${policy}</strong><br>Affected docks:<br>${docks.map(d=>`• ${d}`).join('<br>')}`,
+      'activate-not-found': 'No inactive carrier found to activate in this simulation.',
+      'activate-denied': 'Operation cancelled. The carrier was not activated.',
+      'input-ph':'Paste or describe what you want to simulate... Ex: SKU 5001, ZIP 90210, roadrunners, SC 1',
+      'input-hint':'Tip: paste everything at once —',
+      'btn-send':'Send',
+      'back':'← Back',
+      'agent-label':'A','user-label':'C',
+      'dim-weight':'Weight:','dim-h':'H:','dim-w':'W:','dim-l':'L:',
+      'sc-err': s => `${s} is not associated with the selected sales channel.`
+    }
+  }
+};
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let client = 'pt';
+let state = {sc:null, seller:null, skus:[], zip:null, qty:1, simulated:false};
+let pendingParam = null; // which param the agent last asked for
+let pendingActivation = null; // carrier pending explicit activation confirmation
+let pendingSkuConfirm = null; // array of SKU matches awaiting user selection
+let pendingSkuType = null; // 'id' | 'ean' | 'name' — which input type the user chose
+let detailCtr = 0;
+let currentExcluded = [];
+
+// ── Recent simulations ────────────────────────────────────────────────────────
+const MAX_RECENTS = 5;
+const TTL_MS = 30 * 24 * 60 * 60 * 1000; // 30 days
+let recentSims = [];
+
+function recentsKey() {
+  // vtex_sim_recents_{accountName}_{userId}
+  // Prototype: client context acts as user identity proxy
+  return `vtex_sim_recents_${DATA[client].account}_demo_user`;
+}
+function loadRecents() {
+  try {
+    const raw = localStorage.getItem(recentsKey());
+    if (!raw) return [];
+    return JSON.parse(raw).filter(r => (Date.now() - r.ts) < TTL_MS);
+  } catch(e) { return []; }
+}
+function persistRecents() {
+  try { localStorage.setItem(recentsKey(), JSON.stringify(recentSims)); }
+  catch(e) { /* quota exceeded — fail silently */ }
+}
+const MOCK_RECENT_SIMS = {
+  pt: [
+    {sc:'1 — Ecommerce BR', seller:'Drogarias Pacheco Botafogo', sku:'Vitamina C 1000mg 60 comp.', zip:'01310-100', qty:2, ts: Date.now()-1000*60*52},
+    {sc:'1 — Ecommerce BR', seller:'Drogarias Pacheco',          sku:'Dipirona Sódica 500mg 20 comp.', zip:'22241-000', qty:1, ts: Date.now()-1000*60*60*4},
+    {sc:'2 — Ecommerce RJ', seller:'Drogarias Pacheco Barra',    sku:'Protetor Solar FPS 50 120ml', zip:'22070-010', qty:1, ts: Date.now()-1000*60*60*27},
+  ],
+  en: [
+    {sc:'1 — US Ecommerce',     seller:'Road Runner San Diego',   sku:'Running Shoe X Pro', zip:'92101', qty:1, ts: Date.now()-1000*60*38},
+    {sc:'2 — Canada Ecommerce', seller:'Road Runner Los Angeles', sku:'Trail Vest Lite',    zip:'90210', qty:2, ts: Date.now()-1000*60*60*6},
+  ]
+};
+
+function fmtRelTime(ts) {
+  const m = Math.floor((Date.now()-ts)/60000);
+  const h = Math.floor(m/60), d = Math.floor(h/24);
+  if (m<1)  return client==='pt'?'agora mesmo':'just now';
+  if (m<60) return client==='pt'?`há ${m} min`:`${m}m ago`;
+  if (h<24) return client==='pt'?`há ${h}h`:`${h}h ago`;
+  return client==='pt'?`há ${d}d`:`${d}d ago`;
+}
+
+function initRecentSims() {
+  const stored = loadRecents();
+  recentSims = stored.length ? stored : [...MOCK_RECENT_SIMS[client]];
+  if (!stored.length) persistRecents(); // seed localStorage with mock data
+  renderRecentSims();
+}
+
+function renderRecentSims() {
+  const isBR = client === 'pt';
+  const section = document.getElementById('recents-section');
+  const chips   = document.getElementById('recents-chips');
+  const label   = document.getElementById('recents-label');
+  label.textContent = isBR ? 'Últimas simulações' : 'Recent simulations';
+  if (!recentSims.length) { section.style.display = 'none'; return; }
+  section.style.display = 'block';
+  chips.innerHTML = recentSims.map((r,idx) => `
+    <div class="recent-chip" onclick="restoreRecentSim(${idx})">
+      <div>
+        <div class="recent-chip-main">${r.sku}${r.qty>1?` <span style="font-size:11px;color:#5B6E84">×${r.qty}</span>`:''} <span style="font-size:11px;font-weight:400;color:#5B6E84">· ${r.zip}</span></div>
+        <div class="recent-chip-meta"><span>${r.seller}</span><span>·</span><span>${r.sc}</span></div>
+      </div>
+      <span class="recent-chip-time">${fmtRelTime(r.ts)}</span>
+    </div>`).join('');
+}
+
+function saveRecentSim() {
+  if (!state.simulated || !state.skus.length) return;
+  const entry = {
+    sc: state.sc?.label || '—',
+    seller: state.seller?.name || '—',
+    sku: state.skus.map(s=>s.name).join(', '),
+    zip: state.zip || '—',
+    qty: state.qty,
+    ts: Date.now()
+  };
+  recentSims = recentSims.filter(r => !(r.sku===entry.sku && r.zip===entry.zip && r.seller===entry.seller));
+  recentSims.unshift(entry);
+  if (recentSims.length > MAX_RECENTS) recentSims = recentSims.slice(0, MAX_RECENTS);
+  persistRecents();
+}
+
+function restoreRecentSim(idx) {
+  const r = recentSims[idx];
+  const isBR = client === 'pt';
+  const d = DATA[client];
+  const seller = d.sellers.find(s => s.name === r.seller) || d.sellers[0];
+  const sc = d.sc.find(s => s.label === r.sc) || d.sc[0];
+  const sku = d.skus.find(s => r.sku.includes(s.name.split(' ')[0])) || d.skus[0];
+  state = {sc, seller, skus:[sku], zip:r.zip, qty:r.qty, simulated:false};
+  showThread();
+  appendMsg('user', isBR
+    ? `Restaurar: ${r.sku} · CEP ${r.zip} · ${r.seller}`
+    : `Restore: ${r.sku} · ZIP ${r.zip} · ${r.seller}`);
+  renderCtxBar();
+  setTimeout(() => runSimulation(d, d.i18n), 700);
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+function init() { setClient('pt'); }
+
+function setClient(c) {
+  client = c;
+  state = {sc:null, seller:null, skus:[], zip:null, qty:1, simulated:false};
+  pendingParam = null;
+  pendingSkuType = null;
+  pendingSkuConfirm = null;
+  document.getElementById('btn-pt').classList.toggle('active', c==='pt');
+  document.getElementById('btn-en').classList.toggle('active', c==='en');
+  const d = DATA[c]; const i = d.i18n;
+  applyI18n(i);
+  document.getElementById('sidebar-acct').textContent = d.account;
+  document.getElementById('home-input').placeholder = i['input-ph'];
+  document.getElementById('thread-input').placeholder = i['input-ph'];
+  document.getElementById('home-hint').innerHTML = i['input-hint'] + ' <code>SKU ID</code> · <code>' + i['pill-zip'] + '</code> · <code>Seller ID</code>';
+  document.getElementById('thread-hint').innerHTML = i['input-hint'] + ' <code>SKU ID</code> · <code>' + i['pill-zip'] + '</code> · <code>Seller ID</code>';
+  document.getElementById('home-send-label').textContent = i['btn-send'];
+  document.getElementById('thread-send-label').textContent = i['btn-send'];
+  buildHomeView(d, i);
+  initRecentSims();
+  showHome();
+}
+
+function applyI18n(i) {
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const k = el.getAttribute('data-i18n');
+    if (i[k]) el.textContent = i[k];
+  });
+}
+
+// ── Home view ─────────────────────────────────────────────────────────────────
+function buildHomeView(d, i) {
+  document.getElementById('home-avatar').textContent = i['agent-label'];
+  document.getElementById('home-title').textContent = i['agent-title'];
+  document.getElementById('home-subtitle').textContent = i['agent-subtitle'];
+  const row = document.getElementById('suggestions-row');
+  row.innerHTML = '';
+  [1,2,3].forEach(n => {
+    const card = document.createElement('div');
+    card.className = 'suggestion-card';
+    card.innerHTML = `<div class="suggestion-title">${i[`suggest-${n}-title`]}</div>
+      <div class="suggestion-desc">${i[`suggest-${n}-desc`]}</div>`;
+    card.onclick = () => {
+      document.getElementById('home-input').value = i[`suggest-${n}-text`];
+      sendHome();
+    };
+    row.appendChild(card);
+  });
+}
+
+function showHome() {
+  document.getElementById('home-view').classList.remove('hidden');
+  document.getElementById('thread-view').classList.add('hidden');
+  document.getElementById('chat-wrap').innerHTML = '';
+  state = {sc:null, seller:null, skus:[], zip:null, qty:1, simulated:false};
+  pendingParam = null;
+  pendingSkuType = null;
+  pendingSkuConfirm = null;
+}
+
+function showThread() {
+  document.getElementById('home-view').classList.add('hidden');
+  document.getElementById('thread-view').classList.remove('hidden');
+  renderCtxBar();
+}
+
+function goHome() { showHome(); }
+
+// ── Context bar ───────────────────────────────────────────────────────────────
+function renderCtxBar() {
+  const i = DATA[client].i18n;
+  const pills = [
+    {k:'pill-sc',    v: state.sc     ? state.sc.label      : null, field:'sc'},
+    {k:'pill-seller',v: state.seller ? state.seller.name   : null, field:'seller'},
+    {k:'pill-sku',   v: state.skus.length ? state.skus[0].name.split(' ').slice(0,3).join(' ')+'…' : null, field:'skus'},
+    {k:'pill-zip',   v: state.zip                          || null, field:'zip'},
+  ];
+  document.getElementById('ctx-bar').innerHTML = pills.map(p => {
+    const filled = p.v !== null;
+    return `<span class="ctx-pill ${filled?'filled':'empty'}">
+      <span class="lbl">${i[p.k]}</span>${filled ? p.v : '—'}
+      ${filled ? `<button class="ctx-clear-btn" onclick="clearParam('${p.field}')">✕</button>` : ''}
+    </span>`;
+  }).join('');
+}
+
+function clearParam(field) {
+  if (field === 'skus') state.skus = [];
+  else state[field] = null;
+  state.simulated = false;
+  renderCtxBar();
+}
+
+// ── Chat helpers ──────────────────────────────────────────────────────────────
+function nowStr() {
+  const d = new Date();
+  return d.getHours().toString().padStart(2,'0') + ':' + d.getMinutes().toString().padStart(2,'0');
+}
+
+function appendMsg(role, html) {
+  const i = DATA[client].i18n;
+  const wrap = document.getElementById('chat-wrap');
+  const div = document.createElement('div');
+  div.className = `msg ${role}`;
+  div.innerHTML = `
+    <div class="msg-avatar">${role==='agent' ? i['agent-label'] : i['user-label']}</div>
+    <div class="msg-body">
+      <div class="msg-bubble">${html}</div>
+      <div class="msg-time">${nowStr()}</div>
+    </div>`;
+  wrap.appendChild(div);
+  wrap.scrollTop = wrap.scrollHeight;
+}
+
+function showTyping() {
+  const wrap = document.getElementById('chat-wrap');
+  const div = document.createElement('div');
+  div.className = 'msg agent';
+  div.id = 'typing-indicator';
+  div.innerHTML = `<div class="msg-avatar">${DATA[client].i18n['agent-label']}</div>
+    <div class="msg-body"><div class="typing-bubble">
+      <div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>
+    </div></div>`;
+  wrap.appendChild(div);
+  wrap.scrollTop = wrap.scrollHeight;
+}
+
+function hideTyping() {
+  const el = document.getElementById('typing-indicator');
+  if (el) el.remove();
+}
+
+function agentRespond(html, delay=800) {
+  return new Promise(r => {
+    showTyping();
+    setTimeout(() => { hideTyping(); appendMsg('agent', html); r(); }, delay);
+  });
+}
+
+// ── Parser ────────────────────────────────────────────────────────────────────
+function parseInput(text) {
+  const d = DATA[client];
+  const found = {};
+  const t = text.toLowerCase();
+
+  // SKU: match by known ID, EAN or name fragment
+  d.skus.forEach(s => {
+    const id = (s.meta.match(/SKU (\d+)/)||[])[1];
+    if (id && text.includes(id)) found.sku = s;
+  });
+  if (!found.sku) d.skus.forEach(s => {
+    const ean = (s.meta.match(/EAN (\d+)/)||[])[1];
+    if (ean && text.includes(ean)) found.sku = s;
+  });
+  if (!found.sku) d.skus.forEach(s => {
+    const words = s.name.toLowerCase().split(' ').filter(w=>w.length>3);
+    if (words.some(w => t.includes(w))) found.sku = s;
+  });
+
+  // Seller: match by known ID
+  d.sellers.forEach(s => { if (t.includes(s.v.toLowerCase())) found.seller = s; });
+
+  // ZIP: BR format XXXXX-XXX or 8 digits, or US 5 digits
+  const zipBR  = text.match(/\b(\d{5}-\d{3})\b/);
+  const zipBR2 = text.match(/\b(\d{8})\b/);
+  const zipUS  = text.match(/\b(\d{5})\b/);
+  if (zipBR)       found.zip = zipBR[1];
+  else if (zipBR2) found.zip = zipBR2[1].slice(0,5)+'-'+zipBR2[1].slice(5);
+  else if (zipUS)  found.zip = zipUS[1];
+
+  // SC: pc/sc/política comercial/saleschannel (with or without space) + digit
+  const scM = text.match(/(?:pc|sc|saleschannel|política comercial|politica comercial|sales\s*channel)\s*(\d)/i);
+  if (scM) found.sc = d.sc.find(s=>s.v===scM[1]);
+  else {
+    // lone digit 1 or 2 not part of a longer number
+    const lone = text.replace(/\d{4,}/g,'').replace(/\d{2,}/g,'').match(/\b([12])\b/);
+    if (lone) found.sc = d.sc.find(s=>s.v===lone[1]);
+  }
+
+  // Quantity
+  const qtyM = text.match(/(\d+)\s*(?:unidades?|units?|qty|quantity)/i)
+    || text.match(/(?:qty|quantity)[:\s]+(\d+)/i);
+  if (qtyM) found.qty = parseInt(qtyM[1]);
+
+  return found;
+}
+
+// ── Context-aware resolution (used when pendingParam is set) ──────────────────
+function resolveFromContext(param, text, d) {
+  const t = text.trim().toLowerCase();
+
+  if (param === 'sc') {
+    // try normal parse first
+    const sc = d.sc.find(s => t.includes(s.v.toLowerCase()) || t.includes(s.label.toLowerCase()));
+    if (sc) return {sc};
+    const digit = text.trim().match(/^([12])$/);
+    if (digit) { const sc2 = d.sc.find(s=>s.v===digit[1]); if (sc2) return {sc:sc2}; }
+    return null;
+  }
+
+  if (param === 'seller') {
+    const seller = d.sellers.find(s => t.includes(s.v.toLowerCase()) || t.includes(s.name.toLowerCase()));
+    if (seller) return {seller};
+    // Accept any non-trivial text as a seller ID — use first mock as stand-in
+    if (text.trim().length > 2) return {seller: {...d.sellers[0], name: text.trim(), v: text.trim()}};
+    return null;
+  }
+
+  if (param === 'sku') {
+    const val = text.trim();
+
+    // If user chose a specific input type, resolve accordingly
+    if (pendingSkuType === 'id') {
+      const found = d.skus.find(s => {
+        const id = (s.meta.match(/SKU (\d+)/)||[])[1]||'';
+        return id === val || s.meta.includes(val);
+      });
+      pendingSkuType = null;
+      if (found) return {sku: found};
+      const fallback = {...d.skus[0], _typedId: val, name: d.skus[0].name + ` (ID: ${val})`};
+      return {sku: fallback};
+    }
+
+    if (pendingSkuType === 'ean') {
+      const found = d.skus.find(s => {
+        const ean = (s.meta.match(/EAN (\d+)/)||[])[1]||'';
+        return ean === val || s.meta.includes(val);
+      });
+      pendingSkuType = null;
+      if (found) return {sku: found};
+      const fallback = {...d.skus[0], _typedId: val, name: d.skus[0].name + ` (EAN: ${val})`};
+      return {sku: fallback};
+    }
+
+    if (pendingSkuType === 'name') {
+      pendingSkuType = null;
+      const matches = d.skus.filter(s => s.name.toLowerCase().includes(val.toLowerCase()));
+      if (matches.length === 1) return {sku: matches[0]};
+      if (matches.length > 1) return {skuAmbiguous: matches};
+      const fallback = {...d.skus[0], _typedId: val, name: d.skus[0].name + ` (busca: ${val})`};
+      return {sku: fallback};
+    }
+
+    // No type selected — try full match
+    const matches = findSkuMatches(text, d);
+    if (matches.length === 1) return {sku: matches[0]};
+    if (matches.length > 1) return {skuAmbiguous: matches};
+    // Accept any input as a typed SKU ID — use first mock as stand-in
+    if (val.length > 0) {
+      const fallback = {...d.skus[0], _typedId: val, name: d.skus[0].name + ` (ID: ${val})`};
+      return {sku: fallback};
+    }
+    return null;
+  }
+
+  if (param === 'zip') {
+    // accept any reasonable input as ZIP
+    const clean = text.trim();
+    if (clean.match(/\d{4,}/)) return {zip: clean};
+    return null;
+  }
+
+  return null;
+}
+
+function detectRefinement(text) {
+  const t = text.toLowerCase();
+  const d = DATA[client]; const i = d.i18n;
+
+  if (/nova simulação|nova simula|limpar|clear|reset|new sim/i.test(t)) return {type:'reset'};
+
+  const qtyM = text.match(/(\d+)\s*(?:unidades?|units?)/i) || text.match(/(?:qty|quantity)[:\s]+(\d+)/i);
+  if (qtyM) return {type:'qty', qty:parseInt(qtyM[1])};
+
+  if (/mais barata|cheapest|menor pre[cç]o|mais em conta|lowest/i.test(t)) return {type:'cheapest'};
+  if (/retirada|pickup|loja\b|store\b/i.test(t)) return {type:'pickup-only'};
+
+  for (const ex of d.excluded) {
+    if (t.includes(ex.name.toLowerCase().split(' ')[0]) || t.includes(ex.name.toLowerCase().split(' ')[1]||'')) {
+      return {type:'explain-excluded', carrier:ex};
+    }
+  }
+  if (/exclu|desconsider|por que|porque|why/i.test(t)) return {type:'list-excluded'};
+
+  // Activation request — check for inactive carriers
+  if (/ativ(a|ar|e)|activ(ate|ation)/i.test(t)) {
+    // Prefer inactive carriers with dock/policy info (activatable); fall back to any inactive
+    const inactive = d.excluded.find(e => !e.active && e.docks) || d.excluded.find(e => !e.active);
+    if (inactive) return {type:'activate-request', carrier: inactive};
+  }
+
+  for (const sla of d.slas) {
+    const words = sla.name.toLowerCase().split(' ');
+    if (words.some(w => w.length>3 && t.includes(w))) return {type:'filter-carrier', sla};
+  }
+
+  return null;
+}
+
+// ── Flow ──────────────────────────────────────────────────────────────────────
+function isCapabilitiesQuestion(text) {
+  return /capacidade|capacidades|o que você (pode|faz|consegue)|what can you|help me with|como (você|vc) (pode|funciona)|what do you do/i.test(text);
+}
+
+async function processMessage(text) {
+  const d = DATA[client]; const i = d.i18n;
+
+  // Capabilities question — respond with summary, don't enter simulation flow
+  if (isCapabilitiesQuestion(text)) {
+    const isBR = client === 'pt';
+    const html = isBR
+      ? `Posso te ajudar com:<br><br>
+         <strong>Simular frete</strong> — informe SKU, CEP, seller e sales channel (pode colar tudo de uma vez ou ir informando um por vez).<br><br>
+         <strong>Detalhar resultados</strong> — mostro prazo, custo, rota warehouse → doca → transportadora e breakdown de tempo e custo por etapa.<br><br>
+         <strong>Explicar transportadoras desconsideradas</strong> — digo por que cada carrier foi excluído da simulação (cobertura de CEP, limite de peso, carrier inativo, etc.).<br><br>
+         <strong>Ativar ou desativar transportadoras</strong> — se uma transportadora estiver inativa, posso ativá-la para você mediante confirmação explícita. Antes de ativar, mostro a política de envio e as docas conectadas que serão afetadas.<br><br>
+         <strong>Refinar após simular</strong> — posso filtrar por transportadora específica, mostrar a opção mais barata, atualizar quantidade ou iniciar uma nova simulação.<br><br>
+         <strong>Retirada em loja</strong> — mostro opções de pickup point junto com as opções de entrega domiciliar.<br><br>
+         Para começar, pode colar os parâmetros ou descrever o que quer simular.`
+      : `Here's what I can help you with:<br><br>
+         <strong>Simulate shipping</strong> — provide a SKU, ZIP code, seller and sales channel (paste everything at once or one at a time).<br><br>
+         <strong>Break down results</strong> — I show deadline, cost, warehouse → dock → carrier route and a time/cost breakdown per leg.<br><br>
+         <strong>Explain excluded carriers</strong> — I tell you why each carrier was dropped from the simulation (ZIP coverage, weight limit, inactive carrier, etc.).<br><br>
+         <strong>Activate or deactivate carriers</strong> — if a carrier is inactive, I can activate it for you upon explicit confirmation. Before activating, I'll show you the connected shipping policy and docks that will be affected.<br><br>
+         <strong>Refine after simulating</strong> — filter by specific carrier, find the cheapest option, update quantity, or start a new simulation.<br><br>
+         <strong>Store pickup</strong> — I surface pickup point options alongside home delivery.<br><br>
+         To get started, paste your parameters or describe what you want to simulate.`;
+    await agentRespond(html, 900);
+    return;
+  }
+
+  // Pending activation confirmation
+  if (pendingActivation) {
+    const confirmPT = /pode ativar|confirmo|confirma|sim|yes|go ahead|proceed/i.test(text);
+    const denyPT = /não|nao|cancel|abort|não ativar/i.test(text);
+    if (confirmPT) {
+      const c = pendingActivation;
+      pendingActivation = null;
+      c.active = true;
+      await agentRespond(i['activate-success'](c.name, c.policy, c.docks), 900);
+      return;
+    } else if (denyPT) {
+      pendingActivation = null;
+      await agentRespond(i['activate-denied'], 700);
+      return;
+    }
+  }
+
+  // SKU type selector — user clicked SKU ID / EAN / Nome
+  if (pendingParam === 'sku' && !pendingSkuType) {
+    const t = text.trim().toLowerCase();
+    if (/^sku\s*id$/i.test(text.trim())) {
+      pendingSkuType = 'id';
+      await agentRespond(client==='pt' ? 'Qual o SKU ID do produto?' : 'What is the SKU ID?', 600);
+      return;
+    }
+    if (/^ean$/i.test(text.trim())) {
+      pendingSkuType = 'ean';
+      await agentRespond(client==='pt' ? 'Qual o EAN do produto?' : 'What is the product EAN?', 600);
+      return;
+    }
+    if (/^(buscar pelo nome|search by name|nome|name)$/i.test(text.trim())) {
+      pendingSkuType = 'name';
+      await agentRespond(client==='pt' ? 'Qual o nome do produto que quer buscar?' : 'What is the product name you want to search?', 600);
+      return;
+    }
+  }
+
+  // SKU disambiguation — user is choosing from a list
+  if (pendingSkuConfirm) {
+    const t = text.trim().toLowerCase();
+    // try to match by number (1, 2, 3...) or by name/id fragment
+    let picked = null;
+    const numM = text.match(/^(\d)$/);
+    if (numM) { picked = pendingSkuConfirm[parseInt(numM[1])-1] || null; }
+    if (!picked) picked = pendingSkuConfirm.find(s => {
+      const id = (s.meta.match(/SKU (\d+)/)||[])[1]||'';
+      return text.includes(id) || s.name.toLowerCase().includes(t) || t.includes(s.name.toLowerCase().split(' ')[1]||'');
+    });
+    if (picked) {
+      state.skus = [picked];
+      pendingSkuConfirm = null;
+      pendingParam = null;
+      renderCtxBar();
+      const missing = getMissing(d, i);
+      if (missing) { await agentRespond(missing, 700); return; }
+      await runSimulation(d, i);
+      return;
+    }
+  }
+
+  if (state.simulated) {
+    const ref = detectRefinement(text);
+    if (ref) { await handleRefinement(ref, d, i); return; }
+  }
+
+  // Context-aware: if agent asked for a specific param, resolve from raw input first
+  if (pendingParam) {
+    const resolved = resolveFromContext(pendingParam, text, d);
+    if (resolved) {
+      if (resolved.skuAmbiguous) {
+        // Multiple matches — ask user to disambiguate
+        pendingSkuConfirm = resolved.skuAmbiguous;
+        pendingParam = null;
+        const isBR = client === 'pt';
+        const intro = isBR
+          ? `Encontrei ${resolved.skuAmbiguous.length} produtos com "<strong>${text.trim()}</strong>". Qual você quer simular?`
+          : `Found ${resolved.skuAmbiguous.length} products matching "<strong>${text.trim()}</strong>". Which one do you want to simulate?`;
+        const options = resolved.skuAmbiguous.map((s, idx) => {
+          const id = (s.meta.match(/SKU (\d+)/)||[])[1]||'?';
+          const ean = (s.meta.match(/EAN (\d+)/)||[])[1]||'—';
+          return `<div style="margin:6px 0"><strong>${idx+1}.</strong> ${s.name}<br><span style="color:#5B6E84;font-size:12px">${s.meta}</span></div>`;
+        }).join('');
+        const qr = quickReplies(resolved.skuAmbiguous.map((s,idx)=>({
+          label: `${idx+1}. ${s.name.split(' ').slice(0,3).join(' ')}`,
+          text: (s.meta.match(/SKU (\d+)/)||[])[1] || s.name
+        })));
+        await agentRespond(intro + '<br>' + options + qr, 900);
+        return;
+      }
+      if (resolved.sc && !state.sc)            state.sc = resolved.sc;
+      if (resolved.seller && !state.seller)    state.seller = resolved.seller;
+      if (resolved.sku && !state.skus.length)  state.skus = [resolved.sku];
+      if (resolved.zip && !state.zip)          state.zip = resolved.zip;
+      pendingParam = null;
+      renderCtxBar();
+    }
+  }
+
+  // Also try full parse to capture anything else in the message
+  const found = parseInput(text);
+  if (found.sc && !state.sc)           state.sc = found.sc;
+  if (found.seller && !state.seller)   state.seller = found.seller;
+  if (found.sku && !state.skus.length) state.skus = [found.sku];
+  if (found.zip && !state.zip)         state.zip = found.zip;
+  if (found.qty)                       state.qty = found.qty;
+  renderCtxBar();
+
+  if (state.seller && state.sc) {
+    const allowed = (d.sellerScMap[state.seller.v]||'').split(',');
+    if (!allowed.includes(state.sc.v)) {
+      await agentRespond(i['sc-err-pre'] + state.seller.name + i['sc-err-suf']);
+      state.sc = null; pendingParam = null; renderCtxBar(); return;
+    }
+  }
+
+  const missing = getMissing(d, i);
+  if (missing) { await agentRespond(missing, 900); return; }
+
+  await runSimulation(d, i);
+}
+
+function quickReplies(items) {
+  return `<div class="quick-replies">${items.map(it => {
+    const safe = it.text.replace(/"/g, '&quot;');
+    return `<button class="qr-btn" data-qr="${safe}" onclick="sendDirect(this.dataset.qr)">${it.label}</button>`;
+  }).join('')}</div>`;
+}
+
+function sendDirect(text) {
+  showThread();
+  appendMsg('user', text);
+  processMessage(text);
+}
+
+function findSkuMatches(text, d) {
+  const t = text.toLowerCase().trim();
+  const matches = [];
+  d.skus.forEach(s => {
+    const id = (s.meta.match(/SKU (\d+)/)||[])[1] || '';
+    const ean = (s.meta.match(/EAN (\d+)/)||[])[1] || '';
+    const words = s.name.toLowerCase().split(' ').filter(w=>w.length>3);
+    if ((id && text.includes(id)) || (ean && text.includes(ean)) ||
+        words.some(w => t.includes(w))) {
+      matches.push(s);
+    }
+  });
+  return matches;
+}
+
+function getMissing(d, i) {
+  if (!state.sc) {
+    pendingParam = 'sc';
+    return i['ask-sc'] + '<br>' + d.sc.map(s=>`<code>${s.v}</code> — ${s.label}`).join('<br>');
+  }
+  if (!state.seller) {
+    pendingParam = 'seller';
+    // Show only first 2 examples + hint that there are more
+    const examples = d.sellers.slice(0,2).map(s=>`<code>${s.v}</code> — ${s.name}`).join('<br>');
+    const sellerHint = client === 'pt' ? '…ou cole qualquer ID do seller diretamente' : '…or paste any seller ID directly';
+    return i['ask-seller'] + '<br>' + examples + `<br><span style="color:#5B6E84;font-size:13px">${sellerHint}</span>`;
+  }
+  if (!state.skus.length) {
+    pendingParam = 'sku';
+    const skuQR = client === 'pt'
+      ? quickReplies([{label:'SKU ID', text:'SKU ID'},{label:'EAN', text:'EAN'},{label:'Buscar pelo nome', text:'nome'}])
+      : quickReplies([{label:'SKU ID', text:'SKU ID'},{label:'EAN', text:'EAN'},{label:'Search by name', text:'name'}]);
+    return i['ask-sku'] + skuQR;
+  }
+  if (!state.zip) {
+    pendingParam = 'zip';
+    return i['ask-zip'];
+  }
+  pendingParam = null;
+  return null;
+}
+
+async function runSimulation(d, i) {
+  const sku = state.skus[0];
+  const kitTag = sku.kit ? ' <span class="tag-kit">KIT</span>' : '';
+  await agentRespond(`${i['confirm-sim']}<br><br>
+    <strong>${i['pill-sc']}:</strong> ${state.sc.label} &nbsp;·&nbsp;
+    <strong>${i['pill-seller']}:</strong> ${state.seller.name}<br>
+    <strong>${i['pill-sku']}:</strong> ${sku.name}${kitTag}<br>
+    <strong>${i['pill-zip']}:</strong> ${state.zip} &nbsp;·&nbsp; Qtd: ${state.qty}`, 700);
+
+  await new Promise(r => setTimeout(r, 600));
+  showTyping();
+  await new Promise(r => setTimeout(r, 800));
+  hideTyping();
+
+  state.simulated = true;
+  saveRecentSim();
+  currentExcluded = d.excluded;
+  renderCtxBar();
+  appendResultCard(d, i, d.slas, d.pickups, d.excluded);
+  await new Promise(r => setTimeout(r, 700));
+  // Build dynamic refine hint with one button per excluded carrier + new simulation
+  const isBR = client === 'pt';
+  const refineLabel = isBR ? 'O que quer fazer agora?' : 'What would you like to do next?';
+  const newSimLabel = isBR ? 'Nova simulação' : 'New simulation';
+  const whyPrefix = isBR ? 'Por que ' : 'Why was ';
+  const whySuffix = isBR ? ' foi desconsiderada?' : ' excluded?';
+  const excludedBtns = d.excluded.map(ex => ({
+    label: whyPrefix + ex.name + whySuffix,
+    text: whyPrefix + ex.name + whySuffix
+  }));
+  appendMsg('agent', refineLabel + quickReplies([...excludedBtns, {label: newSimLabel, text: newSimLabel}]));
+}
+
+// ── Result card ───────────────────────────────────────────────────────────────
+function appendResultCard(d, i, slas, pickups, excluded, filterLabel) {
+  const wrap = document.getElementById('chat-wrap');
+  const container = document.createElement('div');
+  container.className = 'msg agent';
+  const rid = 'rc-' + (++detailCtr);
+
+  container.innerHTML = `
+    <div class="msg-avatar">${i['agent-label']}</div>
+    <div class="msg-body">
+      <div class="msg-time" style="margin-bottom:4px">${nowStr()}</div>
+      ${filterLabel ? `<div class="msg-bubble" style="margin-bottom:6px">${filterLabel}</div>` : ''}
+      <div class="result-card" id="${rid}"></div>
+    </div>`;
+  wrap.appendChild(container);
+  const card = document.getElementById(rid);
+
+  // Header
+  card.innerHTML = `<div class="result-card-header">
+    <span class="result-card-title">${i['result-title']}</span>
+    <span class="result-count-badge">${slas.length + pickups.length} opções</span>
+  </div>`;
+
+  // Address + Product meta
+  const sku = state.skus[0];
+  if (sku && d.resolvedAddress && !filterLabel) {
+    const addr = d.resolvedAddress;
+    const metaGrid = document.createElement('div');
+    metaGrid.className = 'result-meta-grid';
+    metaGrid.innerHTML = `
+      <div class="result-meta-block">
+        <div class="result-section-label">${i['address-title']} <span class="result-section-line"></span></div>
+        <div class="meta-val">${addr.street}, ${addr.neighborhood}</div>
+        <div class="meta-val-sub">${addr.city} - ${addr.state} · ${state.zip || addr.postalCode}</div>
+      </div>
+      <div class="result-meta-block">
+        <div class="result-section-label">${i['products-title']} <span class="result-section-line"></span></div>
+        <div class="sku-chip-inline">${sku.name.split(' ').slice(0,4).join(' ')}${sku.kit?'…':''} ${sku.kit?`<span class="tag-kit">KIT</span>`:''}</div>
+        <div class="meta-val-sub" style="margin-top:4px">${i['dim-weight']} ${sku.dim.w}g &nbsp; ${i['dim-h']} ${sku.dim.h}cm &nbsp; ${i['dim-w']} ${sku.dim.w>999?Math.round(sku.dim.w/100)/10+'kg':sku.dim.w+'g'}</div>
+      </div>`;
+    card.appendChild(metaGrid);
+  }
+
+  // Delivery SLAs
+  if (slas.length) {
+    const sec = document.createElement('div');
+    sec.innerHTML = `<div class="result-section-label">${i['result-delivery']} <span class="result-section-line"></span></div>`;
+    const tbl = document.createElement('table');
+    tbl.className = 'sla-table';
+    tbl.innerHTML = `<thead><tr>
+      <th>${i['col-carrier']}</th><th>${i['col-price']}</th>
+      <th>${i['col-deadline']}</th><th>${i['col-qty']}</th><th></th>
+    </tr></thead><tbody></tbody>`;
+    const tbody = tbl.querySelector('tbody');
+    slas.forEach((sla, idx) => {
+      const rowId = `${rid}-s${idx}`;
+      const hasKit = state.skus.some(s=>s.kit);
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><div class="sla-carrier-col">
+          <span class="sla-carrier-name">${sla.name}</span>
+          <span class="type-badge ${sla.typeClass}">${sla.type}</span>
+        </div></td>
+        <td><span class="sla-price">${sla.price}</span></td>
+        <td><div class="sla-deadline">${sla.shippingEstimate}</div><div class="sla-deadline-sub">${sla.arrivalDate}</div></td>
+        <td><span class="sla-qty">${sla.qty}</span></td>
+        <td><button class="btn-details" id="btn-${rowId}" onclick="toggleDetail('${rowId}')">${i['btn-show-details']} ${ICON.chevron}</button></td>`;
+      tbody.appendChild(tr);
+
+      // Detail row: 3 columns (Logística / Custos / Tempo)
+      const trD = document.createElement('tr');
+      trD.className = 'sla-details-row';
+      trD.id = rowId;
+      const kitSection = hasKit ? `
+        <div class="detail-kit-row">
+          <div><div class="detail-kit-label">${i['lbl-postal']}</div><div class="detail-kit-val">${sla.postalRange}</div></div>
+          <div><div class="detail-kit-label">${i['lbl-weight']}</div><div class="detail-kit-val">${sla.weightRange}</div></div>
+        </div>` : '';
+      trD.innerHTML = `<td colspan="5">
+        <div class="details-panel">
+          <div class="detail-col">
+            <div class="detail-col-title">${i['lbl-logistics']}</div>
+            <div class="route-chain">
+              <div class="route-node">${i['lbl-warehouse']}: ${sla.warehouseName} <span class="route-node-sub">${sla.warehouseId}</span></div>
+              <div class="route-arrow">↓</div>
+              <div class="route-node">${i['lbl-dock']}: ${sla.dockName} <span class="route-node-sub">${sla.dockId}</span></div>
+              <div class="route-arrow">↓</div>
+              <div class="route-node">${i['col-carrier']}: ${sla.name}</div>
+            </div>
+          </div>
+          <div class="detail-col">
+            <div class="detail-col-title">${i['lbl-costs']}</div>
+            <div class="calc-row"><span class="calc-label">${i['lbl-absolute']}</span><span class="calc-val">${sla.absoluteCost}</span></div>
+            <div class="calc-row"><span class="calc-label">${i['lbl-pct-weight']}</span><span class="calc-val">${sla.freightPctWeight}</span></div>
+            <div class="calc-row"><span class="calc-label">${i['lbl-pct-price']}</span><span class="calc-val">${sla.freightPctPrice}</span></div>
+            <div class="calc-row"><span class="calc-label">${i['lbl-wh-dock-cost']}</span><span class="calc-val">${sla.warehouseToDockCost}</span></div>
+          </div>
+          <div class="detail-col">
+            <div class="detail-col-title">${i['lbl-time']}</div>
+            <div class="calc-row"><span class="calc-label">${i['lbl-warehouse']}</span><span class="calc-val">${sla.warehouseTime}</span></div>
+            <div class="calc-row"><span class="calc-label">${i['lbl-dock']}</span><span class="calc-val">${sla.dockTime}</span></div>
+            <div class="calc-row"><span class="calc-label">${i['lbl-transit']}</span><span class="calc-val">${sla.transitTime}</span></div>
+            <div class="calc-row" style="border-top:1px solid #F3F4F6;padding-top:5px;margin-top:3px"><span class="calc-label"><strong>${i['lbl-total']}</strong></span><span class="calc-val"><strong>${sla.shippingEstimate}</strong></span></div>
+            ${sla.worksOnWeekends ? `<div class="calc-row"><span class="calc-label">${i['weekend-badge']}</span><span class="calc-val"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2.5 7L5.5 10L11.5 4" stroke="#142032" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div>` : ''}
+          </div>
+        </div>
+        ${kitSection}
+      </td>`;
+      tbody.appendChild(trD);
+    });
+    sec.appendChild(tbl);
+    card.appendChild(sec);
+  }
+
+  // Pickups
+  if (pickups.length) {
+    const sec = document.createElement('div');
+    sec.innerHTML = `<div class="result-section-label">${i['result-pickup']} <span class="result-section-line"></span></div>`;
+    const tbl = document.createElement('table');
+    tbl.className = 'pickup-table';
+    tbl.innerHTML = `<thead><tr>
+      <th>${i['col-pickup-store']}</th><th>${i['col-pickup-hours']}</th>
+      <th>${i['col-pickup-price']}</th><th>${i['col-pickup-avail']}</th>
+    </tr></thead><tbody></tbody>`;
+    const ptbody = tbl.querySelector('tbody');
+    pickups.forEach(p => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><div class="pickup-store-name">${p.storeName}</div><div class="pickup-meta">${ICON.pin} ${p.address}</div></td>
+        <td><div class="pickup-meta" style="margin-top:0">${ICON.clock} ${p.hours}</div></td>
+        <td><div class="pickup-price">${p.price}</div></td>
+        <td><div class="pickup-date">${p.readyDate}</div><div class="pickup-label">${p.readyLabel}</div></td>`;
+      ptbody.appendChild(tr);
+    });
+    sec.appendChild(tbl);
+    card.appendChild(sec);
+  }
+
+  // Rejected carriers button
+  if (excluded && excluded.length && !filterLabel) {
+    const btnWrap = document.createElement('div');
+    const rejLabel = typeof i['result-rejected-btn'] === 'function'
+      ? i['result-rejected-btn'](excluded.length) : `(${excluded.length}) excluídas`;
+    btnWrap.innerHTML = `<button class="btn-rejected" onclick="openRejectedModal()">
+      ${ICON.x} ${rejLabel}
+    </button>`;
+    card.appendChild(btnWrap);
+  }
+
+  wrap.scrollTop = wrap.scrollHeight;
+}
+
+function toggleDetail(rid) {
+  const row = document.getElementById(rid);
+  const btn = document.getElementById('btn-' + rid);
+  const i = DATA[client].i18n;
+  const isOpen = row.classList.contains('open');
+  row.classList.toggle('open', !isOpen);
+  btn.classList.toggle('open', !isOpen);
+  btn.innerHTML = (isOpen ? i['btn-show-details'] : i['btn-hide-details']) + ' ' + ICON.chevron;
+}
+
+// ── Rejected modal ────────────────────────────────────────────────────────────
+function openRejectedModal() {
+  const i = DATA[client].i18n;
+  document.getElementById('modal-title').textContent = i['modal-title'];
+  document.getElementById('modal-search-input').placeholder = i['modal-search-ph'];
+  document.getElementById('modal-search-input').value = '';
+  renderModalBody('');
+  document.getElementById('rejected-modal').classList.remove('hidden');
+}
+
+function renderModalBody(filter) {
+  const d = DATA[client]; const i = d.i18n;
+  const body = document.getElementById('modal-body');
+  const rr = REJECTION_REASONS[client];
+  const active = currentExcluded.filter(e => e.active && (!filter || e.name.toLowerCase().includes(filter)));
+  const inactive = currentExcluded.filter(e => !e.active && (!filter || e.name.toLowerCase().includes(filter)));
+
+  let html = '';
+  if (active.length) {
+    html += `<div class="modal-section-label">${i['modal-active-section']} (${active.length})</div>`;
+    active.forEach(ex => {
+      html += `<div class="rejected-item">
+        <div class="rejected-x">${ICON.x}</div>
+        <div>
+          <div class="rejected-name">${ex.name} <span class="type-badge" style="opacity:.6">${ex.type}</span></div>
+          <div class="rejected-reason-text">${rr[ex.reasonCode] || ex.reasonCode}</div>
+        </div>
+      </div>`;
+    });
+  }
+  if (inactive.length) {
+    html += `<div class="modal-section-label">${i['modal-inactive-section']} (${inactive.length})</div>`;
+    inactive.forEach(ex => {
+      html += `<div class="rejected-item">
+        <div class="rejected-x">${ICON.x}</div>
+        <div>
+          <div class="rejected-name">${ex.name} <span class="type-badge" style="opacity:.6">${ex.type}</span> <span class="tag-inactive">${i['tag-inactive']}</span></div>
+          <div class="rejected-reason-text">${rr[ex.reasonCode] || ex.reasonCode}</div>
+        </div>
+      </div>`;
+    });
+  }
+  if (!html) html = '<div style="padding:16px;font-size:13px;color:#A1AAB7;text-align:center">—</div>';
+  body.innerHTML = html;
+}
+
+function filterModal() {
+  renderModalBody(document.getElementById('modal-search-input').value.toLowerCase().trim());
+}
+
+function closeModal(e) {
+  if (!e || e.target === document.getElementById('rejected-modal')) {
+    document.getElementById('rejected-modal').classList.add('hidden');
+  }
+}
+
+// ── Refinements ───────────────────────────────────────────────────────────────
+async function handleRefinement(ref, d, i) {
+  if (ref.type === 'reset') { showHome(); return; }
+
+  if (ref.type === 'qty') {
+    state.qty = ref.qty; renderCtxBar();
+    await agentRespond(i['qty-update'] + ref.qty + i['qty-update-suf']);
+    return;
+  }
+  if (ref.type === 'cheapest') {
+    const c = [...d.slas].sort((a,b) => {
+      const pa = parseFloat(a.price.replace(/[^0-9.]/g,''));
+      const pb = parseFloat(b.price.replace(/[^0-9.]/g,''));
+      return pa - pb;
+    })[0];
+    await agentRespond(i['cheapest-pre'] + c.name + i['cheapest-mid'] + c.price + i['cheapest-suf']);
+    return;
+  }
+  if (ref.type === 'filter-carrier') {
+    appendResultCard(d, i, [ref.sla], [], [], `${i['filter-carrier']} <strong>${ref.sla.name}</strong>:`);
+    return;
+  }
+  if (ref.type === 'pickup-only') {
+    appendResultCard(d, i, [], d.pickups, [], null);
+    return;
+  }
+  if (ref.type === 'explain-excluded') {
+    const rr = REJECTION_REASONS[client];
+    await agentRespond(i['explain-rejected-pre'] + ref.carrier.name + i['explain-rejected-mid'] + ' <strong>' + rr[ref.carrier.reasonCode] + '</strong>.', 900);
+    return;
+  }
+  if (ref.type === 'list-excluded') {
+    const rr = REJECTION_REASONS[client];
+    const list = d.excluded.map(ex => `• <strong>${ex.name}</strong>: ${rr[ex.reasonCode]}`).join('<br>');
+    await agentRespond(i['list-rejected-title'] + '<br>' + list, 900);
+    return;
+  }
+
+  if (ref.type === 'activate-request') {
+    const c = ref.carrier;
+    if (!c.docks) { await agentRespond(i['activate-not-found'], 700); return; }
+    pendingActivation = c;
+    await agentRespond(i['activate-confirm'](c.name, c.policy, c.docks), 900);
+    return;
+  }
+}
+
+// ── Send ──────────────────────────────────────────────────────────────────────
+async function sendHome() {
+  const input = document.getElementById('home-input');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  showThread();
+  appendMsg('user', text.replace(/\n/g,'<br>'));
+  await processMessage(text);
+}
+
+async function sendThread() {
+  const input = document.getElementById('thread-input');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  document.getElementById('btn-send-thread').disabled = true;
+  appendMsg('user', text.replace(/\n/g,'<br>'));
+  await processMessage(text);
+  document.getElementById('btn-send-thread').disabled = false;
+  input.focus();
+}
+
+function onKey(e, mode) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    mode === 'home' ? sendHome() : sendThread();
+  }
+}
+
+window.addEventListener('load', init);
+</script>
+</body></html>

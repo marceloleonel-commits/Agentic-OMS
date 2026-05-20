@@ -4,7 +4,7 @@
 |---|---|
 | **Module** | Fulfillment |
 | **Feature** | shipping-strategy |
-| **PM** | Carol Tourinho |
+| **PM** | Carolina Tourinho |
 | **Eng Champion** | TBD |
 | **Status** | Under definition |
 | **Expected Release** | TBD |
@@ -43,6 +43,8 @@ The current Shipping Simulator (`/admin/logistics#/freight-simulation`) is a min
 
 This MMR replaces the current simulator with a Shoreline-based experience that resolves all of the above, introduces seller-level simulation with sales channel validation, and surfaces logistics diagnostics in a structured way.
 
+> **Why not fix the current simulator directly?** The existing simulator lives in `vtex/vcs.logistics-ui` and `vtex/vcs.logistics` — repos over 10 years old running on Knockout.js, part of the legacy VCS (VTEX Commerce Suite) stack that predates VTEX IO, Shoreline, and Raccoon entirely. Surgical fixes (e.g., currency-only) in that codebase carry high risk, low velocity, and would be discarded when the new `admin-shipping-simulation` Raccoon app ships. The correct investment is building the replacement, not patching a 10-year-old Knockout.js app.
+
 ---
 
 ## Scope
@@ -79,9 +81,21 @@ This MMR replaces the current simulator with a Shoreline-based experience that r
 - **Note:** The prototype includes a client/language toggle (PT-BR / EN) as a demo-only mechanism to illustrate different account contexts within a single file. This is not a product feature — in the real Admin, language does not switch per-account; in practice, each client would be a separate VTEX account.
 
 ### Not in scope
-- Real-time checkout simulation
-- Saving or exporting simulation results
-- Agentic UI track (separate development path)
+- **Checkout simulation** — The VTEX checkout simulation (`POST /api/checkout/pub/orderForms/simulation`) is intentionally excluded. Although it resolves some logistics parameters as a side effect, it is a different API with a different contract: it requires a full cart payload, applies pricing rules, promotions, and payment conditions, and is scoped to a buyer session. Using it here would significantly increase implementation complexity without improving the core value of this tool, which is logistics-level diagnostics. This simulator is explicitly backed by `POST /api/logistics/pvt/shipping/calculate`, which exposes full carrier-level detail (rejection reasons, route breakdown, warehouse/dock chain) that the checkout simulation does not surface. The right scope for this MMR is: **improve the logistics simulation experience as-is, with seller selection and proper error handling** — not to replicate checkout behavior.
+- Exporting simulation results (CSV, PDF)
+- Agentic UI track (separate development path) — note: the agentic prototype includes carrier activation/deactivation as a conversational action, which is intentionally out of scope for the classic UI MMR but documented as a capability of the agentic track
+
+---
+
+## App Identity
+
+| Field | Value |
+|---|---|
+| **Current location** | `/admin/logistics#/freight-simulation` (legacy VCS route, hash-based) |
+| **Proposed route** | `/admin/shipping-simulation` |
+| **App name** | `admin-shipping-simulation` |
+| **Vendor** | `vtex` |
+| **Migration note** | The legacy route should redirect to the new route on GA. During the transition period both routes may coexist. |
 
 ---
 

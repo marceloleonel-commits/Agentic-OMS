@@ -1,0 +1,1435 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Clubes de Assinatura — Mercado Verde</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --green:        #00A651;
+      --green-dark:   #007A3D;
+      --green-light:  #E8F5EE;
+      --bronze:       #C97B2E;
+      --bronze-bg:    #FDF3E7;
+      --silver:       #64748B;
+      --silver-bg:    #F1F5F9;
+      --gold:         #D97706;
+      --gold-bg:      #FFFBEB;
+      --red:          #DC2626;
+      --red-bg:       #FEF2F2;
+      --success:      #059669;
+      --text:         #111827;
+      --text-2:       #6B7280;
+      --border:       #E5E7EB;
+      --bg:           #F3F4F6;
+      --white:        #FFFFFF;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── Demo banner ─────────────────────────────────────────── */
+    .demo-bar {
+      background: #1E1B4B;
+      color: #fff;
+      padding: 8px 24px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      font-size: 12px;
+      position: sticky;
+      top: 0;
+      z-index: 900;
+    }
+    .demo-pill {
+      background: #7C3AED;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 700;
+      font-size: 10px;
+      letter-spacing: .5px;
+      text-transform: uppercase;
+    }
+    .demo-label { opacity: .7; }
+    .demo-states { margin-left: auto; display: flex; gap: 6px; }
+    .demo-btn {
+      background: rgba(255,255,255,.1);
+      border: 1px solid rgba(255,255,255,.2);
+      color: #fff;
+      padding: 4px 14px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 600;
+      transition: .15s;
+    }
+    .demo-btn:hover, .demo-btn.on { background: #fff; color: #1E1B4B; }
+
+    /* ── Store header ─────────────────────────────────────────── */
+    .store-header {
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 40px;
+      height: 60px;
+      gap: 32px;
+    }
+    .logo {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--green);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      text-decoration: none;
+    }
+    .logo-icon { font-size: 22px; }
+    .store-nav { display: flex; gap: 20px; }
+    .store-nav a {
+      font-size: 13px;
+      color: var(--text-2);
+      text-decoration: none;
+      transition: color .15s;
+    }
+    .store-nav a:hover { color: var(--green); }
+    .store-right { margin-left: auto; display: flex; align-items: center; gap: 16px; }
+    .avatar {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      background: var(--green);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .user-name { font-size: 13px; color: var(--text-2); }
+
+    /* ── Layout ───────────────────────────────────────────────── */
+    .layout {
+      max-width: 1160px;
+      margin: 28px auto;
+      padding: 0 24px;
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      gap: 28px;
+      align-items: start;
+    }
+
+    /* ── Sidebar ──────────────────────────────────────────────── */
+    .sidebar {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .sidebar-user {
+      padding: 18px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .sidebar-user-name { font-size: 14px; font-weight: 700; }
+    .sidebar-user-email { font-size: 11px; color: var(--text-2); margin-top: 2px; }
+    .sidebar-nav { list-style: none; padding: 8px 0; }
+    .sidebar-nav li {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 18px;
+      font-size: 13px;
+      color: var(--text-2);
+      cursor: pointer;
+      border-left: 3px solid transparent;
+      transition: .15s;
+    }
+    .sidebar-nav li:hover { background: var(--bg); color: var(--text); }
+    .sidebar-nav li.active {
+      background: var(--green-light);
+      color: var(--green);
+      border-left-color: var(--green);
+      font-weight: 600;
+    }
+    .sidebar-nav .nav-icon { font-size: 15px; }
+    .nav-badge {
+      margin-left: auto;
+      background: var(--gold);
+      color: #fff;
+      font-size: 9px;
+      font-weight: 700;
+      padding: 1px 6px;
+      border-radius: 10px;
+      letter-spacing: .3px;
+    }
+
+    /* ── Main area ────────────────────────────────────────────── */
+    .main { display: flex; flex-direction: column; gap: 20px; }
+
+    .page-title { font-size: 20px; font-weight: 800; }
+    .page-sub { font-size: 13px; color: var(--text-2); margin-top: 3px; }
+
+    /* ─────────────────────────────────────────────────────────── */
+    /*  STATE 1 — ENROLLMENT                                       */
+    /* ─────────────────────────────────────────────────────────── */
+    #view-enrollment {}
+
+    .hero-banner {
+      background: linear-gradient(135deg, var(--green) 0%, var(--green-dark) 100%);
+      border-radius: 14px;
+      padding: 28px 32px;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+    .hero-text h2 { font-size: 22px; font-weight: 800; margin-bottom: 6px; }
+    .hero-text p { font-size: 13px; opacity: .85; max-width: 460px; line-height: 1.55; }
+    .hero-icon { font-size: 72px; opacity: .75; flex-shrink: 0; }
+
+    .plans-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+    }
+
+    /* Plan card */
+    .plan-card {
+      background: var(--white);
+      border-radius: 14px;
+      border: 2px solid var(--border);
+      overflow: hidden;
+      transition: transform .2s, box-shadow .2s;
+      position: relative;
+    }
+    .plan-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 16px 40px rgba(0,0,0,.11);
+    }
+    .plan-card.popular::after {
+      content: '⭐ Mais Popular';
+      position: absolute;
+      top: 0; left: 50%;
+      transform: translateX(-50%);
+      background: var(--gold);
+      color: #fff;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 3px 14px;
+      border-radius: 0 0 8px 8px;
+      white-space: nowrap;
+    }
+
+    .plan-card.t-bronze { border-color: var(--bronze); }
+    .plan-card.t-silver { border-color: var(--silver); }
+    .plan-card.t-gold   { border-color: var(--gold); }
+
+    .plan-head {
+      padding: 22px 22px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .tier-row { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+    .tier-badge {
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: .5px;
+      text-transform: uppercase;
+      padding: 3px 10px;
+      border-radius: 20px;
+    }
+    .t-bronze .tier-badge { background: var(--bronze-bg); color: var(--bronze); }
+    .t-silver .tier-badge { background: var(--silver-bg); color: var(--silver); }
+    .t-gold   .tier-badge { background: var(--gold-bg);   color: var(--gold); }
+
+    .plan-name {
+      font-size: 24px;
+      font-weight: 900;
+      letter-spacing: -.5px;
+    }
+    .t-bronze .plan-name { color: var(--bronze); }
+    .t-silver .plan-name { color: var(--silver); }
+    .t-gold   .plan-name { color: var(--gold); }
+
+    .plan-tagline { font-size: 12px; color: var(--text-2); margin-top: 3px; }
+
+    .plan-price { margin-top: 14px; display: flex; align-items: baseline; gap: 4px; }
+    .price-val { font-size: 28px; font-weight: 800; }
+    .price-period { font-size: 12px; color: var(--text-2); }
+
+    .plan-body { padding: 18px 22px 22px; }
+    .plan-benefits { list-style: none; display: flex; flex-direction: column; gap: 9px; margin-bottom: 18px; }
+    .plan-benefit {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      font-size: 12.5px;
+      color: var(--text-2);
+      line-height: 1.4;
+    }
+    .plan-benefit .bi { flex-shrink: 0; font-size: 14px; margin-top: 0; }
+    .plan-benefit strong { color: var(--text); }
+
+    .btn-subscribe {
+      width: 100%;
+      padding: 11px;
+      border-radius: 9px;
+      border: none;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: .2s;
+    }
+    .btn-subscribe:hover { opacity: .85; transform: translateY(-1px); }
+    .t-bronze .btn-subscribe { background: var(--bronze); color: #fff; }
+    .t-silver .btn-subscribe { background: var(--silver); color: #fff; }
+    .t-gold   .btn-subscribe { background: var(--gold);   color: #fff; }
+
+    /* ─────────────────────────────────────────────────────────── */
+    /*  STATE 2 — ACTIVE MEMBER                                    */
+    /* ─────────────────────────────────────────────────────────── */
+    #view-active {}
+
+    .membership-card {
+      background: linear-gradient(135deg, #1A1A2E 0%, #16213E 100%);
+      border-radius: 14px;
+      padding: 26px 30px;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 22px;
+    }
+    .membership-card-icon { font-size: 54px; flex-shrink: 0; }
+    .mc-info { flex: 1; }
+    .mc-eyebrow {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      opacity: .55;
+      margin-bottom: 4px;
+    }
+    .mc-plan-name { font-size: 22px; font-weight: 900; }
+    .mc-plan-sub  { font-size: 12px; opacity: .65; margin-top: 3px; }
+    .mc-badge {
+      background: var(--gold);
+      color: #fff;
+      padding: 5px 14px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      margin-top: 10px;
+    }
+    .mc-actions { display: flex; flex-direction: column; gap: 7px; align-items: flex-end; }
+    .btn-ghost-white {
+      background: rgba(255,255,255,.08);
+      border: 1px solid rgba(255,255,255,.2);
+      color: #fff;
+      padding: 7px 14px;
+      border-radius: 7px;
+      font-size: 11px;
+      cursor: pointer;
+      transition: .15s;
+      white-space: nowrap;
+    }
+    .btn-ghost-white:hover { background: rgba(255,255,255,.16); }
+    .btn-ghost-danger {
+      background: rgba(220,38,38,.1);
+      border: 1px solid rgba(220,38,38,.3);
+      color: #FCA5A5;
+      padding: 7px 14px;
+      border-radius: 7px;
+      font-size: 11px;
+      cursor: pointer;
+      transition: .15s;
+      white-space: nowrap;
+    }
+    .btn-ghost-danger:hover { background: rgba(220,38,38,.2); }
+
+    /* Benefits grid */
+    .section-card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+    .section-head {
+      padding: 16px 22px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .section-head h3 { font-size: 14px; font-weight: 700; }
+    .section-head .chip {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 20px;
+      background: var(--green-light);
+      color: var(--green);
+    }
+
+    .benefits-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+    }
+    .benefit-cell {
+      padding: 18px 22px;
+      border-right: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+    .benefit-cell:nth-child(3n) { border-right: none; }
+    .benefit-cell:nth-last-child(-n+3) { border-bottom: none; }
+    .bc-icon { font-size: 26px; margin-bottom: 7px; }
+    .bc-label { font-size: 11px; color: var(--text-2); margin-bottom: 3px; }
+    .bc-value { font-size: 17px; font-weight: 800; }
+    .bc-value.c-gold  { color: var(--gold); }
+    .bc-value.c-green { color: var(--green); }
+    .bc-value.c-text  { color: var(--text); }
+    .bc-note { font-size: 11px; color: var(--text-2); margin-top: 2px; }
+
+    /* Subscription details */
+    .detail-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+    }
+    .detail-cell {
+      padding: 14px 22px;
+      border-right: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+    .detail-cell:nth-child(2n) { border-right: none; }
+    .detail-cell:nth-last-child(-n+2) { border-bottom: none; }
+    .dc-label { font-size: 11px; color: var(--text-2); margin-bottom: 4px; }
+    .dc-value { font-size: 13px; font-weight: 600; }
+    .status-dot {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      color: var(--success);
+      font-weight: 600;
+    }
+    .status-dot::before {
+      content: '';
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--success);
+    }
+
+    /* Other plans */
+    .other-plans-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .other-plan-row {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px 18px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .op-icon { font-size: 28px; }
+    .op-info { flex: 1; }
+    .op-name { font-size: 13px; font-weight: 700; }
+    .op-price { font-size: 11px; color: var(--text-2); margin-top: 2px; }
+    .btn-upgrade {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      padding: 7px 14px;
+      border-radius: 7px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: .15s;
+      white-space: nowrap;
+    }
+    .btn-upgrade:hover { background: var(--green-light); color: var(--green); border-color: var(--green); }
+
+    /* ─────────────────────────────────────────────────────────── */
+    /*  STATE 3 — REACTIVATION                                     */
+    /* ─────────────────────────────────────────────────────────── */
+    #view-reactivation {}
+
+    .alert-banner {
+      background: linear-gradient(135deg, #FFFBEB, #FDE68A);
+      border: 1.5px solid var(--gold);
+      border-radius: 14px;
+      padding: 22px 26px;
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+    }
+    .alert-icon { font-size: 34px; flex-shrink: 0; }
+    .alert-content h2 { font-size: 17px; font-weight: 800; color: #92400E; margin-bottom: 5px; }
+    .alert-content p  { font-size: 12.5px; color: #78350F; line-height: 1.55; }
+    .alert-actions { display: flex; gap: 8px; margin-top: 12px; }
+    .btn-reactivate {
+      background: var(--gold);
+      color: #fff;
+      border: none;
+      padding: 9px 20px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: .15s;
+    }
+    .btn-reactivate:hover { background: #B45309; }
+    .btn-link {
+      background: none;
+      border: none;
+      color: var(--text-2);
+      font-size: 13px;
+      cursor: pointer;
+      padding: 9px;
+    }
+
+    .canceled-card {
+      background: var(--white);
+      border: 2px dashed var(--border);
+      border-radius: 14px;
+      padding: 22px;
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      opacity: .65;
+    }
+    .cc-icon { font-size: 40px; }
+    .cc-info { flex: 1; }
+    .cc-name { font-size: 18px; font-weight: 800; color: var(--text-2); }
+    .cc-reason {
+      font-size: 12px;
+      color: var(--red);
+      margin-top: 4px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .tag-canceled {
+      background: var(--red-bg);
+      color: var(--red);
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+
+    /* Reactivation confirm panel */
+    .reactiv-panel {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+    .reactiv-panel-head {
+      padding: 18px 22px;
+      background: var(--gold-bg);
+      border-bottom: 1px solid #FDE68A;
+    }
+    .reactiv-panel-head h3 { font-size: 15px; font-weight: 700; color: #92400E; }
+    .reactiv-panel-head p  { font-size: 12px; color: #78350F; margin-top: 3px; }
+    .reactiv-panel-body { padding: 22px; }
+
+    .pay-summary {
+      background: var(--bg);
+      border-radius: 9px;
+      padding: 14px 16px;
+      margin-bottom: 16px;
+    }
+    .pay-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      padding: 3px 0;
+      color: var(--text-2);
+    }
+    .pay-row strong { color: var(--text); }
+    .pay-row.total {
+      font-weight: 700;
+      border-top: 1px solid var(--border);
+      margin-top: 8px;
+      padding-top: 10px;
+      font-size: 14px;
+      color: var(--text);
+    }
+
+    .card-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      padding: 12px 14px;
+      margin-bottom: 16px;
+    }
+    .card-row-icon { font-size: 22px; }
+    .card-row-info { flex: 1; }
+    .card-row-label { font-size: 11px; color: var(--text-2); }
+    .card-row-num   { font-size: 13px; font-weight: 600; margin-top: 1px; }
+
+    .btn-confirm-reactiv {
+      width: 100%;
+      background: var(--gold);
+      color: #fff;
+      border: none;
+      padding: 13px;
+      border-radius: 9px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: .15s;
+    }
+    .btn-confirm-reactiv:hover { background: #B45309; }
+
+    /* Also show new plans below */
+    .divider-label {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text-2);
+      padding: 4px 0;
+    }
+
+    /* ─────────────────────────────────────────────────────────── */
+    /*  MODALS                                                      */
+    /* ─────────────────────────────────────────────────────────── */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .2s;
+    }
+    .overlay.open {
+      opacity: 1;
+      pointer-events: all;
+    }
+    .modal {
+      background: var(--white);
+      border-radius: 18px;
+      padding: 32px;
+      max-width: 460px;
+      width: 92%;
+      transform: scale(.95) translateY(8px);
+      transition: transform .2s;
+    }
+    .overlay.open .modal {
+      transform: scale(1) translateY(0);
+    }
+
+    /* Enroll modal */
+    .modal-icon { font-size: 44px; margin-bottom: 10px; }
+    .modal-title { font-size: 19px; font-weight: 800; margin-bottom: 4px; }
+    .modal-sub   { font-size: 13px; color: var(--text-2); margin-bottom: 20px; }
+    .modal-plan-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: 18px;
+    }
+    .modal-plan-badge.t-bronze { background: var(--bronze-bg); color: var(--bronze); }
+    .modal-plan-badge.t-silver { background: var(--silver-bg); color: var(--silver); }
+    .modal-plan-badge.t-gold   { background: var(--gold-bg);   color: var(--gold); }
+
+    .modal-summary {
+      background: var(--bg);
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin-bottom: 18px;
+    }
+    .ms-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      padding: 3px 0;
+      color: var(--text-2);
+    }
+    .ms-row strong { color: var(--text); }
+    .ms-row.total {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--text);
+      border-top: 1px solid var(--border);
+      padding-top: 10px;
+      margin-top: 6px;
+    }
+
+    .modal-benefits-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      color: var(--text-2);
+      margin-bottom: 10px;
+    }
+    .modal-benefits-list { list-style: none; display: flex; flex-direction: column; gap: 7px; margin-bottom: 22px; }
+    .mbl-item { display: flex; align-items: center; gap: 8px; font-size: 12.5px; }
+
+    .btn-confirm {
+      width: 100%;
+      padding: 13px;
+      border-radius: 9px;
+      border: none;
+      font-size: 14px;
+      font-weight: 700;
+      background: var(--green);
+      color: #fff;
+      cursor: pointer;
+      margin-bottom: 9px;
+      transition: .15s;
+    }
+    .btn-confirm:hover { background: var(--green-dark); }
+    .btn-cancel-modal {
+      width: 100%;
+      padding: 11px;
+      border-radius: 9px;
+      border: 1px solid var(--border);
+      font-size: 13px;
+      background: transparent;
+      color: var(--text-2);
+      cursor: pointer;
+      transition: .15s;
+    }
+    .btn-cancel-modal:hover { background: var(--bg); }
+
+    /* Cancel confirmation modal */
+    .cancel-modal { text-align: center; }
+    .cancel-modal .modal-title { color: var(--red); }
+    .cancel-warning {
+      background: var(--red-bg);
+      border: 1px solid #FECACA;
+      border-radius: 9px;
+      padding: 12px 16px;
+      font-size: 12.5px;
+      color: var(--red);
+      text-align: left;
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+    .cancel-warning strong { font-weight: 700; }
+    .btn-cancel-confirm {
+      width: 100%;
+      padding: 13px;
+      border-radius: 9px;
+      border: none;
+      font-size: 14px;
+      font-weight: 700;
+      background: var(--red);
+      color: #fff;
+      cursor: pointer;
+      margin-bottom: 9px;
+      transition: .15s;
+    }
+    .btn-cancel-confirm:hover { background: #B91C1C; }
+    .btn-keep-modal {
+      width: 100%;
+      padding: 11px;
+      border-radius: 9px;
+      border: 1px solid var(--border);
+      font-size: 13px;
+      font-weight: 600;
+      background: transparent;
+      color: var(--text-2);
+      cursor: pointer;
+    }
+
+    /* Success modal */
+    .success-modal { text-align: center; }
+    .success-icon { font-size: 56px; margin-bottom: 14px; }
+    .success-title { font-size: 21px; font-weight: 800; margin-bottom: 8px; }
+    .success-msg { font-size: 13px; color: var(--text-2); line-height: 1.55; margin-bottom: 24px; }
+    .btn-success-ok {
+      background: var(--green);
+      color: #fff;
+      border: none;
+      padding: 13px 40px;
+      border-radius: 9px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: .15s;
+    }
+    .btn-success-ok:hover { background: var(--green-dark); }
+
+    /* Reactivation success */
+    .btn-success-gold {
+      background: var(--gold);
+      color: #fff;
+      border: none;
+      padding: 13px 40px;
+      border-radius: 9px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: .15s;
+    }
+    .btn-success-gold:hover { background: #B45309; }
+
+    /* Utility */
+    .hidden { display: none !important; }
+    .fade-in { animation: fadeSlide .3s ease-out; }
+    @keyframes fadeSlide {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Demo bar ─────────────────────────────────────────────────── -->
+<div class="demo-bar">
+  <span class="demo-pill">DEMO</span>
+  <span class="demo-label">Selecione um estado para navegar pelo protótipo</span>
+  <div class="demo-states">
+    <button class="demo-btn on" id="db-enrollment" onclick="showState('enrollment')">1 · Sem assinatura</button>
+    <button class="demo-btn"   id="db-active"     onclick="showState('active')">2 · Assinatura ativa</button>
+    <button class="demo-btn"   id="db-reactivation" onclick="showState('reactivation')">3 · Cancelada — Reativação</button>
+  </div>
+</div>
+
+<!-- ── Store header ──────────────────────────────────────────────── -->
+<header class="store-header">
+  <a href="#" class="logo"><span class="logo-icon">🥬</span> Mercado Verde</a>
+  <nav class="store-nav">
+    <a href="#">Hortifrúti</a>
+    <a href="#">Mercearia</a>
+    <a href="#">Laticínios</a>
+    <a href="#">Bebidas</a>
+    <a href="#">Orgânicos</a>
+  </nav>
+  <div class="store-right">
+    <div class="avatar">MS</div>
+    <span class="user-name">Maria Silva</span>
+  </div>
+</header>
+
+<!-- ── Layout ───────────────────────────────────────────────────── -->
+<div class="layout">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-user">
+      <div class="sidebar-user-name">Maria Silva</div>
+      <div class="sidebar-user-email">m*****@gmail.com</div>
+    </div>
+    <ul class="sidebar-nav">
+      <li><span class="nav-icon">👤</span> Dados Pessoais</li>
+      <li><span class="nav-icon">📍</span> Endereços</li>
+      <li><span class="nav-icon">📦</span> Meus Pedidos</li>
+      <li><span class="nav-icon">🔁</span> Assinaturas</li>
+      <li class="active"><span class="nav-icon">⭐</span> Clubes de Fidelidade <span class="nav-badge">NOVO</span></li>
+      <li><span class="nav-icon">💳</span> Pagamentos</li>
+      <li><span class="nav-icon">🚪</span> Sair</li>
+    </ul>
+  </aside>
+
+  <!-- Main -->
+  <main class="main">
+    <div>
+      <div class="page-title">Clubes de Fidelidade</div>
+      <div class="page-sub">Assine um clube e aproveite benefícios exclusivos em cada compra no Mercado Verde.</div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════ -->
+    <!-- STATE 1: ENROLLMENT                                        -->
+    <!-- ══════════════════════════════════════════════════════════ -->
+    <div id="view-enrollment" class="fade-in">
+
+      <div class="hero-banner">
+        <div class="hero-text">
+          <h2>Bem-vinda aos Clubes Mercado Verde 🎉</h2>
+          <p>Escolha o plano ideal para você e comece a economizar hoje. Benefícios aplicados automaticamente em todas as compras — sem cupons, sem complicação.</p>
+        </div>
+        <div class="hero-icon">🛒</div>
+      </div>
+
+      <div class="plans-grid" style="margin-top:0">
+
+        <!-- DAILY -->
+        <div class="plan-card t-bronze">
+          <div class="plan-head">
+            <div class="plan-name">Daily</div>
+            <div class="plan-tagline">Para quem compra o essencial toda semana</div>
+            <div class="plan-price">
+              <span class="price-val">R$ 9,90</span>
+              <span class="price-period">/mês</span>
+            </div>
+          </div>
+          <div class="plan-body">
+            <ul class="plan-benefits">
+              <li class="plan-benefit"><span class="bi">✅</span><span><strong>5% de desconto</strong> em produtos essenciais (mercearia, laticínios)</span></li>
+              <li class="plan-benefit"><span class="bi">✅</span><span>Frete grátis em compras <strong>acima de R$ 199</strong></span></li>
+              <li class="plan-benefit"><span class="bi">✅</span><span>Acesso às <strong>promoções semanais</strong> do clube</span></li>
+              <li class="plan-benefit"><span class="bi">✅</span><span>Notificações de reposição de produtos favoritos</span></li>
+              <li class="plan-benefit"><span class="bi">—</span><span style="opacity:.45">Desconto em hortifrúti e orgânicos</span></li>
+              <li class="plan-benefit"><span class="bi">—</span><span style="opacity:.45">Cashback em compras</span></li>
+            </ul>
+            <button class="btn-subscribe" onclick="openEnrollModal('bronze','Daily','R$ 9,90')">Assinar plano Daily</button>
+          </div>
+        </div>
+
+        <!-- FRESH -->
+        <div class="plan-card t-silver popular">
+          <div class="plan-head">
+            <div class="plan-name">Fresh</div>
+            <div class="plan-tagline">Para quem ama produtos frescos e orgânicos</div>
+            <div class="plan-price">
+              <span class="price-val">R$ 19,90</span>
+              <span class="price-period">/mês</span>
+            </div>
+          </div>
+          <div class="plan-body">
+            <ul class="plan-benefits">
+              <li class="plan-benefit"><span class="bi">✅</span><span><strong>10% de desconto</strong> em todos os produtos</span></li>
+              <li class="plan-benefit"><span class="bi">✅</span><span>Frete grátis em compras <strong>acima de R$ 99</strong></span></li>
+              <li class="plan-benefit"><span class="bi">✅</span><span>Acesso antecipado às <strong>promoções semanais</strong></span></li>
+              <li class="plan-benefit"><span class="bi">✅</span><span><strong>15% extra em hortifrúti</strong> e produtos orgânicos</span></li>
+              <li class="plan-benefit"><span class="bi">✅</span><span>Substituição gratuita de itens por ciclo</span></li>
+              <li class="plan-benefit"><span class="bi">—</span><span style="opacity:.45">Cashback em compras</span></li>
+            </ul>
+            <button class="btn-subscribe" onclick="openEnrollModal('silver','Fresh','R$ 19,90')">Assinar plano Fresh</button>
+          </div>
+        </div>
+
+        <!-- PREMIUM -->
+        <div class="plan-card t-gold">
+          <div class="plan-head">
+            <div class="plan-name">Premium</div>
+            <div class="plan-tagline">A experiência completa do Mercado Verde</div>
+            <div class="plan-price">
+              <span class="price-val">R$ 39,90</span>
+              <span class="price-period">/mês</span>
+            </div>
+          </div>
+          <div class="plan-body">
+            <ul class="plan-benefits">
+              <li class="plan-benefit"><span class="bi">✅</span><span><strong>15% de desconto</strong> em todos os produtos</span></li>
+              <li class="plan-benefit"><span class="bi">✅</span><span><strong>Frete grátis</strong> em todas as compras, sem valor mínimo</span></li>
+              <li class="plan-benefit"><span class="bi">✅</span><span>Acesso <strong>VIP antecipado</strong> a lançamentos e ofertas relâmpago</span></li>
+              <li class="plan-benefit"><span class="bi">✅</span><span><strong>20% extra em hortifrúti,</strong> orgânicos e importados</span></li>
+              <li class="plan-benefit"><span class="bi">✅</span><span><strong>2% de cashback</strong> em todas as compras</span></li>
+              <li class="plan-benefit"><span class="bi">✅</span><span>Slot de entrega prioritário + atendimento VIP</span></li>
+            </ul>
+            <button class="btn-subscribe" onclick="openEnrollModal('gold','Premium','R$ 39,90')">Assinar plano Premium</button>
+          </div>
+        </div>
+
+      </div><!-- /plans-grid -->
+    </div><!-- /view-enrollment -->
+
+
+    <!-- ══════════════════════════════════════════════════════════ -->
+    <!-- STATE 2: ACTIVE MEMBER                                     -->
+    <!-- ══════════════════════════════════════════════════════════ -->
+    <div id="view-active" class="hidden fade-in">
+
+      <!-- Status card -->
+      <div class="membership-card">
+        <div class="membership-card-icon">🏆</div>
+        <div class="mc-info">
+          <div class="mc-eyebrow">Sua assinatura ativa</div>
+          <div class="mc-plan-name">Plano Premium</div>
+          <div class="mc-plan-sub">Membro desde 15/05/2026 · Próxima cobrança em 15/06/2026</div>
+          <div class="mc-badge">⭐ Premium Member</div>
+        </div>
+        <div class="mc-actions">
+          <button class="btn-ghost-white" onclick="alert('Funcionalidade em desenvolvimento.')">Gerenciar pagamento</button>
+          <button class="btn-ghost-danger" onclick="openCancelModal()">Cancelar assinatura</button>
+        </div>
+      </div>
+
+      <!-- Benefits -->
+      <div class="section-card">
+        <div class="section-head">
+          <h3>Seus benefícios ativos</h3>
+          <span class="chip">✓ Aplicados automaticamente</span>
+        </div>
+        <div class="benefits-grid">
+          <div class="benefit-cell">
+            <div class="bc-icon">💰</div>
+            <div class="bc-label">Desconto geral</div>
+            <div class="bc-value c-gold">15% OFF</div>
+            <div class="bc-note">em todos os produtos</div>
+          </div>
+          <div class="benefit-cell">
+            <div class="bc-icon">🚚</div>
+            <div class="bc-label">Frete</div>
+            <div class="bc-value c-green">Grátis</div>
+            <div class="bc-note">sem valor mínimo</div>
+          </div>
+          <div class="benefit-cell">
+            <div class="bc-icon">🥦</div>
+            <div class="bc-label">Hortifrúti & Orgânicos</div>
+            <div class="bc-value c-gold">20% OFF</div>
+            <div class="bc-note">desconto adicional</div>
+          </div>
+          <div class="benefit-cell">
+            <div class="bc-icon">🔄</div>
+            <div class="bc-label">Cashback</div>
+            <div class="bc-value c-text">2%</div>
+            <div class="bc-note">em todas as compras</div>
+          </div>
+          <div class="benefit-cell">
+            <div class="bc-icon">⚡</div>
+            <div class="bc-label">Acesso antecipado</div>
+            <div class="bc-value c-text" style="font-size:13px">VIP</div>
+            <div class="bc-note">ofertas e lançamentos</div>
+          </div>
+          <div class="benefit-cell">
+            <div class="bc-icon">📦</div>
+            <div class="bc-label">Entrega</div>
+            <div class="bc-value c-text" style="font-size:13px">Prioritária</div>
+            <div class="bc-note">slot preferencial</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Subscription details -->
+      <div class="section-card">
+        <div class="section-head"><h3>Detalhes da assinatura</h3></div>
+        <div class="detail-grid">
+          <div class="detail-cell">
+            <div class="dc-label">Status</div>
+            <div class="dc-value"><span class="status-dot">Ativa</span></div>
+          </div>
+          <div class="detail-cell">
+            <div class="dc-label">Plano</div>
+            <div class="dc-value">Premium · R$ 39,90/mês</div>
+          </div>
+          <div class="detail-cell">
+            <div class="dc-label">Membro desde</div>
+            <div class="dc-value">15 de maio de 2026</div>
+          </div>
+          <div class="detail-cell">
+            <div class="dc-label">Próxima cobrança</div>
+            <div class="dc-value">15 de junho de 2026</div>
+          </div>
+          <div class="detail-cell">
+            <div class="dc-label">Forma de pagamento</div>
+            <div class="dc-value">💳 Mastercard •••• 4242</div>
+          </div>
+          <div class="detail-cell">
+            <div class="dc-label">Ciclo de cobrança</div>
+            <div class="dc-value">Mensal</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Other plans -->
+      <div>
+        <div class="divider-label" style="margin-bottom:12px">Outros planos disponíveis</div>
+        <div class="other-plans-grid">
+          <div class="other-plan-row">
+            <div class="op-icon">🌿</div>
+            <div class="op-info">
+              <div class="op-name">Daily</div>
+              <div class="op-price">R$ 9,90/mês · 5% de desconto</div>
+            </div>
+            <button class="btn-upgrade" onclick="alert('Funcionalidade em desenvolvimento.')">Mudar plano</button>
+          </div>
+          <div class="other-plan-row">
+            <div class="op-icon">🍃</div>
+            <div class="op-info">
+              <div class="op-name">Fresh</div>
+              <div class="op-price">R$ 19,90/mês · 10% de desconto</div>
+            </div>
+            <button class="btn-upgrade" onclick="alert('Funcionalidade em desenvolvimento.')">Mudar plano</button>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /view-active -->
+
+
+    <!-- ══════════════════════════════════════════════════════════ -->
+    <!-- STATE 3: REACTIVATION                                      -->
+    <!-- ══════════════════════════════════════════════════════════ -->
+    <div id="view-reactivation" class="hidden fade-in">
+
+      <!-- Alert banner -->
+      <div class="alert-banner">
+        <div class="alert-icon">⚠️</div>
+        <div class="alert-content">
+          <h2>Sua assinatura foi cancelada</h2>
+          <p>
+            Após <strong>3 tentativas de cobrança sem sucesso</strong>, seu Plano Premium foi cancelado automaticamente em <strong>10/05/2026</strong>.
+            Seus benefícios exclusivos estão pausados. Reative agora com um único clique para recuperar todos os descontos na próxima compra.
+          </p>
+          <div class="alert-actions">
+            <button class="btn-reactivate" onclick="scrollToReactivPanel()">Reativar minha assinatura</button>
+            <button class="btn-link" onclick="showState('enrollment')">Ver todos os planos</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Canceled plan card -->
+      <div class="canceled-card">
+        <div class="cc-icon">🏆</div>
+        <div class="cc-info">
+          <div class="cc-name">Premium · R$ 39,90/mês</div>
+          <div class="cc-reason">❌ Pagamento recusado após 3 tentativas consecutivas</div>
+        </div>
+        <span class="tag-canceled">CANCELADO</span>
+      </div>
+
+      <!-- Reactivation confirmation panel -->
+      <div class="reactiv-panel" id="reactiv-panel">
+        <div class="reactiv-panel-head">
+          <h3>Reativar Plano Premium</h3>
+          <p>Uma cobrança imediata será realizada para confirmar a reativação e restaurar os seus benefícios.</p>
+        </div>
+        <div class="reactiv-panel-body">
+
+          <div class="pay-summary">
+            <div class="pay-row"><span>Plano Premium</span><strong>R$ 39,90</strong></div>
+            <div class="pay-row"><span>Taxa de reativação</span><strong>Isento</strong></div>
+            <div class="pay-row"><span>Próxima cobrança</span><strong>15/06/2026</strong></div>
+            <div class="pay-row total"><span>Cobrança imediata</span><strong>R$ 39,90</strong></div>
+          </div>
+
+          <div class="card-row">
+            <div class="card-row-icon">💳</div>
+            <div class="card-row-info">
+              <div class="card-row-label">Cartão cadastrado</div>
+              <div class="card-row-num">Mastercard •••• 4242</div>
+            </div>
+            <span style="font-size:11px;color:var(--text-2)">Alterar</span>
+          </div>
+
+          <button class="btn-confirm-reactiv" onclick="openReactivSuccessModal()">
+            Confirmar reativação e pagar R$ 39,90
+          </button>
+
+        </div>
+      </div>
+
+      <!-- Alternative plans below -->
+      <div>
+        <div class="divider-label" style="margin-bottom:12px">Ou escolha um novo plano</div>
+        <div class="plans-grid">
+
+          <div class="plan-card t-bronze">
+            <div class="plan-head">
+              <div class="plan-name">Daily</div>
+              <div class="plan-tagline">Para quem compra o essencial</div>
+              <div class="plan-price"><span class="price-val">R$ 9,90</span><span class="price-period">/mês</span></div>
+            </div>
+            <div class="plan-body">
+              <ul class="plan-benefits">
+                <li class="plan-benefit"><span class="bi">✅</span><span><strong>5% OFF</strong> em produtos essenciais</span></li>
+                <li class="plan-benefit"><span class="bi">✅</span><span>Frete grátis acima de <strong>R$ 199</strong></span></li>
+                <li class="plan-benefit"><span class="bi">✅</span><span>Promoções semanais do clube</span></li>
+              </ul>
+              <button class="btn-subscribe" onclick="openEnrollModal('bronze','Daily','R$ 9,90')">Assinar plano Daily</button>
+            </div>
+          </div>
+
+          <div class="plan-card t-silver popular">
+            <div class="plan-head">
+              <div class="plan-name">Fresh</div>
+              <div class="plan-tagline">Para quem ama produtos frescos</div>
+              <div class="plan-price"><span class="price-val">R$ 19,90</span><span class="price-period">/mês</span></div>
+            </div>
+            <div class="plan-body">
+              <ul class="plan-benefits">
+                <li class="plan-benefit"><span class="bi">✅</span><span><strong>10% OFF</strong> em todos os produtos</span></li>
+                <li class="plan-benefit"><span class="bi">✅</span><span>Frete grátis acima de <strong>R$ 99</strong></span></li>
+                <li class="plan-benefit"><span class="bi">✅</span><span><strong>15% extra</strong> em hortifrúti e orgânicos</span></li>
+              </ul>
+              <button class="btn-subscribe" onclick="openEnrollModal('silver','Fresh','R$ 19,90')">Assinar plano Fresh</button>
+            </div>
+          </div>
+
+          <div class="plan-card t-gold">
+            <div class="plan-head">
+              <div class="plan-name">Premium</div>
+              <div class="plan-tagline">A experiência completa</div>
+              <div class="plan-price"><span class="price-val">R$ 39,90</span><span class="price-period">/mês</span></div>
+            </div>
+            <div class="plan-body">
+              <ul class="plan-benefits">
+                <li class="plan-benefit"><span class="bi">✅</span><span><strong>15% OFF</strong> em todos os produtos</span></li>
+                <li class="plan-benefit"><span class="bi">✅</span><span><strong>Frete grátis</strong> sem valor mínimo</span></li>
+                <li class="plan-benefit"><span class="bi">✅</span><span><strong>2% cashback</strong> em todas as compras</span></li>
+              </ul>
+              <button class="btn-subscribe" onclick="openEnrollModal('gold','Premium','R$ 39,90')">Assinar plano Premium</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div><!-- /view-reactivation -->
+
+  </main>
+</div><!-- /layout -->
+
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- MODAL: Enrollment confirm                                      -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="overlay" id="overlay-enroll">
+  <div class="modal">
+    <div class="modal-icon" id="enroll-icon">🛒</div>
+    <div class="modal-title" id="enroll-title">Confirmar assinatura</div>
+    <div class="modal-sub" id="enroll-sub">Você está assinando o plano Fresh</div>
+
+    <div id="enroll-badge" class="modal-plan-badge t-silver">Fresh</div>
+
+    <div class="modal-summary">
+      <div class="ms-row"><span>Plano</span><strong id="ms-plan">Silver · Fresh</strong></div>
+      <div class="ms-row"><span>Ciclo de cobrança</span><strong>Mensal</strong></div>
+      <div class="ms-row"><span>Forma de pagamento</span><strong>Mastercard •••• 4242</strong></div>
+      <div class="ms-row total"><span>Valor mensal</span><strong id="ms-price">R$ 19,90</strong></div>
+    </div>
+
+    <div class="modal-benefits-label">Benefícios incluídos</div>
+    <ul class="modal-benefits-list" id="enroll-benefits"></ul>
+
+    <button class="btn-confirm" onclick="confirmEnroll()">Confirmar assinatura</button>
+    <button class="btn-cancel-modal" onclick="closeOverlay('overlay-enroll')">Cancelar</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- MODAL: Cancel subscription confirm                             -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="overlay" id="overlay-cancel">
+  <div class="modal cancel-modal">
+    <div class="modal-icon">❌</div>
+    <div class="modal-title">Cancelar assinatura?</div>
+    <div class="modal-sub" style="margin-bottom:16px">Esta ação não pode ser desfeita imediatamente.</div>
+    <div class="cancel-warning">
+      <strong>Ao cancelar, você perderá imediatamente:</strong><br><br>
+      • 15% de desconto em todos os produtos<br>
+      • Frete grátis sem valor mínimo<br>
+      • 20% OFF em hortifrúti e orgânicos<br>
+      • 2% de cashback em compras<br>
+      • Acesso VIP e entrega prioritária
+    </div>
+    <button class="btn-cancel-confirm" onclick="confirmCancel()">Sim, cancelar minha assinatura</button>
+    <button class="btn-keep-modal" onclick="closeOverlay('overlay-cancel')">Manter assinatura 🔒</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- MODAL: Enrollment success                                      -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="overlay" id="overlay-success-enroll">
+  <div class="modal success-modal">
+    <div class="success-icon">🎉</div>
+    <div class="success-title">Bem-vinda ao clube!</div>
+    <div class="success-msg">
+      Sua assinatura foi ativada com sucesso.<br>
+      Seus benefícios já estão disponíveis e serão aplicados automaticamente na sua próxima compra no Mercado Verde.
+    </div>
+    <button class="btn-success-ok" onclick="closeSuccessEnroll()">Ver minha assinatura</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- MODAL: Cancel success                                          -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="overlay" id="overlay-success-cancel">
+  <div class="modal success-modal">
+    <div class="success-icon">😔</div>
+    <div class="success-title">Assinatura cancelada</div>
+    <div class="success-msg">
+      Sua assinatura Premium foi cancelada.<br>
+      Você perdeu o acesso aos benefícios do clube. Pode reativar a qualquer momento.
+    </div>
+    <button class="btn-success-ok" onclick="closeSuccessCancel()" style="background:var(--text-2)">Entendido</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════ -->
+<!-- MODAL: Reactivation success                                    -->
+<!-- ══════════════════════════════════════════════════════════════ -->
+<div class="overlay" id="overlay-success-reactiv">
+  <div class="modal success-modal">
+    <div class="success-icon">✨</div>
+    <div class="success-title">Assinatura reativada!</div>
+    <div class="success-msg">
+      Cobrança de <strong>R$ 39,90</strong> aprovada com sucesso.<br>
+      Seu Plano Premium está ativo novamente — todos os benefícios foram restaurados e já estão aplicados na sua conta.
+    </div>
+    <button class="btn-success-gold" onclick="closeSuccessReactiv()">Ver minha assinatura</button>
+  </div>
+</div>
+
+
+<script>
+  /* ── State management ──────────────────────────────────────── */
+  const views = {
+    enrollment:   document.getElementById('view-enrollment'),
+    active:       document.getElementById('view-active'),
+    reactivation: document.getElementById('view-reactivation'),
+  };
+  const demoBtns = {
+    enrollment:   document.getElementById('db-enrollment'),
+    active:       document.getElementById('db-active'),
+    reactivation: document.getElementById('db-reactivation'),
+  };
+
+  function showState(state) {
+    Object.entries(views).forEach(([k, el]) => {
+      el.classList.toggle('hidden', k !== state);
+      if (k === state) {
+        el.classList.remove('fade-in');
+        void el.offsetWidth; // force reflow
+        el.classList.add('fade-in');
+      }
+    });
+    Object.entries(demoBtns).forEach(([k, btn]) => {
+      btn.classList.toggle('on', k === state);
+    });
+    window.scrollTo({ top: 60, behavior: 'smooth' });
+  }
+
+  /* ── Enrollment modal ──────────────────────────────────────── */
+  const planData = {
+    bronze: {
+      icon: '🌿',
+      label: 'Daily',
+      cls: 't-bronze',
+      name: 'Daily',
+      benefits: [
+        '5% de desconto em produtos essenciais',
+        'Frete grátis em compras acima de R$ 199',
+        'Acesso às promoções semanais do clube',
+        'Notificações de reposição de produtos favoritos',
+      ]
+    },
+    silver: {
+      icon: '🍃',
+      label: 'Fresh',
+      cls: 't-silver',
+      name: 'Fresh',
+      benefits: [
+        '10% de desconto em todos os produtos',
+        'Frete grátis em compras acima de R$ 99',
+        'Acesso antecipado às promoções semanais',
+        '15% extra em hortifrúti e produtos orgânicos',
+        'Substituição gratuita de itens por ciclo',
+      ]
+    },
+    gold: {
+      icon: '⭐',
+      label: 'Premium',
+      cls: 't-gold',
+      name: 'Premium',
+      benefits: [
+        '15% de desconto em todos os produtos',
+        'Frete grátis em todas as compras (sem mínimo)',
+        'Acesso VIP antecipado a lançamentos e ofertas',
+        '20% extra em hortifrúti, orgânicos e importados',
+        '2% de cashback em todas as compras',
+        'Slot de entrega prioritário + atendimento VIP',
+      ]
+    }
+  };
+
+  let selectedTier = 'silver';
+
+  function openEnrollModal(tier, name, price) {
+    selectedTier = tier;
+    const d = planData[tier];
+
+    document.getElementById('enroll-icon').textContent = d.icon;
+    document.getElementById('enroll-title').textContent = `Assinar plano ${name}`;
+    document.getElementById('enroll-sub').textContent   = `Você está assinando o Plano ${d.name}`;
+
+    const badge = document.getElementById('enroll-badge');
+    badge.className = 'modal-plan-badge ' + d.cls;
+    badge.textContent = d.label;
+
+    document.getElementById('ms-plan').textContent  = d.name;
+    document.getElementById('ms-price').textContent = price;
+
+    const ul = document.getElementById('enroll-benefits');
+    ul.innerHTML = d.benefits
+      .map(b => `<li class="mbl-item"><span>✅</span> ${b}</li>`)
+      .join('');
+
+    openOverlay('overlay-enroll');
+  }
+
+  function confirmEnroll() {
+    closeOverlay('overlay-enroll');
+    openOverlay('overlay-success-enroll');
+  }
+
+  function closeSuccessEnroll() {
+    closeOverlay('overlay-success-enroll');
+    showState('active');
+  }
+
+  /* ── Cancel modal ──────────────────────────────────────────── */
+  function openCancelModal() {
+    openOverlay('overlay-cancel');
+  }
+
+  function confirmCancel() {
+    closeOverlay('overlay-cancel');
+    openOverlay('overlay-success-cancel');
+  }
+
+  function closeSuccessCancel() {
+    closeOverlay('overlay-success-cancel');
+    showState('reactivation');
+  }
+
+  /* ── Reactivation ──────────────────────────────────────────── */
+  function scrollToReactivPanel() {
+    document.getElementById('reactiv-panel')
+      .scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  function openReactivSuccessModal() {
+    openOverlay('overlay-success-reactiv');
+  }
+
+  function closeSuccessReactiv() {
+    closeOverlay('overlay-success-reactiv');
+    showState('active');
+  }
+
+  /* ── Overlay helpers ───────────────────────────────────────── */
+  function openOverlay(id) {
+    document.getElementById(id).classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeOverlay(id) {
+    document.getElementById(id).classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  // Close overlays on backdrop click
+  document.querySelectorAll('.overlay').forEach(ov => {
+    ov.addEventListener('click', e => {
+      if (e.target === ov) closeOverlay(ov.id);
+    });
+  });
+</script>
+</body>
+</html>

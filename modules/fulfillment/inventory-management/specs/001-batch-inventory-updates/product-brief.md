@@ -3,7 +3,7 @@
 **Spec:** 001 — Batch Inventory Updates
 **Module path:** inventory-management
 **Pillar:** Fulfillment / Scalability
-**PM:** Carol Tourinho · carolina.rodrigues@vtex.com
+**PM:** Carolina Tourinho · carolina.rodrigues@vtex.com
 **Status:** Beta
 **Availability:** Closed Beta — H1 2026
 

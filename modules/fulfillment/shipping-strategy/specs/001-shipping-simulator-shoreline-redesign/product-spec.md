@@ -1,5 +1,18 @@
 # Product Spec — Shipping Simulator: Shoreline Redesign with Logistics Visibility
 
+## App Identity
+
+| Field | Value |
+|---|---|
+| **App name** | `admin-shipping-simulation` |
+| **Vendor** | `vtex` |
+| **Proposed admin route** | `/admin/shipping-simulation` |
+| **Current legacy route** | `/admin/logistics#/freight-simulation` (hash-based, Knockout.js) |
+| **Builders required** | `admin`, `react`, `node` |
+| **Migration note** | The legacy route should redirect to `/admin/shipping-simulation` on GA. The two routes may coexist during the transition period. No change to the URL is required for the prototype — this applies to the production Raccoon app. |
+
+---
+
 ## Clarifications
 
 - Q: Should the sales channel dropdown show only active sales channels? → A: Yes. Only active sales channels should be listed.
@@ -87,6 +100,8 @@ A logistics manager at Road Runners prefers to use the simulator in English. The
 
 ---
 
+---
+
 ## Requirements *(mandatory)*
 
 ### Functional Requirements
@@ -110,11 +125,102 @@ A logistics manager at Road Runners prefers to use the simulator in English. The
 - **FR-013**: Results MUST show a route analysis summary when no freight options are available, explaining the root cause (stock → route → location → capacity).
 - **FR-014**: Operational capacity constraints MUST be shown inline with the affected delivery option when `operationalCapacity.status` is `dock_time_increased` or `removed_from_quotation`.
 
+**Agentic UI track only**
+- **FR-019**: The agentic UI MUST allow the operator to request carrier activation or deactivation through natural language (e.g., "activate this carrier", "ativar a Azul Cargo").
+- **FR-020**: Before executing a carrier activation or deactivation, the agent MUST display: the carrier name, the connected shipping policy, and all docks linked to that policy. Execution MUST be blocked until the operator provides explicit confirmation.
+- **FR-021**: The agent MUST never activate or deactivate a carrier without a clear, affirmative confirmation message from the operator in the same conversation turn.
+
+**Recent simulations**
+- Fully specified in [`003-shipping-simulator-recent-simulations`](../../003-shipping-simulator-recent-simulations/product-spec.md). Requirements for this feature are not duplicated here.
+
+
 **Prototype-specific**
 - **FR-015**: The prototype MUST include a language toggle (PT-BR / EN) in the top-right corner of the interface.
 - **FR-016**: In PT-BR mode, all UI text, labels, and example data MUST be in Brazilian Portuguese.
 - **FR-017**: In EN mode, all UI text, labels, and example data MUST be in English.
 - **FR-018**: The prototype MUST use Shoreline components and a Raccoon-compatible admin layout — it must visually resemble a real VTEX Admin page.
+
+---
+
+## API Mapping
+
+This section maps each UI area to the specific API calls required. All calls are made from the frontend unless otherwise noted.
+
+### Form — Input resolution
+
+| Field / Behavior | API | Method | Key response fields |
+|---|---|---|---|
+| Sales channel list | `/api/catalog_system/pub/saleschannel/list` | GET | `Id`, `Name`, `IsActive` |
+| Country, currency, symbol auto-resolution | `/api/catalog_system/pub/saleschannel/{salesChannelId}` | GET | `CountryCode`, `CurrencyCode`, `CurrencySymbol` |
+| Seller list | `/seller-register/pvt/sellers` | GET | `id`, `name`, `isActive` |
+| Seller × sales channel validation | `/seller-register/pvt/sellers/{sellerId}/sales-channel/mapping` | GET | Array of mapped sales channel IDs |
+| SKU search by name / ID / EAN / ref | `/api/catalog_system/pub/products/search?fq=skuId:{id}` or `?ft={query}` | GET | `productId`, `skuId`, `nameComplete`, `ean`, `referenceId`, `variations` |
+
+### Simulation
+
+| Feature | API | Method | Notes |
+|---|---|---|---|
+| Run simulation | `/api/logistics/pvt/shipping/calculate` | POST | Core simulation endpoint. Requires: `items[]` (skuId, quantity, price, dimensions), `destination.zipCode`, `destination.country`, `salesChannel`, `sellerId` |
+
+**Request body reference:**
+```json
+{
+  "items": [
+    { "id": "skuId", "quantity": 1, "price": 1000, "dimension": { "weight": 100, "height": 10, "width": 10, "length": 10 } }
+  ],
+  "destination": { "zipCode": "22041-001", "country": "BRA" },
+  "salesChannel": "1",
+  "sellerId": "drogariaspacheco"
+}
+```
+
+### Results — Delivery options
+
+| Result field | Source | API field |
+|---|---|---|
+| Carrier name | Simulation response | `logisticsInfo[n].slas[n].name` |
+| Freight price (formatted with correct currency) | Simulation response + SC API | `slas[n].price` · currency from `CurrencyCode` / `CurrencySymbol` |
+| Estimated delivery (days) | Simulation response | `slas[n].shippingEstimate` |
+| Transit time | Simulation response | `slas[n].transitTime` |
+| Processing time (warehouse handling) | Simulation response | `slas[n].pickupStoreInfo` or `slas[n].deliveryWindow` |
+| Works on weekends | Simulation response | `slas[n].availableDeliveryWindows` — check for Saturday/Sunday slots |
+| Warehouse → dock → carrier route | Simulation response | `logisticsInfo[n].warehouseId`, `logisticsInfo[n].dockId`, `slas[n].deliveryChannel` |
+
+### Results — Rejected carriers
+
+| Result field | Source | API field |
+|---|---|---|
+| Rejected carrier name | Simulation response | `logisticsInfo[n].carriersNotChosenList[n].name` |
+| Rejection reason (human-readable) | Simulation response | `carriersNotChosenList[n].reasonCode` → mapped to string (codes 1–13) |
+| Carrier active/inactive status | Simulation response | `carriersNotChosenList[n].active` |
+
+> No additional API call required. Reason codes are already present in the simulation response. This is a frontend-only display change.
+
+### Results — Inventory status
+
+| Result field | Source | API | Notes |
+|---|---|---|---|
+| Stock availability per item | Inventory API | `GET /api/logistics/pvt/inventory/items/{skuId}/warehouses` | `totalQuantity` per warehouse. Only needed to distinguish "no stock" from "no coverage" in error states. Not required if the simulation response already surfaces `inventoryDetails`. |
+
+### Results — Error states
+
+See [`api-error-diagnostics.md`](./api-error-diagnostics.md) for the full decision tree. Summary:
+
+| Error | Data source | Additional call needed? |
+|---|---|---|
+| ZIP outside coverage | Reason codes in simulation response (code 6 or 7) | No |
+| All carriers excluded (weight/dims) | Reason codes in simulation response (codes 1–5) | No |
+| No stock in seller's warehouses | `GET /api/logistics/pvt/inventory/items/{skuId}/warehouses` | Yes — 1 call per SKU |
+| Logistics configuration error | Multi-API traversal (docks, carriers, policies) | Out of scope for this MMR |
+
+### Results — Store pickup
+
+| Result field | Source | API field |
+|---|---|---|
+| Pickup point name | Simulation response | `logisticsInfo[n].slas[n].pickupStoreInfo.friendlyName` |
+| Pickup point address | Simulation response | `slas[n].pickupStoreInfo.address` |
+| Pickup SLA / estimated time | Simulation response | `slas[n].shippingEstimate` (where `deliveryChannel = "pickup-in-point"`) |
+| Pickup price | Simulation response | `slas[n].price` |
 
 ---
 
@@ -125,6 +231,38 @@ A logistics manager at Road Runners prefers to use the simulator in English. The
 - The existing simulation API (`/api/logistics/pvt/shipping/estimate`) returns the `freightSimulatedForAi` structure with `carriersNotChosenList`, `inventoryDetails`, `routeAnalysis`, and `operationalCapacity` as documented.
 - Kit metadata fields (postal code range, weight range) require investigation to determine if the fix is purely frontend (rendering) or requires a backend change. Engineering input needed.
 - The prototype uses mocked data and does not make real API calls.
+
+---
+
+## Raccoon Implementation Notes
+
+### Component mapping
+The full HTML element → Shoreline component mapping is documented in [`prototype/README.md → Shoreline component map`](../../../prototype/README.md). The table below covers only the production-specific additions not captured in the prototype.
+
+| UI area | Raccoon / Shoreline component | Notes |
+|---|---|---|
+| Page shell | `Page` + `PageHeader` + `PageContent` | Standard Raccoon layout — do not build a custom shell |
+| Admin nav entry | `NavItem` in `sidebar.json` | Route: `/admin/shipping-simulation`, icon: `ShippingFast` (or closest available) |
+| Recent simulations | `Drawer` or collapsible `Section` | Triggered from a secondary action in the header; see spec `003-shipping-simulator-recent-simulations` |
+| Carrier rejection detail | `Tooltip` or expandable `TableRow` | Inline in the results table; no modal required |
+| Confirmation dialog (agentic carrier activation) | `Modal` with `ModalHeader`, `ModalBody`, `ModalFooter` | Required before any carrier activate/deactivate action per FR-020 and FR-021 |
+
+### Shared component across both tracks
+Both the classic UI and the agentic UI render the same simulation results. The prototype has this as duplicated markup. In production, extract as a shared component:
+
+```tsx
+<ShippingResultsTable
+  slas={slas}
+  pickups={pickups}
+  rejectedCarriers={rejectedCarriers}
+  currency={{ code: currencyCode, symbol: currencySymbol }}
+/>
+```
+
+The agentic UI additionally needs `<RejectedCarriersModal />` inline in the chat response. The classic UI renders it as a collapsible section below the SLA table.
+
+### Why `carriersNotChosenList` is a frontend-only change
+The simulation API (`POST /api/logistics/pvt/shipping/calculate`, pvt version) already returns `carriersNotChosenList` with `reasonCode` per excluded carrier. The legacy Knockout.js simulator receives this data and silently discards it. Surfacing rejection reasons is a **frontend-only change** — no backend work required.
 
 ---
 

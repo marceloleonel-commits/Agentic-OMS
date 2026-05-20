@@ -5,7 +5,7 @@
 | **Spec** | 001-delivery-pricing-service |
 | **Module** | Fulfillment / Delivery Pricing |
 | **Pillar** | Accurate availability · Lowest cost-to-serve |
-| **PM** | [Carolina Rodrigues](mailto:carolina.rodrigues@vtex.com) |
+| **PM** | [Carolina Tourinho](mailto:carolina.rodrigues@vtex.com) |
 | **Status** | Active — H2 2025 |
 | **Availability** | Internal Service (dependency unblock) |
 

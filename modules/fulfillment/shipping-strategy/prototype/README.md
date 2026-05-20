@@ -4,7 +4,7 @@ This folder contains prototype artifacts for the new Shipping Simulator experien
 
 ## Context
 
-The current Shipping Simulator (`/admin/logistics#/freight-simulation`) is a minimal form-based UI with limited feedback and no visibility into logistics engine decisions. This prototype work explores two directions for a redesigned experience.
+The current Shipping Simulator (`/admin/logistics#/freight-simulation`) is a minimal form-based UI with limited feedback and no visibility into logistics engine decisions. It lives in `vtex/vcs.logistics-ui` and `vtex/vcs.logistics` — repos over 10 years old running on Knockout.js, part of the legacy VCS (VTEX Commerce Suite) stack that predates VTEX IO, Shoreline, and Raccoon entirely. The new experience is being built in `vtex/admin-shipping-simulation` using Raccoon and Shoreline. This prototype work explores two directions for that replacement.
 
 ## Prototype Tracks
 
@@ -32,6 +32,67 @@ A conversational AI-native experience where merchants interact with a shipping s
 |---|---|---|
 | 514551 | Wrong currency displayed in simulator | Classic UI |
 | 1382356 | Empty postal/weight range for kit SKUs | Classic UI |
+
+## Why HTML — and What That Means for Shoreline
+
+Both prototypes are self-contained HTML files, not Raccoon/React apps. This is intentional: the goal is to validate product flow and UX before any engineering investment. Building in Raccoon would require scaffolding, `vtex link`, a dev account, and typed mocks before a single screen could be shown. HTML allows iterating in hours and opening directly in the browser with no build step.
+
+**What was done to stay close to Shoreline:**
+The CSS tokens (colors, border-radius, focus rings, spacing, typography) were manually aligned to what Shoreline components render. The visual result is nearly identical to the real components.
+
+**What the prototype does NOT guarantee:**
+Accessibility behavior, exact prop/variant APIs, and runtime design system integration. Those are the responsibility of the production implementation.
+
+**Shoreline component map — HTML element → production component:**
+
+| HTML element / class | Shoreline component | Notes |
+|---|---|---|
+| `.btn-primary` | `Button variant="primary"` | Blue, height 32px, border-radius 4px |
+| `.btn-secondary` | `Button variant="secondary"` | Outlined, same sizing |
+| `.btn-link` | `Button variant="tertiary"` or `Link` | Text-only, no border |
+| `.input` | `Input` | Border `#B4B9C2`, focus ring `#0C2DCC` |
+| `select.input` | `Select` + `SelectItem` | Dropdown pattern |
+| `.combo-input` + `.combo-dropdown` | `Combobox` (`ComboboxInput`, `ComboboxItem`, `ComboboxList`, `ComboboxPopover`) | Seller search + SKU search |
+| `.type-badge` (gray) | `Tag color="gray"` | Shipping type: Standard/Padrão |
+| `.type-badge.express` | `Tag color="orange"` | Shipping type: Express |
+| `.weekend-badge` | `Tag color="blue"` | Works on weekends indicator |
+| `.results-count` | `Tag color="blue"` | Result count pill |
+| `.error-box` | `Alert variant="critical"` | Left 4px border, `#FFF1F3` bg |
+| `.sla-table` | `Table` + `TableHeader` + `TableBody` + `TableRow` + `TableCell` | SLA results table |
+| Toast (restore recent) | `toast()` from `@vtex/shoreline` | Floating feedback |
+| Delivery / Pickup tabs | `TabProvider` + `TabList` + `Tab` + `TabPanel` | Result sections |
+| Form label + field group | `Field` + `Label` + `FieldDescription` | Input grouping |
+
+**Elements without a direct Shoreline equivalent (custom):**
+Sidebar nav, client/language toggle pill, SKU chip selection state, expandable SLA detail panel, recent simulations bar. These will need custom design decisions during implementation.
+
+---
+
+## Shared Logic Cross-Reference
+
+Both prototypes are self-contained HTML files (no external JS dependencies) to ensure they work when opened locally via `file://`. This means some logic is intentionally duplicated. The table below maps shared concepts so that the implementation team does not rebuild them independently.
+
+| Concept | Classic UI | Agentic UI | Notes |
+|---|---|---|---|
+| Mock data (`DATA` object) | `DATA` (top of file) | `DATA` (top of file) | Identical structure. PT-BR and EN datasets with accounts, sellers, sales channels, SKUs, SLAs, pickups, i18n |
+| Client/language switch | `setClient(c)` | `setClient(c)` | Resets state and re-renders the interface for PT-BR or EN |
+| i18n application | `applyI18n()` | `applyI18n(i)` | Iterates `[data-i18n]` elements and sets `textContent` from the i18n map |
+| SLA results table | `buildResults()` | `appendResultCard()` | Same structure: carrier row → expandable details panel with Logistics / Costs / Time columns |
+| Pickup results table | Inside `buildResults()` | Inside `appendResultCard()` | Same table layout: store name, hours, price, availability |
+| SLA details toggle | `toggleDetails(idx)` | `toggleDetail(rid)` | Show/hide the 3-column breakdown panel per SLA row |
+| Weekend indicator | `worksOnWeekends` flag → SVG checkmark in details | Same | Inline SVG, Shoreline-compliant — not a badge, lives inside the Time column of the details panel |
+
+### Implementation note
+
+When moving from prototype to production (Raccoon + React), these shared concepts should become a single component:
+
+```
+<ShippingResultsTable slas={slas} pickups={pickups} currency={currency} />
+```
+
+Both the classic form page and the agentic chat interface would consume this component. The agentic UI additionally needs `<RejectedCarriersModal />` (not present in classic UI) and the classic UI needs the form components (`<SellerCombobox />`, `<SkuSearch />`, etc.).
+
+---
 
 ## Status
 
