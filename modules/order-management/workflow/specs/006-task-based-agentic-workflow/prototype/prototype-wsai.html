@@ -988,13 +988,21 @@ tbody td{padding:10px 14px;font-size:13px;vertical-align:middle}
             </svg>
             Configurar em Lote
           </button>
-          <button class="btn btn-primary">
+          <button class="btn btn-primary" onclick="openCreateWorkflowPanel()">
             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M8 2v12M2 8h12"/></svg>
             Novo Workflow
           </button>
         </div>
       </div>
       <div class="wfl-grid" id="wfl-grid"></div>
+      <div id="new-wf-panel" style="position:fixed;right:-400px;top:0;height:100vh;z-index:200;width:400px;background:#fff;border-left:1px solid #e8e8e8;display:flex;flex-direction:column;overflow:hidden;transition:right .25s ease;box-shadow:-4px 0 16px rgba(0,0,0,.08)">
+        <div style="display:flex;align-items:center;padding:14px 16px;border-bottom:1px solid #f0f0f0;gap:8px">
+          <span style="flex:1;font-size:14px;font-weight:600;color:#1a1a1a">🤖 Novo Workflow com AI</span>
+          <button onclick="closeNewWfPanel()" style="background:none;border:none;cursor:pointer;padding:4px;color:#888;font-size:20px;line-height:1">×</button>
+        </div>
+        <div id="new-wf-body" style="flex:1;display:flex;flex-direction:column;overflow:hidden"></div>
+        <div id="new-wf-footer" style="display:flex;gap:8px;padding:10px 16px;border-top:1px solid #f0f0f0"></div>
+      </div>
       <div id="bulk-panel" style="position:fixed;right:-400px;top:0;height:100vh;z-index:200;width:400px;background:#fff;border-left:1px solid #e8e8e8;display:flex;flex-direction:column;overflow:hidden;transition:right .25s ease;box-shadow:-4px 0 16px rgba(0,0,0,.08)">
         <div style="display:flex;align-items:center;padding:14px 16px;border-bottom:1px solid #f0f0f0;gap:8px">
           <span style="flex:1;font-size:14px;font-weight:600;color:#1a1a1a" id="bulk-sp-title">Configurar em Lote</span>
@@ -3163,6 +3171,137 @@ function deleteOrchRule(id) {
 
 function saveAgentConfig() {
   showSuccessModal('Configurações salvas!', 'O agente foi atualizado e está monitorando os workflows ativos.');
+}
+
+// ══════════════════════════════════════════
+// NEW WORKFLOW PANEL
+// ══════════════════════════════════════════
+
+const WF_ICONS = ['📦','↩️','💳','🚚','🔄','⚡','🏪','🌐','📋','🛒'];
+const WF_COLORS = ['#0c6fcd','#7c3aed','#059669','#d97706','#0891b2','#6366f1','#dc2626','#0f766e'];
+let newWfDraft = {}, newWfStep = 0;
+const newWfFlows = [
+  { ai:'Como você quer chamar esse workflow?', field:'name', sugg:['Workflow Marketplace','Aprovação B2B','Entrega Expressa','Troca e Devolução'] },
+  { ai:'Escolha um ícone para identificar visualmente este workflow:', field:null, sugg:[] },
+  { ai:'Descreva brevemente o propósito deste workflow:', field:'description', sugg:['Fluxo padrão para novos pedidos','Aprovação manual para pedidos B2B','Gestão de trocas e devoluções','Entrega rápida para pedidos prioritários'] },
+  { ai:null, field:null, sugg:['Confirmar e criar'] },
+];
+
+function openCreateWorkflowPanel() {
+  newWfDraft = { name:'', icon:'📦', color:'#0c6fcd', description:'' };
+  newWfStep = 0;
+  const body = document.getElementById('new-wf-body');
+  body.innerHTML = `
+    <div id="nwf-preview" style="display:none;margin:12px 16px;background:#f9f9fb;border:1px solid #efefef;border-radius:6px;padding:10px 12px;font-size:12px;color:#555;line-height:1.8">
+      <div id="nwf-prev-name">Nome: <span style="color:#1a1a1a;font-weight:600">—</span></div>
+      <div id="nwf-prev-icon">Ícone: <span style="color:#1a1a1a;font-weight:600">—</span></div>
+      <div id="nwf-prev-desc">Descrição: <span style="color:#1a1a1a;font-weight:600">—</span></div>
+    </div>
+    <div class="cm-msgs" id="nwf-msgs" style="flex:1;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:8px"></div>
+    <div id="nwf-icon-grid" style="display:none;padding:8px 16px;flex-wrap:wrap;gap:8px"></div>
+    <div id="nwf-suggestions" style="padding:0 16px 8px;display:flex;flex-wrap:wrap;gap:6px"></div>
+    <div style="padding:8px 16px;border-top:1px solid #f0f0f0;display:flex;gap:6px">
+      <input class="cm-input" id="nwf-input" placeholder="Digite..." onkeydown="if(event.key==='Enter')sendNewWfChat()" style="flex:1;border:1px solid #e0e0e0;border-radius:6px;padding:7px 10px;font-size:13px">
+      <button onclick="sendNewWfChat()" style="background:#0c6fcd;border:none;border-radius:6px;padding:7px 10px;cursor:pointer;display:flex;align-items:center"><svg viewBox="0 0 16 16" stroke="white" stroke-width="2" fill="none" width="13" height="13"><path d="M2 8l12-6-4 12-3-4-5-2z"/></svg></button>
+    </div>`;
+  document.getElementById('new-wf-footer').innerHTML = `
+    <button class="btn btn-secondary" style="flex:1;justify-content:center" onclick="closeNewWfPanel()">Cancelar</button>
+    <button class="btn btn-primary" style="flex:1;justify-content:center;opacity:.4;cursor:default" id="new-wf-btn" disabled onclick="confirmCreateWorkflow()">Criar Workflow</button>`;
+  document.getElementById('new-wf-panel').style.right = '0';
+  setTimeout(() => {
+    addNwfMsg('ai', newWfFlows[0].ai);
+    renderNwfSuggs(newWfFlows[0].sugg);
+  }, 200);
+}
+
+function closeNewWfPanel() {
+  document.getElementById('new-wf-panel').style.right = '-400px';
+}
+
+function addNwfMsg(who, text) {
+  const msgs = document.getElementById('nwf-msgs'); if (!msgs) return;
+  const d = document.createElement('div'); d.className = 'cm-msg cm-'+who;
+  d.style.cssText = 'white-space:pre-line'; d.textContent = text;
+  msgs.appendChild(d); msgs.scrollTop = msgs.scrollHeight;
+}
+function renderNwfSuggs(sugg) {
+  const c = document.getElementById('nwf-suggestions'); if (!c) return;
+  c.innerHTML = sugg.map(s => `<button class="cm-suggestion" onclick="selectNwfSugg('${s.replace(/'/g,"\\'")}')">${s}</button>`).join('');
+}
+function selectNwfSugg(text) {
+  const i = document.getElementById('nwf-input'); if (!i) return;
+  i.value = text; sendNewWfChat();
+}
+
+function sendNewWfChat() {
+  const input = document.getElementById('nwf-input'); if (!input) return;
+  const text = input.value.trim(); if (!text) return;
+  input.value = ''; addNwfMsg('user', text);
+  document.getElementById('nwf-suggestions').innerHTML = '';
+  const step = newWfFlows[newWfStep];
+  if (step.field) newWfDraft[step.field] = text;
+  newWfStep++;
+  _updateNwfPreview();
+  setTimeout(() => {
+    if (newWfStep < newWfFlows.length) {
+      const next = newWfFlows[newWfStep];
+      if (newWfStep === 1) {
+        addNwfMsg('ai', next.ai);
+        const grid = document.getElementById('nwf-icon-grid');
+        grid.style.display = 'flex';
+        grid.innerHTML = WF_ICONS.map(ic => `<button onclick="pickWfIcon('${ic}')" style="font-size:22px;background:#f9f9fb;border:1px solid #e5e7eb;border-radius:8px;padding:6px 10px;cursor:pointer;line-height:1;transition:background .15s">${ic}</button>`).join('');
+      } else {
+        const grid = document.getElementById('nwf-icon-grid'); if (grid) grid.style.display = 'none';
+        if (next.ai) addNwfMsg('ai', next.ai);
+        if (newWfStep === newWfFlows.length - 1) {
+          addNwfMsg('ai', `Perfeito! Resumo:\n• Nome: ${newWfDraft.name}\n• Ícone: ${newWfDraft.icon}\n• Descrição: ${newWfDraft.description}\n\nCriar o workflow?`);
+        }
+        renderNwfSuggs(next.sugg || []);
+      }
+    } else {
+      const btn = document.getElementById('new-wf-btn');
+      if (btn) { btn.disabled = false; btn.style.opacity = '1'; btn.style.cursor = 'pointer'; }
+      renderNwfSuggs([]);
+    }
+  }, 400);
+}
+
+function pickWfIcon(icon) {
+  newWfDraft.icon = icon;
+  const grid = document.getElementById('nwf-icon-grid'); if (grid) grid.style.display = 'none';
+  addNwfMsg('user', icon);
+  newWfStep++;
+  _updateNwfPreview();
+  setTimeout(() => {
+    addNwfMsg('ai', newWfFlows[newWfStep]?.ai || 'Descreva o propósito deste workflow:');
+    renderNwfSuggs(newWfFlows[newWfStep]?.sugg || []);
+  }, 300);
+}
+
+function _updateNwfPreview() {
+  const p = document.getElementById('nwf-preview'); if (p) p.style.display = 'block';
+  const n = document.getElementById('nwf-prev-name'); if (n) n.innerHTML = `Nome: <span style="color:#1a1a1a;font-weight:600">${newWfDraft.name||'—'}</span>`;
+  const ic = document.getElementById('nwf-prev-icon'); if (ic) ic.innerHTML = `Ícone: <span style="color:#1a1a1a;font-weight:600">${newWfDraft.icon||'—'}</span>`;
+  const d = document.getElementById('nwf-prev-desc'); if (d) d.innerHTML = `Descrição: <span style="color:#1a1a1a;font-weight:600">${newWfDraft.description||'—'}</span>`;
+}
+
+function confirmCreateWorkflow() {
+  const newId = 'wf-' + Date.now();
+  newWfDraft.color = WF_COLORS[WORKFLOW_DEFS.length % WF_COLORS.length];
+  WORKFLOW_DEFS.push({
+    id: newId,
+    name: newWfDraft.name || 'Novo Workflow',
+    icon: newWfDraft.icon || '📦',
+    color: newWfDraft.color,
+    orderCount: 0,
+    description: newWfDraft.description || '',
+    dependencies: [],
+    tasks: [],
+    edges: [],
+  });
+  closeNewWfPanel();
+  renderWorkflowList();
+  showSuccessModal('Workflow criado!', `"${newWfDraft.name}" foi adicionado à lista. Clique em "Abrir" para configurar as etapas.`);
 }
 
 // ══════════════════════════════════════════
