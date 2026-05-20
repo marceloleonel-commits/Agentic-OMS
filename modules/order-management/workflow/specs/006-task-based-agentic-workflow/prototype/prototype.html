@@ -742,6 +742,14 @@ tbody td{padding:10px 14px;font-size:13px;vertical-align:middle}
         </div>
       </div>
       <div class="wfl-grid" id="wfl-grid"></div>
+      <div id="bulk-panel" style="position:fixed;right:-400px;top:0;height:100vh;z-index:200;width:400px;background:#fff;border-left:1px solid #e8e8e8;display:flex;flex-direction:column;overflow:hidden;transition:right .25s ease;box-shadow:-4px 0 16px rgba(0,0,0,.08)">
+        <div style="display:flex;align-items:center;padding:14px 16px;border-bottom:1px solid #f0f0f0;gap:8px">
+          <span style="flex:1;font-size:14px;font-weight:600;color:#1a1a1a" id="bulk-sp-title">Configurar em Lote</span>
+          <button onclick="closeBulkPanel()" style="background:none;border:none;cursor:pointer;padding:4px;color:#888;font-size:20px;line-height:1">×</button>
+        </div>
+        <div id="bulk-sp-body" style="flex:1;display:flex;flex-direction:column;overflow:hidden"></div>
+        <div id="bulk-sp-footer" style="display:flex;gap:8px;padding:10px 16px;border-top:1px solid #f0f0f0"></div>
+      </div>
     </div>
 
     <!-- ══ SCREEN: WORKFLOW BOARD ══ -->
@@ -1807,6 +1815,12 @@ let pendingDragFrom = null, pendingDragTo = null;
 let dragTaskId = null;
 let editChatState = 'idle', editDraft = {}, activePanel = 'create';
 let chatStep = 0, newTaskDraft = {};
+let bulkChatState = 'idle';
+let bulkDraft = {
+  operation: null, workflowIds: [], name: '', position: null,
+  afterStageName: '', targetStageId: null, tasks: [],
+  similarityWarnings: [], impactWarnings: []
+};
 
 function renderWorkflowBoard() {
   renderKanban();
@@ -1822,13 +1836,15 @@ function findSubTask(taskId) {
 
 function renderFlowBar() {
   const bar = document.getElementById('wf-flow-bar');
+  if (!bar) return;
   let html = '';
-  WF_TASKS.forEach((t, i) => {
+  WF_TASKS.forEach((stage, i) => {
     if (i > 0) {
-      const edge = WF_EDGES.find(e => e.from === WF_TASKS[i-1].id && e.to === t.id);
+      const edge = WF_EDGES.find(e => e.from === WF_TASKS[i-1].id && e.to === stage.id);
       html += `<span class="flow-pill-arrow">${edge && !edge.active ? '⇢' : '→'}</span>`;
     }
-    html += `<span class="flow-pill ${t.active?'':'inactive-pill'}" style="background:${t.color}20;border-color:${t.color};color:${t.color}" onclick="selectTaskFromPill('${t.id}')">${i+1}. ${t.name}</span>`;
+    const isActive = (stage.tasks||[]).some(t => t.active !== false);
+    html += `<span class="flow-pill ${isActive?'':'inactive-pill'}" style="background:${stage.color}20;border-color:${stage.color};color:${stage.color}" onclick="selectTaskFromPill('${stage.id}')">${i+1}. ${stage.name}</span>`;
   });
   bar.innerHTML = html;
 }
@@ -1893,11 +1909,21 @@ function renderKanban() {
   scroll.innerHTML = html;
 }
 
+function findSubTask(taskId) {
+  for (const stage of WF_TASKS) {
+    const task = (stage.tasks || []).find(t => t.id === taskId);
+    if (task) return { stage, task };
+  }
+  return null;
+}
+
 // ── Drag & Drop ──
-function dragStart(e, id) {
-  dragTaskId = id;
+function dragStart(e, subTaskId) {
+  // Find the stage that owns this sub-task
+  const found = findSubTask(subTaskId);
+  dragTaskId = found ? found.stage.id : subTaskId;
   e.dataTransfer.effectAllowed = 'move';
-  setTimeout(() => { const c = document.getElementById('card-'+id); if(c) c.classList.add('dragging'); }, 0);
+  setTimeout(() => { const c = document.getElementById('card-'+subTaskId); if(c) c.classList.add('dragging'); }, 0);
 }
 function dragEnd(e) {
   document.querySelectorAll('.task-card').forEach(c => c.classList.remove('dragging'));
@@ -1912,16 +1938,16 @@ function dragLeaveCol(id) { const col = document.getElementById('col-'+id); if(c
 function dropOnCol(targetId) {
   document.querySelectorAll('.kanban-col').forEach(c => c.classList.remove('drag-over'));
   if (!dragTaskId || dragTaskId === targetId) return;
-  const from = WF_TASKS.find(t => t.id === dragTaskId);
-  const to   = WF_TASKS.find(t => t.id === targetId);
+  const from = WF_TASKS.find(s => s.id === dragTaskId);
+  const to   = WF_TASKS.find(s => s.id === targetId);
   if (!from || !to) return;
   pendingDragFrom = dragTaskId; pendingDragTo = targetId;
   document.getElementById('modal-reorder-body').textContent = `Mover "${from.name}" para a posição de "${to.name}"?`;
   openModal('modal-reorder');
 }
 function confirmReorder() {
-  const fi = WF_TASKS.findIndex(t => t.id === pendingDragFrom);
-  const ti = WF_TASKS.findIndex(t => t.id === pendingDragTo);
+  const fi = WF_TASKS.findIndex(s => s.id === pendingDragFrom);
+  const ti = WF_TASKS.findIndex(s => s.id === pendingDragTo);
   if (fi !== -1 && ti !== -1) { const [m] = WF_TASKS.splice(fi, 1); WF_TASKS.splice(ti, 0, m); }
   closeModal('modal-reorder'); renderWorkflowBoard();
 }
@@ -2572,7 +2598,7 @@ function renderCSuggs(sugg) {
   const c = document.getElementById('cm-suggestions'); if(!c) return;
   c.innerHTML = sugg.map(s=>`<button class="cm-suggestion" onclick="selectCSugg('${s}')">${s}</button>`).join('');
 }
-function selectCSugg(text) { const i = document.getElementById('cm-input'); if(!i) return; i.value=text; if(activePanel==='edit') sendEditChat(); else if(activePanel==='split') sendSplitChat(); else sendChat(); }
+function selectCSugg(text) { const i = document.getElementById('cm-input'); if(!i) return; i.value=text; if(activePanel==='edit') sendEditChat(); else if(activePanel==='split') sendSplitChat(); else if(activePanel==='bulk') sendBulkChat(); else sendChat(); }
 function sendChat() {
   const input = document.getElementById('cm-input'); if(!input) return;
   const text = input.value.trim(); if(!text) return;
@@ -2599,7 +2625,8 @@ function sendChat() {
     } else {
       const lower2 = text.toLowerCase();
       if (lower2 === 'criar agora' || lower2 === 'criar' || lower2 === 'pular' || lower2 === 'não') {
-        addCMsg('ai', 'Tudo certo! Clique em "Criar Etapa" para adicionar ao workflow.');
+        const isSubTask = !!newTaskDraft.stageId;
+        addCMsg('ai', isSubTask ? 'Tudo certo! Clique em "Criar Tarefa" para adicionar à etapa.' : 'Tudo certo! Clique em "Criar Etapa" para adicionar ao workflow.');
         const btn = document.getElementById('create-btn');
         if (btn) { btn.disabled=false; btn.style.opacity='1'; btn.style.cursor='pointer'; }
         renderCSuggs([]);
@@ -2648,7 +2675,7 @@ function createTask() {
 // ── Edge modal ──
 function openEdgeModal(edgeId) {
   const edge = WF_EDGES.find(e => e.id===edgeId); if(!edge) return;
-  const from = WF_TASKS.find(t => t.id===edge.from), to = WF_TASKS.find(t => t.id===edge.to);
+  const from = WF_TASKS.find(s => s.id===edge.from), to = WF_TASKS.find(s => s.id===edge.to);
   pendingEdgeId = edgeId;
   document.getElementById('modal-edge-title').textContent = edge.active ? 'Desativar Conexão' : 'Reativar Conexão';
   document.getElementById('modal-edge-body').textContent = edge.active
@@ -2665,6 +2692,70 @@ function confirmEdge() {
 // ── Panel helpers ──
 function openSidePanel() { document.getElementById('side-panel').classList.remove('closed'); }
 function closeSidePanel() { document.getElementById('side-panel').classList.add('closed'); selectedTaskId=null; renderKanban(); }
+
+function renameStage(stageId) {
+  const stage = WF_TASKS.find(s => s.id === stageId); if (!stage) return;
+  activePanel = 'rename';
+  document.getElementById('sp-title').textContent = 'Renomear Etapa';
+  document.getElementById('sp-body').innerHTML = `
+    <div style="padding:12px 0">
+      <label style="font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:6px">Nome da etapa</label>
+      <input id="rename-input" class="cm-input" style="width:100%;box-sizing:border-box" value="${stage.name}" placeholder="Nome da etapa">
+    </div>`;
+  document.getElementById('sp-footer').innerHTML = `
+    <button class="btn btn-secondary" style="flex:1;justify-content:center" onclick="closeSidePanel()">Cancelar</button>
+    <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="applyRenameStage('${stageId}')">Salvar</button>`;
+  openSidePanel();
+}
+function applyRenameStage(stageId) {
+  const stage = WF_TASKS.find(s => s.id === stageId); if (!stage) return;
+  const input = document.getElementById('rename-input');
+  const newName = input ? input.value.trim() : '';
+  if (!newName) return;
+  stage.name = newName;
+  closeSidePanel(); renderWorkflowBoard();
+}
+
+function addTaskToStage(stageId) {
+  activePanel = 'create';
+  chatStep = 0;
+  newTaskDraft = { stageId, name:'', supplier:'', category:'', mcpConfig:null, agentConfig:null };
+  document.getElementById('sp-title').textContent = 'Nova Tarefa com AI';
+  document.getElementById('sp-body').innerHTML = `
+    <div id="task-preview-mini" style="display:none;background:#f9f9fb;border-radius:6px;padding:10px 12px;font-size:12px;color:#555;line-height:1.7;border:1px solid #efefef">
+      <div id="prev-name">Nome: <span style="color:#1a1a1a;font-weight:600">—</span></div>
+      <div id="prev-sup">Supplier: <span style="color:#1a1a1a;font-weight:600">—</span></div>
+      <div id="prev-cat">Categoria: <span style="color:#1a1a1a;font-weight:600">—</span></div>
+    </div>
+    <div class="cm-msgs" id="cm-msgs"></div>
+    <div class="cm-suggestions" id="cm-suggestions"></div>
+    <div class="cm-input-row">
+      <input class="cm-input" id="cm-input" placeholder="Digite..." onkeydown="if(event.key==='Enter')sendChat()">
+      <button class="cm-send" onclick="sendChat()"><svg viewBox="0 0 16 16" stroke="white" stroke-width="2" fill="none" width="13" height="13"><path d="M2 8l12-6-4 12-3-4-5-2z"/></svg></button>
+    </div>`;
+  document.getElementById('sp-footer').innerHTML = `
+    <button class="btn btn-secondary" style="flex:1;justify-content:center" onclick="closeSidePanel()">Cancelar</button>
+    <button class="btn btn-primary" style="flex:1;justify-content:center;opacity:.4;cursor:not-allowed" id="create-btn" disabled onclick="createSubTask()">Criar Tarefa</button>`;
+  openSidePanel();
+  setTimeout(() => { addCMsg('ai', chatFlows[0].ai); renderCSuggs(chatFlows[0].sugg); }, 200);
+}
+function createSubTask() {
+  const stage = WF_TASKS.find(s => s.id === newTaskDraft.stageId);
+  if (!stage) return;
+  const newId = 't' + Date.now();
+  if (!stage.tasks) stage.tasks = [];
+  stage.tasks.push({
+    id: newId, name: newTaskDraft.name || 'Nova Tarefa',
+    supplier: newTaskDraft.supplier || 'A definir',
+    category: newTaskDraft.category || 'Todos',
+    active: true, actions: [], script: null, externalApi: null,
+    mcpConfig: newTaskDraft.mcpConfig || null,
+    agentConfig: newTaskDraft.agentConfig || null,
+    contextOutput: []
+  });
+  closeSidePanel(); renderWorkflowBoard();
+  showSuccessModal('Tarefa criada!', `"${newTaskDraft.name||'Nova Tarefa'}" foi adicionada à etapa "${stage.name}".`);
+}
 
 // ── Modal helpers ──
 function openModal(id) { document.getElementById(id).classList.add('open'); }

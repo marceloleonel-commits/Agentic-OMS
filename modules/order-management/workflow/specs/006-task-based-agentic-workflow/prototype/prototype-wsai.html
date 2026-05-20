@@ -1172,6 +1172,14 @@ tbody td{padding:10px 14px;font-size:13px;vertical-align:middle}
         </div>
       </div>
       <div class="wfl-grid" id="wfl-grid"></div>
+      <div id="bulk-panel" style="position:fixed;right:-400px;top:0;height:100vh;z-index:200;width:400px;background:#fff;border-left:1px solid #e8e8e8;display:flex;flex-direction:column;overflow:hidden;transition:right .25s ease;box-shadow:-4px 0 16px rgba(0,0,0,.08)">
+        <div style="display:flex;align-items:center;padding:14px 16px;border-bottom:1px solid #f0f0f0;gap:8px">
+          <span style="flex:1;font-size:14px;font-weight:600;color:#1a1a1a" id="bulk-sp-title">Configurar em Lote</span>
+          <button onclick="closeBulkPanel()" style="background:none;border:none;cursor:pointer;padding:4px;color:#888;font-size:20px;line-height:1">×</button>
+        </div>
+        <div id="bulk-sp-body" style="flex:1;display:flex;flex-direction:column;overflow:hidden"></div>
+        <div id="bulk-sp-footer" style="display:flex;gap:8px;padding:10px 16px;border-top:1px solid #f0f0f0"></div>
+      </div>
     </div>
 
     <!-- ══ SCREEN: WORKFLOW BOARD ══ -->
@@ -1879,25 +1887,35 @@ const WORKFLOW_DEFS = [
     description:'Fluxo padrão para pedidos de entrega convencional', dependencies:[],
     userCreated: false,
     tasks:[
-      {id:'t1',name:'Separação de Itens',supplier:'CD São Paulo',category:'Todos',color:'#0c6fcd',active:true,
-        actions:['validarEstoque','ReservarEstoque'],script:null,externalApi:null,
-        contextOutput:['validarEstoque.disponivel','validarEstoque.qtd_reservada','validarEstoque.ok']},
-      {id:'t2',name:'Conferência de Qualidade',supplier:'QA Team',category:'Eletrônicos',color:'#7c3aed',active:true,
-        actions:['enviar_email'],script:null,externalApi:null,
-        contextOutput:[]},
-      {id:'t3',name:'Embalagem',supplier:'CD São Paulo',category:'Todos',color:'#0891b2',active:true,
-        actions:['validarEstoque','AlterarItemPedido'],script:null,externalApi:null,
-        contextOutput:[]},
-      {id:'t4',name:'Nota Fiscal',supplier:'Financeiro',category:'Todos',color:'#059669',active:true,
-        actions:['CapturarPagamento'],script:null,
-        externalApi:{url:'https://api.nfe.io/v1/nota',method:'POST',
-          responseMapping:[{key:'nf_numero',path:'data.number'},{key:'nf_chave',path:'data.accessKey'}]},
-        contextOutput:['CapturarPagamento.captura_id','api_nfe.nf_numero','api_nfe.nf_chave']},
-      {id:'t5',name:'Expedição',supplier:'Transportadora XYZ',category:'Todos',color:'#d97706',active:true,
-        actions:['enviar_email','AlterarSellerPedido'],script:null,
-        externalApi:{url:'https://api.transportadora.com/cotacao',method:'POST',
-          responseMapping:[{key:'prazo_entrega',path:'result.delivery_days'},{key:'custo_frete',path:'result.cost'}]},
-        contextOutput:['api_cotacao.prazo_entrega','api_cotacao.custo_frete']},
+      {id:'t1', name:'Separação de Itens', color:'#0c6fcd', tasks:[
+        {id:'t1_0', name:'Separação de Itens', supplier:'CD São Paulo', category:'Todos', active:true,
+          actions:['validarEstoque','ReservarEstoque'], script:null, externalApi:null,
+          contextOutput:['validarEstoque.disponivel','validarEstoque.qtd_reservada','validarEstoque.ok']}
+      ]},
+      {id:'t2', name:'Conferência de Qualidade', color:'#7c3aed', tasks:[
+        {id:'t2_0', name:'Conferência de Qualidade', supplier:'QA Team', category:'Eletrônicos', active:true,
+          actions:['enviar_email'], script:null, externalApi:null,
+          contextOutput:[]}
+      ]},
+      {id:'t3', name:'Embalagem', color:'#0891b2', tasks:[
+        {id:'t3_0', name:'Embalagem', supplier:'CD São Paulo', category:'Todos', active:true,
+          actions:['validarEstoque','AlterarItemPedido'], script:null, externalApi:null,
+          contextOutput:[]}
+      ]},
+      {id:'t4', name:'Nota Fiscal', color:'#059669', tasks:[
+        {id:'t4_0', name:'Nota Fiscal', supplier:'Financeiro', category:'Todos', active:true,
+          actions:['CapturarPagamento'], script:null,
+          externalApi:{url:'https://api.nfe.io/v1/nota', method:'POST',
+            responseMapping:[{key:'nf_numero',path:'data.number'},{key:'nf_chave',path:'data.accessKey'}]},
+          contextOutput:['CapturarPagamento.captura_id','api_nfe.nf_numero','api_nfe.nf_chave']}
+      ]},
+      {id:'t5', name:'Expedição', color:'#d97706', tasks:[
+        {id:'t5_0', name:'Expedição', supplier:'Transportadora XYZ', category:'Todos', active:true,
+          actions:['enviar_email','AlterarSellerPedido'], script:null,
+          externalApi:{url:'https://api.transportadora.com/cotacao', method:'POST',
+            responseMapping:[{key:'prazo_entrega',path:'result.delivery_days'},{key:'custo_frete',path:'result.cost'}]},
+          contextOutput:['api_cotacao.prazo_entrega','api_cotacao.custo_frete']}
+      ]},
     ],
     edges:[
       {id:'e1',from:'t1',to:'t2',active:true},{id:'e2',from:'t2',to:'t3',active:true},
@@ -1909,11 +1927,21 @@ const WORKFLOW_DEFS = [
     description:'Fluxo para pedidos de devolução e troca de produtos', dependencies:['wf-standard'],
     userCreated: false,
     tasks:[
-      {id:'r1',name:'Solicitação Recebida',supplier:'Atendimento',category:'Todos',color:'#7c3aed',active:true},
-      {id:'r2',name:'Análise do Motivo',supplier:'QA Team',category:'Todos',color:'#6366f1',active:true},
-      {id:'r3',name:'Coleta do Item',supplier:'Transportadora XYZ',category:'Todos',color:'#0891b2',active:true},
-      {id:'r4',name:'Inspeção de Qualidade',supplier:'QA Team',category:'Todos',color:'#059669',active:true},
-      {id:'r5',name:'Reembolso / Troca',supplier:'Financeiro',category:'Todos',color:'#d97706',active:true},
+      {id:'r1', name:'Solicitação Recebida', color:'#7c3aed', tasks:[
+        {id:'r1_0', name:'Solicitação Recebida', supplier:'Atendimento', category:'Todos', active:true}
+      ]},
+      {id:'r2', name:'Análise do Motivo', color:'#6366f1', tasks:[
+        {id:'r2_0', name:'Análise do Motivo', supplier:'QA Team', category:'Todos', active:true}
+      ]},
+      {id:'r3', name:'Coleta do Item', color:'#0891b2', tasks:[
+        {id:'r3_0', name:'Coleta do Item', supplier:'Transportadora XYZ', category:'Todos', active:true}
+      ]},
+      {id:'r4', name:'Inspeção de Qualidade', color:'#059669', tasks:[
+        {id:'r4_0', name:'Inspeção de Qualidade', supplier:'QA Team', category:'Todos', active:true}
+      ]},
+      {id:'r5', name:'Reembolso / Troca', color:'#d97706', tasks:[
+        {id:'r5_0', name:'Reembolso / Troca', supplier:'Financeiro', category:'Todos', active:true}
+      ]},
     ],
     edges:[
       {id:'re1',from:'r1',to:'r2',active:true},{id:'re2',from:'r2',to:'r3',active:true},
@@ -1925,10 +1953,18 @@ const WORKFLOW_DEFS = [
     description:'Fluxo de aprovação manual para pedidos B2B acima de R$ 10.000', dependencies:[],
     userCreated: false,
     tasks:[
-      {id:'p1',name:'Validação do Comprador',supplier:'Financeiro',category:'B2B',color:'#059669',active:true},
-      {id:'p2',name:'Análise de Crédito',supplier:'Financeiro',category:'B2B',color:'#0891b2',active:true},
-      {id:'p3',name:'Aprovação do Gestor',supplier:'Gestão',category:'B2B',color:'#6366f1',active:true},
-      {id:'p4',name:'Captura do Pagamento',supplier:'Financeiro',category:'B2B',color:'#d97706',active:true},
+      {id:'p1', name:'Validação do Comprador', color:'#059669', tasks:[
+        {id:'p1_0', name:'Validação do Comprador', supplier:'Financeiro', category:'B2B', active:true}
+      ]},
+      {id:'p2', name:'Análise de Crédito', color:'#0891b2', tasks:[
+        {id:'p2_0', name:'Análise de Crédito', supplier:'Financeiro', category:'B2B', active:true}
+      ]},
+      {id:'p3', name:'Aprovação do Gestor', color:'#6366f1', tasks:[
+        {id:'p3_0', name:'Aprovação do Gestor', supplier:'Gestão', category:'B2B', active:true}
+      ]},
+      {id:'p4', name:'Captura do Pagamento', color:'#d97706', tasks:[
+        {id:'p4_0', name:'Captura do Pagamento', supplier:'Financeiro', category:'B2B', active:true}
+      ]},
     ],
     edges:[
       {id:'pe1',from:'p1',to:'p2',active:true},{id:'pe2',from:'p2',to:'p3',active:true},
@@ -2651,21 +2687,28 @@ let pendingDragFrom = null, pendingDragTo = null;
 let dragTaskId = null;
 let editChatState = 'idle', editDraft = {}, activePanel = 'create';
 let chatStep = 0, newTaskDraft = {};
+let bulkChatState = 'idle';
+let bulkDraft = {
+  operation: null, workflowIds: [], name: '', position: null,
+  afterStageName: '', targetStageId: null, tasks: [],
+  similarityWarnings: [], impactWarnings: []
+};
 
 function renderWorkflowBoard() {
-  renderFlowBar();
   renderKanban();
 }
 
 function renderFlowBar() {
   const bar = document.getElementById('wf-flow-bar');
+  if (!bar) return;
   let html = '';
-  WF_TASKS.forEach((t, i) => {
+  WF_TASKS.forEach((stage, i) => {
     if (i > 0) {
-      const edge = WF_EDGES.find(e => e.from === WF_TASKS[i-1].id && e.to === t.id);
+      const edge = WF_EDGES.find(e => e.from === WF_TASKS[i-1].id && e.to === stage.id);
       html += `<span class="flow-pill-arrow">${edge && !edge.active ? '⇢' : '→'}</span>`;
     }
-    html += `<span class="flow-pill ${t.active?'':'inactive-pill'}" style="background:${t.color}20;border-color:${t.color};color:${t.color}" onclick="selectTaskFromPill('${t.id}')">${i+1}. ${t.name}</span>`;
+    const isActive = (stage.tasks||[]).some(t => t.active !== false);
+    html += `<span class="flow-pill ${isActive?'':'inactive-pill'}" style="background:${stage.color}20;border-color:${stage.color};color:${stage.color}" onclick="selectTaskFromPill('${stage.id}')">${i+1}. ${stage.name}</span>`;
   });
   bar.innerHTML = html;
 }
@@ -2673,9 +2716,9 @@ function renderFlowBar() {
 function renderKanban() {
   const scroll = document.getElementById('wf-board-scroll');
   let html = '';
-  WF_TASKS.forEach((task, i) => {
+  WF_TASKS.forEach((stage, i) => {
     if (i > 0) {
-      const edge = WF_EDGES.find(e => e.from === WF_TASKS[i-1].id && e.to === task.id);
+      const edge = WF_EDGES.find(e => e.from === WF_TASKS[i-1].id && e.to === stage.id);
       const eActive = edge ? edge.active : true;
       const eId = edge ? edge.id : null;
       html += `<div class="col-connector">
@@ -2684,37 +2727,40 @@ function renderKanban() {
         <div class="connector-badge ${eActive?'':'inactive'}" ${eId?`onclick="openEdgeModal('${eId}')"`:''}>${eActive?'Ativa':'Inativa'}</div>
       </div>`;
     }
-    const isSel = selectedTaskId === task.id;
-    html += `<div class="kanban-col" id="col-${task.id}" ondragover="event.preventDefault();dragOverCol('${task.id}')" ondrop="dropOnCol('${task.id}')" ondragleave="dragLeaveCol('${task.id}')">
+    const stageTasks = stage.tasks || [];
+    html += `<div class="kanban-col" id="col-${stage.id}" ondragover="event.preventDefault();dragOverCol('${stage.id}')" ondrop="dropOnCol('${stage.id}')" ondragleave="dragLeaveCol('${stage.id}')">
       <div class="kanban-col-header">
-        <div class="col-num" style="background:${task.color}">${i+1}</div>
-        <span class="col-title" title="${task.name}">${task.name}</span>
-        <button class="col-menu-btn" onclick="editTask('${task.id}')">⋯</button>
+        <div class="col-num" style="background:${stage.color}">${i+1}</div>
+        <span class="col-title" title="${stage.name}">${stage.name}</span>
+        <button class="col-menu-btn" onclick="renameStage('${stage.id}')">⋯</button>
       </div>
-      <div class="kanban-col-body">
-        <div class="task-card ${isSel?'selected':''}" id="card-${task.id}" draggable="true" ondragstart="dragStart(event,'${task.id}')" ondragend="dragEnd(event)" onclick="selectTask('${task.id}')">
+      <div class="kanban-col-body">`;
+    stageTasks.forEach(subTask => {
+      const isSel = selectedTaskId === subTask.id;
+      html += `<div class="task-card ${isSel?'selected':''}" id="card-${subTask.id}" draggable="true" ondragstart="dragStart(event,'${subTask.id}')" ondragend="dragEnd(event)" onclick="selectTask('${subTask.id}')">
           <div class="card-top">
-            <div class="card-name">${task.name}</div>
+            <div class="card-name">${subTask.name}</div>
             <div class="card-actions-row">
-              <button class="card-btn" title="Editar" onclick="event.stopPropagation();editTask('${task.id}')"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M9 2l3 3L4 13H1v-3L9 2z"/></svg></button>
-              <button class="card-btn" title="Dividir em duas etapas" onclick="event.stopPropagation();openSplitPanel('${task.id}')" style="font-size:12px;font-weight:700">✂</button>
-              <button class="card-btn danger" title="Excluir" onclick="event.stopPropagation();deleteTask('${task.id}')"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M2 4h10M5 4V2h4v2M5 6v5M9 6v5M3 4l1 8h6l1-8"/></svg></button>
+              <button class="card-btn" title="Editar" onclick="event.stopPropagation();editTask('${subTask.id}')"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M9 2l3 3L4 13H1v-3L9 2z"/></svg></button>
+              <button class="card-btn" title="Dividir tarefa" onclick="event.stopPropagation();openSplitPanel('${subTask.id}')" style="font-size:12px;font-weight:700">✂</button>
+              <button class="card-btn danger" title="Excluir" onclick="event.stopPropagation();deleteTask('${subTask.id}')"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M2 4h10M5 4V2h4v2M5 6v5M9 6v5M3 4l1 8h6l1-8"/></svg></button>
             </div>
           </div>
           <div class="card-tags">
-            <span class="card-tag tag-supplier">${task.supplier}</span>
-            <span class="card-tag tag-category">${task.category}</span>
+            <span class="card-tag tag-supplier">${subTask.supplier||''}</span>
+            <span class="card-tag tag-category">${subTask.category||''}</span>
           </div>
           <div class="card-footer">
             ${i > 0 ? `<span class="card-dep"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" width="10" height="10"><path d="M2 6h8M7 3l3 3-3 3"/></svg> ${WF_TASKS[i-1].name}</span>` : `<span class="card-dep" style="color:#22c55e">Tarefa inicial</span>`}
             <div style="display:flex;align-items:center;gap:4px">
-              ${task.mcpConfig ? `<span title="MCP: ${task.mcpConfig.serverName}" style="font-size:9px;padding:1px 5px;border-radius:3px;background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;font-weight:600;line-height:1.6">MCP</span>` : ''}
-              ${task.agentConfig ? `<span title="${task.agentConfig.agentName}" style="font-size:11px;line-height:1">${task.agentConfig.agentIcon}</span>` : ''}
-              <div class="card-status-dot" style="background:${task.active?'#22c55e':'#ef4444'}" title="${task.active?'Ativa':'Inativa'}"></div>
+              ${subTask.mcpConfig ? `<span title="MCP: ${subTask.mcpConfig.serverName}" style="font-size:9px;padding:1px 5px;border-radius:3px;background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;font-weight:600;line-height:1.6">MCP</span>` : ''}
+              ${subTask.agentConfig ? `<span title="${subTask.agentConfig.agentName}" style="font-size:11px;line-height:1">${subTask.agentConfig.agentIcon}</span>` : ''}
+              <div class="card-status-dot" style="background:${subTask.active!==false?'#22c55e':'#ef4444'}" title="${subTask.active!==false?'Ativa':'Inativa'}"></div>
             </div>
           </div>
-        </div>
-        <div class="add-task-card" onclick="openCreatePanelAt(${i+1})">
+        </div>`;
+    });
+    html += `<div class="add-task-card" onclick="addTaskToStage('${stage.id}')">
           <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M7 2v10M2 7h10"/></svg>
           Adicionar aqui
         </div>
@@ -2725,11 +2771,21 @@ function renderKanban() {
   scroll.innerHTML = html;
 }
 
+function findSubTask(taskId) {
+  for (const stage of WF_TASKS) {
+    const task = (stage.tasks || []).find(t => t.id === taskId);
+    if (task) return { stage, task };
+  }
+  return null;
+}
+
 // ── Drag & Drop ──
-function dragStart(e, id) {
-  dragTaskId = id;
+function dragStart(e, subTaskId) {
+  // Find the stage that owns this sub-task
+  const found = findSubTask(subTaskId);
+  dragTaskId = found ? found.stage.id : subTaskId;
   e.dataTransfer.effectAllowed = 'move';
-  setTimeout(() => { const c = document.getElementById('card-'+id); if(c) c.classList.add('dragging'); }, 0);
+  setTimeout(() => { const c = document.getElementById('card-'+subTaskId); if(c) c.classList.add('dragging'); }, 0);
 }
 function dragEnd(e) {
   document.querySelectorAll('.task-card').forEach(c => c.classList.remove('dragging'));
@@ -2760,20 +2816,24 @@ function confirmReorder() {
 
 // ── Select / Edit (Agentic) ──
 function selectTask(id) { selectedTaskId = id; editTask(id); }
-function selectTaskFromPill(id) {
-  selectTask(id);
-  const col = document.getElementById('col-'+id);
+function selectTaskFromPill(stageId) {
+  // selectTask by first sub-task in this stage
+  const stage = WF_TASKS.find(s => s.id === stageId);
+  if (stage && stage.tasks && stage.tasks.length) selectTask(stage.tasks[0].id);
+  const col = document.getElementById('col-'+stageId);
   if (col) col.scrollIntoView({behavior:'smooth',inline:'center',block:'nearest'});
 }
 
 function editTask(id) {
-  const task = WF_TASKS.find(t => t.id === id); if (!task) return;
+  const found = findSubTask(id); if (!found) return;
+  const task = found.task;
+  const stage = found.stage;
   selectedTaskId = id;
   activePanel = 'edit';
   editChatState = 'idle';
   editDraft = {
     name: task.name, supplier: task.supplier, category: task.category,
-    color: task.color, active: task.active !== false,
+    color: stage.color, active: task.active !== false,
     actions: [...(task.actions||[])],
     script: task.script !== undefined ? task.script : null,
     externalApi: task.externalApi ? {
@@ -3038,11 +3098,12 @@ function generateScript(description) {
 }
 
 function applyEditDraft() {
-  const task = WF_TASKS.find(t => t.id === selectedTaskId); if (!task) return;
+  const found = findSubTask(selectedTaskId); if (!found) return;
+  const { task, stage } = found;
   task.name        = editDraft.name;
   task.supplier    = editDraft.supplier;
   task.category    = editDraft.category;
-  task.color       = editDraft.color;
+  stage.color      = editDraft.color;
   task.active      = editDraft.active;
   task.actions     = editDraft.actions ? [...editDraft.actions] : [];
   task.script      = editDraft.script !== undefined ? editDraft.script : null;
@@ -3050,10 +3111,13 @@ function applyEditDraft() {
   task.mcpConfig   = editDraft.mcpConfig || null;
   task.agentConfig = editDraft.agentConfig || null;
   closeSidePanel(); renderWorkflowBoard();
-  showSuccessModal('Etapa atualizada!', `"${task.name}" foi salva com as novas configurações.`);
+  showSuccessModal('Tarefa atualizada!', `"${task.name}" foi salva com as novas configurações.`);
 }
 
-function setTaskColor(id, color) { const t = WF_TASKS.find(t => t.id===id); if(t){t.color=color;renderWorkflowBoard();} }
+function setTaskColor(id, color) {
+  const found = findSubTask(id);
+  if (found) { found.stage.color = color; renderWorkflowBoard(); }
+}
 
 // ── Pick and Pack Native Integration ──
 function showPickAndPackPanel() {
@@ -3203,13 +3267,24 @@ function selectAgentWs(agentId) {
   }, 350);
 }
 function deleteTask(id) {
-  const t = WF_TASKS.find(t => t.id===id); pendingDeleteId = id;
-  document.getElementById('del-name').textContent = t ? t.name : '';
+  const found = findSubTask(id); if (!found) return;
+  pendingDeleteId = id;
+  document.getElementById('del-name').textContent = found.task.name;
   openModal('modal-delete');
 }
 function confirmDelete() {
-  WF_TASKS = WF_TASKS.filter(t => t.id !== pendingDeleteId);
-  WF_EDGES = WF_EDGES.filter(e => e.from !== pendingDeleteId && e.to !== pendingDeleteId);
+  const found = findSubTask(pendingDeleteId); if (!found) return;
+  const { stage } = found;
+  stage.tasks = stage.tasks.filter(t => t.id !== pendingDeleteId);
+  // If stage is empty, remove it from WF_TASKS
+  if (stage.tasks.length === 0) {
+    const si = WF_TASKS.findIndex(s => s.id === stage.id);
+    if (si !== -1) {
+      WF_TASKS.splice(si, 1);
+      WF_EDGES = WF_EDGES.filter(e => e.from !== stage.id && e.to !== stage.id);
+    }
+  }
+  pendingDeleteId = null;
   closeModal('modal-delete'); closeSidePanel(); renderWorkflowBoard();
 }
 
@@ -3217,7 +3292,8 @@ function confirmDelete() {
 let splitTaskId = null, splitDraft = {}, splitStep = 0;
 
 function openSplitPanel(taskId) {
-  const task = WF_TASKS.find(t => t.id === taskId); if (!task) return;
+  const found = findSubTask(taskId); if (!found) return;
+  const task = found.task;
   activePanel = 'split'; splitTaskId = taskId; splitDraft = { name1:'', name2:'' }; splitStep = 0;
   document.getElementById('sp-title').textContent = '✂ Dividir Etapa com AI';
   document.getElementById('sp-body').innerHTML = `
@@ -3245,7 +3321,7 @@ function sendSplitChat() {
   const input = document.getElementById('cm-input'); if (!input) return;
   const text = input.value.trim(); if (!text) return;
   input.value = ''; addCMsg('user', text);
-  const task = WF_TASKS.find(t => t.id === splitTaskId);
+  const task = findSubTask(splitTaskId)?.task;
   if (splitStep === 0) {
     splitDraft.name1 = text; splitStep = 1;
     const p1 = document.getElementById('prev-part1');
@@ -3264,8 +3340,9 @@ function sendSplitChat() {
 }
 
 function requestSplitConfirm() {
+  const taskName = findSubTask(splitTaskId)?.task?.name || '';
   document.getElementById('modal-split-body').innerHTML =
-    `Dividir <strong>${WF_TASKS.find(t=>t.id===splitTaskId)?.name}</strong> em:<br><br>
+    `Dividir <strong>${taskName}</strong> em:<br><br>
      <strong>1ª parte:</strong> ${splitDraft.name1}<br>
      <strong>2ª parte:</strong> ${splitDraft.name2}`;
   openModal('modal-split-confirm');
@@ -3273,21 +3350,16 @@ function requestSplitConfirm() {
 
 function confirmSplit() {
   closeModal('modal-split-confirm');
-  const task = WF_TASKS.find(t => t.id === splitTaskId); if (!task) return;
-  const idx = WF_TASKS.findIndex(t => t.id === splitTaskId);
-  const colors = ['#0c6fcd','#7c3aed','#0891b2','#059669','#d97706','#6366f1','#0f766e','#dc2626'];
+  const found = findSubTask(splitTaskId); if (!found) return;
+  const { stage, task } = found;
+  const idx = stage.tasks.findIndex(t => t.id === splitTaskId);
   const newId1 = 't' + Date.now(), newId2 = 't' + (Date.now() + 1);
-  const task1 = { id:newId1, name:splitDraft.name1, supplier:task.supplier, category:task.category, color:task.color, active:true };
-  const task2 = { id:newId2, name:splitDraft.name2, supplier:task.supplier, category:task.category, color:colors[(idx+1)%colors.length], active:true };
-  WF_TASKS.splice(idx, 1, task1, task2);
-  WF_EDGES.forEach(e => {
-    if (e.to   === splitTaskId) e.to   = newId1;
-    if (e.from === splitTaskId) e.from = newId2;
-  });
-  WF_EDGES.push({ id:'e'+Date.now(), from:newId1, to:newId2, active:true });
+  const task1 = { ...task, id: newId1, name: splitDraft.name1 };
+  const task2 = { ...task, id: newId2, name: splitDraft.name2 };
+  stage.tasks.splice(idx, 1, task1, task2);
   closeSidePanel();
   renderWorkflowBoard();
-  showSuccessModal('Etapa dividida!', `"${task.name}" foi dividida em "${splitDraft.name1}" e "${splitDraft.name2}".`);
+  showSuccessModal('Tarefa dividida!', `"${task.name}" foi dividida em "${splitDraft.name1}" e "${splitDraft.name2}".`);
 }
 
 // ── Create panel ──
@@ -3331,7 +3403,7 @@ function renderCSuggs(sugg) {
   const c = document.getElementById('cm-suggestions'); if(!c) return;
   c.innerHTML = sugg.map(s=>`<button class="cm-suggestion" onclick="selectCSugg('${s}')">${s}</button>`).join('');
 }
-function selectCSugg(text) { const i = document.getElementById('cm-input'); if(!i) return; i.value=text; if(activePanel==='edit') sendEditChat(); else if(activePanel==='split') sendSplitChat(); else sendChat(); }
+function selectCSugg(text) { const i = document.getElementById('cm-input'); if(!i) return; i.value=text; if(activePanel==='edit') sendEditChat(); else if(activePanel==='split') sendSplitChat(); else if(activePanel==='bulk') sendBulkChat(); else sendChat(); }
 function sendChat() {
   const input = document.getElementById('cm-input'); if(!input) return;
   const text = input.value.trim(); if(!text) return;
@@ -3358,7 +3430,8 @@ function sendChat() {
     } else {
       const lower2 = text.toLowerCase();
       if (lower2 === 'criar agora' || lower2 === 'criar' || lower2 === 'pular' || lower2 === 'não') {
-        addCMsg('ai', 'Tudo certo! Clique em "Criar Etapa" para adicionar ao workflow.');
+        const isSubTask = !!newTaskDraft.stageId;
+        addCMsg('ai', isSubTask ? 'Tudo certo! Clique em "Criar Tarefa" para adicionar à etapa.' : 'Tudo certo! Clique em "Criar Etapa" para adicionar ao workflow.');
         const btn = document.getElementById('create-btn');
         if (btn) { btn.disabled=false; btn.style.opacity='1'; btn.style.cursor='pointer'; }
         renderCSuggs([]);
@@ -3381,13 +3454,29 @@ function updatePreviewMini() {
 }
 function createTask() {
   const colors = ['#0c6fcd','#7c3aed','#0891b2','#059669','#d97706','#6366f1','#0f766e','#dc2626'];
-  const newT = {id:'t'+Date.now(), name:newTaskDraft.name||'Nova Etapa', supplier:newTaskDraft.supplier||'A definir', category:newTaskDraft.category||'Todos', color:colors[WF_TASKS.length%colors.length], active:true, mcpConfig:newTaskDraft.mcpConfig||null, agentConfig:newTaskDraft.agentConfig||null};
-  const pos = typeof newTaskDraft.position==='number' ? newTaskDraft.position : WF_TASKS.length;
-  WF_TASKS.splice(pos, 0, newT);
-  if (pos > 0) WF_EDGES.push({id:'e'+Date.now(), from:WF_TASKS[pos-1].id, to:newT.id, active:true});
-  if (pos < WF_TASKS.length-1) WF_EDGES.push({id:'e'+(Date.now()+1), from:newT.id, to:WF_TASKS[pos+1].id, active:true});
+  const stageId = 't' + Date.now();
+  const subId = stageId + '_0';
+  const newStage = {
+    id: stageId,
+    name: newTaskDraft.name || 'Nova Etapa',
+    color: colors[WF_TASKS.length % colors.length],
+    tasks: [{
+      id: subId,
+      name: newTaskDraft.name || 'Nova Etapa',
+      supplier: newTaskDraft.supplier || 'A definir',
+      category: newTaskDraft.category || 'Todos',
+      active: true, actions: [], script: null, externalApi: null,
+      mcpConfig: newTaskDraft.mcpConfig || null,
+      agentConfig: newTaskDraft.agentConfig || null,
+      contextOutput: []
+    }]
+  };
+  const pos = typeof newTaskDraft.position === 'number' ? newTaskDraft.position : WF_TASKS.length;
+  WF_TASKS.splice(pos, 0, newStage);
+  if (pos > 0) WF_EDGES.push({id:'e'+Date.now(), from:WF_TASKS[pos-1].id, to:newStage.id, active:true});
+  if (pos < WF_TASKS.length-1) WF_EDGES.push({id:'e'+(Date.now()+1), from:newStage.id, to:WF_TASKS[pos+1].id, active:true});
   closeSidePanel(); renderWorkflowBoard();
-  showSuccessModal('Etapa criada!', `"${newT.name}" foi adicionada ao workflow.`);
+  showSuccessModal('Etapa criada!', `"${newStage.name}" foi adicionada ao workflow.`);
 }
 
 // ── Edge modal ──
@@ -3410,6 +3499,70 @@ function confirmEdge() {
 // ── Panel helpers ──
 function openSidePanel() { document.getElementById('side-panel').classList.remove('closed'); }
 function closeSidePanel() { document.getElementById('side-panel').classList.add('closed'); selectedTaskId=null; renderKanban(); }
+
+function renameStage(stageId) {
+  const stage = WF_TASKS.find(s => s.id === stageId); if (!stage) return;
+  activePanel = 'rename';
+  document.getElementById('sp-title').textContent = 'Renomear Etapa';
+  document.getElementById('sp-body').innerHTML = `
+    <div style="padding:12px 0">
+      <label style="font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:6px">Nome da etapa</label>
+      <input id="rename-input" class="cm-input" style="width:100%;box-sizing:border-box" value="${stage.name}" placeholder="Nome da etapa">
+    </div>`;
+  document.getElementById('sp-footer').innerHTML = `
+    <button class="btn btn-secondary" style="flex:1;justify-content:center" onclick="closeSidePanel()">Cancelar</button>
+    <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="applyRenameStage('${stageId}')">Salvar</button>`;
+  openSidePanel();
+}
+function applyRenameStage(stageId) {
+  const stage = WF_TASKS.find(s => s.id === stageId); if (!stage) return;
+  const input = document.getElementById('rename-input');
+  const newName = input ? input.value.trim() : '';
+  if (!newName) return;
+  stage.name = newName;
+  closeSidePanel(); renderWorkflowBoard();
+}
+
+function addTaskToStage(stageId) {
+  activePanel = 'create';
+  chatStep = 0;
+  newTaskDraft = { stageId, name:'', supplier:'', category:'', mcpConfig:null, agentConfig:null };
+  document.getElementById('sp-title').textContent = 'Nova Tarefa com AI';
+  document.getElementById('sp-body').innerHTML = `
+    <div id="task-preview-mini" style="display:none;background:#f9f9fb;border-radius:6px;padding:10px 12px;font-size:12px;color:#555;line-height:1.7;border:1px solid #efefef">
+      <div id="prev-name">Nome: <span style="color:#1a1a1a;font-weight:600">—</span></div>
+      <div id="prev-sup">Supplier: <span style="color:#1a1a1a;font-weight:600">—</span></div>
+      <div id="prev-cat">Categoria: <span style="color:#1a1a1a;font-weight:600">—</span></div>
+    </div>
+    <div class="cm-msgs" id="cm-msgs"></div>
+    <div class="cm-suggestions" id="cm-suggestions"></div>
+    <div class="cm-input-row">
+      <input class="cm-input" id="cm-input" placeholder="Digite..." onkeydown="if(event.key==='Enter')sendChat()">
+      <button class="cm-send" onclick="sendChat()"><svg viewBox="0 0 16 16" stroke="white" stroke-width="2" fill="none" width="13" height="13"><path d="M2 8l12-6-4 12-3-4-5-2z"/></svg></button>
+    </div>`;
+  document.getElementById('sp-footer').innerHTML = `
+    <button class="btn btn-secondary" style="flex:1;justify-content:center" onclick="closeSidePanel()">Cancelar</button>
+    <button class="btn btn-primary" style="flex:1;justify-content:center;opacity:.4;cursor:not-allowed" id="create-btn" disabled onclick="createSubTask()">Criar Tarefa</button>`;
+  openSidePanel();
+  setTimeout(() => { addCMsg('ai', chatFlows[0].ai); renderCSuggs(chatFlows[0].sugg); }, 200);
+}
+function createSubTask() {
+  const stage = WF_TASKS.find(s => s.id === newTaskDraft.stageId);
+  if (!stage) return;
+  const newId = 't' + Date.now();
+  if (!stage.tasks) stage.tasks = [];
+  stage.tasks.push({
+    id: newId, name: newTaskDraft.name || 'Nova Tarefa',
+    supplier: newTaskDraft.supplier || 'A definir',
+    category: newTaskDraft.category || 'Todos',
+    active: true, actions: [], script: null, externalApi: null,
+    mcpConfig: newTaskDraft.mcpConfig || null,
+    agentConfig: newTaskDraft.agentConfig || null,
+    contextOutput: []
+  });
+  closeSidePanel(); renderWorkflowBoard();
+  showSuccessModal('Tarefa criada!', `"${newTaskDraft.name||'Nova Tarefa'}" foi adicionada à etapa "${stage.name}".`);
+}
 
 // ── Modal helpers ──
 function openModal(id) { document.getElementById(id).classList.add('open'); }
