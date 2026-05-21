@@ -193,6 +193,17 @@ tbody td{padding:10px 14px;font-size:13px;vertical-align:middle}
 .pipe-sup{font-size:9px;color:#aaa;text-align:center;margin-top:1px}
 .pipe-arrow{width:24px;height:2px;background:#e0e0e0;flex-shrink:0;position:relative;margin:0 2px;margin-bottom:20px}
 .pipe-arrow.done-arrow{background:#22c55e}
+.pipe-circle.failed{background:#dc2626;border-color:#dc2626}
+.pipe-arrow.failed-arrow{background:#dc2626}
+.pipe-step.clickable-step{cursor:pointer}
+.pipe-step.clickable-step:hover .pipe-circle.waiting{background:#9ca3af;border-color:#9ca3af;transition:background .15s}
+.pipe-step.clickable-step:hover .pipe-circle.active{filter:brightness(1.15);transition:filter .15s}
+.pipe-step.clickable-step .pipe-label{color:#0c6fcd;text-decoration:underline;text-decoration-style:dotted}
+/* ── TASK ACTION MODAL ── */
+.ta-option{display:flex;align-items:center;gap:10px;padding:9px 12px;border:1.5px solid #e5e7eb;border-radius:7px;cursor:pointer;font-size:13px;transition:all .15s;margin-bottom:0}
+.ta-option:hover{border-color:#0c6fcd;background:#f0f7ff}
+.ta-option.selected{border-color:#0c6fcd;background:#eff6ff;font-weight:500}
+.ta-option-icon{font-size:16px;flex-shrink:0}
 
 /* ── PAYMENT CARD ── */
 .payment-card{background:#fff;border:1px solid #e8e8e8;border-radius:4px;padding:18px 20px}
@@ -1070,6 +1081,48 @@ tbody td{padding:10px 14px;font-size:13px;vertical-align:middle}
     </div>
   </div>
 </div>
+<div class="modal-overlay" id="modal-task-action">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-title">Gerenciar Etapa Manualmente</div>
+    <div class="modal-body">
+      <div style="font-size:12.5px;color:#555;margin-bottom:14px;padding:8px 10px;background:#f9f9fb;border-radius:6px;border:1px solid #efefef">
+        Etapa: <strong id="ta-task-name" style="color:#1a1a1a"></strong>
+        <span id="ta-task-sup" style="color:#aaa;margin-left:6px;font-size:11.5px"></span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div class="ta-option" id="ta-opt-start" onclick="selectTaskAction('start')">
+          <span class="ta-option-icon">▶️</span>
+          <div>
+            <div style="font-weight:600">Iniciar</div>
+            <div style="font-size:11.5px;color:#666">Marcar como em processamento</div>
+          </div>
+        </div>
+        <div class="ta-option" id="ta-opt-done" onclick="selectTaskAction('done')">
+          <span class="ta-option-icon">✅</span>
+          <div>
+            <div style="font-weight:600">Concluir com sucesso</div>
+            <div style="font-size:11.5px;color:#666">Etapa finalizada sem problemas</div>
+          </div>
+        </div>
+        <div class="ta-option" id="ta-opt-fail" onclick="selectTaskAction('fail')">
+          <span class="ta-option-icon">❌</span>
+          <div>
+            <div style="font-weight:600">Concluir com falha</div>
+            <div style="font-size:11.5px;color:#666">Etapa finalizada com erro ou problema</div>
+          </div>
+        </div>
+      </div>
+      <div id="ta-fail-reason-wrap" style="display:none;margin-top:12px">
+        <label style="font-size:11.5px;font-weight:600;color:#dc2626;display:block;margin-bottom:5px">Motivo da falha *</label>
+        <textarea id="ta-fail-reason-text" placeholder="Descreva o motivo da falha..." style="width:100%;min-height:70px;border:1px solid #fca5a5;border-radius:6px;padding:8px 10px;font-size:12.5px;resize:vertical;box-sizing:border-box;color:#1a1a1a"></textarea>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('modal-task-action')">Cancelar</button>
+      <button class="btn btn-primary" id="ta-confirm-btn" onclick="confirmTaskAction()">Confirmar</button>
+    </div>
+  </div>
+</div>
 <div class="modal-overlay" id="modal-success">
   <div class="modal" style="text-align:center">
     <div style="width:50px;height:50px;border-radius:50%;background:#f0fdf4;border:2px solid #22c55e;display:flex;align-items:center;justify-content:center;margin:0 auto 14px">
@@ -1097,19 +1150,19 @@ const STATUS_CFG = {
 
 const ORDERS = [
   { id:'1631888948228-01', short:'68948228', date:'13/05/2026 - 16:48', client:'Paulo Bernardo', items:3, total:'R$ 502,00', origin:'Marketplace', orderStatus:'processing', tasks:[
-    {n:'Separação',s:'done'},{n:'Conferência',s:'active'},{n:'Embalagem',s:'waiting'},{n:'Expedição',s:'waiting'}] },
+    {n:'Separação',s:'done'},{n:'Conferência',s:'active'},{n:'Embalagem',s:'waiting'},{n:'Expedição',s:'waiting'},{n:'Entregue',s:'waiting'}] },
   { id:'1631858947234-01', short:'68947234', date:'13/05/2026 - 13:33', client:'Ana Carvalho', items:2, total:'R$ 1.230,00', origin:'Marketplace', orderStatus:'processed', tasks:[
-    {n:'Separação',s:'done'},{n:'Conferência',s:'done'},{n:'Embalagem',s:'done'},{n:'Expedição',s:'done'}] },
+    {n:'Separação',s:'done'},{n:'Conferência',s:'done'},{n:'Embalagem',s:'done'},{n:'Expedição',s:'done'},{n:'Entregue',s:'done'}] },
   { id:'1631848947052-01', short:'68947052', date:'13/05/2026 - 12:56', client:'Carlos Mendes', items:1, total:'R$ 89,90', origin:'Loja própria', orderStatus:'processed', tasks:[
-    {n:'Separação',s:'done'},{n:'Conferência',s:'done'},{n:'Embalagem',s:'done'},{n:'Expedição',s:'done'}] },
+    {n:'Separação',s:'done'},{n:'Conferência',s:'done'},{n:'Embalagem',s:'done'},{n:'Expedição',s:'done'},{n:'Entregue',s:'done'}] },
   { id:'1631848946980-01', short:'68946980', date:'13/05/2026 - 12:43', client:'Fernanda Lima', items:4, total:'R$ 345,00', origin:'Marketplace', orderStatus:'not-processed', tasks:[
-    {n:'Separação',s:'waiting'},{n:'Conferência',s:'waiting'},{n:'Embalagem',s:'waiting'},{n:'Expedição',s:'waiting'}] },
+    {n:'Separação',s:'waiting'},{n:'Conferência',s:'waiting'},{n:'Embalagem',s:'waiting'},{n:'Expedição',s:'waiting'},{n:'Entregue',s:'waiting'}] },
   { id:'1631838946798-01', short:'68946798', date:'13/05/2026 - 12:08', client:'Roberto Silva', items:1, total:'R$ 67,50', origin:'Loja própria', orderStatus:'not-processed', tasks:[
-    {n:'Separação',s:'waiting'},{n:'Conferência',s:'waiting'},{n:'Embalagem',s:'waiting'},{n:'Expedição',s:'waiting'}] },
+    {n:'Separação',s:'waiting'},{n:'Conferência',s:'waiting'},{n:'Embalagem',s:'waiting'},{n:'Expedição',s:'waiting'},{n:'Entregue',s:'waiting'}] },
   { id:'1631828946500-01', short:'68946500', date:'13/05/2026 - 11:30', client:'Mariana Costa', items:5, total:'R$ 890,00', origin:'Marketplace', orderStatus:'processing', tasks:[
-    {n:'Separação',s:'done'},{n:'Conferência',s:'done'},{n:'Embalagem',s:'active'},{n:'Expedição',s:'waiting'}] },
+    {n:'Separação',s:'done'},{n:'Conferência',s:'done'},{n:'Embalagem',s:'active'},{n:'Expedição',s:'waiting'},{n:'Entregue',s:'waiting'}] },
   { id:'1631818946200-01', short:'68946200', date:'13/05/2026 - 10:55', client:'Diego Ferreira', items:2, total:'R$ 155,00', origin:'Loja própria', orderStatus:'processed', tasks:[
-    {n:'Separação',s:'done'},{n:'Conferência',s:'done'},{n:'Embalagem',s:'done'},{n:'Expedição',s:'done'}] },
+    {n:'Separação',s:'done'},{n:'Conferência',s:'done'},{n:'Embalagem',s:'done'},{n:'Expedição',s:'done'},{n:'Entregue',s:'done'}] },
   { id:'1631808945900-01', short:'68945900', date:'13/05/2026 - 10:12', client:'Juliana Santos', items:3, total:'R$ 220,00', origin:'Marketplace', orderStatus:'canceled', tasks:[] },
 ];
 
@@ -1120,7 +1173,7 @@ const ORDER_ITEMS = {
       paymentWorkflow:[{name:'Autorização',sup:'Financeiro',s:'done'},{name:'Captura',sup:'Financeiro',s:'done'}],
       tasks:[
       {name:'Separação',sup:'CD São Paulo',s:'done'},{name:'Conferência',sup:'QA Team',s:'done'},
-      {name:'Embalagem',sup:'CD São Paulo',s:'done'},{name:'Expedição',sup:'Transp. XYZ',s:'done'}],
+      {name:'Embalagem',sup:'CD São Paulo',s:'done'},{name:'Expedição',sup:'Transp. XYZ',s:'done'},{name:'Entregue',sup:'Transp. XYZ',s:'done'}],
       secondWorkflow:{
         wfId:'wf-returns', wfName:'Troca e Devolução', triggeredAt:'14/05/2026 10:23',
         triggeredBy:'Shopper',
@@ -1149,7 +1202,7 @@ const ORDER_ITEMS = {
       paymentWorkflow:[{name:'Autorização',sup:'Financeiro',s:'done'},{name:'Captura',sup:'Financeiro',s:'done'}],
       tasks:[
       {name:'Separação',sup:'CD São Paulo',s:'done'},{name:'Conferência',sup:'QA Team',s:'done'},
-      {name:'Embalagem',sup:'CD São Paulo',s:'done'},{name:'Expedição',sup:'Transp. XYZ',s:'done'}],
+      {name:'Embalagem',sup:'CD São Paulo',s:'done'},{name:'Expedição',sup:'Transp. XYZ',s:'done'},{name:'Entregue',sup:'Transp. XYZ',s:'done'}],
       secondWorkflow:{
         wfId:'wf-returns', wfName:'Troca e Devolução', triggeredAt:'15/05/2026 11:40',
         triggeredBy:'Shopper',
@@ -1180,12 +1233,12 @@ const ORDER_ITEMS = {
         blockSource:'validarEstoque() → { disponivel: 2, qtd_necessaria: 3, ok: false }',
         suggestion:'Realocar para CD Rio de Janeiro (8 un. disponíveis) via AlterarSellerPedido()',
         actions:['validarEstoque','AlterarItemPedido']},
-      {name:'Expedição',sup:'Transp. XYZ',s:'waiting'}]},
+      {name:'Expedição',sup:'Transp. XYZ',s:'waiting'},{name:'Entregue',sup:'Transp. XYZ',s:'waiting'}]},
     { name:'Meia Adidas c/3', emoji:'🧦', qty:2, price:'R$ 89,00',
       paymentWorkflow:[{name:'Autorização',sup:'Financeiro',s:'done'},{name:'Captura',sup:'Financeiro',s:'done'}],
       tasks:[
       {name:'Separação',sup:'CD São Paulo',s:'done'},{name:'Conferência',sup:'QA Team',s:'done'},
-      {name:'Embalagem',sup:'CD São Paulo',s:'active'},{name:'Expedição',sup:'Transp. XYZ',s:'waiting'}]},
+      {name:'Embalagem',sup:'CD São Paulo',s:'active'},{name:'Expedição',sup:'Transp. XYZ',s:'waiting'},{name:'Entregue',sup:'Transp. XYZ',s:'waiting'}]},
     { name:'Shaker Proteína 700ml', emoji:'🥤', qty:1, price:'R$ 93,00',
       paymentWorkflow:[{name:'Autorização',sup:'Financeiro',s:'active'},{name:'Captura',sup:'Financeiro',s:'waiting'}],
       tasks:[
@@ -1195,7 +1248,7 @@ const ORDER_ITEMS = {
         blockSource:'CapturarPagamento() → { status: "pending_authorization" }',
         suggestion:'Aguardar confirmação do gateway ou acionar aprovação manual via Aprovação de Pagamento.',
         actions:['enviar_email']},
-      {name:'Embalagem',sup:'CD São Paulo',s:'waiting'},{name:'Expedição',sup:'Transp. XYZ',s:'waiting'}]},
+      {name:'Embalagem',sup:'CD São Paulo',s:'waiting'},{name:'Expedição',sup:'Transp. XYZ',s:'waiting'},{name:'Entregue',sup:'Transp. XYZ',s:'waiting'}]},
   ],
 };
 
@@ -1233,10 +1286,15 @@ const WORKFLOW_DEFS = [
             responseMapping:[{key:'prazo_entrega',path:'result.delivery_days'},{key:'custo_frete',path:'result.cost'}]},
           contextOutput:['api_cotacao.prazo_entrega','api_cotacao.custo_frete']}
       ]},
+      {id:'t6', name:'Entregue', color:'#059669', tasks:[
+        {id:'t6_0', name:'Entregue', supplier:'Transportadora XYZ', category:'Todos', active:true,
+          actions:[], script:null, externalApi:null, mcpConfig:null, agentConfig:null, contextOutput:[]}
+      ]},
     ],
     edges:[
       {id:'e1',from:'t1',to:'t2',active:true},{id:'e2',from:'t2',to:'t3',active:true},
       {id:'e3',from:'t3',to:'t4',active:true},{id:'e4',from:'t4',to:'t5',active:true},
+      {id:'e5',from:'t5',to:'t6',active:true},
     ],
   },
   {
@@ -1398,6 +1456,56 @@ function confirmDeleteWorkflow() {
   }
 }
 
+function openTaskAction(orderId, itemIdx, taskType, taskIdx) {
+  const items = ORDER_ITEMS[orderId]; if (!items) return;
+  const item = items[itemIdx];
+  const taskList = taskType === 'main' ? item.tasks
+                 : taskType === 'payment' ? (item.paymentWorkflow || [])
+                 : (item.secondWorkflow?.tasks || []);
+  const task = taskList[taskIdx];
+  if (!task || (task.s !== 'waiting' && task.s !== 'active')) return;
+  pendingTaskAction = { orderId, itemIdx, taskIdx, taskType, action: task.s === 'active' ? 'done' : 'start' };
+  document.getElementById('ta-task-name').textContent = task.name;
+  document.getElementById('ta-task-sup').textContent = task.sup || '';
+  document.getElementById('ta-fail-reason-wrap').style.display = 'none';
+  document.getElementById('ta-fail-reason-text').value = '';
+  // Hide "start" option if task is already active
+  const startOpt = document.getElementById('ta-opt-start');
+  startOpt.style.display = task.s === 'active' ? 'none' : 'flex';
+  document.querySelectorAll('.ta-option').forEach(el => el.classList.remove('selected'));
+  document.getElementById('ta-opt-' + pendingTaskAction.action)?.classList.add('selected');
+  openModal('modal-task-action');
+}
+
+function selectTaskAction(action) {
+  pendingTaskAction.action = action;
+  document.querySelectorAll('.ta-option').forEach(el => el.classList.remove('selected'));
+  document.getElementById('ta-opt-' + action)?.classList.add('selected');
+  document.getElementById('ta-fail-reason-wrap').style.display = action === 'fail' ? 'block' : 'none';
+}
+
+function confirmTaskAction() {
+  const { orderId, itemIdx, taskIdx, taskType, action } = pendingTaskAction;
+  const items = ORDER_ITEMS[orderId]; if (!items) return;
+  const item = items[itemIdx];
+  const taskList = taskType === 'main' ? item.tasks
+                 : taskType === 'payment' ? (item.paymentWorkflow || [])
+                 : (item.secondWorkflow?.tasks || []);
+  const task = taskList[taskIdx]; if (!task) return;
+  if (action === 'fail') {
+    const reason = document.getElementById('ta-fail-reason-text').value.trim();
+    if (!reason) { document.getElementById('ta-fail-reason-text').style.borderColor='#dc2626'; return; }
+    task.s = 'failed'; task.failReason = reason;
+  } else {
+    task.s = action === 'start' ? 'active' : 'done';
+  }
+  closeModal('modal-task-action');
+  const orderObj = ORDERS.find(o => o.id === orderId);
+  if (orderObj) renderItemsWithTasks(orderObj);
+  const label = action==='start' ? 'iniciada' : action==='done' ? 'concluída com sucesso' : 'marcada com falha';
+  showSuccessModal('Etapa atualizada', `"${task.name}" foi ${label}.`);
+}
+
 function openWorkflow(id) {
   const wf = WORKFLOW_DEFS.find(w => w.id === id);
   if (!wf) return;
@@ -1511,21 +1619,25 @@ function renderOrderStatus3Step(status) {
 }
 
 function renderItemsWithTasks(order) {
-  const items = ORDER_ITEMS[order.id] || genItems(order);
+  const items = ORDER_ITEMS[order.id] || (ORDER_ITEMS[order.id] = genItems(order));
   document.getElementById('detail-items-count').textContent = items.length + (items.length === 1 ? ' item' : ' itens');
   const container = document.getElementById('detail-items-list');
 
-  function buildPipeline(tasks) {
+  function buildPipeline(tasks, clickCtx) {
     return tasks.map((t, ti) => {
-      const prevDone = ti > 0 && tasks[ti-1].s === 'done';
+      const prevDone = ti > 0 && (tasks[ti-1].s === 'done' || tasks[ti-1].s === 'failed');
       const isBlocked = t.s === 'blocked';
-      return `<div class="pipe-step">
-        ${ti > 0 ? `<div class="pipe-arrow ${isBlocked?'blocked-arrow':prevDone?'done-arrow':''}"></div>` : ''}
+      const isFailed = t.s === 'failed';
+      const isClickable = !!clickCtx && (t.s === 'waiting' || t.s === 'active');
+      const clickAttr = isClickable ? `onclick="openTaskAction('${clickCtx.orderId}',${clickCtx.itemIdx},'${clickCtx.taskType}',${ti})"` : '';
+      const arrowCls = isFailed ? 'failed-arrow' : prevDone ? 'done-arrow' : '';
+      return `<div class="pipe-step${isClickable?' clickable-step':''}" ${clickAttr}>
+        ${ti > 0 ? `<div class="pipe-arrow ${arrowCls}"></div>` : ''}
         <div class="pipe-node ${isBlocked?'blocked':''}">
-          <div class="pipe-circle ${t.s}" title="${isBlocked ? t.blockReason||'' : ''}">
+          <div class="pipe-circle ${t.s}" title="${isBlocked ? t.blockReason||'' : isFailed ? t.failReason||'Falha' : isClickable ? 'Clique para gerenciar' : ''}">
             ${t.s==='done'?`<svg viewBox="0 0 12 12" fill="none" stroke="white" stroke-width="2.5" width="10" height="10"><path d="M2 6l3 3 5-5"/></svg>`:''}
             ${t.s==='active'?`<svg viewBox="0 0 12 12" fill="none" stroke="white" stroke-width="2.5" width="8" height="8"><circle cx="6" cy="6" r="3" fill="white"/></svg>`:''}
-            ${t.s==='blocked'?`<svg viewBox="0 0 12 12" fill="none" stroke="white" stroke-width="2.5" width="10" height="10"><path d="M2 2l8 8M10 2L2 10"/></svg>`:''}
+            ${t.s==='blocked'||t.s==='failed'?`<svg viewBox="0 0 12 12" fill="none" stroke="white" stroke-width="2.5" width="10" height="10"><path d="M2 2l8 8M10 2L2 10"/></svg>`:''}
           </div>
           <div class="pipe-label">${t.name}</div>
           <div class="pipe-sup">${t.sup}</div>
@@ -1542,7 +1654,7 @@ function renderItemsWithTasks(order) {
     return `<span class="wf-sec-badge" style="background:#f9f9f9;border:1px solid #e0e0e0;color:#888">Aguardando</span>`;
   }
 
-  container.innerHTML = items.map(item => {
+  container.innerHTML = items.map((item, itemIdx) => {
     // ── Payment workflow ──
     const pw = item.paymentWorkflow || [{name:'Autorização',sup:'Financeiro',s:'done'},{name:'Captura',sup:'Financeiro',s:'done'}];
     const paymentDone  = pw.every(t => t.s === 'done');
@@ -1607,7 +1719,7 @@ function renderItemsWithTasks(order) {
     // ── Standard section (locked or pipeline) ──
     const standardSection = !paymentDone
       ? `<div class="wf-locked-msg">🔒 Aguardando conclusão do Workflow de Pagamento</div>`
-      : `<div class="item-pipeline">${buildPipeline(item.tasks)}</div>${ctxVarsHtml}${orchPanel}`;
+      : `<div class="item-pipeline">${buildPipeline(item.tasks, {orderId:order.id,itemIdx,taskType:'main'})}</div>${ctxVarsHtml}${orchPanel}`;
 
     // ── Returns chain (workflow 3) ──
     let chainHtml = '';
@@ -1668,7 +1780,7 @@ function renderItemsWithTasks(order) {
           <span class="chain-sep-time">${separatorBy} · ${sw.triggeredAt}</span>
         </div>
         ${returnInfoHtml}
-        <div class="item-pipeline">${buildPipeline(sw.tasks)}</div>`;
+        <div class="item-pipeline">${buildPipeline(sw.tasks, {orderId:order.id,itemIdx,taskType:'return'})}</div>`;
     }
 
     return `<div class="item-task-card">
@@ -1697,7 +1809,7 @@ function renderItemsWithTasks(order) {
 
 function genItems(order) {
   const emojis = ['📦','🛍️','🧴','👕','📱'];
-  const ts = order.tasks.length ? order.tasks : [{n:'Separação',s:'waiting'},{n:'Conferência',s:'waiting'},{n:'Embalagem',s:'waiting'},{n:'Expedição',s:'waiting'}];
+  const ts = order.tasks.length ? order.tasks : [{n:'Separação',s:'waiting'},{n:'Conferência',s:'waiting'},{n:'Embalagem',s:'waiting'},{n:'Expedição',s:'waiting'},{n:'Entregue',s:'waiting'}];
   return Array.from({length: Math.min(order.items, 3)}, (_, i) => ({
     name: 'Produto ' + (i+1), emoji: emojis[i % emojis.length], qty: 1, price: 'R$ ' + Math.round(parseFloat(order.total.replace('R$ ','').replace('.','').replace(',','.')) / order.items).toString().replace(/\B(?=(\d{3})+(?!\d))/g,'.') + ',00',
     paymentWorkflow: [{name:'Autorização',sup:'Financeiro',s:'done'},{name:'Captura',sup:'Financeiro',s:'done'}],
@@ -1710,6 +1822,7 @@ function genItems(order) {
 // ══════════════════════════════════════════
 
 let selectedTaskId = null, pendingDeleteId = null, pendingEdgeId = null;
+let pendingTaskAction = { orderId:null, itemIdx:null, taskIdx:null, taskType:null, action:'start' };
 let pendingDragFrom = null, pendingDragTo = null;
 let dragTaskId = null;
 let editChatState = 'idle', editDraft = {}, activePanel = 'create';
