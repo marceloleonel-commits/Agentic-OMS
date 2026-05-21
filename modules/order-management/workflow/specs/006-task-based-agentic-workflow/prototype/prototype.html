@@ -1047,6 +1047,20 @@ tbody td{padding:10px 14px;font-size:13px;vertical-align:middle}
     </div>
   </div>
 </div>
+<div class="modal-overlay" id="modal-wf-delete">
+  <div class="modal">
+    <div class="modal-title">Excluir Workflow</div>
+    <div class="modal-body">Deseja excluir permanentemente <strong id="wf-del-name"></strong>? Esta ação não pode ser desfeita e afetará todos os pedidos vinculados.</div>
+    <div class="modal-warning">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M8 2l6 12H2L8 2z"/><path d="M8 7v3M8 12v.5"/></svg>
+      <span>Pedidos em andamento <strong>não serão cancelados</strong>, mas perderão a referência de workflow.</span>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('modal-wf-delete')">Cancelar</button>
+      <button class="btn btn-danger" onclick="confirmDeleteWorkflow()">Excluir</button>
+    </div>
+  </div>
+</div>
 <div class="modal-overlay" id="modal-success">
   <div class="modal" style="text-align:center">
     <div style="width:50px;height:50px;border-radius:50%;background:#f0fdf4;border:2px solid #22c55e;display:flex;align-items:center;justify-content:center;margin:0 auto 14px">
@@ -1300,12 +1314,17 @@ function showScreen(name) {
 function renderWorkflowList() {
   const grid = document.getElementById('wfl-grid');
   if (!grid) return;
-  grid.innerHTML = WORKFLOW_DEFS.map(wf => `
-    <div class="wfl-card" onclick="openWorkflow('${wf.id}')">
+  grid.innerHTML = WORKFLOW_DEFS.map(wf => {
+    const archived = !!wf.archived;
+    const statusDot = archived ? 'background:#9ca3af' : 'background:#22c55e';
+    const statusLabel = archived ? 'Arquivado' : 'Ativo';
+    const cardOpacity = archived ? 'opacity:.65' : '';
+    return `
+    <div class="wfl-card" onclick="openWorkflow('${wf.id}')" style="${cardOpacity}">
       <div class="wfl-card-header">
         <div class="wfl-icon" style="background:${wf.color}20">${wf.icon}</div>
         <div style="flex:1;min-width:0">
-          <div class="wfl-name">${wf.name}</div>
+          <div class="wfl-name">${wf.name}${archived ? ' <span style="font-size:10px;font-weight:600;background:#f3f4f6;color:#6b7280;padding:1px 6px;border-radius:10px;vertical-align:middle">Arquivado</span>' : ''}</div>
           <div class="wfl-desc">${wf.description}</div>
         </div>
       </div>
@@ -1314,16 +1333,53 @@ function renderWorkflowList() {
         <div class="wfl-meta-item"><span class="wfl-meta-label">Etapas</span><span class="wfl-meta-val">${wf.tasks.length}</span></div>
       </div>
       <div class="wfl-card-footer">
-        <div class="wfl-status"><div class="wfl-status-dot"></div>Ativo</div>
+        <div class="wfl-status"><div class="wfl-status-dot" style="${statusDot}"></div>${statusLabel}</div>
         <div style="display:flex;gap:6px">
           <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();openWorkflowSettings('${wf.id}')" title="Configurações">
             <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><circle cx="7" cy="7" r="2"/><path d="M7 1v2M7 11v2M1 7h2M11 7h2M3 3l1.4 1.4M9.6 9.6L11 11M3 11l1.4-1.4M9.6 4.4L11 3"/></svg>
           </button>
+          <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();toggleArchiveWorkflow('${wf.id}')" title="${archived ? 'Reativar workflow' : 'Arquivar workflow'}" style="${archived ? 'color:#059669' : ''}">
+            ${archived
+              ? `<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M7 1v8M4 6l3 3 3-3"/><path d="M2 10v2h10v-2"/></svg> Reativar`
+              : `<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><rect x="1" y="4" width="12" height="2" rx=".5"/><path d="M2 6v6h10V6"/><path d="M5 9h4"/></svg> Arquivar`}
+          </button>
+          <button class="btn btn-sm" onclick="event.stopPropagation();deleteWorkflow('${wf.id}')" title="Excluir workflow" style="background:transparent;border:1px solid #fca5a5;color:#dc2626;padding:4px 7px">
+            <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M2 4h10M5 4V2h4v2M5 6v5M9 6v5M3 4l1 8h6l1-8"/></svg>
+          </button>
           <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();openWorkflow('${wf.id}')">Abrir →</button>
         </div>
       </div>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
+}
+
+let pendingDeleteWfId = null;
+function toggleArchiveWorkflow(id) {
+  const wf = WORKFLOW_DEFS.find(w => w.id === id); if (!wf) return;
+  wf.archived = !wf.archived;
+  renderWorkflowList();
+  const msg = wf.archived
+    ? `"${wf.name}" foi arquivado e não receberá novos pedidos.`
+    : `"${wf.name}" foi reativado e voltará a receber pedidos.`;
+  showSuccessModal(wf.archived ? 'Workflow arquivado' : 'Workflow reativado', msg);
+}
+function deleteWorkflow(id) {
+  const wf = WORKFLOW_DEFS.find(w => w.id === id); if (!wf) return;
+  pendingDeleteWfId = id;
+  document.getElementById('wf-del-name').textContent = wf.name;
+  openModal('modal-wf-delete');
+}
+function confirmDeleteWorkflow() {
+  const idx = WORKFLOW_DEFS.findIndex(w => w.id === pendingDeleteWfId);
+  if (idx !== -1) {
+    const name = WORKFLOW_DEFS[idx].name;
+    WORKFLOW_DEFS.splice(idx, 1);
+    if (currentWorkflowId === pendingDeleteWfId) currentWorkflowId = null;
+    pendingDeleteWfId = null;
+    closeModal('modal-wf-delete');
+    renderWorkflowList();
+    showSuccessModal('Workflow excluído', `"${name}" foi removido permanentemente.`);
+  }
 }
 
 function openWorkflow(id) {
