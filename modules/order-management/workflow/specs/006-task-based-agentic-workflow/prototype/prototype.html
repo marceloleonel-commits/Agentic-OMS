@@ -433,6 +433,15 @@ tbody td{padding:10px 14px;font-size:13px;vertical-align:middle}
 .ric-desc{font-size:12.5px;color:#3f3f40;line-height:1.6}
 .ric-agent-note{background:#fff;border:1px solid #e9d5ff;border-radius:6px;padding:10px 12px;margin-top:8px}
 .ric-agent-note-title{font-size:10.5px;font-weight:700;color:#7c3aed;text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px;display:flex;align-items:center;gap:4px}
+/* ── AI DIAGNOSIS CARD ── */
+.ric-agent-diagnosis{background:#f5f3ff;border:1px solid #c4b5fd;border-radius:6px;padding:10px 12px;margin-top:8px}
+.ric-diagnosis-header{display:flex;align-items:center;gap:6px;font-size:10.5px;font-weight:700;color:#6d28d9;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px}
+.ric-diagnosis-tag{font-size:10px;background:#ede9fe;color:#6d28d9;border-radius:4px;padding:2px 7px;font-weight:600;margin-left:auto;text-transform:none;letter-spacing:0}
+.ric-insight{display:flex;gap:8px;padding:7px 0;border-top:1px solid #ddd6fe;line-height:1.5}
+.ric-insight:first-child{border-top:none;padding-top:0}
+.ric-insight-icon{font-size:14px;flex-shrink:0;margin-top:1px;line-height:1}
+.ric-insight-label{font-size:11px;font-weight:600;color:#1a1a1a;margin-bottom:2px}
+.ric-insight-desc{font-size:11.5px;color:#555;line-height:1.5}
 
 /* ── MCP / AI WORKSPACE INTEGRATION ── */
 .integration-selector{display:flex;flex-direction:column;gap:6px;margin:4px 0;padding:4px 0}
@@ -1114,7 +1123,7 @@ const ORDER_ITEMS = {
       {name:'Embalagem',sup:'CD São Paulo',s:'done'},{name:'Expedição',sup:'Transp. XYZ',s:'done'}],
       secondWorkflow:{
         wfId:'wf-returns', wfName:'Troca e Devolução', triggeredAt:'14/05/2026 10:23',
-        triggeredBy:'Agente AI',
+        triggeredBy:'Shopper',
         tasks:[
           {name:'Solicitação Recebida',sup:'Atendimento',s:'done'},
           {name:'Análise do Motivo',sup:'QA Team',s:'done'},
@@ -1123,10 +1132,17 @@ const ORDER_ITEMS = {
           {name:'Reembolso / Troca',sup:'Financeiro',s:'waiting'}]
       },
       returnInfo:{
-        initiator:'agent', initiatedAt:'14/05/2026 10:23',
+        initiator:'shopper', initiatedAt:'14/05/2026 10:23',
         reason:'defeito_produto', reasonLabel:'Defeito no produto',
-        description:'Cliente relatou costura com defeito na manga direita após a primeira utilização. Solicita troca por outro exemplar no mesmo tamanho (G) e cor (preto).',
-        agentJustification:'Análise preditiva identificou risco alto de chargeback (confiança 87%). Com base em NPS score 2/10 e 3 ocorrências similares no histórico do cliente, abertura proativa de troca reduz probabilidade de disputa em 64% segundo modelo de retenção.'
+        description:'Costura com defeito na manga direita após a primeira utilização. Solicito troca por outro exemplar no mesmo tamanho (G) e cor (preto).',
+        agentDiagnosis:{
+          confidence:87,
+          insights:[
+            {icon:'🔁', label:'Padrão de devolução detectado', desc:'Este produto (SKU JCK-BLK-G) foi devolvido por 14 outros clientes nos últimos 30 dias. Em 71% dos casos o defeito é na costura da manga — indica lote com problema de fabricação.'},
+            {icon:'⚠️', label:'Risco de chargeback elevado', desc:'NPS 2/10 combinado com 3 ocorrências anteriores neste cliente eleva o risco de disputa para 87% de confiança. Histórico sugere baixa tolerância a falhas de produto.'},
+            {icon:'💡', label:'Ação recomendada', desc:'Aprovar troca imediatamente via fluxo expresso. Substituição proativa reduz probabilidade de disputa em 64% segundo modelo de retenção. Considerar envio de novo item antes da coleta do defeituoso.'}
+          ]
+        }
       }
     },
     { name:'Cinto Couro Marrom', emoji:'👔', qty:1, price:'R$ 440,00',
@@ -1603,6 +1619,30 @@ function renderItemsWithTasks(order) {
       if (ri) {
         const initiatorLabel = ri.initiator==='agent' ? '🤖 Agente AI' : ri.initiator==='shopper' ? '🛍️ Shopper' : '🏪 Merchant';
         const initiatorCls   = ri.initiator==='agent' ? 'ric-badge-agent' : ri.initiator==='shopper' ? 'ric-badge-shopper' : 'ric-badge-merchant';
+        // AI Diagnosis block (shown for any initiator when agentDiagnosis is present)
+        const diagHtml = ri.agentDiagnosis ? `
+          <div class="ric-agent-diagnosis">
+            <div class="ric-diagnosis-header">
+              <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" width="12" height="12"><circle cx="7" cy="7" r="5.5"/><path d="M7 4.5v3M7 9v.5"/></svg>
+              Diagnóstico do Agente
+              <span class="ric-diagnosis-tag">confiança ${ri.agentDiagnosis.confidence}%</span>
+            </div>
+            ${ri.agentDiagnosis.insights.map(ins => `
+            <div class="ric-insight">
+              <span class="ric-insight-icon">${ins.icon}</span>
+              <div>
+                <div class="ric-insight-label">${ins.label}</div>
+                <div class="ric-insight-desc">${ins.desc}</div>
+              </div>
+            </div>`).join('')}
+          </div>` : (ri.agentJustification ? `
+          <div class="ric-agent-note">
+            <div class="ric-agent-note-title">
+              <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11" style="color:#7c3aed"><circle cx="7" cy="7" r="5"/><path d="M7 4v4M7 9.5v.5"/></svg>
+              Diagnóstico do Agente
+            </div>
+            <div style="font-size:12px;color:#555;line-height:1.6">${ri.agentJustification}</div>
+          </div>` : '');
         returnInfoHtml = `
           <div class="return-info-card">
             <div class="ric-initiator-row">
@@ -1611,14 +1651,7 @@ function renderItemsWithTasks(order) {
             </div>
             <div class="ric-field"><span class="ric-label">Motivo</span><span class="ric-reason">${ri.reasonLabel}</span></div>
             <div class="ric-field"><span class="ric-label">Descrição</span><span class="ric-desc">${ri.description}</span></div>
-            ${ri.agentJustification ? `
-            <div class="ric-agent-note">
-              <div class="ric-agent-note-title">
-                <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11" style="color:#7c3aed"><circle cx="7" cy="7" r="5"/><path d="M7 4v4M7 9.5v.5"/></svg>
-                Justificativa do Agente
-              </div>
-              <div style="font-size:12px;color:#555;line-height:1.6">${ri.agentJustification}</div>
-            </div>` : ''}
+            ${diagHtml}
           </div>`;
       }
       const separatorBy = ri ? (ri.initiator==='agent' ? 'por Agente AI' : ri.initiator==='shopper' ? 'por Shopper' : 'por Merchant') : `por ${sw.triggeredBy}`;
