@@ -35,10 +35,15 @@ accuracy
 ### 2. Why Now
 
 The urgency is driven by:
+
 a. Shoppers expecting faster, more flexible fulfillment options — 90% consider 2–3 day shipping a baseline, ~30% expect same-day, and 35% actively use BOPIS — pushing merchants to leverage every physical location, from stores to darkstores. [3]
+
 b. Rising fuel, labor, and last-mile costs eroding margins, [2] with shoppers unwilling to absorb these (a last-mile delivery costs the organization an average of $10.1, but the customer only pays an average $8.08 [10]); grocers are particularly affected, since their ability to use fees or higher prices to improve gross margins is limited [18].
+
 c. Stores facing inventory accuracy gaps (70–90% vs. 99.5% in warehouses) and longer picking cycles (4–8 hours),  [4] since they are not designed for fulfillment.
+
 d. Competitors (Janis, Instaleap, Síntese) offering costly alternatives [15], leaving a gap for an integrated VTEX-native product with  lower onboarding and recurring costs.
+
 e. VTEX transitioning to a suite of solutions with the vision of becoming the backbone for connected commerce [19], with VTEX Pick and Pack representing GMV expansion by offering the connection between offline and online for omnichannel operations.
 This can lead to customer churn, missed upsell opportunities, and difficulties to stay competitive in omnichannel fulfillment.
 
@@ -180,11 +185,7 @@ Phase 1 and 2 simplify the core activation path for standard merchants. Merchant
 
 **3. What is the right scope for AI substitution suggestions?** Substitution rules vary significantly by merchant (grocery allows brand substitution; pharma does not allow generic substitution; fashion requires size/color confirmation from the customer). The AI model must be designed with configurable substitution policies before it can be applied across merchant types.
 
-**3. Agentic Workflow entry point dependency.** Injecting Pick and Pack status events into the OMS order timeline depends on the Agentic Workflow entry point API, which is in RFC stage. 
-
-**4. Sales team commercial readiness for Pick and Pack.** The sales team has hesitated to position Pick and Pack against established competitors (Instaleap, Janis) given the product's current maturity. Phase 2 (scan-first redesign) is the prerequisite for a confident commercial motion. Current team position: Phase 2 alpha live with one Tier 1 merchant operational is the minimum viable commercial proof point.
-
-**5. Onboarding complexity as a qualification and product gap.** Mid-tier merchants in extended onboarding cycles are consuming team capacity without contributing to ARR. The debate is whether this is a product gap (activation is too complex) or a qualification gap (merchants with complex POS or TMS dependencies are being onboarded without PS routing). Current position: both — Phase 1 and 2 simplify the standard activation path; merchants with non-standard integrations must be qualified earlier and routed to PS support.
+**4. Agentic Workflow entry point dependency.** Injecting Pick and Pack status events into the OMS order timeline depends on the Agentic Workflow entry point API, which is in RFC stage. 
 
 ---
 
