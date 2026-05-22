@@ -10,7 +10,7 @@
 | **Author** | Carolina Tourinho |
 | **Status** | Draft |
 | **Created** | May 2026 |
-| **Personas** | Shopper (primary); Ecommerce Manager, Logistics Configurator (secondary) |
+| **Personas** | Ecommerce Manager, Logistics Manager (secondary) |
 | **Infrastructure dependency** | Mandatory migration of the Pickup Point data layer off MasterData. Target database to be defined by engineering based on a technical study. This spec cannot ship without the migration. |
 | **Source documents** | 2026 DOM On Site deck (internal); Customer Need — RONA; Customer Need — Arcaplanet; Customer Need — Mazda |
 
@@ -20,7 +20,7 @@
 
 **Title:** Pickup Point Migration
 
-**Description:** With this release, shoppers will see all eligible pickup points regardless of distance — not just those within the current ~50km platform limit — up to the existing API cap of 300 results. Merchants will no longer need to open a support request to VTEX to increase the pickup point radius. This is enabled by migrating the Pickup Point data layer off MasterData, eliminating the architectural root cause of the radius constraint. The radius configuration step is removed from the Admin setup flow — unblocking orders that today are silently lost because the nearest pickup option is just beyond our technical limit.
+**Description:** With this release, shoppers will see all eligible pickup points regardless of distance, up to the existing API cap of 300 results. Merchants will no longer need to open a support request to VTEX to increase the pickup point radius. This is enabled by migrating the Pickup Point data layer off MasterData, eliminating the architectural root cause of the radius constraint. The radius configuration step is removed from the Admin setup flow, unblocking orders that today are silently lost because the nearest pickup option is just beyond our technical limit.
 
 ---
 
@@ -40,9 +40,9 @@
 
 ### Why Now — MasterData Cost and the Company-Wide Migration
 
-VTEX is migrating all products off MasterData and onto more reliable, cost-efficient databases. Pickup Points is one of the last modules still on MasterData. The cost today is **~US$7,600/month**, recurring and growing as the pickup point base expands. This cost is being transferred to our team as the service owner.
+VTEX is migrating all products off MasterData and onto more robust, reliable, cost-efficient databases. Pickup Points is one of the last modules still on MasterData. The cost today is **~US$7,600/month**, recurring and growing as the pickup point base expands. This cost is being transferred to our team as the service owner.
 
-This is not a future risk — it is an active, increasing expense with no upside to staying. Every other VTEX product that has moved off MasterData has gained query reliability, scalability, and cost reduction. Pickup Points will too.
+This is not a future risk — it is an active, increasing expense with no upside to staying. The move to more robust databases is both a company-wide strategic direction and a prerequisite for removing the constraints documented below. Every other VTEX product that has moved off MasterData has gained query reliability, scalability, and cost reduction. Pickup Points will too.
 
 This migration is the forcing function that makes the product improvements in this spec possible. We are not migrating databases to ship a nicer UI — we are migrating because we have to, and we are using that migration to fix the radius constraint that has been blocking revenue.
 
@@ -53,7 +53,7 @@ Today, any merchant who needs a radius above 50km must open a request and wait f
 **The consequences are real and documented:**
 
 - **Merchants lose orders** from shoppers whose nearest pickup point is beyond 50km. The shopper sees no pickup option in checkout — no error, no explanation — and either abandons or buys elsewhere.
-- **High-ticket and heavy items**: long-distance delivery is too expensive; buyers are willing to travel 80–150km to a store or DC to avoid freight cost. The radius hides that option.
+- **High-ticket, heavy, and luxury items**: for these categories, long-distance delivery is either too expensive or beside the point. B2B buyers routinely travel 80–150km to a DC to avoid freight cost on heavy goods. B2C luxury shoppers are destination-driven: a shopper in Recife may plan a trip to São Paulo specifically to collect a purchase at the D&G Iguatemi boutique, where the in-store experience is part of what they are buying. Manchester City supporters travel internationally for matches and want to collect official merchandise at the Etihad Stadium store — a pickup point with global demand. For all of these profiles, the 50km limit does not protect the shopper from an irrelevant option; it removes a deliberate choice.
 - **Low store density regions**, such as Brazil, the United States, and Canada: a single flagship or DC naturally serves a much larger geographic area. The 50km circle excludes most of its real catchment.
 
 > *"The core issue is the fixed ~50km pickup radius, which hides valid stores that customers would realistically use, so they never appear in checkout."*
@@ -79,6 +79,8 @@ The shopper experience becomes: *"I enter my ZIP and see the closest pickup opti
 **I want** to evaluate candidate databases, run comparative tests, and execute a migration plan for the Pickup Point data layer off MasterData,
 **So that** the architectural root cause of the 50km constraint is eliminated and the platform can scale to support large pickup point networks at lower cost and higher reliability.
 
+> This user story must be executed using **SDD (Spec-Driven Development)**. The engineering team should produce a spec describing the target data layer, migration phases, and validation criteria before writing any implementation code. The spec is the handoff artifact.
+
 **Acceptance criteria:**
 - Engineering produces a comparative study of database candidates covering query performance, infrastructure cost, operational complexity, and migration risk.
 - A migration plan is defined with phasing, rollback strategy, and validation criteria at each stage.
@@ -100,9 +102,9 @@ The shopper experience becomes: *"I enter my ZIP and see the closest pickup opti
 
 ---
 
-### US-03 — Merchant No Longer Configures Radius
+### US-03 — Merchant No Longer Configures Radius *(lower priority — ship after US-02)*
 
-**As** a Logistics Configurator setting up a new pickup point,
+**As** a Logistics Manager setting up a new pickup point,
 **I want** to skip the radius definition step entirely,
 **So that** I don't have to reason about which ZIP codes the pickup point should serve — the system handles proximity automatically.
 
@@ -118,7 +120,7 @@ The shopper experience becomes: *"I enter my ZIP and see the closest pickup opti
 ### FR-001 — Remove the ~50km maxDistance Ceiling
 Post-migration, the `maxDistance` parameter passed to `_searchsellers` must not be capped at ~50km. The platform returns up to 300 pickup points regardless of distance, ordered by ascending proximity from the shopper's ZIP centroid.
 
-### FR-002 — Remove Radius Configuration from Admin
+### FR-002 — Remove Radius Configuration from Admin *(lower priority — ship after FR-001)*
 The radius definition step must be removed from the pickup point shipping policy setup flow. Merchants should not be required to define a maximum distance when creating or editing a pickup policy.
 
 ### FR-003 — Preserve Existing Merchant Configurations
@@ -129,9 +131,27 @@ All changes are additive and transparent to API consumers. Existing storefronts,
 
 ### FR-005 — Documentation Review
 
-Before this feature is considered complete, engineering must review and propose updates to:
-- [help.vtex.com/docs/tutorials/pickup-points](https://help.vtex.com/docs/tutorials/pickup-points) — remove 50km limit statement; update setup instructions.
-- [community.vtex.com/t/request-to-increase-pickup-point-radius/42497](https://community.vtex.com/t/request-to-increase-pickup-point-radius/42497) — close or update with a note pointing to the new behavior.
+Owner: **PM (Carolina Tourinho)** — engineering is not required to act on this requirement. The PM will coordinate updates with the DK/EDU team for all public-facing pages that reference the 50km limit.
+
+Known pages to update or close:
+
+**Help Center (tutorials)**
+- [Pickup points (EN)](https://help.vtex.com/en/docs/tutorials/pickup-points) — remove 50km limit statement; update setup instructions.
+- [Pontos de retirada (PT)](https://help.vtex.com/pt/docs/tutorials/pontos-de-retirada) — same as above.
+- [Puntos de recogida (ES)](https://help.vtex.com/es/docs/tutorials/puntos-de-recogida) — same as above.
+- [Delivery Promise (Beta)](https://help.vtex.com/en/docs/tutorials/delivery-promise-beta) — references 50km as the default radius for pickup filtering; update when behavior changes.
+- [Physical stores as pickup points](https://help.vtex.com/en/docs/tracks/configuring-physical-stores-as-pickup-points) — review for any radius references.
+- [How shipping calculation works](https://help.vtex.com/docs/tutorials/how-shipping-calculation-works) — review for any radius references.
+- [Shipping strategies](https://help.vtex.com/docs/tracks/shipping-strategies) — review for any radius references.
+
+**Developer Portal**
+- [List pickup points by location](https://developers.vtex.com/docs/guides/list-pickup-points-by-location) — references 50km and the `maxDistance` parameter; update to reflect new behavior.
+- [Delivery Promise](https://developers.vtex.com/docs/guides/delivery-promise) — references 50km as checkout-configured radius; update.
+- [Setting up Delivery Promise components (Beta)](https://developers.vtex.com/docs/guides/setting-up-delivery-promise-components) — review for radius references.
+- [Delivery Promise for headless stores (Beta)](https://developers.vtex.com/docs/guides/delivery-promise-for-headless-stores) — references 50km as default; update.
+
+**Community**
+- [Request to increase pickup point radius](https://community.vtex.com/t/request-to-increase-pickup-point-radius/42497) — close or update with a note pointing to the new behavior.
 
 ### FR-006 — Account Mapping (pre-launch prerequisite)
 Before launch, produce a mapping of all VTEX accounts with active pickup points, segmented by: (a) accounts with manually increased radius >50km and (b) accounts at the 50km default where a meaningful share of shopper ZIPs have the nearest PUP beyond 50km.
@@ -143,16 +163,13 @@ Track the following indicators separately for two cohorts (defined in FR-006):
 
 | Indicator | What it measures |
 |---|---|
-| % of orders with `selectedDeliveryChannel=pickup-in-point` (pre/post) | Whether removing the hard limit changes behavior even for accounts already above 50km |
-| Distance distribution of selected PUPs (pre/post) | Whether the distribution shifts further out after the cap is fully removed |
+| % of orders with `selectedDeliveryChannel=pickup-in-point` (pre/post) | Whether removing the hard limit changes order behavior even for accounts already above 50km |
 
 **Cohort B — accounts at the 50km default (no prior manual increase)**
 
 | Indicator | What it measures |
 |---|---|
 | % of orders with `selectedDeliveryChannel=pickup-in-point` (pre/post) | Primary signal: did pickup adoption increase when the radius constraint was removed? |
-| Distance distribution of selected PUPs (pre/post) | % of pickup orders where selected PUP was >50km from shopper ZIP |
-| Pickup offer rate at checkout (pre/post) | % of sessions where at least one pickup option was shown |
 
 **Infrastructure (both cohorts)**
 
@@ -175,15 +192,11 @@ Using the Product Support data (35 requests, 25 executions in 2025), identify al
 
 ### Step 2 — Establish baseline (pre-launch)
 For each seller in the cohort, record:
-- % of checkout sessions where at least one pickup option was shown
 - % of orders with `selectedDeliveryChannel=pickup-in-point`
-- Distance distribution of the pickup points currently being surfaced
 
 ### Step 3 — Post-launch tracking (per seller)
-After removing the limit, track the same indicators for the same sellers. The delta is the attributable impact:
-- Did more sessions surface a pickup option? (offer rate)
-- Did more orders close via pickup? (conversion)
-- Did the distance distribution shift — i.e., are shoppers now selecting PUPs that were previously hidden?
+After removing the limit, track the same indicator for the same sellers. The delta is the attributable impact:
+- Did more orders close via pickup? (conversion lift)
 
 ### Step 4 — Interpret and report
 A meaningful lift in pickup offer rate and conversion for the cohort is the signal that the radius was the binding constraint. This is the most credible data point for leadership because it is based on accounts with a confirmed, documented need — not a modeled estimate.
@@ -252,8 +265,8 @@ No breaking changes to the existing delivery options API contract. New fields ar
 ## Target Audience
 
 - **Tier:** All tiers
-- **Merchant Profile:** Omnichannel retailers, merchants with large physical networks or low-density store coverage
-- **Anchor merchants:** RONA, Arcaplanet, Mazda
+- **Merchant Profile:** Omnichannel retailers, B2B operations, merchants with large physical networks or low-density store coverage, B2C luxury and rare-item retailers with sparse or iconic store networks
+- **Anchor merchants:** RONA, Arcaplanet, Mazda, Dolce & Gabbana, Manchester City
 - **Persona:** Shopper (primary impact); Logistics Configurator (eliminates manual radius increase requests)
 
 ---

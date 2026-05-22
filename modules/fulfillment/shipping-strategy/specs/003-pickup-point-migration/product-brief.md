@@ -31,6 +31,7 @@ The result: merchants with stores or DCs beyond 50km from a shopper cannot surfa
 
 **This is especially damaging for B2B operations, particularly in countries with large territories such as Brazil, the United States, and Canada.** In B2B commerce, buyers frequently travel significant distances to pick up orders at distribution centers, fulfillment hubs, or partner locations — often across cities or even states. The purchase decision is driven by product availability, price, and the total cost of the operation, not by proximity. A buyer placing a large order of construction materials, industrial equipment, or wholesale goods routinely travels 100–300km to a DC because the freight cost for those items is prohibitive. The 50km limit has no basis in this business model: it silently removes the pickup option from checkout, forcing the buyer to either pay for long-distance freight or abandon the order entirely. For B2B merchants like RONA and Mazda, this is a direct and measurable revenue loss.
 
+**The constraint is equally damaging for B2C merchants selling luxury goods or rare items** — categories where the shopper is not proximity-driven but destination-driven. For a luxury fashion brand like Dolce & Gabbana, the flagship store is not a convenience pickup point — it is part of the brand experience. A shopper based in Recife or Porto Alegre may intentionally plan to collect a purchase at the São Paulo Iguatemi boutique during a trip, combining the journey with the in-store service and brand encounter that define the product category. The 50km limit silently removes that intent from checkout. The same logic applies to merchants anchored to a single iconic location: Manchester City supporters travel internationally to attend matches at the Etihad Stadium, and many specifically want to collect official merchandise at the stadium store — a pickup point with global demand from fans who plan the purchase around the visit. For both profiles, the radius constraint does not protect the shopper from an irrelevant option — it hides a deliberate, high-intent purchase decision.
 ---
 
 ## Reasons to Act Now
@@ -66,7 +67,7 @@ VTEX is actively investing in B2B commerce — including the development of Buye
 ## Target Audience
 
 - **Tier:** All tiers
-- **Merchant Profile:** Omnichannel retailers, B2B operations, merchants with large physical networks or low-density store coverage
-- **Anchor merchants:** RONA, Arcaplanet, Mazda
+- **Merchant Profile:** Omnichannel retailers, B2B operations, merchants with large physical networks or low-density store coverage, B2C luxury and rare-item retailers with sparse or iconic store networks
+- **Anchor merchants:** RONA, Arcaplanet, Mazda, Dolce & Gabbana, Manchester City
 - **Persona:** Shopper (primary impact); Logistics Configurator (eliminates manual radius increase requests to VTEX)
 - **Pain:** Valid pickup points silently excluded from checkout due to a platform-level distance constraint unrelated to any business rule
