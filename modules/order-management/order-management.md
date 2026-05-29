@@ -6,6 +6,7 @@
 | **GPM** | [Julia Grisi Lolato](mailto:julia.lolato@vtex.com) |
 | **PM** | [Marcelo Leonel](mailto:marcelo.leonel@vtex.com) |
 | **EM** | [Heliomar Santos](mailto:heliomar.santos@vtex.com) |
+| **PD** | [Jackeline Dinizo](mailto:jackeline.dinizo@vtex.com) |
 | **Status** | Active |
 
 ---

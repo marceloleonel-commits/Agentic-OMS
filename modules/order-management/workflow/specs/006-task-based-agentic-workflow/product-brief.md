@@ -34,17 +34,22 @@
 ## Scope
 
 **In scope:**
-- Engine de workflow baseado em tarefas com definição visual (board kanban) por tipo de pedido ou merchant
-- Configuração conversacional de tarefas via chat: nome, responsável, categoria, ações VTEX nativas, script JavaScript customizado, API externa, integração MCP, agente AI Workspace
-- Múltiplos pipelines por item de pedido: pagamento (Autorização → Captura) e operacional (Separação → Conferência → Embalagem → Expedição)
+- **Order Jobs como unidade de configuração top-level**: merchants criam e gerenciam Order Jobs via "Gerenciar Order Jobs" (kanban visual). Cada Order Job contém exatamente 4 marcos fixos — Confirmação de Pagamento, Preparando Itens, NFes Emitidas, Recebido pelo Cliente — cada marco contendo N tarefas (cards)
+- 4 Order Jobs nativos: **Entrega em domicílio** 🚚, **Retirada na loja** 🏪, **Entrega digital** 💻, **Entrega pela loja** 🏬 — mais Troca e Devolução ↩️
+- Criação de novo Order Job via fluxo conversacional de 6 passos: nome → modelo base → ícone → descrição → preview dos marcos → confirmar
+- Configuração conversacional de tarefas via chat: nome, responsável, categoria, visibilidade (user / internal), script JavaScript customizado, API externa (configuração inline durante criação), integração MCP, agente AI Workspace
+- Múltiplos marcos por item de pedido exibidos como seções independentes com headers coloridos (💳 Confirmação de Pagamento + 📦 Preparando Itens + 🧾 NFes Emitidas + 📬 Recebido pelo Cliente)
+- Sistema de gatilho de ativação por workflow com 3 tipos: (a) **Início do pedido** — automático ao criar o pedido; (b) **Conclusão de workflow** — após outro workflow da cadeia ser concluído; (c) **Conclusão de tarefa específica** — após uma tarefa nomeada de um workflow específico ser concluída
+- Suporte a pedidos com itens do tipo kit: agrupamento visual de itens físicos + serviços associados sob banner compartilhado no detalhe do pedido
+- Ciclo de vida de tarefas com 4 status: **Pendente · Completado · Cancelado · Ignorado**; cancelamento exige motivo registrado; todas as transições são iniciadas pelo operador ou pelo agente
+- Checkpoints por tarefa: gates de validação nomeados (ex.: "Arte aprovada pelo cliente") com `failAction` configurável; progresso de checkpoints exibido no pipeline do pedido
+- Criação de etapas (colunas) e tarefas (cards) por fluxos conversacionais separados; catálogo de fornecedores contextual auto-sugere responsáveis com base no nome da tarefa (pagamento, separação, NF, entrega, personalização, instalação, etc.)
 - Workflows secundários (ex.: Troca e Devolução) disparáveis manualmente (operador/shopper) ou autonomamente pelo agente
-- Agente orquestrador configurável: limiar de confiança (0–100%), SLA de monitoramento, horário de operação (24/7 ou horário comercial), toggles de capacidade por ação
+- Agente orquestrador com 3 sub-agentes independentes: **🗺️ Roteamento** (seleciona fulfillment mode e provider por pedido), **⚙️ Orquestração** (monitora gates e avança status), **🚨 Escalação** (detecta inatividade além do SLA, cria tasks para operador, dispara alertas Slack); cada sub-agente tem toggles de skill individuais
 - Detecção e resolução autônoma de pedidos travados dentro dos parâmetros de confiança configurados
 - Engine de regras customizadas em linguagem natural (IF condition THEN action) com prioridade e escopo por workflow
-- Integração com catálogo de ferramentas VTEX nativas (enviar_email, validarEstoque, reservarEstoque, capturarPagamento, cancelarPedido, alterarSellerPedido, etc.)
 - Integração com servidores MCP externos (VTEX Catalog, Logistics, Payments, NFe Emitter, CRM)
 - Integração com agentes do AI Workspace via contratos de variáveis de entrada/saída
-- Visibilidade de variáveis de contexto produzidas por ações anteriores do workflow no detalhe do pedido
 - Painel de configuração do agente com interface conversacional e cards estruturados
 - Gestão de dependências entre workflows (sequenciamento de pipelines)
 - Trilha de auditoria completa por pedido: ação, ferramenta, parâmetros, resultado, timestamp, operador responsável
@@ -52,4 +57,4 @@
 - Preview em tempo real durante edição de tarefas
 - Operações destrutivas (excluir tarefa, reordenar pipeline, dividir tarefa) com confirmação modal
 
-**Not in scope:** Engine de pagamento (responsabilidade do gateway/PSP); comunicação com o shopper final (cobre o módulo Message Center); notificações push mobile; criação de workflows via API (MLP); suporte a BPMN ou notação de processo externa; SLA contratuais ou multas (responsabilidade do contrato com o seller); auditoria financeira ou contábil (responsabilidade do ERP).
+**Not in scope:** Engine de pagamento (responsabilidade do gateway/PSP); comunicação com o shopper final (cobre o módulo Message Center); notificações push mobile; criação de workflows via API (MLP); suporte a BPMN ou notação de processo externa; SLA contratuais ou multas (responsabilidade do contrato com o seller); auditoria financeira ou contábil (responsabilidade do ERP); variáveis de contexto intermediárias exibidas no detalhe do pedido (removido do escopo do MLP — substituído por visibilidade de status de checkpoints).

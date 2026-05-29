@@ -1,855 +1,3 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Agentic Workflow — VTEX Admin</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css">
-</head>
-<body>
-
-<!-- GLOBAL NAV -->
-<nav class="global-nav">
-  <button class="hamburger">
-    <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="18" height="18"><line x1="2" y1="4" x2="16" y2="4"/><line x1="2" y1="9" x2="16" y2="9"/><line x1="2" y1="14" x2="16" y2="14"/></svg>
-  </button>
-  <div class="vtex-logo-wrap">
-    <svg viewBox="0 0 80 68" fill="none" width="26" height="22"><path d="M40 0L80 68H0L40 0Z" fill="#F71963"/></svg>
-    <span class="store-name">recorrenciacharlie</span>
-  </div>
-  <div class="global-search">
-    <svg class="gs-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="7" cy="7" r="5"/><line x1="11" y1="11" x2="15" y2="15"/></svg>
-    <input type="text" placeholder="Buscar VTEX">
-  </div>
-  <div class="global-nav-right">
-    <button class="nav-action">Copilot</button>
-    <button class="nav-action">Visite a loja ↗</button>
-    <button class="nav-action">Ajuda</button>
-    <div class="user-avatar">M</div>
-  </div>
-</nav>
-
-<div class="main-layout">
-  <aside class="sidebar">
-    <div class="nav-item" onclick="showScreen('orders')">
-      <svg class="nav-icon" viewBox="0 0 16 16"><rect x="2" y="2" width="12" height="3" rx="1"/><rect x="2" y="7" width="12" height="3" rx="1"/><rect x="2" y="12" width="8" height="2" rx="1"/></svg>
-      Dashboards
-    </div>
-    <div class="nav-item" id="nav-pedidos">
-      <svg class="nav-icon" viewBox="0 0 16 16"><path d="M3 2h10l1 4H2L3 2z"/><path d="M2 6l1 8h10l1-8"/><path d="M6 10h4"/></svg>
-      Pedidos
-      <svg class="nav-chevron" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="2" width="10" height="10"><path d="M2 4l3 3 3-3"/></svg>
-    </div>
-    <div class="nav-item sub active" onclick="showScreen('orders')" id="nav-all-orders">Todos os pedidos</div>
-    <div class="nav-item sub">Transações</div>
-    <div class="nav-item sub">Conciliação bancária</div>
-    <div class="sidebar-divider"></div>
-    <div class="sidebar-section">Agentic Workflow</div>
-    <div class="nav-item" onclick="showScreen('workflow-list')" id="nav-workflow" style="font-weight:500">
-      <svg class="nav-icon" viewBox="0 0 16 16"><circle cx="4" cy="4" r="2"/><circle cx="12" cy="4" r="2"/><circle cx="4" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><path d="M6 4h4M4 6v4M12 6v4M6 12h4"/></svg>
-      Gerenciar Order Jobs
-</div>
-    <div class="nav-item" onclick="showScreen('agent-config')" id="nav-agent">
-      <svg class="nav-icon" viewBox="0 0 16 16"><circle cx="8" cy="5" r="3"/><path d="M2 14c0-3 2.7-5 6-5s6 2 6 5"/><circle cx="13" cy="3" r="1.5" fill="currentColor" stroke="none"/><path d="M13 5v2M11.5 6.5l1 1"/></svg>
-      Agente de Orquestração
-    </div>
-    <div class="sidebar-divider"></div>
-    <div class="nav-item"><svg class="nav-icon" viewBox="0 0 16 16"><path d="M2 3h12v2H2zM2 7h8v2H2zM2 11h5v2H2z"/></svg>Catálogo</div>
-    <div class="nav-item"><svg class="nav-icon" viewBox="0 0 16 16"><path d="M8 2v12M2 8h12"/></svg>Promoções</div>
-    <div class="nav-item"><svg class="nav-icon" viewBox="0 0 16 16"><rect x="2" y="2" width="12" height="12" rx="2"/></svg>Storefront</div>
-    <div class="nav-item"><svg class="nav-icon" viewBox="0 0 16 16"><rect x="2" y="4" width="12" height="10" rx="1"/><path d="M5 4V3a3 3 0 016 0v1"/></svg>Envio</div>
-    <div class="nav-item"><svg class="nav-icon" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/></svg>Marketplace</div>
-    <div class="nav-item"><svg class="nav-icon" viewBox="0 0 16 16"><circle cx="8" cy="8" r="3"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2"/></svg>Configurações da loja</div>
-  </aside>
-
-  <div class="app-body">
-
-    <!-- ══ SCREEN: ORDERS ══ -->
-    <div class="screen active" id="screen-orders">
-      <div class="page-header">
-        <h1 class="page-title">Todos os pedidos</h1>
-        <div class="page-header-actions">
-          <button class="btn btn-primary">
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M8 2v10M4 8l4 4 4-4"/><path d="M2 14h12"/></svg>
-            Exportar
-          </button>
-        </div>
-      </div>
-      <div class="stats-bar">
-        <span class="stats-label">Total de pedidos</span>
-        <div class="stats-group">
-          <div class="stats-item"><span class="stats-period">Hoje</span><span class="stats-value">1.185</span></div>
-          <div class="stats-item"><span class="stats-period">Ontem</span><span class="stats-value">1.190</span><span class="stats-delta delta-neg">-0%</span></div>
-          <div class="stats-item"><span class="stats-period">Últimos 7 dias</span><span class="stats-value">1.182</span><span class="stats-delta delta-pos">0%</span></div>
-        </div>
-        <div class="stats-divider"></div>
-        <span class="stats-label">Vendas em BRL</span>
-        <div class="stats-group">
-          <div class="stats-item"><span class="stats-period">Vendas</span><span class="stats-value">4.256</span></div>
-          <div class="stats-item"><span class="stats-period">Ticket médio</span><span class="stats-value">R$ 35,98</span></div>
-          <div class="stats-item"><span class="stats-period">Receita</span><span class="stats-value">R$ 153.133,87</span></div>
-        </div>
-      </div>
-      <div class="search-filter-row">
-        <div class="search-box">
-          <svg class="search-box-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="7" cy="7" r="5"/><line x1="11" y1="11" x2="15" y2="15"/></svg>
-          <input type="text" placeholder="Buscar por Número de Pedido, CPF, Nome do Cliente...">
-        </div>
-        <div class="filter-chip ai-badge">
-          <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><circle cx="7" cy="7" r="5"/></svg>
-          Filtros AI (beta) <span class="badge-num">13</span>
-        </div>
-        <div class="filter-chip">Status: Em processamento +2 <svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="2" width="10" height="10"><path d="M2 4l3 3 3-3"/></svg></div>
-        <div class="filter-chip">Criado: Últimos 30 dias <svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="2" width="10" height="10"><path d="M2 4l3 3 3-3"/></svg></div>
-        <span class="pagination-info">1 — 30 de 4256 pedidos</span>
-      </div>
-      <div class="table-wrap">
-        <div class="table-toolbar">
-          <span class="table-toolbar-title">Pedidos</span>
-          <button class="btn btn-secondary btn-sm" id="task-tree-toggle" onclick="toggleTaskTree()" style="margin-left:auto">
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M2 4h3v3H2zM7 2h3v3H7zM7 8h3v3H7zM2 10h3v2H2z"/><path d="M5 5.5h2M5 11h2M10 3.5h2v9h-2"/></svg>
-            Mostrar Tarefas
-          </button>
-        </div>
-        <table>
-          <thead>
-            <tr>
-              <th>Status</th>
-              <th>Processamento</th>
-              <th>ID do pedido ⇅</th>
-              <th>Data ⇅</th>
-              <th>Cliente</th>
-              <th>Itens</th>
-              <th>Valor ⇅</th>
-              <th>Origem</th>
-              <th>Pagamento</th>
-              <th class="task-tree-col hidden" id="task-tree-header-col">Tarefas</th>
-            </tr>
-          </thead>
-          <tbody id="orders-tbody"></tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- ══ SCREEN: ORDER DETAIL ══ -->
-    <div class="screen" id="screen-detail">
-      <div class="detail-header">
-        <button class="back-btn" onclick="showScreen('orders')">
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M10 4L6 8l4 4"/></svg>
-          Voltar
-        </button>
-        <span class="detail-order-id" id="detail-order-id"></span>
-        <span class="badge" id="detail-status-badge"></span>
-        <div class="detail-actions">
-          <button class="btn btn-secondary btn-sm">Imprimir pedido</button>
-          <button class="btn btn-danger btn-sm">Cancelar pedido</button>
-          <button class="btn btn-primary btn-sm">Faturar</button>
-        </div>
-      </div>
-      <p class="detail-meta" id="detail-meta"></p>
-
-      <div class="detail-sections">
-        <div class="detail-card">
-          <div class="detail-card-title">Cliente</div>
-          <div class="detail-field-value" id="detail-client-name" style="font-weight:600;margin-bottom:2px"></div>
-          <div class="detail-field-value" style="color:#888;font-size:12px" id="detail-client-doc"></div>
-          <div class="detail-field-value link" style="margin-top:6px;font-size:12.5px">(82) 99675-0713</div>
-          <div class="detail-field-value link" style="font-size:12.5px">cliente@vtex.com</div>
-        </div>
-        <div class="detail-card">
-          <div class="detail-card-title">Entrega</div>
-          <div style="font-size:11px;font-weight:600;color:#aaa;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Endereço</div>
-          <div class="detail-field-value">Rua Comendador Firmo Lopes, 75<br>Farol · Maceió, AL · 57050-030</div>
-          <div style="font-size:11px;font-weight:600;color:#aaa;text-transform:uppercase;letter-spacing:.4px;margin:10px 0 4px">Destinatário</div>
-          <div class="detail-field-value" id="detail-client-name2"></div>
-        </div>
-        <div class="detail-card">
-          <div class="detail-card-title">Valores</div>
-          <div class="payment-row"><span class="payment-row-label">Itens</span><span class="payment-row-value" id="detail-items-val"></span></div>
-          <div class="payment-row"><span class="payment-row-label">Envio</span><span class="payment-row-value">R$ 2,00</span></div>
-          <div class="payment-row" style="margin-top:10px;padding-top:10px;border-top:1px solid #f0f0f0;font-weight:700">
-            <span style="color:#1a1a1a">Valor final</span>
-            <span style="color:#1a1a1a" id="detail-total-val"></span>
-          </div>
-        </div>
-      </div>
-
-      <div class="detail-status-card">
-        <div class="status-header">
-          <span class="status-title">Status do pedido</span>
-          <div class="status-links">
-            <span class="status-link">Ver histórico</span>
-            <span class="status-link active-link">Ver fluxo completo</span>
-          </div>
-        </div>
-        <div class="order-status-steps" id="order-status-steps"></div>
-      </div>
-
-      <div class="items-section">
-        <div class="items-section-title">
-          <svg viewBox="0 0 16 16" fill="none" stroke="#0c6fcd" stroke-width="2" width="16" height="16"><path d="M2 4h3v3H2zM7 2h3v3H7zM7 8h3v3H7zM2 10h3v2H2z"/><path d="M5 5.5h2M5 11h2M10 3.5h2v9h-2"/></svg>
-          Itens do Pedido — Tarefas por Item
-          <span class="badge badge-blue" style="font-size:11px" id="detail-items-count"></span>
-        </div>
-        <div id="detail-items-list"></div>
-      </div>
-
-      <div class="detail-main-row">
-        <div></div>
-        <div class="payment-card">
-          <div class="payment-title">Pagamento</div>
-          <div class="payment-method">
-            <div class="payment-method-name">Promissory</div>
-            <div class="payment-row"><span class="payment-row-label">Método</span><span class="payment-row-value">Promissory</span></div>
-            <div class="payment-row"><span class="payment-row-label">Valor</span><span class="payment-row-value" id="detail-pay-val"></span></div>
-            <div style="margin-top:10px;padding-top:10px;border-top:1px solid #f0f0f0">
-              <div style="font-size:11px;font-weight:600;color:#aaa;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">Status do Pagamento</div>
-              <span class="badge badge-yellow">Aguardando pagamento</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ══ SCREEN: WORKFLOW LIST ══ -->
-    <div class="screen" id="screen-workflow-list">
-      <div class="page-header">
-        <div>
-          <h1 class="page-title">Gerenciar Order Jobs</h1>
-          <div style="font-size:12.5px;color:#888;margin-top:3px">Gerencie os jobs de pedidos da sua operação</div>
-        </div>
-        <div class="page-header-actions">
-          <button class="btn btn-secondary" onclick="openBulkConfigPanel()">
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-              <rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/>
-              <rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/>
-            </svg>
-            Configurar em Lote
-          </button>
-          <button class="btn btn-primary" onclick="openCreateWorkflowPanel()">
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M8 2v12M2 8h12"/></svg>
-            + Novo Job
-          </button>
-        </div>
-      </div>
-      <div class="wfl-grid" id="wfl-grid"></div>
-      <div id="new-wf-panel" style="position:fixed;right:-400px;top:0;height:100vh;z-index:200;width:400px;background:#fff;border-left:1px solid #e8e8e8;display:flex;flex-direction:column;overflow:hidden;transition:right .25s ease;box-shadow:-4px 0 16px rgba(0,0,0,.08)">
-        <div style="display:flex;align-items:center;padding:14px 16px;border-bottom:1px solid #f0f0f0;gap:8px">
-          <span style="flex:1;font-size:14px;font-weight:600;color:#1a1a1a">🤖 Novo Workflow com AI</span>
-          <button onclick="closeNewWfPanel()" style="background:none;border:none;cursor:pointer;padding:4px;color:#888;font-size:20px;line-height:1">×</button>
-        </div>
-        <div id="new-wf-body" style="flex:1;display:flex;flex-direction:column;overflow:hidden"></div>
-        <div id="new-wf-footer" style="display:flex;gap:8px;padding:10px 16px;border-top:1px solid #f0f0f0"></div>
-      </div>
-      <div id="bulk-panel" style="position:fixed;right:-400px;top:0;height:100vh;z-index:200;width:400px;background:#fff;border-left:1px solid #e8e8e8;display:flex;flex-direction:column;overflow:hidden;transition:right .25s ease;box-shadow:-4px 0 16px rgba(0,0,0,.08)">
-        <div style="display:flex;align-items:center;padding:14px 16px;border-bottom:1px solid #f0f0f0;gap:8px">
-          <span style="flex:1;font-size:14px;font-weight:600;color:#1a1a1a" id="bulk-sp-title">Configurar em Lote</span>
-          <button onclick="closeBulkPanel()" style="background:none;border:none;cursor:pointer;padding:4px;color:#888;font-size:20px;line-height:1">×</button>
-        </div>
-        <div id="bulk-sp-body" style="flex:1;display:flex;flex-direction:column;overflow:hidden"></div>
-        <div id="bulk-sp-footer" style="display:flex;gap:8px;padding:10px 16px;border-top:1px solid #f0f0f0"></div>
-      </div>
-    </div>
-
-    <!-- ══ SCREEN: WORKFLOW BOARD ══ -->
-    <div class="screen" id="screen-workflow">
-      <div class="wf-toolbar">
-        <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0">
-          <button class="back-btn" onclick="showScreen('workflow-list')" style="flex-shrink:0;padding:5px 8px;border:1px solid #e0e0e0;border-radius:4px;background:#fff">
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M10 4L6 8l4 4"/></svg>
-            Workflows
-          </button>
-          <span style="color:#d0d0d0;font-size:16px;flex-shrink:0">/</span>
-          <div style="min-width:0">
-            <div class="wf-title" id="wf-board-title">Workflow</div>
-            <div style="font-size:11.5px;color:#888;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="wf-board-desc">Configure e organize as etapas</div>
-          </div>
-        </div>
-        <div class="wf-toolbar-right">
-          <div class="impact-badge">
-            <svg viewBox="0 0 16 16" fill="none" stroke="#c2410c" stroke-width="2" width="13" height="13"><path d="M8 2l6 12H2L8 2z"/><path d="M8 7v3M8 12v.5"/></svg>
-            Alterações valem apenas para pedidos novos
-          </div>
-          <button class="btn btn-secondary btn-sm" onclick="showScreen('orders')">Ver Pedidos</button>
-          <button class="btn btn-secondary btn-sm" onclick="openWorkflowSettings(currentWorkflowId)" title="Configurações do workflow">
-            <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><circle cx="7" cy="7" r="2"/><path d="M7 1v2M7 11v2M1 7h2M11 7h2M3 3l1.4 1.4M9.6 9.6L11 11M3 11l1.4-1.4M9.6 4.4L11 3"/></svg>
-          </button>
-          <button class="btn btn-primary btn-sm" onclick="openCreatePanel()">+ Nova Etapa</button>
-        </div>
-      </div>
-      <div class="wf-flow-bar" id="wf-flow-bar"></div>
-      <div class="wf-board-wrap">
-        <div class="wf-board-scroll" id="wf-board-scroll"></div>
-        <div class="side-panel closed" id="side-panel">
-          <div class="sp-header">
-            <span class="sp-title" id="sp-title">Editar Etapa</span>
-            <button class="sp-close" onclick="closeSidePanel()">
-              <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M2 2l10 10M12 2L2 12"/></svg>
-            </button>
-          </div>
-          <div class="sp-body" id="sp-body"></div>
-          <div class="sp-footer" id="sp-footer"></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- ══ SCREEN: AGENT CONFIG ══ -->
-    <div class="screen" id="screen-agent-config">
-      <!-- Header -->
-      <div class="orch-header">
-        <div>
-          <h1 class="page-title" style="font-size:17px;margin:0">Agente de Orquestração</h1>
-          <div style="font-size:12px;color:#888;margin-top:3px">Configure o comportamento do agente AI que orquestra os workflows de pedidos</div>
-        </div>
-        <div class="orch-header-right">
-          <div class="agent-status-bar" style="padding:8px 12px">
-            <div class="agent-status-dot"></div>
-            <span class="agent-status-label">Agente ativo</span>
-            <span class="agent-status-sub">· 4.256 pedidos</span>
-            <button class="toggle-switch on" id="agent-master-toggle" onclick="this.classList.toggle('on');this.classList.toggle('off')" style="margin-left:8px" title="Ativar/desativar agente"></button>
-          </div>
-          <button class="btn btn-secondary btn-sm" onclick="showScreen('workflow-list')">Ver Workflows</button>
-          <button class="btn btn-primary btn-sm" onclick="saveAgentConfig()">Salvar</button>
-        </div>
-      </div>
-
-      <!-- 2-column body -->
-      <div class="orch-layout">
-
-        <!-- LEFT: agentic chat -->
-        <div class="orch-chat-col">
-          <div class="orch-chat-header">
-            <div class="orch-agent-avatar">🤖</div>
-            <div>
-              <div style="font-size:13px;font-weight:600;color:#1a1a1a">Assistente de Configuração</div>
-              <div style="font-size:11.5px;color:#888">AI · Modo interativo</div>
-            </div>
-          </div>
-          <div class="orch-chat-msgs" id="orch-chat-msgs"></div>
-          <div class="orch-sugg-wrap" id="orch-sugg-wrap"></div>
-          <div class="orch-chat-input-row">
-            <input class="cm-input" id="orch-chat-input" placeholder="Descreva o que deseja configurar…" onkeydown="if(event.key==='Enter')sendOrchChat()">
-            <button class="cm-send" onclick="sendOrchChat()">
-              <svg viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="2" width="13" height="13"><path d="M14 2L2 8l4 2 2 4 6-12z"/></svg>
-            </button>
-          </div>
-        </div>
-
-        <!-- RIGHT: config panels -->
-        <div class="orch-config-col" id="orch-config-col">
-
-          <!-- ── 1. ORDER JOB ── -->
-          <div class="settings-card orch-card" id="ocard-orderjob">
-            <div class="settings-card-title"><span class="sc-title-icon">🗂️</span> Order Job — Agrupamento de Itens</div>
-            <div style="font-size:12px;color:#888;margin-top:-6px;margin-bottom:14px">Define como os itens do pedido são agrupados. Itens com os mesmos parâmetros seguem juntos no mesmo fluxo de fulfillment.</div>
-
-            <div style="font-size:12px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px">Modelo de Fulfillment</div>
-            <div style="display:flex;flex-direction:column;gap:6px;padding:10px 12px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;margin-bottom:12px">
-              <div class="checkbox-row" style="margin:0"><input type="checkbox" id="fm-home" checked><label for="fm-home" style="font-size:12.5px">Entrega em domicílio<span class="sub">Itens despachados por transportadora até o endereço do cliente</span></label></div>
-              <div class="checkbox-row" style="margin:0"><input type="checkbox" id="fm-bopis" checked><label for="fm-bopis" style="font-size:12.5px">Retirada em loja (BOPIS)<span class="sub">Itens separados para pickup no ponto de venda</span></label></div>
-            </div>
-
-            <div style="font-size:12px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px">Critérios de agrupamento</div>
-            <div class="checkbox-row"><input type="checkbox" id="oj-sla" checked><label for="oj-sla">SLA de entrega<span class="sub">Itens com prazos incompatíveis geram Order Jobs separados</span></label></div>
-            <div class="checkbox-row"><input type="checkbox" id="oj-sup" checked><label for="oj-sup">Supplier de Entrega<span class="sub">Itens de suppliers/sellers diferentes geram Order Jobs distintos</span></label></div>
-
-            <div style="border-top:1px solid #f0f0f0;padding-top:12px;margin-top:8px">
-              <div style="font-size:12px;font-weight:600;color:#3f3f40;margin-bottom:8px">Exemplo de agrupamento</div>
-              <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:10px 12px;font-size:11.5px;line-height:1.8;color:#555">
-                <div style="font-weight:600;color:#1a1a1a;margin-bottom:6px">Pedido com 4 itens → 2 Order Jobs</div>
-                <div style="display:flex;flex-direction:column;gap:6px">
-                  <div style="display:flex;gap:8px;align-items:flex-start">
-                    <span style="background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8;font-size:10px;font-weight:700;padding:1px 7px;border-radius:10px;flex-shrink:0;margin-top:1px">OJ 1</span>
-                    <span>3 itens · Entrega em domicílio · CD São Paulo · Jadlog · SLA 3d</span>
-                  </div>
-                  <div style="display:flex;gap:8px;align-items:flex-start">
-                    <span style="background:#f5f3ff;border:1px solid #e9d5ff;color:#7c3aed;font-size:10px;font-weight:700;padding:1px 7px;border-radius:10px;flex-shrink:0;margin-top:1px">OJ 2</span>
-                    <span>1 item · Retirada em loja · Shopping Botafogo RJ</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- ── 2. AGENTES & SKILLS ── -->
-          <div class="settings-card orch-card" id="ocard-agents" style="margin-top:16px">
-            <div class="settings-card-title"><span class="sc-title-icon">🤖</span> Agentes &amp; Skills</div>
-            <div style="font-size:12px;color:#888;margin-top:-6px;margin-bottom:14px">Configure os agentes que compõem o orquestrador. Expanda cada agente para ativar ou desativar suas skills.</div>
-            <div style="display:flex;flex-direction:column;gap:10px">
-
-              <!-- Roteamento -->
-              <div style="border:1px solid #e5e7eb;border-radius:8px;overflow:hidden">
-                <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:#f9fafb;cursor:pointer" onclick="toggleAgentCard('agent-routing')">
-                  <span style="font-size:18px;line-height:1">🗺️</span>
-                  <div style="flex:1">
-                    <div style="font-size:13px;font-weight:600;color:#1a1a1a">Roteamento</div>
-                    <div style="font-size:11.5px;color:#888;margin-top:1px">Seleciona modo de fulfillment e provider por pedido</div>
-                  </div>
-                  <button class="toggle-switch on" onclick="event.stopPropagation();this.classList.toggle('on');this.classList.toggle('off')"></button>
-                  <svg id="agent-routing-arrow" viewBox="0 0 16 16" fill="none" stroke="#888" stroke-width="2" width="14" height="14" style="flex-shrink:0;transition:transform .2s"><path d="M4 6l4 4 4-4"/></svg>
-                </div>
-                <div id="agent-routing" style="padding:12px 14px;border-top:1px solid #e5e7eb;display:none">
-                  <div style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Skills</div>
-                  <div style="display:flex;flex-direction:column;gap:5px">
-                    <div class="checkbox-row" style="margin:0"><input type="checkbox" id="sk-rt1" checked><label for="sk-rt1" style="font-size:12px">Seleção de CD por proximidade<span class="sub">Minimiza custo de frete e prazo</span></label></div>
-                    <div class="checkbox-row" style="margin:0"><input type="checkbox" id="sk-rt2" checked><label for="sk-rt2" style="font-size:12px">Verificação de estoque em tempo real<span class="sub">Consulta WMS antes de alocar</span></label></div>
-                    <div class="checkbox-row" style="margin:0"><input type="checkbox" id="sk-rt3" checked><label for="sk-rt3" style="font-size:12px">Split de pedido por seller<span class="sub">Order Jobs independentes por supplier</span></label></div>
-                    <div class="checkbox-row" style="margin:0"><input type="checkbox" id="sk-rt4"><label for="sk-rt4" style="font-size:12px">Ranking de provider por SLA histórico<span class="sub">Dados dos últimos 30 dias</span></label></div>
-                  </div>
-                  <div style="border-top:1px solid #f0f0f0;padding-top:10px;margin-top:10px;display:flex;flex-direction:column;gap:8px">
-                    <div class="field-group" style="margin:0">
-                      <div class="field-label">Modo de decisão</div>
-                      <select class="field-input" style="max-width:240px"><option selected>Automático</option><option>Sugerir + aguardar aprovação</option></select>
-                    </div>
-                    <div class="field-group" style="margin:0">
-                      <div class="field-label">Fallback quando sem provider disponível</div>
-                      <select class="field-input" style="max-width:240px"><option selected>Escalar para operador</option><option>Tentar provider alternativo</option><option>Cancelar automaticamente</option></select>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Orquestração -->
-              <div style="border:1px solid #e5e7eb;border-radius:8px;overflow:hidden">
-                <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:#f9fafb;cursor:pointer" onclick="toggleAgentCard('agent-orch')">
-                  <span style="font-size:18px;line-height:1">⚙️</span>
-                  <div style="flex:1">
-                    <div style="font-size:13px;font-weight:600;color:#1a1a1a">Orquestração</div>
-                    <div style="font-size:11.5px;color:#888;margin-top:1px">Monitora gates e dispara ações automaticamente</div>
-                  </div>
-                  <button class="toggle-switch on" onclick="event.stopPropagation();this.classList.toggle('on');this.classList.toggle('off')"></button>
-                  <svg id="agent-orch-arrow" viewBox="0 0 16 16" fill="none" stroke="#888" stroke-width="2" width="14" height="14" style="flex-shrink:0;transition:transform .2s"><path d="M4 6l4 4 4-4"/></svg>
-                </div>
-                <div id="agent-orch" style="padding:12px 14px;border-top:1px solid #e5e7eb;display:none">
-                  <div style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Skills</div>
-                  <div style="display:flex;flex-direction:column;gap:5px">
-                    <div class="checkbox-row" style="margin:0"><input type="checkbox" id="sk-oc1" checked><label for="sk-oc1" style="font-size:12px">Detecção de pedidos travados<span class="sub">Monitora status sem movimentação acima do SLA</span></label></div>
-                    <div class="checkbox-row" style="margin:0"><input type="checkbox" id="sk-oc2" checked><label for="sk-oc2" style="font-size:12px">Avanço automático de status<span class="sub">Avança etapas quando todas as condições são satisfeitas</span></label></div>
-                    <div class="checkbox-row" style="margin:0"><input type="checkbox" id="sk-oc3" checked><label for="sk-oc3" style="font-size:12px">Sugestão de realocação de estoque<span class="sub">Propõe novo CD quando o atual não pode atender</span></label></div>
-                    <div class="checkbox-row" style="margin:0"><input type="checkbox" id="sk-oc4" checked><label for="sk-oc4" style="font-size:12px">Criação de tarefas para operadores<span class="sub">Gera tasks quando confiança está abaixo do threshold</span></label></div>
-                    <div class="checkbox-row" style="margin:0"><input type="checkbox" id="sk-oc5"><label for="sk-oc5" style="font-size:12px">Cancelamento automático<span class="sub">Requer confiança ≥ 95% e aprovação do gestor</span></label></div>
-                  </div>
-                  <div style="border-top:1px solid #f0f0f0;padding-top:10px;margin-top:10px">
-                    <div class="slider-wrap">
-                      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-                        <span style="font-size:12px;font-weight:600;color:#3f3f40">Confiança mínima para ação automática</span>
-                        <span class="slider-val" id="conf-val">75%</span>
-                      </div>
-                      <div class="slider-track" style="position:relative;height:6px;background:#e5e7eb;border-radius:3px;overflow:visible">
-                        <div class="slider-fill" id="conf-fill" style="width:75%;height:100%;background:#0c6fcd;border-radius:3px;pointer-events:none"></div>
-                        <input type="range" min="0" max="100" value="75" id="conf-range" oninput="updateSlider(this,'conf-val','conf-fill')" style="width:100%;position:absolute;top:-5px;left:0;opacity:0;cursor:pointer;height:16px">
-                      </div>
-                      <div class="slider-labels"><span>0% — age sempre</span><span>100% — nunca age</span></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Escalação -->
-              <div style="border:1px solid #e5e7eb;border-radius:8px;overflow:hidden">
-                <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:#f9fafb;cursor:pointer" onclick="toggleAgentCard('agent-esc')">
-                  <span style="font-size:18px;line-height:1">🚨</span>
-                  <div style="flex:1">
-                    <div style="font-size:13px;font-weight:600;color:#1a1a1a">Escalação</div>
-                    <div style="font-size:11.5px;color:#888;margin-top:1px">Detecta inatividade e cria tarefas para operadores</div>
-                  </div>
-                  <button class="toggle-switch on" onclick="event.stopPropagation();this.classList.toggle('on');this.classList.toggle('off')"></button>
-                  <svg id="agent-esc-arrow" viewBox="0 0 16 16" fill="none" stroke="#888" stroke-width="2" width="14" height="14" style="flex-shrink:0;transition:transform .2s"><path d="M4 6l4 4 4-4"/></svg>
-                </div>
-                <div id="agent-esc" style="padding:12px 14px;border-top:1px solid #e5e7eb;display:none">
-                  <div style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Skills</div>
-                  <div style="display:flex;flex-direction:column;gap:5px">
-                    <div class="checkbox-row" style="margin:0"><input type="checkbox" id="sk-es1" checked><label for="sk-es1" style="font-size:12px">Monitoramento de SLA por etapa<span class="sub">Alerta quando o prazo da etapa está em risco</span></label></div>
-                    <div class="checkbox-row" style="margin:0"><input type="checkbox" id="sk-es2" checked><label for="sk-es2" style="font-size:12px">Criação de task manual para operador<span class="sub">Gera task com contexto e sugestão de ação</span></label></div>
-                    <div class="checkbox-row" style="margin:0"><input type="checkbox" id="sk-es3" checked><label for="sk-es3" style="font-size:12px">Notificação via Slack (#dom-alertas)<span class="sub">Envia alerta em tempo real ao canal da equipe</span></label></div>
-                    <div class="checkbox-row" style="margin:0"><input type="checkbox" id="sk-es4" checked><label for="sk-es4" style="font-size:12px">Notificação por e-mail<span class="sub">Resumo de exceções ao gestor de operações</span></label></div>
-                    <div class="checkbox-row" style="margin:0"><input type="checkbox" id="sk-es5"><label for="sk-es5" style="font-size:12px">Webhook personalizado<span class="sub">Envia payload para endpoint configurado</span></label></div>
-                  </div>
-                  <div style="border-top:1px solid #f0f0f0;padding-top:10px;margin-top:10px;display:flex;flex-direction:column;gap:8px">
-                    <div class="field-group" style="margin:0">
-                      <div class="field-label">Intervir após (horas sem movimentação)</div>
-                      <input class="field-input" type="number" value="4" min="1" max="72" style="max-width:100px">
-                    </div>
-                    <div class="field-group" style="margin:0">
-                      <div class="field-label">Horário de operação</div>
-                      <select class="field-input" style="max-width:240px"><option selected>24h / 7 dias</option><option>Horário comercial (08h–18h, seg–sex)</option></select>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-            </div><!-- /agents list -->
-          </div>
-
-        </div><!-- /orch-config-col -->
-      </div><!-- /orch-layout -->
-    </div>
-
-    <!-- ══ SCREEN: WORKFLOW SETTINGS ══ -->
-    <div class="screen" id="screen-workflow-settings">
-      <div class="page-header">
-        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-          <button class="back-btn" onclick="showScreen('workflow-list')" style="padding:5px 8px;border:1px solid #e0e0e0;border-radius:4px;background:#fff">
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M10 4L6 8l4 4"/></svg>
-            Workflows
-          </button>
-          <span style="color:#d0d0d0;font-size:16px">/</span>
-          <span id="ws-breadcrumb" style="font-size:14px;color:#888;font-weight:500"></span>
-          <span style="color:#d0d0d0;font-size:16px">/</span>
-          <h1 class="page-title" style="font-size:18px;margin:0">Configurações</h1>
-        </div>
-        <div class="page-header-actions">
-          <button class="btn btn-secondary" onclick="showScreen('workflow-list')">Cancelar</button>
-          <button class="btn btn-primary" onclick="saveWorkflowSettings()">Salvar Configurações</button>
-        </div>
-      </div>
-      <div class="settings-layout">
-        <div class="settings-card" style="grid-column:1/-1">
-          <div class="settings-card-title"><span class="sc-title-icon">📝</span> Informações Gerais</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
-            <div class="field-group"><div class="field-label">Nome do Workflow</div><input class="field-input" id="ws-name"></div>
-            <div class="field-group"><div class="field-label">Ícone</div>
-              <div style="display:flex;gap:6px;flex-wrap:wrap" id="ws-icon-row"></div>
-            </div>
-          </div>
-          <div class="field-group"><div class="field-label">Descrição</div><textarea class="field-input" id="ws-desc" rows="2" style="resize:vertical"></textarea></div>
-        </div>
-        <div class="settings-card">
-          <div class="settings-card-title"><span class="sc-title-icon">⚡</span> Acionamento</div>
-          <div style="font-size:12px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Quando este workflow é iniciado</div>
-          <div class="radio-row"><input type="radio" name="ws-trigger" id="wt-auto" checked><label for="wt-auto">Automaticamente para novos pedidos<span class="sub">Acionado assim que o pedido é criado ou após dependência concluir</span></label></div>
-          <div class="radio-row"><input type="radio" name="ws-trigger" id="wt-manual"><label for="wt-manual">Manualmente pelo operador<span class="sub">Um operador ou o agente AI deve acionar explicitamente</span></label></div>
-          <div class="radio-row"><input type="radio" name="ws-trigger" id="wt-customer"><label for="wt-customer">Por solicitação do cliente<span class="sub">Acionado quando o cliente abre solicitação no portal</span></label></div>
-          <div style="border-top:1px solid #f0f0f0;padding-top:12px;margin-top:4px">
-            <div class="toggle-row"><div><div class="toggle-label">Agente AI orquestra este workflow</div><div class="toggle-sub">O agente monitora e avança etapas automaticamente</div></div><button class="toggle-switch on" onclick="this.classList.toggle('on');this.classList.toggle('off')"></button></div>
-          </div>
-        </div>
-        <div class="settings-card">
-          <div class="settings-card-title"><span class="sc-title-icon">🔗</span> Dependências de Workflow</div>
-          <div style="font-size:12.5px;color:#555;margin-bottom:10px">Este workflow só será acionado após a conclusão de:</div>
-          <div id="ws-deps" style="display:flex;flex-wrap:wrap;gap:8px;min-height:32px;margin-bottom:10px"></div>
-          <button class="dep-add-btn" onclick="toggleDepDropdown()">
-            <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M7 2v10M2 7h10"/></svg>
-            Adicionar dependência
-          </button>
-          <div id="dep-dropdown" style="display:none;margin-top:8px;border:1px solid #e0e0e0;border-radius:6px;overflow:hidden"></div>
-          <div style="border-top:1px solid #f0f0f0;padding-top:12px;margin-top:12px">
-            <div style="font-size:12px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">Workflows que dependem deste</div>
-            <div id="ws-dependents" style="font-size:12.5px;color:#888;line-height:1.6"></div>
-          </div>
-          <div style="border-top:1px solid #f0f0f0;padding-top:12px;margin-top:12px">
-            <div style="font-size:12px;font-weight:700;color:#333;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px">Gatilho de ativação</div>
-            <div id="ws-trigger"></div>
-          </div>
-        </div>
-        <div class="settings-card" style="grid-column:1/-1">
-          <div class="settings-card-title"><span class="sc-title-icon">📐</span> Regras de Aplicação</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px">
-            <div>
-              <div style="font-size:12px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Tipo de entrega</div>
-              <div class="checkbox-row"><input type="checkbox" id="r-all" checked><label for="r-all">Todos os tipos</label></div>
-            </div>
-            <div>
-              <div style="font-size:12px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Canal de venda</div>
-              <div class="checkbox-row"><input type="checkbox" id="c-all" checked><label for="c-all">Todos os canais</label></div>
-              <div class="checkbox-row"><input type="checkbox" id="c-own"><label for="c-own">Loja própria</label></div>
-              <div class="checkbox-row"><input type="checkbox" id="c-mkt"><label for="c-mkt">Marketplace</label></div>
-              <div class="checkbox-row"><input type="checkbox" id="c-b2b"><label for="c-b2b">B2B</label></div>
-            </div>
-            <div>
-              <div style="font-size:12px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Categoria de produto</div>
-              <div class="checkbox-row"><input type="checkbox" id="p-all" checked><label for="p-all">Todas as categorias</label></div>
-              <div class="checkbox-row"><input type="checkbox" id="p-elec"><label for="p-elec">Eletrônicos</label></div>
-              <div class="checkbox-row"><input type="checkbox" id="p-fashion"><label for="p-fashion">Moda e Calçados</label></div>
-              <div class="checkbox-row"><input type="checkbox" id="p-food"><label for="p-food">Alimentos</label></div>
-              <div class="checkbox-row"><input type="checkbox" id="p-ebook"><label for="p-ebook">E-Books</label></div>
-              <div class="checkbox-row"><input type="checkbox" id="p-travel"><label for="p-travel">Passagens Aéreas</label></div>
-              <div class="checkbox-row"><input type="checkbox" id="p-custom"><label for="p-custom">Personalização de Itens</label></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-  </div>
-</div>
-
-<!-- MODALS -->
-<div class="modal-overlay" id="modal-delete">
-  <div class="modal">
-    <div class="modal-title">Excluir Etapa</div>
-    <div class="modal-body">Deseja excluir <strong id="del-name"></strong>? Esta ação não pode ser desfeita.</div>
-    <div class="modal-actions">
-      <button class="btn btn-secondary" onclick="closeModal('modal-delete')">Cancelar</button>
-      <button class="btn btn-danger" onclick="confirmDelete()">Excluir</button>
-    </div>
-  </div>
-</div>
-<div class="modal-overlay" id="modal-edge">
-  <div class="modal">
-    <div class="modal-title" id="modal-edge-title">Gerenciar Conexão</div>
-    <div class="modal-body" id="modal-edge-body"></div>
-    <div class="modal-warning">
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M8 2l6 12H2L8 2z"/><path d="M8 7v3M8 12v.5"/></svg>
-      <span>Esta alteração valerá apenas para <strong>pedidos novos</strong>.</span>
-    </div>
-    <div class="modal-actions">
-      <button class="btn btn-secondary" onclick="closeModal('modal-edge')">Cancelar</button>
-      <button class="btn btn-primary" id="modal-edge-confirm" onclick="confirmEdge()">Confirmar</button>
-    </div>
-  </div>
-</div>
-<div class="modal-overlay" id="modal-reorder">
-  <div class="modal">
-    <div class="modal-title">Alterar Ordem de Execução</div>
-    <div class="modal-body" id="modal-reorder-body"></div>
-    <div class="modal-warning">
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M8 2l6 12H2L8 2z"/><path d="M8 7v3M8 12v.5"/></svg>
-      <span>Esta alteração valerá apenas para <strong>pedidos novos</strong>.</span>
-    </div>
-    <div class="modal-actions">
-      <button class="btn btn-secondary" onclick="closeModal('modal-reorder')">Cancelar</button>
-      <button class="btn btn-primary" onclick="confirmReorder()">Confirmar</button>
-    </div>
-  </div>
-</div>
-<div class="modal-overlay" id="modal-split-confirm">
-  <div class="modal">
-    <div class="modal-title">Confirmar Divisão de Etapa</div>
-    <div class="modal-body" id="modal-split-body"></div>
-    <div class="modal-warning">
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M8 2l6 12H2L8 2z"/><path d="M8 7v3M8 12v.5"/></svg>
-      <span>Esta alteração valerá apenas para <strong>pedidos novos</strong>. Pedidos em andamento não serão afetados.</span>
-    </div>
-    <div class="modal-actions">
-      <button class="btn btn-secondary" onclick="closeModal('modal-split-confirm')">Cancelar</button>
-      <button class="btn btn-primary" onclick="confirmSplit()">Confirmar Divisão</button>
-    </div>
-  </div>
-</div>
-<div class="modal-overlay" id="modal-wf-delete">
-  <div class="modal">
-    <div class="modal-title">Excluir Workflow</div>
-    <div class="modal-body">Deseja excluir permanentemente <strong id="wf-del-name"></strong>? Esta ação não pode ser desfeita e afetará todos os pedidos vinculados.</div>
-    <div class="modal-warning">
-      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M8 2l6 12H2L8 2z"/><path d="M8 7v3M8 12v.5"/></svg>
-      <span>Pedidos em andamento <strong>não serão cancelados</strong>, mas perderão a referência de workflow.</span>
-    </div>
-    <div class="modal-actions">
-      <button class="btn btn-secondary" onclick="closeModal('modal-wf-delete')">Cancelar</button>
-      <button class="btn btn-danger" onclick="confirmDeleteWorkflow()">Excluir</button>
-    </div>
-  </div>
-</div>
-
-<script>
-// ══════════════════════════════════════════
-// DATA
-// ══════════════════════════════════════════
-
-const STATUS_CFG = {
-  'not-processed':{ label:'Não processado', cls:'badge-not-processed', icon:'⏳' },
-  'processing':   { label:'Em processamento', cls:'badge-processing', icon:'🔄' },
-  'processed':    { label:'Processado', cls:'badge-processed', icon:'✅' },
-  'canceled':     { label:'Cancelado', cls:'badge-canceled', icon:'❌' },
-};
-
-const ORDERS = [
-  { id:'1631888948228-01', short:'68948228', date:'13/05/2026 - 16:48', client:'Paulo Bernardo', items:3, total:'R$ 502,00', origin:'Marketplace', orderStatus:'processing', tasks:[
-    {n:'Separação',s:'done'},{n:'Conferência',s:'active'},{n:'Embalagem',s:'waiting'},{n:'Expedição',s:'waiting'}] },
-  { id:'1631858947234-01', short:'68947234', date:'13/05/2026 - 13:33', client:'Ana Carvalho', items:2, total:'R$ 1.230,00', origin:'Marketplace', orderStatus:'processed', tasks:[
-    {n:'Separação',s:'done'},{n:'Conferência',s:'done'},{n:'Embalagem',s:'done'},{n:'Expedição',s:'done'}] },
-  { id:'1631848947052-01', short:'68947052', date:'13/05/2026 - 12:56', client:'Carlos Mendes', items:1, total:'R$ 89,90', origin:'Loja própria', orderStatus:'processed', tasks:[
-    {n:'Separação',s:'done'},{n:'Conferência',s:'done'},{n:'Embalagem',s:'done'},{n:'Expedição',s:'done'}] },
-  { id:'1631848946980-01', short:'68946980', date:'13/05/2026 - 12:43', client:'Fernanda Lima', items:4, total:'R$ 345,00', origin:'Marketplace', orderStatus:'not-processed', tasks:[
-    {n:'Separação',s:'waiting'},{n:'Conferência',s:'waiting'},{n:'Embalagem',s:'waiting'},{n:'Expedição',s:'waiting'}] },
-  { id:'1631838946798-01', short:'68946798', date:'13/05/2026 - 12:08', client:'Roberto Silva', items:1, total:'R$ 67,50', origin:'Loja própria', orderStatus:'not-processed', tasks:[
-    {n:'Separação',s:'waiting'},{n:'Conferência',s:'waiting'},{n:'Embalagem',s:'waiting'},{n:'Expedição',s:'waiting'}] },
-  { id:'1631828946500-01', short:'68946500', date:'13/05/2026 - 11:30', client:'Mariana Costa', items:5, total:'R$ 890,00', origin:'Marketplace', orderStatus:'processing', tasks:[
-    {n:'Separação',s:'done'},{n:'Conferência',s:'done'},{n:'Embalagem',s:'active'},{n:'Expedição',s:'waiting'}] },
-  { id:'1631818946200-01', short:'68946200', date:'13/05/2026 - 10:55', client:'Diego Ferreira', items:2, total:'R$ 155,00', origin:'Loja própria', orderStatus:'processed', tasks:[
-    {n:'Separação',s:'done'},{n:'Conferência',s:'done'},{n:'Embalagem',s:'done'},{n:'Expedição',s:'done'}] },
-  { id:'1631808945900-01', short:'68945900', date:'13/05/2026 - 10:12', client:'Juliana Santos', items:3, total:'R$ 220,00', origin:'Marketplace', orderStatus:'canceled', tasks:[] },
-];
-
-// Per-order item details
-const ORDER_ITEMS = {
-  '1631858947234-01': [
-    { name:'Jaqueta Calvin Klein G', emoji:'🧥', qty:1, price:'R$ 790,00',
-      paymentWorkflow:[{name:'Autorização',sup:'Financeiro',s:'done'},{name:'Captura',sup:'Financeiro',s:'done'}],
-      tasks:[
-      {name:'Separação',sup:'CD São Paulo',s:'done'},{name:'Conferência',sup:'QA Team',s:'done'},
-      {name:'Embalagem',sup:'CD São Paulo',s:'done'},{name:'Expedição',sup:'Transp. XYZ',s:'done'}],
-      secondWorkflow:{
-        wfId:'wf-returns', wfName:'Troca e Devolução', triggeredAt:'14/05/2026 10:23',
-        triggeredBy:'Agente AI',
-        tasks:[
-          {name:'Solicitação Recebida',sup:'Atendimento',s:'done'},
-          {name:'Análise do Motivo',sup:'QA Team',s:'done'},
-          {name:'Coleta do Item',sup:'Transp. XYZ',s:'active'},
-          {name:'Inspeção de Qualidade',sup:'QA Team',s:'waiting'},
-          {name:'Reembolso / Troca',sup:'Financeiro',s:'waiting'}]
-      },
-      returnInfo:{
-        initiator:'agent', initiatedAt:'14/05/2026 10:23',
-        reason:'defeito_produto', reasonLabel:'Defeito no produto',
-        description:'Cliente relatou costura com defeito na manga direita após a primeira utilização. Solicita troca por outro exemplar no mesmo tamanho (G) e cor (preto).',
-        agentJustification:'Análise preditiva identificou risco alto de chargeback (confiança 87%). Com base em NPS score 2/10 e 3 ocorrências similares no histórico do cliente, abertura proativa de troca reduz probabilidade de disputa em 64% segundo modelo de retenção.'
-      }
-    },
-    { name:'Cinto Couro Marrom', emoji:'👔', qty:1, price:'R$ 440,00',
-      paymentWorkflow:[{name:'Autorização',sup:'Financeiro',s:'done'},{name:'Captura',sup:'Financeiro',s:'done'}],
-      tasks:[
-      {name:'Separação',sup:'CD São Paulo',s:'done'},{name:'Conferência',sup:'QA Team',s:'done'},
-      {name:'Embalagem',sup:'CD São Paulo',s:'done'},{name:'Expedição',sup:'Transp. XYZ',s:'done'}],
-      secondWorkflow:{
-        wfId:'wf-returns', wfName:'Troca e Devolução', triggeredAt:'15/05/2026 11:40',
-        triggeredBy:'Shopper',
-        tasks:[
-          {name:'Solicitação Recebida',sup:'Atendimento',s:'done'},
-          {name:'Análise do Motivo',sup:'QA Team',s:'active'},
-          {name:'Coleta do Item',sup:'Transp. XYZ',s:'waiting'},
-          {name:'Inspeção de Qualidade',sup:'QA Team',s:'waiting'},
-          {name:'Reembolso / Troca',sup:'Financeiro',s:'waiting'}]
-      },
-      returnInfo:{
-        initiator:'shopper', initiatedAt:'15/05/2026 11:40',
-        reason:'tamanho_incorreto', reasonLabel:'Tamanho incorreto',
-        description:'Recebi o cinto no tamanho 40 mas o pedido era referente ao tamanho 42. Gostaria de realizar a troca pelo tamanho correto, mantendo o mesmo modelo e cor marrom.',
-        agentJustification:null
-      }
-    },
-  ],
-  '1631888948228-01': [
-    { name:'Tênis Nike Air Max 42', emoji:'👟', qty:3, price:'R$ 320,00',
-      paymentWorkflow:[{name:'Autorização',sup:'Financeiro',s:'done'},{name:'Captura',sup:'Financeiro',s:'done'}],
-      tasks:[
-      {name:'Separação',sup:'CD São Paulo',s:'done',actions:['validarEstoque','ReservarEstoque'],
-        contextVars:[{k:'validarEstoque.disponivel',v:'2'},{k:'validarEstoque.qtd_necessaria',v:'3'},{k:'validarEstoque.ok',v:'false'}]},
-      {name:'Conferência',sup:'QA Team',s:'done'},
-      {name:'Embalagem',sup:'CD São Paulo',s:'blocked',
-        blockReason:'validarEstoque() retornou estoque insuficiente no CD São Paulo (2 un. disponíveis; pedido requer 3 un.)',
-        blockSource:'validarEstoque() → { disponivel: 2, qtd_necessaria: 3, ok: false }',
-        suggestion:'Realocar para CD Rio de Janeiro (8 un. disponíveis) via AlterarSellerPedido()',
-        actions:['validarEstoque','AlterarItemPedido']},
-      {name:'Expedição',sup:'Transp. XYZ',s:'waiting'}]},
-    { name:'Meia Adidas c/3', emoji:'🧦', qty:2, price:'R$ 89,00',
-      paymentWorkflow:[{name:'Autorização',sup:'Financeiro',s:'done'},{name:'Captura',sup:'Financeiro',s:'done'}],
-      tasks:[
-      {name:'Separação',sup:'CD São Paulo',s:'done'},{name:'Conferência',sup:'QA Team',s:'done'},
-      {name:'Embalagem',sup:'CD São Paulo',s:'active'},{name:'Expedição',sup:'Transp. XYZ',s:'waiting'}]},
-    { name:'Shaker Proteína 700ml', emoji:'🥤', qty:1, price:'R$ 93,00',
-      paymentWorkflow:[{name:'Autorização',sup:'Financeiro',s:'active'},{name:'Captura',sup:'Financeiro',s:'waiting'}],
-      tasks:[
-      {name:'Separação',sup:'CD São Paulo',s:'waiting'},
-      {name:'Conferência',sup:'QA Team',s:'waiting',
-        blockReason:'CapturarPagamento() não foi executado na etapa anterior — pedido aguarda confirmação de pagamento.',
-        blockSource:'CapturarPagamento() → { status: "pending_authorization" }',
-        suggestion:'Aguardar confirmação do gateway ou acionar aprovação manual via Aprovação de Pagamento.',
-        actions:['enviar_email']},
-      {name:'Embalagem',sup:'CD São Paulo',s:'waiting'},{name:'Expedição',sup:'Transp. XYZ',s:'waiting'}]},
-  ],
-};
-
-const WORKFLOW_DEFS = [
-  {
-    id:'wf-standard', name:'Workflow Padrão', icon:'📦', color:'#0c6fcd', orderCount:4256,
-    description:'Fluxo padrão para pedidos de entrega convencional', dependencies:[],
-    tasks:[
-      {id:'t1', name:'Separação de Itens', color:'#0c6fcd', tasks:[
-        {id:'t1_0', name:'Separação de Itens', supplier:'CD São Paulo', category:'Todos', active:true,
-          actions:['validarEstoque','ReservarEstoque'], script:null, externalApi:null, mcpConfig:null, agentConfig:null,
-          contextOutput:['validarEstoque.disponivel','validarEstoque.qtd_reservada','validarEstoque.ok']}
-      ]},
-      {id:'t2', name:'Conferência de Qualidade', color:'#7c3aed', tasks:[
-        {id:'t2_0', name:'Conferência de Qualidade', supplier:'QA Team', category:'Eletrônicos', active:true,
-          actions:['enviar_email'], script:null, externalApi:null, mcpConfig:null, agentConfig:null,
-          contextOutput:[]}
-      ]},
-      {id:'t3', name:'Embalagem', color:'#0891b2', tasks:[
-        {id:'t3_0', name:'Embalagem', supplier:'CD São Paulo', category:'Todos', active:true,
-          actions:['validarEstoque','AlterarItemPedido'], script:null, externalApi:null, mcpConfig:null, agentConfig:null,
-          contextOutput:[]}
-      ]},
-      {id:'t4', name:'Nota Fiscal', color:'#059669', tasks:[
-        {id:'t4_0', name:'Nota Fiscal', supplier:'Financeiro', category:'Todos', active:true,
-          actions:['CapturarPagamento'], script:null, mcpConfig:null, agentConfig:null,
-          externalApi:{url:'https://api.nfe.io/v1/nota', method:'POST',
-            responseMapping:[{key:'nf_numero',path:'data.number'},{key:'nf_chave',path:'data.accessKey'}]},
-          contextOutput:['CapturarPagamento.captura_id','api_nfe.nf_numero','api_nfe.nf_chave']}
-      ]},
-      {id:'t5', name:'Expedição', color:'#d97706', tasks:[
-        {id:'t5_0', name:'Expedição', supplier:'Transportadora XYZ', category:'Todos', active:true,
-          actions:['enviar_email','AlterarSellerPedido'], script:null, mcpConfig:null, agentConfig:null,
-          externalApi:{url:'https://api.transportadora.com/cotacao', method:'POST',
-            responseMapping:[{key:'prazo_entrega',path:'result.delivery_days'},{key:'custo_frete',path:'result.cost'}]},
-          contextOutput:['api_cotacao.prazo_entrega','api_cotacao.custo_frete']}
-      ]},
-    ],
-    edges:[
-      {id:'e1',from:'t1',to:'t2',active:true},{id:'e2',from:'t2',to:'t3',active:true},
-      {id:'e3',from:'t3',to:'t4',active:true},{id:'e4',from:'t4',to:'t5',active:true},
-    ],
-  },
-  {
-    id:'wf-returns', name:'Troca e Devolução', icon:'↩️', color:'#7c3aed', orderCount:83,
-    description:'Fluxo para pedidos de devolução e troca de produtos', dependencies:['wf-standard'],
-    tasks:[
-      {id:'r1', name:'Solicitação Recebida', color:'#7c3aed', tasks:[
-        {id:'r1_0', name:'Solicitação Recebida', supplier:'Atendimento', category:'Todos', active:true,
-          actions:[], script:null, externalApi:null, mcpConfig:null, agentConfig:null, contextOutput:[]}
-      ]},
-      {id:'r2', name:'Análise do Motivo', color:'#6366f1', tasks:[
-        {id:'r2_0', name:'Análise do Motivo', supplier:'QA Team', category:'Todos', active:true,
-          actions:[], script:null, externalApi:null, mcpConfig:null, agentConfig:null, contextOutput:[]}
-      ]},
-      {id:'r3', name:'Coleta do Item', color:'#0891b2', tasks:[
-        {id:'r3_0', name:'Coleta do Item', supplier:'Transportadora XYZ', category:'Todos', active:true,
-          actions:[], script:null, externalApi:null, mcpConfig:null, agentConfig:null, contextOutput:[]}
-      ]},
-      {id:'r4', name:'Inspeção de Qualidade', color:'#059669', tasks:[
-        {id:'r4_0', name:'Inspeção de Qualidade', supplier:'QA Team', category:'Todos', active:true,
-          actions:[], script:null, externalApi:null, mcpConfig:null, agentConfig:null, contextOutput:[]}
-      ]},
-      {id:'r5', name:'Reembolso / Troca', color:'#d97706', tasks:[
-        {id:'r5_0', name:'Reembolso / Troca', supplier:'Financeiro', category:'Todos', active:true,
-          actions:[], script:null, externalApi:null, mcpConfig:null, agentConfig:null, contextOutput:[]}
-      ]},
-    ],
-    edges:[
-      {id:'re1',from:'r1',to:'r2',active:true},{id:'re2',from:'r2',to:'r3',active:true},
-      {id:'re3',from:'r3',to:'r4',active:true},{id:'re4',from:'r4',to:'r5',active:true},
-    ],
-  },
-  {
-    id:'wf-payment', name:'Aprovação de Pagamento', icon:'💳', color:'#059669', orderCount:12,
-    description:'Fluxo de aprovação manual para pedidos B2B acima de R$ 10.000', dependencies:[],
-    tasks:[
-      {id:'p1', name:'Validação do Comprador', color:'#059669', tasks:[
-        {id:'p1_0', name:'Validação do Comprador', supplier:'Financeiro', category:'B2B', active:true,
-          actions:[], script:null, externalApi:null, mcpConfig:null, agentConfig:null, contextOutput:[]}
-      ]},
-      {id:'p2', name:'Análise de Crédito', color:'#0891b2', tasks:[
-        {id:'p2_0', name:'Análise de Crédito', supplier:'Financeiro', category:'B2B', active:true,
-          actions:[], script:null, externalApi:null, mcpConfig:null, agentConfig:null, contextOutput:[]}
-      ]},
-      {id:'p3', name:'Aprovação do Gestor', color:'#6366f1', tasks:[
-        {id:'p3_0', name:'Aprovação do Gestor', supplier:'Gestão', category:'B2B', active:true,
-          actions:[], script:null, externalApi:null, mcpConfig:null, agentConfig:null, contextOutput:[]}
-      ]},
-      {id:'p4', name:'Captura do Pagamento', color:'#d97706', tasks:[
-        {id:'p4_0', name:'Captura do Pagamento', supplier:'Financeiro', category:'B2B', active:true,
-          actions:[], script:null, externalApi:null, mcpConfig:null, agentConfig:null, contextOutput:[]}
-      ]},
-    ],
-    edges:[
-      {id:'pe1',from:'p1',to:'p2',active:true},{id:'pe2',from:'p2',to:'p3',active:true},
-      {id:'pe3',from:'p3',to:'p4',active:true},
-    ],
-  },
-];
-
 let currentWorkflowId = null;
 let WF_TASKS = [];
 let WF_EDGES = [];
@@ -883,62 +31,749 @@ function showScreen(name) {
 function renderWorkflowList() {
   const grid = document.getElementById('wfl-grid');
   if (!grid) return;
-  grid.innerHTML = WORKFLOW_DEFS.map(wf => `
-    <div class="wfl-card" onclick="openWorkflow('${wf.id}')">
+
+  function wfCardHtml(wf) {
+    const archived = !!wf.archived;
+    const statusDot = archived ? 'background:#9ca3af' : 'background:#22c55e';
+    const statusLabel = archived ? 'Arquivado' : 'Ativo';
+    const cardOpacity = archived ? 'opacity:.65' : '';
+    return `
+    <div class="wfl-card" onclick="openWorkflow('${wf.id}')" style="${cardOpacity}">
       <div class="wfl-card-header">
         <div class="wfl-icon" style="background:${wf.color}20">${wf.icon}</div>
         <div style="flex:1;min-width:0">
-          <div class="wfl-name">${wf.name}</div>
+          <div class="wfl-name">${wf.name}${archived ? ' <span style="font-size:10px;font-weight:600;background:#f3f4f6;color:#6b7280;padding:1px 6px;border-radius:10px;vertical-align:middle">Arquivado</span>' : ''}</div>
           <div class="wfl-desc">${wf.description}</div>
         </div>
       </div>
       <div class="wfl-meta">
         <div class="wfl-meta-item"><span class="wfl-meta-label">Pedidos ativos</span><span class="wfl-meta-val">${wf.orderCount.toLocaleString('pt-BR')}</span></div>
-        <div class="wfl-meta-item"><span class="wfl-meta-label">Etapas</span><span class="wfl-meta-val">${wf.tasks.length}</span></div>
+        <div class="wfl-meta-item"><span class="wfl-meta-label">Marcos</span><span class="wfl-meta-val">${wf.marcos.length}</span></div>
       </div>
+      ${wf.marcos.length === 4 && wf.marcos[0] && wf.marcos[0].id === 'wf-payments' ? `
+      <div style="display:flex;flex-wrap:wrap;gap:4px;margin:6px 0 2px">
+        ${wf.marcos.map(m => `<span style="font-size:10px;font-weight:600;background:${m.color}15;color:${m.color};border:1px solid ${m.color}30;padding:2px 7px;border-radius:10px">${m.icon} ${m.name}</span>`).join('')}
+      </div>` : ''}
       <div class="wfl-card-footer">
-        <div class="wfl-status"><div class="wfl-status-dot"></div>Ativo</div>
+        <div class="wfl-status"><div class="wfl-status-dot" style="${statusDot}"></div>${statusLabel}</div>
         <div style="display:flex;gap:6px">
           <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();openWorkflowSettings('${wf.id}')" title="Configurações">
             <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><circle cx="7" cy="7" r="2"/><path d="M7 1v2M7 11v2M1 7h2M11 7h2M3 3l1.4 1.4M9.6 9.6L11 11M3 11l1.4-1.4M9.6 4.4L11 3"/></svg>
           </button>
+          <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();toggleArchiveWorkflow('${wf.id}')" title="${archived ? 'Reativar workflow' : 'Arquivar workflow'}" style="${archived ? 'color:#059669' : ''}">
+            ${archived
+              ? `<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M7 1v8M4 6l3 3 3-3"/><path d="M2 10v2h10v-2"/></svg> Reativar`
+              : `<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><rect x="1" y="4" width="12" height="2" rx=".5"/><path d="M2 6v6h10V6"/><path d="M5 9h4"/></svg> Arquivar`}
+          </button>
+          <button class="btn btn-sm" onclick="event.stopPropagation();deleteWorkflow('${wf.id}')" title="Excluir workflow" style="background:transparent;border:1px solid #fca5a5;color:#dc2626;padding:4px 7px">
+            <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M2 4h10M5 4V2h4v2M5 6v5M9 6v5M3 4l1 8h6l1-8"/></svg>
+          </button>
           <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();openWorkflow('${wf.id}')">Abrir →</button>
         </div>
       </div>
-      <div style="display:flex;flex-direction:column;gap:8px">
-        <div class="ta-option" id="ta-opt-pending" onclick="selectTaskAction('pending')">
-          <div class="ta-opt-icon" style="background:#f3f4f6;border:2px solid #d1d5db"><span style="font-size:16px">⏳</span></div>
-          <div><div class="ta-opt-label">Pendente</div><div class="ta-opt-desc">Tarefa aguardando execução</div></div>
+    </div>`;
+  }
+
+  const active   = WORKFLOW_DEFS.filter(w => !w.archived);
+  const archived = WORKFLOW_DEFS.filter(w =>  w.archived);
+
+  let html = '';
+  if (active.length) {
+    html += `<div style="margin-bottom:28px"><div class="wfl-grid">${active.map(wfCardHtml).join('')}</div></div>`;
+  }
+
+  if (archived.length) {
+    html += `
+      <div style="margin-bottom:28px">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;padding-bottom:10px;border-bottom:2px solid #e5e7eb">
+          <div style="width:32px;height:32px;border-radius:8px;background:#f3f4f6;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0">📁</div>
+          <div>
+            <div style="font-size:14px;font-weight:700;color:#6b7280">Arquivados</div>
+            <div style="font-size:11.5px;color:#aaa;margin-top:1px">Workflows inativos — não recebem novos pedidos</div>
+          </div>
+          <span style="margin-left:auto;font-size:11px;font-weight:600;background:#f3f4f6;color:#6b7280;padding:2px 8px;border-radius:10px">${archived.length}</span>
         </div>
-        <div class="ta-option" id="ta-opt-completed" onclick="selectTaskAction('completed')">
-          <div class="ta-opt-icon" style="background:#f0fdf4;border:2px solid #22c55e"><span style="font-size:16px">✅</span></div>
-          <div><div class="ta-opt-label">Completado</div><div class="ta-opt-desc">Tarefa concluída com sucesso</div></div>
+        <div class="wfl-grid">${archived.map(wfCardHtml).join('')}</div>
+      </div>`;
+  }
+
+  grid.innerHTML = html;
+}
+
+let pendingDeleteWfId = null;
+function toggleArchiveWorkflow(id) {
+  const wf = WORKFLOW_DEFS.find(w => w.id === id); if (!wf) return;
+  wf.archived = !wf.archived;
+  renderWorkflowList();
+  const msg = wf.archived
+    ? `"${wf.name}" foi arquivado e não receberá novos pedidos.`
+    : `"${wf.name}" foi reativado e voltará a receber pedidos.`;
+  showSuccessModal(wf.archived ? 'Workflow arquivado' : 'Workflow reativado', msg);
+}
+function deleteWorkflow(id) {
+  const wf = WORKFLOW_DEFS.find(w => w.id === id); if (!wf) return;
+  pendingDeleteWfId = id;
+  document.getElementById('wf-del-name').textContent = wf.name;
+  openModal('modal-wf-delete');
+}
+function confirmDeleteWorkflow() {
+  const idx = WORKFLOW_DEFS.findIndex(w => w.id === pendingDeleteWfId);
+  if (idx !== -1) {
+    const name = WORKFLOW_DEFS[idx].name;
+    WORKFLOW_DEFS.splice(idx, 1);
+    if (currentWorkflowId === pendingDeleteWfId) currentWorkflowId = null;
+    pendingDeleteWfId = null;
+    closeModal('modal-wf-delete');
+    renderWorkflowList();
+    showSuccessModal('Workflow excluído', `"${name}" foi removido permanentemente.`);
+  }
+}
+
+function openTaskAction(orderId, itemIdx, taskType, taskIdx) {
+  const items = ORDER_ITEMS[orderId]; if (!items) return;
+  const item = items[itemIdx]; if (!item) return;
+  let task;
+  if (item.pipelines) {
+    if (taskType === 'return') {
+      task = (item.secondWorkflow?.tasks || [])[taskIdx];
+    } else if (taskType.startsWith('pipeline_')) {
+      const pIdx = parseInt(taskType.split('_')[1]);
+      task = item.pipelines[pIdx]?.tasks[taskIdx];
+    } else {
+      // 'main' = first pipeline
+      task = item.pipelines[0]?.tasks[taskIdx];
+    }
+  } else {
+    const taskList = taskType === 'main' ? (item.tasks || []) : (item.secondWorkflow?.tasks || []);
+    task = taskList[taskIdx];
+  }
+  if (!task || task.s !== 'pending') return;
+  pendingTaskAction = { orderId, itemIdx, taskIdx, taskType, action: 'completed' };
+  document.getElementById('ta-task-name').textContent = task.name;
+  document.getElementById('ta-task-sup').textContent = task.sup || '';
+  document.getElementById('ta-fail-reason-wrap').style.display = 'none';
+  document.getElementById('ta-fail-reason-text').value = '';
+  document.querySelectorAll('.ta-option').forEach(el => el.classList.remove('selected'));
+  document.getElementById('ta-opt-completed')?.classList.add('selected');
+  openModal('modal-task-action');
+}
+
+function selectTaskAction(action) {
+  pendingTaskAction.action = action;
+  document.querySelectorAll('.ta-option').forEach(el => el.classList.remove('selected'));
+  document.getElementById('ta-opt-' + action)?.classList.add('selected');
+  document.getElementById('ta-fail-reason-wrap').style.display = action === 'canceled' ? 'block' : 'none';
+}
+
+function confirmTaskAction() {
+  const { orderId, itemIdx, taskIdx, taskType, action } = pendingTaskAction;
+  const items = ORDER_ITEMS[orderId]; if (!items) return;
+  const item = items[itemIdx]; if (!item) return;
+  let task;
+  if (item.pipelines) {
+    if (taskType === 'return') {
+      task = (item.secondWorkflow?.tasks || [])[taskIdx];
+    } else if (taskType.startsWith('pipeline_')) {
+      const pIdx = parseInt(taskType.split('_')[1]);
+      task = item.pipelines[pIdx]?.tasks[taskIdx];
+    } else {
+      task = item.pipelines[0]?.tasks[taskIdx];
+    }
+  } else {
+    const taskList = taskType === 'main' ? (item.tasks || []) : (item.secondWorkflow?.tasks || []);
+    task = taskList[taskIdx];
+  }
+  if (!task) return;
+  if (action === 'canceled') {
+    const reason = document.getElementById('ta-fail-reason-text').value.trim();
+    if (!reason) { document.getElementById('ta-fail-reason-text').style.borderColor='#dc2626'; return; }
+    task.s = 'canceled'; task.cancelReason = reason;
+  } else {
+    task.s = action;
+  }
+  closeModal('modal-task-action');
+  const orderObj = ORDERS.find(o => o.id === orderId);
+  if (orderObj) renderItemsWithTasks(orderObj);
+  const labels = {completed:'concluída',canceled:'cancelada',ignored:'ignorada',pending:'marcada como pendente'};
+  showSuccessModal('Tarefa atualizada', `"${task.name}" foi ${labels[action]||action}.`);
+}
+
+function openWorkflow(id) {
+  const wf = WORKFLOW_DEFS.find(w => w.id === id);
+  if (!wf) return;
+  currentWorkflowId = id;
+  WF_TASKS = wf.marcos;
+  WF_EDGES = wf.edges || [];
+  const titleEl = document.getElementById('wf-board-title');
+  const descEl  = document.getElementById('wf-board-desc');
+  if (titleEl) titleEl.textContent = wf.name;
+  if (descEl)  descEl.textContent  = wf.description;
+  showScreen('workflow');
+}
+
+// ══════════════════════════════════════════
+// ORDERS LIST
+// ══════════════════════════════════════════
+
+let taskTreeVisible = false;
+
+function renderOrders() {
+  const tbody = document.getElementById('orders-tbody');
+  tbody.innerHTML = ORDERS.map((o, i) => {
+    const returnItems = (ORDER_ITEMS[o.id]||[]).filter(item => item.secondWorkflow);
+    const hasReturn = returnItems.length > 0;
+
+    let statusCell, dotsCell;
+    if (hasReturn) {
+      const sw = returnItems[0].secondWorkflow;
+      const activeTask = sw.tasks.find(t => t.s === 'pending') || sw.tasks.find(t => t.s === 'completed');
+      const stepName = activeTask?.name || '';
+      statusCell = `<span class="badge badge-return" style="white-space:nowrap">↩️ Em troca/dev.</span>
+        ${stepName ? `<br><span style="font-size:10.5px;color:#9333ea;display:block;margin-top:2px">→ ${stepName}</span>` : ''}`;
+      dotsCell = `<div class="processing-indicator">${sw.tasks.map(t =>
+        `<div class="proc-dot ${t.s}" title="${t.name}" style="${t.s==='completed'?'background:#7c3aed':t.s==='pending'?'background:#a78bfa':''}"></div>`
+      ).join('')}</div>`;
+    } else {
+      const sc = STATUS_CFG[o.orderStatus];
+      statusCell = `<span class="badge ${sc.cls}">${sc.icon} ${sc.label}</span>`;
+      dotsCell = o.tasks.length
+        ? `<div class="processing-indicator">${o.tasks.map(t=>`<div class="proc-dot ${t.s}" title="${t.n}"></div>`).join('')}</div>`
+        : '—';
+    }
+
+    const treeHtml = o.tasks.length
+      ? `<div class="task-tree-mini">${o.tasks.map(t=>`<div class="task-mini-item"><div class="task-mini-dot dot-${t.s}"></div><span>${t.n}</span></div>`).join('')}</div>`
+      : '—';
+
+    return `<tr onclick="openOrder(${i})">
+      <td style="white-space:nowrap">${statusCell}</td>
+      <td>${dotsCell}</td>
+      <td><div class="order-id-link">${o.id}<br><span style="font-size:11px;color:#888">${o.short}</span></div></td>
+      <td style="font-size:12.5px">${o.date}</td>
+      <td>${o.client}</td>
+      <td style="text-align:center;font-weight:600">${o.items}</td>
+      <td style="font-weight:500">${o.total}</td>
+      <td style="font-size:12.5px;color:#888">${o.origin}</td>
+      <td><div class="payment-toggle"></div></td>
+      <td class="task-tree-col hidden">${treeHtml}</td>
+    </tr>`;
+  }).join('');
+}
+
+function toggleTaskTree() {
+  taskTreeVisible = !taskTreeVisible;
+  document.querySelectorAll('.task-tree-col').forEach(el => el.classList.toggle('hidden', !taskTreeVisible));
+  document.getElementById('task-tree-header-col').classList.toggle('hidden', !taskTreeVisible);
+  document.getElementById('task-tree-toggle').innerHTML = `<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M2 4h3v3H2zM7 2h3v3H7zM7 8h3v3H7zM2 10h3v2H2z"/><path d="M5 5.5h2M5 11h2M10 3.5h2v9h-2"/></svg> ${taskTreeVisible ? 'Ocultar Tarefas' : 'Mostrar Tarefas'}`;
+}
+
+// ══════════════════════════════════════════
+// ORDER DETAIL
+// ══════════════════════════════════════════
+
+function openOrder(idx) {
+  const o = ORDERS[idx];
+  const sc = STATUS_CFG[o.orderStatus];
+  document.getElementById('detail-order-id').textContent = o.id + ' (' + o.short + ')';
+  const badge = document.getElementById('detail-status-badge');
+  badge.textContent = sc.icon + ' ' + sc.label;
+  badge.className = 'badge ' + sc.cls;
+  document.getElementById('detail-meta').textContent = o.date + ' • Vendido por recorrenciacharlie';
+  document.getElementById('detail-client-name').textContent = o.client;
+  document.getElementById('detail-client-name2').textContent = o.client;
+  document.getElementById('detail-client-doc').textContent = '12681154448';
+  document.getElementById('detail-items-val').textContent = o.total;
+  document.getElementById('detail-total-val').textContent = o.total;
+  document.getElementById('detail-pay-val').textContent = o.total;
+  renderOrderStatus3Step(o.orderStatus, o.id);
+  renderItemsWithTasks(o);
+  showScreen('detail');
+}
+
+const MILESTONE_ORDER_IDS = ['1631888948228-01', '1631920951000-01'];
+
+function renderOrderStatus3Step(status, orderId) {
+  const steps = [
+    {key:'not-processed',icon:'📋',label:'Não processado',sub:'Aguardando início das tarefas'},
+    {key:'processing',icon:'⚙️',label:'Em processamento',sub:'Tarefas sendo executadas'},
+    {key:'processed',icon:'✅',label:'Processado',sub:'Todas as tarefas concluídas'},
+  ];
+  const activeIdx = steps.findIndex(s => s.key === status);
+  const container = document.getElementById('order-status-steps');
+  const card = container ? container.closest('.detail-status-card') : null;
+  // "Status do pedido" section is hidden for all orders; status is shown via pipeline accordions
+  if (card) card.style.display = 'none';
+  return;
+  let html = '';
+  steps.forEach((s, i) => {
+    const isDone = i < activeIdx || (activeIdx === 2 && i === 2);
+    const isActive = i === activeIdx && status !== 'canceled';
+    const cls = isDone ? 'done' : isActive ? 'active' : 'waiting';
+    html += `<div class="oss-step ${cls}"><div class="oss-step-icon">${s.icon}</div><div class="oss-step-label">${s.label}</div><div class="oss-step-sub">${s.sub}</div></div>`;
+    if (i < steps.length - 1) html += `<div class="oss-arrow">→</div>`;
+  });
+  if (status === 'canceled') html += `<div style="margin-left:12px"><span class="badge badge-canceled">❌ Cancelado</span></div>`;
+  container.innerHTML = html;
+}
+
+// ── Group milestones (computed from pipeline task data) ──
+function computeGroupMilestones(groupItems, order) {
+  const allPipelines = groupItems.flatMap(item => item.pipelines || []);
+  const isCanceled = order && order.orderStatus === 'canceled';
+  const hasReturn  = groupItems.some(i => i.secondWorkflow);
+  function statusOf(tasks) {
+    if (!tasks.length) return 'nao_iniciado';
+    if (tasks.every(t => t.s === 'completed')) return 'finalizado';
+    if (tasks.some(t => t.s === 'canceled')) return 'cancelado';
+    if (tasks.some(t => t.s === 'completed' || t.s === 'blocked')) return 'em_andamento';
+    return 'nao_iniciado';
+  }
+  const payTasks  = allPipelines.filter(p => p.wfId === 'wf-payments').flatMap(p => p.tasks || []);
+  const prepTasks = allPipelines.filter(p => p.wfId === 'wf-standard').flatMap(p => p.tasks || []);
+  const nfeTasks  = allPipelines.filter(p => p.wfId === 'wf-nfe').flatMap(p => p.tasks || []);
+  const recTasks  = allPipelines.filter(p => p.wfId === 'wf-delivery').flatMap(p => p.tasks || []);
+  const payStatus = isCanceled && payTasks.every(t => t.s === 'completed') ? 'estorno' : statusOf(payTasks);
+  return [
+    { label:'Confirmação de Pagamentos', icon:'💳', status: payStatus },
+    { label:'Preparando os itens',       icon:'📦', status: isCanceled ? 'cancelado' : statusOf(prepTasks) },
+    { label:'NFes Emitidas',             icon:'🧾', status: isCanceled ? 'cancelado' : statusOf(nfeTasks)  },
+    { label:'Recebido pelo Cliente',     icon:'📬', status: isCanceled ? 'cancelado' : statusOf(recTasks),
+      note: hasReturn ? '↩️ Em Troca e Devolução' : null },
+  ];
+}
+function milestoneRowHtml(milestones) {
+  const cfg = {
+    finalizado:   { dot:'#15803d', text:'Finalizado',        bg:'#f0fdf4', border:'#bbf7d0', color:'#15803d' },
+    em_andamento: { dot:'#1d4ed8', text:'Em andamento',      bg:'#eff6ff', border:'#bfdbfe', color:'#1d4ed8' },
+    nao_iniciado: { dot:'#9ca3af', text:'Não iniciado',      bg:'#f9fafb', border:'#e5e7eb', color:'#6b7280' },
+    cancelado:    { dot:'#dc2626', text:'Cancelado',          bg:'#fef2f2', border:'#fecaca', color:'#dc2626' },
+    estorno:      { dot:'#d97706', text:'Estorno realizado', bg:'#fffbeb', border:'#fde68a', color:'#b45309' },
+  };
+  return `<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:6px 0 10px">
+    ${milestones.map(m => {
+      const c = cfg[m.status] || cfg.nao_iniciado;
+      return `<div style="background:${c.bg};border:1px solid ${c.border};border-radius:8px;padding:10px 8px;text-align:center">
+        <div style="font-size:20px;margin-bottom:5px">${m.icon}</div>
+        <div style="font-size:11px;font-weight:600;color:#1a1a1a;line-height:1.35;margin-bottom:6px">${m.label}</div>
+        <div style="display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:600;color:${c.color}">
+          <span style="width:6px;height:6px;border-radius:50%;background:${c.dot};flex-shrink:0;display:inline-block"></span>
+          ${c.text}
         </div>
-        <div class="ta-option" id="ta-opt-canceled" onclick="selectTaskAction('canceled')">
-          <div class="ta-opt-icon" style="background:#fef2f2;border:2px solid #dc2626"><span style="font-size:16px">❌</span></div>
-          <div><div class="ta-opt-label">Cancelado</div><div class="ta-opt-desc">Tarefa cancelada</div></div>
+        ${m.note ? `<div style="margin-top:5px;font-size:10px;font-weight:600;color:#7c3aed;background:#f5f3ff;border:1px solid #ddd6fe;border-radius:4px;padding:2px 6px;display:inline-block">${m.note}</div>` : ''}
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+function toggleGroup(id) {
+  const body = document.getElementById(id);
+  const chevron = document.getElementById('chev-' + id);
+  if (!body) return;
+  const open = body.style.display !== 'none';
+  body.style.display = open ? 'none' : '';
+  if (chevron) chevron.style.transform = open ? 'rotate(-90deg)' : 'rotate(0deg)';
+}
+
+function getItemGroupKey(item) {
+  // Find primary delivery pipeline (first non-payment pipeline)
+  const deliveryPipeline = (item.pipelines || []).find(p => p.wfId !== 'wf-payments');
+  const wfName = deliveryPipeline ? deliveryPipeline.wfName : 'Entrega';
+  const sellerKey = item.seller || '__main__';
+  return sellerKey + '||' + wfName;
+}
+
+function renderItemsWithTasks(order) {
+  const items = ORDER_ITEMS[order.id] || (ORDER_ITEMS[order.id] = genItems(order));
+  document.getElementById('detail-items-count').textContent = items.length + (items.length === 1 ? ' item' : ' itens');
+  const container = document.getElementById('detail-items-list');
+
+  // Build group keys preserving order, deduplicating
+  const groupOrder = [];
+  const groupMap = {};
+  items.forEach((item, idx) => {
+    const key = getItemGroupKey(item);
+    if (!groupMap[key]) {
+      groupMap[key] = [];
+      groupOrder.push(key);
+    }
+    groupMap[key].push(idx);
+  });
+  // Show group headers whenever there are 2+ items with pipeline data
+  const needsGrouping = items.length > 1 && items.some(i => i.pipelines && i.pipelines.length);
+
+  function buildPipeline(tasks, clickCtx) {
+    return tasks.map((t, ti) => {
+      const prevStatus = ti > 0 ? tasks[ti-1].s : null;
+      const isBlocked = t.s === 'blocked';
+      const isCanceled = t.s === 'canceled';
+      const isCompleted = t.s === 'completed';
+      const isIgnored = t.s === 'ignored';
+      const isClickable = !!clickCtx && t.s === 'pending';
+      const clickAttr = isClickable ? `onclick="openTaskAction('${clickCtx.orderId}',${clickCtx.itemIdx},'${clickCtx.taskType}',${ti})"` : '';
+      const arrowCls = prevStatus === 'completed' ? 'completed-arrow' : prevStatus === 'canceled' ? 'canceled-arrow' : prevStatus === 'blocked' ? 'blocked-arrow' : '';
+      const statusLabel = isBlocked ? 'Bloqueado' : isCompleted ? 'Completado' : isCanceled ? 'Cancelado' : isIgnored ? 'Ignorado' : 'Pendente';
+      const statusColor = isBlocked ? '#c2410c' : isCompleted ? '#15803d' : isCanceled ? '#dc2626' : isIgnored ? '#9ca3af' : '#6b7280';
+      const circleClass = isBlocked ? 'blocked' : t.s;
+      const icon = isCompleted
+        ? `<svg viewBox="0 0 12 12" fill="none" stroke="white" stroke-width="2.5" width="10" height="10"><path d="M2 6l3 3 5-5"/></svg>`
+        : (isCanceled || isBlocked)
+          ? `<svg viewBox="0 0 12 12" fill="none" stroke="white" stroke-width="2.5" width="10" height="10"><path d="M2 2l8 8M10 2L2 10"/></svg>`
+        : isIgnored
+          ? `<svg viewBox="0 0 12 12" fill="none" stroke="#9ca3af" stroke-width="2.5" width="10" height="10"><path d="M2 6h8"/></svg>`
+        : '';
+      const cpHtml = (t.checkpoints||[]).length ? (() => {
+        const total = t.checkpoints.length;
+        const done = t.checkpoints.filter(cp => cp.s === 'completed').length;
+        const failed = t.checkpoints.filter(cp => cp.s === 'failed').length;
+        const partial = done > 0 && done < total;
+        const allDone = done === total;
+        const hasFailed = failed > 0;
+        const color = hasFailed ? '#dc2626' : allDone ? '#15803d' : partial ? '#d97706' : '#6b7280';
+        const label = hasFailed ? `${failed} falha` : allDone ? 'Completo' : partial ? `${done}/${total}` : `0/${total}`;
+        return `<div style="font-size:8.5px;font-weight:600;color:${color};margin-top:1px;background:${hasFailed?'#fef2f2':allDone?'#f0fdf4':partial?'#fff7ed':'#f9f9f9'};padding:1px 4px;border-radius:3px">${label} ckpt</div>`;
+      })() : '';
+      return `<div class="pipe-step${isClickable?' clickable-step':''}" ${clickAttr}>
+        ${ti > 0 ? `<div class="pipe-arrow ${arrowCls}"></div>` : ''}
+        <div class="pipe-node ${isBlocked?'blocked':''}">
+          <div class="pipe-circle ${circleClass}" title="${isBlocked ? (t.blockReason||'Bloqueado') : isClickable ? 'Clique para gerenciar' : statusLabel}">
+            ${icon}
+          </div>
+          <div class="pipe-label">${t.name}</div>
+          <div class="pipe-sup">${t.sup||''}</div>
+          <div style="font-size:9.5px;font-weight:600;color:${statusColor};margin-top:1px">${statusLabel}</div>
+          ${cpHtml}
+          ${isBlocked && t.blockReason ? `<div class="pipe-label" style="font-size:9px;color:#c2410c;max-width:80px;text-align:center;line-height:1.2">${t.blockReason.substring(0,40)}…</div>` : ''}
         </div>
-        <div class="ta-option" id="ta-opt-ignored" onclick="selectTaskAction('ignored')">
-          <div class="ta-opt-icon" style="background:#f9fafb;border:2px solid #9ca3af"><span style="font-size:16px">—</span></div>
-          <div><div class="ta-opt-label">Ignorado</div><div class="ta-opt-desc">Tarefa ignorada/pulada</div></div>
+      </div>`;
+    }).join('');
+  }
+
+  function wfBadge(state) {
+    if (state==='completed') return `<span class="wf-sec-badge" style="background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d">Concluído</span>`;
+    if (state==='pending')   return `<span class="wf-sec-badge" style="background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8">Em andamento</span>`;
+    if (state==='blocked')   return `<span class="wf-sec-badge" style="background:#fef2f2;border:1px solid #fecaca;color:#dc2626">Bloqueado</span>`;
+    if (state==='canceled')  return `<span class="wf-sec-badge" style="background:#fff7ed;border:1px solid #fed7aa;color:#c2410c">Cancelado</span>`;
+    return `<span class="wf-sec-badge" style="background:#f9f9f9;border:1px solid #e0e0e0;color:#888">Aguardando</span>`;
+  }
+
+  const renderedCards = items.map((item, itemIdx) => {
+    // ── Flatten all tasks for status analysis ──
+    let allTasks = [];
+    if (item.pipelines && item.pipelines.length) {
+      allTasks = item.pipelines.flatMap(p => p.tasks);
+    } else {
+      allTasks = item.tasks || [];
+    }
+
+    // ── Task status analysis ──
+    const allDone = allTasks.every(t => t.s === 'completed');
+    const anyActive = allTasks.some(t => t.s === 'pending' || t.s === 'completed');
+    const blockedTasks = allTasks.filter(t => t.s === 'blocked');
+    const workflowState = blockedTasks.length ? 'blocked'
+      : allDone ? 'completed'
+      : anyActive ? 'pending' : 'waiting';
+
+    // ── Item top badge ──
+    let iSt, iStCls;
+    if (item.secondWorkflow)      { iSt = '↩️ Em troca/dev.'; iStCls = 'badge-return'; }
+    else if (blockedTasks.length) { iSt = '🚫 Bloqueado';      iStCls = 'badge-red'; }
+    else if (allDone)             { iSt = '✅ Completado';      iStCls = 'badge-processed'; }
+    else if (anyActive)           { iSt = '🔄 Em andamento';   iStCls = 'badge-processing'; }
+    else                          { iSt = '⏳ Pendente';        iStCls = 'badge-not-processed'; }
+
+    // ── Context vars (hidden) ──
+    const ctxVarsHtml = '';
+
+    // ── Blocked panel ──
+    const orchPanel = blockedTasks.length ? `
+      <div class="orch-block-panel">
+        <div class="orch-block-header">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="8" cy="8" r="6"/><path d="M8 5v4M8 11v.5"/></svg>
+          Orquestrador detectou ${blockedTasks.length} bloqueio${blockedTasks.length>1?'s':''} neste item
         </div>
+        ${blockedTasks.map(t => `
+          <div class="orch-block-item">
+            <div style="font-size:18px;flex-shrink:0">⚠️</div>
+            <div style="flex:1;min-width:0">
+              <div class="orch-block-task">${t.name} — não pode ser executada</div>
+              <div class="orch-block-reason">${t.blockReason||''}</div>
+              <div class="orch-block-source">${t.blockSource||''}</div>
+              ${t.suggestion ? `<div class="orch-block-suggestion">
+                <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><path d="M7 1v8M4 7l3 3 3-3"/><path d="M1 11h12"/></svg>
+                Sugestão: ${t.suggestion}
+              </div>` : ''}
+            </div>
+          </div>`).join('')}
+        <div class="orch-block-actions">
+          <button class="btn btn-primary btn-sm" style="flex:1;justify-content:center;background:#f97316;border-color:#f97316">
+            <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><circle cx="7" cy="5" r="3"/><path d="M1 13c0-2.8 2.7-4 6-4s6 1.2 6 4"/><circle cx="12" cy="3" r="1.5" fill="currentColor" stroke="none"/></svg>
+            Aplicar sugestão do Agente
+          </button>
+          <button class="btn btn-secondary btn-sm" style="flex:1;justify-content:center">Escalar para Operador</button>
+        </div>
+      </div>` : '';
+
+    // ── Multi-pipeline renderer ──
+    let pipelineSection = '';
+    if (item.pipelines && item.pipelines.length) {
+      pipelineSection = item.pipelines.map((pipeline, pIdx) => {
+        const pBadgeColor = pipeline.wfId === 'wf-payments' ? '#059669'
+          : pipeline.wfId === 'wf-virtual' ? '#7c3aed'
+          : pipeline.wfId === 'wf-personalization' ? '#e11d48'
+          : pipeline.wfId === 'wf-services' ? '#0891b2'
+          : pipeline.wfId === 'wf-nfe' ? '#d97706'
+          : pipeline.wfId === 'wf-delivery' ? '#0284c7'
+          : '#0c6fcd';
+        const pBadgeBg = pipeline.wfId === 'wf-payments' ? '#f0fdf4'
+          : pipeline.wfId === 'wf-virtual' ? '#f5f3ff'
+          : pipeline.wfId === 'wf-personalization' ? '#fff1f2'
+          : pipeline.wfId === 'wf-services' ? '#f0f9ff'
+          : pipeline.wfId === 'wf-nfe' ? '#fffbeb'
+          : pipeline.wfId === 'wf-delivery' ? '#f0f9ff'
+          : '#eff6ff';
+        const pIcon = pipeline.wfId === 'wf-payments' ? '💳'
+          : pipeline.wfId === 'wf-virtual' ? '💻'
+          : pipeline.wfId === 'wf-personalization' ? '🎨'
+          : pipeline.wfId === 'wf-services' ? '🔧'
+          : pipeline.wfId === 'wf-nfe' ? '🧾'
+          : pipeline.wfId === 'wf-delivery' ? '🚚'
+          : '📦';
+        let triggerLabel = '';
+        if (pIdx > 0 && pipeline.triggeredAt) {
+          const byLabel = pipeline.triggeredBy === 'Agente AI' ? '🤖 Agente AI' : pipeline.triggeredBy === 'Shopper' ? '🛍️ Shopper' : '🏪 Merchant';
+          triggerLabel = `<div style="display:flex;align-items:center;gap:5px;margin:4px 0 2px;font-size:11px;color:#888"><div style="width:1px;height:10px;background:#d0d0d0"></div>↓ Acionado por ${byLabel} · ${pipeline.triggeredAt}</div>`;
+        } else if (pIdx > 0) {
+          const wfDef = WORKFLOW_DEFS.find(w => w.id === pipeline.wfId);
+          const trigLabel = wfDef && wfDef.trigger ? wfDef.trigger.label : '';
+          triggerLabel = trigLabel ? `<div style="display:flex;align-items:center;gap:5px;margin:4px 0 2px;font-size:11px;color:#888"><div style="width:1px;height:10px;background:#d0d0d0"></div>↓ ${trigLabel}</div>` : '';
+        }
+        const taskType = pIdx === 0 ? 'main' : `pipeline_${pIdx}`;
+        // compute pipeline status for the status pill
+        const pTasks = pipeline.tasks || [];
+        const pAllDone = pTasks.length && pTasks.every(t => t.s === 'completed');
+        const pBlocked = pTasks.some(t => t.s === 'blocked');
+        const pCanceled = pTasks.some(t => t.s === 'canceled');
+        const pHasActive = pTasks.some(t => t.s === 'completed');
+        const pStatusLabel = pBlocked ? 'Bloqueado' : pCanceled ? 'Cancelado' : pAllDone ? 'Concluído' : pHasActive ? 'Em andamento' : 'Não iniciado';
+        const pStatusColor = pBlocked ? '#c2410c' : pCanceled ? '#dc2626' : pAllDone ? '#15803d' : pHasActive ? '#1d4ed8' : '#9ca3af';
+        const pStatusBg   = pBlocked ? '#fff7ed' : pCanceled ? '#fef2f2' : pAllDone ? '#f0fdf4' : pHasActive ? '#eff6ff' : '#f9fafb';
+        const pipId = `pip-${order.id}-${itemIdx}-${pIdx}`;
+        return `${triggerLabel}
+          <button onclick="toggleGroup('${pipId}')" style="width:100%;display:flex;align-items:center;gap:10px;margin-bottom:4px;margin-top:${pIdx===0?'0':'12px'};padding:8px 12px;background:${pBadgeBg};border:none;border-left:3px solid ${pBadgeColor};border-radius:0 6px 6px 0;cursor:pointer;text-align:left;transition:filter .15s" onmouseenter="this.style.filter='brightness(.97)'" onmouseleave="this.style.filter=''">
+            <span style="font-size:18px;line-height:1">${pIcon}</span>
+            <span style="font-size:13px;font-weight:700;color:${pBadgeColor};flex:1">${pipeline.wfName}</span>
+            <span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;background:${pStatusBg};color:${pStatusColor};border:1px solid ${pStatusColor}25">${pStatusLabel}</span>
+            <svg id="chev-${pipId}" viewBox="0 0 12 12" fill="none" stroke="${pBadgeColor}" stroke-width="2.2" width="12" height="12" style="flex-shrink:0;transition:transform .2s;margin-left:6px"><path d="M2 4l4 4 4-4"/></svg>
+          </button>
+          <div id="${pipId}" style="overflow:hidden">
+            <div class="item-pipeline" style="padding-bottom:4px">${buildPipeline(pipeline.tasks, {orderId:order.id,itemIdx,taskType})}</div>
+          </div>`;
+      }).join('') + ctxVarsHtml + orchPanel;
+    } else {
+      // fallback for old flat tasks
+      pipelineSection = `<div class="item-pipeline">${buildPipeline(allTasks, {orderId:order.id,itemIdx,taskType:'main'})}</div>${ctxVarsHtml}${orchPanel}`;
+    }
+
+    // ── Returns chain ──
+    let chainHtml = '';
+    if (item.secondWorkflow) {
+      const sw = item.secondWorkflow;
+      const swState = sw.tasks.every(t=>t.s==='completed') ? 'completed' : sw.tasks.some(t=>t.s==='pending') ? 'pending' : 'waiting';
+      const ri = item.returnInfo;
+      let returnInfoHtml = '';
+      if (ri) {
+        const initiatorLabel = ri.initiator==='agent' ? '🤖 Agente AI' : ri.initiator==='shopper' ? '🛍️ Shopper' : '🏪 Merchant';
+        const initiatorCls   = ri.initiator==='agent' ? 'ric-badge-agent' : ri.initiator==='shopper' ? 'ric-badge-shopper' : 'ric-badge-merchant';
+        const diagHtml = ri.agentDiagnosis ? `
+          <div class="ric-agent-diagnosis">
+            <div class="ric-diagnosis-header">
+              <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" width="12" height="12"><circle cx="7" cy="7" r="5.5"/><path d="M7 4.5v3M7 9v.5"/></svg>
+              Diagnóstico do Agente
+              <span class="ric-diagnosis-tag">confiança ${ri.agentDiagnosis.confidence}%</span>
+            </div>
+            ${ri.agentDiagnosis.insights.map(ins => `
+            <div class="ric-insight">
+              <span class="ric-insight-icon">${ins.icon}</span>
+              <div>
+                <div class="ric-insight-label">${ins.label}</div>
+                <div class="ric-insight-desc">${ins.desc}</div>
+              </div>
+            </div>`).join('')}
+          </div>` : (ri.agentJustification ? `
+          <div class="ric-agent-note">
+            <div class="ric-agent-note-title">
+              <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11" style="color:#7c3aed"><circle cx="7" cy="7" r="5"/><path d="M7 4v4M7 9.5v.5"/></svg>
+              Diagnóstico do Agente
+            </div>
+            <div style="font-size:12px;color:#555;line-height:1.6">${ri.agentJustification}</div>
+          </div>` : '');
+        returnInfoHtml = `
+          <div class="return-info-card">
+            <div class="ric-initiator-row">
+              <span class="ric-badge ${initiatorCls}">${initiatorLabel}</span>
+              <span class="ric-time">Iniciado em ${ri.initiatedAt}</span>
+            </div>
+            <div class="ric-field"><span class="ric-label">Motivo</span><span class="ric-reason">${ri.reasonLabel}</span></div>
+            <div class="ric-field"><span class="ric-label">Descrição</span><span class="ric-desc">${ri.description}</span></div>
+            ${diagHtml}
+          </div>`;
+      }
+      const separatorBy = ri ? (ri.initiator==='agent' ? 'por Agente AI' : ri.initiator==='shopper' ? 'por Shopper' : 'por Merchant') : `por ${sw.triggeredBy}`;
+      // Status pill — same logic as pipelines
+      const swTasks = sw.tasks || [];
+      const swAllDone  = swTasks.length && swTasks.every(t => t.s === 'completed');
+      const swBlocked  = swTasks.some(t => t.s === 'blocked');
+      const swCanceled = swTasks.some(t => t.s === 'canceled');
+      const swHasActive= swTasks.some(t => t.s === 'completed');
+      const swStatusLabel = swBlocked?'Bloqueado':swCanceled?'Cancelado':swAllDone?'Concluído':swHasActive?'Em andamento':'Não iniciado';
+      const swStatusColor = swBlocked?'#c2410c':swCanceled?'#dc2626':swAllDone?'#15803d':swHasActive?'#1d4ed8':'#9ca3af';
+      const swStatusBg    = swBlocked?'#fff7ed':swCanceled?'#fef2f2':swAllDone?'#f0fdf4':swHasActive?'#eff6ff':'#f9fafb';
+      const swBadgeColor  = '#7c3aed';
+      const swBadgeBg     = '#f5f3ff';
+      const retPipId = `ret-${order.id}-${itemIdx}`;
+      chainHtml = `
+        <div style="display:flex;align-items:center;gap:5px;margin:8px 0 2px;font-size:11px;color:#888"><div style="width:1px;height:10px;background:#d0d0d0"></div>↓ Acionado ${separatorBy} · ${sw.triggeredAt}</div>
+        <button onclick="toggleGroup('${retPipId}')" style="width:100%;display:flex;align-items:center;gap:10px;margin-bottom:4px;margin-top:4px;padding:8px 12px;background:${swBadgeBg};border:none;border-left:3px solid ${swBadgeColor};border-radius:0 6px 6px 0;cursor:pointer;text-align:left;transition:filter .15s" onmouseenter="this.style.filter='brightness(.97)'" onmouseleave="this.style.filter=''">
+          <span style="font-size:18px;line-height:1">↩️</span>
+          <span style="font-size:13px;font-weight:700;color:${swBadgeColor};flex:1">${sw.wfName || 'Troca e Devolução'}</span>
+          <span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;background:${swStatusBg};color:${swStatusColor};border:1px solid ${swStatusColor}25">${swStatusLabel}</span>
+          <svg id="chev-${retPipId}" viewBox="0 0 12 12" fill="none" stroke="${swBadgeColor}" stroke-width="2.2" width="12" height="12" style="flex-shrink:0;transition:transform .2s;margin-left:6px"><path d="M2 4l4 4 4-4"/></svg>
+        </button>
+        <div id="${retPipId}" style="overflow:hidden">
+          ${returnInfoHtml}
+          <div class="item-pipeline" style="padding-bottom:4px">${buildPipeline(sw.tasks, {orderId:order.id,itemIdx,taskType:'return'})}</div>
+        </div>`;
+    }
+
+    const sellerBadge = item.seller ? `<span style="display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:600;padding:1px 7px;border-radius:10px;background:#f0f4ff;color:#3b5bdb;border:1px solid #c5d0f5;margin-left:4px">🏪 ${item.seller}</span>` : '';
+    const cardHtml = `<div class="item-task-card">
+      <div class="item-card-header">
+        <div class="item-product-img">${item.emoji}</div>
+        <div style="flex:1">
+          <div class="item-product-name">${item.name}</div>
+          <div class="item-product-meta">Qtd: ${item.qty} · ${item.price}${item.seller ? '' : ''}</div>
+          ${item.seller ? `<div style="margin-top:3px">${sellerBadge}</div>` : ''}
+        </div>
+        ${(item.pipelines && item.pipelines.length) ? '' : `<span class="badge ${iStCls}" style="font-size:11px">${iSt}</span>`}
       </div>
-      <div id="ta-fail-reason-wrap" style="display:none;margin-top:12px">
-        <label style="font-size:11.5px;font-weight:600;color:#dc2626;display:block;margin-bottom:5px">Motivo da falha *</label>
-        <textarea id="ta-fail-reason-text" placeholder="Descreva o motivo da falha..." style="width:100%;min-height:70px;border:1px solid #fca5a5;border-radius:6px;padding:8px 10px;font-size:12.5px;resize:vertical;box-sizing:border-box;color:#1a1a1a"></textarea>
-      </div>
-      ${standardSection}
+      ${pipelineSection}
       ${chainHtml}
     </div>`;
-  }).join('');
+    return { html: cardHtml, kitGroupId: item.kitGroupId || null, kitGroupName: item.kitGroupName || null };
+  });
+
+  // Build flat ordered index array for kit grouping
+  const flatIndexByGroup = needsGrouping
+    ? groupOrder.map(key => groupMap[key])
+    : [items.map((_, idx) => idx)];
+
+  let finalHtml = '';
+
+  if (needsGrouping) {
+    groupOrder.forEach((key, gIdx) => {
+      const parts = key.split('||');
+      const seller = parts[0] === '__main__' ? null : parts[0];
+      const wfName = parts[1] || 'Entrega';
+      const groupIndices = groupMap[key];
+      const count = groupIndices.length;
+      // Derive delivery supplier from the last task of the primary pipeline of the first item
+      const firstItem = items[groupIndices[0]];
+      const deliveryPipeline = (firstItem.pipelines || []).find(p => p.wfId !== 'wf-payments');
+      const pipelineTasks = deliveryPipeline ? deliveryPipeline.tasks : [];
+      const allFirstItemTasks = (firstItem.pipelines || []).flatMap(p => p.tasks || []);
+      const carrierTask = allFirstItemTasks.find(t => /rastreio|despachado|entregue|retirada/i.test(t.name));
+      const deliverySup = (carrierTask ? carrierTask.sup : null) || (pipelineTasks.length ? pipelineTasks[pipelineTasks.length-1].sup : null) || seller || '';
+      const icon = seller ? '🏪' : '🏭';
+      const groupLabel = wfName === 'Preparação dos itens'
+        ? (seller ? 'Retirada em loja' : 'Entrega em Domicílio')
+        : wfName;
+      const title = groupLabel + (deliverySup ? ' · ' + deliverySup : '');
+      const gId = 'grp-' + order.id + '-' + gIdx;
+      const groupItems = groupIndices.map(idx => items[idx]);
+      const showMilestones = groupItems.some(i => i.pipelines && i.pipelines.length);
+
+      // Accordion header
+      finalHtml += `
+<div style="margin-top:${gIdx===0?'0':'16px'};margin-bottom:2px">
+  <button onclick="toggleGroup('${gId}')" style="width:100%;display:flex;align-items:center;gap:10px;padding:9px 14px;background:#f8faff;border:1px solid #dce8ff;border-left:3px solid #0c6fcd;border-radius:6px;cursor:pointer;text-align:left;transition:background .15s" onmouseenter="this.style.background='#eef4ff'" onmouseleave="this.style.background='#f8faff'">
+    <span style="font-size:16px;line-height:1">${icon}</span>
+    <div style="flex:1;min-width:0">
+      <div style="font-size:12px;font-weight:700;color:#1a1a1a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${title}</div>
+      <div style="font-size:11px;color:#666">${count} item${count !== 1 ? 's' : ''}</div>
+    </div>
+    <svg id="chev-${gId}" viewBox="0 0 12 12" fill="none" stroke="#0c6fcd" stroke-width="2.2" width="13" height="13" style="flex-shrink:0;transition:transform .2s"><path d="M2 4l4 4 4-4"/></svg>
+  </button>
+  ${showMilestones ? milestoneRowHtml(computeGroupMilestones(groupItems, order)) : ''}
+  <div id="${gId}" style="padding:6px 0 0">`;
+
+      // Render items in this group with kit handling
+      let gi = 0;
+      while (gi < groupIndices.length) {
+        const itemIdx = groupIndices[gi];
+        const card = renderedCards[itemIdx];
+        if (card.kitGroupId) {
+          const groupId = card.kitGroupId;
+          const groupName = card.kitGroupName || 'Kit';
+          const kitCards = [];
+          while (gi < groupIndices.length && renderedCards[groupIndices[gi]].kitGroupId === groupId) {
+            kitCards.push(renderedCards[groupIndices[gi]].html);
+            gi++;
+          }
+          finalHtml += `
+        <div style="border:2px dashed #d97706;border-radius:8px;padding:4px;margin-bottom:12px;background:#fffbeb">
+          <div style="font-size:11px;font-weight:700;color:#b45309;padding:6px 10px 4px;display:flex;align-items:center;gap:6px">
+            <span style="font-size:14px">📦</span> ${groupName}
+            <span style="font-size:10px;background:#fef3c7;border:1px solid #fde68a;color:#92400e;padding:1px 6px;border-radius:10px;font-weight:500">Kit</span>
+          </div>
+          ${kitCards.join('')}
+        </div>`;
+        } else {
+          finalHtml += card.html;
+          gi++;
+        }
+      }
+
+      // Close accordion body + wrapper
+      finalHtml += `</div></div>`;
+    });
+  } else {
+    // No grouping needed — show milestones if the single item has pipeline data
+    if (items.some(item => item.pipelines && item.pipelines.length)) {
+      finalHtml += milestoneRowHtml(computeGroupMilestones(items, order));
+    }
+    let i = 0;
+    while (i < renderedCards.length) {
+      const card = renderedCards[i];
+      if (card.kitGroupId) {
+        const groupId = card.kitGroupId;
+        const groupName = card.kitGroupName || 'Kit';
+        const groupCards = [];
+        while (i < renderedCards.length && renderedCards[i].kitGroupId === groupId) {
+          groupCards.push(renderedCards[i].html);
+          i++;
+        }
+        finalHtml += `
+        <div style="border:2px dashed #d97706;border-radius:8px;padding:4px;margin-bottom:12px;background:#fffbeb">
+          <div style="font-size:11px;font-weight:700;color:#b45309;padding:6px 10px 4px;display:flex;align-items:center;gap:6px">
+            <span style="font-size:14px">📦</span> ${groupName}
+            <span style="font-size:10px;background:#fef3c7;border:1px solid #fde68a;color:#92400e;padding:1px 6px;border-radius:10px;font-weight:500">Kit</span>
+          </div>
+          ${groupCards.join('')}
+        </div>`;
+      } else {
+        finalHtml += card.html;
+        i++;
+      }
+    }
+  }
+  container.innerHTML = finalHtml;
 }
 
 function genItems(order) {
   const emojis = ['📦','🛍️','🧴','👕','📱'];
-  const ts = order.tasks.length ? order.tasks : [{n:'Separação',s:'waiting'},{n:'Conferência',s:'waiting'},{n:'Embalagem',s:'waiting'},{n:'Expedição',s:'waiting'}];
+  const ts = order.tasks.length ? order.tasks : [{n:'Autorização de Pagamento',s:'completed'},{n:'Captura de Pagamento',s:'completed'},{n:'Separação',s:'pending'},{n:'Conferência',s:'pending'},{n:'Embalagem',s:'pending'},{n:'Expedição',s:'pending'},{n:'Entregue',s:'pending'}];
   return Array.from({length: Math.min(order.items, 3)}, (_, i) => ({
     name: 'Produto ' + (i+1), emoji: emojis[i % emojis.length], qty: 1, price: 'R$ ' + Math.round(parseFloat(order.total.replace('R$ ','').replace('.','').replace(',','.')) / order.items).toString().replace(/\B(?=(\d{3})+(?!\d))/g,'.') + ',00',
-    paymentWorkflow: [{name:'Autorização',sup:'Financeiro',s:'done'},{name:'Captura',sup:'Financeiro',s:'done'}],
     tasks: ts.map(t => ({name:t.n, sup:'CD São Paulo', s:t.s}))
   }));
 }
@@ -948,6 +783,7 @@ function genItems(order) {
 // ══════════════════════════════════════════
 
 let selectedTaskId = null, pendingDeleteId = null, pendingEdgeId = null;
+let pendingTaskAction = { orderId:null, itemIdx:null, taskIdx:null, taskType:null, action:'start' };
 let pendingDragFrom = null, pendingDragTo = null;
 let dragTaskId = null;
 let editChatState = 'idle', editDraft = {}, activePanel = 'create';
@@ -1012,14 +848,22 @@ function renderKanban() {
             </div>
           </div>
           <div class="card-tags">
-            <span class="card-tag tag-supplier">${subTask.supplier||''}</span>
             <span class="card-tag tag-category">${subTask.category||''}</span>
           </div>
+          ${subTask.checkpoints?.length ? `
+          <div style="margin-top:5px;display:flex;gap:3px;flex-wrap:wrap">
+            ${subTask.checkpoints.slice(0,3).map(cp => `<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;font-weight:500">✓ ${cp.label.substring(0,18)}${cp.label.length>18?'…':''}</span>`).join('')}
+            ${subTask.checkpoints.length > 3 ? `<span style="font-size:9px;color:#9ca3af">+${subTask.checkpoints.length-3}</span>` : ''}
+          </div>` : ''}
           <div class="card-footer">
             ${i > 0 ? `<span class="card-dep"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" width="10" height="10"><path d="M2 6h8M7 3l3 3-3 3"/></svg> ${WF_TASKS[i-1].name}</span>` : `<span class="card-dep" style="color:#22c55e">Tarefa inicial</span>`}
             <div style="display:flex;align-items:center;gap:4px">
               ${subTask.mcpConfig ? `<span title="MCP: ${subTask.mcpConfig.serverName}" style="font-size:9px;padding:1px 5px;border-radius:3px;background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;font-weight:600;line-height:1.6">MCP</span>` : ''}
               ${subTask.agentConfig ? `<span title="${subTask.agentConfig.agentName}" style="font-size:11px;line-height:1">${subTask.agentConfig.agentIcon}</span>` : ''}
+              ${subTask.visibility === 'internal'
+                ? `<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:#f5f3ff;border:1px solid #e9d5ff;color:#7c3aed;font-weight:600;line-height:1.6">🔒 Interna</span>`
+                : `<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;font-weight:600;line-height:1.6">👤 Usuário</span>`
+              }
               <div class="card-status-dot" style="background:${subTask.active!==false?'#22c55e':'#ef4444'}" title="${subTask.active!==false?'Ativa':'Inativa'}"></div>
             </div>
           </div>
@@ -1099,7 +943,7 @@ function editTask(id) {
   editDraft = {
     name: task.name, supplier: task.supplier, category: task.category,
     color: stage.color, active: task.active !== false,
-    actions: [...(task.actions||[])],
+    visibility: task.visibility || 'user',
     script: task.script !== undefined ? task.script : null,
     externalApi: task.externalApi ? {
       url: task.externalApi.url||'', method: task.externalApi.method||'POST',
@@ -1123,31 +967,31 @@ function editTask(id) {
   refreshEditPreview();
   openSidePanel(); renderKanban();
   setTimeout(() => {
-    const actionNames = (task.actions||[]).map(a=>{ const d=TASK_ACTIONS.find(x=>x.id===a); return d?d.label:''; }).filter(Boolean);
-    let greeting = `Editando "${task.name}".\n\nConfiguração atual:\n• Supplier: ${task.supplier}\n• Categoria: ${task.category}\n• Ações: ${actionNames.length?actionNames.join(', '):'nenhuma'}`;
+    let greeting = `Editando "${task.name}".\n\nConfiguração atual:\n• Categoria: ${task.category}`;
+    greeting += `\n• Visibilidade: ${task.visibility === 'internal' ? 'Interna (não visível no pedido)' : 'Usuário (visível no pedido)'}`;
     if (task.externalApi) greeting += `\n• API externa: ${task.externalApi.url}`;
     if (task.script !== null && task.script !== undefined) greeting += `\n• Script customizado: ativo`;
     if (task.mcpConfig) greeting += `\n• MCP: ${task.mcpConfig.serverName} → ${task.mcpConfig.toolName||'tool não configurada'}`;
     if (task.agentConfig) greeting += `\n• Agente AI: ${task.agentConfig.agentIcon} ${task.agentConfig.agentName}`;
     greeting += '\n\nO que deseja alterar?';
     addCMsg('ai', greeting);
-    renderCSuggs(['Renomear','Trocar supplier','Configurar ações','Integração MCP','Agente AI Workspace','Script customizado']);
+    renderCSuggs(['Renomear','Alternar visibilidade','Integração MCP','Agente AI Workspace','Script customizado']);
   }, 200);
 }
 
 function refreshEditPreview() {
   const ep = document.getElementById('edit-preview'); if (!ep) return;
   const dot = `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${editDraft.color||'#0c6fcd'};margin-right:5px;vertical-align:middle;flex-shrink:0"></span>`;
-  const actionsHtml = (editDraft.actions||[]).length
-    ? (editDraft.actions||[]).map(a=>{ const d=TASK_ACTIONS.find(x=>x.id===a); return d?`<code style="background:#eff6ff;padding:1px 5px;border-radius:3px;font-size:10px;font-family:monospace">${d.label}</code>`:''; }).filter(Boolean).join(' ')
-    : '<span style="color:#aaa;font-size:11px">nenhuma</span>';
+  const visHtml = editDraft.visibility === 'internal'
+    ? `<span style="font-size:10px;padding:1px 5px;border-radius:3px;background:#f5f3ff;border:1px solid #e9d5ff;color:#7c3aed;font-weight:500">🔒 Interna</span>`
+    : `<span style="font-size:10px;padding:1px 5px;border-radius:3px;background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;font-weight:500">👤 Usuário</span>`;
   ep.innerHTML = `
     <div style="display:flex;align-items:center;gap:4px;font-weight:700;color:#1a1a1a;margin-bottom:5px;flex-wrap:wrap">
       ${dot}<span>${editDraft.name||'—'}</span>
       <span style="font-size:10px;padding:1px 6px;border-radius:10px;background:${editDraft.active?'#f0fdf4':'#fef2f2'};border:1px solid ${editDraft.active?'#bbf7d0':'#fecaca'};color:${editDraft.active?'#15803d':'#dc2626'};font-weight:500;margin-left:2px">${editDraft.active?'Ativa':'Inativa'}</span>
     </div>
-    <div style="color:#555;font-size:11.5px;margin-bottom:3px"><span style="font-weight:500">Supplier:</span> ${editDraft.supplier||'—'} · <span style="font-weight:500">Cat:</span> ${editDraft.category||'—'}</div>
-    <div style="font-size:11.5px;line-height:1.8"><span style="font-weight:500">Ações:</span> ${actionsHtml}</div>
+    <div style="color:#555;font-size:11.5px;margin-bottom:3px"><span style="font-weight:500">Cat:</span> ${editDraft.category||'—'}</div>
+    <div style="font-size:11.5px;line-height:1.8"><span style="font-weight:500">Visibilidade:</span> ${visHtml}</div>
     ${editDraft.script!==null&&editDraft.script!==undefined?'<div style="color:#7c3aed;font-size:10.5px;margin-top:3px">📜 Script customizado ativo</div>':''}
     ${editDraft.externalApi?`<div style="color:#0891b2;font-size:10.5px;margin-top:2px">🌐 ${editDraft.externalApi.method} ${editDraft.externalApi.url||'(URL não definida)'}</div>`:''}
     ${editDraft.mcpConfig?`<div style="color:#15803d;font-size:10.5px;margin-top:2px">🔌 MCP: ${editDraft.mcpConfig.serverName} → <code style="font-family:monospace">${editDraft.mcpConfig.toolName||'(tool não selecionada)'}</code></div>`:''}
@@ -1164,21 +1008,17 @@ function sendEditChat() {
 
 function processEditIntent(text) {
   const lower = text.toLowerCase();
-  const idleSuggs = ['Renomear','Trocar supplier','Configurar ações','Integração MCP','Agente AI Workspace','Salvar e fechar'];
+  const idleSuggs = ['Renomear','Alternar visibilidade','Integração MCP','Agente AI Workspace','Salvar e fechar'];
 
   if (lower === 'salvar e fechar' || lower === 'salvar') { applyEditDraft(); return; }
 
   if (editChatState === 'rename') {
     editDraft.name = text; editChatState = 'idle'; refreshEditPreview();
-    setTimeout(() => { addCMsg('ai', `✓ Nome alterado para "${text}". Mais alguma alteração?`); renderCSuggs(['Trocar supplier','Configurar ações','Script customizado','Salvar e fechar']); }, 350);
-
-  } else if (editChatState === 'supplier') {
-    editDraft.supplier = text; editChatState = 'idle'; refreshEditPreview();
-    setTimeout(() => { addCMsg('ai', `✓ Supplier atualizado para "${text}". Mais alguma alteração?`); renderCSuggs(['Renomear','Configurar ações','API externa','Salvar e fechar']); }, 350);
+    setTimeout(() => { addCMsg('ai', `✓ Nome alterado para "${text}". Mais alguma alteração?`); renderCSuggs(['Alternar visibilidade','Script customizado','Salvar e fechar']); }, 350);
 
   } else if (editChatState === 'category') {
     editDraft.category = text; editChatState = 'idle'; refreshEditPreview();
-    setTimeout(() => { addCMsg('ai', `✓ Categoria definida como "${text}". Mais alguma alteração?`); renderCSuggs(['Renomear','Trocar supplier','Configurar ações','Salvar e fechar']); }, 350);
+    setTimeout(() => { addCMsg('ai', `✓ Categoria definida como "${text}". Mais alguma alteração?`); renderCSuggs(['Renomear','Alternar visibilidade','Salvar e fechar']); }, 350);
 
   } else if (editChatState === 'script-describe') {
     const generated = generateScript(text);
@@ -1191,13 +1031,13 @@ function processEditIntent(text) {
   } else if (editChatState === 'script-review') {
     if (lower.includes('remover') || lower.includes('excluir') || lower.includes('cancelar')) {
       editDraft.script = null; editChatState = 'idle'; refreshEditPreview();
-      setTimeout(() => { addCMsg('ai', '✓ Script removido. Mais alguma alteração?'); renderCSuggs(['Configurar ações','API externa','Salvar e fechar']); }, 350);
+      setTimeout(() => { addCMsg('ai', '✓ Script removido. Mais alguma alteração?'); renderCSuggs(['Alternar visibilidade','API externa','Salvar e fechar']); }, 350);
     } else if (lower.includes('ajustar') || lower.includes('nova') || lower.includes('reescrever') || lower.includes('mudar')) {
       editChatState = 'script-describe';
       setTimeout(() => { addCMsg('ai', 'Descreva novamente o que o script deve fazer e vou gerar uma versão atualizada.'); }, 350);
     } else {
       editChatState = 'idle'; refreshEditPreview();
-      setTimeout(() => { addCMsg('ai', '✓ Script confirmado. Mais alguma alteração?'); renderCSuggs(['Configurar ações','API externa','Salvar e fechar']); }, 350);
+      setTimeout(() => { addCMsg('ai', '✓ Script confirmado. Mais alguma alteração?'); renderCSuggs(['Alternar visibilidade','API externa','Salvar e fechar']); }, 350);
     }
 
   } else if (editChatState === 'api-url') {
@@ -1222,7 +1062,7 @@ function processEditIntent(text) {
       let msg = `✓ API configurada com ${maps.length} mapeamento${maps.length!==1?'s':''}.`;
       if (outputVars.length) msg += `\n\nVariáveis geradas para etapas seguintes:\n${outputVars.map(v=>`• ${v}`).join('\n')}`;
       msg += '\n\nMais alguma alteração?';
-      setTimeout(() => { addCMsg('ai', msg); renderCSuggs(['Configurar ações','Script customizado','Salvar e fechar']); }, 350);
+      setTimeout(() => { addCMsg('ai', msg); renderCSuggs(['Alternar visibilidade','Script customizado','Salvar e fechar']); }, 350);
     } else {
       const match = text.match(/^([a-z_][a-z0-9_]*)\s*(?:←|<-|=|:)\s*(.+)$/i) || text.match(/^(\S+)\s+(\S+)$/);
       if (match) {
@@ -1234,25 +1074,11 @@ function processEditIntent(text) {
       }
     }
 
-  } else if (editChatState === 'actions') {
-    if (lower.includes('confirmar') || lower === 'ok') {
-      editChatState = 'idle';
-      const selected = (editDraft.actions||[]).map(a=>{ const d=TASK_ACTIONS.find(x=>x.id===a); return d?d.label:''; }).filter(Boolean);
-      const outputVars = (editDraft.actions||[]).flatMap(aId=>{ const d=TASK_ACTIONS.find(x=>x.id===aId); return d?d.outputVars.map(v=>`{{${aId}.${v}}}`):[]; });
-      let msg = `✓ Ações: ${selected.length?selected.join(', '):'nenhuma'}.`;
-      if (outputVars.length) msg += `\n\nVariáveis geradas para etapas seguintes:\n${outputVars.map(v=>`• ${v}`).join('\n')}`;
-      msg += '\n\nMais alguma alteração?';
-      setTimeout(() => { addCMsg('ai', msg); renderCSuggs(['Renomear','Script customizado','API externa','Salvar e fechar']); }, 350);
-    }
-
   } else {
     // idle — intent detection
     if (lower.includes('renomear') || lower === 'nome' || (lower.includes('nome') && lower.includes('mudar'))) {
       editChatState = 'rename';
       setTimeout(() => { addCMsg('ai', `Qual será o novo nome da etapa "${editDraft.name}"?`); }, 350);
-    } else if (lower.includes('supplier') || lower.includes('trocar supplier') || lower.includes('time') || lower.includes('responsável') || lower.includes('responsavel')) {
-      editChatState = 'supplier';
-      setTimeout(() => { addCMsg('ai', `Supplier atual: "${editDraft.supplier}". Qual o novo?`); renderCSuggs(['CD São Paulo','CD Rio de Janeiro','QA Team','Financeiro','Transportadora XYZ']); }, 350);
     } else if (lower.includes('categoria') || lower.includes('produto')) {
       editChatState = 'category';
       setTimeout(() => { addCMsg('ai', `Categoria atual: "${editDraft.category}". Qual a nova?`); renderCSuggs(['Todos os produtos','Eletrônicos','Moda e Calçados','Alimentos','B2B']); }, 350);
@@ -1260,9 +1086,12 @@ function processEditIntent(text) {
       showMcpSelector();
     } else if (lower.includes('workspace') || lower === 'agente ai workspace' || lower === 'agente ai') {
       showAgentWsSelector();
+    } else if (lower.includes('visib') || lower.includes('interno') || lower.includes('usuário') || lower.includes('usuario') || lower.includes('alternar visib')) {
+      editDraft.visibility = editDraft.visibility === 'internal' ? 'user' : 'internal';
+      refreshEditPreview();
+      setTimeout(() => { addCMsg('ai', `Visibilidade alterada para: ${editDraft.visibility === 'internal' ? '🔒 Interna' : '👤 Usuário'}`); renderCSuggs(['Renomear','Alternar visibilidade','Integração MCP','Agente AI Workspace','Script customizado']); }, 350);
     } else if (/\bação\b|\bações\b|\bacao\b|\bacoes\b/.test(lower) || lower.includes('configurar ação') || lower.includes('configurar ações')) {
-      editChatState = 'actions';
-      showActionsSelector();
+      setTimeout(() => { addCMsg('ai', 'O conceito de ações foi substituído por Visibilidade (controla se a tarefa é visível no pedido para o cliente) e integrações MCP / API externa.\n\nUse "Alternar visibilidade" para mudar entre Interna e Usuário.'); renderCSuggs(idleSuggs); }, 350);
     } else if (lower.includes('script') || lower.includes('código') || lower.includes('codigo') || lower.includes('customizado')) {
       editChatState = 'script-describe';
       setTimeout(() => {
@@ -1293,38 +1122,17 @@ function processEditIntent(text) {
       setTimeout(() => { addCMsg('ai', '✓ Etapa marcada como inativa. Mais alguma alteração?'); renderCSuggs(['Ativar etapa','Renomear','Salvar e fechar']); }, 350);
     } else if (lower.includes('ativar') && !lower.includes('desativar')) {
       editDraft.active = true; refreshEditPreview();
-      setTimeout(() => { addCMsg('ai', '✓ Etapa marcada como ativa. Mais alguma alteração?'); renderCSuggs(['Renomear','Configurar ações','Salvar e fechar']); }, 350);
+      setTimeout(() => { addCMsg('ai', '✓ Etapa marcada como ativa. Mais alguma alteração?'); renderCSuggs(['Renomear','Alternar visibilidade','Salvar e fechar']); }, 350);
     } else {
       setTimeout(() => {
-        addCMsg('ai', 'Posso ajudar com:\n• Renomear a etapa\n• Trocar o supplier\n• Configurar ações executadas\n• Criar script customizado (com geração automática)\n• Configurar API externa + mapeamento\n• Integração MCP (ferramentas externas via Model Context Protocol)\n• Agente AI Workspace (agentes publicados no AI Workspace)\n• Alterar cor\n• Ativar / desativar\n\nO que deseja?');
+        addCMsg('ai', 'Posso ajudar com:\n• Renomear a etapa\n• Alternar visibilidade (Interna / Usuário)\n• Criar script customizado (com geração automática)\n• Configurar API externa + mapeamento\n• Integração MCP (ferramentas externas via Model Context Protocol)\n• Agente AI Workspace (agentes publicados no AI Workspace)\n• Alterar cor\n• Ativar / desativar\n\nO que deseja?');
         renderCSuggs(idleSuggs);
       }, 350);
     }
   }
 }
 
-function showActionsSelector() {
-  setTimeout(() => {
-    addCMsg('ai', 'Selecione as ações que esta etapa deve executar (clique para marcar/desmarcar):');
-    const msgs = document.getElementById('cm-msgs'); if (!msgs) return;
-    const div = document.createElement('div');
-    div.style.cssText = 'display:flex;flex-wrap:wrap;gap:5px;margin-top:5px;padding:8px 10px;background:#f9f9f9;border:1px solid #e8e8e8;border-radius:6px';
-    div.innerHTML = TASK_ACTIONS.map(a => {
-      const sel = (editDraft.actions||[]).includes(a.id);
-      return `<span class="action-chip ${sel?'selected':''}" onclick="toggleEditAction('${a.id}',this)">${a.icon} ${a.label}</span>`;
-    }).join('');
-    msgs.appendChild(div); msgs.scrollTop = msgs.scrollHeight;
-    renderCSuggs(['Confirmar seleção']);
-  }, 350);
-}
-
-function toggleEditAction(actionId, chipEl) {
-  if (!editDraft.actions) editDraft.actions = [];
-  const idx = editDraft.actions.indexOf(actionId);
-  if (idx >= 0) { editDraft.actions.splice(idx, 1); chipEl.classList.remove('selected'); }
-  else { editDraft.actions.push(actionId); chipEl.classList.add('selected'); }
-  refreshEditPreview();
-}
+// showActionsSelector removed — actions concept replaced by visibility
 
 function showColorSelector() {
   const colors = ['#0c6fcd','#7c3aed','#0891b2','#059669','#d97706','#dc2626','#6366f1','#0f766e'];
@@ -1343,7 +1151,7 @@ function selectEditColor(color, el) {
   document.querySelectorAll('[onclick^="selectEditColor"]').forEach(d => d.style.border = '3px solid transparent');
   el.style.border = '3px solid #1a1a1a';
   editChatState = 'idle'; refreshEditPreview();
-  setTimeout(() => { addCMsg('ai', '✓ Cor atualizada! Mais alguma alteração?'); renderCSuggs(['Renomear','Configurar ações','Salvar e fechar']); }, 350);
+  setTimeout(() => { addCMsg('ai', '✓ Cor atualizada! Mais alguma alteração?'); renderCSuggs(['Renomear','Alternar visibilidade','Salvar e fechar']); }, 350);
 }
 
 function generateScript(description) {
@@ -1368,7 +1176,7 @@ function applyEditDraft() {
   task.category    = editDraft.category;
   stage.color      = editDraft.color;
   task.active      = editDraft.active;
-  task.actions     = editDraft.actions ? [...editDraft.actions] : [];
+  task.visibility  = editDraft.visibility || 'user';
   task.script      = editDraft.script !== undefined ? editDraft.script : null;
   task.externalApi = editDraft.externalApi;
   task.mcpConfig   = editDraft.mcpConfig || null;
@@ -1437,7 +1245,7 @@ function selectMcpTool(toolId) {
   setTimeout(() => {
     addCMsg('ai', `✓ Integração MCP configurada: ${server.icon} ${server.name} → ${tool.name}\n\nEsta ferramenta será chamada durante a execução da etapa e seus resultados ficarão disponíveis como variáveis de contexto.\n\nMais alguma configuração?`);
     if (activePanel === 'edit') {
-      renderCSuggs(['Agente AI Workspace', 'Configurar ações', 'Salvar e fechar']);
+      renderCSuggs(['Agente AI Workspace', 'Alternar visibilidade', 'Salvar e fechar']);
     } else {
       renderCSuggs(['Criar agora', 'Agente AI Workspace']);
     }
@@ -1477,7 +1285,7 @@ function selectAgentWs(agentId) {
     const outputList = agent.outputVars.map(v=>`• {{agent_${agentId}.${v}}}`).join('\n');
     addCMsg('ai', `✓ Agente integrado: ${agent.icon} ${agent.name}\n\nO agente será chamado durante a execução desta etapa. Variáveis de saída disponíveis:\n${outputList}\n\nMais alguma configuração?`);
     if (activePanel === 'edit') {
-      renderCSuggs(['Integração MCP', 'Configurar ações', 'Salvar e fechar']);
+      renderCSuggs(['Integração MCP', 'Alternar visibilidade', 'Salvar e fechar']);
     } else {
       renderCSuggs(['Criar agora', 'Integração MCP']);
     }
@@ -1571,8 +1379,8 @@ function confirmSplit() {
   const { stage, task } = found;
   const idx = stage.tasks.findIndex(t => t.id === splitTaskId);
   const newId1 = 't' + Date.now(), newId2 = 't' + (Date.now() + 1);
-  const task1 = { ...task, id: newId1, name: splitDraft.name1 };
-  const task2 = { ...task, id: newId2, name: splitDraft.name2 };
+  const task1 = { ...task, id: newId1, name: splitDraft.name1, visibility: task.visibility || 'user' };
+  const task2 = { ...task, id: newId2, name: splitDraft.name2, visibility: task.visibility || 'user' };
   stage.tasks.splice(idx, 1, task1, task2);
   closeSidePanel();
   renderWorkflowBoard();
@@ -1582,33 +1390,37 @@ function confirmSplit() {
 // ── Create panel ──
 function openCreatePanel() { openCreatePanelAt(WF_TASKS.length); }
 function openCreatePanelAt(pos) {
-  activePanel = 'create'; chatStep = 0; newTaskDraft = { position: pos, name:'', supplier:'', category:'', mcpConfig:null, agentConfig:null };
-  document.getElementById('sp-title').textContent = 'Nova Etapa com AI';
+  activePanel = 'create-stage'; chatStep = 0; newTaskDraft = { position: pos, name:'', supplier:'', category:'', mcpConfig:null, agentConfig:null };
+  document.getElementById('sp-title').textContent = '✚ Nova Etapa';
   document.getElementById('sp-body').innerHTML = `
     <div class="cm-msgs" id="cm-msgs"></div>
     <div class="cm-suggestions" id="cm-suggestions"></div>
     <div class="task-preview-mini" id="task-preview-mini">
       <strong>Preview</strong>
       <div class="tpm-row" id="prev-name">Nome: —</div>
-      <div class="tpm-row" id="prev-sup">Supplier: —</div>
       <div class="tpm-row" id="prev-cat">Categoria: —</div>
     </div>
     <div class="cm-input-row">
-      <input class="cm-input" id="cm-input" placeholder="Digite..." onkeydown="if(event.key==='Enter')sendChat()">
-      <button class="cm-send" onclick="sendChat()"><svg viewBox="0 0 16 16" stroke="white" stroke-width="2" fill="none" width="13" height="13"><path d="M2 8l12-6-4 12-3-4-5-2z"/></svg></button>
+      <input class="cm-input" id="cm-input" placeholder="Digite..." onkeydown="if(event.key==='Enter')sendStageChat()">
+      <button class="cm-send" onclick="sendStageChat()"><svg viewBox="0 0 16 16" stroke="white" stroke-width="2" fill="none" width="13" height="13"><path d="M2 8l12-6-4 12-3-4-5-2z"/></svg></button>
     </div>`;
   document.getElementById('sp-footer').innerHTML = `
     <button class="btn btn-secondary" style="flex:1;justify-content:center" onclick="closeSidePanel()">Cancelar</button>
     <button class="btn btn-primary" id="create-btn" style="flex:1;justify-content:center;opacity:.4;cursor:not-allowed" disabled onclick="createTask()">Criar Etapa</button>`;
   openSidePanel();
-  setTimeout(() => { addCMsg('ai', chatFlows[0].ai); renderCSuggs(chatFlows[0].sugg); }, 200);
+  setTimeout(() => { addCMsg('ai', stageChatFlows[0].ai); renderCSuggs(stageChatFlows[0].sugg); }, 200);
 }
 
-const chatFlows = [
-  {ai:'Como você quer chamar essa nova etapa?', field:null, sugg:['Triagem de Devoluções','Aprovação B2B','Controle de Qualidade','Validação Fiscal']},
-  {ai:'Qual supplier ou time é responsável por executar essa etapa?', field:'name', sugg:['CD São Paulo','CD Rio de Janeiro','QA Team','Financeiro','Transportadora XYZ']},
-  {ai:'Em quais categorias de produtos essa etapa se aplica?', field:'supplier', sugg:['Todos os produtos','Eletrônicos','Moda e Calçados','Alimentos','B2B']},
-  {ai:null, field:'category', sugg:['Confirmar e criar']},
+const stageChatFlows = [
+  {ai:'Como você quer chamar essa nova etapa?', field:'name', sugg:['Triagem de Devoluções','Aprovação B2B','Controle de Qualidade','Validação Fiscal']},
+  {ai:'Em quais categorias de produtos essa etapa se aplica?', field:'category', sugg:['Todos os produtos','Eletrônicos','Moda e Calçados','Alimentos','B2B']},
+  {ai:null, field:null, sugg:['Confirmar e criar']},
+];
+
+const taskChatFlows = [
+  {ai:'Como você quer chamar essa tarefa?', field:'name', sugg:['Validar Estoque','Emitir Nota Fiscal','Capturar Pagamento','Enviar Rastreio','Conferência de Qualidade']},
+  {ai:'Esta tarefa deve ser visível no pedido ou é interna?', field:'visibility', sugg:['Visível no pedido','Interna']},
+  {ai:null, field:null, sugg:['Criar tarefa','Adicionar API externa','Adicionar checkpoints']},
 ];
 
 function addCMsg(who, text) {
@@ -1620,53 +1432,112 @@ function renderCSuggs(sugg) {
   const c = document.getElementById('cm-suggestions'); if(!c) return;
   c.innerHTML = sugg.map(s=>`<button class="cm-suggestion" onclick="selectCSugg('${s}')">${s}</button>`).join('');
 }
-function selectCSugg(text) { const i = document.getElementById('cm-input'); if(!i) return; i.value=text; if(activePanel==='edit') sendEditChat(); else if(activePanel==='split') sendSplitChat(); else if(activePanel==='bulk') sendBulkChat(); else sendChat(); }
-function sendChat() {
+function selectCSugg(text) {
+  const i = document.getElementById('cm-input'); if(!i) return; i.value=text;
+  if (activePanel==='edit') sendEditChat();
+  else if (activePanel==='split') sendSplitChat();
+  else if (activePanel==='bulk') sendBulkChat();
+  else if (activePanel==='create-stage') sendStageChat();
+  else if (activePanel==='create-task') sendTaskChat();
+  else sendChat();
+}
+function sendStageChat() {
   const input = document.getElementById('cm-input'); if(!input) return;
   const text = input.value.trim(); if(!text) return;
   input.value = ''; addCMsg('user', text);
   document.getElementById('cm-suggestions').innerHTML = '';
-  const step = chatFlows[chatStep];
-  if (step.field) { newTaskDraft[step.field] = text; }
+  // Save the field for the current step
+  const step = stageChatFlows[chatStep];
+  if (step && step.field) newTaskDraft[step.field] = text;
   chatStep++;
   updatePreviewMini();
   setTimeout(() => {
-    if (chatStep < chatFlows.length) {
-      let aiText = chatFlows[chatStep].ai;
-      if (chatStep === chatFlows.length - 1) {
-        if (!newTaskDraft.category) newTaskDraft.category = text;
-        updatePreviewMini();
-        aiText = `Perfeito! Resumo:\n• Nome: ${newTaskDraft.name}\n• Supplier: ${newTaskDraft.supplier}\n• Categoria: ${newTaskDraft.category}\n\nPosso criar a etapa?`;
+    if (chatStep < stageChatFlows.length) {
+      const next = stageChatFlows[chatStep];
+      if (chatStep === stageChatFlows.length - 1) {
+        // confirmation step
+        addCMsg('ai', `Perfeito! Resumo da etapa:\n• Nome: ${newTaskDraft.name||'—'}\n• Categoria: ${newTaskDraft.category||'—'}\n\nDeseja adicionar integrações ou criar agora?`);
+        renderCSuggs(['Criar agora','Integração MCP','Agente AI Workspace','API externa']);
+      } else {
+        if (next.ai) addCMsg('ai', next.ai);
+        renderCSuggs(next.sugg || []);
       }
-      if (aiText) addCMsg('ai', aiText);
-      renderCSuggs(chatFlows[chatStep].sugg || []);
-    } else if (chatStep === chatFlows.length) {
-      addCMsg('ai', `"${newTaskDraft.name}" está pronta! Deseja adicionar integrações antes de criar?\n\n• Integração MCP — conecte uma ferramenta externa via Model Context Protocol\n• Agente AI Workspace — acione um agente publicado no AI Workspace durante a execução`);
-      renderCSuggs(['Criar agora', 'Integração MCP', 'Agente AI Workspace']);
-      chatStep++;
     } else {
-      const lower2 = text.toLowerCase();
-      if (lower2 === 'criar agora' || lower2 === 'criar' || lower2 === 'pular' || lower2 === 'não') {
-        const isSubTask = !!newTaskDraft.stageId;
-        addCMsg('ai', isSubTask ? 'Tudo certo! Clique em "Criar Tarefa" para adicionar à etapa.' : 'Tudo certo! Clique em "Criar Etapa" para adicionar ao workflow.');
+      // post-flow: integration or create
+      const lower = text.toLowerCase();
+      if (lower === 'criar agora' || lower === 'criar' || lower === 'pular' || lower === 'não' || lower === 'nao') {
+        addCMsg('ai', 'Tudo certo! Clique em "Criar Etapa" para adicionar ao workflow.');
         const btn = document.getElementById('create-btn');
         if (btn) { btn.disabled=false; btn.style.opacity='1'; btn.style.cursor='pointer'; }
         renderCSuggs([]);
-      } else if (lower2.includes('mcp')) {
+      } else if (lower.includes('mcp')) {
         showMcpSelector();
-      } else if (lower2.includes('agente') || lower2.includes('workspace')) {
+      } else if (lower.includes('agente') || lower.includes('workspace')) {
         showAgentWsSelector();
+      } else if (lower.includes('api')) {
+        showApiConfigInline();
       } else {
         addCMsg('ai', 'Deseja adicionar alguma integração ou criar a etapa agora?');
-        renderCSuggs(['Criar agora', 'Integração MCP', 'Agente AI Workspace']);
+        renderCSuggs(['Criar agora','Integração MCP','Agente AI Workspace','API externa']);
       }
     }
-  }, 500);
+  }, 400);
 }
+
+function sendTaskChat() {
+  const input = document.getElementById('cm-input'); if(!input) return;
+  const text = input.value.trim(); if(!text) return;
+  input.value = ''; addCMsg('user', text);
+  document.getElementById('cm-suggestions').innerHTML = '';
+
+  const step = taskChatFlows[chatStep];
+  if (step && step.field) {
+    if (step.field === 'visibility') {
+      newTaskDraft.visibility = (text.toLowerCase().includes('interna') || text.toLowerCase().includes('interno')) ? 'internal' : 'user';
+    } else {
+      newTaskDraft[step.field] = text;
+    }
+  }
+  chatStep++;
+  updatePreviewMini();
+
+  setTimeout(() => {
+    if (chatStep === 1) {
+      // After name: ask visibility
+      addCMsg('ai', taskChatFlows[1].ai);
+      renderCSuggs(taskChatFlows[1].sugg);
+    } else if (chatStep === 2) {
+      // After visibility: ask about extras
+      addCMsg('ai', `Tarefa "${newTaskDraft.name}" configurada!\n• Visibilidade: ${newTaskDraft.visibility === 'internal' ? '🔒 Interna' : '👤 Usuário'}\n\nDeseja adicionar checkpoints, API externa ou criar agora?`);
+      renderCSuggs(['Criar tarefa','Adicionar checkpoints','Adicionar API externa','Integração MCP']);
+    } else {
+      // extras
+      const lower = text.toLowerCase();
+      if (lower === 'criar tarefa' || lower === 'criar' || lower === 'criar agora') {
+        addCMsg('ai', 'Tudo certo! Clique em "Criar Tarefa" para finalizar.');
+        const btn = document.getElementById('create-btn');
+        if (btn) { btn.disabled=false; btn.style.opacity='1'; btn.style.cursor='pointer'; }
+        renderCSuggs([]);
+      } else if (lower.includes('checkpoint')) {
+        showCheckpointBuilderInline();
+      } else if (lower.includes('api')) {
+        showApiConfigInline();
+      } else if (lower.includes('mcp')) {
+        showMcpSelector();
+      } else if (lower.includes('agente') || lower.includes('workspace')) {
+        showAgentWsSelector();
+      } else {
+        addCMsg('ai', 'Deseja criar a tarefa ou adicionar mais configurações?');
+        renderCSuggs(['Criar tarefa','Adicionar checkpoints','Adicionar API externa','Integração MCP']);
+      }
+    }
+  }, 400);
+}
+
+function sendChat() { sendStageChat(); }
 function updatePreviewMini() {
   const p = document.getElementById('task-preview-mini'); if(p) p.style.display='block';
   if(document.getElementById('prev-name')) document.getElementById('prev-name').innerHTML = `Nome: <span>${newTaskDraft.name||'—'}</span>`;
-  if(document.getElementById('prev-sup')) document.getElementById('prev-sup').innerHTML = `Supplier: <span>${newTaskDraft.supplier||'—'}</span>`;
   if(document.getElementById('prev-cat')) document.getElementById('prev-cat').innerHTML = `Categoria: <span>${newTaskDraft.category||'—'}</span>`;
 }
 function createTask() {
@@ -1682,10 +1553,12 @@ function createTask() {
       name: newTaskDraft.name || 'Nova Etapa',
       supplier: newTaskDraft.supplier || 'A definir',
       category: newTaskDraft.category || 'Todos',
-      active: true, actions: [], script: null, externalApi: null,
+      active: true, visibility: 'user', script: null,
+      externalApi: newTaskDraft.externalApi || null,
       mcpConfig: newTaskDraft.mcpConfig || null,
       agentConfig: newTaskDraft.agentConfig || null,
-      contextOutput: []
+      contextOutput: [],
+      checkpoints: []
     }]
   };
   const pos = typeof newTaskDraft.position === 'number' ? newTaskDraft.position : WF_TASKS.length;
@@ -1741,27 +1614,29 @@ function applyRenameStage(stageId) {
 }
 
 function addTaskToStage(stageId) {
-  activePanel = 'create';
+  activePanel = 'create-task';
   chatStep = 0;
-  newTaskDraft = { stageId, name:'', supplier:'', category:'', mcpConfig:null, agentConfig:null };
-  document.getElementById('sp-title').textContent = 'Nova Tarefa com AI';
+  newTaskDraft = { stageId, name:'', supplier:'', category:'', visibility:'user', mcpConfig:null, agentConfig:null };
+  document.getElementById('sp-title').textContent = '✚ Nova Tarefa';
   document.getElementById('sp-body').innerHTML = `
     <div id="task-preview-mini" style="display:none;background:#f9f9fb;border-radius:6px;padding:10px 12px;font-size:12px;color:#555;line-height:1.7;border:1px solid #efefef">
       <div id="prev-name">Nome: <span style="color:#1a1a1a;font-weight:600">—</span></div>
-      <div id="prev-sup">Supplier: <span style="color:#1a1a1a;font-weight:600">—</span></div>
       <div id="prev-cat">Categoria: <span style="color:#1a1a1a;font-weight:600">—</span></div>
     </div>
     <div class="cm-msgs" id="cm-msgs"></div>
     <div class="cm-suggestions" id="cm-suggestions"></div>
     <div class="cm-input-row">
-      <input class="cm-input" id="cm-input" placeholder="Digite..." onkeydown="if(event.key==='Enter')sendChat()">
-      <button class="cm-send" onclick="sendChat()"><svg viewBox="0 0 16 16" stroke="white" stroke-width="2" fill="none" width="13" height="13"><path d="M2 8l12-6-4 12-3-4-5-2z"/></svg></button>
+      <input class="cm-input" id="cm-input" placeholder="Digite..." onkeydown="if(event.key==='Enter')sendTaskChat()">
+      <button class="cm-send" onclick="sendTaskChat()"><svg viewBox="0 0 16 16" stroke="white" stroke-width="2" fill="none" width="13" height="13"><path d="M2 8l12-6-4 12-3-4-5-2z"/></svg></button>
     </div>`;
   document.getElementById('sp-footer').innerHTML = `
     <button class="btn btn-secondary" style="flex:1;justify-content:center" onclick="closeSidePanel()">Cancelar</button>
     <button class="btn btn-primary" style="flex:1;justify-content:center;opacity:.4;cursor:not-allowed" id="create-btn" disabled onclick="createSubTask()">Criar Tarefa</button>`;
   openSidePanel();
-  setTimeout(() => { addCMsg('ai', chatFlows[0].ai); renderCSuggs(chatFlows[0].sugg); }, 200);
+  setTimeout(() => {
+    addCMsg('ai', taskChatFlows[0].ai);
+    renderCSuggs(taskChatFlows[0].sugg);
+  }, 200);
 }
 function createSubTask() {
   const stage = WF_TASKS.find(s => s.id === newTaskDraft.stageId);
@@ -1772,10 +1647,12 @@ function createSubTask() {
     id: newId, name: newTaskDraft.name || 'Nova Tarefa',
     supplier: newTaskDraft.supplier || 'A definir',
     category: newTaskDraft.category || 'Todos',
-    active: true, actions: [], script: null, externalApi: null,
+    active: true, visibility: newTaskDraft.visibility || 'user', script: null,
+    externalApi: newTaskDraft.externalApi || null,
     mcpConfig: newTaskDraft.mcpConfig || null,
     agentConfig: newTaskDraft.agentConfig || null,
-    contextOutput: []
+    contextOutput: [],
+    checkpoints: newTaskDraft.checkpoints || [],
   });
   closeSidePanel(); renderWorkflowBoard();
   showSuccessModal('Tarefa criada!', `"${newTaskDraft.name||'Nova Tarefa'}" foi adicionada à etapa "${stage.name}".`);
@@ -1804,6 +1681,41 @@ const TASK_ACTIONS = [
   {id:'AlterarSellerPedido',label:'AlterarSellerPedido()', icon:'🔄', outputVars:['novo_seller_id']},
   {id:'AlterarItemPedido',  label:'AlterarItemPedido()',    icon:'📝', outputVars:['item_alterado']},
 ];
+
+const SUPPLIER_CATALOG = {
+  pagamento:      ['PagSeguro','Cielo','VTEX Payments','Adyen','PayPal','Rede','Stone'],
+  separacao:      ['CD São Paulo','CD Rio de Janeiro','CD Recife','CD Manaus','Armazém Central','Fulfillment SP'],
+  qualidade:      ['QA Team','Equipe Inspeção SP','Equipe Inspeção RJ','Parceiro Qualidade'],
+  entrega:        ['Correios','Jadlog','Transportadora XYZ','Total Express','Loggi','Azul Cargo','DHL'],
+  nota_fiscal:    ['Nota Fácil','NF-e.io','Bling','Omie','SAP NF','NF Paulistana'],
+  rastreamento:   ['Intelipost','Melhor Envio','Aftership','Rastreio.net','Kangu'],
+  atendimento:    ['Equipe Atendimento','VTEX Support','Help Desk SP','Customer Success'],
+  fiscal:         ['Financeiro','Contabilidade','Depto Fiscal','Controladoria'],
+  personalizacao: ['BRK','Estamparia Digital','PrintShop Brasil','Custom Factory','Bordados SP','Gráfica Personalizada'],
+  instalacao:     ['Arte&Decor','Instaladores Pro','Casa & Serviços','Montag SP','TecnoFix','ServiçosMais'],
+};
+
+function getContextSuppliers(taskName) {
+  const n = (taskName||'').toLowerCase();
+  if (/pagament|autoriz|captur|financ|cobranc|cobrança/.test(n)) return SUPPLIER_CATALOG.pagamento;
+  if (/separ|reserv|estoque|armazem|armazém|fulfillment|cd /.test(n)) return SUPPLIER_CATALOG.separacao;
+  if (/qualidade|confer|inspeç|inspetion|qa|audit/.test(n)) return SUPPLIER_CATALOG.qualidade;
+  if (/entrega|expedi|transport|frete|logist|envio|coleta/.test(n)) return SUPPLIER_CATALOG.entrega;
+  if (/nota.?fiscal|nf-?e|nfe|fiscal|sefaz/.test(n)) return SUPPLIER_CATALOG.nota_fiscal;
+  if (/rastreio|rastreamento|tracking|código de rastreio/.test(n)) return SUPPLIER_CATALOG.rastreamento;
+  if (/atendimento|suporte|devolu|troca|reclam/.test(n)) return SUPPLIER_CATALOG.atendimento;
+  if (/financ|contab|cobranc/.test(n)) return SUPPLIER_CATALOG.fiscal;
+  if (/personaliz|estampa|bordado|customiz|gravação|gravacao|brk/.test(n)) return SUPPLIER_CATALOG.personalizacao;
+  if (/instala|montagem|serviço|servico|técnico|tecnico|arte.*decor/.test(n)) return SUPPLIER_CATALOG.instalacao;
+  // default: mix of common ones
+  return ['CD São Paulo','QA Team','Financeiro','Transportadora XYZ','VTEX Payments'];
+}
+
+function showSupplierCategoryPicker() {
+  addCMsg('ai', 'Qual categoria de supplier você precisa consultar?');
+  renderCSuggs(['Pagamento','Separação/Armazém','Qualidade','Entrega/Transportadora','Nota Fiscal','Rastreamento','Atendimento']);
+  newTaskDraft._supplierPickMode = true;
+}
 
 const MCP_SERVERS = [
   {id:'vtex-catalog', name:'VTEX Catalog', icon:'📚', description:'Acesso ao catálogo de produtos, SKUs e categorias',
@@ -1863,6 +1775,86 @@ const AI_WORKSPACE_AGENTS = [
 
 function getActiveDraft() { return activePanel === 'edit' ? editDraft : newTaskDraft; }
 
+function showApiConfigInline() {
+  addCMsg('ai', 'Configure a API externa desta tarefa:');
+  const msgs = document.getElementById('cm-msgs'); if(!msgs) return;
+  const div = document.createElement('div');
+  div.style.cssText = 'background:#f0f7ff;border:1px solid #bfdbfe;border-radius:8px;padding:12px;margin-top:6px;display:flex;flex-direction:column;gap:8px';
+  div.innerHTML = `
+    <div style="font-size:11px;font-weight:700;color:#1d4ed8;margin-bottom:2px">⚡ Configuração de API Externa</div>
+    <input id="api-url-inp" placeholder="URL da API (ex: https://api.seuservico.com/endpoint)" style="border:1px solid #bfdbfe;border-radius:4px;padding:6px 9px;font-size:12px;font-family:inherit;width:100%;box-sizing:border-box">
+    <div style="display:flex;gap:6px">
+      <select id="api-method-sel" style="border:1px solid #bfdbfe;border-radius:4px;padding:5px;font-size:12px;font-family:inherit;background:#fff">
+        <option>POST</option><option>GET</option><option>PUT</option><option>PATCH</option>
+      </select>
+      <input id="api-return-inp" placeholder="Campo de retorno (ex: data.status)" style="border:1px solid #bfdbfe;border-radius:4px;padding:6px 9px;font-size:12px;font-family:inherit;flex:1">
+    </div>
+    <div style="font-size:10.5px;color:#6b7280">O retorno será disponível como variável de contexto para a próxima tarefa.</div>
+    <button onclick="applyApiConfig()" style="background:#0c6fcd;color:#fff;border:none;border-radius:4px;padding:6px 14px;font-size:12px;cursor:pointer;font-family:inherit;align-self:flex-start">Salvar configuração</button>`;
+  msgs.appendChild(div); msgs.scrollTop = msgs.scrollHeight;
+  renderCSuggs([]);
+}
+
+function applyApiConfig() {
+  const url = document.getElementById('api-url-inp')?.value?.trim();
+  const method = document.getElementById('api-method-sel')?.value || 'POST';
+  const returnField = document.getElementById('api-return-inp')?.value?.trim() || 'data.result';
+  if (!url) { addCMsg('ai', 'Por favor informe a URL da API.'); return; }
+  newTaskDraft.externalApi = {
+    url, method,
+    responseMapping: [{ key: 'api_result', path: returnField }]
+  };
+  if (activePanel === 'edit') { editDraft.externalApi = newTaskDraft.externalApi; refreshEditPreview(); }
+  addCMsg('ai', `✓ API configurada: ${method} ${url}\nRetorno mapeado como {{api_result}} para a próxima tarefa.\n\nDeseja criar a tarefa agora?`);
+  renderCSuggs(['Criar tarefa','Adicionar checkpoints','Integração MCP']);
+}
+
+function showCheckpointBuilderInline() {
+  addCMsg('ai', 'Defina os checkpoints desta tarefa (passos que devem ser verificados):');
+  if (!newTaskDraft.checkpoints) newTaskDraft.checkpoints = [];
+  const msgs = document.getElementById('cm-msgs'); if(!msgs) return;
+  const div = document.createElement('div');
+  div.id = 'cp-builder';
+  div.style.cssText = 'background:#fafafa;border:1px solid #e8e8e8;border-radius:8px;padding:12px;margin-top:6px;display:flex;flex-direction:column;gap:8px';
+  div.innerHTML = `
+    <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:2px">📋 Checkpoints da tarefa</div>
+    <div id="cp-list" style="display:flex;flex-direction:column;gap:5px"></div>
+    <div style="display:flex;gap:6px">
+      <input id="cp-label-inp" placeholder="Ex: Estoque reservado" style="border:1px solid #e0e0e0;border-radius:4px;padding:6px 9px;font-size:12px;font-family:inherit;flex:1">
+      <input id="cp-fail-inp" placeholder="Ação em falha" style="border:1px solid #e0e0e0;border-radius:4px;padding:6px 9px;font-size:12px;font-family:inherit;flex:1">
+      <button onclick="addCheckpointItem()" style="background:#142032;color:#fff;border:none;border-radius:4px;padding:6px 12px;font-size:12px;cursor:pointer;white-space:nowrap;font-family:inherit">+ Add</button>
+    </div>
+    <button onclick="applyCheckpoints()" style="background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0;border-radius:4px;padding:6px 14px;font-size:12px;cursor:pointer;font-family:inherit;align-self:flex-start">✓ Salvar checkpoints</button>`;
+  msgs.appendChild(div); msgs.scrollTop = msgs.scrollHeight;
+  renderCSuggs([]);
+}
+
+function addCheckpointItem() {
+  const label = document.getElementById('cp-label-inp')?.value?.trim();
+  const failAction = document.getElementById('cp-fail-inp')?.value?.trim() || 'Escalar para operador';
+  if (!label) return;
+  if (!newTaskDraft.checkpoints) newTaskDraft.checkpoints = [];
+  const id = 'cp' + (newTaskDraft.checkpoints.length + 1);
+  newTaskDraft.checkpoints.push({id, label, failAction});
+  document.getElementById('cp-label-inp').value = '';
+  document.getElementById('cp-fail-inp').value = '';
+  const listEl = document.getElementById('cp-list');
+  if (listEl) {
+    listEl.innerHTML = newTaskDraft.checkpoints.map((cp,i) => `
+      <div style="display:flex;align-items:center;gap:6px;padding:4px 6px;background:#fff;border:1px solid #f0f0f0;border-radius:4px;font-size:11.5px">
+        <span style="color:#059669;font-size:10px">✓</span>
+        <span style="flex:1">${cp.label}</span>
+        <span style="color:#9ca3af;font-size:10px">falha: ${cp.failAction}</span>
+      </div>`).join('');
+  }
+}
+
+function applyCheckpoints() {
+  const count = (newTaskDraft.checkpoints||[]).length;
+  addCMsg('ai', `✓ ${count} checkpoint${count!==1?'s':''} configurado${count!==1?'s':''}.\n\nDeseja criar a tarefa agora?`);
+  renderCSuggs(['Criar tarefa','Adicionar API externa','Integração MCP']);
+}
+
 
 // ══════════════════════════════════════════
 // AGENT CONFIG
@@ -1874,6 +1866,15 @@ function updateSlider(input, valId, fillId) {
   const fillEl = document.getElementById(fillId);
   if (valEl) valEl.textContent = v + '%';
   if (fillEl) fillEl.style.width = v + '%';
+}
+
+function toggleAgentCard(id) {
+  const body  = document.getElementById(id);
+  const arrow = document.getElementById(id + '-arrow');
+  if (!body) return;
+  const open = body.style.display !== 'none';
+  body.style.display  = open ? 'none' : 'block';
+  if (arrow) arrow.style.transform = open ? '' : 'rotate(180deg)';
 }
 
 // ══════════════════════════════════════════
@@ -1920,6 +1921,50 @@ function renderWorkflowSettings() {
   if (depsEl) depsEl.innerHTML = dependents.length
     ? dependents.map(d => `<span style="margin-right:6px">${d.icon} ${d.name}</span>`).join('')
     : '<span style="font-style:italic">Nenhum workflow depende deste</span>';
+
+  // Trigger configuration
+  const triggerContainer = document.getElementById('ws-trigger');
+  if (triggerContainer) {
+    const trigger = wf.trigger || { type:'order-created', label:'Acionado automaticamente no início do pedido' };
+    const otherWorkflows = WORKFLOW_DEFS.filter(w => w.id !== wf.id);
+    const taskOptions = trigger.workflowId
+      ? (WORKFLOW_DEFS.find(w => w.id === trigger.workflowId)?.tasks || []).map(s =>
+          `<option value="${s.id}" ${s.id === trigger.stageId ? 'selected' : ''}>${s.name}</option>`
+        ).join('')
+      : '';
+    triggerContainer.innerHTML = `
+      <div style="margin-bottom:8px">
+        <label style="font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:6px">Este workflow é acionado por:</label>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
+            <input type="radio" name="trig-type" value="order-created" ${trigger.type==='order-created'?'checked':''} onchange="onTriggerTypeChange('order-created')">
+            Início do pedido (automático)
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
+            <input type="radio" name="trig-type" value="workflow-complete" ${trigger.type==='workflow-complete'?'checked':''} onchange="onTriggerTypeChange('workflow-complete')">
+            Conclusão de um workflow
+          </label>
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
+            <input type="radio" name="trig-type" value="task-complete" ${trigger.type==='task-complete'?'checked':''} onchange="onTriggerTypeChange('task-complete')">
+            Conclusão de uma tarefa específica
+          </label>
+        </div>
+      </div>
+      <div id="ws-trigger-detail" style="margin-top:8px;${trigger.type==='order-created'?'display:none':''}">
+        <label style="font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:4px">Workflow de origem</label>
+        <select id="ws-trigger-wf" class="cm-input" style="width:100%;margin-bottom:8px" onchange="onTriggerWfChange(this.value)">
+          <option value="">Selecione um workflow</option>
+          ${otherWorkflows.map(w => `<option value="${w.id}" ${w.id === trigger.workflowId ? 'selected' : ''}>${w.icon} ${w.name}</option>`).join('')}
+        </select>
+        <div id="ws-trigger-task-row" style="${trigger.type==='task-complete'?'':'display:none'}">
+          <label style="font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:4px">Tarefa de origem</label>
+          <select id="ws-trigger-task" class="cm-input" style="width:100%">
+            <option value="">Selecione uma tarefa</option>
+            ${taskOptions}
+          </select>
+        </div>
+      </div>`;
+  }
 }
 
 function selectWsIcon(btn, icon) {
@@ -1963,8 +2008,38 @@ function saveWorkflowSettings() {
   const descEl = document.getElementById('ws-desc');
   if (nameEl && nameEl.value.trim()) wf.name = nameEl.value.trim();
   if (descEl && descEl.value.trim()) wf.description = descEl.value.trim();
+  // persist trigger
+  if (!wf.trigger) wf.trigger = {};
+  const trigTypeEl = document.querySelector('input[name="trig-type"]:checked');
+  if (trigTypeEl) wf.trigger.type = trigTypeEl.value;
+  const trigWfEl = document.getElementById('ws-trigger-wf');
+  if (trigWfEl) wf.trigger.workflowId = trigWfEl.value;
+  const trigTaskEl = document.getElementById('ws-trigger-task');
+  if (trigTaskEl) wf.trigger.stageId = trigTaskEl.value;
   showScreen('workflow-list');
   showSuccessModal('Workflow atualizado!', `As configurações de "${wf.name}" foram salvas.`);
+}
+
+function onTriggerTypeChange(type) {
+  const wf = WORKFLOW_DEFS.find(w => w.id === currentSettingsWfId); if (!wf) return;
+  if (!wf.trigger) wf.trigger = {};
+  wf.trigger.type = type;
+  const detail = document.getElementById('ws-trigger-detail');
+  const taskRow = document.getElementById('ws-trigger-task-row');
+  if (detail) detail.style.display = type === 'order-created' ? 'none' : '';
+  if (taskRow) taskRow.style.display = type === 'task-complete' ? '' : 'none';
+}
+
+function onTriggerWfChange(wfId) {
+  const wf = WORKFLOW_DEFS.find(w => w.id === currentSettingsWfId); if (!wf) return;
+  if (!wf.trigger) wf.trigger = {};
+  wf.trigger.workflowId = wfId;
+  const srcWf = WORKFLOW_DEFS.find(w => w.id === wfId);
+  const taskSelect = document.getElementById('ws-trigger-task');
+  if (taskSelect && srcWf) {
+    taskSelect.innerHTML = `<option value="">Selecione uma tarefa</option>` +
+      (srcWf.tasks || []).map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+  }
 }
 
 // ══════════════════════════════════════════
@@ -1973,9 +2048,9 @@ function saveWorkflowSettings() {
 let orchChatState = 'idle';
 let orchRuleDraft = null;
 let orchRules = [
-  {id:'r1', condition:'Pedido travado há > 8h em Separação', action:'Escalar para gerente de operações', priority:'high', wf:'Workflow Padrão', active:true},
+  {id:'r1', condition:'Pedido travado há > 8h em Separação', action:'Escalar para gerente de operações', priority:'high', wf:'Preparando os itens', active:true},
   {id:'r2', condition:'Valor do pedido > R$ 5.000', action:'Requer confirmação humana antes de avançar', priority:'high', wf:'Todos', active:true},
-  {id:'r3', condition:'Supplier sem capacidade há > 2h', action:'Sugerir realocação automaticamente', priority:'med', wf:'Workflow Padrão', active:true},
+  {id:'r3', condition:'Supplier sem capacidade há > 2h', action:'Sugerir realocação automaticamente', priority:'med', wf:'Preparando os itens', active:true},
   {id:'r4', condition:'Valor de devolução < R$ 200', action:'Reembolso automático sem auditoria manual', priority:'low', wf:'Troca e Devolução', active:false},
 ];
 
@@ -1983,7 +2058,7 @@ function initOrchChat() {
   const msgs = document.getElementById('orch-chat-msgs');
   if (!msgs || msgs.children.length > 0) return;
   orchChatState = 'idle';
-  addOrchMsg('ai', 'Olá! Sou o assistente de configuração do Agente de Orquestração. 🤖\n\nAtualmente o agente está ativo com:\n• Confiança mínima: 75%\n• SLA: 4h sem movimentação\n• Cobertura: Workflow Padrão + Troca e Devolução\n• 4 regras customizadas\n\nO que você gostaria de configurar?');
+  addOrchMsg('ai', 'Olá! Sou o assistente de configuração do Agente de Orquestração. 🤖\n\nEste agente é composto por 3 sub-agentes:\n🗺️ Roteamento — seleciona o modo de fulfillment e provider por pedido\n⚙️ Orquestração — avança gates e dispara ações automaticamente\n🚨 Escalação — detecta inatividade e cria tarefas para operadores\n\nConfiguração atual:\n• Confiança mínima: 75%\n• SLA: 4h sem movimentação\n• Cobertura: Preparando os itens + Troca e Devolução\n• 4 regras customizadas\n\nO que você gostaria de configurar?');
   renderOrchSuggs(['Ajustar confiança', 'Configurar SLA', 'Cobertura de workflows', 'Definir regra customizada', 'Notificações']);
   renderCustomRules();
 }
@@ -2075,13 +2150,13 @@ function processOrchIntent(text) {
     orchRuleDraft.priority = priority;
     orchChatState = 'await-rule-workflow';
     addOrchMsg('ai', 'Para qual workflow esta regra se aplica?');
-    renderOrchSuggs(['Todos os workflows', 'Workflow Padrão', 'Troca e Devolução', 'Aprovação de Pagamento']);
+    renderOrchSuggs(['Todos os workflows', 'Preparando os itens', 'Troca e Devolução', 'Aprovação de Pagamento']);
     return;
   }
 
   if (orchChatState === 'await-rule-workflow') {
     let wf = 'Todos';
-    if (lower.includes('padrão') || lower.includes('padrao')) wf = 'Workflow Padrão';
+    if (lower.includes('padrão') || lower.includes('padrao')) wf = 'Preparando os itens';
     else if (lower.includes('troca') || lower.includes('devolução') || lower.includes('devolucao')) wf = 'Troca e Devolução';
     else if (lower.includes('pagamento')) wf = 'Aprovação de Pagamento';
     orchRuleDraft.wf = wf;
@@ -2115,7 +2190,7 @@ function processOrchIntent(text) {
   if (/cobertura|workflow|fluxo/.test(lower)) {
     highlightOrchCard('ocard-coverage');
     orchChatState = 'idle';
-    addOrchMsg('ai', 'Configuração de cobertura destacada no painel à direita 👉\n\nStatus atual:\n✅ Workflow Padrão — 4.256 pedidos\n✅ Troca e Devolução — 83 pedidos\n⬜ Aprovação de Pagamento — desativado\n\nUse os toggles para ativar ou desativar cada workflow.');
+    addOrchMsg('ai', 'Configuração de cobertura destacada no painel à direita 👉\n\nStatus atual:\n✅ Preparando os itens — 4.256 pedidos\n✅ Troca e Devolução — 83 pedidos\n⬜ Aprovação de Pagamento — desativado\n\nUse os toggles para ativar ou desativar cada workflow.');
     renderOrchSuggs(['Ajustar confiança', 'Configurar SLA', 'Definir regra customizada', 'Pronto!']);
     return;
   }
@@ -2206,9 +2281,22 @@ function renderCustomRules() {
         <button onclick="deleteOrchRule('${r.id}')" style="border:none;background:transparent;cursor:pointer;padding:2px 4px;color:#ccc;font-size:13px;line-height:1" title="Excluir">🗑</button>
       </div>
     </div>
-  </div>
-</div>
+  `).join('');
+}
 
+function toggleOrchRule(id) {
+  const r = orchRules.find(x => x.id === id);
+  if (r) { r.active = !r.active; renderCustomRules(); }
+}
+
+function deleteOrchRule(id) {
+  orchRules = orchRules.filter(x => x.id !== id);
+  renderCustomRules();
+}
+
+function saveAgentConfig() {
+  showSuccessModal('Configurações salvas!', 'O agente foi atualizado e está monitorando os workflows ativos.');
+}
 
 // ══════════════════════════════════════════
 // NEW WORKFLOW PANEL
@@ -2218,14 +2306,16 @@ const WF_ICONS = ['📦','↩️','💳','🚚','🔄','⚡','🏪','🌐','📋
 const WF_COLORS = ['#0c6fcd','#7c3aed','#059669','#d97706','#0891b2','#6366f1','#dc2626','#0f766e'];
 let newWfDraft = {}, newWfStep = 0;
 const newWfFlows = [
-  { ai:'Como você quer chamar esse workflow?', field:'name', sugg:['Workflow Marketplace','Aprovação B2B','Entrega Expressa','Troca e Devolução'] },
-  { ai:'Escolha um ícone para identificar visualmente este workflow:', field:null, sugg:[] },
-  { ai:'Descreva brevemente o propósito deste workflow:', field:'description', sugg:['Fluxo padrão para novos pedidos','Aprovação manual para pedidos B2B','Gestão de trocas e devoluções','Entrega rápida para pedidos prioritários'] },
-  { ai:null, field:null, sugg:['Confirmar e criar'] },
+  { id:'name',        ai:'Como você quer chamar esse Order Job?',                                       field:'name',        sugg:['Entrega Expressa','Marketplace Premium','Cross-docking','Entrega Agendada'] },
+  { id:'origin',      ai:null,                                                                          field:null,          sugg:[] },
+  { id:'icon',        ai:'Escolha um ícone para identificar visualmente este Order Job:',               field:null,          sugg:[] },
+  { id:'description', ai:'Descreva brevemente o propósito deste Order Job:',                            field:'description', sugg:['Fluxo para entregas no mesmo dia','Entrega com agendamento pelo cliente','Modalidade para pedidos B2B','Entrega via parceiros logísticos regionais'] },
+  { id:'marcos',      ai:null,                                                                          field:null,          sugg:[] },
+  { id:'confirm',     ai:null,                                                                          field:null,          sugg:['Confirmar e criar'] },
 ];
 
 function openCreateWorkflowPanel() {
-  newWfDraft = { name:'', icon:'📦', color:'#0c6fcd', description:'' };
+  newWfDraft = { name:'', icon:'📦', color:'#0c6fcd', description:'', sourceId:null };
   newWfStep = 0;
   const body = document.getElementById('new-wf-body');
   body.innerHTML = `
@@ -2233,8 +2323,10 @@ function openCreateWorkflowPanel() {
       <div id="nwf-prev-name">Nome: <span style="color:#1a1a1a;font-weight:600">—</span></div>
       <div id="nwf-prev-icon">Ícone: <span style="color:#1a1a1a;font-weight:600">—</span></div>
       <div id="nwf-prev-desc">Descrição: <span style="color:#1a1a1a;font-weight:600">—</span></div>
+      <div id="nwf-prev-source" style="display:none">Copiado de: <span style="color:#0c6fcd;font-weight:600">—</span></div>
     </div>
     <div class="cm-msgs" id="nwf-msgs" style="flex:1;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:8px"></div>
+    <div id="nwf-origin-picker" style="display:none;padding:0 16px 8px;flex-direction:column;gap:8px"></div>
     <div id="nwf-icon-grid" style="display:none;padding:8px 16px;display:none;flex-wrap:wrap;gap:8px"></div>
     <div id="nwf-suggestions" style="padding:0 16px 8px;display:flex;flex-wrap:wrap;gap:6px"></div>
     <div style="padding:8px 16px;border-top:1px solid #f0f0f0;display:flex;gap:6px">
@@ -2243,7 +2335,7 @@ function openCreateWorkflowPanel() {
     </div>`;
   document.getElementById('new-wf-footer').innerHTML = `
     <button class="btn btn-secondary" style="flex:1;justify-content:center" onclick="closeNewWfPanel()">Cancelar</button>
-    <button class="btn btn-primary" style="flex:1;justify-content:center;opacity:.4;cursor:default" id="new-wf-btn" disabled onclick="confirmCreateWorkflow()">Criar Workflow</button>`;
+    <button class="btn btn-primary" style="flex:1;justify-content:center;opacity:.4;cursor:default" id="new-wf-btn" disabled onclick="confirmCreateWorkflow()">Criar Job</button>`;
   document.getElementById('new-wf-panel').style.right = '0';
   setTimeout(() => {
     addNwfMsg('ai', newWfFlows[0].ai);
@@ -2283,16 +2375,24 @@ function sendNewWfChat() {
     if (newWfStep < newWfFlows.length) {
       const next = newWfFlows[newWfStep];
       if (newWfStep === 1) {
+        // Origin picker step
+        renderNwfOriginPicker();
+      } else if (newWfStep === 2) {
         // Icon picker step
         addNwfMsg('ai', next.ai);
         const grid = document.getElementById('nwf-icon-grid');
         grid.style.display = 'flex';
         grid.innerHTML = WF_ICONS.map(ic => `<button onclick="pickWfIcon('${ic}')" style="font-size:22px;background:#f9f9fb;border:1px solid #e5e7eb;border-radius:8px;padding:6px 10px;cursor:pointer;line-height:1;transition:background .15s" title="${ic}">${ic}</button>`).join('');
+      } else if (newWfStep === 4) {
+        // Marcos preview step
+        const grid = document.getElementById('nwf-icon-grid'); if (grid) grid.style.display = 'none';
+        renderNwfMarcosPreview();
       } else {
         const grid = document.getElementById('nwf-icon-grid'); if (grid) grid.style.display = 'none';
         if (next.ai) addNwfMsg('ai', next.ai);
         if (newWfStep === newWfFlows.length - 1) {
-          addNwfMsg('ai', `Perfeito! Resumo:\n• Nome: ${newWfDraft.name}\n• Ícone: ${newWfDraft.icon}\n• Descrição: ${newWfDraft.description}\n\nCriar o workflow?`);
+          const srcLine = newWfDraft.sourceId ? `\n• Modelo base: ${WORKFLOW_DEFS.find(w=>w.id===newWfDraft.sourceId)?.name||'—'}` : '';
+          addNwfMsg('ai', `Perfeito! Resumo do Order Job:\n• Nome: ${newWfDraft.name}\n• Ícone: ${newWfDraft.icon}\n• Descrição: ${newWfDraft.description}${srcLine}\n• Marcos: 4 marcos configurados\n\nDeseja criar o Order Job?`);
         }
         renderNwfSuggs(next.sugg || []);
       }
@@ -2311,8 +2411,13 @@ function pickWfIcon(icon) {
   newWfStep++;
   _updateNwfPreview();
   setTimeout(() => {
-    addNwfMsg('ai', newWfFlows[newWfStep]?.ai || 'Descreva o propósito deste workflow:');
-    renderNwfSuggs(newWfFlows[newWfStep]?.sugg || []);
+    addNwfMsg('ai', newWfFlows[newWfStep]?.ai || 'Descreva o propósito deste Order Job:');
+    const baseSugg = newWfFlows[newWfStep]?.sugg || [];
+    // If copying, offer inherited description as first suggestion
+    const sugg = (newWfDraft.sourceId && newWfDraft.description)
+      ? [newWfDraft.description, ...baseSugg].slice(0, 4)
+      : baseSugg;
+    renderNwfSuggs(sugg);
   }, 300);
 }
 
@@ -2321,25 +2426,139 @@ function _updateNwfPreview() {
   const n = document.getElementById('nwf-prev-name'); if (n) n.innerHTML = `Nome: <span style="color:#1a1a1a;font-weight:600">${newWfDraft.name||'—'}</span>`;
   const ic = document.getElementById('nwf-prev-icon'); if (ic) ic.innerHTML = `Ícone: <span style="color:#1a1a1a;font-weight:600">${newWfDraft.icon||'—'}</span>`;
   const d = document.getElementById('nwf-prev-desc'); if (d) d.innerHTML = `Descrição: <span style="color:#1a1a1a;font-weight:600">${newWfDraft.description||'—'}</span>`;
+  const src = document.getElementById('nwf-prev-source');
+  if (src) {
+    if (newWfDraft.sourceId) {
+      const srcWf = WORKFLOW_DEFS.find(w => w.id === newWfDraft.sourceId);
+      src.innerHTML = `Copiado de: <span style="color:#0c6fcd;font-weight:600">${srcWf ? srcWf.name : '—'}</span>`;
+      src.style.display = 'block';
+    } else {
+      src.style.display = 'none';
+    }
+  }
+}
+
+function renderNwfMarcosPreview() {
+  const src = newWfDraft.sourceId ? WORKFLOW_DEFS.find(w => w.id === newWfDraft.sourceId) : null;
+  const EMPTY_MARCOS = [
+    { id:'wf-payments', name:'Confirmação de Pagamento', icon:'💳', color:'#059669', tasks:[] },
+    { id:'wf-standard', name:'Preparando Itens',         icon:'📦', color:'#0c6fcd', tasks:[] },
+    { id:'wf-nfe',      name:'NFes Emitidas',            icon:'🧾', color:'#059669', tasks:[] },
+    { id:'wf-delivery', name:'Recebido pelo Cliente',    icon:'📬', color:'#d97706', tasks:[] },
+  ];
+  const marcos = src && src.marcos ? JSON.parse(JSON.stringify(src.marcos)) : EMPTY_MARCOS;
+  newWfDraft.marcos = marcos;
+
+  addNwfMsg('ai', src
+    ? `Estes são os ${marcos.length} marcos copiados de "${src.name}". Revise e confirme:`
+    : 'Seu Order Job terá os seguintes 4 marcos. Confirme para criar:');
+
+  // Render marcos as a visual block inside the chat
+  const msgs = document.getElementById('nwf-msgs');
+  const wrap = document.createElement('div');
+  wrap.style.cssText = 'display:flex;flex-direction:column;gap:6px;margin:4px 0';
+  wrap.innerHTML = marcos.map(m => {
+    const taskList = m.tasks.length
+      ? m.tasks.map(t => `<div style="font-size:11px;color:#555;padding:1px 0">• ${t.name}</div>`).join('')
+      : `<div style="font-size:11px;color:#aaa;font-style:italic">Marco sem tarefas definidas</div>`;
+    return `
+      <div style="border:1px solid ${m.color}40;background:${m.color}08;border-radius:8px;padding:10px 12px">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+          <span style="font-size:15px">${m.icon}</span>
+          <span style="font-size:12.5px;font-weight:700;color:${m.color}">${m.name}</span>
+          <span style="margin-left:auto;font-size:10px;font-weight:600;background:${m.color}20;color:${m.color};padding:1px 7px;border-radius:10px">${m.tasks.length} tarefa${m.tasks.length !== 1 ? 's' : ''}</span>
+        </div>
+        <div style="padding-left:4px">${taskList}</div>
+      </div>`;
+  }).join('');
+  msgs.appendChild(wrap);
+  msgs.scrollTop = msgs.scrollHeight;
+
+  // Enable create button + show confirm suggestion
+  setTimeout(() => {
+    addNwfMsg('ai', 'Tudo certo! Clique em "Criar Job" ou confirme abaixo.');
+    renderNwfSuggs(['Confirmar e criar']);
+    const btn = document.getElementById('new-wf-btn');
+    if (btn) { btn.disabled = false; btn.style.opacity = '1'; btn.style.cursor = 'pointer'; }
+  }, 350);
 }
 
 function confirmCreateWorkflow() {
-  const newId = 'wf-' + Date.now();
+  const newId = 'oj-' + Date.now();
   newWfDraft.color = WF_COLORS[WORKFLOW_DEFS.length % WF_COLORS.length];
+  const marcos = newWfDraft.marcos ? JSON.parse(JSON.stringify(newWfDraft.marcos)) : [];
+  const srcName = newWfDraft.sourceId
+    ? (WORKFLOW_DEFS.find(w => w.id === newWfDraft.sourceId)?.name || null)
+    : null;
   WORKFLOW_DEFS.push({
     id: newId,
-    name: newWfDraft.name || 'Novo Workflow',
+    name: newWfDraft.name || 'Novo Order Job',
     icon: newWfDraft.icon || '📦',
     color: newWfDraft.color,
     orderCount: 0,
+    archived: false,
     description: newWfDraft.description || '',
-    dependencies: [],
-    tasks: [],
-    edges: [],
+    edges: [
+      { id:'e1', from:'wf-payments', to:'wf-standard', active:true },
+      { id:'e2', from:'wf-standard', to:'wf-nfe',      active:true },
+      { id:'e3', from:'wf-nfe',      to:'wf-delivery', active:true },
+    ],
+    marcos,
   });
   closeNewWfPanel();
   renderWorkflowList();
-  showSuccessModal('Workflow criado!', `"${newWfDraft.name}" foi adicionado à lista. Clique em "Abrir" para configurar as etapas.`);
+  const msg = srcName
+    ? `"${newWfDraft.name}" foi criado com base em "${srcName}". Clique em "Abrir" para personalizar os marcos.`
+    : `"${newWfDraft.name}" foi adicionado. Clique em "Abrir" para configurar os marcos e tarefas.`;
+  showSuccessModal('Order Job criado!', msg);
+}
+
+function renderNwfOriginPicker() {
+  addNwfMsg('ai', 'Selecione o modelo base para este Order Job:');
+  const container = document.getElementById('nwf-origin-picker');
+  container.style.display = 'flex';
+  const BASE_MODELS = [
+    { id: null,         icon: '✨', name: 'Estrutura vazia',       desc: 'Crie os marcos e tarefas do zero' },
+    { id: 'oj-home',   icon: '🚚', name: 'Entrega em domicílio', desc: '4 marcos · transportadora ao endereço' },
+    { id: 'oj-bopis',  icon: '🏪', name: 'Retirada na loja',     desc: '4 marcos · BOPIS / pickup in store' },
+    { id: 'oj-digital',icon: '💻', name: 'Entrega digital',      desc: '4 marcos · licença, e-mail, acesso' },
+    { id: 'oj-sfs',    icon: '🏬', name: 'Entrega pela loja',    desc: '4 marcos · ship-from-store / courier' },
+  ];
+  const btnStyle = 'display:flex;align-items:center;gap:10px;background:#f9f9fb;border:1.5px solid #e5e7eb;border-radius:8px;padding:10px 12px;cursor:pointer;text-align:left;width:100%;transition:border-color .15s';
+  container.innerHTML = BASE_MODELS.map(m => `
+    <button onclick="pickNwfOrigin('${m.id}')" style="${btnStyle}" onmouseover="this.style.borderColor='#0c6fcd'" onmouseout="this.style.borderColor='#e5e7eb'">
+      <span style="font-size:22px;flex-shrink:0">${m.icon}</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:600;color:#1a1a1a">${m.name}</div>
+        <div style="font-size:11px;color:#888;margin-top:2px">${m.desc}</div>
+      </div>
+      ${m.id ? `<svg viewBox="0 0 14 14" fill="none" stroke="#0c6fcd" stroke-width="2" width="12" height="12"><rect x="1" y="3" width="9" height="10" rx="1"/><path d="M4 3V2h9v9h-1"/></svg>` : ''}
+    </button>`).join('');
+}
+
+function pickNwfOrigin(sourceId) {
+  const container = document.getElementById('nwf-origin-picker');
+  if (container) container.style.display = 'none';
+  if (sourceId) {
+    const src = WORKFLOW_DEFS.find(w => w.id === sourceId);
+    newWfDraft.sourceId = sourceId;
+    newWfDraft.icon    = src ? src.icon : '📦';
+    newWfDraft.description = src ? (src.description || '') : '';
+    const marcosCount = src && src.marcos ? src.marcos.length : 0;
+    addNwfMsg('user', `Usar modelo: ${src ? src.name : sourceId}`);
+    setTimeout(() => addNwfMsg('ai', `Ótimo! Vou usar os ${marcosCount} marcos de "${src ? src.name : sourceId}" como base. Agora escolha um ícone para o novo Order Job:`), 300);
+  } else {
+    newWfDraft.sourceId = null;
+    addNwfMsg('user', 'Estrutura vazia');
+    setTimeout(() => addNwfMsg('ai', 'Perfeito! Escolha um ícone para identificar visualmente este Order Job:'), 300);
+  }
+  newWfStep = 2;
+  _updateNwfPreview();
+  setTimeout(() => {
+    const grid = document.getElementById('nwf-icon-grid');
+    grid.style.display = 'flex';
+    grid.innerHTML = WF_ICONS.map(ic => `<button onclick="pickWfIcon('${ic}')" style="font-size:22px;background:#f9f9fb;border:1px solid #e5e7eb;border-radius:8px;padding:6px 10px;cursor:pointer;line-height:1;transition:background .15s" title="${ic}">${ic}</button>`).join('');
+  }, 450);
 }
 
 // ══════════════════════════════════════════
@@ -2631,7 +2850,7 @@ function applyBulkConfig() {
         tasks: (bulkDraft.tasks.length ? bulkDraft.tasks : [bulkDraft.name]).map((tn, ti) => ({
           id: newId + '_' + ti,
           name: tn, supplier: 'A definir', category: 'Todos',
-          active: true, actions: [], script: null, externalApi: null,
+          active: true, visibility: 'user', script: null, externalApi: null,
           mcpConfig: null, agentConfig: null, contextOutput: []
         }))
       };
@@ -2667,7 +2886,7 @@ function applyBulkConfig() {
       const newId = 'bt_' + Date.now() + '_' + Math.random().toString(36).slice(2,6);
       const newTask = {
         id: newId, name: bulkDraft.name, supplier: 'A definir', category: 'Todos',
-        active: true, actions: [], script: null, externalApi: null,
+        active: true, visibility: 'user', script: null, externalApi: null,
         mcpConfig: null, agentConfig: null, contextOutput: []
       };
       if (!stage.tasks) stage.tasks = [];
@@ -2695,6 +2914,3 @@ function applyBulkConfig() {
 // INIT
 // ══════════════════════════════════════════
 renderOrders();
-</script>
-</body>
-</html>

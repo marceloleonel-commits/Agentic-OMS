@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Order Agent — AI Workspace</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{font-family:'Inter',system-ui,sans-serif;font-size:14px;display:flex;background:#0d0f14}
+
+/* ── Sidebar ─────────────────────────────────────────── */
+.sidebar{width:252px;min-width:252px;background:#0d0f14;display:flex;flex-direction:column;height:100vh;border-right:1px solid rgba(255,255,255,.06);transition:width .2s}
+.sidebar.collapsed{width:52px;min-width:52px}
+.sidebar-top{padding:12px 12px 0;display:flex;flex-direction:column;gap:1px;flex-shrink:0;flex:1;overflow-y:auto;overflow-x:hidden}
+.sidebar-top::-webkit-scrollbar{width:0}
+.sidebar-logo{display:flex;align-items:center;justify-content:space-between;padding:4px 2px 10px;margin-bottom:2px;flex-shrink:0}
+.logo-mark{display:flex;align-items:center;gap:9px}
+.logo-icon{width:28px;height:28px;flex-shrink:0}
+.logo-text{font-size:14px;font-weight:700;color:#fff;letter-spacing:-.3px;white-space:nowrap}
+.collapse-btn{width:26px;height:26px;border-radius:6px;border:none;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.35);flex-shrink:0;transition:background .15s}
+.collapse-btn:hover{background:rgba(255,255,255,.08);color:rgba(255,255,255,.8)}
+.nav-item{display:flex;align-items:center;gap:9px;padding:7px 9px;border-radius:7px;cursor:pointer;color:rgba(255,255,255,.5);font-size:13px;font-weight:400;transition:all .15s;white-space:nowrap;overflow:hidden;user-select:none}
+.nav-item:hover{background:rgba(255,255,255,.07);color:rgba(255,255,255,.85)}
+.nav-item.active{background:rgba(255,255,255,.1);color:#fff;font-weight:500}
+.nav-icon{width:16px;height:16px;flex-shrink:0;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.nav-label{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sidebar-sep{height:1px;background:rgba(255,255,255,.05);margin:8px 0}
+.sec-label{font-size:10px;font-weight:600;color:rgba(255,255,255,.22);letter-spacing:.7px;text-transform:uppercase;padding:8px 11px 3px;white-space:nowrap}
+.chat-item{display:flex;align-items:center;gap:7px;padding:5px 9px;border-radius:6px;cursor:pointer;color:rgba(255,255,255,.35);font-size:12px;transition:all .15s;overflow:hidden}
+.chat-item:hover{background:rgba(255,255,255,.05);color:rgba(255,255,255,.65)}
+.chat-dot{width:4px;height:4px;border-radius:50%;background:rgba(255,255,255,.18);flex-shrink:0}
+.chat-txt{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sidebar-bottom{padding:10px 12px 14px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid rgba(255,255,255,.05);flex-shrink:0}
+.sb-btn{width:30px;height:30px;border-radius:7px;border:none;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.38);transition:all .15s;flex-shrink:0}
+.sb-btn:hover{background:rgba(255,255,255,.08);color:rgba(255,255,255,.8)}
+.sb-btn svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.uavatar{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
+.sidebar.collapsed .nav-label,.sidebar.collapsed .logo-text,.sidebar.collapsed .sec-label,.sidebar.collapsed .chat-txt{display:none}
+.sidebar.collapsed .sidebar-bottom{justify-content:center}
+.sidebar.collapsed .sb-btn:not(:last-of-type){display:none}
+
+/* ── Main ────────────────────────────────────────────── */
+.main{flex:1;display:flex;flex-direction:column;height:100vh;background:#fff;overflow:hidden;min-width:0}
+
+/* header */
+.main-hdr{height:52px;min-height:52px;display:flex;align-items:center;justify-content:space-between;padding:0 22px;border-bottom:1px solid #f0f0f0;flex-shrink:0}
+.main-title{font-size:15px;font-weight:600;color:#111;display:flex;align-items:center;gap:8px}
+.ia-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;background:linear-gradient(135deg,#f5f3ff,#eff6ff);border:1px solid #ddd6fe;font-size:10.5px;font-weight:600;color:#6d28d9}
+.team-btn{display:flex;align-items:center;gap:6px;padding:6px 13px;border-radius:7px;border:1px solid #e5e7eb;background:#fff;font-size:12.5px;font-weight:500;color:#374151;cursor:pointer;transition:all .15s;font-family:inherit}
+.team-btn:hover{background:#f9fafb}
+.team-btn svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+
+/* view tabs */
+.view-tabs{display:flex;align-items:center;gap:2px;padding:0 22px;border-bottom:1px solid #f0f0f0;flex-shrink:0;height:40px}
+.vtab{padding:0 12px;height:100%;display:flex;align-items:center;font-size:13px;font-weight:500;color:#6b7280;cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;user-select:none}
+.vtab:hover{color:#374151}
+.vtab.active{color:#111;border-bottom-color:#111;font-weight:600}
+
+/* ── Overview panel (compact) ────────────────────────── */
+.overview-wrap{padding:14px 22px 10px;flex-shrink:0}
+.overview-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.ov-title{font-size:14px;font-weight:600;color:#111}
+.period-btn{display:flex;align-items:center;gap:4px;padding:4px 9px;border-radius:5px;border:1px solid #e5e7eb;background:#fff;font-size:12px;color:#6b7280;cursor:pointer;font-family:inherit;transition:all .15s}
+.period-btn:hover{background:#f9fafb}
+.period-btn svg{width:12px;height:12px;stroke:currentColor;fill:none;stroke-width:2}
+.overview-grid{display:grid;grid-template-columns:200px 1fr;gap:10px}
+/* left: compact stats */
+.stats-block{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.sc{background:#f9fafb;border:1px solid #f0f0f0;border-radius:8px;padding:10px 12px}
+.sc-label{font-size:10px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px}
+.sc-val{font-size:20px;font-weight:700;color:#111;line-height:1}
+.sc-val.red{color:#dc2626}
+.sc-val.green{color:#16a34a}
+.sc-sub{font-size:10px;color:#9ca3af;margin-top:2px}
+/* right: anomaly list */
+.anomaly-list{border:1px solid #f0f0f0;border-radius:8px;overflow:hidden}
+.al-header{display:grid;grid-template-columns:110px 1fr 72px 36px 68px;gap:0;padding:6px 10px;background:#f9fafb;border-bottom:1px solid #f0f0f0}
+.al-th{font-size:10px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:.4px}
+.al-row{display:grid;grid-template-columns:110px 1fr 72px 36px 68px;gap:0;padding:7px 10px;border-bottom:1px solid #f9fafb;cursor:pointer;transition:background .1s;align-items:center}
+.al-row:last-child{border-bottom:none}
+.al-row:hover{background:#fafafa}
+.al-row:hover .al-action{opacity:1}
+.al-id{font-size:12px;font-weight:600;color:#374151;font-family:'Menlo','Monaco',monospace}
+.al-merchant{font-size:12px;color:#6b7280;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:6px}
+.al-age{font-size:11.5px;color:#9ca3af;text-align:center}
+.al-action{opacity:0;padding:3px 7px;border-radius:4px;border:1px solid #e5e7eb;background:#fff;font-size:11px;font-weight:500;color:#374151;cursor:pointer;font-family:inherit;transition:all .15s;white-space:nowrap}
+.al-action:hover{background:#f71963;color:#fff;border-color:#f71963}
+.badge{display:inline-flex;align-items:center;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:600;white-space:nowrap}
+.badge.critical{background:#fef2f2;color:#dc2626}
+.badge.high{background:#fff7ed;color:#c2410c}
+.badge.medium{background:#f0fdf4;color:#15803d}
+.badge.resolved{background:#f0fdf4;color:#15803d}
+.badge.escalated{background:#fffbeb;color:#b45309}
+
+/* ── Chat view ───────────────────────────────────────── */
+#view-chat{display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden}
+.chat-area{flex:1;overflow-y:auto;padding:14px 22px;display:flex;flex-direction:column;gap:14px;min-height:0}
+.chat-area::-webkit-scrollbar{width:4px}
+.chat-area::-webkit-scrollbar-thumb{background:#e5e7eb;border-radius:10px}
+.msg{display:flex;gap:9px;max-width:660px}
+.msg.user{align-self:flex-end;flex-direction:row-reverse}
+.mavatar{width:28px;height:28px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;margin-top:2px}
+.mavatar.agent{background:linear-gradient(135deg,#f71963,#c0392b);color:#fff}
+.mavatar.user{background:linear-gradient(135deg,#667eea,#764ba2);color:#fff}
+.mbubble{padding:10px 14px;border-radius:10px;font-size:13px;line-height:1.55;color:#1f2937}
+.msg.agent .mbubble{background:#f9fafb;border:1px solid #f0f0f0;border-radius:3px 10px 10px 10px}
+.msg.user .mbubble{background:#111827;color:#fff;border-radius:10px 3px 10px 10px}
+.mbubble strong{font-weight:600}
+.mbubble code{font-family:'Menlo','Monaco',monospace;font-size:11.5px;background:#f3f4f6;padding:1px 5px;border-radius:3px;color:#374151}
+.msg.user .mbubble code{background:rgba(255,255,255,.15);color:#e5e7eb}
+.inline-table{width:100%;border-collapse:collapse;margin-top:9px;font-size:12px}
+.inline-table th{text-align:left;padding:5px 8px;background:#f3f4f6;color:#6b7280;font-weight:600;font-size:10.5px;text-transform:uppercase;letter-spacing:.4px}
+.inline-table td{padding:6px 8px;border-top:1px solid #f0f0f0;color:#374151;vertical-align:middle}
+.inline-table tr:hover td{background:#fafafa;cursor:pointer}
+.qbtn{padding:4px 9px;border-radius:4px;border:1px solid #e5e7eb;background:#fff;font-size:11px;font-weight:500;color:#374151;cursor:pointer;font-family:inherit;transition:all .15s}
+.qbtn:hover{background:#f71963;color:#fff;border-color:#f71963}
+.react-block{margin-top:10px;background:#0d1f33;border-radius:7px;padding:12px;font-family:'Menlo','Monaco',monospace;font-size:11px;line-height:1.75}
+.react-step{opacity:0;animation:fsi .25s forwards}
+@keyframes fsi{to{opacity:1}}
+.r-think{color:#93c5fd}.r-act{color:#fde68a}.r-obs{color:#6ee7b7}.r-resolved{color:#4ade80;font-weight:700}
+.sl{font-weight:700;margin-right:4px}
+.typing{display:flex;align-items:center;gap:4px;padding:10px 14px;background:#f9fafb;border:1px solid #f0f0f0;border-radius:3px 10px 10px 10px;width:fit-content}
+.td{width:5px;height:5px;border-radius:50%;background:#9ca3af;animation:tb 1.2s infinite}
+.td:nth-child(2){animation-delay:.2s}.td:nth-child(3){animation-delay:.4s}
+@keyframes tb{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-4px)}}
+
+/* suggestions */
+.suggestions{display:flex;gap:7px;padding:8px 22px 0;overflow-x:auto;flex-shrink:0}
+.suggestions::-webkit-scrollbar{height:0}
+.spill{padding:6px 13px;border-radius:20px;border:1px solid #e5e7eb;background:#fff;font-size:12.5px;color:#374151;cursor:pointer;white-space:nowrap;transition:all .15s;font-family:inherit}
+.spill:hover{background:#f9fafb;border-color:#d1d5db;color:#111}
+
+/* input */
+.input-area{padding:10px 22px 16px;flex-shrink:0}
+.input-box{border:1px solid #e5e7eb;border-radius:12px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.05);transition:border-color .15s,box-shadow .15s}
+.input-box:focus-within{border-color:#c4b5fd;box-shadow:0 0 0 3px rgba(167,139,250,.1)}
+.input-row{display:flex;align-items:center;gap:7px;padding:9px 12px}
+.chat-input{flex:1;border:none;outline:none;font-size:13.5px;font-family:inherit;color:#111;background:transparent;resize:none;min-height:22px;max-height:100px;line-height:1.5}
+.chat-input::placeholder{color:#9ca3af}
+.send-btn{width:32px;height:32px;border-radius:50%;background:#111827;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .15s}
+.send-btn:hover{background:#374151;transform:scale(1.05)}
+.send-btn:disabled{background:#e5e7eb;cursor:not-allowed;transform:none}
+.send-btn svg{width:14px;height:14px;stroke:#fff;fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.input-foot{display:flex;align-items:center;gap:7px;padding:0 12px 8px}
+.att-btn{width:24px;height:24px;border-radius:5px;border:none;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#9ca3af;transition:all .15s}
+.att-btn:hover{background:#f3f4f6;color:#6b7280}
+.att-btn svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.agent-chip{display:inline-flex;align-items:center;gap:5px;padding:3px 8px 3px 4px;border-radius:5px;background:#fef2f2;border:1px solid #fecaca;font-size:11.5px;font-weight:500;color:#7f1d1d;cursor:pointer;transition:background .15s}
+.agent-chip:hover{background:#fee2e2}
+.xmark{width:13px;height:13px;flex-shrink:0}
+
+/* ── Rules view ──────────────────────────────────────── */
+#view-rules{display:none;flex:1;overflow-y:auto;padding:18px 22px 24px;flex-direction:column;gap:14px}
+#view-rules::-webkit-scrollbar{width:4px}
+#view-rules::-webkit-scrollbar-thumb{background:#e5e7eb;border-radius:10px}
+.rule-card{border:1px solid #e5e7eb;border-radius:10px;overflow:hidden}
+.rule-card-hdr{display:flex;align-items:flex-start;justify-content:space-between;padding:14px 16px 10px;border-bottom:1px solid #f3f4f6}
+.rule-card-left{}
+.rule-card-title{font-size:13.5px;font-weight:600;color:#111;margin-bottom:3px}
+.rule-card-desc{font-size:12px;color:#6b7280;max-width:520px;line-height:1.5}
+.rule-card-body{padding:14px 16px}
+.save-btn{padding:6px 14px;border-radius:6px;background:#111827;color:#fff;border:none;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:background .15s;white-space:nowrap;flex-shrink:0}
+.save-btn:hover{background:#374151}
+/* threshold table */
+.th-table{width:100%;border-collapse:collapse;font-size:12.5px}
+.th-table th{text-align:left;padding:5px 8px;font-size:10.5px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:.4px;border-bottom:1px solid #f0f0f0}
+.th-table td{padding:7px 8px;border-bottom:1px solid #f9fafb;color:#374151;vertical-align:middle}
+.th-table tr:last-child td{border-bottom:none}
+.th-input{width:64px;border:1px solid #e5e7eb;border-radius:5px;padding:4px 7px;font-size:12.5px;font-family:inherit;color:#111;text-align:right;transition:border-color .15s}
+.th-input:focus{outline:none;border-color:#818cf8}
+.th-input.dirty{border-color:#f97316}
+.state-tag{display:inline-block;padding:2px 7px;border-radius:4px;background:#f3f4f6;font-size:11.5px;font-weight:500;color:#374151;font-family:'Menlo','Monaco',monospace}
+/* toggles */
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f9fafb}
+.toggle-row:last-child{border-bottom:none}
+.toggle-label{font-size:13px;color:#374151}
+.toggle{width:36px;height:20px;border-radius:10px;background:#e5e7eb;cursor:pointer;transition:background .2s;position:relative;flex-shrink:0}
+.toggle.on{background:#22c55e}
+.toggle::after{content:'';position:absolute;width:14px;height:14px;border-radius:50%;background:#fff;top:3px;left:3px;transition:left .2s;box-shadow:0 1px 2px rgba(0,0,0,.15)}
+.toggle.on::after{left:19px}
+/* param inputs */
+.param-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.param-field label{display:block;font-size:11px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px}
+.param-input{width:100%;border:1px solid #e5e7eb;border-radius:6px;padding:7px 10px;font-size:13px;font-family:inherit;color:#111;transition:border-color .15s}
+.param-input:focus{outline:none;border-color:#818cf8}
+.param-input.dirty{border-color:#f97316}
+/* custom rules */
+.custom-rules-list{display:flex;flex-direction:column;gap:8px;margin-bottom:12px}
+.custom-rule-item{background:#f9fafb;border:1px solid #f0f0f0;border-radius:7px;padding:10px 12px;display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
+.cri-text{font-size:12.5px;color:#374151;line-height:1.5;flex:1}
+.cri-meta{font-size:10.5px;color:#9ca3af;margin-top:3px}
+.cri-del{width:22px;height:22px;border-radius:4px;border:none;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#9ca3af;transition:all .15s;flex-shrink:0}
+.cri-del:hover{background:#fee2e2;color:#dc2626}
+.cri-del svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.rule-textarea{width:100%;border:1px solid #e5e7eb;border-radius:7px;padding:9px 12px;font-size:13px;font-family:inherit;color:#111;resize:vertical;min-height:72px;line-height:1.5;transition:border-color .15s}
+.rule-textarea:focus{outline:none;border-color:#818cf8}
+.rule-actions{display:flex;gap:8px;margin-top:9px}
+.analyze-btn{padding:7px 14px;border-radius:6px;border:1px solid #818cf8;background:#f5f3ff;color:#5b21b6;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s}
+.analyze-btn:hover{background:#ede9fe}
+.conflict-box{margin-top:9px;padding:9px 12px;border-radius:6px;font-size:12.5px;line-height:1.5}
+.conflict-box.ok{background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d}
+.conflict-box.warn{background:#fffbeb;border:1px solid #fde68a;color:#92400e}
+
+/* toast */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(40px);background:#111;color:#fff;padding:9px 18px;border-radius:8px;font-size:13px;font-weight:500;opacity:0;transition:all .3s;z-index:999;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+
+<!-- ── Sidebar ─────────────────────────────────────── -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-top">
+    <div class="sidebar-logo">
+      <div class="logo-mark">
+        <svg class="logo-icon" viewBox="0 0 28 28">
+          <rect width="28" height="28" rx="7" fill="#f71963"/>
+          <path d="M8 20L14 8L20 20" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M10.5 15.5H17.5" stroke="white" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        <span class="logo-text">MerchantVTEX</span>
+      </div>
+      <button class="collapse-btn" onclick="toggleSidebar()">
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+
+    <div class="nav-item active" onclick="setNav(this,'chat')">
+      <svg class="nav-icon" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+      <span class="nav-label">Meu assistente</span>
+    </div>
+    <div class="nav-item" onclick="setNav(this,'rules')">
+      <svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+      <span class="nav-label">Regras & Parâmetros</span>
+    </div>
+    <div class="nav-item" onclick="setNav(this,'chat')">
+      <svg class="nav-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      <span class="nav-label">Minhas iniciativas</span>
+    </div>
+    <div class="nav-item" onclick="setNav(this,'chat')">
+      <svg class="nav-icon" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      <span class="nav-label">Chats</span>
+    </div>
+
+    <div class="sidebar-sep"></div>
+    <div class="sec-label">Recentes</div>
+    <div class="chat-item"><span class="chat-dot"></span><span class="chat-txt">Pedidos travados — Americanas</span></div>
+    <div class="chat-item"><span class="chat-dot"></span><span class="chat-txt">Resolver ORD-2847391 automaticamente</span></div>
+    <div class="chat-item"><span class="chat-dot"></span><span class="chat-txt">Divergência FFM/MKP — Farm Rio</span></div>
+    <div class="chat-item"><span class="chat-dot"></span><span class="chat-txt">Configurar threshold payment-approved</span></div>
+  </div>
+  <div class="sidebar-bottom">
+    <button class="sb-btn"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg></button>
+    <button class="sb-btn"><svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></button>
+    <div class="uavatar">M</div>
+  </div>
+</aside>
+
+<!-- ── Main ───────────────────────────────────────── -->
+<main class="main">
+
+  <!-- Header -->
+  <div class="main-hdr">
+    <div class="main-title">
+      Order Agent
+      <span class="ia-badge"><svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> IA</span>
+    </div>
+    <button class="team-btn">
+      <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      Minha equipe de IA
+    </button>
+  </div>
+
+  <!-- View tabs -->
+  <div class="view-tabs">
+    <div class="vtab active" id="tab-chat" onclick="switchView('chat')">Assistente</div>
+    <div class="vtab" id="tab-rules" onclick="switchView('rules')">Regras & Parâmetros</div>
+  </div>
+
+  <!-- Overview (shared, always visible) -->
+  <div class="overview-wrap" id="overview-wrap">
+    <div class="overview-hdr">
+      <span class="ov-title">Visão geral</span>
+      <button class="period-btn">7 dias atrás <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></button>
+    </div>
+    <div class="overview-grid">
+      <!-- compact stats -->
+      <div class="stats-block">
+        <div class="sc"><div class="sc-label">Críticos</div><div class="sc-val red">2</div><div class="sc-sub">Ação imediata</div></div>
+        <div class="sc"><div class="sc-label">Pendentes</div><div class="sc-val">5</div><div class="sc-sub">Em análise</div></div>
+        <div class="sc"><div class="sc-label">Resolvidos</div><div class="sc-val green" id="resolved-count">0</div><div class="sc-sub">Hoje</div></div>
+        <div class="sc"><div class="sc-label">Taxa</div><div class="sc-val">91%</div><div class="sc-sub">7 dias</div></div>
+      </div>
+      <!-- anomaly list -->
+      <div class="anomaly-list">
+        <div class="al-header">
+          <div class="al-th">Pedido</div>
+          <div class="al-th">Seller</div>
+          <div class="al-th">Prioridade</div>
+          <div class="al-th">Idade</div>
+          <div class="al-th"></div>
+        </div>
+        <div id="anomaly-rows"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Chat view ──────────────────────────────── -->
+  <div id="view-chat" style="display:flex;flex:1;flex-direction:column;min-height:0;overflow:hidden">
+    <div class="chat-area" id="chatArea">
+      <div class="msg agent">
+        <div class="mavatar agent">OA</div>
+        <div class="mbubble">Olá! Sou o <strong>Order Agent</strong> — monitoro continuamente os pedidos da Americanas.com em busca de anomalias de workflow e divergências FFM/MKP.<br><br>Detectei <strong>5 anomalias ativas</strong> no último scan, sendo 2 críticas. Posso diagnosticar qualquer pedido, sugerir e executar resoluções autonomamente mediante sua aprovação. Como posso ajudar?</div>
+      </div>
+    </div>
+    <div class="suggestions" id="suggestions">
+      <button class="spill" onclick="trigger('Quais pedidos estão travados agora?')">Quais pedidos estão travados agora?</button>
+      <button class="spill" onclick="trigger('Resolver o pedido ORD-2847391 automaticamente')">Resolver ORD-2847391</button>
+      <button class="spill" onclick="trigger('Mostrar divergências FFM/MKP ativas')">Divergências FFM/MKP</button>
+    </div>
+    <div class="input-area">
+      <div class="input-box">
+        <div class="input-row">
+          <textarea class="chat-input" id="chatInput" placeholder="Mensagem para Order Agent..." rows="1" onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+          <button class="send-btn" id="sendBtn" onclick="sendMsg()">
+            <svg viewBox="0 0 24 24"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+          </button>
+        </div>
+        <div class="input-foot">
+          <button class="att-btn"><svg viewBox="0 0 24 24"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg></button>
+          <div class="agent-chip">
+            <svg class="xmark" viewBox="0 0 14 14"><rect width="14" height="14" rx="3" fill="#f71963"/><path d="M4 10L7 5L10 10" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M5.5 8H8.5" stroke="white" stroke-width="1.2" stroke-linecap="round"/></svg>
+            Order Agent
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Rules view ─────────────────────────────── -->
+  <div id="view-rules" style="display:none;flex:1;overflow-y:auto;padding:16px 22px 24px;flex-direction:column;gap:14px">
+
+    <!-- 1. Detection Thresholds -->
+    <div class="rule-card">
+      <div class="rule-card-hdr">
+        <div class="rule-card-left">
+          <div class="rule-card-title">⏱ Thresholds de Detecção</div>
+          <div class="rule-card-desc">Tempo máximo que um pedido pode permanecer em cada estado do workflow antes de ser sinalizado como travado.</div>
+        </div>
+        <button class="save-btn" onclick="saveCard(this)">Salvar</button>
+      </div>
+      <div class="rule-card-body">
+        <table class="th-table" id="threshold-rows">
+          <thead><tr><th>Estado</th><th>Threshold (h)</th><th>Tipo</th></tr></thead>
+          <tbody id="thresh-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 2. FFM/MKP Divergence -->
+    <div class="rule-card">
+      <div class="rule-card-hdr">
+        <div class="rule-card-left">
+          <div class="rule-card-title">🔀 Detecção de Divergência FFM / MKP</div>
+          <div class="rule-card-desc">Regras para detectar divergências de status entre as camadas de marketplace e fulfillment em pedidos chain. Divergências críticas são sempre sinalizadas imediatamente.</div>
+        </div>
+        <button class="save-btn" onclick="saveCard(this)">Salvar</button>
+      </div>
+      <div class="rule-card-body">
+        <div style="display:flex;gap:16px;align-items:flex-start;margin-bottom:12px">
+          <div class="param-field" style="width:160px">
+            <label>Delta máx. LastChange (h)</label>
+            <input class="param-input" type="number" value="24" min="1" oninput="markDirty(this)">
+          </div>
+        </div>
+        <div class="toggle-row"><span class="toggle-label">Divergência crítica → prioridade imediata</span><div class="toggle on" onclick="toggleEl(this)"></div></div>
+        <div class="toggle-row"><span class="toggle-label">Alertar quando ambas as legs em erro</span><div class="toggle on" onclick="toggleEl(this)"></div></div>
+        <div class="toggle-row"><span class="toggle-label">Incluir pedidos chain externos</span><div class="toggle on" onclick="toggleEl(this)"></div></div>
+      </div>
+    </div>
+
+    <!-- 3. Escalation & Retry -->
+    <div class="rule-card">
+      <div class="rule-card-hdr">
+        <div class="rule-card-left">
+          <div class="rule-card-title">🔁 Escalation & Retry</div>
+          <div class="rule-card-desc">Controla quando o agente para de tentar resolver autonomamente e escala para operador humano ou engenharia.</div>
+        </div>
+        <button class="save-btn" onclick="saveCard(this)">Salvar</button>
+      </div>
+      <div class="rule-card-body">
+        <div class="param-grid">
+          <div class="param-field"><label>Máx. retries automáticos</label><input class="param-input" type="number" value="5" min="1" oninput="markDirty(this)"></div>
+          <div class="param-field"><label>Máx. ciclos ReAct</label><input class="param-input" type="number" value="5" min="1" oninput="markDirty(this)"></div>
+          <div class="param-field"><label>Threshold erro seller (%)</label><input class="param-input" type="number" value="18" min="1" oninput="markDirty(this)"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. Agent Behavior -->
+    <div class="rule-card">
+      <div class="rule-card-hdr">
+        <div class="rule-card-left">
+          <div class="rule-card-title">🤖 Comportamento do Agente</div>
+          <div class="rule-card-desc">Controla como o agente de IA raciocina, executa ações e gera explicações para os operadores.</div>
+        </div>
+        <button class="save-btn" onclick="saveCard(this)">Salvar</button>
+      </div>
+      <div class="rule-card-body">
+        <div class="param-grid">
+          <div class="param-field"><label>Risk threshold (0–1)</label><input class="param-input" type="number" value="0.60" step="0.05" min="0" max="1" oninput="markDirty(this)"></div>
+          <div class="param-field"><label>Modelo</label><input class="param-input" type="text" value="GPT-4o-mini" oninput="markDirty(this)"></div>
+          <div class="param-field"><label>Temperature</label><input class="param-input" type="number" value="0.3" step="0.1" min="0" max="2" oninput="markDirty(this)"></div>
+          <div class="param-field"><label>Max tokens</label><input class="param-input" type="number" value="200" min="50" oninput="markDirty(this)"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5. Custom Rules -->
+    <div class="rule-card">
+      <div class="rule-card-hdr">
+        <div class="rule-card-left">
+          <div class="rule-card-title">✏️ Regras Customizadas</div>
+          <div class="rule-card-desc">Escreva regras em linguagem natural. O agente as interpreta em cada scan e verifica automaticamente se afetam configurações existentes.</div>
+        </div>
+      </div>
+      <div class="rule-card-body">
+        <div class="custom-rules-list" id="custom-rules-list">
+          <div class="custom-rule-item">
+            <div>
+              <div class="cri-text">Se um pedido permanecer em <em>payment-approved</em> por mais de 2 horas sem progressão, sinalizar como CRÍTICO independente do threshold padrão.</div>
+              <div class="cri-meta">Adicionado em 14/05/2026 · Sem conflitos</div>
+            </div>
+            <button class="cri-del" onclick="deleteRule(this)"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg></button>
+          </div>
+        </div>
+        <textarea class="rule-textarea" id="rule-input" placeholder="Ex: Se o seller tiver mais de 3 pedidos travados simultâneos, escalar todos automaticamente para engenharia..."></textarea>
+        <div class="rule-actions">
+          <button class="analyze-btn" onclick="analyzeRule()">🔍 Analisar conflitos</button>
+          <button class="save-btn" onclick="addRule()" style="padding:7px 14px;font-size:12.5px">Adicionar regra</button>
+        </div>
+        <div class="conflict-box" id="conflict-result" style="display:none"></div>
+      </div>
+    </div>
+
+  </div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ── Data ─────────────────────────────────────────────── */
+const ANOMALIES = [
+  {id:'ORD-2847391',cat:'WORKFLOW_STUCK_PERMANENT',prio:'CRITICAL',merchant:'Hering Store',status:'payment-approved',age:'31h',summary:'Pedido travado em payment-approved por 31h. Falha de integração ERP na emissão de NF. WorkflowInErrorState=true, retryCount=12.',tool:'force_retry_workflow',risk:'BAIXO',state:'pending'},
+  {id:'ORD-2841052',cat:'STATUS_DIVERGENCE_FFM_MKP',prio:'CRITICAL',merchant:'Farm Rio',status:'invoiced/handling',age:'28h',summary:'Divergência crítica: MKP reporta invoiced, FFM ainda em handling. Pedido chain inconsistente há 28h.',tool:'fix_workflow_consistency',risk:'MÉDIO',state:'pending'},
+  {id:'ORD-2839774',cat:'WORKFLOW_STUCK_TEMPORARY',prio:'HIGH',merchant:'Tudo Ferramentas',status:'ready-for-handling',age:'28h',summary:'Pedido em ready-for-handling além do threshold de 24h. Provável restrição de capacidade do seller.',tool:'reindex_order',risk:'BAIXO',state:'pending'},
+  {id:'ORD-2835901',cat:'STATUS_DIVERGENCE_FFM_MKP',prio:'HIGH',merchant:'São João Eletro',status:'error/error',age:'31h',summary:'Ambas as legs em estado de erro com códigos divergentes. Delta LastChange de 31h.',tool:'restore_workflow',risk:'MÉDIO',state:'pending'},
+  {id:'ORD-2830146',cat:'WORKFLOW_STUCK_PERMANENT',prio:'MEDIUM',merchant:'Puket',status:'authorize-fulfillment',age:'18h',summary:'WorkflowInErrorState após authorize-fulfillment. Possível timeout no callback do gateway de pagamento.',tool:'change_workflow_state',risk:'MÉDIO',state:'pending'}
+];
+
+const THRESHOLDS = [
+  {state:'payment-pending',hours:24,type:'TEMPORARY'},
+  {state:'payment-approved',hours:12,type:'PERMANENT'},
+  {state:'ready-for-handling',hours:24,type:'TEMPORARY'},
+  {state:'handling',hours:48,type:'PERMANENT'},
+  {state:'invoice',hours:6,type:'PERMANENT'},
+  {state:'start-handling',hours:4,type:'PERMANENT'},
+  {state:'authorize-fulfillment',hours:4,type:'PERMANENT'}
+];
+
+const REACT_STEPS=[
+  {t:'think',txt:'Pedido ORD-2847391 com WorkflowInErrorState=true há 31h em payment-approved. Regra: ERP_INTEGRATION_FAILURE. Inspecionando estado do workflow.'},
+  {t:'act',txt:'get_workflow_state({ orderId: "ORD-2847391" })'},
+  {t:'obs',txt:'{ state: "payment-approved", errorCode: "ERP_TIMEOUT_503", retryCount: 12, lastRetry: "2026-05-15T03:22:11Z" }'},
+  {t:'think',txt:'retryCount=12 excede o limite de auto-retry. Estado recuperável. force_retry_workflow adequado (risco BAIXO).'},
+  {t:'act',txt:'force_retry_workflow({ orderId: "ORD-2847391", fromState: "payment-approved" })'},
+  {t:'obs',txt:'{ success: true, newState: "invoicing", transitionId: "TRN-99182" }'},
+  {t:'think',txt:'Transição bem-sucedida. Pedido avançou para invoicing. Verificando estabilidade do novo estado.'},
+  {t:'act',txt:'get_workflow_state({ orderId: "ORD-2847391" })'},
+  {t:'obs',txt:'{ state: "invoicing", errorCode: null, workflowInErrorState: false }'},
+  {t:'resolved',txt:'Pedido avançado de payment-approved → invoicing. Nenhuma intervenção adicional necessária.'}
+];
+
+let isTyping=false, resolvedCount=0;
+
+/* ── Init ─────────────────────────────────────────────── */
+function init(){
+  // threshold table
+  const tbody=document.getElementById('thresh-body');
+  THRESHOLDS.forEach(r=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td><span class="state-tag">${r.state}</span></td><td><input class="th-input" data-state="${r.state}" type="number" value="${r.hours}" min="1" oninput="markDirty(this)"></td><td style="color:#6b7280;font-size:12px">${r.type}</td>`;
+    tbody.appendChild(tr);
+  });
+  renderAnomalyRows();
+}
+
+function renderAnomalyRows(){
+  const container=document.getElementById('anomaly-rows');
+  container.innerHTML='';
+  ANOMALIES.forEach(a=>{
+    const cls=a.prio==='CRITICAL'?'critical':a.prio==='HIGH'?'high':'medium';
+    const label=a.prio==='CRITICAL'?'CRÍTICO':a.prio==='HIGH'?'ALTA':'MÉDIA';
+    const stateBadge=a.state==='resolved'?'<span class="badge resolved">RESOLVIDO</span>':a.state==='escalated'?'<span class="badge escalated">ESCALADO</span>':`<span class="badge ${cls}">${label}</span>`;
+    const actionBtn=a.state==='pending'?`<button class="al-action" onclick="event.stopPropagation();trigger('Resolver o pedido ${a.id} automaticamente')">Resolver</button>`:'';
+    const row=document.createElement('div');
+    row.className='al-row';
+    row.id=`row-${a.id}`;
+    row.innerHTML=`<div class="al-id">${a.id}</div><div class="al-merchant">${a.merchant}</div><div>${stateBadge}</div><div class="al-age">${a.age}</div><div>${actionBtn}</div>`;
+    row.onclick=()=>trigger(`Detalhe o pedido ${a.id}`);
+    container.appendChild(row);
+  });
+}
+
+/* ── View switching ───────────────────────────────────── */
+function switchView(v){
+  document.getElementById('view-chat').style.display=v==='chat'?'flex':'none';
+  document.getElementById('view-rules').style.display=v==='rules'?'flex':'none';
+  document.getElementById('tab-chat').classList.toggle('active',v==='chat');
+  document.getElementById('tab-rules').classList.toggle('active',v==='rules');
+  document.getElementById('overview-wrap').style.display=v==='chat'?'block':'none';
+}
+
+function setNav(el,view){
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  el.classList.add('active');
+  switchView(view);
+}
+
+function toggleSidebar(){
+  document.getElementById('sidebar').classList.toggle('collapsed');
+}
+
+/* ── Chat ─────────────────────────────────────────────── */
+function autoResize(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,100)+'px';}
+function handleKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg();}}
+
+function trigger(text){
+  switchView('chat');
+  document.getElementById('chatInput').value=text;
+  autoResize(document.getElementById('chatInput'));
+  sendMsg();
+}
+
+function sendMsg(){
+  const input=document.getElementById('chatInput');
+  const text=input.value.trim();
+  if(!text||isTyping)return;
+  input.value=''; autoResize(input);
+  document.getElementById('suggestions').style.display='none';
+  appendUser(text);
+  const lo=text.toLowerCase();
+  if(lo.includes('travados')||lo.includes('anomalias')||lo.includes('pendentes')) replyList();
+  else if((lo.includes('resolver')||lo.includes('automaticamente'))&&lo.includes('2847391')) replyApprove();
+  else if(lo.includes('divergência')||lo.includes('ffm')||lo.includes('mkp')) replyDivergences();
+  else if(lo.includes('2847391')) replyDetail(ANOMALIES[0]);
+  else if(lo.includes('2841052')) replyDetail(ANOMALIES[1]);
+  else if(lo.includes('2839774')||lo.includes('alta prioridade')) replyDetail(ANOMALIES[2]);
+  else if(lo.includes('2835901')) replyDetail(ANOMALIES[3]);
+  else if(lo.includes('2830146')||lo.includes('média prioridade')) replyDetail(ANOMALIES[4]);
+  else replyGeneric(text);
+}
+
+function appendUser(text){
+  const chat=document.getElementById('chatArea');
+  const d=document.createElement('div');
+  d.className='msg user';
+  d.innerHTML=`<div class="mavatar user">M</div><div class="mbubble">${esc(text)}</div>`;
+  chat.appendChild(d); scrollBot();
+}
+
+function appendAgent(html,delay=750){
+  return new Promise(res=>{
+    isTyping=true; setDisabled(true);
+    const chat=document.getElementById('chatArea');
+    const t=document.createElement('div');
+    t.className='msg agent';
+    t.innerHTML=`<div class="mavatar agent">OA</div><div class="typing"><span class="td"></span><span class="td"></span><span class="td"></span></div>`;
+    chat.appendChild(t); scrollBot();
+    setTimeout(()=>{
+      t.remove();
+      const d=document.createElement('div');
+      d.className='msg agent';
+      d.innerHTML=`<div class="mavatar agent">OA</div><div class="mbubble">${html}</div>`;
+      chat.appendChild(d); scrollBot();
+      isTyping=false; setDisabled(false); res(d);
+    },delay);
+  });
+}
+
+function setDisabled(v){document.getElementById('sendBtn').disabled=v;}
+function scrollBot(){const c=document.getElementById('chatArea');setTimeout(()=>c.scrollTop=c.scrollHeight,50);}
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function badgeHtml(p){const c=p==='CRITICAL'?'critical':p==='HIGH'?'high':'medium';const l=p==='CRITICAL'?'CRÍTICO':p==='HIGH'?'ALTA':'MÉDIA';return`<span class="badge ${c}">${l}</span>`;}
+
+function replyList(){
+  const rows=ANOMALIES.map(a=>`<tr onclick="trigger('Detalhe o pedido ${a.id}')"><td><code>${a.id}</code></td><td>${a.merchant}</td><td>${badgeHtml(a.prio)}</td><td style="color:#6b7280">${a.age}</td><td><button class="qbtn" onclick="event.stopPropagation();trigger('Resolver o pedido ${a.id} automaticamente')">Resolver</button></td></tr>`).join('');
+  appendAgent(`Detectei <strong>5 anomalias ativas</strong> no último scan. Resumo:<table class="inline-table"><thead><tr><th>Pedido</th><th>Seller</th><th>Prio.</th><th>Idade</th><th></th></tr></thead><tbody>${rows}</tbody></table><br>Clique em um pedido para ver o diagnóstico ou em <strong>Resolver</strong> para iniciar a resolução autônoma.`);
+}
+
+function replyDetail(a){
+  appendAgent(`<strong>${a.id}</strong> — ${a.merchant}<br>${badgeHtml(a.prio)} &nbsp;<code>${a.cat}</code><br><br><strong>Diagnóstico:</strong> ${a.summary}<br><br><strong>Resolução sugerida:</strong> <code>${a.tool}</code> · Risco ${a.risk}<br><br><button class="qbtn" style="padding:6px 14px;font-size:12.5px" onclick="trigger('Resolver o pedido ${a.id} automaticamente')">✓ Aprovar resolução</button> &nbsp;<button class="qbtn" style="padding:6px 14px;font-size:12.5px;color:#dc2626;border-color:#fecaca" onclick="trigger('Escalar pedido ${a.id} para engenharia')">↑ Escalar</button>`);
+}
+
+function replyDivergences(){
+  const divs=ANOMALIES.filter(a=>a.cat.includes('DIVERGENCE'));
+  const rows=divs.map(a=>`<tr onclick="trigger('Detalhe o pedido ${a.id}')"><td><code>${a.id}</code></td><td>${a.merchant}</td><td>${badgeHtml(a.prio)}</td><td style="color:#6b7280;font-size:11.5px;max-width:200px">${a.summary.substring(0,70)}…</td></tr>`).join('');
+  appendAgent(`Encontrei <strong>${divs.length} divergências FFM/MKP ativas</strong>:<table class="inline-table"><thead><tr><th>Pedido</th><th>Seller</th><th>Prio.</th><th>Resumo</th></tr></thead><tbody>${rows}</tbody></table><br>Clique em qualquer pedido para o diagnóstico detalhado.`);
+}
+
+function replyApprove(){
+  appendAgent(`Iniciando resolução autônoma de <strong>ORD-2847391</strong>.<br>Ferramenta: <code>force_retry_workflow</code> · Risco: BAIXO<br><br>Executando loop ReAct…`,600).then(msgDiv=>{
+    const bubble=msgDiv.querySelector('.mbubble');
+    const block=document.createElement('div');
+    block.className='react-block';
+    bubble.appendChild(block); scrollBot();
+    animateReact(block);
+  });
+}
+
+function animateReact(container){
+  const delays={think:1300,act:900,obs:700,resolved:0};
+  let elapsed=0;
+  REACT_STEPS.forEach((step,i)=>{
+    const prev=REACT_STEPS[i-1];
+    elapsed+=prev?delays[prev.t]:0;
+    setTimeout(()=>{
+      const el=document.createElement('div');
+      el.className=`react-step r-${step.t}`;
+      const labels={think:'THINK',act:'ACT',obs:'OBS'};
+      if(step.t==='resolved'){
+        el.innerHTML=`<span class="sl">✓ RESOLVIDO</span>${esc(step.txt)}`;
+        setTimeout(()=>postResolution(),1000);
+      } else {
+        el.innerHTML=`<span class="sl">[${labels[step.t]}]</span> ${esc(step.txt)}`;
+      }
+      container.appendChild(el); scrollBot();
+    },elapsed);
+  });
+}
+
+function postResolution(){
+  resolvedCount++;
+  document.getElementById('resolved-count').textContent=resolvedCount;
+  const a=ANOMALIES.find(x=>x.id==='ORD-2847391');
+  if(a) a.state='resolved';
+  renderAnomalyRows();
+  appendAgent(`✅ <strong>ORD-2847391 resolvido.</strong> Pedido avançou de <code>payment-approved</code> → <code>invoicing</code>.<br><br><strong>Trilha de auditoria:</strong><br><code style="font-size:11px;display:block;margin-top:6px;line-height:1.9;background:#f3f4f6;padding:8px 10px;border-radius:6px">2026-05-15 09:31:02 · DETECTED · WorkflowInErrorState=true (31h)<br>2026-05-15 09:31:02 · DIAGNOSED · ERP_INTEGRATION_FAILURE · 94%<br>2026-05-15 09:31:06 · APPROVED · Operador aprovou force_retry_workflow<br>2026-05-15 09:31:07 · RESOLVED · payment-approved → invoicing · TRN-99182</code>`,900);
+}
+
+function replyGeneric(text){
+  appendAgent(`Analisando "<em>${esc(text.substring(0,60))}</em>"…<br><br>Monitoro 5 anomalias ativas para a Americanas.com. Posso detalhar qualquer pedido, executar resoluções ou ajustar os parâmetros de detecção. O que prefere?`);
+}
+
+/* ── Rules ────────────────────────────────────────────── */
+function markDirty(el){el.classList.add('dirty');}
+function toggleEl(el){el.classList.toggle('on');}
+
+function saveCard(btn){
+  btn.closest('.rule-card').querySelectorAll('.dirty').forEach(el=>el.classList.remove('dirty'));
+  showToast('Configurações salvas');
+}
+
+function analyzeRule(){
+  const text=document.getElementById('rule-input').value.trim();
+  if(!text){showToast('Escreva uma regra antes de analisar');return;}
+  const btn=document.querySelector('.analyze-btn');
+  btn.textContent='Analisando…'; btn.disabled=true;
+  setTimeout(()=>{
+    btn.textContent='🔍 Analisar conflitos'; btn.disabled=false;
+    const box=document.getElementById('conflict-result');
+    const conflicts=detectConflicts(text);
+    if(conflicts.length===0){
+      box.className='conflict-box ok'; box.style.display='block';
+      box.textContent='✓ Nenhum conflito detectado com as regras existentes. Pode adicionar com segurança.';
+    } else {
+      box.className='conflict-box warn'; box.style.display='block';
+      box.innerHTML='⚠️ Conflito detectado:<br>'+conflicts.map(c=>`• ${c}`).join('<br>');
+    }
+  },1700);
+}
+
+function detectConflicts(text){
+  const lo=text.toLowerCase();
+  const conflicts=[];
+  const paInput=document.querySelector('[data-state="payment-approved"]');
+  const paHours=paInput?parseInt(paInput.value):12;
+  if((lo.includes('payment-approved')||lo.includes('payment approved'))&&(lo.match(/\d+\s*h/)||lo.match(/\d+\s*hora/))){
+    const m=lo.match(/(\d+)\s*(h|hora)/);
+    if(m&&parseInt(m[1])<paHours) conflicts.push(`Threshold de ${m[1]}h para payment-approved é menor que o configurado (${paHours}h) — pode gerar falsos positivos.`);
+  }
+  if(lo.includes('escalar')&&lo.includes('automaticamente')&&!lo.includes('aprovação')&&!lo.includes('operador')) conflicts.push('Regra de escalation automática pode conflitar com o fluxo de aprovação humana configurado.');
+  if(lo.includes('crítico')&&lo.includes('ignore')||lo.includes('ignorar todos')) conflicts.push('Conflito com política de prioridade: pedidos CRÍTICO não podem ser ignorados automaticamente.');
+  return conflicts;
+}
+
+function addRule(){
+  const text=document.getElementById('rule-input').value.trim();
+  if(!text){showToast('Escreva uma regra antes de adicionar');return;}
+  const list=document.getElementById('custom-rules-list');
+  const item=document.createElement('div');
+  item.className='custom-rule-item';
+  const today=new Date().toLocaleDateString('pt-BR');
+  item.innerHTML=`<div><div class="cri-text">${esc(text)}</div><div class="cri-meta">Adicionado em ${today} · Aguardando próximo scan</div></div><button class="cri-del" onclick="deleteRule(this)"><svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg></button>`;
+  list.appendChild(item);
+  document.getElementById('rule-input').value='';
+  document.getElementById('conflict-result').style.display='none';
+  showToast('Regra adicionada com sucesso');
+}
+
+function deleteRule(btn){
+  btn.closest('.custom-rule-item').remove();
+  showToast('Regra removida');
+}
+
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2600);
+}
+
+init();
+</script>
+</body>
+</html>

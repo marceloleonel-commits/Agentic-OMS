@@ -1798,33 +1798,36 @@ const WORKFLOW_DEFS = [
     trigger:{ type:'workflow-complete', workflowId:'wf-payments', label:'Após conclusão do workflow de Pagamentos' },
     tasks:[
       {id:'t1', name:'Separação de Itens', color:'#0c6fcd', tasks:[
-        {id:'t1_0', name:'Separação de Itens', supplier:'CD São Paulo', category:'Todos', active:true,
-          actions:['validarEstoque','ReservarEstoque'], script:null, externalApi:null,
-          contextOutput:['validarEstoque.disponivel','validarEstoque.qtd_reservada','validarEstoque.ok']}
+        {id:'t1_0', name:'Separação de Itens', supplier:'CD São Paulo', category:'Todos', active:true, visibility:'user', script:null, externalApi:null, mcpConfig:null, agentConfig:null, contextOutput:['validarEstoque.disponivel','validarEstoque.qtd_reservada','validarEstoque.ok'],
+          checkpoints:[
+            {id:'cp1', label:'Reserva de estoque confirmada', failAction:'Realocar para outro CD'},
+            {id:'cp2', label:'Itens fisicamente separados', failAction:'Acionar gestor de operações'},
+            {id:'cp3', label:'Etiqueta impressa', failAction:'Reimprimir etiqueta'},
+          ]}
       ]},
       {id:'t2', name:'Conferência de Qualidade', color:'#7c3aed', tasks:[
-        {id:'t2_0', name:'Conferência de Qualidade', supplier:'QA Team', category:'Eletrônicos', active:true,
-          actions:['enviar_email'], script:null, externalApi:null,
-          contextOutput:[]}
+        {id:'t2_0', name:'Conferência de Qualidade', supplier:'QA Team', category:'Eletrônicos', active:true, visibility:'user', script:null, externalApi:null, mcpConfig:null, agentConfig:null, contextOutput:[], checkpoints:[]}
       ]},
       {id:'t3', name:'Embalagem', color:'#0891b2', tasks:[
-        {id:'t3_0', name:'Embalagem', supplier:'CD São Paulo', category:'Todos', active:true,
-          actions:['validarEstoque','AlterarItemPedido'], script:null, externalApi:null,
-          contextOutput:[]}
+        {id:'t3_0', name:'Embalagem', supplier:'CD São Paulo', category:'Todos', active:true, visibility:'user', script:null, externalApi:null, mcpConfig:null, agentConfig:null, contextOutput:[], checkpoints:[]}
       ]},
       {id:'t4', name:'Nota Fiscal', color:'#059669', tasks:[
-        {id:'t4_0', name:'Nota Fiscal', supplier:'Financeiro', category:'Todos', active:true,
-          actions:['CapturarPagamento'], script:null,
-          externalApi:{url:'https://api.nfe.io/v1/nota', method:'POST',
-            responseMapping:[{key:'nf_numero',path:'data.number'},{key:'nf_chave',path:'data.accessKey'}]},
-          contextOutput:['CapturarPagamento.captura_id','api_nfe.nf_numero','api_nfe.nf_chave']}
+        {id:'t4_0', name:'Nota Fiscal', supplier:'Financeiro', category:'Todos', active:true, visibility:'internal',
+          script:null, externalApi:{url:'https://api.nfe.io/v1/nota', method:'POST', responseMapping:[{key:'nf_numero',path:'data.number'},{key:'nf_chave',path:'data.accessKey'}]},
+          mcpConfig:null, agentConfig:null, contextOutput:['api_nfe.nf_numero','api_nfe.nf_chave'], checkpoints:[]}
       ]},
       {id:'t5', name:'Expedição', color:'#d97706', tasks:[
-        {id:'t5_0', name:'Expedição', supplier:'Transportadora XYZ', category:'Todos', active:true,
-          actions:['enviar_email','AlterarSellerPedido'], script:null,
-          externalApi:{url:'https://api.transportadora.com/cotacao', method:'POST',
-            responseMapping:[{key:'prazo_entrega',path:'result.delivery_days'},{key:'custo_frete',path:'result.cost'}]},
-          contextOutput:['api_cotacao.prazo_entrega','api_cotacao.custo_frete']}
+        {id:'t5_0', name:'Expedição', supplier:'Transportadora XYZ', category:'Todos', active:true, visibility:'user',
+          script:null, externalApi:{url:'https://api.transportadora.com/cotacao', method:'POST', responseMapping:[{key:'prazo_entrega',path:'result.delivery_days'},{key:'custo_frete',path:'result.cost'}]},
+          mcpConfig:null, agentConfig:null, contextOutput:['api_cotacao.prazo_entrega','api_cotacao.custo_frete'],
+          checkpoints:[
+            {id:'cp1', label:'Coleta agendada com transportadora', failAction:'Tentar outra transportadora'},
+            {id:'cp2', label:'Código de rastreio gerado', failAction:'Solicitar código manual via Intelipost'},
+            {id:'cp3', label:'Pacote entregue à transportadora', failAction:'Acionar supervisor logístico'},
+          ]}
+      ]},
+      {id:'t6', name:'Entregue', color:'#059669', tasks:[
+        {id:'t6_0', name:'Entregue', supplier:'Transportadora XYZ', category:'Todos', active:true, visibility:'user', script:null, externalApi:null, mcpConfig:null, agentConfig:null, contextOutput:[], checkpoints:[]}
       ]},
     ],
     edges:[
@@ -1839,19 +1842,19 @@ const WORKFLOW_DEFS = [
     trigger:{ type:'workflow-complete', workflowId:'wf-standard', label:'Após conclusão do workflow Entrega pela loja (ou acionado pelo Shopper/Agente)' },
     tasks:[
       {id:'r1', name:'Solicitação Recebida', color:'#7c3aed', tasks:[
-        {id:'r1_0', name:'Solicitação Recebida', supplier:'Atendimento', category:'Todos', active:true}
+        {id:'r1_0', name:'Solicitação Recebida', supplier:'Atendimento', category:'Todos', active:true, visibility:'user', script:null, externalApi:null, mcpConfig:null, agentConfig:null, contextOutput:[], checkpoints:[]}
       ]},
       {id:'r2', name:'Análise do Motivo', color:'#6366f1', tasks:[
-        {id:'r2_0', name:'Análise do Motivo', supplier:'QA Team', category:'Todos', active:true}
+        {id:'r2_0', name:'Análise do Motivo', supplier:'QA Team', category:'Todos', active:true, visibility:'user', script:null, externalApi:null, mcpConfig:null, agentConfig:null, contextOutput:[], checkpoints:[]}
       ]},
       {id:'r3', name:'Coleta do Item', color:'#0891b2', tasks:[
-        {id:'r3_0', name:'Coleta do Item', supplier:'Transportadora XYZ', category:'Todos', active:true}
+        {id:'r3_0', name:'Coleta do Item', supplier:'Transportadora XYZ', category:'Todos', active:true, visibility:'user', script:null, externalApi:null, mcpConfig:null, agentConfig:null, contextOutput:[], checkpoints:[]}
       ]},
       {id:'r4', name:'Inspeção de Qualidade', color:'#059669', tasks:[
-        {id:'r4_0', name:'Inspeção de Qualidade', supplier:'QA Team', category:'Todos', active:true}
+        {id:'r4_0', name:'Inspeção de Qualidade', supplier:'QA Team', category:'Todos', active:true, visibility:'user', script:null, externalApi:null, mcpConfig:null, agentConfig:null, contextOutput:[], checkpoints:[]}
       ]},
       {id:'r5', name:'Reembolso / Troca', color:'#d97706', tasks:[
-        {id:'r5_0', name:'Reembolso / Troca', supplier:'Financeiro', category:'Todos', active:true}
+        {id:'r5_0', name:'Reembolso / Troca', supplier:'Financeiro', category:'Todos', active:true, visibility:'user', script:null, externalApi:null, mcpConfig:null, agentConfig:null, contextOutput:[], checkpoints:[]}
       ]},
     ],
     edges:[
@@ -1934,17 +1937,41 @@ const WORKFLOW_DEFS = [
     description:'Fluxo para serviços presenciais como instalação, montagem e manutenção', dependencies:[],
     trigger:{ type:'order-created', label:'Acionado automaticamente no início do pedido' },
     tasks:[
-      {id:'p1', name:'Validação do Comprador', color:'#059669', tasks:[
-        {id:'p1_0', name:'Validação do Comprador', supplier:'Financeiro', category:'B2B', active:true}
+      {id:'sv1', name:'Agendamento', color:'#0891b2', tasks:[
+        {id:'sv1_0', name:'Agendamento', supplier:'Arte&Decor', category:'Serviços', active:true, visibility:'user',
+          script:null, externalApi:null, mcpConfig:null, agentConfig:null,
+          checkpoints:[
+            {id:'cp1', label:'Data e horário confirmados com cliente', failAction:'Ligar para cliente e remarcar'},
+            {id:'cp2', label:'Técnico disponível na data', failAction:'Reatribuir a outro técnico Arte&Decor'},
+          ], contextOutput:[]}
       ]},
-      {id:'p2', name:'Análise de Crédito', color:'#0891b2', tasks:[
-        {id:'p2_0', name:'Análise de Crédito', supplier:'Financeiro', category:'B2B', active:true}
+      {id:'sv2', name:'Confirmação Pré-Serviço', color:'#6366f1', tasks:[
+        {id:'sv2_0', name:'Confirmação Pré-Serviço', supplier:'Arte&Decor', category:'Serviços', active:true, visibility:'user',
+          script:null, externalApi:null, mcpConfig:null, agentConfig:null,
+          checkpoints:[
+            {id:'cp1', label:'Cliente confirmou agendamento', failAction:'Tentar reagendamento via SMS'},
+            {id:'cp2', label:'Material disponível para a instalação', failAction:'Verificar estoque e reprogramar'},
+          ], contextOutput:[]}
       ]},
-      {id:'p3', name:'Aprovação do Gestor', color:'#6366f1', tasks:[
-        {id:'p3_0', name:'Aprovação do Gestor', supplier:'Gestão', category:'B2B', active:true}
+      {id:'sv3', name:'Execução do Serviço', color:'#e11d48', tasks:[
+        {id:'sv3_0', name:'Execução do Serviço', supplier:'Arte&Decor', category:'Serviços', active:true, visibility:'user',
+          script:null, externalApi:null, mcpConfig:null, agentConfig:null,
+          checkpoints:[
+            {id:'cp1', label:'Check-in do técnico no local', failAction:'Acionar supervisor Arte&Decor'},
+            {id:'cp2', label:'Instalação em andamento', failAction:'Escalar para gerente técnico'},
+            {id:'cp3', label:'Instalação concluída pelo técnico', failAction:'Retornar no próximo dia útil'},
+          ], contextOutput:[]}
       ]},
-      {id:'p4', name:'Captura do Pagamento', color:'#d97706', tasks:[
-        {id:'p4_0', name:'Captura do Pagamento', supplier:'Financeiro', category:'B2B', active:true}
+      {id:'sv4', name:'Verificação Pós-Serviço', color:'#d97706', tasks:[
+        {id:'sv4_0', name:'Verificação Pós-Serviço', supplier:'Arte&Decor', category:'Serviços', active:true, visibility:'user',
+          script:null, externalApi:null, mcpConfig:null, agentConfig:null,
+          checkpoints:[
+            {id:'cp1', label:'Cliente assinou termo de conclusão', failAction:'Reabrir chamado para correção'},
+            {id:'cp2', label:'Fotos do serviço registradas', failAction:'Solicitar fotos ao técnico'},
+          ], contextOutput:[]}
+      ]},
+      {id:'sv5', name:'Conclusão', color:'#059669', tasks:[
+        {id:'sv5_0', name:'Conclusão', supplier:'Arte&Decor', category:'Serviços', active:true, visibility:'user', script:null, externalApi:null, mcpConfig:null, agentConfig:null, checkpoints:[], contextOutput:[]}
       ]},
     ],
     edges:[
@@ -3934,14 +3961,15 @@ const WF_ICONS = ['📦','↩️','💳','🚚','🔄','⚡','🏪','🌐','📋
 const WF_COLORS = ['#0c6fcd','#7c3aed','#059669','#d97706','#0891b2','#6366f1','#dc2626','#0f766e'];
 let newWfDraft = {}, newWfStep = 0;
 const newWfFlows = [
-  { ai:'Como você quer chamar esse workflow?', field:'name', sugg:['Workflow Marketplace','Aprovação B2B','Entrega Expressa','Troca e Devolução'] },
-  { ai:'Escolha um ícone para identificar visualmente este workflow:', field:null, sugg:[] },
-  { ai:'Descreva brevemente o propósito deste workflow:', field:'description', sugg:['Fluxo padrão para novos pedidos','Aprovação manual para pedidos B2B','Gestão de trocas e devoluções','Entrega rápida para pedidos prioritários'] },
-  { ai:null, field:null, sugg:['Confirmar e criar'] },
+  { id:'name',        ai:'Como você quer chamar esse workflow?',                         field:'name',        sugg:['Workflow Marketplace','Aprovação B2B','Entrega Expressa','Troca e Devolução'] },
+  { id:'origin',      ai:null,                                                           field:null,          sugg:[] },
+  { id:'icon',        ai:'Escolha um ícone para identificar visualmente este workflow:', field:null,          sugg:[] },
+  { id:'description', ai:'Descreva brevemente o propósito deste workflow:',              field:'description', sugg:['Fluxo padrão para novos pedidos','Aprovação manual para pedidos B2B','Gestão de trocas e devoluções','Entrega rápida para pedidos prioritários'] },
+  { id:'confirm',     ai:null,                                                           field:null,          sugg:['Confirmar e criar'] },
 ];
 
 function openCreateWorkflowPanel() {
-  newWfDraft = { name:'', icon:'📦', color:'#0c6fcd', description:'' };
+  newWfDraft = { name:'', icon:'📦', color:'#0c6fcd', description:'', sourceId:null };
   newWfStep = 0;
   const body = document.getElementById('new-wf-body');
   body.innerHTML = `
@@ -3949,8 +3977,10 @@ function openCreateWorkflowPanel() {
       <div id="nwf-prev-name">Nome: <span style="color:#1a1a1a;font-weight:600">—</span></div>
       <div id="nwf-prev-icon">Ícone: <span style="color:#1a1a1a;font-weight:600">—</span></div>
       <div id="nwf-prev-desc">Descrição: <span style="color:#1a1a1a;font-weight:600">—</span></div>
+      <div id="nwf-prev-source" style="display:none">Copiado de: <span style="color:#0c6fcd;font-weight:600">—</span></div>
     </div>
     <div class="cm-msgs" id="nwf-msgs" style="flex:1;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:8px"></div>
+    <div id="nwf-origin-picker" style="display:none;padding:0 16px 8px;flex-direction:column;gap:8px"></div>
     <div id="nwf-icon-grid" style="display:none;padding:8px 16px;flex-wrap:wrap;gap:8px"></div>
     <div id="nwf-suggestions" style="padding:0 16px 8px;display:flex;flex-wrap:wrap;gap:6px"></div>
     <div style="padding:8px 16px;border-top:1px solid #f0f0f0;display:flex;gap:6px">
@@ -3999,15 +4029,20 @@ function sendNewWfChat() {
     if (newWfStep < newWfFlows.length) {
       const next = newWfFlows[newWfStep];
       if (newWfStep === 1) {
+        // Origin picker step
+        renderNwfOriginPicker();
+      } else if (newWfStep === 2) {
+        // Icon picker step
         addNwfMsg('ai', next.ai);
         const grid = document.getElementById('nwf-icon-grid');
         grid.style.display = 'flex';
-        grid.innerHTML = WF_ICONS.map(ic => `<button onclick="pickWfIcon('${ic}')" style="font-size:22px;background:#f9f9fb;border:1px solid #e5e7eb;border-radius:8px;padding:6px 10px;cursor:pointer;line-height:1;transition:background .15s">${ic}</button>`).join('');
+        grid.innerHTML = WF_ICONS.map(ic => `<button onclick="pickWfIcon('${ic}')" style="font-size:22px;background:#f9f9fb;border:1px solid #e5e7eb;border-radius:8px;padding:6px 10px;cursor:pointer;line-height:1;transition:background .15s" title="${ic}">${ic}</button>`).join('');
       } else {
         const grid = document.getElementById('nwf-icon-grid'); if (grid) grid.style.display = 'none';
         if (next.ai) addNwfMsg('ai', next.ai);
         if (newWfStep === newWfFlows.length - 1) {
-          addNwfMsg('ai', `Perfeito! Resumo:\n• Nome: ${newWfDraft.name}\n• Ícone: ${newWfDraft.icon}\n• Descrição: ${newWfDraft.description}\n\nCriar o workflow?`);
+          const srcLine = newWfDraft.sourceId ? `\n• Copiado de: ${WORKFLOW_DEFS.find(w=>w.id===newWfDraft.sourceId)?.name||'—'}` : '';
+          addNwfMsg('ai', `Perfeito! Resumo:\n• Nome: ${newWfDraft.name}\n• Ícone: ${newWfDraft.icon}\n• Descrição: ${newWfDraft.description}${srcLine}\n\nCriar o workflow?`);
         }
         renderNwfSuggs(next.sugg || []);
       }
@@ -4027,7 +4062,12 @@ function pickWfIcon(icon) {
   _updateNwfPreview();
   setTimeout(() => {
     addNwfMsg('ai', newWfFlows[newWfStep]?.ai || 'Descreva o propósito deste workflow:');
-    renderNwfSuggs(newWfFlows[newWfStep]?.sugg || []);
+    const baseSugg = newWfFlows[newWfStep]?.sugg || [];
+    // If copying, offer inherited description as first suggestion
+    const sugg = (newWfDraft.sourceId && newWfDraft.description)
+      ? [newWfDraft.description, ...baseSugg].slice(0, 4)
+      : baseSugg;
+    renderNwfSuggs(sugg);
   }, 300);
 }
 
@@ -4036,11 +4076,31 @@ function _updateNwfPreview() {
   const n = document.getElementById('nwf-prev-name'); if (n) n.innerHTML = `Nome: <span style="color:#1a1a1a;font-weight:600">${newWfDraft.name||'—'}</span>`;
   const ic = document.getElementById('nwf-prev-icon'); if (ic) ic.innerHTML = `Ícone: <span style="color:#1a1a1a;font-weight:600">${newWfDraft.icon||'—'}</span>`;
   const d = document.getElementById('nwf-prev-desc'); if (d) d.innerHTML = `Descrição: <span style="color:#1a1a1a;font-weight:600">${newWfDraft.description||'—'}</span>`;
+  const src = document.getElementById('nwf-prev-source');
+  if (src) {
+    if (newWfDraft.sourceId) {
+      const srcWf = WORKFLOW_DEFS.find(w => w.id === newWfDraft.sourceId);
+      src.innerHTML = `Copiado de: <span style="color:#0c6fcd;font-weight:600">${srcWf ? srcWf.name : '—'}</span>`;
+      src.style.display = 'block';
+    } else {
+      src.style.display = 'none';
+    }
+  }
 }
 
 function confirmCreateWorkflow() {
   const newId = 'wf-' + Date.now();
   newWfDraft.color = WF_COLORS[WORKFLOW_DEFS.length % WF_COLORS.length];
+  let tasks = [], edges = [];
+  let srcName = null;
+  if (newWfDraft.sourceId) {
+    const src = WORKFLOW_DEFS.find(w => w.id === newWfDraft.sourceId);
+    if (src) {
+      tasks = JSON.parse(JSON.stringify(src.tasks || []));
+      edges = JSON.parse(JSON.stringify(src.edges || []));
+      srcName = src.name;
+    }
+  }
   WORKFLOW_DEFS.push({
     id: newId,
     name: newWfDraft.name || 'Novo Workflow',
@@ -4049,12 +4109,64 @@ function confirmCreateWorkflow() {
     orderCount: 0,
     description: newWfDraft.description || '',
     dependencies: [],
-    tasks: [],
-    edges: [],
+    tasks,
+    edges,
   });
   closeNewWfPanel();
   renderWorkflowList();
-  showSuccessModal('Workflow criado!', `"${newWfDraft.name}" foi adicionado à lista. Clique em "Abrir" para configurar as etapas.`);
+  const msg = srcName
+    ? `"${newWfDraft.name}" foi criado como cópia de "${srcName}". Clique em "Abrir" para personalizar as etapas.`
+    : `"${newWfDraft.name}" foi adicionado à lista. Clique em "Abrir" para configurar as etapas.`;
+  showSuccessModal('Workflow criado!', msg);
+}
+
+function renderNwfOriginPicker() {
+  addNwfMsg('ai', 'Deseja criar do zero ou copiar a estrutura de um workflow existente?');
+  const available = WORKFLOW_DEFS.filter(w => !w.archived);
+  const container = document.getElementById('nwf-origin-picker');
+  container.style.display = 'flex';
+  container.innerHTML = `
+    <button onclick="pickNwfOrigin(null)" style="display:flex;align-items:center;gap:10px;background:#f9f9fb;border:1.5px solid #e5e7eb;border-radius:8px;padding:10px 12px;cursor:pointer;text-align:left;width:100%;transition:border-color .15s" onmouseover="this.style.borderColor='#0c6fcd'" onmouseout="this.style.borderColor='#e5e7eb'">
+      <span style="font-size:22px">✨</span>
+      <div>
+        <div style="font-size:13px;font-weight:600;color:#1a1a1a">Criar do zero</div>
+        <div style="font-size:11px;color:#888;margin-top:2px">Começar com um workflow em branco</div>
+      </div>
+    </button>
+    ${available.map(wf => `
+    <button onclick="pickNwfOrigin('${wf.id}')" style="display:flex;align-items:center;gap:10px;background:#f9f9fb;border:1.5px solid #e5e7eb;border-radius:8px;padding:10px 12px;cursor:pointer;text-align:left;width:100%;transition:border-color .15s" onmouseover="this.style.borderColor='#0c6fcd'" onmouseout="this.style.borderColor='#e5e7eb'">
+      <span style="font-size:22px">${wf.icon}</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:600;color:#1a1a1a">${wf.name}</div>
+        <div style="font-size:11px;color:#888;margin-top:2px">${(wf.tasks||[]).length} etapa${(wf.tasks||[]).length !== 1 ? 's' : ''} · Copiar estrutura</div>
+      </div>
+      <svg viewBox="0 0 14 14" fill="none" stroke="#0c6fcd" stroke-width="2" width="12" height="12"><rect x="1" y="3" width="9" height="10" rx="1"/><path d="M4 3V2h9v9h-1"/></svg>
+    </button>`).join('')}
+  `;
+}
+
+function pickNwfOrigin(sourceId) {
+  const container = document.getElementById('nwf-origin-picker');
+  if (container) container.style.display = 'none';
+  if (sourceId) {
+    const src = WORKFLOW_DEFS.find(w => w.id === sourceId);
+    newWfDraft.sourceId = sourceId;
+    newWfDraft.icon = src.icon;
+    newWfDraft.description = src.description;
+    addNwfMsg('user', `Copiar de "${src.name}"`);
+    setTimeout(() => addNwfMsg('ai', `Ótimo! Vou copiar ${(src.tasks||[]).length} etapa${(src.tasks||[]).length!==1?'s':''} de "${src.name}". Agora escolha um ícone para o novo workflow:`), 300);
+  } else {
+    newWfDraft.sourceId = null;
+    addNwfMsg('user', 'Criar do zero');
+    setTimeout(() => addNwfMsg('ai', 'Perfeito! Escolha um ícone para identificar visualmente este workflow:'), 300);
+  }
+  newWfStep = 2;
+  _updateNwfPreview();
+  setTimeout(() => {
+    const grid = document.getElementById('nwf-icon-grid');
+    grid.style.display = 'flex';
+    grid.innerHTML = WF_ICONS.map(ic => `<button onclick="pickWfIcon('${ic}')" style="font-size:22px;background:#f9f9fb;border:1px solid #e5e7eb;border-radius:8px;padding:6px 10px;cursor:pointer;line-height:1;transition:background .15s" title="${ic}">${ic}</button>`).join('');
+  }, 450);
 }
 
 // ══════════════════════════════════════════

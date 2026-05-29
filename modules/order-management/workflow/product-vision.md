@@ -2,7 +2,7 @@
 
 | Status | Draft | Owner(s) | [Marcelo Leonel](mailto:marcelo.leonel@vtex.com) |
 |---|---|---|---|
-| Last Updated | May 2026 | Approver(s) | [Julia Grisi Lolato](mailto:julia.lolato@vtex.com) |
+| Last Updated | May 2026 | Approver(s) | [Julia Grisi Lolato](mailto:julia.lolato@vtex.com) · [Vanessa Borges](mailto:vanessa.borges@vtex.com) |
 | Created | May 2026 | Author(s) | [Marcelo Leonel](mailto:marcelo.leonel@vtex.com) |
 |  |  | Channel | #dom-product-vertical |
 
@@ -17,7 +17,7 @@
 | **Product/Area:** Order Management — Agentic Workflow |
 | **Focus Task:** Allow merchants to configure order workflows that match their operational reality — by delivery type, product category, sales channel, and B2B buying flow — with AI agents performing or suggesting actions at key decision points |
 | **Persona:** Head of Ecommerce Operations and Head of IT at enterprise merchants in grocery, pharma, fashion, and construction materials — segments with order workflows that differ significantly from VTEX's default B2C shipping flow (BOPIS, ship-from-store, B2B approval chains, pick-and-pack, virtual SKUs) |
-| **Working title/Commercial Name:** Agentic Workflow (previously referred to as Order Workflow / Dynamic Workflow) |
+| **Working title/Commercial Name:** Agentic Workflow — Gerenciar Order Jobs (previously referred to as Controle de Fluxos / Order Workflow / Dynamic Workflow) |
 | **Value headline:** Merchants configure the order workflow their business needs — without custom development — and AI agents reduce manual operational interventions at exception points, cutting order management costs across complex omnichannel scenarios. |
 | **Mini-Press Release:** VTEX's order management module has one workflow for every order type — the same statuses and rules apply whether an order is a same-day BOPIS pickup, a B2B bulk order requiring purchase approval, a ship-from-store return, or a virtual product delivery. Merchants in grocery, pharma, fashion, and construction build expensive customizations to make their operations fit this single model, and VTEX loses source-of-truth status for orders when those customizations route data outside the platform. VTEX is building the Agentic Workflow: a configurable orchestration engine that offers predefined workflow models for key scenarios (BOPIS, BORIS, ship-from-store, B2B) and allows merchants to extend them with AI agents that automate exception handling and reduce manual interventions. |
 | **Opportunity Size:** Competitors Shopify, Salesforce Commerce Cloud, commercetools, Manhattan, and IBM Sterling all offer configurable order workflows. This is a documented gap in enterprise sales evaluations and an explicit migration risk for TFG, C&A, and Container Store. [PM INPUT NEEDED: ARR from accounts that cited workflow limitations as a migration risk] |
@@ -56,6 +56,9 @@ Additionally, the Admin & AI Workspace team and Weni integration create the plat
 | Ship-from-store return linked to OMS record | In-store return event creates a native status in the original order record | Fashion merchant: returns processed at physical stores update the OMS order without a third-party tool |
 | Payment capture decoupled from invoicing | Merchant configures capture to occur before or after invoice — not hardcoded at invoice step | US/EMEA merchants: capture confirmation received before shipping tracking code is sent |
 | AI agent flags and resolves stuck orders | AI agent detects order stuck in intermediate status and either auto-advances or creates a merchant task | Operations team: 80% of stuck orders auto-resolved by AI agent within defined SLA |
+| Personalized product order with dedicated personalization workflow | A separate `wf-personalization` workflow (Briefing → Arte/Design → Aprovação → Produção → QA → Conclusão) is triggered automatically when "Separação de Itens" completes in the delivery workflow; the order detail shows both pipelines as separate labeled sections | Fashion/BRK merchant: personalized jersey artwork is approved and produced in parallel to the separation step, then both workflows converge before packaging |
+| Kit order with physical item + installation service | Kit items (physical product + service) are grouped visually under a shared kit banner; each item follows its own `wfType` pipeline | Flooring retailer: "Kit Piso + Instalação Arte&Decor" groups the vinyl flooring item and the installation service, each with their own stages and supplier |
+| Virtual product activation without physical fulfillment | Digital products follow a short pipeline (Ativação → Licença → Entrega digital → Confirmação) with no picking, packing, or shipping stages | Software/media merchant: license key is generated and sent without triggering any logistics workflow |
 
 ### 4. Customer Workarounds
 
@@ -69,7 +72,9 @@ Additionally, the Admin & AI Workspace team and Weni integration create the plat
 
 ## Vision Concepts
 
-**Workflow Model** — A predefined set of statuses, transitions, and rules designed for a specific order type (e.g., BOPIS, ship-from-store, B2B approval, virtual product). Merchants select and configure a workflow model per order type; they do not build workflows from scratch.
+**Workflow Model** — A predefined set of statuses, transitions, and rules designed for a specific order type (e.g., payment, standard delivery, personalization, virtual product, service). Merchants select and configure a workflow model; they do not build workflows from scratch.
+
+**Workflow Trigger** — The condition that activates a workflow. Three types: (a) automatic at order creation (`order-created`); (b) after another workflow completes (`workflow-complete`); (c) after a specific task within a specific workflow completes (`task-complete`). Triggers create chains of composable workflows that together cover the full order lifecycle.
 
 **Entry Points** — Configurable extension hooks in a workflow where third-party apps or AI agents can inject status information, trigger actions, or extend the workflow with custom steps — without modifying the core workflow logic.
 
@@ -85,15 +90,21 @@ Additionally, the Admin & AI Workspace team and Weni integration create the plat
 
 ### Key Capabilities
 
-**1. Predefined workflow models for key order types.** VTEX ships configurable workflow models for: standard delivery, BOPIS, BORIS, ship-from-store, B2B purchase approval, virtual product, and subscription order. Merchants select and configure models — they do not build workflows from scratch.
+**1. Order Jobs with fixed Marcos.** The primary configuration unit is the **Order Job** — a named operational model designed for a specific fulfillment scenario (e.g., Entrega em domicílio, Retirada na loja, Entrega digital, Entrega pela loja). Each Order Job contains exactly 4 **marcos** (milestones that become kanban columns): Confirmação de Pagamento, Preparando Itens, NFes Emitidas, and Recebido pelo Cliente. Merchants select a base template and customize — they do not build workflows from scratch. VTEX ships 4 pre-built Order Jobs plus a Troca e Devolução job.
 
-**2. Payment capture decoupled from invoicing.** Merchants configure whether payment capture happens before or after invoicing, per workflow model — enabling EMEA and US payment norms natively without customization.
+**2. Separate, composable pipelines per item.** Each order item displays multiple named workflow pipelines as distinct visual sections — not a single merged list. For a standard physical item: a 💳 Confirmação de Pagamento marco runs first, followed by 📦 Preparando Itens, 🧾 NFes Emitidas, and 📬 Recebido pelo Cliente. Kit orders group physical + service items under a shared banner, each with its own pipeline stack.
 
-**3. Entry points for third-party apps and AI agents.** Workflows expose entry points where third-party apps (e.g., pick-and-pack, returns, delivery solutions) can add status events and where AI agents can inject actions, suggestions, or escalations.
+**3. Task visibility and 4-status lifecycle.** Each task within a stage carries a `visibility` attribute (`user` = shopper-facing, `internal` = ops-only) and a status from the set: **Pendente · Completado · Cancelado · Ignorado**. Canceled tasks require a cancellation reason; all transitions are operator-initiated or agent-triggered.
 
-**4. Low-code configuration canvas (Premium).** A visual interface for configuring which workflow model applies per order, what rules govern model selection (by delivery type, channel, product category, payment method), and which entry points are active.
+**4. Task checkpoints.** Each task can declare one or more checkpoints — named validation gates (e.g., "Arte aprovada pelo cliente") with an associated `failAction` (e.g., "Escalar para supervisora"). Checkpoint completion is tracked per-item and surfaced in the pipeline view.
 
-**5. AI agent exception handling.** AI agents monitor active orders, detect exception patterns (stuck statuses, delivery risk, authorization holds), and take defined actions autonomously or create operator tasks — with configurable confidence thresholds for auto-action vs. escalation.
+**5. Gerenciar Order Jobs (visual workflow canvas).** A visual Kanban board accessed via the "Gerenciar Order Jobs" nav item, where each column is a marco and cards within columns are tasks. Operators can create a new Order Job (choosing a base template or empty structure), add tasks within a marco, rename marcos, split or delete tasks — all via conversational side-panel chat. The "+ Novo Job" creation flow guides merchants through 6 steps: name → base template → icon → description → marcos preview → confirm. A context-aware supplier catalog auto-suggests responsible parties based on task name.
+
+**6. Workflow trigger system.** Each workflow declares how it is activated, via one of three trigger types: (a) **Início do pedido** — automatically when the order is created; (b) **Conclusão de workflow** — after another workflow in the chain completes; (c) **Conclusão de tarefa específica** — after a named task within a specific workflow completes (e.g., the Personalização workflow triggers when "Separação de Itens" in the delivery workflow is done). Merchants configure triggers in the workflow settings screen with origin-workflow and origin-task selectors.
+
+**7. Entry points for third-party apps and AI agents.** Workflows expose entry points where third-party apps (e.g., pick-and-pack, returns, delivery solutions) can add status events and where AI agents can inject actions, suggestions, or escalations. Inline API configuration during task creation allows external endpoints to be wired up without leaving the chat flow.
+
+**8. AI agent exception handling — 3 specialized sub-agents.** The orchestration agent is composed of three sub-agents with distinct responsibilities: 🗺️ **Roteamento** (selects fulfillment mode and provider per order), ⚙️ **Orquestração** (monitors gates and advances order status when systems report completion), and 🚨 **Escalação** (detects inactivity beyond SLA, creates operator tasks, sends Slack alerts). Each sub-agent has individual skill toggles and can be enabled or disabled independently.
 
 ### Conditions of Satisfaction
 
@@ -107,7 +118,7 @@ Additionally, the Admin & AI Workspace team and Weni integration create the plat
 
 ### Non-Goals
 
-**Full no-code workflow builder** — this vision provides predefined workflow models with configuration options. Merchants cannot build arbitrary custom workflows from blank canvas. A no-code builder is a potential future phase but adds product and support complexity beyond the 3-year horizon.
+**Full no-code workflow builder** — this vision provides predefined workflow models with configuration options. Merchants extend these via the Controle de Fluxos canvas (add/rename/split stages and tasks), but cannot build arbitrary workflows from a blank canvas. A fully open builder is a potential future phase beyond the 3-year horizon.
 
 **Warehouse management system (WMS)** — VTEX does not own physical warehouse operations. Agentic Workflow manages order status and orchestration; physical picking, sorting, and staging are handled by Pick and Pack or external WMS systems.
 
@@ -161,3 +172,6 @@ Additionally, the Admin & AI Workspace team and Weni integration create the plat
 | Changed | Details |
 |---|---|
 | May 2026 | Initial draft created for Chapter OS repo setup |
+| May 2026 | Updated Key Capabilities: added unified pipeline, 4-status lifecycle, task visibility, checkpoints, supplier catalog, new workflow types (virtual/personalized/service/returns), kit order grouping, Controle de Fluxos canvas; added use cases for personalized product, kit orders, and virtual products; aligned Non-Goals; added Vanessa Borges as co-approver |
+| May 2026 | Updated Key Capabilities: replaced unified pipeline with separate composable pipelines model; added wf-payments and wf-personalization as standalone workflows; replaced wf-personalized with wf-personalization (task-triggered); added Workflow Trigger system as Key Capability 6; added Workflow Trigger to Vision Concepts glossary; updated personalized product use case to reflect trigger-based activation |
+| May 2026 | Aligned to prototype: renamed working title to "Gerenciar Order Jobs"; replaced workflow-catalog model with Order Jobs + Marcos model (4 fixed marcos per OJ: Confirmação de Pagamento / Preparando Itens / NFes Emitidas / Recebido pelo Cliente); updated Key Capability #1, #2, #5, #8 to reflect Order Jobs structure and 3-sub-agent orchestration (Roteamento / Orquestração / Escalação) |

@@ -1,0 +1,1023 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Order Agent — VTEX Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ── Reset ───────────────────────────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:'Inter',system-ui,sans-serif;font-size:14px;color:#3f3f40;background:#fff;display:flex;flex-direction:column;overflow:hidden}
+
+/* ── Global Top Bar ──────────────────────────────────────────────────── */
+.global-nav{height:56px;min-height:56px;background:#fff;border-bottom:1px solid #e0e0e0;display:flex;align-items:center;padding:0 16px;gap:12px;z-index:50;flex-shrink:0}
+.hamburger{width:32px;height:32px;border:none;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;border-radius:4px;flex-shrink:0;color:#666}
+.hamburger:hover{background:#f5f5f5}
+.hamburger svg{width:18px;height:18px}
+.vtex-logo-wrap{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.vtex-mark{width:26px;height:22px}
+.store-name{font-size:13px;font-weight:400;color:#3f3f40}
+.global-search{flex:1;max-width:480px;margin:0 auto;position:relative}
+.global-search input{width:100%;border:1px solid #e0e0e0;border-radius:4px;padding:7px 12px 7px 34px;font-size:13px;font-family:'Inter',sans-serif;color:#3f3f40;background:#f9f9f9;transition:all .15s}
+.global-search input:focus{outline:none;border-color:#0c6fcd;background:#fff;box-shadow:0 0 0 2px rgba(12,111,205,.1)}
+.global-search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#999;width:15px;height:15px}
+.global-nav-right{display:flex;align-items:center;gap:4px;margin-left:auto;flex-shrink:0}
+.nav-action{display:flex;align-items:center;gap:5px;padding:6px 10px;border-radius:4px;font-size:12.5px;color:#3f3f40;cursor:pointer;white-space:nowrap;border:none;background:transparent;font-family:inherit}
+.nav-action:hover{background:#f5f5f5}
+.nav-action svg{width:16px;height:16px;flex-shrink:0;opacity:.7}
+.user-avatar-btn{width:30px;height:30px;border-radius:50%;background:#0c6fcd;color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;cursor:pointer;border:none;flex-shrink:0}
+
+/* ── Main Layout ─────────────────────────────────────────────────────── */
+.main-layout{flex:1;display:flex;overflow:hidden}
+
+/* ── Sidebar ─────────────────────────────────────────────────────────── */
+.sidebar{width:220px;min-width:220px;background:#fff;border-right:1px solid #e0e0e0;display:flex;flex-direction:column;height:100%;overflow-y:auto;overflow-x:hidden}
+.sidebar::-webkit-scrollbar{width:0}
+.sidebar-section{padding:16px 16px 5px;font-size:10.5px;font-weight:600;color:#aaa;letter-spacing:.6px;text-transform:uppercase}
+.nav-item{display:flex;align-items:center;gap:9px;padding:8px 14px;cursor:pointer;color:#3f3f40;font-size:13px;font-weight:400;transition:background .1s;user-select:none;position:relative;border-left:3px solid transparent}
+.nav-item:hover{background:#f5f5f5}
+.nav-item.active{color:#0c6fcd;background:rgba(12,111,205,.07);font-weight:500;border-left-color:#0c6fcd}
+.nav-item.sub{padding-left:40px;font-size:12.5px}
+.nav-icon{width:16px;height:16px;flex-shrink:0;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;opacity:.75}
+.nav-item.active .nav-icon{opacity:1}
+.sidebar-divider{border:none;border-top:1px solid #f0f0f0;margin:6px 0}
+
+/* ── App Body ────────────────────────────────────────────────────────── */
+.app-body{flex:1;display:flex;flex-direction:column;min-width:0;overflow:hidden}
+
+/* ── Page Top Bar ────────────────────────────────────────────────────── */
+.page-topbar{height:52px;min-height:52px;background:#fff;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;padding:0 24px;gap:12px;flex-shrink:0}
+.breadcrumb{display:flex;align-items:center;gap:6px;font-size:13px;color:#999}
+.bc-sep{color:#ccc}
+.bc-cur{color:#3f3f40;font-weight:500}
+.page-topbar-spacer{flex:1}
+.agent-status-pill{display:flex;align-items:center;gap:6px;padding:4px 11px;border-radius:20px;background:#f0fdf4;border:1px solid #bbf7d0;font-size:11px;font-weight:600;color:#15803d}
+.pulse-dot{width:6px;height:6px;border-radius:50%;background:#22c55e;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+
+/* ── Content ─────────────────────────────────────────────────────────── */
+.content{flex:1;overflow-y:auto;padding:24px 28px;background:#fff}
+
+/* ── Page Header ─────────────────────────────────────────────────────── */
+.page-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:24px}
+.page-title{font-size:22px;font-weight:700;color:#1a1a1a;margin-bottom:4px;display:flex;align-items:center;gap:8px}
+.page-title-badge{display:inline-flex;align-items:center;gap:5px;background:linear-gradient(135deg,#f5f3ff,#eff6ff);border:1px solid #ddd6fe;border-radius:20px;padding:2px 10px;font-size:11px;font-weight:600;color:#6d28d9;margin-left:4px}
+.page-sub{font-size:13px;color:#888}
+.page-header-right{display:flex;align-items:center;gap:8px}
+.btn-export{display:flex;align-items:center;gap:6px;padding:8px 16px;background:#142032;color:#fff;border:none;border-radius:4px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:background .15s}
+.btn-export:hover{background:#0f1a27}
+.btn-export svg{width:15px;height:15px}
+.scan-info{display:flex;align-items:center;gap:5px;padding:6px 12px;border-radius:4px;background:#f9f9f9;border:1px solid #e8e8e8;font-size:11.5px;color:#888;white-space:nowrap;cursor:default}
+
+/* ── Stats Row ───────────────────────────────────────────────────────── */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px}
+.stat-card{background:#fff;border-radius:4px;border:1px solid #e8e8e8;padding:16px 18px}
+.stat-label{font-size:11px;font-weight:600;color:#aaa;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.stat-value{font-size:28px;font-weight:700;color:#1a1a1a;line-height:1}
+.stat-sub{font-size:11px;color:#aaa;margin-top:5px}
+.stat-critical .stat-value{color:#dc2626}
+.stat-high .stat-value{color:#d97706}
+
+/* ── View Nav ────────────────────────────────────────────────────────── */
+.view-nav{display:flex;margin-bottom:20px;border-bottom:1px solid #e8e8e8}
+.view-tab{padding:8px 16px;font-size:13px;font-weight:500;cursor:pointer;color:#888;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s;user-select:none}
+.view-tab:hover{color:#3f3f40}
+.view-tab.active{color:#0c6fcd;border-bottom-color:#0c6fcd;font-weight:600}
+
+/* ── Tab Bar ─────────────────────────────────────────────────────────── */
+.tab-bar{display:flex;gap:2px;margin-bottom:14px;background:#f5f5f5;border-radius:4px;padding:3px}
+.tab{flex:1;padding:6px 10px;border-radius:3px;font-size:12.5px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;color:#666;transition:all .12s;user-select:none}
+.tab:hover{background:rgba(255,255,255,.6);color:#3f3f40}
+.tab.active{background:#fff;color:#1a1a1a;font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,.08)}
+.tab-count{background:#e8e8e8;border-radius:20px;padding:1px 7px;font-size:11px;font-weight:700;color:#666}
+.tab.active .tab-count{background:#0c6fcd;color:#fff}
+
+/* ── Table ───────────────────────────────────────────────────────────── */
+.table-card{background:#fff;border-radius:4px;border:1px solid #e8e8e8;overflow:hidden}
+.table-head{display:grid;grid-template-columns:130px 210px 90px 1fr 72px 108px 90px;padding:10px 16px;border-bottom:1px solid #e8e8e8;font-size:11px;font-weight:600;color:#aaa;letter-spacing:.4px;text-transform:uppercase}
+.anomaly-row{display:grid;grid-template-columns:130px 210px 90px 1fr 72px 108px 90px;padding:12px 16px;border-bottom:1px solid #f5f5f5;cursor:pointer;transition:background .08s;align-items:center}
+.anomaly-row:last-child{border-bottom:none}
+.anomaly-row:hover{background:#fafafa}
+.anomaly-row.selected{background:#f0f7ff;border-left:3px solid #0c6fcd;padding-left:13px}
+.anomaly-row.dimmed{opacity:.5}
+.order-id{font-weight:600;font-size:12.5px;color:#0c6fcd;font-family:'Fira Code','SF Mono',monospace;text-decoration:none}
+.ai-cell{font-size:12px;color:#555;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:12px}
+.age-cell{font-size:12px;color:#aaa;white-space:nowrap}
+.row-actions{display:flex;gap:4px}
+
+/* ── Badges ─────────────────────────────────────────────────────────── */
+.badge{display:inline-flex;align-items:center;padding:2px 8px;border-radius:3px;font-size:10.5px;font-weight:600;white-space:nowrap;line-height:1.6}
+.badge-stuck{background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;font-family:monospace;font-size:9.5px}
+.badge-diverge{background:#fdf4ff;color:#7e22ce;border:1px solid #e9d5ff;font-family:monospace;font-size:9.5px}
+.badge-temp{background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0;font-family:monospace;font-size:9.5px}
+.badge-critical{background:#fef2f2;color:#dc2626;border:1px solid #fecaca}
+.badge-high{background:#fff7ed;color:#c2410c;border:1px solid #fed7aa}
+.badge-medium{background:#f0fdf4;color:#166534;border:1px solid #bbf7d0}
+.badge-pending{background:#fffbeb;color:#b45309;border:1px solid #fde68a}
+.badge-resolved{background:#f0fdf4;color:#15803d;border:1px solid #86efac}
+.badge-escalated{background:#fff7ed;color:#c2410c;border:1px solid #fdba74}
+.badge-ignored{background:#f5f5f5;color:#888;border:1px solid #e0e0e0}
+
+/* ── Micro Buttons ───────────────────────────────────────────────────── */
+.btn-xs{padding:4px 9px;border-radius:3px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid #e0e0e0;background:#fff;color:#555;transition:all .1s;font-family:inherit}
+.btn-xs:hover{background:#f5f5f5}
+.btn-xs.primary{background:#0c6fcd;color:#fff;border-color:#0c6fcd}
+.btn-xs.primary:hover{background:#0a5faf}
+
+/* ── Panel Overlay ───────────────────────────────────────────────────── */
+.panel-overlay{position:fixed;inset:0;z-index:100;pointer-events:none}
+.panel-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.25);opacity:0;transition:opacity .22s;pointer-events:none;cursor:pointer}
+.panel-overlay.open .panel-backdrop{opacity:1;pointer-events:all}
+.panel-overlay.open .detail-panel{transform:translateX(0);pointer-events:all}
+.detail-panel{position:absolute;top:0;right:0;bottom:0;width:490px;background:#fff;box-shadow:-4px 0 24px rgba(0,0,0,.12);transform:translateX(100%);transition:transform .24s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;overflow:hidden}
+
+/* ── Panel Header ────────────────────────────────────────────────────── */
+.panel-header{padding:18px 20px;border-bottom:1px solid #e8e8e8;display:flex;align-items:flex-start;gap:12px;flex-shrink:0}
+.panel-header-main{flex:1;min-width:0}
+.panel-oid{font-size:16px;font-weight:700;color:#0c6fcd;font-family:'Fira Code','SF Mono',monospace;margin-bottom:7px}
+.panel-badges{display:flex;flex-wrap:wrap;gap:4px}
+.panel-close{width:30px;height:30px;border-radius:4px;border:1px solid #e8e8e8;background:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;color:#aaa;flex-shrink:0;transition:all .1s;font-family:inherit}
+.panel-close:hover{background:#f5f5f5;color:#3f3f40}
+
+/* ── Panel Body ──────────────────────────────────────────────────────── */
+.panel-body{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:18px}
+.panel-body::-webkit-scrollbar{width:4px}
+.panel-body::-webkit-scrollbar-thumb{background:#e0e0e0;border-radius:2px}
+.section-title{font-size:10.5px;font-weight:700;color:#aaa;letter-spacing:.6px;text-transform:uppercase;margin-bottom:10px}
+
+/* ── Context Grid ────────────────────────────────────────────────────── */
+.ctx-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.ctx-lbl{font-size:11px;color:#aaa;margin-bottom:3px;font-weight:500}
+.ctx-val{font-size:13px;font-weight:500;color:#1a1a1a}
+.ctx-val.mono{font-family:'Fira Code','SF Mono',monospace;font-size:11.5px}
+.ctx-val.err{color:#dc2626}
+
+/* ── AI Block ────────────────────────────────────────────────────────── */
+.ai-block{background:linear-gradient(135deg,#f9f5ff,#eff6ff);border:1px solid #ddd6fe;border-radius:6px;padding:14px 14px 10px;position:relative}
+.ai-spark{position:absolute;top:11px;right:11px;width:22px;height:22px;background:linear-gradient(135deg,#7c3aed,#4f46e5);border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:12px}
+.ai-text{font-size:13px;line-height:1.65;color:#2e1a5e;padding-right:28px}
+.ai-attr{margin-top:8px;font-size:10px;color:#9d80d4;font-style:italic}
+
+/* ── Suggestion ──────────────────────────────────────────────────────── */
+.suggestion-box{background:#f9f9f9;border:1px solid #e8e8e8;border-radius:5px;padding:12px 13px;display:flex;flex-direction:column;gap:6px}
+.sug-row{display:flex;align-items:center;gap:7px}
+.sug-tool{background:#142032;color:#7dd3fc;font-family:'Fira Code','SF Mono',monospace;font-size:11px;font-weight:600;padding:2px 8px;border-radius:3px;white-space:nowrap}
+.risk-chip{font-size:10px;font-weight:700;padding:2px 6px;border-radius:3px}
+.risk-low{background:#f0fdf4;color:#15803d}
+.risk-med{background:#fffbeb;color:#b45309}
+.risk-medh{background:#fff7ed;color:#c2410c}
+.sug-text{font-size:12px;color:#555;line-height:1.55}
+
+/* ── Result Banner ───────────────────────────────────────────────────── */
+.result-banner{border-radius:6px;padding:12px 14px;display:flex;align-items:center;gap:10px}
+.result-banner.resolved{background:linear-gradient(135deg,#f0fdf4,#dcfce7);border:1px solid #86efac}
+.result-banner.escalated{background:linear-gradient(135deg,#fff7ed,#ffedd5);border:1px solid #fdba74}
+.banner-icon{font-size:18px;line-height:1}
+.banner-title{font-size:13px;font-weight:700}
+.result-banner.resolved .banner-title{color:#15803d}
+.result-banner.escalated .banner-title{color:#c2410c}
+.banner-sub{font-size:11.5px;margin-top:2px}
+.result-banner.resolved .banner-sub{color:#166534}
+.result-banner.escalated .banner-sub{color:#9a3412}
+
+/* ── Audit Trail ─────────────────────────────────────────────────────── */
+.audit-list{display:flex;flex-direction:column}
+.audit-item{display:flex;align-items:flex-start;gap:10px;padding:7px 0;position:relative}
+.audit-item:not(:last-child)::after{content:'';position:absolute;left:10px;top:26px;bottom:0;width:1px;background:#e8e8e8}
+.audit-dot{width:22px;height:22px;min-width:22px;border-radius:50%;border:2px solid #e8e8e8;background:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;z-index:1;line-height:1}
+.dot-blue{border-color:#3b82f6;background:#eff6ff;color:#1d4ed8}
+.dot-purple{border-color:#8b5cf6;background:#f5f3ff;color:#6d28d9}
+.dot-orange{border-color:#f97316;background:#fff7ed;color:#c2410c}
+.dot-green{border-color:#22c55e;background:#f0fdf4;color:#15803d}
+.dot-amber{border-color:#f59e0b;background:#fffbeb;color:#b45309}
+.audit-body{flex:1;padding-top:1px}
+.audit-event{font-size:12px;font-weight:600;color:#1a1a1a}
+.audit-ts{font-size:11px;color:#aaa;margin-top:1px}
+
+/* ── Panel Footer ────────────────────────────────────────────────────── */
+.panel-footer{padding:14px 20px;border-top:1px solid #e8e8e8;background:#fff;flex-shrink:0;display:flex;gap:8px;align-items:center}
+.btn{padding:8px 16px;border-radius:4px;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;border:none;display:inline-flex;align-items:center;gap:5px;font-family:inherit;line-height:1}
+.btn-primary{background:#0c6fcd;color:#fff}
+.btn-primary:hover{background:#0a5faf}
+.btn-primary:disabled{background:#93c5fd;cursor:not-allowed}
+.btn-secondary{background:#fff;color:#3f3f40;border:1px solid #e0e0e0}
+.btn-secondary:hover{background:#f5f5f5}
+.btn-danger{background:#fff;color:#dc2626;border:1px solid #fecaca}
+.btn-danger:hover{background:#fef2f2}
+.footer-spacer{flex:1}
+
+/* ── ReAct Modal ─────────────────────────────────────────────────────── */
+.modal-overlay{position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
+.modal-overlay.open{opacity:1;pointer-events:all}
+.react-modal{width:640px;max-width:95vw;background:#0d1f33;border-radius:8px;box-shadow:0 24px 60px rgba(0,0,0,.5);display:flex;flex-direction:column;max-height:82vh;border:1px solid rgba(255,255,255,.09);transform:scale(.97) translateY(8px);transition:transform .2s}
+.modal-overlay.open .react-modal{transform:scale(1) translateY(0)}
+.react-header{padding:16px 20px;border-bottom:1px solid rgba(255,255,255,.07);display:flex;align-items:flex-start;gap:12px;flex-shrink:0}
+.react-title-area{flex:1}
+.react-title{font-size:14px;font-weight:600;color:#e2e8f0}
+.react-subtitle{font-size:11px;color:#4a6580;margin-top:2px}
+.running-badge{display:flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;background:rgba(12,111,205,.2);border:1px solid rgba(12,111,205,.35);font-size:10.5px;font-weight:700;color:#93c5fd;white-space:nowrap}
+.running-dot{width:6px;height:6px;border-radius:50%;background:#60a5fa;animation:pulse 1s infinite}
+.react-body{flex:1;overflow-y:auto;padding:14px 18px;display:flex;flex-direction:column;gap:7px;scroll-behavior:smooth}
+.react-body::-webkit-scrollbar{width:3px}
+.react-body::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:2px}
+.step{border-radius:5px;padding:10px 12px;animation:stepIn .18s ease both}
+@keyframes stepIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.step-think{background:rgba(139,92,246,.11);border-left:3px solid #8b5cf6}
+.step-act{background:rgba(59,130,246,.11);border-left:3px solid #3b82f6}
+.step-obs{background:rgba(34,197,94,.07);border-left:3px solid #22c55e}
+.step-resolved{background:rgba(34,197,94,.13);border:1px solid rgba(34,197,94,.28);border-radius:6px}
+.step-escalated{background:rgba(249,115,22,.11);border:1px solid rgba(249,115,22,.25);border-radius:6px}
+.step-lbl{font-size:9.5px;font-weight:800;letter-spacing:1.1px;margin-bottom:5px}
+.step-think .step-lbl{color:#a78bfa}
+.step-act .step-lbl{color:#60a5fa}
+.step-obs .step-lbl{color:#4ade80}
+.step-resolved .step-lbl{color:#4ade80}
+.step-escalated .step-lbl{color:#fb923c}
+.step-content{font-family:'Fira Code','SF Mono',Menlo,monospace;font-size:11.5px;line-height:1.6;color:#94a3b8;white-space:pre-wrap}
+.tool-name{color:#7dd3fc;font-weight:700}
+.tool-params{color:#64748b}
+.step-resolved .step-content,.step-escalated .step-content{font-family:'Inter',sans-serif;font-size:12px;line-height:1.55;color:#cbd5e1}
+.react-footer{padding:12px 18px;border-top:1px solid rgba(255,255,255,.07);display:flex;align-items:center;gap:8px;flex-shrink:0}
+.status-text{font-size:12px;color:#4a6580;display:flex;align-items:center;gap:7px}
+.modal-spacer{flex:1}
+.btn-muted{background:rgba(255,255,255,.06);color:#94a3b8;border:1px solid rgba(255,255,255,.09);padding:7px 14px;border-radius:4px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit}
+.btn-muted:hover{background:rgba(255,255,255,.1);color:#e2e8f0}
+.btn-success{background:#166534;color:#fff;border:none;padding:7px 14px;border-radius:4px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit}
+.btn-success:hover{background:#15803d}
+.spinner{width:14px;height:14px;border:2px solid rgba(255,255,255,.15);border-top-color:#60a5fa;border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── Escalate Modal ──────────────────────────────────────────────────── */
+.escalate-modal{width:490px;max-width:95vw;background:#fff;border-radius:6px;box-shadow:0 24px 60px rgba(0,0,0,.18);padding:24px;transform:scale(.97);transition:transform .2s}
+.modal-overlay.open .escalate-modal{transform:scale(1)}
+.esc-title{font-size:16px;font-weight:700;color:#1a1a1a;margin-bottom:3px}
+.esc-sub{font-size:13px;color:#888;margin-bottom:20px}
+.form-field{margin-bottom:14px}
+.form-lbl{font-size:12px;font-weight:600;color:#555;margin-bottom:4px;display:block}
+.form-input,.form-textarea{width:100%;border:1px solid #e0e0e0;border-radius:4px;padding:8px 10px;font-size:13px;font-family:'Inter',sans-serif;color:#1a1a1a;transition:border-color .1s;background:#fff}
+.form-input:focus,.form-textarea:focus{outline:none;border-color:#0c6fcd;box-shadow:0 0 0 2px rgba(12,111,205,.1)}
+.form-textarea{height:82px;resize:vertical;line-height:1.5}
+.form-input[readonly]{background:#f9f9f9;color:#888;cursor:default}
+.esc-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:18px;padding-top:16px;border-top:1px solid #e8e8e8}
+
+/* ── Rules View ──────────────────────────────────────────────────────── */
+.rules-grid{display:flex;flex-direction:column;gap:14px;max-width:820px}
+.rule-card{background:#fff;border:1px solid #e8e8e8;border-radius:4px;overflow:hidden}
+.rule-card-header{padding:14px 18px 12px;border-bottom:1px solid #f5f5f5}
+.rule-card-title{font-size:14px;font-weight:600;color:#1a1a1a;display:flex;align-items:center;gap:7px}
+.rule-card-desc{font-size:12px;color:#888;margin-top:3px;line-height:1.5}
+.rule-card-body{padding:6px 18px 14px}
+.threshold-table{width:100%;border-collapse:collapse;margin-top:8px}
+.threshold-table th{font-size:10px;font-weight:700;color:#aaa;letter-spacing:.5px;text-transform:uppercase;padding:0 12px 8px 0;text-align:left}
+.threshold-table th:last-child{text-align:right;padding-right:0}
+.threshold-table td{padding:7px 12px 7px 0;vertical-align:middle}
+.threshold-table tr:not(:last-child) td{border-bottom:1px solid #f5f5f5}
+.state-name{font-family:'Fira Code','SF Mono',monospace;font-size:12px;color:#1a1a1a;font-weight:500}
+.num-wrap{display:flex;align-items:center;gap:5px;justify-content:flex-end}
+.num-inp{width:60px;border:1px solid #e0e0e0;border-radius:4px;padding:5px 8px;font-size:13px;font-weight:500;text-align:center;color:#1a1a1a;font-family:'Inter',sans-serif;transition:border-color .15s;background:#fff}
+.num-inp:focus{outline:none;border-color:#0c6fcd;box-shadow:0 0 0 2px rgba(12,111,205,.08)}
+.num-inp.dirty{border-color:#f97316;background:#fffbeb}
+.unit-lbl{font-size:12px;color:#aaa;font-weight:500;min-width:14px}
+.param-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f5f5f5}
+.param-row:first-child{padding-top:8px}
+.param-row:last-child{border-bottom:none;padding-bottom:0}
+.param-label{font-size:13px;color:#1a1a1a;font-weight:500}
+.param-sub{font-size:11px;color:#aaa;margin-top:2px}
+.param-ctrl{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.select-inp{border:1px solid #e0e0e0;border-radius:4px;padding:6px 9px;font-size:12.5px;color:#1a1a1a;font-family:'Inter',sans-serif;background:#fff;cursor:pointer}
+.select-inp:focus{outline:none;border-color:#0c6fcd}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #f5f5f5}
+.toggle-row:first-child{padding-top:8px}
+.toggle-row:last-child{border-bottom:none;padding-bottom:0}
+.toggle{width:36px;height:20px;border-radius:10px;background:#dde5ed;cursor:pointer;position:relative;transition:background .2s;flex-shrink:0}
+.toggle.on{background:#0c6fcd}
+.toggle::after{content:'';width:16px;height:16px;border-radius:50%;background:#fff;position:absolute;top:2px;left:2px;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.toggle.on::after{transform:translateX(16px)}
+.rules-footer{display:flex;align-items:center;justify-content:space-between;margin-top:4px;padding:12px 0 4px}
+.saved-label{font-size:12px;color:#aaa}
+.saved-label.unsaved{color:#d97706;font-weight:500}
+.rules-actions{display:flex;gap:8px}
+
+/* ── Custom Rules ────────────────────────────────────────────────────── */
+.cr-empty{padding:20px 0 8px;text-align:center;color:#aaa;font-size:13px}
+.cr-empty-icon{font-size:22px;margin-bottom:5px;opacity:.4}
+.cr-list{display:flex;flex-direction:column}
+.cr-item{padding:12px 0;border-bottom:1px solid #f5f5f5;display:flex;align-items:flex-start;gap:10px}
+.cr-item:last-child{border-bottom:none;padding-bottom:0}
+.cr-indicator{width:8px;height:8px;border-radius:50%;background:#6d28d9;flex-shrink:0;margin-top:5px}
+.cr-indicator.warn{background:#f97316}
+.cr-body{flex:1;min-width:0}
+.cr-text{font-size:13px;color:#1a1a1a;line-height:1.55}
+.cr-meta{display:flex;align-items:center;gap:8px;margin-top:5px;flex-wrap:wrap}
+.cr-date{font-size:11px;color:#aaa}
+.cr-tag-ok{font-size:10px;font-weight:700;color:#15803d}
+.cr-tag-warn{font-size:10px;font-weight:700;background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;border-radius:3px;padding:1px 6px}
+.cr-item-actions{display:flex;gap:4px;flex-shrink:0;padding-top:1px}
+.add-rule-area{margin-top:12px;padding-top:12px;border-top:1px solid #f5f5f5}
+.rule-textarea{width:100%;border:1px solid #e0e0e0;border-radius:4px;padding:10px 12px;font-size:13px;font-family:'Inter',sans-serif;color:#1a1a1a;line-height:1.6;resize:vertical;min-height:76px;transition:border-color .15s;background:#fff}
+.rule-textarea:focus{outline:none;border-color:#6d28d9;box-shadow:0 0 0 2px rgba(109,40,217,.1)}
+.rule-textarea::placeholder{color:#c0c0c0;font-style:italic}
+.analysis-result{margin-top:10px;border-radius:5px;padding:11px 13px;font-size:12.5px;line-height:1.55;display:none;animation:stepIn .18s ease}
+.analysis-result.show{display:block}
+.analysis-result.loading{background:#f5f3ff;border:1px solid #ddd6fe;color:#5b21b6;display:flex;align-items:center;gap:8px}
+.analysis-result.ok{background:#f0fdf4;border:1px solid #bbf7d0;color:#14532d}
+.analysis-result.conflict{background:#fff7ed;border:1px solid #fed7aa;color:#7c2d12}
+.conflict-list{margin-top:8px;display:flex;flex-direction:column;gap:5px}
+.conflict-entry{font-size:12px;color:#92400e;display:flex;gap:6px;align-items:flex-start;line-height:1.5}
+.conflict-entry-icon{flex-shrink:0;margin-top:1px}
+.add-rule-actions{display:flex;gap:7px;margin-top:10px;justify-content:flex-end;align-items:center}
+.btn-purple{background:#6d28d9;color:#fff;border:none}
+.btn-purple:hover{background:#5b21b6}
+
+/* ── Empty State ─────────────────────────────────────────────────────── */
+.empty-state{padding:56px 20px;text-align:center}
+.empty-icon{font-size:36px;margin-bottom:12px;opacity:.35}
+.empty-label{font-size:14px;font-weight:500;color:#aaa}
+.empty-hint{font-size:12px;color:#c0c0c0;margin-top:4px}
+
+/* ── Toast ───────────────────────────────────────────────────────────── */
+.toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(80px);background:#142032;color:#fff;padding:10px 20px;border-radius:6px;font-size:13px;font-weight:500;z-index:500;transition:transform .25s cubic-bezier(.4,0,.2,1);pointer-events:none;box-shadow:0 6px 24px rgba(0,0,0,.2);display:flex;align-items:center;gap:8px;white-space:nowrap}
+.toast.show{transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+
+<!-- ─── GLOBAL TOP BAR ────────────────────────────────────────────────── -->
+<header class="global-nav">
+  <button class="hamburger">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+  </button>
+  <div class="vtex-logo-wrap">
+    <svg class="vtex-mark" viewBox="0 0 40 34" fill="none">
+      <path d="M20 2L38 32H2L20 2Z" fill="#F71963"/>
+      <path d="M20 10L30 28H10L20 10Z" fill="#fff" opacity=".35"/>
+    </svg>
+    <span class="store-name">Americanas.com</span>
+  </div>
+  <div class="global-search">
+    <svg class="global-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    <input type="text" placeholder="Buscar VTEX">
+  </div>
+  <div class="global-nav-right">
+    <button class="nav-action">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      Copilot
+    </button>
+    <button class="nav-action">
+      Visite a loja
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+    </button>
+    <button class="nav-action">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      Ajuda
+    </button>
+    <button class="user-avatar-btn">M</button>
+  </div>
+</header>
+
+<!-- ─── MAIN LAYOUT ───────────────────────────────────────────────────── -->
+<div class="main-layout">
+
+<!-- ─── SIDEBAR ──────────────────────────────────────────────────────── -->
+<aside class="sidebar">
+  <div class="sidebar-section">Pedidos</div>
+  <div class="nav-item sub">
+    <svg class="nav-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+    Todos os pedidos
+  </div>
+  <div class="nav-item sub">
+    <svg class="nav-icon" viewBox="0 0 24 24"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+    Transações
+  </div>
+  <div class="nav-item sub active">
+    <svg class="nav-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+    Order Agent
+  </div>
+  <div class="nav-item sub">
+    <svg class="nav-icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+    Audit Logs
+  </div>
+
+  <hr class="sidebar-divider">
+  <div class="sidebar-section">Fulfillment</div>
+  <div class="nav-item">
+    <svg class="nav-icon" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+    Inventário
+  </div>
+  <div class="nav-item">
+    <svg class="nav-icon" viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+    Logística
+  </div>
+
+  <hr class="sidebar-divider">
+  <div class="sidebar-section">Loja</div>
+  <div class="nav-item">
+    <svg class="nav-icon" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    Catálogo
+  </div>
+  <div class="nav-item">
+    <svg class="nav-icon" viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+    Promoções
+  </div>
+  <div class="nav-item">
+    <svg class="nav-icon" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+    Storefront
+  </div>
+  <div class="nav-item">
+    <svg class="nav-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07M8.46 8.46a5 5 0 0 0 0 7.07"/></svg>
+    Marketplace
+  </div>
+  <div class="nav-item">
+    <svg class="nav-icon" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+    Configurações
+  </div>
+
+  <hr class="sidebar-divider">
+  <div class="sidebar-section">Protótipos</div>
+  <a href="task-workflow-gtj/prototype-gtj.html" target="_blank" style="text-decoration:none;color:inherit;">
+    <div class="nav-item" style="cursor:pointer;">
+      <svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+      Agentic OMS · GTJ
+      <span style="margin-left:auto;font-size:9px;background:#7c3aed;color:#fff;border-radius:3px;padding:1px 5px;">novo</span>
+    </div>
+  </a>
+  <a href="task-workflow/prototype.html" target="_blank" style="text-decoration:none;color:inherit;">
+    <div class="nav-item" style="cursor:pointer;">
+      <svg class="nav-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+      Task Workflow
+    </div>
+  </a>
+  <a href="stuck-order/prototype.html" target="_blank" style="text-decoration:none;color:inherit;">
+    <div class="nav-item" style="cursor:pointer;">
+      <svg class="nav-icon" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      Stuck Order
+    </div>
+  </a>
+</aside>
+
+<!-- ─── APP BODY ──────────────────────────────────────────────────────── -->
+<div class="app-body">
+  <div class="page-topbar">
+    <div class="breadcrumb">
+      <span>Pedidos</span>
+      <span class="bc-sep">›</span>
+      <span class="bc-cur">Order Agent</span>
+    </div>
+    <div class="page-topbar-spacer"></div>
+    <div class="agent-status-pill">
+      <span class="pulse-dot"></span>
+      Agente ativo · scan de 7 camadas em execução
+    </div>
+  </div>
+
+  <main class="content">
+    <div class="page-header">
+      <div>
+        <div class="page-title">
+          Order Agent
+          <span class="page-title-badge">✦ IA</span>
+        </div>
+        <div class="page-sub">Detecção automática, diagnóstico e resolução assistida por IA de pedidos travados e divergências de status</div>
+      </div>
+      <div class="page-header-right">
+        <div class="scan-info">⟳ Último scan: 4 min atrás · Próximo em 11 min</div>
+        <button class="btn-export">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.29"/></svg>
+          Exportar
+        </button>
+      </div>
+    </div>
+
+    <div class="view-nav">
+      <div class="view-tab active" data-view="anomalies" onclick="switchView('anomalies')">Anomalias</div>
+      <div class="view-tab" data-view="rules" onclick="switchView('rules')">Regras &amp; Parâmetros</div>
+    </div>
+
+    <!-- ── ANOMALIES VIEW ──────────────────────────────────────────────── -->
+    <div id="view-anomalies">
+    <div class="stats-row">
+      <div class="stat-card stat-critical">
+        <div class="stat-label">Críticas</div>
+        <div class="stat-value" id="stat-critical">2</div>
+        <div class="stat-sub">Requerem ação imediata</div>
+      </div>
+      <div class="stat-card stat-high">
+        <div class="stat-label">Alta Prioridade</div>
+        <div class="stat-value" id="stat-high">2</div>
+        <div class="stat-sub">Aguardando revisão</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Resolvidas Hoje</div>
+        <div class="stat-value" id="stat-resolved-count">0</div>
+        <div class="stat-sub" id="stat-ttr">TTR médio: —</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Taxa de Resolução</div>
+        <div class="stat-value" id="stat-rate">—</div>
+        <div class="stat-sub">Últimos 7 dias</div>
+      </div>
+    </div>
+
+    <div class="tab-bar">
+      <div class="tab active" data-tab="all" onclick="switchTab('all')">Todos <span class="tab-count" id="tc-all">5</span></div>
+      <div class="tab" data-tab="pending" onclick="switchTab('pending')">Pendentes <span class="tab-count" id="tc-pending">5</span></div>
+      <div class="tab" data-tab="resolved" onclick="switchTab('resolved')">Resolvidos <span class="tab-count" id="tc-resolved">0</span></div>
+      <div class="tab" data-tab="escalated" onclick="switchTab('escalated')">Escalados <span class="tab-count" id="tc-escalated">0</span></div>
+    </div>
+
+    <div class="table-card">
+      <div class="table-head">
+        <div>ID do Pedido</div>
+        <div>Categoria</div>
+        <div>Prioridade</div>
+        <div>Resumo IA</div>
+        <div>Tempo</div>
+        <div>Status</div>
+        <div>Ações</div>
+      </div>
+      <div id="table-body"></div>
+    </div>
+    </div><!-- /view-anomalies -->
+
+    <!-- ── RULES VIEW ──────────────────────────────────────────────────── -->
+    <div id="view-rules" style="display:none">
+      <div class="rules-grid">
+
+        <div class="rule-card">
+          <div class="rule-card-header">
+            <div class="rule-card-title">📐 Detecção de Pedidos Travados — Thresholds de Tempo</div>
+            <div class="rule-card-desc">Tempo máximo que um pedido pode permanecer em cada estado do workflow antes de ser sinalizado como travado. Reduzir o threshold aumenta a sensibilidade; aumentar reduz o ruído.</div>
+          </div>
+          <div class="rule-card-body">
+            <table class="threshold-table">
+              <thead><tr><th style="width:260px">Estado do Workflow</th><th style="text-align:right">Threshold</th></tr></thead>
+              <tbody id="threshold-rows"></tbody>
+            </table>
+            <div style="margin-top:12px;padding:10px 12px;background:#f9f9f9;border-radius:4px;border:1px solid #e8e8e8;font-size:11.5px;color:#888;line-height:1.55">
+              <strong style="color:#555">ℹ️ Como a classificação funciona:</strong>
+              ao exceder o threshold, o agente verifica os flags do pedido —
+              <code style="font-size:11px;background:#f0f0f0;padding:1px 5px;border-radius:3px">WorkflowInErrorState=true</code> → <strong>Permanente</strong> (não se recupera sozinho);
+              <code style="font-size:11px;background:#f0f0f0;padding:1px 5px;border-radius:3px">WorkflowInRetry=true</code> → <strong>Temporário</strong> (ainda tentando). O mesmo estado pode produzir os dois tipos.
+            </div>
+          </div>
+        </div>
+
+        <div class="rule-card">
+          <div class="rule-card-header">
+            <div class="rule-card-title">🔀 Detecção de Divergência FFM / MKP</div>
+            <div class="rule-card-desc">Regras para detectar divergências de status entre as camadas de marketplace e fulfillment em pedidos chain. Divergências críticas são sempre sinalizadas imediatamente.</div>
+          </div>
+          <div class="rule-card-body">
+            <div class="param-row">
+              <div class="param-info"><div class="param-label">Delta de divergência moderada (gap LastChange)</div><div class="param-sub">Sinalizar quando MKP e FFM têm LastChange com distância superior a este valor</div></div>
+              <div class="param-ctrl"><input class="num-inp" id="r-diverge-delta" type="number" min="1" max="168" value="24" oninput="markDirty(this)"><span class="unit-lbl">h</span></div>
+            </div>
+            <div class="toggle-row">
+              <div class="param-info"><div class="param-label">Crítico: MKP faturado — FFM ainda em handling</div><div class="param-sub">Sempre sinalizar imediatamente, independentemente do delta de tempo</div></div>
+              <div class="toggle on" id="t-mkp-invoiced" onclick="toggleSwitch(this)"></div>
+            </div>
+            <div class="toggle-row">
+              <div class="param-info"><div class="param-label">Crítico: MKP cancelado — FFM não cancelado</div><div class="param-sub">Sempre sinalizar imediatamente para evitar fulfillment em pedido cancelado</div></div>
+              <div class="toggle on" id="t-mkp-canceled" onclick="toggleSwitch(this)"></div>
+            </div>
+            <div class="toggle-row">
+              <div class="param-info"><div class="param-label">Moderado: Ambas as legs em erro com códigos divergentes</div><div class="param-sub">Sinalizar após exceder o threshold de delta acima</div></div>
+              <div class="toggle on" id="t-both-error" onclick="toggleSwitch(this)"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="rule-card">
+          <div class="rule-card-header">
+            <div class="rule-card-title">⚙️ Regras de Escalação &amp; Retry</div>
+            <div class="rule-card-desc">Controla quando o agente para de tentar resolver autonomamente e escala para um operador humano ou time de engenharia.</div>
+          </div>
+          <div class="rule-card-body">
+            <div class="param-row">
+              <div class="param-info"><div class="param-label">Max auto-retries antes de classificar como PERMANENTE</div><div class="param-sub">Pedidos que excederem este número de retentativas são tratados como travados permanentemente</div></div>
+              <div class="param-ctrl"><input class="num-inp" id="r-max-retries" type="number" min="1" max="50" value="5" oninput="markDirty(this)"><span class="unit-lbl">retries</span></div>
+            </div>
+            <div class="param-row">
+              <div class="param-info"><div class="param-label">Max tentativas ReAct do agente antes de escalar</div><div class="param-sub">Se o agente não resolver dentro deste número de ciclos THINK→ACT→OBSERVE, escala automaticamente</div></div>
+              <div class="param-ctrl"><input class="num-inp" id="r-max-react" type="number" min="1" max="10" value="5" oninput="markDirty(this)"><span class="unit-lbl">ciclos</span></div>
+            </div>
+            <div class="param-row">
+              <div class="param-info"><div class="param-label">Threshold de error rate do seller para detecção de capacidade</div><div class="param-sub">Se a taxa de erro de um seller exceder este percentual, pedidos travados são classificados como SELLER_CAPACITY</div></div>
+              <div class="param-ctrl"><input class="num-inp" id="r-seller-err" type="number" min="1" max="100" value="18" oninput="markDirty(this)"><span class="unit-lbl">%</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="rule-card">
+          <div class="rule-card-header">
+            <div class="rule-card-title">🤖 Comportamento do Agente</div>
+            <div class="rule-card-desc">Controla como o agente de IA raciocina, executa ações e gera explicações para os operadores.</div>
+          </div>
+          <div class="rule-card-body">
+            <div class="param-row">
+              <div class="param-info"><div class="param-label">Threshold de risk score para gate de dry-run</div><div class="param-sub">Ações com risk score acima deste valor requerem validação dry-run antes da execução (0.0 – 1.0)</div></div>
+              <div class="param-ctrl"><input class="num-inp" id="r-risk-threshold" type="number" min="0" max="1" step="0.01" value="0.60" oninput="markDirty(this)"></div>
+            </div>
+            <div class="param-row">
+              <div class="param-info"><div class="param-label">Modelo de explicação IA</div><div class="param-sub">LLM usado para gerar explicações em linguagem natural para os operadores</div></div>
+              <div class="param-ctrl"><select class="select-inp" id="r-model" onchange="markDirty(this)"><option value="gpt-4o-mini" selected>GPT-4o-mini</option><option value="claude-haiku">Claude 3 Haiku</option><option value="gpt-4o">GPT-4o</option></select></div>
+            </div>
+            <div class="param-row">
+              <div class="param-info"><div class="param-label">Temperature do modelo</div><div class="param-sub">Menor = explicações mais determinísticas. Recomendado: 0.3 (0.0 – 1.0)</div></div>
+              <div class="param-ctrl"><input class="num-inp" id="r-temperature" type="number" min="0" max="1" step="0.1" value="0.3" oninput="markDirty(this)"></div>
+            </div>
+            <div class="param-row">
+              <div class="param-info"><div class="param-label">Máximo de tokens por explicação</div><div class="param-sub">Limite de tokens nas explicações geradas pelo agente para os operadores</div></div>
+              <div class="param-ctrl"><input class="num-inp" id="r-tokens" type="number" min="50" max="500" value="200" oninput="markDirty(this)" style="width:72px"><span class="unit-lbl">tokens</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="rule-card">
+          <div class="rule-card-header">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+              <div>
+                <div class="rule-card-title">📝 Regras Customizadas</div>
+                <div class="rule-card-desc">Escreva regras em linguagem natural. O agente as interpreta em cada scan e as aplica sobre os parâmetros configurados acima. Ao criar uma regra, o agente verifica automaticamente se ela afeta alguma configuração existente.</div>
+              </div>
+              <button class="btn btn-secondary" id="add-rule-btn" onclick="showAddRuleForm()" style="white-space:nowrap;flex-shrink:0;font-size:12px;padding:6px 13px;margin-top:2px">+ Nova regra</button>
+            </div>
+          </div>
+          <div class="rule-card-body">
+            <div id="cr-empty" class="cr-empty"><div class="cr-empty-icon">📋</div><div>Nenhuma regra customizada ainda</div></div>
+            <div class="cr-list" id="cr-list"></div>
+            <div class="add-rule-area" id="add-rule-area" style="display:none">
+              <textarea class="rule-textarea" id="new-rule-text" placeholder="Ex: Se um pedido da Hering Store ficar em payment-approved por mais de 2 horas, escalar diretamente sem tentativas de resolução automática."></textarea>
+              <div class="analysis-result" id="analysis-result"></div>
+              <div class="add-rule-actions">
+                <button class="btn btn-secondary" onclick="cancelAddRule()">Cancelar</button>
+                <button class="btn btn-purple" id="analyze-btn" onclick="analyzeRule()">✦ Analisar regra</button>
+                <button class="btn btn-primary" id="save-rule-btn" style="display:none" onclick="saveCustomRule()">Salvar regra</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="rules-footer">
+          <div class="saved-label" id="saved-label">Todas as alterações salvas</div>
+          <div class="rules-actions">
+            <button class="btn btn-secondary" onclick="resetRules()">Restaurar padrões</button>
+            <button class="btn btn-primary" id="save-btn" onclick="saveRules()">Salvar alterações</button>
+          </div>
+        </div>
+
+      </div>
+    </div><!-- /view-rules -->
+  </main>
+</div><!-- /app-body -->
+</div><!-- /main-layout -->
+
+<div class="toast" id="toast"></div>
+
+<!-- ─── DETAIL PANEL ──────────────────────────────────────────────────── -->
+<div class="panel-overlay" id="panel-overlay">
+  <div class="panel-backdrop" id="panel-backdrop" onclick="closePanel()"></div>
+  <div class="detail-panel" id="detail-panel">
+    <div class="panel-header">
+      <div class="panel-header-main">
+        <div class="panel-oid" id="panel-oid">—</div>
+        <div class="panel-badges" id="panel-badges"></div>
+      </div>
+      <button class="panel-close" onclick="closePanel()">✕</button>
+    </div>
+    <div class="panel-body" id="panel-body"></div>
+    <div class="panel-footer" id="panel-footer"></div>
+  </div>
+</div>
+
+<!-- ─── REACT MODAL ───────────────────────────────────────────────────── -->
+<div class="modal-overlay" id="react-overlay">
+  <div class="react-modal" onclick="event.stopPropagation()">
+    <div class="react-header">
+      <div class="react-title-area">
+        <div class="react-title" id="react-title">Agente IA resolvendo pedido…</div>
+        <div class="react-subtitle">ReAct loop · THINK → ACT → OBSERVE</div>
+      </div>
+      <div class="running-badge" id="running-badge"><span class="running-dot"></span> Agente em execução</div>
+    </div>
+    <div class="react-body" id="react-body"></div>
+    <div class="react-footer">
+      <div class="status-text" id="react-status"><span class="spinner"></span> Executando…</div>
+      <div class="modal-spacer"></div>
+      <button class="btn-muted" id="react-close-btn" style="display:none" onclick="closeReActModal()">Fechar</button>
+      <button class="btn-success" id="react-audit-btn" style="display:none" onclick="viewAuditLog()">Ver Audit Log</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── ESCALATE MODAL ────────────────────────────────────────────────── -->
+<div class="modal-overlay" id="esc-overlay" onclick="closeEscModal()">
+  <div class="escalate-modal" onclick="event.stopPropagation()">
+    <div class="esc-title">Escalar para Engenharia</div>
+    <div class="esc-sub" id="esc-sub">Criar ticket e atribuir ao time on-call de OMS.</div>
+    <div class="form-field"><label class="form-lbl">Título do Ticket</label><input class="form-input" id="esc-title-inp" readonly></div>
+    <div class="form-field"><label class="form-lbl">Resumo</label><textarea class="form-textarea" id="esc-summary"></textarea></div>
+    <div class="form-field"><label class="form-lbl">Atribuir para</label><input class="form-input" value="OMS On-call · Heliomar Kann" readonly></div>
+    <div class="esc-footer">
+      <button class="btn btn-secondary" onclick="closeEscModal()">Cancelar</button>
+      <button class="btn btn-primary" onclick="confirmEscalation()">Confirmar Escalação</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Data ──────────────────────────────────────────────────────────────────
+
+const ANOMALIES = [
+  {
+    id: 'ORD-2847391',category:'WORKFLOW_STUCK_PERMANENT',catClass:'badge-stuck',priority:'CRITICAL',priClass:'badge-critical',
+    merchant:'Hering Store',status:'payment-approved',lastChange:'14 Mai · 10:22 UTC',flag:'WorkflowInErrorState=true',age:'31h 14m',
+    summary:'Pedido travado em payment-approved por 31h devido a timeout do ERP na emissão de NF.',
+    explanation:'Este pedido está no estado payment-approved há 31 horas, excedendo o threshold de 12 horas para esse estado. O motor de diagnóstico identificou a regra ERP_INTEGRATION_FAILURE — o sistema ERP retornou timeouts HTTP 503 em 12 tentativas consecutivas de emissão de nota fiscal. O pedido é classificado como WORKFLOW_STUCK_PERMANENT e não se recuperará sem intervenção forçada no workflow.',
+    tool:'force_retry_workflow',riskLabel:'LOW',riskClass:'risk-low',
+    rationale:'Resetar o contador de retentativas e forçar uma nova transição a partir de payment-approved para que a emissão de NF pelo ERP possa ser refeita.',
+    react:[
+      {t:'THINK',c:'Pedido ORD-2847391 com WorkflowInErrorState=true por 31h em payment-approved.\nRegra: ERP_INTEGRATION_FAILURE (confiança: 0.94).\nInspecionando estado atual do workflow antes de selecionar ação.'},
+      {t:'ACT',tool:'get_workflow_state',params:'{ orderId: "ORD-2847391" }'},
+      {t:'OBS',c:'{ "state": "payment-approved",\n  "errorCode": "ERP_TIMEOUT_503",\n  "retryCount": 12, "maxRetries": 5,\n  "lastRetry": "2026-05-15T03:22:11Z",\n  "workflowInErrorState": true }'},
+      {t:'THINK',c:'Contador de retries (12) excede o limite (5). Estado é recuperável.\nforce_retry_workflow adequado — risco LOW, sem gate de dry-run necessário.\nChave de idempotência gerada para evitar transições duplicadas.'},
+      {t:'ACT',tool:'force_retry_workflow',params:'{ orderId: "ORD-2847391", fromState: "payment-approved" }'},
+      {t:'OBS',c:'{ "success": true,\n  "newState": "invoicing",\n  "transitionId": "TRN-99182",\n  "idempotencyKey": "frw-2847391-20260515T041800Z" }'},
+      {t:'THINK',c:'Transição bem-sucedida. Pedido movido para invoicing. Verificando se flags de erro foram limpos.'},
+      {t:'ACT',tool:'get_workflow_state',params:'{ orderId: "ORD-2847391" }'},
+      {t:'OBS',c:'{ "state": "invoicing",\n  "errorCode": null,\n  "workflowInErrorState": false,\n  "retryCount": 0 }'},
+      {t:'RESOLVED',c:'Pedido ORD-2847391 avançado com sucesso de payment-approved → invoicing.\nWorkflowInErrorState limpo. Contadores de retry zerados.\nEntrada de auditoria gravada em oms-agent-anomalies (TTL: 90 dias).'}
+    ]
+  },
+  {
+    id:'ORD-2841052',category:'STATUS_DIVERGENCE_FFM_MKP',catClass:'badge-diverge',priority:'CRITICAL',priClass:'badge-critical',
+    merchant:'Farm Rio',status:'invoiced (MKP) / handling (FFM)',lastChange:'14 Mai · 16:08 UTC',flag:'MKP faturado · FFM handling',age:'25h 02m',
+    summary:'Divergência crítica: marketplace mostra faturado enquanto fulfillment ainda está em handling.',
+    explanation:'Uma divergência crítica de status foi detectada neste pedido chain — a leg do marketplace mostra o pedido como faturado enquanto a leg de fulfillment permanece em handling. Esse padrão (MKP_INVOICED / FFM_HANDLING) indica que o evento de fatura foi processado no marketplace mas nunca propagado para o workflow de fulfillment. Sem resolução, isso gerará eventos de nota fiscal duplicados e erros na conciliação financeira.',
+    tool:'fix_workflow_consistency',riskLabel:'MEDIUM',riskClass:'risk-med',
+    rationale:'Sincronizar o estado do FFM para corresponder ao evento de fatura do MKP, restaurando a consistência do pedido chain sem re-emitir a nota.',
+    react:[
+      {t:'THINK',c:'Pedido chain ORD-2841052: divergência crítica MKP/FFM.\nMKP: faturado · FFM: handling. Regra: STATUS_DIVERGENCE_CRITICAL.\nBuscando detalhes completos do pedido antes de tentar sincronização.'},
+      {t:'ACT',tool:'get_order_details',params:'{ orderId: "ORD-2841052", includeChain: true }'},
+      {t:'OBS',c:'{ "mkpStatus": "invoiced",\n  "ffmStatus": "handling",\n  "invoiceKey": "NFe-2841052-001",\n  "chainOrderId": "ORD-2841052-01",\n  "divergenceDeltaH": 25.03 }'},
+      {t:'THINK',c:'NF NFe-2841052-001 confirmada no MKP. Seguro propagar para FFM.\nfix_workflow_consistency alinhará o estado sem re-emitir a nota.'},
+      {t:'ACT',tool:'fix_workflow_consistency',params:'{ orderId: "ORD-2841052", targetState: "invoiced", reason: "mkp_ffm_sync" }'},
+      {t:'OBS',c:'{ "success": true,\n  "ffmNewState": "invoiced",\n  "syncedAt": "2026-05-15T04:19:33Z" }'},
+      {t:'RESOLVED',c:'Divergência do pedido chain ORD-2841052 resolvida.\nFFM sincronizado para faturado. Chave de NF preservada — sem emissão duplicada.\nEntrada de auditoria gravada.'}
+    ]
+  },
+  {
+    id:'ORD-2839774',category:'WORKFLOW_STUCK_TEMPORARY',catClass:'badge-temp',priority:'HIGH',priClass:'badge-high',
+    merchant:'Tudo Ferramentas',status:'ready-for-handling',lastChange:'14 Mai · 03:45 UTC',flag:'WorkflowInRetry=true · 28h',age:'28h 19m',
+    summary:'Pedido em ready-for-handling além de 28h; WorkflowInRetry ativo, restrição de capacidade do seller suspeita.',
+    explanation:'Este pedido está no estado ready-for-handling há 28 horas, excedendo o threshold de 24 horas. O flag WorkflowInRetry está ativo, indicando que o sistema continua tentando repetidamente a solicitação de handling. O motor de diagnóstico suspeita de restrição de capacidade — Tudo Ferramentas teve taxas de erro elevadas nas últimas 6 horas, consistente com um evento de capacidade de armazém que parece estar se recuperando.',
+    tool:'reindex_order',riskLabel:'LOW',riskClass:'risk-low',
+    rationale:'Reindexar o pedido para acionar uma nova verificação de alocação do seller. Se a capacidade se recuperou, isso vai desbloquear a solicitação de handling sem mutar o estado do workflow.',
+    react:[
+      {t:'THINK',c:'Pedido ORD-2839774 travado em ready-for-handling por 28h.\nWorkflowInRetry=true. Regra: WORKFLOW_STUCK_TEMPORARY (SELLER_CAPACITY).\nVerificando disponibilidade do seller antes de agir.'},
+      {t:'ACT',tool:'get_workflow_state',params:'{ orderId: "ORD-2839774" }'},
+      {t:'OBS',c:'{ "state": "ready-for-handling",\n  "workflowInRetry": true,\n  "sellerId": "Tudo Ferramentas",\n  "sellerErrorRate": 0.18,\n  "sellerStatus": "recovering" }'},
+      {t:'THINK',c:'Status do seller é "recovering" — capacidade provavelmente disponível.\nreindex_order (risco LOW) aciona nova alocação sem mutar o estado.'},
+      {t:'ACT',tool:'reindex_order',params:'{ orderId: "ORD-2839774" }'},
+      {t:'OBS',c:'{ "success": true,\n  "indexed": true,\n  "allocationTriggered": true }'},
+      {t:'RESOLVED',c:'Pedido ORD-2839774 reindexado com sucesso.\nNova alocação de seller acionada. Tudo Ferramentas está em recuperação — solicitação de handling deve prosseguir em ~15 minutos.'}
+    ]
+  },
+  {
+    id:'ORD-2835901',category:'STATUS_DIVERGENCE_FFM_MKP',catClass:'badge-diverge',priority:'HIGH',priClass:'badge-high',
+    merchant:'São João Eletro',status:'error (MKP) / error (FFM)',lastChange:'13 Mai · 22:17 UTC',flag:'Ambos em erro · códigos diff · Δ31h',age:'41h 47m',
+    summary:'MKP e FFM em estado de erro com códigos diferentes; delta de LastChange de 31 horas.',
+    explanation:'As legs de marketplace e fulfillment deste pedido chain estão em estado de erro, mas com códigos diferentes — MKP reporta ERR_PAYMENT_CALLBACK enquanto FFM reporta ERR_INTEGRATION_TIMEOUT. A diferença de 31 horas nos timestamps LastChange sugere que os erros ocorreram de forma independente. Esse padrão é classificado como STATUS_DIVERGENCE_MODERATE e requer restauração direcionada do workflow em ambas as legs.',
+    tool:'restore_workflow',riskLabel:'MEDIUM-HIGH',riskClass:'risk-medh',
+    rationale:'Restaurar as duas legs do workflow a partir de seus estados de erro independentes. O gate de dry-run será utilizado para validar o plano de restauração antes da execução.',
+    react:[
+      {t:'THINK',c:'Pedido chain ORD-2835901: ambas as legs em erro, códigos diferentes.\nMKP: ERR_PAYMENT_CALLBACK · FFM: ERR_INTEGRATION_TIMEOUT.\nRisco MEDIUM-HIGH — restore_workflow com gate de dry-run obrigatório.'},
+      {t:'ACT',tool:'restore_workflow',params:'{ orderId: "ORD-2835901", dryRun: true }'},
+      {t:'OBS',c:'{ "dryRun": true,\n  "restorable": true,\n  "mkpTargetState": "payment-approved",\n  "ffmTargetState": "payment-approved",\n  "riskScore": 0.61,\n  "warnings": [] }'},
+      {t:'THINK',c:'Dry-run aprovado. Risk score 0.61 dentro do threshold MEDIUM-HIGH. Sem warnings.\nProsseguindo com restore real.'},
+      {t:'ACT',tool:'restore_workflow',params:'{ orderId: "ORD-2835901", dryRun: false }'},
+      {t:'OBS',c:'{ "success": true,\n  "mkpNewState": "payment-approved",\n  "ffmNewState": "payment-approved",\n  "restoreId": "RST-44821" }'},
+      {t:'RESOLVED',c:'Ambas as legs restauradas para payment-approved.\nMKP e FFM estão sincronizados. RestoreId RST-44821 registrado para conciliação.\nEntrada de auditoria gravada.'}
+    ]
+  },
+  {
+    id:'ORD-2830146',category:'WORKFLOW_STUCK_PERMANENT',catClass:'badge-stuck',priority:'MEDIUM',priClass:'badge-medium',
+    merchant:'Puket',status:'authorize-fulfillment',lastChange:'14 Mai · 00:10 UTC',flag:'WorkflowInErrorState=true',age:'41h 54m',
+    summary:'WorkflowInErrorState após authorize-fulfillment; timeout no callback de autorização do gateway de pagamento.',
+    explanation:'Este pedido entrou em estado de erro após o step authorize-fulfillment, que tem threshold de 4 horas. O motor de diagnóstico classificou como GATEWAY_CALLBACK_TIMEOUT — o gateway de pagamento falhou em entregar o callback de confirmação de autorização dentro da janela esperada. O pedido está travado em um ponto crítico de handoff entre autorização de pagamento e início do fulfillment, mas o pagamento foi de fato autorizado.',
+    tool:'change_workflow_state',riskLabel:'MEDIUM',riskClass:'risk-med',
+    rationale:'Avançar manualmente o workflow além de authorize-fulfillment para desbloquear o início do fulfillment após confirmar que a autorização de pagamento foi recebida no gateway.',
+    react:[
+      {t:'THINK',c:'Pedido ORD-2830146 travado em authorize-fulfillment por 41h.\nRegra: GATEWAY_CALLBACK_TIMEOUT. Verificar se pagamento foi de fato autorizado antes de avançar.'},
+      {t:'ACT',tool:'get_order_details',params:'{ orderId: "ORD-2830146" }'},
+      {t:'OBS',c:'{ "paymentAuthorized": true,\n  "authCode": "AUTH-9920341",\n  "gatewayStatus": "approved",\n  "workflowState": "authorize-fulfillment",\n  "errorCode": "CALLBACK_TIMEOUT" }'},
+      {t:'THINK',c:'Pagamento confirmado como autorizado (AUTH-9920341). Timeout do callback foi benigno.\nSeguro avançar workflow. change_workflow_state (risco MEDIUM).'},
+      {t:'ACT',tool:'change_workflow_state',params:'{ orderId: "ORD-2830146", targetState: "handling" }'},
+      {t:'OBS',c:'{ "success": true,\n  "newState": "handling",\n  "transitionId": "TRN-88031" }'},
+      {t:'RESOLVED',c:'Pedido ORD-2830146 avançado de authorize-fulfillment → handling.\nAutorização de pagamento confirmada. Timeout do callback não bloqueante. Fulfillment desbloqueado.'}
+    ]
+  }
+];
+
+// ── State ─────────────────────────────────────────────────────────────────
+const state={tab:'all',selectedId:null,resolved:new Set(),escalated:new Set(),ignored:new Set(),reactRunning:false,reactOrderId:null,escalateId:null};
+
+// ── Helpers ───────────────────────────────────────────────────────────────
+function orderStatus(id){if(state.resolved.has(id))return'resolved';if(state.escalated.has(id))return'escalated';if(state.ignored.has(id))return'ignored';return'pending';}
+function statusLabel(id){return{pending:'Pendente',resolved:'Resolvido',escalated:'Escalado',ignored:'Ignorado'}[orderStatus(id)];}
+function statusBadgeClass(id){return{pending:'badge-pending',resolved:'badge-resolved',escalated:'badge-escalated',ignored:'badge-ignored'}[orderStatus(id)];}
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function now(){return new Date().toLocaleString('pt-BR',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit',hour12:false})+' UTC';}
+
+// ── Table ─────────────────────────────────────────────────────────────────
+function renderTable(){
+  const body=document.getElementById('table-body');
+  const rows=ANOMALIES.filter(a=>{const s=orderStatus(a.id);if(state.tab==='pending')return s==='pending';if(state.tab==='resolved')return s==='resolved';if(state.tab==='escalated')return s==='escalated';return true;});
+  if(!rows.length){body.innerHTML=`<div class="empty-state"><div class="empty-icon">✓</div><div class="empty-label">Nenhuma anomalia nesta visualização</div><div class="empty-hint">Todos os pedidos monitorados estão saudáveis</div></div>`;updateCounts();return;}
+  body.innerHTML=rows.map(a=>{
+    const s=orderStatus(a.id);const isPending=s==='pending';const sel=a.id===state.selectedId;const dim=!isPending&&!sel?' dimmed':'';
+    const statusBadge=`<span class="badge ${statusBadgeClass(a.id)}">${statusLabel(a.id)}</span>`;
+    const actionBtn=isPending?`<button class="btn-xs primary" onclick="openPanel('${a.id}');event.stopPropagation()">Revisar</button>`:`<button class="btn-xs" onclick="openPanel('${a.id}');event.stopPropagation()">Ver</button>`;
+    return`<div class="anomaly-row${sel?' selected':''}${dim}" id="row-${a.id}" onclick="openPanel('${a.id}')"><div class="order-id">${a.id}</div><div><span class="badge ${a.catClass}">${a.category}</span></div><div><span class="badge ${a.priClass}">${a.priority}</span></div><div class="ai-cell" title="${a.summary}">${a.summary}</div><div class="age-cell">${a.age}</div><div>${statusBadge}</div><div class="row-actions" onclick="event.stopPropagation()">${actionBtn}</div></div>`;
+  }).join('');
+  updateCounts();
+}
+function updateCounts(){
+  let pending=0,resolved=0,escalated=0,critical=0,high=0;
+  ANOMALIES.forEach(a=>{const s=orderStatus(a.id);if(s==='pending'){pending++;if(a.priority==='CRITICAL')critical++;if(a.priority==='HIGH')high++;}if(s==='resolved')resolved++;if(s==='escalated')escalated++;});
+  document.getElementById('tc-all').textContent=ANOMALIES.length;document.getElementById('tc-pending').textContent=pending;document.getElementById('tc-resolved').textContent=resolved;document.getElementById('tc-escalated').textContent=escalated;document.getElementById('stat-critical').textContent=critical;document.getElementById('stat-high').textContent=high;document.getElementById('stat-resolved-count').textContent=resolved;
+  if(resolved>0){document.getElementById('stat-ttr').textContent='TTR médio: ~4 min';document.getElementById('stat-rate').textContent=Math.round(resolved/ANOMALIES.length*100)+'%';}
+}
+function switchTab(tab){state.tab=tab;document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===tab));renderTable();}
+
+// ── Panel ─────────────────────────────────────────────────────────────────
+function openPanel(id){
+  const a=ANOMALIES.find(x=>x.id===id);if(!a)return;
+  state.selectedId=id;renderTable();
+  document.getElementById('panel-oid').textContent=a.id;
+  document.getElementById('panel-badges').innerHTML=`<span class="badge ${a.catClass}">${a.category}</span><span class="badge ${a.priClass}">${a.priority}</span><span class="badge ${statusBadgeClass(id)}" id="status-badge">${statusLabel(id)}</span>`;
+  renderPanelBody(a);renderPanelFooter(a);
+  document.getElementById('panel-overlay').classList.add('open');
+}
+function renderPanelBody(a){
+  const s=orderStatus(a.id);let bannerHtml='';
+  if(s==='resolved')bannerHtml=`<div class="result-banner resolved"><div class="banner-icon">✅</div><div><div class="banner-title">Resolvido com sucesso pelo agente IA</div><div class="banner-sub">Workflow avançado · Flags de erro limpos · Sem ticket de engenharia</div></div></div>`;
+  else if(s==='escalated')bannerHtml=`<div class="result-banner escalated"><div class="banner-icon">⚠️</div><div><div class="banner-title">Escalado para engenharia</div><div class="banner-sub">Ticket criado · Atribuído a Heliomar Kann · On-call notificado</div></div></div>`;
+  const riskHtml=`<span class="risk-chip ${a.riskClass}">${a.riskLabel} risk</span>`;
+  const auditHtml=(s==='resolved'||s==='escalated')?buildAudit(a,s):'';
+  document.getElementById('panel-body').innerHTML=`
+    ${bannerHtml}
+    <div><div class="section-title">📋 Contexto do Pedido</div><div class="ctx-grid">
+      <div><div class="ctx-lbl">Seller</div><div class="ctx-val">${a.merchant}</div></div>
+      <div><div class="ctx-lbl">Status Atual</div><div class="ctx-val mono">${a.status}</div></div>
+      <div><div class="ctx-lbl">Última Alteração</div><div class="ctx-val">${a.lastChange}</div></div>
+      <div><div class="ctx-lbl">Flag do Workflow</div><div class="ctx-val mono err" style="font-size:11px">${a.flag}</div></div>
+    </div></div>
+    <div><div class="section-title">✦ Diagnóstico IA</div><div class="ai-block"><div class="ai-spark">✦</div><div class="ai-text">${a.explanation}</div><div class="ai-attr">GPT-4o-mini · temperature 0.3 · ${now()}</div></div></div>
+    <div><div class="section-title">🛠 Resolução Sugerida</div><div class="suggestion-box"><div class="sug-row"><span class="sug-tool">${a.tool}</span>${riskHtml}</div><div class="sug-text">${a.rationale}</div></div></div>
+    ${auditHtml}`;
+}
+function buildAudit(a,outcome){
+  const t=now();
+  const entries=[
+    {dc:'dot-blue',icon:'◉',event:'Anomalia detectada pelo scan de 7 camadas',time:t},
+    {dc:'dot-purple',icon:'★',event:`Diagnosticado · Regra: ${a.category}`,time:t},
+    {dc:'dot-orange',icon:'▶',event:'Resolução aprovada pelo operador',time:t},
+    outcome==='resolved'?{dc:'dot-green',icon:'✓',event:`Resolvido pelo agente IA · ${a.tool}`,time:now()}:{dc:'dot-amber',icon:'!',event:'Escalado para engenharia · Ticket criado',time:now()}
+  ];
+  const items=entries.map(e=>`<div class="audit-item"><div class="audit-dot ${e.dc}">${e.icon}</div><div class="audit-body"><div class="audit-event">${e.event}</div><div class="audit-ts">${e.time}</div></div></div>`).join('');
+  return`<div id="audit-section"><div class="section-title">🗂 Audit Trail</div><div class="audit-list">${items}</div></div>`;
+}
+function renderPanelFooter(a){
+  const footer=document.getElementById('panel-footer');const s=orderStatus(a.id);
+  if(s!=='pending'){footer.innerHTML=`<button class="btn btn-secondary" onclick="closePanel()">Fechar</button>`;return;}
+  footer.innerHTML=`<button class="btn btn-primary" id="resolve-btn" onclick="startResolve('${a.id}')">✦&nbsp; Resolver com IA</button><button class="btn btn-secondary" onclick="ignoreAnomaly('${a.id}')">Ignorar</button><div class="footer-spacer"></div><button class="btn btn-danger" onclick="openEscModal('${a.id}')">Escalar</button>`;
+}
+function closePanel(){document.getElementById('panel-overlay').classList.remove('open');state.selectedId=null;renderTable();}
+
+// ── ReAct Loop ────────────────────────────────────────────────────────────
+const STEP_DELAYS={THINK:1400,ACT:950,OBS:750};
+function startResolve(id){
+  if(state.reactRunning)return;const a=ANOMALIES.find(x=>x.id===id);if(!a)return;
+  state.reactRunning=true;state.reactOrderId=id;
+  document.getElementById('react-title').textContent=`Agente IA resolvendo ${a.id}…`;
+  document.getElementById('react-body').innerHTML='';
+  document.getElementById('react-status').innerHTML='<span class="spinner"></span> Executando…';
+  document.getElementById('react-close-btn').style.display='none';document.getElementById('react-audit-btn').style.display='none';
+  document.getElementById('running-badge').style.display='flex';document.getElementById('react-overlay').classList.add('open');
+  let i=0;const steps=a.react;
+  function next(){if(i>=steps.length)return;const step=steps[i++];appendStep(step);if(step.t==='RESOLVED'||step.t==='ESCALATED'){setTimeout(()=>finishReAct(step,id),350);}else{setTimeout(next,STEP_DELAYS[step.t]||800);}}
+  setTimeout(next,500);
+}
+function appendStep(step){
+  const body=document.getElementById('react-body');let html='';
+  if(step.t==='THINK')html=`<div class="step step-think"><div class="step-lbl">THINK</div><div class="step-content">${esc(step.c)}</div></div>`;
+  else if(step.t==='ACT')html=`<div class="step step-act"><div class="step-lbl">ACT</div><div class="step-content"><span class="tool-name">${esc(step.tool)}</span>  <span class="tool-params">${esc(step.params)}</span></div></div>`;
+  else if(step.t==='OBS')html=`<div class="step step-obs"><div class="step-lbl">OBSERVE</div><div class="step-content">${esc(step.c)}</div></div>`;
+  else if(step.t==='RESOLVED')html=`<div class="step step-resolved"><div class="step-lbl">✅ RESOLVIDO</div><div class="step-content">${esc(step.c)}</div></div>`;
+  else if(step.t==='ESCALATED')html=`<div class="step step-escalated"><div class="step-lbl">⚠ ESCALADO</div><div class="step-content">${esc(step.c)}</div></div>`;
+  const el=document.createElement('div');el.innerHTML=html;body.appendChild(el.firstChild);body.scrollTop=body.scrollHeight;
+}
+function finishReAct(step,id){
+  state.reactRunning=false;
+  if(step.t==='RESOLVED'){state.resolved.add(id);document.getElementById('react-status').innerHTML='✅ <span style="color:#4ade80;font-weight:600;font-size:12px">Resolvido com sucesso</span>';}
+  else{state.escalated.add(id);document.getElementById('react-status').innerHTML='⚠️ <span style="color:#fb923c;font-weight:600;font-size:12px">Escalado</span>';}
+  document.getElementById('running-badge').innerHTML=step.t==='RESOLVED'?'<span style="color:#4ade80">● Concluído</span>':'<span style="color:#fb923c">● Escalado</span>';
+  document.getElementById('react-close-btn').style.display='';document.getElementById('react-audit-btn').style.display='';
+}
+function closeReActModal(){
+  document.getElementById('react-overlay').classList.remove('open');
+  const id=state.reactOrderId;state.reactOrderId=null;renderTable();
+  if(id&&state.selectedId===id){const a=ANOMALIES.find(x=>x.id===id);if(a){renderPanelBody(a);renderPanelFooter(a);refreshStatusBadge(id);}}
+}
+function viewAuditLog(){closeReActModal();setTimeout(()=>{const sec=document.getElementById('audit-section');const body=document.getElementById('panel-body');if(sec&&body)body.scrollTo({top:sec.offsetTop-10,behavior:'smooth'});},280);}
+function refreshStatusBadge(id){const badge=document.getElementById('status-badge');if(badge){badge.className=`badge ${statusBadgeClass(id)}`;badge.textContent=statusLabel(id);}}
+
+// ── Ignore / Escalate ─────────────────────────────────────────────────────
+function ignoreAnomaly(id){if(!confirm(`Marcar ${id} como ignorado?\n\nO pedido continuará monitorado mas não aparecerá na fila de Pendentes.`))return;state.ignored.add(id);closePanel();renderTable();}
+function openEscModal(id){
+  const a=ANOMALIES.find(x=>x.id===id);if(!a)return;state.escalateId=id;
+  document.getElementById('esc-title-inp').value=`[OMS-AI] ${a.category} em ${a.id} · ${a.priority}`;
+  document.getElementById('esc-summary').value=`Pedido ${a.id} (${a.merchant}) sinalizado com ${a.category} (prioridade: ${a.priority}).\n\nDiagnóstico IA: ${a.explanation}\n\nAção sugerida: ${a.tool} (risco ${a.riskLabel})\nTempo: ${a.age} · Última alteração: ${a.lastChange}`;
+  document.getElementById('esc-sub').textContent=`Criar ticket para ${id} e atribuir ao time on-call de OMS.`;
+  document.getElementById('esc-overlay').classList.add('open');
+}
+function closeEscModal(){document.getElementById('esc-overlay').classList.remove('open');}
+function confirmEscalation(){
+  const id=state.escalateId;if(!id)return;state.escalated.add(id);state.escalateId=null;
+  closeEscModal();renderTable();
+  if(state.selectedId===id){const a=ANOMALIES.find(x=>x.id===id);if(a){renderPanelBody(a);renderPanelFooter(a);refreshStatusBadge(id);}}
+}
+
+// ── Custom Rules ──────────────────────────────────────────────────────────
+const customRules=[];let pendingAnalysis=null;
+function showAddRuleForm(){document.getElementById('add-rule-area').style.display='';document.getElementById('add-rule-btn').style.display='none';document.getElementById('analysis-result').className='analysis-result';document.getElementById('save-rule-btn').style.display='none';document.getElementById('new-rule-text').value='';setTimeout(()=>document.getElementById('new-rule-text').focus(),50);pendingAnalysis=null;}
+function cancelAddRule(){document.getElementById('add-rule-area').style.display='none';document.getElementById('add-rule-btn').style.display='';pendingAnalysis=null;}
+function analyzeRule(){
+  const text=document.getElementById('new-rule-text').value.trim();if(!text){document.getElementById('new-rule-text').focus();return;}
+  const box=document.getElementById('analysis-result');box.className='analysis-result loading show';box.innerHTML='<span class="spinner" style="border-top-color:#6d28d9;width:13px;height:13px"></span> Analisando conflitos com regras e parâmetros existentes…';
+  document.getElementById('analyze-btn').disabled=true;document.getElementById('save-rule-btn').style.display='none';
+  setTimeout(()=>{
+    const conflicts=detectConflicts(text);pendingAnalysis={text,conflicts};
+    if(conflicts.length===0){box.className='analysis-result ok show';box.innerHTML='✅ <strong>Sem conflitos detectados.</strong> Esta regra complementa os parâmetros existentes sem sobrepor nenhuma configuração ativa.';document.getElementById('save-rule-btn').textContent='Salvar regra';}
+    else{box.className='analysis-result conflict show';const lines=conflicts.map(c=>`<div class="conflict-entry"><span class="conflict-entry-icon">⚠</span><span>${c}</span></div>`).join('');box.innerHTML=`<strong>⚠️ ${conflicts.length} conflito${conflicts.length>1?'s':''} detectado${conflicts.length>1?'s':''}.</strong> Esta regra afeta os seguintes parâmetros configurados:<div class="conflict-list">${lines}</div>`;document.getElementById('save-rule-btn').textContent='Salvar mesmo assim';}
+    document.getElementById('save-rule-btn').style.display='';document.getElementById('analyze-btn').disabled=false;
+  },1700);
+}
+function getThresholdHours(stateName){for(const row of document.querySelectorAll('#threshold-rows tr')){const cell=row.querySelector('.state-name');const inp=row.querySelector('.num-inp');if(cell&&inp&&cell.textContent.trim()===stateName)return parseFloat(inp.value);}return null;}
+function detectConflicts(text){
+  const t=text.toLowerCase();const conflicts=[];
+  const timeMatches=[...t.matchAll(/(\d+(?:[.,]\d+)?)\s*(?:horas?|hours?|\bh\b)/g)];const ruleHours=timeMatches.map(m=>parseFloat(m[1].replace(',','.')));
+  const stateMap={'payment-approved':['payment-approved','payment approved','pagamento aprovado','aprovado'],'payment-pending':['payment-pending','payment pending','pagamento pendente','pendente'],'ready-for-handling':['ready-for-handling','ready for handling','pronto para manuseio'],'handling':['handling','manuseio'],'invoice':['invoice','fatura','nota fiscal'],'start-handling':['start-handling','start handling'],'authorize-fulfillment':['authorize-fulfillment','authorize fulfillment','autorização','autorizar']};
+  for(const[state,keywords]of Object.entries(stateMap)){if(!keywords.some(k=>t.includes(k)))continue;const configured=getThresholdHours(state);if(configured===null)continue;for(const h of ruleHours){if(h!==configured){const dir=h<configured?'mais sensível':'menos sensível';conflicts.push(`Threshold de <strong>${state}</strong> está configurado para <strong>${configured}h</strong>. Esta regra define <strong>${h}h</strong> — tornará a detecção <strong>${dir}</strong> para os pedidos correspondentes.`);}}}
+  const escalWords=['escalar diretamente','escalate directly','sem tentativa','without retry','sem retry','imediatamente','immediately','sem resolução automática'];
+  if(escalWords.some(w=>t.includes(w))){const maxReact=document.getElementById('r-max-react')?.value??'5';conflicts.push(`Ciclos ReAct máximos estão configurados para <strong>${maxReact}</strong>. Esta regra ignora esse limite para pedidos correspondentes — o agente escalará sem tentar resolver.`);}
+  const retryWords=['sem retry','sem retentativa','no retry','pular retry','ignorar retry'];
+  if(retryWords.some(w=>t.includes(w))){const maxR=document.getElementById('r-max-retries')?.value??'5';conflicts.push(`Limite de auto-retries está configurado para <strong>${maxR}</strong>. Esta regra suprime as retentativas automáticas para os pedidos correspondentes.`);}
+  return conflicts;
+}
+function saveCustomRule(){
+  if(!pendingAnalysis)return;
+  customRules.push({id:Date.now(),text:pendingAnalysis.text,hasConflicts:pendingAnalysis.conflicts.length>0,conflictCount:pendingAnalysis.conflicts.length,date:new Date().toLocaleDateString('pt-BR',{day:'numeric',month:'short',year:'numeric'})});
+  renderCustomRules();cancelAddRule();showToast('✓  Regra salva — ativa no próximo scan');
+}
+function removeCustomRule(id){const idx=customRules.findIndex(r=>r.id===id);if(idx!==-1){customRules.splice(idx,1);renderCustomRules();showToast('Regra removida');}}
+function renderCustomRules(){
+  const list=document.getElementById('cr-list');const empty=document.getElementById('cr-empty');
+  if(!customRules.length){empty.style.display='';list.innerHTML='';return;}
+  empty.style.display='none';
+  list.innerHTML=customRules.map(r=>`<div class="cr-item"><div class="cr-indicator ${r.hasConflicts?'warn':''}"></div><div class="cr-body"><div class="cr-text">${esc(r.text)}</div><div class="cr-meta"><span class="cr-date">${r.date}</span>${r.hasConflicts?`<span class="cr-tag-warn">⚠ ${r.conflictCount} conflito${r.conflictCount>1?'s':''}</span>`:'<span class="cr-tag-ok">✓ sem conflitos</span>'}</div></div><div class="cr-item-actions"><button class="btn-xs" onclick="removeCustomRule(${r.id})">Remover</button></div></div>`).join('');
+}
+
+// ── View Switching ────────────────────────────────────────────────────────
+function switchView(view){document.getElementById('view-anomalies').style.display=view==='anomalies'?'':'none';document.getElementById('view-rules').style.display=view==='rules'?'':'none';document.querySelectorAll('.view-tab').forEach(t=>t.classList.toggle('active',t.dataset.view===view));}
+
+// ── Rules ─────────────────────────────────────────────────────────────────
+const THRESHOLDS_DEFAULT=[
+  {state:'payment-pending',hours:24},{state:'payment-approved',hours:12},{state:'ready-for-handling',hours:24},
+  {state:'handling',hours:48},{state:'invoice',hours:6},{state:'start-handling',hours:4},{state:'authorize-fulfillment',hours:4}
+];
+let rulesDirty=false;
+function initRules(){
+  document.getElementById('threshold-rows').innerHTML=THRESHOLDS_DEFAULT.map(r=>`<tr><td><span class="state-name">${r.state}</span></td><td><div class="num-wrap"><input class="num-inp" data-default="${r.hours}" type="number" min="1" max="720" value="${r.hours}" oninput="markDirty(this)"><span class="unit-lbl">h</span></div></td></tr>`).join('');
+}
+function markDirty(el){el.classList.add('dirty');if(!rulesDirty){rulesDirty=true;document.getElementById('saved-label').textContent='Alterações não salvas';document.getElementById('saved-label').classList.add('unsaved');}}
+function toggleSwitch(el){el.classList.toggle('on');if(!rulesDirty){rulesDirty=true;document.getElementById('saved-label').textContent='Alterações não salvas';document.getElementById('saved-label').classList.add('unsaved');}}
+function saveRules(){rulesDirty=false;document.querySelectorAll('.num-inp.dirty,.select-inp.dirty').forEach(el=>el.classList.remove('dirty'));document.getElementById('saved-label').textContent='Todas as alterações salvas';document.getElementById('saved-label').classList.remove('unsaved');showToast('✓  Regras salvas — agente aplicará no próximo scan');}
+function resetRules(){
+  if(!confirm('Restaurar todos os parâmetros para os valores padrão?'))return;initRules();
+  document.getElementById('r-diverge-delta').value=24;document.getElementById('r-max-retries').value=5;document.getElementById('r-max-react').value=5;document.getElementById('r-seller-err').value=18;document.getElementById('r-risk-threshold').value=0.60;document.getElementById('r-model').value='gpt-4o-mini';document.getElementById('r-temperature').value=0.3;document.getElementById('r-tokens').value=200;
+  ['t-mkp-invoiced','t-mkp-canceled','t-both-error'].forEach(id=>document.getElementById(id).classList.add('on'));
+  rulesDirty=false;document.getElementById('saved-label').textContent='Padrões restaurados';document.getElementById('saved-label').classList.remove('unsaved');showToast('↺  Parâmetros restaurados para os padrões');
+}
+let toastTimer=null;
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),2800);}
+
+// ── Init ──────────────────────────────────────────────────────────────────
+renderTable();
+initRules();
+</script>
+</body>
+</html>
