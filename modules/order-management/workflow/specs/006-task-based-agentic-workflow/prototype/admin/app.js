@@ -2535,7 +2535,6 @@ function renderNwfOriginPicker() {
     { id: 'oj-home',   icon: '🚚', name: 'Entrega em domicílio', desc: '4 marcos · transportadora ao endereço' },
     { id: 'oj-bopis',  icon: '🏪', name: 'Retirada na loja',     desc: '4 marcos · BOPIS / pickup in store' },
     { id: 'oj-digital',icon: '💻', name: 'Entrega digital',      desc: '4 marcos · licença, e-mail, acesso' },
-    { id: 'oj-sfs',    icon: '🏬', name: 'Entrega pela loja',    desc: '4 marcos · ship-from-store / courier' },
   ];
   const btnStyle = 'display:flex;align-items:center;gap:10px;background:#f9f9fb;border:1.5px solid #e5e7eb;border-radius:8px;padding:10px 12px;cursor:pointer;text-align:left;width:100%;transition:border-color .15s';
   container.innerHTML = BASE_MODELS.map(m => `
