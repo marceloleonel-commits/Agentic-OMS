@@ -34,9 +34,9 @@
 ## Scope
 
 **In scope:**
-- **Order Jobs como unidade de configuração top-level**: merchants criam e gerenciam Order Jobs via "Gerenciar Order Jobs" (kanban visual). Cada Order Job contém exatamente 4 marcos fixos — Confirmação de Pagamento, Preparando Itens, NFes Emitidas, Recebido pelo Cliente — cada marco contendo N tarefas (cards)
-- 4 Order Jobs nativos: **Entrega em domicílio** 🚚, **Retirada na loja** 🏪, **Entrega digital** 💻, **Entrega pela loja** 🏬 — mais Troca e Devolução ↩️
-- Criação de novo Order Job via fluxo conversacional de 6 passos: nome → modelo base → ícone → descrição → preview dos marcos → confirmar
+- **Experiências como unidade de configuração top-level**: merchants criam e gerenciam Experiências via "Gerenciar Experiências" (kanban visual). Cada Experiência contém exatamente 4 marcos fixos — Confirmação de Pagamento, Preparando Itens, NFes Emitidas, Recebido pelo Cliente — cada marco contendo N tarefas (cards). Em tempo de execução, o sistema cria automaticamente uma instância de Experiência para cada combinação de parâmetros de fulfillment dentro de um pedido (modelo de fulfillment + prazo SLA + seller), roteando os itens correspondentes para o fluxo correto.
+- 3 Experiências nativas: **Entrega em domicílio** 🚚, **Retirada na loja** 🏪, **Entrega digital** 💻 — mais Troca e Devolução ↩️
+- Criação de nova Experiência via fluxo conversacional de 6 passos: nome → modelo base → ícone → descrição → preview dos marcos → confirmar
 - Configuração conversacional de tarefas via chat: nome, responsável, categoria, visibilidade (user / internal), script JavaScript customizado, API externa (configuração inline durante criação), integração MCP, agente AI Workspace
 - Múltiplos marcos por item de pedido exibidos como seções independentes com headers coloridos (💳 Confirmação de Pagamento + 📦 Preparando Itens + 🧾 NFes Emitidas + 📬 Recebido pelo Cliente)
 - Sistema de gatilho de ativação por workflow com 3 tipos: (a) **Início do pedido** — automático ao criar o pedido; (b) **Conclusão de workflow** — após outro workflow da cadeia ser concluído; (c) **Conclusão de tarefa específica** — após uma tarefa nomeada de um workflow específico ser concluída
