@@ -38,13 +38,49 @@ function ActBadge({ kind }) {
   );
 }
 
+function AgentCard({ emoji, title, subtitle, defaultOn, children }) {
+  const [open, setOpen] = useState(false);
+  const [on, setOn] = useState(defaultOn !== false);
+  return (
+    <div style={{ border: "1px solid #e5e7eb", borderRadius: 8, overflow: "hidden", marginBottom: 8 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", background: "#f9fafb", cursor: "pointer" }}
+           onClick={() => setOpen(o => !o)}>
+        <span style={{ fontSize: 18, lineHeight: 1 }}>{emoji}</span>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: "#1a1a1a" }}>{title}</div>
+          <div style={{ fontSize: 11.5, color: "#888", marginTop: 1 }}>{subtitle}</div>
+        </div>
+        <Toggle on={on} onChange={(v) => { setOn(v); }} />
+        <svg viewBox="0 0 16 16" fill="none" stroke="#888" strokeWidth="2" width="14" height="14"
+             style={{ flexShrink: 0, transition: "transform .2s", transform: open ? "rotate(180deg)" : "rotate(0deg)" }}>
+          <path d="M4 6l4 4 4-4"/>
+        </svg>
+      </div>
+      {open && (
+        <div style={{ padding: "12px 14px", borderTop: "1px solid #e5e7eb" }}>
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SkillRow({ id, label, desc, defaultOn }) {
+  const [on, setOn] = useState(defaultOn !== false);
+  return (
+    <div className="setting-row" style={{ margin: 0 }}>
+      <div className="setting-row-body">
+        <span className="setting-row-title" style={{ fontSize: 12 }}>{label}</span>
+        {desc && <span className="setting-row-desc">{desc}</span>}
+      </div>
+      <Toggle on={on} onChange={setOn} />
+    </div>
+  );
+}
+
 function OrchestrationCanvas() {
   const [threshold, setThreshold] = useState(75);
-  const [resTarget, setResTarget] = useState(80);
-  const [hours, setHours] = useState(2);
-  const [horario, setHorario] = useState("24-7");
-  const [actions, setActions] = useState({ detect: true, realloc: true, advance: true, tasks: true, cancel: false });
-  const [notifs, setNotifs] = useState({ email: true, slack: true, webhook: false });
+  const [hours, setHours] = useState(4);
 
   return (
     <div className="detail-panel">
@@ -65,123 +101,116 @@ function OrchestrationCanvas() {
             <span className="muted">Agente ativo · 4.256 pedidos monitorados</span>
           </div>
 
-          {/* Comportamento */}
+          {/* ── Experiências ── */}
           <section className="detail-section">
-            <div className="detail-section-head"><h3>Comportamento do agente</h3></div>
-            <div className="settings-card">
-              <div className="setting-field">
-                <label>Confiança mínima para ação automática</label>
-                <Slider value={threshold} onChange={setThreshold} min={0} max={100} suffix="%" />
-                <div className="setting-ends">
-                  <span>0% — age sempre</span>
-                  <span>100% — nunca age</span>
-                </div>
-                <div className="setting-help">Abaixo deste threshold o agente escala para um operador humano.</div>
-              </div>
-              <div className="setting-divider" />
-              <div className="setting-field">
-                <label>Ações habilitadas</label>
-                {[
-                  { key: "detect",  name: "Detectar pedidos travados",       desc: "Monitora status sem movimentação acima do SLA" },
-                  { key: "realloc", name: "Sugerir realocação de estoque",   desc: "Propõe novo CD quando o atual não pode atender" },
-                  { key: "advance", name: "Avançar status automaticamente",  desc: "Avança etapas quando todas as condições são satisfeitas" },
-                  { key: "tasks",   name: "Criar tarefas para operadores",   desc: "Gera tasks manuais quando confiança está abaixo do threshold" },
-                  { key: "cancel",  name: "Cancelar pedidos automaticamente", desc: "Requer confiança ≥ 95% e aprovação do gestor" }
-                ].map((it) =>
-                  <div key={it.key} className="setting-row">
-                    <div className="setting-row-body">
-                      <span className="setting-row-title">{it.name}</span>
-                      <span className="setting-row-desc">{it.desc}</span>
-                    </div>
-                    <Toggle on={actions[it.key]} onChange={() => setActions((a) => ({ ...a, [it.key]: !a[it.key] }))} />
+            <div className="detail-section-head" style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <h3>Experiências</h3>
+              <span style={{ fontSize: 10.5, fontWeight: 600, color: "#7c3aed", background: "#f5f3ff", border: "1px solid #e9d5ff", padding: "2px 9px", borderRadius: 10 }}>
+                definido pelo sistema
+              </span>
+            </div>
+            <p className="detail-desc" style={{ marginTop: -8, marginBottom: 12 }}>
+              Uma Experiência é criada automaticamente para cada combinação de parâmetros de fulfillment dentro de um pedido. Itens que compartilham os mesmos critérios seguem juntos no mesmo fluxo.
+            </p>
+            <div className="settings-card" style={{ display: "flex", flexDirection: "column", gap: 8, padding: "12px 14px" }}>
+              {[
+                { emoji: "🏠", title: "Modelo de fulfillment",
+                  desc: "Entrega em domicílio e Retirada em loja geram experiências separadas — cada modalidade tem seu próprio fluxo de execução." },
+                { emoji: "⏱️", title: "Prazo de entrega (SLA)",
+                  desc: "Itens com SLAs incompatíveis dentro de um mesmo pedido são divididos em experiências distintas." },
+                { emoji: "🏪", title: "Seller / Supplier",
+                  desc: "Itens de sellers diferentes são agrupados em experiências independentes, cada uma com seu próprio ciclo de fulfillment." }
+              ].map((item) => (
+                <div key={item.title} style={{ display: "flex", gap: 10, alignItems: "flex-start", padding: "9px 12px", background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: 8 }}>
+                  <span style={{ fontSize: 16, lineHeight: 1.3 }}>{item.emoji}</span>
+                  <div>
+                    <div style={{ fontSize: 12.5, fontWeight: 600, color: "#1a1a1a" }}>{item.title}</div>
+                    <div style={{ fontSize: 12, color: "#666", marginTop: 2 }}>{item.desc}</div>
                   </div>
-                )}
-              </div>
+                </div>
+              ))}
             </div>
           </section>
 
-          {/* SLA */}
+          {/* ── Agentes & Skills ── */}
           <section className="detail-section">
-            <div className="detail-section-head"><h3>SLA e intervenção</h3></div>
-            <div className="settings-card">
-              <div className="setting-field">
-                <label>Intervir após (horas sem movimentação)</label>
-                <Slider value={hours} onChange={setHours} min={1} max={12} suffix="h" />
-              </div>
-              <div className="setting-divider" />
-              <div className="setting-field">
-                <label>Horário de operação</label>
-                {[
-                  { key: "24-7", name: "24h por dia, 7 dias por semana", desc: "O agente nunca para de monitorar" },
-                  { key: "biz",  name: "Horário comercial (08h–18h, seg–sex)", desc: "Fora deste horário apenas alerta por notificação" }
-                ].map((opt) =>
-                  <button key={opt.key} className="setting-radio" onClick={() => setHorario(opt.key)}>
-                    <span className={`radio-dot ${horario === opt.key ? "checked" : ""}`} />
-                    <div className="setting-row-body">
-                      <span className="setting-row-title">{opt.name}</span>
-                      <span className="setting-row-desc">{opt.desc}</span>
-                    </div>
-                  </button>
-                )}
-              </div>
-              <div className="setting-divider" />
-              <div className="setting-field">
-                <label>Notificações</label>
-                {[
-                  { key: "email",   name: "Email ao escalar para operador" },
-                  { key: "slack",   name: "Slack — #dom-alertas" },
-                  { key: "webhook", name: "Webhook personalizado" }
-                ].map((it) =>
-                  <div key={it.key} className="setting-row">
-                    <div className="setting-row-body">
-                      <span className="setting-row-title">{it.name}</span>
-                    </div>
-                    <Toggle on={notifs[it.key]} onChange={() => setNotifs((a) => ({ ...a, [it.key]: !a[it.key] }))} />
-                  </div>
-                )}
-              </div>
-            </div>
-          </section>
+            <div className="detail-section-head"><h3>Agentes &amp; Skills</h3></div>
+            <p className="detail-desc" style={{ marginTop: -8, marginBottom: 12 }}>
+              Configure os agentes que compõem o orquestrador. Expanda cada agente para ativar ou desativar suas skills.
+            </p>
 
-          {/* Cobertura */}
-          <section className="detail-section">
-            <div className="detail-section-head"><h3>Cobertura por workflow</h3></div>
-            <div className="settings-card">
-              {AIWData.orchestrationCoverage.map((w, i) =>
-                <div key={i} className={`setting-row ${i === 0 ? "first" : ""}`}>
-                  <div className="setting-row-body">
-                    <span className="setting-row-title">{w.name}</span>
-                    <span className="setting-row-desc">{w.meta}</span>
-                  </div>
-                  <Toggle on={true} onChange={() => {}} />
-                </div>
-              )}
-              <div className="setting-divider" />
-              <div className="setting-field">
-                <label>Taxa de resolução automática alvo</label>
-                <Slider value={resTarget} onChange={setResTarget} min={0} max={100} suffix="%" />
-                <div className="setting-help">Meta: {resTarget}% das exceções resolvidas sem intervenção humana.</div>
+            {/* Roteamento */}
+            <AgentCard emoji="🗺️" title="Roteamento" subtitle="Seleciona modo de fulfillment e provider por pedido">
+              <div style={{ fontSize: 11, fontWeight: 700, color: "#888", textTransform: "uppercase", letterSpacing: .5, marginBottom: 8 }}>Skills</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 5, marginBottom: 12 }}>
+                <SkillRow label="Seleção de CD por proximidade"        desc="Minimiza custo de frete e prazo" />
+                <SkillRow label="Verificação de estoque em tempo real" desc="Consulta WMS antes de alocar" />
+                <SkillRow label="Split de pedido por seller"           desc="Experiências independentes por supplier" />
+                <SkillRow label="Ranking de provider por SLA histórico" desc="Dados dos últimos 30 dias" defaultOn={false} />
               </div>
-            </div>
-          </section>
-
-          {/* Atividade recente */}
-          <section className="detail-section">
-            <div className="detail-section-head"><h3>Atividade recente</h3></div>
-            <div className="activities">
-              {AIWData.orchestrationActivity.map((a, i) =>
-                <div key={i} className="activity-row">
-                  <span className="activity-time">{a.time}</span>
-                  <div className="activity-body">
-                    <div className="activity-head">
-                      <ActBadge kind={a.kind} />
-                      <span><strong>{a.actor}</strong> <span className="muted">{a.action}</span></span>
-                    </div>
-                    {a.note && <div className="activity-note">{a.note}</div>}
-                  </div>
+              <div style={{ borderTop: "1px solid #f0f0f0", paddingTop: 10, display: "flex", flexDirection: "column", gap: 8 }}>
+                <div className="setting-field" style={{ margin: 0 }}>
+                  <label style={{ fontSize: 12 }}>Modo de decisão</label>
+                  <select className="field-input" style={{ maxWidth: 240 }}>
+                    <option>Automático</option>
+                    <option>Sugerir + aguardar aprovação</option>
+                  </select>
                 </div>
-              )}
-            </div>
+                <div className="setting-field" style={{ margin: 0 }}>
+                  <label style={{ fontSize: 12 }}>Fallback quando sem provider disponível</label>
+                  <select className="field-input" style={{ maxWidth: 240 }}>
+                    <option>Escalar para operador</option>
+                    <option>Tentar provider alternativo</option>
+                    <option>Cancelar automaticamente</option>
+                  </select>
+                </div>
+              </div>
+            </AgentCard>
+
+            {/* Orquestração */}
+            <AgentCard emoji="⚙️" title="Orquestração" subtitle="Monitora gates e dispara ações automaticamente">
+              <div style={{ fontSize: 11, fontWeight: 700, color: "#888", textTransform: "uppercase", letterSpacing: .5, marginBottom: 8 }}>Skills</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 5, marginBottom: 12 }}>
+                <SkillRow label="Detecção de pedidos travados"     desc="Monitora status sem movimentação acima do SLA" />
+                <SkillRow label="Avanço automático de status"      desc="Avança etapas quando todas as condições são satisfeitas" />
+                <SkillRow label="Sugestão de realocação de estoque" desc="Propõe novo CD quando o atual não pode atender" />
+                <SkillRow label="Criação de tarefas para operadores" desc="Gera tasks quando confiança está abaixo do threshold" />
+                <SkillRow label="Cancelamento automático"          desc="Requer confiança ≥ 95% e aprovação do gestor" defaultOn={false} />
+              </div>
+              <div style={{ borderTop: "1px solid #f0f0f0", paddingTop: 10 }}>
+                <div className="setting-field" style={{ margin: 0 }}>
+                  <label style={{ fontSize: 12 }}>Confiança mínima para ação automática</label>
+                  <Slider value={threshold} onChange={setThreshold} min={0} max={100} suffix="%" />
+                  <div className="setting-ends"><span>0% — age sempre</span><span>100% — nunca age</span></div>
+                </div>
+              </div>
+            </AgentCard>
+
+            {/* Escalação */}
+            <AgentCard emoji="🚨" title="Escalação" subtitle="Detecta inatividade e cria tarefas para operadores">
+              <div style={{ fontSize: 11, fontWeight: 700, color: "#888", textTransform: "uppercase", letterSpacing: .5, marginBottom: 8 }}>Skills</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 5, marginBottom: 12 }}>
+                <SkillRow label="Monitoramento de SLA por etapa"   desc="Alerta quando o prazo da etapa está em risco" />
+                <SkillRow label="Criação de task manual para operador" desc="Gera task com contexto e sugestão de ação" />
+                <SkillRow label="Notificação via Slack (#dom-alertas)" desc="Envia alerta em tempo real ao canal da equipe" />
+                <SkillRow label="Notificação por e-mail"           desc="Resumo de exceções ao gestor de operações" />
+                <SkillRow label="Webhook personalizado"            desc="Envia payload para endpoint configurado" defaultOn={false} />
+              </div>
+              <div style={{ borderTop: "1px solid #f0f0f0", paddingTop: 10, display: "flex", flexDirection: "column", gap: 8 }}>
+                <div className="setting-field" style={{ margin: 0 }}>
+                  <label style={{ fontSize: 12 }}>Intervir após (horas sem movimentação)</label>
+                  <Slider value={hours} onChange={setHours} min={1} max={12} suffix="h" />
+                </div>
+                <div className="setting-field" style={{ margin: 0 }}>
+                  <label style={{ fontSize: 12 }}>Horário de operação</label>
+                  <select className="field-input" style={{ maxWidth: 240 }}>
+                    <option>24h / 7 dias</option>
+                    <option>Horário comercial (08h–18h, seg–sex)</option>
+                  </select>
+                </div>
+              </div>
+            </AgentCard>
+
           </section>
 
           <div style={{ height: 40 }} />
