@@ -1,7 +1,0 @@
-{
-  "cleanUrls": false,
-  "redirects": [
-    { "source": "/prototype", "destination": "/prototype.html" },
-    { "source": "/prototype-wsai", "destination": "/prototype-wsai.html" }
-  ]
-}
