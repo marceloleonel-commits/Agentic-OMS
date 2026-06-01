@@ -956,66 +956,6 @@ const WORKFLOW_DEFS = [
     ]
   },
 
-  // ── 4. Entrega pela loja (Ship from Store) ───────────────────
-  {
-    id: 'oj-sfs', name: 'Entrega pela loja', icon: '🏬', color: '#d97706',
-    orderCount: 89, archived: false,
-    description: 'Itens separados na loja e entregues por courier ou motoboy local',
-    edges: [
-      { id: 'e1', from: 'wf-payments', to: 'wf-standard', active: true },
-      { id: 'e2', from: 'wf-standard', to: 'wf-nfe', active: true },
-      { id: 'e3', from: 'wf-nfe', to: 'wf-delivery', active: true },
-    ],
-    marcos: [
-      {
-        id: 'wf-payments', name: 'Confirmação de Pagamento', icon: '💳', color: '#059669',
-        tasks: [
-          { id: 's-pmt1', name: 'Autorização de Pagamento', supplier: 'Gateway Pagamento', category: 'Todos', active: true, visibility: 'internal', script: null, externalApi: null, mcpConfig: null, agentConfig: null, contextOutput: [], checkpoints: [
-            { id: 'cp1', label: 'Envio da requisição ao gateway', failAction: 'Retentar em 5min' },
-            { id: 'cp2', label: 'Recebimento da autorização', failAction: 'Escalar para análise manual' },
-          ]},
-          { id: 's-pmt2', name: 'Captura de Pagamento', supplier: 'Gateway Pagamento', category: 'Todos', active: true, visibility: 'internal', script: null, externalApi: null, mcpConfig: null, agentConfig: null, contextOutput: [], checkpoints: [] },
-        ]
-      },
-      {
-        id: 'wf-standard', name: 'Preparando Itens', icon: '📦', color: '#0c6fcd',
-        tasks: [
-          { id: 's-sep1', name: 'Separação na Loja', supplier: 'Loja Física', category: 'Todos', active: true, visibility: 'user', script: null, externalApi: null, mcpConfig: null, agentConfig: null, contextOutput: [], checkpoints: [
-            { id: 'cp1', label: 'Estoque da loja verificado', failAction: 'Transferir de outro ponto' },
-            { id: 'cp2', label: 'Itens separados no balcão', failAction: 'Acionar gerente da loja' },
-          ]},
-          { id: 's-conf1', name: 'Conferência de Qualidade', supplier: 'Loja Física', category: 'Todos', active: true, visibility: 'user', script: null, externalApi: null, mcpConfig: null, agentConfig: null, contextOutput: [], checkpoints: [] },
-          { id: 's-emb1', name: 'Embalagem na Loja', supplier: 'Loja Física', category: 'Todos', active: true, visibility: 'user', script: null, externalApi: null, mcpConfig: null, agentConfig: null, contextOutput: [], checkpoints: [
-            { id: 'cp1', label: 'Item embalado e etiquetado', failAction: 'Reimprimir etiqueta' },
-            { id: 'cp2', label: 'Pronto para saída', failAction: 'Acionar courier' },
-          ]},
-        ]
-      },
-      {
-        id: 'wf-nfe', name: 'NFes Emitidas', icon: '🧾', color: '#059669',
-        tasks: [
-          { id: 's-nfe1', name: 'Gerar Nota Fiscal', supplier: 'Financeiro', category: 'Todos', active: true, visibility: 'internal', script: null, externalApi: null, mcpConfig: null, agentConfig: null, contextOutput: [], checkpoints: [
-            { id: 'cp1', label: 'NF-e autorizada pela SEFAZ', failAction: 'Acionar fiscal' },
-          ]},
-          { id: 's-nfe2', name: 'Atualizar Marketplace', supplier: 'VTEX', category: 'Todos', active: true, visibility: 'internal', script: null, externalApi: null, mcpConfig: null, agentConfig: null, contextOutput: [], checkpoints: [] },
-        ]
-      },
-      {
-        id: 'wf-delivery', name: 'Recebido pelo Cliente', icon: '📬', color: '#d97706',
-        tasks: [
-          { id: 's-saida1', name: 'Saída da Loja', supplier: 'Courier Local', category: 'Todos', active: true, visibility: 'user', script: null, externalApi: null, mcpConfig: null, agentConfig: null, contextOutput: [], checkpoints: [
-            { id: 'cp1', label: 'Courier coletou o pedido', failAction: 'Acionar outro courier' },
-            { id: 'cp2', label: 'Código de rastreio gerado', failAction: 'Solicitar manualmente' },
-          ]},
-          { id: 's-rota1', name: 'Em Rota de Entrega', supplier: 'Courier Local', category: 'Todos', active: true, visibility: 'user', script: null, externalApi: null, mcpConfig: null, agentConfig: null, contextOutput: [], checkpoints: [] },
-          { id: 's-entregue1', name: 'Entregue', supplier: 'Courier Local', category: 'Todos', active: true, visibility: 'user', script: null, externalApi: null, mcpConfig: null, agentConfig: null, contextOutput: [], checkpoints: [
-            { id: 'cp1', label: 'Confirmação de entrega registrada', failAction: 'Contatar cliente' },
-          ]},
-        ]
-      },
-    ]
-  },
-
   // ── 5. Troca e Devolução (condicional) ───────────────────────
   {
     id: 'wf-returns', name: 'Troca e Devolução', icon: '↩️', color: '#7c3aed',
