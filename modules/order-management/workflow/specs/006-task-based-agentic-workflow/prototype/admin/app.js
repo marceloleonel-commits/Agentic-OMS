@@ -25,7 +25,7 @@ function showScreen(name) {
   if (name === 'workflow') renderWorkflowBoard();
   if (name === 'workflow-list') renderWorkflowList();
   if (name === 'workflow-settings') renderWorkflowSettings();
-  if (name === 'agent-config') { el.style.display = 'flex'; initOrchChat(); setTimeout(renderOrchConnectors, 50); }
+  if (name === 'agent-config') { el.style.display = 'flex'; initOrchChat(); }
 }
 
 function renderWorkflowList() {
@@ -278,6 +278,7 @@ function openOrder(idx) {
   const badge = document.getElementById('detail-status-badge');
   badge.textContent = sc.icon + ' ' + sc.label;
   badge.className = 'badge ' + sc.cls;
+  badge.style.display = 'none';
   document.getElementById('detail-meta').textContent = o.date + ' • Vendido por recorrenciacharlie';
   document.getElementById('detail-client-name').textContent = o.client;
   document.getElementById('detail-client-name2').textContent = o.client;
@@ -568,9 +569,9 @@ function renderItemsWithTasks(order) {
             <span style="font-size:18px;line-height:1">${pIcon}</span>
             <span style="font-size:13px;font-weight:700;color:${pBadgeColor};flex:1">${pipeline.wfName}</span>
             <span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;background:${pStatusBg};color:${pStatusColor};border:1px solid ${pStatusColor}25">${pStatusLabel}</span>
-            <svg id="chev-${pipId}" viewBox="0 0 12 12" fill="none" stroke="${pBadgeColor}" stroke-width="2.2" width="12" height="12" style="flex-shrink:0;transition:transform .2s;margin-left:6px"><path d="M2 4l4 4 4-4"/></svg>
+            <svg id="chev-${pipId}" viewBox="0 0 12 12" fill="none" stroke="${pBadgeColor}" stroke-width="2.2" width="12" height="12" style="flex-shrink:0;transition:transform .2s;margin-left:6px;transform:rotate(-90deg)"><path d="M2 4l4 4 4-4"/></svg>
           </button>
-          <div id="${pipId}" style="overflow:hidden">
+          <div id="${pipId}" style="overflow:hidden;display:none">
             <div class="item-pipeline" style="padding-bottom:4px">${buildPipeline(pipeline.tasks, {orderId:order.id,itemIdx,taskType})}</div>
           </div>`;
       }).join('') + ctxVarsHtml + orchPanel;
@@ -642,9 +643,9 @@ function renderItemsWithTasks(order) {
           <span style="font-size:18px;line-height:1">↩️</span>
           <span style="font-size:13px;font-weight:700;color:${swBadgeColor};flex:1">${sw.wfName || 'Troca e Devolução'}</span>
           <span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;background:${swStatusBg};color:${swStatusColor};border:1px solid ${swStatusColor}25">${swStatusLabel}</span>
-          <svg id="chev-${retPipId}" viewBox="0 0 12 12" fill="none" stroke="${swBadgeColor}" stroke-width="2.2" width="12" height="12" style="flex-shrink:0;transition:transform .2s;margin-left:6px"><path d="M2 4l4 4 4-4"/></svg>
+          <svg id="chev-${retPipId}" viewBox="0 0 12 12" fill="none" stroke="${swBadgeColor}" stroke-width="2.2" width="12" height="12" style="flex-shrink:0;transition:transform .2s;margin-left:6px;transform:rotate(-90deg)"><path d="M2 4l4 4 4-4"/></svg>
         </button>
-        <div id="${retPipId}" style="overflow:hidden">
+        <div id="${retPipId}" style="overflow:hidden;display:none">
           ${returnInfoHtml}
           <div class="item-pipeline" style="padding-bottom:4px">${buildPipeline(sw.tasks, {orderId:order.id,itemIdx,taskType:'return'})}</div>
         </div>`;
@@ -660,7 +661,6 @@ function renderItemsWithTasks(order) {
           <div class="item-product-meta">Qtd: ${item.qty} · ${item.price}${item.seller ? '' : ''}</div>
           <div style="margin-top:3px;display:flex;gap:4px;flex-wrap:wrap">${item.seller ? sellerBadge : ''}${item.isService ? serviceBadge : ''}</div>
         </div>
-        ${(item.pipelines && item.pipelines.length) ? '' : `<span class="badge ${iStCls}" style="font-size:11px">${iSt}</span>`}
       </div>
       ${pipelineSection}
       ${chainHtml}

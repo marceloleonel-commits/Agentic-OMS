@@ -351,49 +351,40 @@
         <!-- RIGHT: config panels -->
         <div class="orch-config-col" id="orch-config-col">
 
-          <!-- ── 1. ORDER JOB ── -->
-          <div class="settings-card orch-card" id="ocard-orderjob">
-            <div class="settings-card-title"><span class="sc-title-icon">🗂️</span> Order Job — Agrupamento de Itens</div>
-            <div style="font-size:12px;color:#888;margin-top:-6px;margin-bottom:14px">Define como os itens do pedido são agrupados. Itens com os mesmos parâmetros seguem juntos no mesmo fluxo de fulfillment.</div>
-
-            <div style="font-size:12px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px">Modelo de Fulfillment</div>
-            <div style="display:flex;flex-direction:column;gap:6px;padding:10px 12px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;margin-bottom:12px">
-              <div class="checkbox-row" style="margin:0"><input type="checkbox" id="fm-home" checked><label for="fm-home" style="font-size:12.5px">Entrega em domicílio<span class="sub">Itens despachados por transportadora até o endereço do cliente</span></label></div>
-              <div class="checkbox-row" style="margin:0"><input type="checkbox" id="fm-bopis" checked><label for="fm-bopis" style="font-size:12.5px">Retirada em loja (BOPIS)<span class="sub">Itens separados para pickup no ponto de venda</span></label></div>
+          <!-- ── 1. EXPERIÊNCIAS ── -->
+          <div class="settings-card orch-card" id="ocard-experiencias">
+            <div class="settings-card-title" style="display:flex;align-items:center;justify-content:space-between">
+              <span><span class="sc-title-icon">✦</span> Experiências</span>
+              <span style="font-size:10.5px;font-weight:600;color:#7c3aed;background:#f5f3ff;border:1px solid #e9d5ff;padding:2px 9px;border-radius:10px;letter-spacing:.2px">definido pelo sistema</span>
             </div>
+            <div style="font-size:12px;color:#888;margin-top:-6px;margin-bottom:14px">Uma Experiência (OrderJob) é criada automaticamente para cada combinação de parâmetros de fulfillment dentro de um pedido. Itens que compartilham os mesmos critérios seguem juntos no mesmo fluxo.</div>
 
-            <div style="font-size:12px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px">Critérios de agrupamento</div>
-            <div class="checkbox-row"><input type="checkbox" id="oj-sla" checked><label for="oj-sla">SLA de entrega<span class="sub">Itens com prazos incompatíveis geram Order Jobs separados</span></label></div>
-            <div class="checkbox-row"><input type="checkbox" id="oj-sup" checked><label for="oj-sup">Supplier de Entrega<span class="sub">Itens de suppliers/sellers diferentes geram Order Jobs distintos</span></label></div>
-
-            <div style="border-top:1px solid #f0f0f0;padding-top:12px;margin-top:8px">
-              <div style="font-size:12px;font-weight:600;color:#3f3f40;margin-bottom:8px">Exemplo de agrupamento</div>
-              <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:10px 12px;font-size:11.5px;line-height:1.8;color:#555">
-                <div style="font-weight:600;color:#1a1a1a;margin-bottom:6px">Pedido com 4 itens → 2 Order Jobs</div>
-                <div style="display:flex;flex-direction:column;gap:6px">
-                  <div style="display:flex;gap:8px;align-items:flex-start">
-                    <span style="background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8;font-size:10px;font-weight:700;padding:1px 7px;border-radius:10px;flex-shrink:0;margin-top:1px">OJ 1</span>
-                    <span>3 itens · Entrega em domicílio · CD São Paulo · Jadlog · SLA 3d</span>
-                  </div>
-                  <div style="display:flex;gap:8px;align-items:flex-start">
-                    <span style="background:#f5f3ff;border:1px solid #e9d5ff;color:#7c3aed;font-size:10px;font-weight:700;padding:1px 7px;border-radius:10px;flex-shrink:0;margin-top:1px">OJ 2</span>
-                    <span>1 item · Retirada em loja · Shopping Botafogo RJ</span>
-                  </div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div style="display:flex;gap:10px;align-items:flex-start;padding:9px 12px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px">
+                <span style="font-size:16px;line-height:1.2">🏠</span>
+                <div>
+                  <div style="font-size:12.5px;font-weight:600;color:#1a1a1a">Modelo de fulfillment</div>
+                  <div style="font-size:12px;color:#666;margin-top:2px">Entrega em domicílio e Retirada em loja geram experiências separadas — cada modalidade tem seu próprio fluxo de execução.</div>
+                </div>
+              </div>
+              <div style="display:flex;gap:10px;align-items:flex-start;padding:9px 12px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px">
+                <span style="font-size:16px;line-height:1.2">⏱️</span>
+                <div>
+                  <div style="font-size:12.5px;font-weight:600;color:#1a1a1a">Prazo de entrega (SLA)</div>
+                  <div style="font-size:12px;color:#666;margin-top:2px">Itens com SLAs incompatíveis dentro de um mesmo pedido são divididos em experiências distintas.</div>
+                </div>
+              </div>
+              <div style="display:flex;gap:10px;align-items:flex-start;padding:9px 12px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px">
+                <span style="font-size:16px;line-height:1.2">🏪</span>
+                <div>
+                  <div style="font-size:12.5px;font-weight:600;color:#1a1a1a">Seller / Supplier</div>
+                  <div style="font-size:12px;color:#666;margin-top:2px">Itens de sellers diferentes são agrupados em experiências independentes, cada uma com seu próprio ciclo de fulfillment.</div>
                 </div>
               </div>
             </div>
           </div>
 
           <!-- ── 2. AGENTES & SKILLS ── -->
-          <!-- Conectores Externos -->
-          <div class="settings-card orch-card" id="ocard-connectors" style="margin-top:16px">
-            <div class="settings-card-title"><span class="sc-title-icon">🔌</span> Conectores Externos</div>
-            <div style="font-size:12px;color:#888;margin-top:-6px;margin-bottom:14px">Sistemas externos vinculados aos slots desta experiência. Os agentes invocam esses conectores para avançar as tarefas automaticamente.</div>
-            <div id="orch-connector-list" style="display:flex;flex-direction:column;gap:8px">
-              <!-- rendered by renderOrchConnectors() -->
-            </div>
-          </div>
-
           <div class="settings-card orch-card" id="ocard-agents" style="margin-top:16px">
             <div class="settings-card-title"><span class="sc-title-icon">🤖</span> Agentes &amp; Skills</div>
             <div style="font-size:12px;color:#888;margin-top:-6px;margin-bottom:14px">Configure os agentes que compõem o orquestrador. Expanda cada agente para ativar ou desativar suas skills.</div>
