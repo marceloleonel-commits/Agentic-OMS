@@ -141,13 +141,6 @@ function App() {
             My AI Team <Icon name="chevron-down" size={12} />
           </button>
         }>
-        <button className="dd-item" onClick={() => setRoute({ name: "orchestration" })}>
-          <span className="dd-item-icon ai"><Icon name="sparkle" size={14} /></span>
-          <span>
-            <span className="dd-item-label">Agentes de Pedidos</span>
-            <span className="dd-item-sub">Ativo · 4.256 pedidos monitorados</span>
-          </span>
-        </button>
         <button className="dd-item" onClick={() => { setAIOpen(true); }}>
           <span className="dd-item-icon ai"><Icon name="grid" size={14} /></span>
           <span>
