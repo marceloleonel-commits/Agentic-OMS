@@ -262,27 +262,20 @@ function OdStepRow({ step }) {
   );
 }
 
-/* ── Item row (colapsado por padrão) ── */
+/* ── Item row — tarefas sempre visíveis quando a raia está aberta ── */
 function OdItemRow({ item }) {
-  const [open, setOpen] = useState(false);
   return (
     <div className="od-item-row">
-      <button className="od-item-head" onClick={() => setOpen(o => !o)}>
+      <div className="od-item-head">
         <div className="od-item-thumb" />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div className="od-item-name">{item.name}</div>
           <div className="od-item-meta">Qtd: {item.qty} · {item.price} · SKU {item.sku}</div>
         </div>
-        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13"
-             style={{ flexShrink: 0, transition: "transform .2s", transform: open ? "rotate(180deg)" : "rotate(0)", color: "var(--fg-3)" }}>
-          <path d="M4 6l4 4 4-4" />
-        </svg>
-      </button>
-      {open && (
-        <div className="od-item-steps">
-          {item.steps.map((step, i) => <OdStepRow key={i} step={step} />)}
-        </div>
-      )}
+      </div>
+      <div className="od-item-steps">
+        {item.steps.map((step, i) => <OdStepRow key={i} step={step} />)}
+      </div>
     </div>
   );
 }
