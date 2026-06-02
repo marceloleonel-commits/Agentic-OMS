@@ -75,8 +75,11 @@ function App() {
     const orderId = route.orderId;
     const currentOrder = AIWData.orders.find(o => o.id === orderId);
     const initialMsgs = currentOrder ? [
-      { from: "agent", text: `Estou monitorando o pedido ${currentOrder.id} (${currentOrder.short}). Status: ${currentOrder.statusLabel}.` },
-      { from: "agent", text: `${currentOrder.qty} item(ns) · ${currentOrder.total} · SLA ${currentOrder.sla}. Quer que eu analise o histórico ou sugira uma ação?` }
+      {
+        from: "agent",
+        text: `O Agente de Orquestração está acompanhando este pedido.\n\n${currentOrder.qty} item(ns) · ${currentOrder.total}${currentOrder.sla !== "—" ? ` · SLA ${currentOrder.sla}` : ""} · ${currentOrder.statusLabel}\n\nO que você deseja fazer?`,
+        quickReplies: ["Alterar item do pedido", "Cancelar o pedido", "Verificar SLA restante", "Escalar para Supervisor"]
+      }
     ] : [{ from: "agent", text: "Selecione um pedido para começar." }];
     setOrderChatMsgs(initialMsgs);
     setOrderChatTyping(false);
@@ -197,10 +200,10 @@ function App() {
       }
     };
     const orderChips = [
-      { icon: "search", label: "Analisar histórico" },
-      { icon: "sparkle", label: "Sugerir próxima ação" },
-      { icon: "graph",   label: "Verificar SLA restante" },
-      { icon: "edit",    label: "Escalar para operador" }
+      { icon: "edit",    label: "Alterar item do pedido"  },
+      { icon: "x",       label: "Cancelar o pedido"       },
+      { icon: "graph",   label: "Verificar SLA restante"  },
+      { icon: "sparkle", label: "Escalar para Supervisor" }
     ];
     const handleOrderChatSend = (text) => {
       setOrderChatMsgs(m => [...m, { from: "user", text }]);

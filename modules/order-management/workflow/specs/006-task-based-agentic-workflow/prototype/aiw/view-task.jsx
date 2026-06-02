@@ -285,7 +285,9 @@ function OdItemRow({ item, group }) {
   return (
     <div className="od-item-row">
       <div className="od-item-head">
-        <div className="od-item-thumb" />
+        <div className="od-item-thumb">
+          {item.emoji && <span>{item.emoji}</span>}
+        </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div className="od-item-name">
             {item.name}

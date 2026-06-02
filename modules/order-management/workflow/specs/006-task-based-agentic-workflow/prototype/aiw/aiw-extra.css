@@ -2503,6 +2503,12 @@ body.resizing-x .split-resizer::before { background: var(--primary); }
   width: 44px; height: 44px;
   border-radius: 6px; background: var(--bg-muted);
   flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; line-height: 1;
+  overflow: hidden;
+}
+.od-item-thumb img {
+  width: 100%; height: 100%; object-fit: cover; border-radius: 6px;
 }
 .od-item-name { font-size: 13px; font-weight: 500; color: var(--fg); }
 .od-item-meta { font-size: 11.5px; color: var(--fg-3); margin-top: 2px; }

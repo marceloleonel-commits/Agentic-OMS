@@ -435,9 +435,9 @@ window.AIWData = (function () {
             { icon:"🤝", label:"Entrega em Loja",           status:"pending" },
           ],
           items:[
-            { name:"Blusa Feminina Listrada",  sku:"CA-BL-1042", qty:2, price:"R$ 119,90", steps:stepsBOPISNotified("02/06/2026") },
-            { name:"Calça Jeans Slim Fit",     sku:"CA-CJ-2187", qty:1, price:"R$ 189,90", steps:stepsBOPISNotified("02/06/2026") },
-            { name:"Tênis Casual Urban",        sku:"CA-TN-3051", qty:1, price:"R$ 299,90", steps:stepsBOPISNotified("02/06/2026") },
+            { name:"Blusa Feminina Listrada",  emoji:"👗", sku:"CA-BL-1042", qty:2, price:"R$ 119,90", steps:stepsBOPISNotified("02/06/2026") },
+            { name:"Calça Jeans Slim Fit",     emoji:"👖", sku:"CA-CJ-2187", qty:1, price:"R$ 189,90", steps:stepsBOPISNotified("02/06/2026") },
+            { name:"Tênis Casual Urban",        emoji:"👟", sku:"CA-TN-3051", qty:1, price:"R$ 299,90", steps:stepsBOPISNotified("02/06/2026") },
           ],
         },
         {
@@ -450,8 +450,8 @@ window.AIWData = (function () {
             { icon:"🚚", label:"Entrega",                  status:"done" },
           ],
           items:[
-            { name:"Camiseta Básica Pack 2un", sku:"CA-CB-0991", qty:1, price:"R$ 89,90",  steps:stepsDeliveryAllDone("02/06/2026") },
-            { name:"Bermuda Cargo",            sku:"CA-BC-1773", qty:2, price:"R$ 149,90", steps:stepsDeliveryAllDone("02/06/2026") },
+            { name:"Camiseta Básica Pack 2un", emoji:"👕", sku:"CA-CB-0991", qty:1, price:"R$ 89,90",  steps:stepsDeliveryAllDone("02/06/2026") },
+            { name:"Bermuda Cargo",            emoji:"🩳", sku:"CA-BC-1773", qty:2, price:"R$ 149,90", steps:stepsDeliveryAllDone("02/06/2026") },
           ],
         },
       ],
@@ -479,7 +479,7 @@ window.AIWData = (function () {
             { icon:"🚚", label:"Entrega",                  status:"done" },
           ],
           items:[
-            { name:"Samsung Galaxy S24 FE 128GB", sku:"SM-S724B", qty:1, price:"R$ 3.499,00", steps:stepsDeliveryAllDone("30/05/2026") },
+            { name:"Samsung Galaxy S24 FE 128GB", emoji:"📱", sku:"SM-S724B", qty:1, price:"R$ 3.499,00", steps:stepsDeliveryAllDone("30/05/2026") },
           ],
         },
         {
@@ -499,7 +499,7 @@ window.AIWData = (function () {
             { icon:"✅", label:"Resolução",       status:"pending" },
           ],
           items:[
-            { name:"Samsung Galaxy S24 FE 128GB", sku:"SM-S724B", qty:1, price:"R$ 3.499,00",
+            { name:"Samsung Galaxy S24 FE 128GB", emoji:"📱", sku:"SM-S724B", qty:1, price:"R$ 3.499,00",
               steps:[
                 { label:"Abertura de Solicitação",          icon:"📝", status:"done",    agent:true,  time:"01/06/2026 18:32" },
                 { label:"Validar Elegibilidade",            icon:"🔍", status:"done",    agent:true,  time:"01/06/2026 18:33" },
@@ -540,7 +540,7 @@ window.AIWData = (function () {
             { icon:"📧", label:"Entrega Digital",           status:"pending" },
           ],
           items:[
-            { name:"Consulta Online — Assinatura 3 meses", sku:"DS-CO-3M", qty:1, price:"R$ 149,90",
+            { name:"Consulta Online — Assinatura 3 meses", emoji:"💻", sku:"DS-CO-3M", qty:1, price:"R$ 149,90",
               steps:[
                 { label:"Autorização de Pagamento", icon:"💳", status:"done",    agent:true,  time:"02/06/2026 10:15" },
                 { label:"Captura de Pagamento",     icon:"💳", status:"done",    agent:true,  time:"02/06/2026 10:15" },
@@ -562,7 +562,7 @@ window.AIWData = (function () {
             { icon:"🚚", label:"Entrega",                  status:"pending" },
           ],
           items:[
-            { name:"Vitamina C 1000mg — 60 comprimidos", sku:"DS-VC-1000", qty:5, price:"R$ 33,90",
+            { name:"Vitamina C 1000mg — 60 comprimidos", emoji:"💊", sku:"DS-VC-1000", qty:5, price:"R$ 33,90",
               steps:[
                 { label:"Autorização de Pagamento", icon:"💳", status:"done",    agent:true,  time:"02/06/2026 10:15" },
                 { label:"Captura de Pagamento",     icon:"💳", status:"done",    agent:true,  time:"02/06/2026 10:15" },
@@ -607,7 +607,7 @@ window.AIWData = (function () {
           items:[
             {
               name:"Kit Piso Vinílico + Rodapé",
-              sku:"KIT-PISO-RODAPE", qty:1, price:"R$ 780,00",
+              emoji:"🪵", sku:"KIT-PISO-RODAPE", qty:1, price:"R$ 780,00",
               isKit:true,
               kitComponents:[
                 { name:"Piso Vinílico Premium 2m²",  sku:"PV-2M2-04",  qty:4, unit:"caixas" },
@@ -640,7 +640,7 @@ window.AIWData = (function () {
             { icon:"🚚", label:"Entrega",                  status:"pending" },
           ],
           items:[
-            { name:"Cola de Instalação Vinílica 1kg", sku:"CI-1KG-VIN", qty:2, price:"R$ 45,90",
+            { name:"Cola de Instalação Vinílica 1kg", emoji:"🔧", sku:"CI-1KG-VIN", qty:2, price:"R$ 45,90",
               steps:[
                 { label:"Autorização de Pagamento", icon:"💳", status:"done",    agent:true,  time:"01/06/2026 14:00" },
                 { label:"Captura de Pagamento",     icon:"💳", status:"done",    agent:true,  time:"01/06/2026 14:00" },

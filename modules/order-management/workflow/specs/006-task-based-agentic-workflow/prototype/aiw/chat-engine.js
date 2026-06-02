@@ -391,19 +391,50 @@
       var currentOrder = contextOrderId
         ? orders.filter(function (o) { return o.id === contextOrderId; })[0]
         : null;
+      var orderId = currentOrder ? currentOrder.short || currentOrder.id : contextOrderId;
 
-      if (/histórico|history|auditoria/.test(lower)) {
-        agentSay({ from: 'agent', text: 'Histórico do pedido ' + (currentOrder ? currentOrder.id : contextOrderId) + ':\n\n• Pedido criado\n• Pagamento confirmado\n• Separação iniciada\n• Status atual: ' + (currentOrder ? currentOrder.statusLabel : 'Em processamento') });
+      /* ── Alterar item ── */
+      if (/alterar.*item|modificar.*item|change.*item|trocar.*item/i.test(lower)) {
+        agentSay([
+          { from: 'agent', text: 'Para alterar um item, preciso identificar qual item e o tipo de alteração (quantidade, endereço ou substituição de produto).' },
+          { from: 'agent', text: '⚠️ Alterações de item exigem confirmação do seller e podem impactar o SLA. Deseja prosseguir?',
+            quickReplies: ['Sim, prosseguir', 'Escalar para Supervisor', 'Cancelar'] }
+        ]);
         return;
       }
-      if (/próxima ação|sugerir|sugestão|suggest/.test(lower)) {
-        var risk = currentOrder && isAtSlaRisk(currentOrder);
-        agentSay({ from: 'agent', text: risk
-          ? 'Este pedido está com risco de atraso (ETA: ' + currentOrder.eta + ', SLA: ' + currentOrder.sla + '). Recomendo contatar o fornecedor e verificar disponibilidade de CD alternativo.'
-          : 'Pedido dentro do prazo. Próxima ação: aguardar confirmação de NF antes de ' + (currentOrder ? currentOrder.eta : 'a data de entrega') + '.' });
+
+      /* ── Cancelar pedido ── */
+      if (/cancelar.*pedido|cancelamento.*pedido|quero cancelar|cancel.*order/i.test(lower)) {
+        agentSay([
+          { from: 'agent', text: '⚠️ O cancelamento do pedido ' + orderId + ' é uma ação irreversível e requer autorização.' },
+          { from: 'agent', text: 'Posso escalar esta solicitação para um Supervisor para análise e aprovação.',
+            quickReplies: ['Escalar para Supervisor', 'Não, manter pedido'] }
+        ]);
         return;
       }
-      if (/sla|prazo|tempo restante/.test(lower)) {
+
+      /* ── Escalar para Supervisor ── */
+      if (/supervisor|escalar/i.test(lower)) {
+        agentSay([
+          { from: 'agent', text: 'Vou encaminhar a solicitação para um Supervisor. Confirme para criar a task de escalação:' },
+          {
+            from: 'agent',
+            type: 'action',
+            title: 'Escalar pedido ' + orderId + ' para Supervisor',
+            body: 'Pedido: ' + (currentOrder ? currentOrder.id : contextOrderId) + '\nStatus: ' + (currentOrder ? currentOrder.statusLabel : '—') + '\nSolicitação aguardando análise supervisória.',
+            onApply: function () {
+              if (onAgentSay) onAgentSay([{
+                from: 'agent',
+                text: '✅ Solicitação escalada com sucesso. Um Supervisor irá analisar e retornar em breve.'
+              }]);
+            }
+          }
+        ]);
+        return;
+      }
+
+      /* ── SLA ── */
+      if (/sla|prazo|tempo restante|verificar sla/i.test(lower)) {
         if (!currentOrder || currentOrder.eta === '—') {
           agentSay({ from: 'agent', text: 'Sem ETA definido para este pedido.' });
         } else {
@@ -411,15 +442,27 @@
           var etaDate = new Date(p[2], p[1] - 1, p[0]);
           var hoursLeft = Math.round((etaDate - PROTOTYPE_DATE) / 3600000);
           var slaH = SLA_MAP[currentOrder.sla] || '?';
-          agentSay({ from: 'agent', text: 'SLA: ' + currentOrder.sla + ' — Tempo restante: ' + (hoursLeft > 0 ? hoursLeft + 'h' : '⚠️ VENCIDO') + '. SLA total: ' + slaH + 'h.' });
+          var risk = isAtSlaRisk(currentOrder);
+          agentSay({ from: 'agent',
+            text: (risk ? '⚠️ ' : '✅ ') + 'SLA: ' + currentOrder.sla + ' · Tempo restante: ' + (hoursLeft > 0 ? hoursLeft + 'h' : 'VENCIDO') + ' · ETA: ' + currentOrder.eta,
+            quickReplies: risk ? ['Escalar para Supervisor', 'Alterar item do pedido'] : ['Alterar item do pedido', 'Cancelar o pedido']
+          });
         }
         return;
       }
-      if (/escalar|operador/.test(lower)) {
-        agentSay({ from: 'agent', text: 'Certo. Vou criar uma task de escalação. Deseja incluir um resumo da situação?', quickReplies: ['Sim, incluir resumo', 'Não, apenas escalar'] });
+
+      /* ── Histórico ── */
+      if (/histórico|history|auditoria/i.test(lower)) {
+        agentSay({ from: 'agent', text: 'Histórico do pedido ' + orderId + ':\n\n• Pedido criado e pagamento confirmado\n• Separação iniciada\n• Status atual: ' + (currentOrder ? currentOrder.statusLabel : 'Em processamento') });
         return;
       }
-      agentSay({ from: 'agent', text: 'Posso ajudar com: "analisar histórico", "sugerir próxima ação", "verificar SLA restante" ou "escalar para operador".' });
+
+      /* ── Fallback: ação não mapeada → sugerir escalação ── */
+      agentSay({
+        from: 'agent',
+        text: 'Não consigo executar esta ação automaticamente. Posso escalar a solicitação para um Supervisor que poderá analisá-la.',
+        quickReplies: ['Escalar para Supervisor', 'Alterar item do pedido', 'Cancelar o pedido']
+      });
     }
 
     /* ── Task context ─────────────────────────────────────────── */
