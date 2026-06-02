@@ -118,6 +118,7 @@ These are technical constraints of the current implementation — not product de
 
 | **Order Allocation heuristic does not cover sellerType=3** | The order allocation heuristic intentionally excludes sellerType=3 sellers in this release. The expected flow for the initial sponsor (Dollar General) is that the frontend pre-selects the desired seller before the order is placed. No automatic seller selection by the allocation engine is supported. |
 | **StockBalance route not functional for sellerType=3** | The `/stockBalance` route was intentionally not updated to support sellerType=3 sellers. Indexation flows must rely exclusively on Delivery Promises for availability signals. Any caller attempting to use StockBalance to retrieve inventory data for type=3 sellers will get no results for those sellers. |
+| **No batch creation or update for logistics entities** | The only batch capability available today is **Batch Inventory**, which updates inventory quantities — it does not create or update shipping policies, docks, or warehouses. Those entities must still be created or updated one at a time via the standard Logistics APIs. In the sellerType=3 model, all stores and their logistics configuration are concentrated in a single main account — unlike the franchise model, where each store has its own account and can be onboarded independently. At enterprise scale, this makes the initial data load and ongoing mass updates impractical without a dedicated batch mechanism. **Shipping policies are the most critical gap:** merchants typically need at least one policy per seller, making this the entity with the highest volume (e.g., DG with ~69K policies vs. ~46K docks and ~46K warehouses). VTEX is handling the initial upload for the sponsor customer given timeline constraints; a self-service batch capability for merchants remains on the backlog and is not available by 6/18. |
 | **No parallel bulk updates for logistics entities** | The S3 + lock architecture used by Logistics prevents parallel updates to docks, warehouses, and shipping policies. At DG scale (46K docks, 46K warehouses, 69K shipping policies), bulk operations that require simultaneous changes must be serialized. A dedicated bulk-write mechanism may need to be developed before large-scale operational use. |
 | **SOS order closing not yet updated** | Changes made in Checkout to support sellerType=3 in the order closing flow have not yet been replicated in SOS. This gap will need to be addressed during the marketplace order closing migration to SOS. |
 
@@ -132,6 +133,20 @@ These are known scalability and correctness risks identified during the implemen
 | **Aggregation route without guardrail** | The `/aggregation` route was not updated for sellerType=3. No flow should be calling it, but there is no enforcement mechanism. If called without scoping, the request has explosive potential given the scale of DG's logistics structure (69K policies, 46K docks, 46K warehouses). A guard or hard limit must be added before this becomes a problem in production. | 🔴 High |
 | **S3 document size at DG scale** | The total size of Logistics documents stored in S3 — particularly shipping policies — may become unviable at DG's scale. This has not been stress-tested for 69K policies in a single account. | 🔴 High |
 | **Delivery routes processing at scale** | With 46K warehouses/docks and 69K shipping policies, the total number of delivery routes can become very large, making route processing slow or causing failures. Today this only affects the `items/v2` route. This risk needs monitoring after go-live and may require architectural changes if route volume is problematic. | 🔴 High |
+
+---
+
+## Future plans
+
+These are not in scope for the Q2C2 API release or the June 18 sponsor go-live. They address structural scalability limits surfaced by sellerType=3 at enterprise scale — especially the concentration of tens of thousands of shipping policies in a single main account.
+
+| Initiative | Rationale | Expected impact |
+| --- | --- | --- |
+| **Migrate shipping policies to a relational database** | Shipping policies are today stored as Logistics documents in S3. At DG scale (~69K policies in one account), document size, serialization under lock, and delivery-route processing become bottlenecks (see Open technical risks). A relational store would enable efficient querying, filtering, and updates at volume — including seller-scoped reads and batch operations that the current architecture does not support. | Unblocks batch create/update for shipping policies, reduces timeout risk on simple updates, improves route processing performance, and is a prerequisite for self-service bulk onboarding at enterprise scale. |
+| **Self-service batch upload for shipping policies** | Merchants like DG need to load and maintain one or more policies per seller without VTEX-operated file uploads. Depends on batch APIs and/or the relational migration above. | Reduces operational dependency on VTEX for initial load and ongoing mass updates. |
+| **Parallel / bulk-write mechanism for logistics entities** | S3 + lock architecture serializes updates to docks, warehouses, and shipping policies. | Required for large-scale operational changes without long-running, failure-prone bulk jobs. |
+
+> **Note:** Shipping policy storage migration is the highest-priority future initiative for sellerType=3 logistics scalability. Batch inventory already covers inventory quantities only; policies, docks, and warehouses remain the critical gap for initial load and maintenance.
 
 ---
 

@@ -25,6 +25,8 @@ The Delivery Options Agent backend must follow the same standard the platform is
 
 VTEX's AI Workspace provides a standardized scaffolding template ([Create AI Workspace Agent](https://darkkitchen.vtex.com/create/templates/default/create-ai-workspace-agent)) that automates the most time-consuming parts of agent setup: Agent ID generation, repository creation, Tech Catalog registration, deployment pipelines, and credentials provisioning. Using this template eliminates manual configuration risk and ensures the Delivery Options Agent follows VTEX's standard agentic architecture from day one.
 
+**What this agent will do (beyond this release):** absorb logistics configuration workflows that require reading the merchant's **shipping policies, delivery routes, docks, warehouses, and existing Delivery Options** — at account level and, for enterprise seller architecture, **per seller** within the same account. Spec 002 only provisions the backend; see [product-spec.md](./product-spec.md#agent-purpose-long-term) for the full data context and API surface engineering needs for credentials scoping.
+
 ---
 
 ## Scope (this release)
