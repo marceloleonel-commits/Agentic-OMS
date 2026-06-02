@@ -165,8 +165,13 @@ function OdStepRow({ step }) {
       <div className="od-step-bar" style={{ background: step.cancelSignal ? "#EF4444" : lc }} />
       <div className="od-step-content">
         <div className="od-step-head">
-          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
             <span className="od-step-label" style={{ color: lc }}>{step.label}</span>
+            {step.owner && (
+              <span style={{ fontSize: 10.5, fontWeight: 500, color: "var(--fg-3)", background: "var(--bg-muted)", border: "1px solid var(--border)", borderRadius: 5, padding: "1px 6px", lineHeight: 1.5 }}>
+                {step.owner}
+              </span>
+            )}
             {step.cancelSignal && (
               <span style={{ fontSize: 10, fontWeight: 700, background: "#FEF2F2", color: "#EF4444", border: "1px solid #FECACA", borderRadius: 6, padding: "1px 7px" }}>
                 ⚠ Cancelamento sinalizado
@@ -270,7 +275,10 @@ function OdItemRow({ item, group }) {
   if (wfDef && item.steps && item.steps.length > 0) {
     const built = wfDef.stages.map((wfStage, si) => {
       const taskNames = new Set(wfStage.tasks.map(t => t.name));
-      const stageSteps = item.steps.filter(s => taskNames.has(s.label));
+      const stageSteps = item.steps.filter(s => taskNames.has(s.label)).map(s => {
+        const wfTask = wfStage.tasks.find(t => t.name === s.label);
+        return wfTask ? { ...s, owner: wfTask.owner } : s;
+      });
       const groupStage = group.stages && group.stages[si];
       return {
         label:  wfStage.name,

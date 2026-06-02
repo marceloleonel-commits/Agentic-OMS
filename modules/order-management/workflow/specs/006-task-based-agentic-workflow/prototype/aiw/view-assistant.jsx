@@ -144,7 +144,6 @@ function AllOrdersTable({ onOpenOrder }) {
           <span>Origem</span>
           <span>Itens</span>
           <span>Total</span>
-          <span>Status</span>
           <span>Caso de Uso</span>
         </div>
         {orders.map((o, i) =>
@@ -159,7 +158,6 @@ function AllOrdersTable({ onOpenOrder }) {
             <span>{o.origin}</span>
             <span>{o.qty}</span>
             <span>{o.total}</span>
-            <span><span className={`orders-status orders-status-${o.status}`}>{o.statusLabel}</span></span>
             <span style={{ display: "flex", flexDirection: "column", gap: 3 }}>
               <span style={{ fontSize: 12, fontWeight: 700, color: "var(--fg)" }}>{o.seller || "—"}</span>
               {o.note && o.note.useCase && (
