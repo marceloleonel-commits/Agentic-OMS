@@ -186,7 +186,7 @@ function App() {
       </div>
     );
   } else if (route.name === "task") {
-    view = <TaskView taskId={route.id} onBack={goHome} />;
+    view = <TaskView taskId={route.id} onBack={goHome} onOpenOrder={openOrder} />;
   } else if (route.name === "workflow-board") {
     view = <WorkflowBoardView onBack={goHome} wfLayout={tweaks.wfLayout} wfGroup={tweaks.wfGroup} />;
   } else if (route.name === "orchestration") {

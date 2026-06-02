@@ -1,5 +1,5 @@
-/* global React, Icon, AIWData, ChatPanel */
-const { useState, useRef, useEffect } = React;
+/* global React, Icon, AIWData, ChatPanel, ChatEngine */
+const { useState, useRef, useEffect, useCallback } = React;
 
 function SevPill({ level }) {
   const map = { high: "Alta", medium: "Média", low: "Baixa" };
@@ -476,7 +476,7 @@ function TaskCanvas({ task, onBack }) {
 
 }
 
-function TaskView({ taskId, onBack }) {
+function TaskView({ taskId, onBack, onOpenOrder }) {
   const task = AIWData.tasks.find((t) => t.id === taskId);
   if (!task) return null;
   const d = task.detail;
@@ -485,6 +485,30 @@ function TaskView({ taskId, onBack }) {
   const dragRef = useRef(false);
   const rootRef = useRef(null);
 
+  // Chat engine state
+  const [chatMsgs, setChatMsgs] = useState(d.chat || []);
+  const [isTyping, setIsTyping] = useState(false);
+  const engineRef = useRef(null);
+
+  // Initialise / re-initialise engine when taskId changes
+  useEffect(() => {
+    setChatMsgs(d.chat || []);
+    setIsTyping(false);
+    engineRef.current = ChatEngine.create({
+      context: "task",
+      data: AIWData,
+      task: task,
+      onNavigate: (route) => { if (onOpenOrder) onOpenOrder(route.orderId); },
+      onAddFollowUp: (newItem) => {
+        // Add to task's followUp array in-memory (prototype only)
+        if (task.detail.followUp) task.detail.followUp.push(newItem);
+      },
+      onAgentSay: (msgs) => setChatMsgs((m) => [...m, ...msgs]),
+      onTyping: setIsTyping,
+    });
+  }, [taskId]);
+
+  // Drag-to-resize
   useEffect(() => {
     const onMove = (e) => {
       if (!dragRef.current || !rootRef.current) return;
@@ -506,13 +530,18 @@ function TaskView({ taskId, onBack }) {
   }, []);
 
   const chips = [
-  { icon: "list", label: "Summarize the initiative" },
-  { icon: "plus", label: "Create new task" },
-  { icon: "sparkle", label: "Suggest next steps" },
-  { icon: "search", label: "Analyze impacted orders" }];
+    { icon: "list",    label: "Summarize the initiative"                  },
+    { icon: "plus",    label: "+ create new task"                         },
+    { icon: "sparkle", label: "Suggest next steps"                        },
+    { icon: "search",  label: "Analize impacted orders and sugest actions" }
+  ];
 
+  const handleSend = (text) => {
+    setChatMsgs((m) => [...m, { from: "user", text }]);
+    engineRef.current && engineRef.current.send(text);
+  };
 
-  const intro = `Esta iniciativa foi reportada por ${d.reportedBy.agent} em ${d.reportedBy.at}. ${d.summary}`;
+  const intro = `Reportada por ${d.reportedBy.agent} · ${d.reportedBy.at}`;
 
   return (
     <div
@@ -520,13 +549,15 @@ function TaskView({ taskId, onBack }) {
       className="main split-main resizable-split"
       style={{ gridTemplateColumns: `${chatWidth}px 6px 1fr` }}
       data-screen-label={`02 Task ${taskId}`}>
-      
+
       <ChatPanel
         title={d.title}
         intro={intro}
         chips={chips}
-        initialMessages={d.chat}
-        placeholder={`Ask about initiative ${task.id}...`}
+        messages={chatMsgs}
+        onSend={handleSend}
+        isTyping={isTyping}
+        placeholder={`Pergunte sobre a iniciativa ${task.id}…`}
         onBack={onBack} />
       
       <div

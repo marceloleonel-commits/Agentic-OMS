@@ -94,13 +94,16 @@
     var context          = options.context;
     var data             = options.data;
     var contextOrderId   = options.orderId;
+    var contextTask      = options.task;       // full task object for context:"task"
     var onNavigate       = options.onNavigate;
     var onApplyRule      = options.onApplyRule;
     var onCreateExperience = options.onCreateExperience;
+    var onAddFollowUp    = options.onAddFollowUp; // callback for new task in task context
     var onAgentSay       = options.onAgentSay;
     var onTyping         = options.onTyping;
 
     var experienceDraft = null;
+    var newTaskDraft    = null; // state machine for "Create new task" in task context
 
     /* Simulate async agent response */
     function agentSay(msgs, delay) {
@@ -419,6 +422,207 @@
       agentSay({ from: 'agent', text: 'Posso ajudar com: "analisar histórico", "sugerir próxima ação", "verificar SLA restante" ou "escalar para operador".' });
     }
 
+    /* ── Task context ─────────────────────────────────────────── */
+
+    function handleNewTaskDraftStep(text, lower) {
+      if (!newTaskDraft) return false;
+      if (/cancelar|sair|desistir/.test(lower)) {
+        newTaskDraft = null;
+        agentSay({ from: 'agent', text: 'Criação de tarefa cancelada. Diga "criar tarefa" quando quiser tentar novamente.' });
+        return true;
+      }
+      if (newTaskDraft.step === 'title') {
+        newTaskDraft.title = text.trim();
+        newTaskDraft.step = 'assignee';
+        // Collect existing assignees from followUp for quick replies
+        var d = contextTask && contextTask.detail;
+        var assignees = [];
+        if (d && d.followUp) {
+          d.followUp.forEach(function (t) {
+            if (t.assignee && t.assignee !== 'OMS Agent' && assignees.indexOf(t.assignee) === -1) {
+              assignees.push(t.assignee);
+            }
+          });
+        }
+        if (d && d.attributedTo && assignees.indexOf(d.attributedTo.name) === -1) {
+          assignees.push(d.attributedTo.name);
+        }
+        if (assignees.length === 0) assignees = ['Guilherme Vecchi', 'Maria Santos'];
+        agentSay({
+          from: 'agent',
+          text: 'Quem vai ser o responsável pela tarefa "' + newTaskDraft.title + '"?',
+          quickReplies: assignees.concat(['Atribuir depois'])
+        });
+        return true;
+      }
+      if (newTaskDraft.step === 'assignee') {
+        newTaskDraft.assignee = /atribuir depois|depois|skip/i.test(text) ? '—' : text.trim();
+        var snap = { title: newTaskDraft.title, assignee: newTaskDraft.assignee };
+        newTaskDraft = null;
+        agentSay([
+          { from: 'agent', text: 'Pronto! Confirme para adicionar à lista de follow-ups da iniciativa:' },
+          {
+            from: 'agent',
+            type: 'action',
+            title: snap.title,
+            body: 'Responsável: ' + snap.assignee + '\nEstado: Pendente',
+            onApply: function () {
+              if (onAddFollowUp) onAddFollowUp({ state: 'attention', title: snap.title, assignee: snap.assignee });
+              if (onAgentSay) onAgentSay([{ from: 'agent', text: 'Tarefa "' + snap.title + '" adicionada aos follow-ups. ✅' }]);
+            }
+          }
+        ]);
+        return true;
+      }
+      return false;
+    }
+
+    function handleTaskMessage(text) {
+      var lower = text.toLowerCase();
+      var d = contextTask && contextTask.detail;
+
+      // New task draft step
+      if (handleNewTaskDraftStep(text, lower)) return;
+
+      // Summarize the initiative
+      if (/summarize|sumariz|resumo|iniciativa|summary/i.test(lower)) {
+        if (!d) { agentSay({ from: 'agent', text: 'Nenhuma iniciativa carregada.' }); return; }
+        var impactCount = d.impacted ? d.impacted.length : 0;
+        var pendingCount = d.followUp ? d.followUp.length : 0;
+        var resolvedCount = d.resolved ? d.resolved.length : 0;
+        agentSay([
+          {
+            from: 'agent',
+            text: '📋 ' + d.title + '\n\nReportada por: ' + d.reportedBy.agent + ' · ' + d.reportedBy.at
+          },
+          {
+            from: 'agent',
+            text: d.summary + (d.diagnosis ? '\n\n🔍 Diagnóstico: ' + d.diagnosis : '')
+          },
+          {
+            from: 'agent',
+            text: '📊 ' + impactCount + ' pedido(s) impactado(s) · ' + pendingCount + ' tarefa(s) pendente(s) · ' + resolvedCount + ' concluída(s)',
+            quickReplies: ['Analize impacted orders and sugest actions', 'Suggest next steps']
+          }
+        ]);
+        return;
+      }
+
+      // Suggest next steps
+      if (/suggest next|próximas etapas|próximos passos|next steps|sugerir|suggest/i.test(lower)) {
+        if (!d) { agentSay({ from: 'agent', text: 'Nenhuma iniciativa carregada.' }); return; }
+        var msgs = [];
+        var stateLabel = { attention: '⚠️ Atenção necessária', loading: '⏳ Em progresso', done: '✅ Concluído' };
+
+        // Pending tasks
+        if (d.followUp && d.followUp.length > 0) {
+          var pendingText = 'Tarefas pendentes desta iniciativa:\n\n';
+          d.followUp.forEach(function (t) {
+            pendingText += (stateLabel[t.state] || '•') + ' ' + t.title + ' → ' + t.assignee + '\n';
+          });
+          msgs.push({ from: 'agent', text: pendingText.trim() });
+        }
+
+        // Recommend priority action
+        var attentionTask = d.followUp && d.followUp.filter(function (t) { return t.state === 'attention'; })[0];
+        if (attentionTask) {
+          msgs.push({
+            from: 'agent',
+            text: '🎯 Próximo passo prioritário: "' + attentionTask.title + '" está aguardando ação de ' + attentionTask.assignee + '. Deseja criar uma task de acompanhamento?',
+            quickReplies: ['+ create new task', 'Analize impacted orders and sugest actions']
+          });
+        } else if (d.impacted && d.impacted.length > 0) {
+          msgs.push({
+            from: 'agent',
+            text: 'Todas as tarefas estão em progresso. Recomendo verificar o status dos ' + d.impacted.length + ' pedidos impactados.',
+            quickReplies: ['Analize impacted orders and sugest actions']
+          });
+        }
+
+        agentSay(msgs);
+        return;
+      }
+
+      // Create new task
+      if (/create new task|criar.*tarefa|nova tarefa|\+ create/i.test(lower)) {
+        newTaskDraft = { step: 'title', title: '', assignee: '' };
+        agentSay({ from: 'agent', text: 'Vamos criar uma nova tarefa de acompanhamento. Qual é o título?' });
+        return;
+      }
+
+      // Analyze impacted orders
+      if (/anali[sz]e?|impacted|impacto|pedidos.*impactado|orders and sug/i.test(lower)) {
+        if (!d || !d.impacted || d.impacted.length === 0) {
+          agentSay({ from: 'agent', text: 'Nenhum pedido impactado registrado nesta iniciativa.' });
+          return;
+        }
+        var orderMsgs = [
+          { from: 'agent', text: d.impacted.length + ' pedido(s) impactado(s) nesta iniciativa:' }
+        ];
+
+        // Build order-list message from impacted
+        var impactedOrders = d.impacted.map(function (imp) {
+          // Extract raw ID from "1631888948228-01 (68948228)" format
+          var rawId = imp.id.split(' (')[0];
+          var short = imp.id.match(/\(([^)]+)\)/) ? imp.id.match(/\(([^)]+)\)/)[1] : rawId.slice(-8);
+          return {
+            id: rawId,
+            short: short,
+            customer: imp.seller,
+            sla: imp.sla,
+            eta: imp.eta,
+            status: 'processing',
+            statusLabel: 'Impactado'
+          };
+        });
+
+        orderMsgs.push({
+          from: 'agent',
+          type: 'order-list',
+          orders: impactedOrders,
+          onOpenOrder: function (id) { if (onNavigate) onNavigate({ name: 'order-detail', orderId: id }); }
+        });
+
+        // Suggest action based on task tag/diagnosis
+        var urgentOrders = d.impacted.filter(function (imp) {
+          var slaH = parseInt(imp.sla) || 99;
+          return slaH <= 6;
+        });
+        if (urgentOrders.length > 0) {
+          orderMsgs.push({
+            from: 'agent',
+            text: '⚠️ ' + urgentOrders.length + ' pedido(s) com SLA ≤ 6h requerem ação imediata. Recomendo reatribuição para CD alternativo ou contato direto com o seller.',
+            quickReplies: ['+ create new task', 'Suggest next steps']
+          });
+        } else {
+          orderMsgs.push({
+            from: 'agent',
+            text: 'Os pedidos estão dentro de uma janela de SLA gerenciável. Acompanhe os follow-ups para garantir resolução antes do prazo.',
+            quickReplies: ['Suggest next steps']
+          });
+        }
+
+        agentSay(orderMsgs);
+        return;
+      }
+
+      // General help for task context
+      if (/ajuda|help|capacidade/i.test(lower)) {
+        agentSay({
+          from: 'agent',
+          text: 'Posso ajudar com esta iniciativa:\n\n📋 Summarize the initiative\n🎯 Suggest next steps\n📦 Analize impacted orders and sugest actions\n➕ + create new task\n\nSó clicar nos chips ou digitar sua pergunta.',
+        });
+        return;
+      }
+
+      // Fallback
+      agentSay({
+        from: 'agent',
+        text: 'Posso resumir a iniciativa, sugerir próximos passos, analisar pedidos impactados ou criar uma nova tarefa.',
+        quickReplies: ['Summarize the initiative', 'Suggest next steps', 'Analize impacted orders and sugest actions']
+      });
+    }
+
     /* ── Public API ── */
     return {
       send: function (userText) {
@@ -426,9 +630,11 @@
         if (context === 'assistant')          handleAssistantMessage(userText);
         else if (context === 'orchestration') handleOrchestrationMessage(userText);
         else if (context === 'order-detail')  handleOrderDetailMessage(userText);
+        else if (context === 'task')          handleTaskMessage(userText);
       },
       reset: function () {
         experienceDraft = null;
+        newTaskDraft    = null;
       }
     };
   }
