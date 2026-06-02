@@ -22,7 +22,7 @@ function AITeamDrawer({ open, onClose, onPick }) {
 
         <div className="aiteam-section-title">Assistentes principais</div>
         <div className="aiteam-list">
-          {team.filter((a) => a.id === "assistant" || a.id === "orchestration").map((a) =>
+          {team.filter((a) => a.id === "assistant").map((a) =>
             <button key={a.id} className="aiteam-row primary" onClick={() => onPick(a.id)}>
               <div className="aiteam-avatar primary" style={{ background: a.color }}>
                 <Icon name="sparkle" size={14} />
