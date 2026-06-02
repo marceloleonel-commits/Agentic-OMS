@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ADR-001 — Fulfillment Configuration Agent Architecture</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0f0f0f;
+    --surface: #161616;
+    --surface-2: #1e1e1e;
+    --border: #2a2a2a;
+    --border-accent: #3d3d3d;
+    --text: #e8e8e8;
+    --text-muted: #7a7a7a;
+    --text-dim: #4a4a4a;
+    --accent: #00d4ff;
+    --accent-2: #7b61ff;
+    --accent-3: #00ff9d;
+    --accent-warn: #ffb547;
+    --accent-danger: #ff5757;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 14px;
+    line-height: 1.7;
+    padding: 48px 40px;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .adr-header { border-left: 3px solid var(--accent); padding-left: 20px; margin-bottom: 48px; }
+  .adr-badge { font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 600; letter-spacing: 0.15em; color: var(--accent); text-transform: uppercase; margin-bottom: 8px; }
+  .adr-title { font-size: 28px; font-weight: 600; color: var(--text); line-height: 1.2; margin-bottom: 20px; }
+  .status-badge { display: inline-flex; align-items: center; gap: 6px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 600; letter-spacing: 0.08em; padding: 4px 12px; border-radius: 3px; background: #0d2a1a; color: var(--accent-3); border: 1px solid #1a4a2a; margin-bottom: 20px; }
+  .status-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent-3); }
+
+  .meta-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; margin-top: 16px; }
+  .meta-item { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 10px 14px; }
+  .meta-label { font-family: 'IBM Plex Mono', monospace; font-size: 9px; font-weight: 600; letter-spacing: 0.12em; color: var(--text-muted); text-transform: uppercase; margin-bottom: 4px; }
+  .meta-value { font-size: 13px; font-weight: 500; color: var(--text); }
+
+  .section { margin-bottom: 40px; }
+  .section-header { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+  .section-num { font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 600; color: var(--text-dim); min-width: 24px; }
+  .section-title { font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); }
+  .section-content { color: var(--text); font-size: 14px; line-height: 1.75; }
+  .section-content p { margin-bottom: 12px; }
+  .section-content p:last-child { margin-bottom: 0; }
+
+  .goal-box { background: #1a1405; border: 1px solid var(--accent-warn); border-left: 3px solid var(--accent-warn); border-radius: 4px; padding: 18px 22px; margin: 16px 0; }
+  .goal-label { font-family: 'IBM Plex Mono', monospace; font-size: 9px; font-weight: 600; letter-spacing: 0.15em; color: var(--accent-warn); text-transform: uppercase; margin-bottom: 10px; }
+  .goal-box p { font-size: 14.5px; color: var(--text); line-height: 1.6; }
+
+  .decision-box { background: #0a1a2a; border: 1px solid var(--accent); border-left: 3px solid var(--accent); border-radius: 4px; padding: 18px 22px; margin: 16px 0; }
+  .decision-label { font-family: 'IBM Plex Mono', monospace; font-size: 9px; font-weight: 600; letter-spacing: 0.15em; color: var(--accent); text-transform: uppercase; margin-bottom: 10px; }
+  .decision-box p { font-size: 15px; font-weight: 500; color: var(--text); line-height: 1.6; }
+
+  /* Capability flow */
+  .flow { display: flex; align-items: stretch; gap: 0; margin: 20px 0; flex-wrap: wrap; }
+  .flow-stage { flex: 1; min-width: 180px; background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 16px; position: relative; }
+  .flow-stage-num { font-family: 'IBM Plex Mono', monospace; font-size: 9px; font-weight: 600; color: var(--accent); letter-spacing: 0.1em; margin-bottom: 8px; }
+  .flow-stage-title { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 8px; }
+  .flow-stage-list { list-style: none; }
+  .flow-stage-list li { font-size: 12px; color: var(--text-muted); padding-left: 12px; position: relative; margin-bottom: 4px; line-height: 1.4; }
+  .flow-stage-list li::before { content: '·'; position: absolute; left: 2px; color: var(--accent-2); }
+  .flow-arrow { display: flex; align-items: center; justify-content: center; color: var(--accent); font-size: 18px; padding: 0 8px; flex: 0 0 auto; }
+
+  .options-grid { display: grid; gap: 12px; margin: 16px 0; }
+  .option-card { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 18px 20px; }
+  .option-card.chosen { border-color: var(--accent-3); background: #0a1a12; }
+  .option-card.rejected { opacity: 0.55; }
+  .option-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .option-name { font-family: 'IBM Plex Mono', monospace; font-size: 13px; font-weight: 600; color: var(--text); }
+  .option-tag { font-family: 'IBM Plex Mono', monospace; font-size: 9px; font-weight: 600; letter-spacing: 0.1em; padding: 3px 9px; border-radius: 3px; text-transform: uppercase; }
+  .tag-chosen { background: #0d2a1a; color: var(--accent-3); border: 1px solid #1a4a2a; }
+  .tag-rejected { background: #2a1a1a; color: var(--accent-danger); border: 1px solid #4a2a2a; }
+  .tag-open { background: #2a2a0a; color: var(--accent-warn); border: 1px solid #4a4a0a; }
+  .option-desc { font-size: 13px; color: var(--text-muted); margin-bottom: 14px; }
+  .pros-cons { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .pros-label, .cons-label { font-family: 'IBM Plex Mono', monospace; font-size: 9px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 8px; }
+  .pros-label { color: var(--accent-3); }
+  .cons-label { color: var(--accent-danger); }
+  .pros ul, .cons ul { list-style: none; }
+  .pros li, .cons li { padding-left: 16px; position: relative; margin-bottom: 5px; color: var(--text); font-size: 13px; line-height: 1.5; }
+  .pros li::before { content: '+'; position: absolute; left: 0; color: var(--accent-3); font-weight: 700; }
+  .cons li::before { content: '\2212'; position: absolute; left: 0; color: var(--accent-danger); font-weight: 700; }
+
+  .data-table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 13px; }
+  .data-table th { font-family: 'IBM Plex Mono', monospace; font-size: 9px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-muted); text-align: left; padding: 10px 14px; background: var(--surface); border-bottom: 1px solid var(--border-accent); }
+  .data-table td { padding: 11px 14px; border-bottom: 1px solid var(--border); vertical-align: top; line-height: 1.5; }
+  .data-table tr:last-child td { border-bottom: none; }
+  code { font-family: 'IBM Plex Mono', monospace; font-size: 12px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 3px; padding: 1px 6px; color: var(--accent); }
+  .repo-type-tag { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--accent-2); }
+
+  .code-block { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 18px 20px; font-family: 'IBM Plex Mono', monospace; font-size: 12px; line-height: 1.9; color: #c0c0c0; margin: 16px 0; overflow-x: auto; white-space: pre; }
+  .dir { color: var(--accent); }
+  .comment-text { color: var(--text-dim); font-style: italic; }
+
+  .consequence-list { display: grid; gap: 8px; margin: 12px 0; }
+  .consequence-item { display: flex; gap: 14px; align-items: flex-start; padding: 12px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 4px; font-size: 13.5px; line-height: 1.6; }
+  .consequence-icon { flex-shrink: 0; margin-top: 1px; }
+
+  hr.divider { border: none; border-top: 1px solid var(--border); margin: 40px 0 24px; }
+  .adr-footer { display: flex; justify-content: space-between; align-items: center; }
+  .footer-ref { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--text-dim); letter-spacing: 0.08em; }
+</style>
+</head>
+<body>
+
+<div class="adr-header">
+  <div class="adr-badge">ADR — Architecture Decision Record</div>
+  <div class="adr-title">Fulfillment Configuration Agent Architecture</div>
+  <div class="status-badge"><span class="status-dot"></span>Accepted</div>
+  <div class="meta-grid">
+    <div class="meta-item"><div class="meta-label">ADR ID</div><div class="meta-value">ADR-001</div></div>
+    <div class="meta-item"><div class="meta-label">Date</div><div class="meta-value">June 2026</div></div>
+    <div class="meta-item"><div class="meta-label">Author</div><div class="meta-value">Ricardinho</div></div>
+    <div class="meta-item"><div class="meta-label">Related to</div><div class="meta-value">Spec 002 — Q2C2</div></div>
+    <div class="meta-item"><div class="meta-label">Domain</div><div class="meta-value">Fulfillment / Agentic</div></div>
+    <div class="meta-item"><div class="meta-label">Pillar</div><div class="meta-value">Fulfillment Config</div></div>
+  </div>
+</div>
+
+<!-- 01 CONTEXT -->
+<div class="section">
+  <div class="section-header"><span class="section-num">01</span><span class="section-title">Context</span></div>
+  <div class="section-content">
+    <p>The Fulfillment team is building a logistics configuration agent that starts with the Delivery Options use case but must be scalable to absorb other domains over time: inventory updates, Delivery Windows configuration, and more.</p>
+    <p>The agent needs to read and write data from VTEX's Logistics APIs, follow the platform's agentic architecture standard (AI Workspace / Dark Kitchen), and be viable for Q2C2 without premature over-engineering.</p>
+    <p>The central decision is how to structure the repositories and the agents so the system is scalable, without creating unnecessary complexity at the start.</p>
+  </div>
+</div>
+
+<!-- 02 GOAL OF THIS CYCLE -->
+<div class="section">
+  <div class="section-header"><span class="section-num">02</span><span class="section-title">Goal of This Cycle (Q2C2)</span></div>
+  <div class="goal-box">
+    <div class="goal-label">Cycle Goal</div>
+    <p>Set up the agent's <strong>backend</strong>. Have the backend prepared so that work on top of the agent can begin afterward — for example, already including logistics coverage analysis actions inside the Delivery Options feature we already have shipped.</p>
+  </div>
+  <div class="section-content">
+    <p>This cycle is infrastructure-focused: the backend must be hosted, deployed, and observable following the platform standard, ready to receive agent tasks. Implementation of the analysis actions themselves comes in subsequent cycles.</p>
+  </div>
+</div>
+
+<!-- 03 WHAT THE AGENT DOES -->
+<div class="section">
+  <div class="section-header"><span class="section-num">03</span><span class="section-title">What the Agent Covers</span></div>
+  <div class="section-content">
+    <p>The agent reads the logistics data stored on the platform, understands delivery routes from it, and translates that understanding into Delivery Options (lead times, coverage, filters).</p>
+  </div>
+
+  <div class="flow">
+    <div class="flow-stage">
+      <div class="flow-stage-num">INPUT — DATA READ</div>
+      <div class="flow-stage-title">Logistics data</div>
+      <ul class="flow-stage-list">
+        <li>Shipping policies (SLAs, costs, working hours)</li>
+        <li>Docks</li>
+        <li>Warehouses</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">&#8594;</div>
+    <div class="flow-stage">
+      <div class="flow-stage-num">REASONING</div>
+      <div class="flow-stage-title">Understands routes</div>
+      <ul class="flow-stage-list">
+        <li>Derives delivery routes</li>
+        <li>Detects problems and gaps</li>
+        <li>Maps coverage &amp; constraints</li>
+      </ul>
+    </div>
+    <div class="flow-arrow">&#8594;</div>
+    <div class="flow-stage">
+      <div class="flow-stage-num">OUTPUT</div>
+      <div class="flow-stage-title">Delivery Options</div>
+      <ul class="flow-stage-list">
+        <li>Lead times</li>
+        <li>Coverage</li>
+        <li>Filters</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- 04 PRIMARY OBJECTIVE -->
+<div class="section">
+  <div class="section-header"><span class="section-num">04</span><span class="section-title">Primary Objective</span></div>
+  <div class="section-content">
+    <p>Help with logistics configurations related to Delivery Options, and fix configuration problems in the account's logistics setup more broadly.</p>
+    <p>Concretely, the agent is able to read the logistics data stored on the platform (see section 03), identify potential problems, translate them into Delivery Options, and based on that <strong>suggest optimizations for coverage, lead time, and shipping margin</strong>.</p>
+  </div>
+</div>
+
+<!-- 05 DECISION -->
+<div class="section">
+  <div class="section-header"><span class="section-num">05</span><span class="section-title">Decision</span></div>
+  <div class="decision-box">
+    <div class="decision-label">Decision</div>
+    <p>Multi-agent architecture with an Orchestrator + specialized Sub-agents, two separate repositories (<code>fulfillment-config-agent</code> as a monorepo and <code>fulfillment-mcp-server</code> as a shared platform service), using the Strands framework.</p>
+  </div>
+</div>
+
+<!-- 06 OPTIONS CONSIDERED -->
+<div class="section">
+  <div class="section-header"><span class="section-num">06</span><span class="section-title">Options Considered</span></div>
+  <div class="options-grid">
+
+    <div class="option-card rejected">
+      <div class="option-header"><span class="option-name">Option A — Single super-agent</span><span class="option-tag tag-rejected">Rejected</span></div>
+      <p class="option-desc">One agent with access to every domain (SLAs, docks, warehouses, DOs, inventory...).</p>
+      <div class="pros-cons">
+        <div class="pros"><div class="pros-label">Pros</div><ul>
+          <li>Simple to start</li>
+          <li>Single deploy</li>
+          <li>Unified context</li>
+        </ul></div>
+        <div class="cons"><div class="cons-label">Cons</div><ul>
+          <li>Context window grows with each new domain</li>
+          <li>Coupled deploy across domains</li>
+          <li>Reasoning quality drops as scope widens</li>
+          <li>Does not scale to other teams</li>
+        </ul></div>
+      </div>
+    </div>
+
+    <div class="option-card chosen">
+      <div class="option-header"><span class="option-name">Option B — Orchestrator + specialized Sub-agents (Strands)</span><span class="option-tag tag-chosen">Chosen</span></div>
+      <p class="option-desc">An Orchestrator centralizes intent and delegates to domain-specialized sub-agents. Each sub-agent has a focused system prompt.</p>
+      <div class="pros-cons">
+        <div class="pros"><div class="pros-label">Pros</div><ul>
+          <li>Lean system prompt per sub-agent</li>
+          <li>New domain = new sub-agent without touching the orchestrator</li>
+          <li>Independent deploy per component</li>
+          <li>Strands natively supports orchestration and chained tool calling</li>
+          <li>MCP Server reusable by other teams</li>
+        </ul></div>
+        <div class="cons"><div class="cons-label">Cons</div><ul>
+          <li>More initial complexity vs. super-agent</li>
+          <li>Added latency per delegation hop</li>
+          <li>Sub-agents have no automatic template scaffolding</li>
+        </ul></div>
+      </div>
+    </div>
+
+    <div class="option-card rejected">
+      <div class="option-header"><span class="option-name">Option C — Multi-repo (one repo per agent from the start)</span><span class="option-tag tag-rejected">Rejected</span></div>
+      <p class="option-desc">Each sub-agent in its own repository starting in Q2C2.</p>
+      <div class="pros-cons">
+        <div class="pros"><div class="pros-label">Pros</div><ul>
+          <li>Granular ownership per repo</li>
+          <li>Fully independent deploy</li>
+        </ul></div>
+        <div class="cons"><div class="cons-label">Cons</div><ul>
+          <li>Premature coordination overhead</li>
+          <li>Cross-dependencies hard to manage early</li>
+          <li>Multi-repo PRs for simple schema changes</li>
+        </ul></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- 07 REPOSITORY STRUCTURE -->
+<div class="section">
+  <div class="section-header"><span class="section-num">07</span><span class="section-title">Repository Structure</span></div>
+  <table class="data-table">
+    <thead><tr><th>Repository</th><th>Type (Dark Kitchen)</th><th>Responsibility</th><th>Scope</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><code>fulfillment-config-agent</code></td>
+        <td><span class="repo-type-tag">Backend (Strands) only</span></td>
+        <td>Monorepo — Orchestrator + specialized Sub-agents</td>
+        <td>Fulfillment team</td>
+      </tr>
+      <tr>
+        <td><code>fulfillment-mcp-server</code></td>
+        <td><span class="repo-type-tag">MCP Instructions</span></td>
+        <td>Platform service — unified access to the Logistics APIs</td>
+        <td>Shared across teams</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="code-block"><span class="dir">fulfillment-config-agent/</span>   <span class="comment-text"># monorepo — 1st template run</span>
+&#9500;&#9472;&#9472; <span class="dir">orchestrator/</span>            <span class="comment-text"># interprets intent, delegates to sub-agents</span>
+&#9500;&#9472;&#9472; <span class="dir">agents/</span>
+&#9474;   &#9500;&#9472;&#9472; <span class="dir">delivery-options/</span>    <span class="comment-text"># Q2C2 sub-agent — SLAs, docks, warehouses, DOs</span>
+&#9474;   &#9500;&#9472;&#9472; <span class="dir">inventory/</span>           <span class="comment-text"># future</span>
+&#9474;   &#9492;&#9472;&#9472; <span class="dir">delivery-windows/</span>    <span class="comment-text"># future</span>
+&#9492;&#9472;&#9472; <span class="dir">shared/</span>                  <span class="comment-text"># common types, schemas and utils</span>
+
+<span class="dir">fulfillment-mcp-server/</span>      <span class="comment-text"># separate repo — 2nd template run</span>
+&#9500;&#9472;&#9472; <span class="dir">tools/</span>
+&#9474;   &#9500;&#9472;&#9472; shipping-policies.py
+&#9474;   &#9500;&#9472;&#9472; docks.py
+&#9474;   &#9500;&#9472;&#9472; warehouses.py
+&#9474;   &#9492;&#9472;&#9472; delivery-options.py
+&#9492;&#9472;&#9472; <span class="dir">auth/</span>                    <span class="comment-text"># credentials and delegation flow</span></div>
+</div>
+
+<!-- 08 AGENT TYPE -->
+<div class="section">
+  <div class="section-header"><span class="section-num">08</span><span class="section-title">Agent Type in the Dark Kitchen Template</span></div>
+  <table class="data-table">
+    <thead><tr><th>Run</th><th>Repository</th><th>Selected Type</th><th>Rationale</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>1st</td>
+        <td><code>fulfillment-config-agent</code></td>
+        <td><span class="repo-type-tag">Backend (Strands) only</span></td>
+        <td>Pure backend. The UI does not ship with this setup &mdash; it can reuse existing systems or new agentic UIs (see section 09). Strands natively supports sub-agent orchestration. No unnecessary Next.js scaffolding.</td>
+      </tr>
+      <tr>
+        <td>2nd</td>
+        <td><code>fulfillment-mcp-server</code></td>
+        <td><span class="repo-type-tag">MCP Instructions</span></td>
+        <td>Shared platform service. Independent lifecycle, credentials, and ownership from the main agent.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- 09 UI STRATEGY -->
+<div class="section">
+  <div class="section-header"><span class="section-num">09</span><span class="section-title">UI Strategy</span></div>
+  <div class="section-content">
+    <p>The backend agent is decoupled from any specific UI. The frontend is out of scope for this cycle and connects to the orchestrator via API. The UI can take two forms:</p>
+  </div>
+  <table class="data-table">
+    <thead><tr><th>UI Option</th><th>Platform Standard</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>Existing systems</td>
+        <td><span class="repo-type-tag">VTEX Raccoon</span> or legacy <span class="repo-type-tag">Admin VTEX IO</span> apps</td>
+        <td>Some existing logistics surfaces already follow the Raccoon standard; others are more legacy apps on Admin VTEX IO. The agent can plug into these where it makes sense.</td>
+      </tr>
+      <tr>
+        <td>New agentic UIs</td>
+        <td><span class="repo-type-tag">Admin Shell / Raccoon</span></td>
+        <td>New agentic experiences built for the agent, scoped to a future frontend spec.</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- 10 CONSEQUENCES -->
+<div class="section">
+  <div class="section-header"><span class="section-num">10</span><span class="section-title">Consequences</span></div>
+  <div class="consequence-list">
+    <div class="consequence-item"><span class="consequence-icon">&#9989;</span><span>Adding new domains (inventory, delivery windows) does not require refactoring the orchestrator &mdash; just a new sub-agent inside the monorepo with its own system prompt.</span></div>
+    <div class="consequence-item"><span class="consequence-icon">&#9989;</span><span>The <code>fulfillment-mcp-server</code> can be consumed by agents from other teams without coupling to <code>fulfillment-config-agent</code>.</span></div>
+    <div class="consequence-item"><span class="consequence-icon">&#9989;</span><span>Each sub-agent has a lean, domain-focused system prompt, preserving reasoning quality as scope grows.</span></div>
+    <div class="consequence-item"><span class="consequence-icon">&#9989;</span><span>The backend is decoupled from the UI, so it can serve both existing systems (Raccoon / Admin VTEX IO) and new agentic UIs without rework.</span></div>
+    <div class="consequence-item"><span class="consequence-icon">&#9888;&#65039;</span><span>The Dark Kitchen template is run twice. Sub-agents inside the monorepo are created manually &mdash; no automatic scaffolding per sub-agent.</span></div>
+    <div class="consequence-item"><span class="consequence-icon">&#9888;&#65039;</span><span>The <code>fulfillment-mcp-server</code> needs clear ownership &mdash; who maintains it, who approves breaking changes, how other teams contribute.</span></div>
+  </div>
+</div>
+
+<!-- 11 OPEN DECISIONS -->
+<div class="section">
+  <div class="section-header"><span class="section-num">11</span><span class="section-title">Open Decisions</span></div>
+  <table class="data-table">
+    <thead><tr><th>Decision</th><th>Status</th><th>Owner</th></tr></thead>
+    <tbody>
+      <tr><td>Owner of <code>fulfillment-mcp-server</code> as a platform service</td><td><span class="option-tag tag-open">Open</span></td><td>Ricardinho + AI Platform</td></tr>
+      <tr><td>LLM Gateway availability for the Fulfillment use case</td><td><span class="option-tag tag-open">Open</span></td><td>AI Platform</td></tr>
+      <tr><td>Communication protocol between Orchestrator and Sub-agents (HTTP, gRPC, event)</td><td><span class="option-tag tag-open">Open</span></td><td>Ricardinho</td></tr>
+      <tr><td>Strategy for extracting sub-agents from the monorepo into their own repos in the future</td><td><span class="option-tag tag-open">Open</span></td><td>Ricardinho</td></tr>
+      <tr><td>Which existing surfaces (Raccoon vs. Admin VTEX IO) the agent integrates with first</td><td><span class="option-tag tag-open">Open</span></td><td>Ricardinho + Carol</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<hr class="divider">
+<div class="adr-footer">
+  <span class="footer-ref">ADR-001 &middot; fulfillment-config-agent &middot; Q2C2 2026</span>
+  <span class="footer-ref">Spec 002 — AI Workspace Backend Setup</span>
+</div>
+
+</body>
+</html>
