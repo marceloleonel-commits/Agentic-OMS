@@ -389,7 +389,7 @@
                   <span style="font-size:18px;line-height:1">🗺️</span>
                   <div style="flex:1">
                     <div style="font-size:13px;font-weight:600;color:#1a1a1a">Roteamento</div>
-                    <div style="font-size:11.5px;color:#888;margin-top:1px">Seleciona modo de fulfillment e provider por pedido</div>
+                    <div style="font-size:11.5px;color:#888;margin-top:1px">Organiza os itens do pedido e define quem vai cuidar de cada parte da entrega</div>
                   </div>
                   <button class="toggle-switch on" onclick="event.stopPropagation();this.classList.toggle('on');this.classList.toggle('off')"></button>
                   <svg id="agent-routing-arrow" viewBox="0 0 16 16" fill="none" stroke="#888" stroke-width="2" width="14" height="14" style="flex-shrink:0;transition:transform .2s"><path d="M4 6l4 4 4-4"/></svg>
@@ -397,10 +397,9 @@
                 <div id="agent-routing" style="padding:12px 14px;border-top:1px solid #e5e7eb;display:none">
                   <div style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Skills</div>
                   <div style="display:flex;flex-direction:column;gap:5px">
-                    <div class="checkbox-row" style="margin:0"><input type="checkbox" id="sk-rt1" checked><label for="sk-rt1" style="font-size:12px">Seleção de CD por proximidade<span class="sub">Minimiza custo de frete e prazo</span></label></div>
-                    <div class="checkbox-row" style="margin:0"><input type="checkbox" id="sk-rt2" checked><label for="sk-rt2" style="font-size:12px">Verificação de estoque em tempo real<span class="sub">Consulta WMS antes de alocar</span></label></div>
-                    <div class="checkbox-row" style="margin:0"><input type="checkbox" id="sk-rt3" checked><label for="sk-rt3" style="font-size:12px">Split de pedido por seller<span class="sub">Order Jobs independentes por supplier</span></label></div>
-                    <div class="checkbox-row" style="margin:0"><input type="checkbox" id="sk-rt4"><label for="sk-rt4" style="font-size:12px">Ranking de provider por SLA histórico<span class="sub">Dados dos últimos 30 dias</span></label></div>
+                    <div class="checkbox-row" style="margin:0"><input type="checkbox" id="sk-rt1" checked><label for="sk-rt1" style="font-size:12px">Classificador de Entrega<span class="sub">Lê cada item do pedido e identifica como ele precisa ser entregue — armazém, retirada na loja, produto digital ou saída da loja física</span></label></div>
+                    <div class="checkbox-row" style="margin:0"><input type="checkbox" id="sk-rt2" checked><label for="sk-rt2" style="font-size:12px">Agrupador de Fornecedores<span class="sub">Descobre quais fornecedores precisam trabalhar juntos e agrupa os itens que o mesmo time consegue atender</span></label></div>
+                    <div class="checkbox-row" style="margin:0"><input type="checkbox" id="sk-rt3" checked><label for="sk-rt3" style="font-size:12px">Divisor de Pedidos<span class="sub">Divide o pedido em tarefas de entrega, agrupando os itens que o mesmo time de fornecedores vai resolver do início ao fim</span></label></div>
                   </div>
                   <div style="border-top:1px solid #f0f0f0;padding-top:10px;margin-top:10px;display:flex;flex-direction:column;gap:8px">
                     <div class="field-group" style="margin:0">
@@ -415,13 +414,13 @@
                 </div>
               </div>
 
-              <!-- Orquestração -->
+              <!-- Orquestração de Workflow -->
               <div style="border:1px solid #e5e7eb;border-radius:8px;overflow:hidden">
                 <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:#f9fafb;cursor:pointer" onclick="toggleAgentCard('agent-orch')">
                   <span style="font-size:18px;line-height:1">⚙️</span>
                   <div style="flex:1">
-                    <div style="font-size:13px;font-weight:600;color:#1a1a1a">Orquestração</div>
-                    <div style="font-size:11.5px;color:#888;margin-top:1px">Monitora gates e dispara ações automaticamente</div>
+                    <div style="font-size:13px;font-weight:600;color:#1a1a1a">Orquestração de Workflow</div>
+                    <div style="font-size:11.5px;color:#888;margin-top:1px">Acompanha o andamento de cada etapa e sabe exatamente o que pode acontecer a seguir</div>
                   </div>
                   <button class="toggle-switch on" onclick="event.stopPropagation();this.classList.toggle('on');this.classList.toggle('off')"></button>
                   <svg id="agent-orch-arrow" viewBox="0 0 16 16" fill="none" stroke="#888" stroke-width="2" width="14" height="14" style="flex-shrink:0;transition:transform .2s"><path d="M4 6l4 4 4-4"/></svg>
@@ -429,11 +428,9 @@
                 <div id="agent-orch" style="padding:12px 14px;border-top:1px solid #e5e7eb;display:none">
                   <div style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Skills</div>
                   <div style="display:flex;flex-direction:column;gap:5px">
-                    <div class="checkbox-row" style="margin:0"><input type="checkbox" id="sk-oc1" checked><label for="sk-oc1" style="font-size:12px">Detecção de pedidos travados<span class="sub">Monitora status sem movimentação acima do SLA</span></label></div>
-                    <div class="checkbox-row" style="margin:0"><input type="checkbox" id="sk-oc2" checked><label for="sk-oc2" style="font-size:12px">Avanço automático de status<span class="sub">Avança etapas quando todas as condições são satisfeitas</span></label></div>
-                    <div class="checkbox-row" style="margin:0"><input type="checkbox" id="sk-oc3" checked><label for="sk-oc3" style="font-size:12px">Sugestão de realocação de estoque<span class="sub">Propõe novo CD quando o atual não pode atender</span></label></div>
-                    <div class="checkbox-row" style="margin:0"><input type="checkbox" id="sk-oc4" checked><label for="sk-oc4" style="font-size:12px">Criação de tarefas para operadores<span class="sub">Gera tasks quando confiança está abaixo do threshold</span></label></div>
-                    <div class="checkbox-row" style="margin:0"><input type="checkbox" id="sk-oc5"><label for="sk-oc5" style="font-size:12px">Cancelamento automático<span class="sub">Requer confiança ≥ 95% e aprovação do gestor</span></label></div>
+                    <div class="checkbox-row" style="margin:0"><input type="checkbox" id="sk-oc1" checked><label for="sk-oc1" style="font-size:12px">Verificador de Próximos Passos<span class="sub">Confere o que já foi concluído no pedido e libera automaticamente a etapa seguinte quando todas as condições foram atendidas</span></label></div>
+                    <div class="checkbox-row" style="margin:0"><input type="checkbox" id="sk-oc2" checked><label for="sk-oc2" style="font-size:12px">Monitor de Prazo por Etapa<span class="sub">Mede o tempo que o pedido está parado em cada etapa e avisa quando algo está demorando mais do que deveria</span></label></div>
+                    <div class="checkbox-row" style="margin:0"><input type="checkbox" id="sk-oc3" checked><label for="sk-oc3" style="font-size:12px">Controle de Cancelamento<span class="sub">Quando um cancelamento é solicitado, interrompe o fluxo em andamento e aciona cada fornecedor na ordem certa para desfazer o que já foi feito</span></label></div>
                   </div>
                   <div style="border-top:1px solid #f0f0f0;padding-top:10px;margin-top:10px">
                     <div class="slider-wrap">
@@ -457,7 +454,7 @@
                   <span style="font-size:18px;line-height:1">🚨</span>
                   <div style="flex:1">
                     <div style="font-size:13px;font-weight:600;color:#1a1a1a">Escalação</div>
-                    <div style="font-size:11.5px;color:#888;margin-top:1px">Detecta inatividade e cria tarefas para operadores</div>
+                    <div style="font-size:11.5px;color:#888;margin-top:1px">Identifica quando o agente não consegue resolver sozinho e prepara o caso para o operador agir</div>
                   </div>
                   <button class="toggle-switch on" onclick="event.stopPropagation();this.classList.toggle('on');this.classList.toggle('off')"></button>
                   <svg id="agent-esc-arrow" viewBox="0 0 16 16" fill="none" stroke="#888" stroke-width="2" width="14" height="14" style="flex-shrink:0;transition:transform .2s"><path d="M4 6l4 4 4-4"/></svg>
@@ -465,11 +462,9 @@
                 <div id="agent-esc" style="padding:12px 14px;border-top:1px solid #e5e7eb;display:none">
                   <div style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Skills</div>
                   <div style="display:flex;flex-direction:column;gap:5px">
-                    <div class="checkbox-row" style="margin:0"><input type="checkbox" id="sk-es1" checked><label for="sk-es1" style="font-size:12px">Monitoramento de SLA por etapa<span class="sub">Alerta quando o prazo da etapa está em risco</span></label></div>
-                    <div class="checkbox-row" style="margin:0"><input type="checkbox" id="sk-es2" checked><label for="sk-es2" style="font-size:12px">Criação de task manual para operador<span class="sub">Gera task com contexto e sugestão de ação</span></label></div>
-                    <div class="checkbox-row" style="margin:0"><input type="checkbox" id="sk-es3" checked><label for="sk-es3" style="font-size:12px">Notificação via Slack (#dom-alertas)<span class="sub">Envia alerta em tempo real ao canal da equipe</span></label></div>
-                    <div class="checkbox-row" style="margin:0"><input type="checkbox" id="sk-es4" checked><label for="sk-es4" style="font-size:12px">Notificação por e-mail<span class="sub">Resumo de exceções ao gestor de operações</span></label></div>
-                    <div class="checkbox-row" style="margin:0"><input type="checkbox" id="sk-es5"><label for="sk-es5" style="font-size:12px">Webhook personalizado<span class="sub">Envia payload para endpoint configurado</span></label></div>
+                    <div class="checkbox-row" style="margin:0"><input type="checkbox" id="sk-es1" checked><label for="sk-es1" style="font-size:12px">Detector de Pedidos Travados<span class="sub">Confirma que o pedido está realmente travado — só sinaliza quando não há saída automática, sem gerar alertas desnecessários</span></label></div>
+                    <div class="checkbox-row" style="margin:0"><input type="checkbox" id="sk-es2" checked><label for="sk-es2" style="font-size:12px">Analisador de Bloqueio de Cancelamento<span class="sub">Identifica exatamente qual fornecedor está impedindo o cancelamento e coleta o contexto para o operador agir rapidamente</span></label></div>
+                    <div class="checkbox-row" style="margin:0"><input type="checkbox" id="sk-es3" checked><label for="sk-es3" style="font-size:12px">Preparador de Caso para o Operador<span class="sub">Monta um resumo completo: o que travou, há quanto tempo, o que já foi tentado e qual ação é recomendada</span></label></div>
                   </div>
                   <div style="border-top:1px solid #f0f0f0;padding-top:10px;margin-top:10px;display:flex;flex-direction:column;gap:8px">
                     <div class="field-group" style="margin:0">
@@ -480,6 +475,27 @@
                       <div class="field-label">Horário de operação</div>
                       <select class="field-input" style="max-width:240px"><option selected>24h / 7 dias</option><option>Horário comercial (08h–18h, seg–sex)</option></select>
                     </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Explorer -->
+              <div style="border:1px solid #e5e7eb;border-radius:8px;overflow:hidden">
+                <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:#f9fafb;cursor:pointer" onclick="toggleAgentCard('agent-explorer')">
+                  <span style="font-size:18px;line-height:1">🔭</span>
+                  <div style="flex:1">
+                    <div style="font-size:13px;font-weight:600;color:#1a1a1a">Explorer</div>
+                    <div style="font-size:11.5px;color:#888;margin-top:1px">Fica de olho em todos os pedidos ao mesmo tempo e avisa quando um padrão de risco está se formando</div>
+                  </div>
+                  <button class="toggle-switch on" onclick="event.stopPropagation();this.classList.toggle('on');this.classList.toggle('off')"></button>
+                  <svg id="agent-explorer-arrow" viewBox="0 0 16 16" fill="none" stroke="#888" stroke-width="2" width="14" height="14" style="flex-shrink:0;transition:transform .2s"><path d="M4 6l4 4 4-4"/></svg>
+                </div>
+                <div id="agent-explorer" style="padding:12px 14px;border-top:1px solid #e5e7eb;display:none">
+                  <div style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Skills</div>
+                  <div style="display:flex;flex-direction:column;gap:5px">
+                    <div class="checkbox-row" style="margin:0"><input type="checkbox" id="sk-ex1" checked><label for="sk-ex1" style="font-size:12px">Varredura de Padrões nos Pedidos<span class="sub">Varre todos os pedidos ativos em busca de problemas que se repetem — como vários pedidos travados no mesmo armazém — algo que nenhum alerta individual mostraria</span></label></div>
+                    <div class="checkbox-row" style="margin:0"><input type="checkbox" id="sk-ex2" checked><label for="sk-ex2" style="font-size:12px">Classificador de Urgência<span class="sub">Ordena os problemas pela urgência — considera quantos pedidos estão afetados, o valor em risco e quanto tempo ainda há antes de atrasar a entrega</span></label></div>
+                    <div class="checkbox-row" style="margin:0"><input type="checkbox" id="sk-ex3" checked><label for="sk-ex3" style="font-size:12px">Gerador de Alertas Inteligentes<span class="sub">Prepara um aviso claro para o operador: qual é o problema, o tamanho do impacto e o que precisa ser feito — sem ruído e sem jargão técnico</span></label></div>
                   </div>
                 </div>
               </div>

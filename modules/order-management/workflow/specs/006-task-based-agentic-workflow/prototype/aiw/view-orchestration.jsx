@@ -138,13 +138,12 @@ function OrchestrationCanvas({ customRules }) {
             </p>
 
             {/* Roteamento */}
-            <AgentCard emoji="🗺️" title="Roteamento" subtitle="Seleciona modo de fulfillment e provider por pedido">
+            <AgentCard emoji="🗺️" title="Roteamento" subtitle="Organiza os itens do pedido e define quem vai cuidar de cada parte da entrega">
               <div style={{ fontSize: 11, fontWeight: 700, color: "#888", textTransform: "uppercase", letterSpacing: .5, marginBottom: 8 }}>Skills</div>
               <div style={{ display: "flex", flexDirection: "column", gap: 5, marginBottom: 12 }}>
-                <SkillRow label="Seleção de CD por proximidade"        desc="Minimiza custo de frete e prazo" />
-                <SkillRow label="Verificação de estoque em tempo real" desc="Consulta WMS antes de alocar" />
-                <SkillRow label="Split de pedido por seller"           desc="Experiências independentes por supplier" />
-                <SkillRow label="Ranking de provider por SLA histórico" desc="Dados dos últimos 30 dias" defaultOn={false} />
+                <SkillRow label="Classificador de Entrega"    desc="Lê cada item do pedido e identifica como ele precisa ser entregue — armazém, retirada na loja, produto digital ou saída da loja física" />
+                <SkillRow label="Agrupador de Fornecedores"   desc="Descobre quais fornecedores precisam trabalhar juntos e agrupa os itens que o mesmo time consegue atender" />
+                <SkillRow label="Divisor de Pedidos"          desc="Divide o pedido em tarefas de entrega, agrupando os itens que o mesmo time de fornecedores vai resolver do início ao fim" />
               </div>
               <div style={{ borderTop: "1px solid #f0f0f0", paddingTop: 10, display: "flex", flexDirection: "column", gap: 8 }}>
                 <div className="setting-field" style={{ margin: 0 }}>
@@ -165,15 +164,13 @@ function OrchestrationCanvas({ customRules }) {
               </div>
             </AgentCard>
 
-            {/* Orquestração */}
-            <AgentCard emoji="⚙️" title="Orquestração" subtitle="Monitora gates e dispara ações automaticamente">
+            {/* Orquestração de Workflow */}
+            <AgentCard emoji="⚙️" title="Orquestração de Workflow" subtitle="Acompanha o andamento de cada etapa e sabe exatamente o que pode acontecer a seguir">
               <div style={{ fontSize: 11, fontWeight: 700, color: "#888", textTransform: "uppercase", letterSpacing: .5, marginBottom: 8 }}>Skills</div>
               <div style={{ display: "flex", flexDirection: "column", gap: 5, marginBottom: 12 }}>
-                <SkillRow label="Detecção de pedidos travados"     desc="Monitora status sem movimentação acima do SLA" />
-                <SkillRow label="Avanço automático de status"      desc="Avança etapas quando todas as condições são satisfeitas" />
-                <SkillRow label="Sugestão de realocação de estoque" desc="Propõe novo CD quando o atual não pode atender" />
-                <SkillRow label="Criação de tarefas para operadores" desc="Gera tasks quando confiança está abaixo do threshold" />
-                <SkillRow label="Cancelamento automático"          desc="Requer confiança ≥ 95% e aprovação do gestor" defaultOn={false} />
+                <SkillRow label="Verificador de Próximos Passos"  desc="Confere o que já foi concluído no pedido e libera automaticamente a etapa seguinte quando todas as condições foram atendidas" />
+                <SkillRow label="Monitor de Prazo por Etapa"      desc="Mede o tempo que o pedido está parado em cada etapa e avisa quando algo está demorando mais do que deveria" />
+                <SkillRow label="Controle de Cancelamento"        desc="Quando um cancelamento é solicitado, interrompe o fluxo em andamento e aciona cada fornecedor na ordem certa para desfazer o que já foi feito" />
               </div>
               <div style={{ borderTop: "1px solid #f0f0f0", paddingTop: 10 }}>
                 <div className="setting-field" style={{ margin: 0 }}>
@@ -185,14 +182,12 @@ function OrchestrationCanvas({ customRules }) {
             </AgentCard>
 
             {/* Escalação */}
-            <AgentCard emoji="🚨" title="Escalação" subtitle="Detecta inatividade e cria tarefas para operadores">
+            <AgentCard emoji="🚨" title="Escalação" subtitle="Identifica quando o agente não consegue resolver sozinho e prepara o caso para o operador agir">
               <div style={{ fontSize: 11, fontWeight: 700, color: "#888", textTransform: "uppercase", letterSpacing: .5, marginBottom: 8 }}>Skills</div>
               <div style={{ display: "flex", flexDirection: "column", gap: 5, marginBottom: 12 }}>
-                <SkillRow label="Monitoramento de SLA por etapa"   desc="Alerta quando o prazo da etapa está em risco" />
-                <SkillRow label="Criação de task manual para operador" desc="Gera task com contexto e sugestão de ação" />
-                <SkillRow label="Notificação via Slack (#dom-alertas)" desc="Envia alerta em tempo real ao canal da equipe" />
-                <SkillRow label="Notificação por e-mail"           desc="Resumo de exceções ao gestor de operações" />
-                <SkillRow label="Webhook personalizado"            desc="Envia payload para endpoint configurado" defaultOn={false} />
+                <SkillRow label="Detector de Pedidos Travados"            desc="Confirma que o pedido está realmente travado — só sinaliza quando não há saída automática, sem gerar alertas desnecessários" />
+                <SkillRow label="Analisador de Bloqueio de Cancelamento"  desc="Identifica exatamente qual fornecedor está impedindo o cancelamento e coleta o contexto para o operador agir rapidamente" />
+                <SkillRow label="Preparador de Caso para o Operador"      desc="Monta um resumo completo: o que travou, há quanto tempo, o que já foi tentado e qual ação é recomendada" />
               </div>
               <div style={{ borderTop: "1px solid #f0f0f0", paddingTop: 10, display: "flex", flexDirection: "column", gap: 8 }}>
                 <div className="setting-field" style={{ margin: 0 }}>
@@ -206,6 +201,16 @@ function OrchestrationCanvas({ customRules }) {
                     <option>Horário comercial (08h–18h, seg–sex)</option>
                   </select>
                 </div>
+              </div>
+            </AgentCard>
+
+            {/* Explorer */}
+            <AgentCard emoji="🔭" title="Explorer" subtitle="Fica de olho em todos os pedidos ao mesmo tempo e avisa quando um padrão de risco está se formando">
+              <div style={{ fontSize: 11, fontWeight: 700, color: "#888", textTransform: "uppercase", letterSpacing: .5, marginBottom: 8 }}>Skills</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+                <SkillRow label="Varredura de Padrões nos Pedidos"  desc="Varre todos os pedidos ativos em busca de problemas que se repetem — como vários pedidos travados no mesmo armazém — algo que nenhum alerta individual mostraria" />
+                <SkillRow label="Classificador de Urgência"         desc="Ordena os problemas pela urgência — considera quantos pedidos estão afetados, o valor em risco e quanto tempo ainda há antes de atrasar a entrega" />
+                <SkillRow label="Gerador de Alertas Inteligentes"   desc="Prepara um aviso claro para o operador: qual é o problema, o tamanho do impacto e o que precisa ser feito — sem ruído e sem jargão técnico" />
               </div>
             </AgentCard>
 
