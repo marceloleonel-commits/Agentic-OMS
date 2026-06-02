@@ -78,7 +78,7 @@ An operator opens the simulator in a private/incognito browser window where `loc
 | FR-008 | The storage key MUST include both `accountName` and `userId` to ensure isolation between users on the same account | P1 |
 | FR-009 | Clicking a saved entry MUST pre-fill all available form fields and re-execute the simulation without additional user input | P1 |
 | FR-010 | If `localStorage` throws or is unavailable, the system MUST fall back to in-memory storage for the current session without surfacing an error | P2 |
-| FR-011 | The classic UI panel MUST be collapsible, defaulting to collapsed | P2 |
+| FR-011 | The Admin UI panel MUST be collapsible, defaulting to collapsed | P2 |
 | FR-012 | Each entry MUST display a relative timestamp (e.g., "há 2h", "3d ago") based on the saved `ts` | P2 |
 | FR-013 | The agentic UI MUST show saved simulations as clickable cards on the home screen, hidden entirely when the list is empty | P2 |
 | FR-014 | When the operator switches account context (prototype: client toggle), the recents list MUST reset to the entries for the new context | P2 |

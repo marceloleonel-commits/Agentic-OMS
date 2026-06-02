@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shipping Simulator — New Functionalities</title>
+<style>
+  :root {
+    --ebel-pink: #F71963;
+    --bubble-gum: #FFC4DD;
+    --yogurt-pink: #FFE0EF;
+    --soft-pink: #FFF3F6;
+    --serious-black: #142032;
+    --serious-gray: #5B6E84;
+    --cool-gray: #A1AAB7;
+    --winter-gray: #E7E9EE;
+    --white-ice: #F8F7FC;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--white-ice);
+    color: var(--serious-black);
+    padding: 40px 24px;
+  }
+  .container { max-width: 1100px; margin: 0 auto; }
+  h1 { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+  .subtitle { font-size: 13px; color: var(--serious-gray); margin-bottom: 36px; }
+  h2 { font-size: 15px; font-weight: 700; margin-bottom: 14px; }
+
+  /* KRR table */
+  .krr-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(20,32,50,0.06);
+    font-size: 13px;
+    margin-bottom: 40px;
+  }
+  .krr-table thead tr { background: var(--serious-black); color: #fff; }
+  .krr-table thead th { padding: 11px 16px; text-align: left; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+  .krr-table tbody tr { border-bottom: 1px solid var(--winter-gray); }
+  .krr-table tbody tr:last-child { border-bottom: none; }
+  .krr-table tbody td { padding: 13px 16px; vertical-align: top; line-height: 1.5; color: var(--serious-gray); }
+  .krr-table tbody td:first-child { width: 140px; }
+  .krr-table tbody td:nth-child(2) { width: 260px; font-weight: 600; color: var(--serious-black); }
+  .status-keep { color: #0a7a3b; font-weight: 700; white-space: nowrap; }
+  .status-review { color: #d97706; font-weight: 700; white-space: nowrap; }
+  .status-remove { color: var(--ebel-pink); font-weight: 700; white-space: nowrap; }
+
+  /* Priority table */
+  table.prio {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(20,32,50,0.06);
+    font-size: 13px;
+  }
+  table.prio thead tr { background: var(--serious-black); color: #fff; }
+  table.prio thead th { padding: 11px 16px; text-align: left; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+  table.prio tbody tr { border-bottom: 1px solid var(--winter-gray); }
+  table.prio tbody tr:last-child { border-bottom: none; }
+  table.prio tbody td { padding: 14px 16px; vertical-align: top; line-height: 1.5; color: var(--serious-gray); }
+  .badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+  }
+  .badge-p0 { background: var(--ebel-pink); color: #fff; }
+  .badge-p1 { background: var(--bubble-gum); color: var(--serious-black); }
+  .badge-p2 { background: var(--yogurt-pink); color: var(--serious-black); }
+  .badge-p3 { background: var(--winter-gray); color: var(--serious-gray); }
+  .func-name { font-weight: 700; color: var(--serious-black); display: block; margin-bottom: 2px; }
+  code {
+    background: var(--soft-pink);
+    color: var(--ebel-pink);
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-size: 11.5px;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Shipping Simulator — Shoreline Redesign</h1>
+  <p class="subtitle">New Functionalities · Priority Order · Product Brief review — Jun 2, 2026</p>
+
+  <h2>Current Simulator: What to Keep, Review &amp; Remove</h2>
+  <table class="krr-table">
+    <thead>
+      <tr>
+        <th>Status</th>
+        <th>What</th>
+        <th>Notes</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="status-keep">✓ Keep</span></td>
+        <td>Core flow: input form → simulation results</td>
+        <td>Same mental model, new UI</td>
+      </tr>
+      <tr>
+        <td><span class="status-keep">✓ Keep</span></td>
+        <td>Result fields: carrier name, SLA tag, shipping price, lead time, quantity</td>
+        <td>Already well understood by operators</td>
+      </tr>
+      <tr>
+        <td><span class="status-keep">✓ Keep</span></td>
+        <td>Expanded detail: dock, warehouse, postal code range, weight range, absolute value, per-gram surcharge, % surcharge, dock→warehouse cost, scheduled delivery flag, time costs</td>
+        <td>Carry forward as-is; may reorganize layout</td>
+      </tr>
+      <tr>
+        <td><span class="status-keep">✓ Keep</span></td>
+        <td>Carrier rejection motive</td>
+        <td>Already shown today — goal is to improve specificity, not remove</td>
+      </tr>
+      <tr>
+        <td><span class="status-review">⚠ Review</span></td>
+        <td>Cubic weight factor, max order value, cubic weight</td>
+        <td>Confirm with eng whether actionable for operators or can be simplified/hidden</td>
+      </tr>
+      <tr>
+        <td><span class="status-review">⚠ Review</span></td>
+        <td>Time cost breakdown (dock / warehouse / transport shown separately)</td>
+        <td>May consolidate into a single readable line, e.g., "5 days transport + 0 dock handling"</td>
+      </tr>
+      <tr>
+        <td><span class="status-remove">✕ Remove</span></td>
+        <td>Manual country input</td>
+        <td>Replaced by auto-resolution from the selected sales channel</td>
+      </tr>
+      <tr>
+        <td><span class="status-remove">✕ Remove</span></td>
+        <td>SKU search with indistinguishable variant names</td>
+        <td>Replaced by new picker showing SKU ID, variant name, EAN, reference code</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>New Functionalities — Priority Order</h2>
+  <table class="prio">
+    <thead>
+      <tr>
+        <th style="width:60px;">Priority</th>
+        <th style="width:210px;">Functionality</th>
+        <th>Today</th>
+        <th>New</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="badge badge-p0">P0</span></td>
+        <td><span class="func-name">Seller-level simulation</span></td>
+        <td>Simulation always runs against the main account — no way to scope to a specific seller</td>
+        <td>Operators can select a seller and simulate within its logistics configuration</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-p0">P0</span></td>
+        <td><span class="func-name">Usage metrics</span></td>
+        <td>No instrumentation — no visibility into how the tool is used by VTEX accounts</td>
+        <td>Pre-migration baseline via legacy API logs (<code>POST /api/logistics/pvt/shipping/calculate</code>), then post-launch tracking <strong>per account</strong>: unique users, usage frequency, sales channel, seller, result count, errors — enabling before/after comparison</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-p1">P1</span></td>
+        <td><span class="func-name">Logistics route visibility</span></td>
+        <td>Expanded detail shows dock and warehouse, but not which <strong>shipping policy</strong> is applied — root-cause diagnosis is incomplete</td>
+        <td>Each result shows the full route: warehouse → dock → shipping policy</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-p1">P1</span></td>
+        <td><span class="func-name">Clear SKU variant identification</span></td>
+        <td>All variants of the same product appear with identical names in the search dropdown — operator cannot tell which SKU they are simulating</td>
+        <td>Search dropdown shows differentiating attributes per variant: SKU ID, variant name, EAN, reference code</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-p1">P1</span></td>
+        <td><span class="func-name">Carrier rejection reasons</span></td>
+        <td>Rejection motive already shown (e.g., "dismissed due to priority"), but generic — operator cannot identify the root configuration issue</td>
+        <td>Review and improve rejection reasons: out of postal code range, above weight limit, outside business hours, dimensions exceeded, etc.</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-p2">P2</span></td>
+        <td><span class="func-name">Recent simulations history</span></td>
+        <td>Every session starts blank — no memory of previous simulations</td>
+        <td>Last 5 simulations saved and restorable with one click (30-day TTL, per user) — covered in spec 002</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-p2">P2</span></td>
+        <td><span class="func-name">Delivery date display</span></td>
+        <td>Results show lead time in days only (e.g., "3 dias") — no calendar date shown</td>
+        <td>Results display the estimated delivery date (e.g., "Arrives June 5"), computed from lead time, business days, and cutoff hours</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-p3">P3</span></td>
+        <td><span class="func-name">Delivery vs. pickup separation</span></td>
+        <td>Results mix delivery and pickup options without clear distinction</td>
+        <td>Separate tabs or sections for delivery and pickup; each clearly labeled</td>
+      </tr>
+      <tr>
+        <td><span class="badge badge-p3">P3</span></td>
+        <td><span class="func-name">Correct local currency</span></td>
+        <td>Always shows the platform default currency, ignoring the sales channel's configured currency (KI 514551)</td>
+        <td>Currency auto-resolved from the selected sales channel</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+</body>
+</html>

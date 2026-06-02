@@ -4,13 +4,13 @@ This folder contains the agentic UI prototype for the new Shipping Simulator exp
 
 ## Concept
 
-Unlike the Classic UI (form-based), the Agentic UI is a conversational interface powered by an AI agent. The operator describes what they want to simulate in natural language, and the agent handles parameter resolution, API calls, and result interpretation.
+Unlike the Admin UI (form-based), the Agentic UI is a conversational interface powered by an AI agent. The operator describes what they want to simulate in natural language, and the agent handles parameter resolution, API calls, and result interpretation.
 
 **Inspired by:** [`vtex/shipping-simulator-agent`](https://github.com/vtex/shipping-simulator-agent) — a fullstack agent built with the Strands Framework (Python backend) and Raccoon/Agentic UI (Next.js frontend).
 
-## Key Differences from Classic UI
+## Key Differences from Admin UI
 
-| Aspect | Classic UI | Agentic UI |
+| Aspect | Admin UI | Agentic UI |
 |---|---|---|
 | Interaction model | Form-based | Conversational / natural language |
 | Parameter input | Manual fields | Agent resolves from context |
