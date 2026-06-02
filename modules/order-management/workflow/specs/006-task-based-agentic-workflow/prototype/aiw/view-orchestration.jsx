@@ -96,43 +96,9 @@ function OrchestrationCanvas({ customRules }) {
         <div className="detail-body">
           <h1 className="detail-title">Agentes de Pedidos</h1>
           <p className="detail-desc">Configure o comportamento dos agentes AI que orquestram os workflows de pedidos.</p>
-          <div className="active-line">
-            <span className="status-dot active" />
-            <span className="muted">Agente ativo · 4.256 pedidos monitorados</span>
-          </div>
-
-          {/* ── Experiências ── */}
+          {/* ── Sub-Agentes e Skills ── */}
           <section className="detail-section">
-            <div className="detail-section-head" style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <h3>Experiências</h3>
-              <span style={{ fontSize: 10.5, fontWeight: 600, color: "#7c3aed", background: "#f5f3ff", border: "1px solid #e9d5ff", padding: "2px 9px", borderRadius: 10 }}>
-                definido pelo sistema
-              </span>
-            </div>
-            <p className="detail-desc" style={{ marginTop: -8, marginBottom: 12 }}>
-              Uma Experiência é criada automaticamente para cada combinação de parâmetros de fulfillment dentro de um pedido. Itens que compartilham os mesmos critérios seguem juntos no mesmo fluxo.
-            </p>
-            <div className="settings-card" style={{ display: "flex", flexDirection: "column", gap: 8, padding: "12px 14px" }}>
-              {[
-                { emoji: "🏠", title: "Modelo de fulfillment",
-                  desc: "Entrega em domicílio e Retirada em loja geram experiências separadas — cada modalidade tem seu próprio fluxo de execução." },
-                { emoji: "⏱️", title: "Prazo de entrega (SLA)",
-                  desc: "Itens com SLAs incompatíveis dentro de um mesmo pedido são divididos em experiências distintas." }
-              ].map((item) => (
-                <div key={item.title} style={{ display: "flex", gap: 10, alignItems: "flex-start", padding: "9px 12px", background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: 8 }}>
-                  <span style={{ fontSize: 16, lineHeight: 1.3 }}>{item.emoji}</span>
-                  <div>
-                    <div style={{ fontSize: 12.5, fontWeight: 600, color: "#1a1a1a" }}>{item.title}</div>
-                    <div style={{ fontSize: 12, color: "#666", marginTop: 2 }}>{item.desc}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          {/* ── Agentes & Skills ── */}
-          <section className="detail-section">
-            <div className="detail-section-head"><h3>Agentes &amp; Skills</h3></div>
+            <div className="detail-section-head"><h3>Sub-Agentes e Skills</h3></div>
             <p className="detail-desc" style={{ marginTop: -8, marginBottom: 12 }}>
               Configure os agentes que compõem o orquestrador. Expanda cada agente para ativar ou desativar suas skills.
             </p>

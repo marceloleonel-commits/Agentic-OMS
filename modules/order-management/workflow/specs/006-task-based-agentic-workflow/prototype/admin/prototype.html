@@ -316,10 +316,7 @@
         </div>
         <div class="orch-header-right">
           <div class="agent-status-bar" style="padding:8px 12px">
-            <div class="agent-status-dot"></div>
-            <span class="agent-status-label">Agente ativo</span>
-            <span class="agent-status-sub">· 4.256 pedidos</span>
-            <button class="toggle-switch on" id="agent-master-toggle" onclick="this.classList.toggle('on');this.classList.toggle('off')" style="margin-left:8px" title="Ativar/desativar agente"></button>
+            <button class="toggle-switch on" id="agent-master-toggle" onclick="this.classList.toggle('on');this.classList.toggle('off')" title="Ativar/desativar agente"></button>
           </div>
           <button class="btn btn-secondary btn-sm" onclick="showScreen('workflow-list')">Ver Workflows</button>
           <button class="btn btn-primary btn-sm" onclick="saveAgentConfig()">Salvar</button>
@@ -351,35 +348,9 @@
         <!-- RIGHT: config panels -->
         <div class="orch-config-col" id="orch-config-col">
 
-          <!-- ── 1. EXPERIÊNCIAS ── -->
-          <div class="settings-card orch-card" id="ocard-experiencias">
-            <div class="settings-card-title" style="display:flex;align-items:center;justify-content:space-between">
-              <span><span class="sc-title-icon">✦</span> Experiências</span>
-              <span style="font-size:10.5px;font-weight:600;color:#7c3aed;background:#f5f3ff;border:1px solid #e9d5ff;padding:2px 9px;border-radius:10px;letter-spacing:.2px">definido pelo sistema</span>
-            </div>
-            <div style="font-size:12px;color:#888;margin-top:-6px;margin-bottom:14px">Uma Experiência (OrderJob) é criada automaticamente para cada combinação de parâmetros de fulfillment dentro de um pedido. Itens que compartilham os mesmos critérios seguem juntos no mesmo fluxo.</div>
-
-            <div style="display:flex;flex-direction:column;gap:8px">
-              <div style="display:flex;gap:10px;align-items:flex-start;padding:9px 12px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px">
-                <span style="font-size:16px;line-height:1.2">🏠</span>
-                <div>
-                  <div style="font-size:12.5px;font-weight:600;color:#1a1a1a">Modelo de fulfillment</div>
-                  <div style="font-size:12px;color:#666;margin-top:2px">Entrega em domicílio e Retirada em loja geram experiências separadas — cada modalidade tem seu próprio fluxo de execução.</div>
-                </div>
-              </div>
-              <div style="display:flex;gap:10px;align-items:flex-start;padding:9px 12px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px">
-                <span style="font-size:16px;line-height:1.2">⏱️</span>
-                <div>
-                  <div style="font-size:12.5px;font-weight:600;color:#1a1a1a">Prazo de entrega (SLA)</div>
-                  <div style="font-size:12px;color:#666;margin-top:2px">Itens com SLAs incompatíveis dentro de um mesmo pedido são divididos em experiências distintas.</div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- ── 2. AGENTES & SKILLS ── -->
-          <div class="settings-card orch-card" id="ocard-agents" style="margin-top:16px">
-            <div class="settings-card-title"><span class="sc-title-icon">🤖</span> Agentes &amp; Skills</div>
+          <!-- ── SUB-AGENTES E SKILLS ── -->
+          <div class="settings-card orch-card" id="ocard-agents">
+            <div class="settings-card-title"><span class="sc-title-icon">🤖</span> Sub-Agentes e Skills</div>
             <div style="font-size:12px;color:#888;margin-top:-6px;margin-bottom:14px">Configure os agentes que compõem o orquestrador. Expanda cada agente para ativar ou desativar suas skills.</div>
             <div style="display:flex;flex-direction:column;gap:10px">
 
