@@ -275,6 +275,52 @@ window.AIWData = (function () {
         ]},
       ]},
 
+    /* ── Entrega produto virtual ─────────────────────────────────────────── */
+    { id: "entrega-produto-virtual", name: "Entrega produto virtual", icon: "💻",
+      category: "servicos", status: "active",
+      desc: "Ativação e entrega de produtos digitais: licenças, vouchers, assinaturas e downloads.",
+      orders: "234", custom: false,
+      trigger: { type: "order-start" },
+      agentEnabled: true,
+      dependencies: [],
+      stages: [
+        { id: "vd-s1", name: "Confirmação de Pagamento", linkedToNext: true, category: "PAYMENT", tasks: [
+          { id: "vd-1", name: "Autorização de Pagamento", type: "auto", owner: "Gateway",         desc: "Pré-autorização do valor junto à adquirente/gateway." },
+          { id: "vd-2", name: "Captura de Pagamento",     type: "auto", owner: "Gateway",         desc: "Confirmação e captura definitiva do valor autorizado." },
+        ]},
+        { id: "vd-s2", name: "Ativação Digital", linkedToNext: true, category: "FULFILLMENT", tasks: [
+          { id: "vd-3", name: "Gerar Chave / Licença",    type: "auto", owner: "Digital Service", desc: "Geração automática da chave de ativação ou licença digital." },
+          { id: "vd-4", name: "Emissão de NF-e",          type: "auto", owner: "Fiscal Service",  desc: "Emissão da nota fiscal para produto digital." },
+        ]},
+        { id: "vd-s3", name: "Entrega Digital", linkedToNext: false, category: "DELIVERY", tasks: [
+          { id: "vd-5", name: "Enviar por E-mail",         type: "auto", owner: "Notif. Agent",    desc: "Envio da chave / link de acesso ao e-mail do cliente." },
+          { id: "vd-6", name: "Confirmação de Acesso",     type: "auto", owner: "Digital Service", desc: "Verificação de que o cliente acessou ou ativou o produto." },
+        ]},
+      ]},
+
+    /* ── Cancelamento de Pedido ──────────────────────────────────────────── */
+    { id: "cancelamento", name: "Cancelamento de Pedido", icon: "🚫",
+      category: "fulfillment", status: "active",
+      desc: "Fluxo de cancelamento iniciado por cliente ou operador, com reversão de estoque e estorno financeiro.",
+      orders: "142", custom: false,
+      trigger: { type: "manual" },
+      agentEnabled: true,
+      dependencies: [],
+      stages: [
+        { id: "ca-s1", name: "Solicitação", linkedToNext: true, category: "FULFILLMENT", tasks: [
+          { id: "ca-1", name: "Receber Solicitação",              type: "auto",   owner: "Portal",         desc: "Registro da solicitação de cancelamento." },
+          { id: "ca-2", name: "Validar Janela de Cancelamento",   type: "auto",   owner: "Returns Agent",  desc: "Verifica se o pedido ainda pode ser cancelado." },
+        ]},
+        { id: "ca-s2", name: "Reversão de Fulfillment", linkedToNext: true, category: "FULFILLMENT", tasks: [
+          { id: "ca-3", name: "Bloquear Expedição",               type: "auto",   owner: "WMS",            desc: "Interrompe separação/expedição caso ainda em andamento." },
+          { id: "ca-4", name: "Estornar Estoque",                 type: "auto",   owner: "WMS",            desc: "Devolução das unidades canceladas ao estoque disponível." },
+        ]},
+        { id: "ca-s3", name: "Estorno Financeiro", linkedToNext: false, category: "PAYMENT", tasks: [
+          { id: "ca-5", name: "Processar Estorno",                type: "auto",   owner: "Gateway",        desc: "Devolução do valor ao cliente pelo método de pagamento original." },
+          { id: "ca-6", name: "Notificar Cliente",                type: "auto",   owner: "Notif. Agent",   desc: "Confirmação do cancelamento e prazo de estorno ao cliente." },
+        ]},
+      ]},
+
     /* ── Troca e devolução (logística reversa) ──────────────────────────── */
     { id: "troca-devolucao", name: "Troca e devolução", icon: "↩",
       category: "logistica-reversa", status: "active",
@@ -310,9 +356,11 @@ window.AIWData = (function () {
   const wfCategoriesRef = wfCategories;
 
   const orchestrationCoverage = [
-    { name: "Entrega em domicílio", meta: "4 etapas · 4.256 pedidos ativos" },
-    { name: "Retirada na loja",     meta: "4 etapas · 127 pedidos ativos"   },
-    { name: "Troca e devolução",    meta: "4 etapas · 83 pedidos ativos"    },
+    { name: "Entrega em domicílio",      meta: "4 etapas · 4.256 pedidos ativos" },
+    { name: "Retirada na loja",          meta: "4 etapas · 127 pedidos ativos"   },
+    { name: "Troca e devolução",         meta: "4 etapas · 83 pedidos ativos"    },
+    { name: "Entrega produto virtual",   meta: "3 etapas · 234 pedidos ativos"   },
+    { name: "Cancelamento de Pedido",    meta: "3 etapas · 142 pedidos ativos"   },
   ];
 
   const orchestrationActivity = [
@@ -333,18 +381,302 @@ window.AIWData = (function () {
     { id: "oms",            name: "OMS Agent",               emoji: "📦", color: "#E3F8E5", tasks: 12150, credits: 47600, sub: "Order Management & routing" }
   ];
 
+  /* ─── helpers reutilizáveis para steps ──────────────────────────── */
+  function stepsDeliveryAllDone(d) {
+    return [
+      { label:"Autorização de Pagamento", icon:"💳", status:"done", agent:true,  time:d+" 09:43" },
+      { label:"Captura de Pagamento",     icon:"💳", status:"done", agent:true,  time:d+" 09:43" },
+      { label:"Reserva de Estoque",       icon:"📦", status:"done", agent:true,  time:d+" 09:44" },
+      { label:"Picking",                  icon:"🔍", status:"done", agent:false, time:d+" 10:30" },
+      { label:"Packing",                  icon:"📦", status:"done", agent:false, time:d+" 10:50" },
+      { label:"Labeling",                 icon:"🏷️", status:"done", agent:false, time:d+" 11:00" },
+      { label:"Emissão de Nota Fiscal",   icon:"🧾", status:"done", agent:true,  time:d+" 11:01" },
+      { label:"Expedição",                icon:"📮", status:"done", agent:false, time:d+" 11:30" },
+      { label:"First Mile",               icon:"🚚", status:"done", agent:true,  time:d+" 13:00" },
+      { label:"Last Mile",                icon:"🚚", status:"done", agent:true,  time:d+" 16:00" },
+      { label:"Proof of Delivery",        icon:"✅", status:"done", agent:true,  time:d+" 17:30" },
+    ];
+  }
+  function stepsBOPISNotified(d) {
+    return [
+      { label:"Autorização de Pagamento", icon:"💳", status:"done",    agent:true,  time:d+" 09:43" },
+      { label:"Captura de Pagamento",     icon:"💳", status:"done",    agent:true,  time:d+" 09:43" },
+      { label:"Reserva de Estoque",       icon:"📦", status:"done",    agent:true,  time:d+" 09:44" },
+      { label:"Picking",                  icon:"🔍", status:"done",    agent:false, time:d+" 11:00" },
+      { label:"Packing",                  icon:"📦", status:"done",    agent:false, time:d+" 11:20" },
+      { label:"Ready for Pickup",         icon:"🔔", status:"done",    agent:true,  time:d+" 11:22", note:"Cliente notificado por e-mail e SMS." },
+      { label:"Emissão de Nota Fiscal",   icon:"🧾", status:"pending", agent:true,  time:null },
+      { label:"Customer Check-in",        icon:"🏪", status:"pending", agent:false, time:null },
+      { label:"Handover at POS",          icon:"🤝", status:"pending", agent:false, time:null },
+    ];
+  }
+
   const orders = [
-    { id:"1631888948228-01", short:"68948228", date:"13/05/2026 - 16:48", customer:"Paulo Bernardo",  origin:"Marketplace",  qty:3, total:"R$ 502,00",    status:"processing", statusLabel:"Em processamento", sla:"6h",  seller:"CD São Paulo",   eta:"14/05/2026" },
-    { id:"1631858947234-01", short:"68947234", date:"13/05/2026 - 13:33", customer:"Ana Carvalho",    origin:"Marketplace",  qty:2, total:"R$ 1.230,00",  status:"invoiced",   statusLabel:"Faturado",         sla:"24h", seller:"CD São Paulo",   eta:"14/05/2026" },
-    { id:"1631848947052-01", short:"68947052", date:"13/05/2026 - 12:56", customer:"Carlos Mendes",   origin:"Loja própria", qty:1, total:"R$ 89,90",     status:"invoiced",   statusLabel:"Faturado",         sla:"24h", seller:"Loja própria",   eta:"14/05/2026" },
-    { id:"1631848946980-01", short:"68946980", date:"13/05/2026 - 12:43", customer:"Fernanda Lima",   origin:"Marketplace",  qty:4, total:"R$ 345,00",    status:"pending",    statusLabel:"Não processado",   sla:"48h", seller:"Marketplace",    eta:"15/05/2026" },
-    { id:"1631828946500-01", short:"68946500", date:"13/05/2026 - 11:30", customer:"Mariana Costa",   origin:"Marketplace",  qty:5, total:"R$ 890,00",    status:"processing", statusLabel:"Em processamento", sla:"8h",  seller:"CD São Paulo",   eta:"14/05/2026" },
-    { id:"1631818946200-01", short:"68946200", date:"13/05/2026 - 10:55", customer:"Diego Ferreira",  origin:"Loja própria", qty:2, total:"R$ 155,00",    status:"invoiced",   statusLabel:"Faturado",         sla:"24h", seller:"Loja própria",   eta:"14/05/2026" },
-    { id:"1631900949000-01", short:"68949000", date:"25/05/2026 - 09:14", customer:"Luiza Torres",    origin:"Loja própria", qty:2, total:"R$ 380,00",    status:"processing", statusLabel:"Em processamento", sla:"12h", seller:"Loja própria",   eta:"26/05/2026" },
-    { id:"1631910950000-01", short:"68950000", date:"26/05/2026 - 14:30", customer:"João Eduardo",    origin:"Loja própria", qty:3, total:"R$ 890,00",    status:"processing", statusLabel:"Em processamento", sla:"8h",  seller:"Loja própria",   eta:"27/05/2026" },
-    { id:"1631808945900-01", short:"68945900", date:"13/05/2026 - 10:12", customer:"Juliana Santos",  origin:"Marketplace",  qty:3, total:"R$ 220,00",    status:"canceled",   statusLabel:"Cancelado",        sla:"—",   seller:"Marketplace",    eta:"—"         },
-    { id:"1631920951000-01", short:"68951000", date:"26/05/2026 - 16:45", customer:"Geraldo Thomaz",  origin:"Marketplace",  qty:4, total:"R$ 1.139,00",  status:"processing", statusLabel:"Em processamento", sla:"6h",  seller:"CD #3 Campinas", eta:"27/05/2026" },
-    { id:"1632000952000-01", short:"68952000", date:"28/05/2026 - 10:05", customer:"John Crimber",    origin:"Loja própria", qty:3, total:"R$ 2.930,00",  status:"processing", statusLabel:"Em processamento", sla:"12h", seller:"Loja própria",   eta:"29/05/2026" }
+
+    /* ══ Pedido 1 · C&A · Omnicanal: BOPIS + entrega domicílio ══ */
+    {
+      id:"1631808945901-01", short:"68945901",
+      date:"02/06/2026 - 09:42", customer:"Mariana Figueiredo",
+      origin:"Marketplace", qty:5, total:"R$ 1.240,00",
+      status:"processing", statusLabel:"Em processamento",
+      sla:"4h", seller:"C&A", eta:"02/06/2026",
+      note:{
+        useCase:"Pedido omnicanal: múltiplas modalidades de entrega no mesmo carrinho",
+        text:"Cenário recorrente em varejistas com operação física e digital. O cliente adicionou ao mesmo carrinho itens para retirar na loja e itens para entrega em domicílio. O OMS identificou automaticamente as modalidades, criou Order Jobs separados e acionou os workflows de Retirada na Loja (BOPIS) e Entrega em Domicílio via Jadlog. Os 2 itens de entrega já foram despachados e entregues com sucesso. Os 3 itens de retirada estão prontos na C&A Botafogo aguardando a visita do cliente.",
+      },
+      itemGroups:[
+        {
+          id:"g-bopis", workflow:"retirada-loja", fulfillmentType:"pickup",
+          label:"Retirada na Loja · C&A Botafogo – RJ",
+          stages:[
+            { icon:"💳", label:"Confirmação de Pagamento", status:"done" },
+            { icon:"🏪", label:"Handling na Loja",          status:"done" },
+            { icon:"🧾", label:"Faturamento",               status:"pending" },
+            { icon:"🤝", label:"Entrega em Loja",           status:"pending" },
+          ],
+          items:[
+            { name:"Blusa Feminina Listrada",  sku:"CA-BL-1042", qty:2, price:"R$ 119,90", steps:stepsBOPISNotified("02/06/2026") },
+            { name:"Calça Jeans Slim Fit",     sku:"CA-CJ-2187", qty:1, price:"R$ 189,90", steps:stepsBOPISNotified("02/06/2026") },
+            { name:"Tênis Casual Urban",        sku:"CA-TN-3051", qty:1, price:"R$ 299,90", steps:stepsBOPISNotified("02/06/2026") },
+          ],
+        },
+        {
+          id:"g-delivery", workflow:"entrega-domicilio", fulfillmentType:"delivery",
+          label:"Entrega em Domicílio · Jadlog",
+          stages:[
+            { icon:"💳", label:"Confirmação de Pagamento", status:"done" },
+            { icon:"📦", label:"Handling",                 status:"done" },
+            { icon:"🧾", label:"Faturamento",              status:"done" },
+            { icon:"🚚", label:"Entrega",                  status:"done" },
+          ],
+          items:[
+            { name:"Camiseta Básica Pack 2un", sku:"CA-CB-0991", qty:1, price:"R$ 89,90",  steps:stepsDeliveryAllDone("02/06/2026") },
+            { name:"Bermuda Cargo",            sku:"CA-BC-1773", qty:2, price:"R$ 149,90", steps:stepsDeliveryAllDone("02/06/2026") },
+          ],
+        },
+      ],
+    },
+
+    /* ══ Pedido 2 · Samsung · Troca e devolução por defeito ══ */
+    {
+      id:"1631808945902-01", short:"68945902",
+      date:"30/05/2026 - 14:17", customer:"Ricardo Alves",
+      origin:"Marketplace", qty:1, total:"R$ 3.499,00",
+      status:"return", statusLabel:"Troca e devolução",
+      sla:"—", seller:"Samsung", eta:"—",
+      note:{
+        useCase:"Logística reversa pós-entrega: devolução por defeito de produto",
+        text:"Cenário de pós-venda em que o cliente reportou defeito no produto após o recebimento. O workflow de Troca e Devolução foi acionado automaticamente após a conclusão do workflow de Entrega. O Returns Agent validou a elegibilidade dentro do prazo de 7 dias, classificou como devolução com estorno e gerou a etiqueta reversa. O processo aguarda a postagem pelo cliente para seguir para inspeção no CD e liberação do estorno.",
+      },
+      itemGroups:[
+        {
+          id:"g-delivery", workflow:"entrega-domicilio", fulfillmentType:"delivery",
+          label:"Entrega em Domicílio · Total Express",
+          stages:[
+            { icon:"💳", label:"Confirmação de Pagamento", status:"done" },
+            { icon:"📦", label:"Handling",                 status:"done" },
+            { icon:"🧾", label:"Faturamento",              status:"done" },
+            { icon:"🚚", label:"Entrega",                  status:"done" },
+          ],
+          items:[
+            { name:"Samsung Galaxy S24 FE 128GB", sku:"SM-S724B", qty:1, price:"R$ 3.499,00", steps:stepsDeliveryAllDone("30/05/2026") },
+          ],
+        },
+        {
+          id:"g-return", workflow:"troca-devolucao", type:"return",
+          fulfillmentType:"return",
+          label:"Troca e Devolução",
+          returnDetail:{
+            reason:"Produto com defeito de fabricação",
+            customerText:"Recebi o aparelho e na primeira semana de uso a tela começou a apresentar linhas horizontais. Tentei reiniciar e o problema persiste. Gostaria de trocar por um novo ou receber o reembolso integral.",
+            requestedAt:"01/06/2026 18:32",
+            classification:"Devolução com estorno",
+          },
+          stages:[
+            { icon:"📝", label:"Solicitação",    status:"done"    },
+            { icon:"📦", label:"Coleta Reversa", status:"active"  },
+            { icon:"🔍", label:"Inspeção no CD", status:"pending" },
+            { icon:"✅", label:"Resolução",       status:"pending" },
+          ],
+          items:[
+            { name:"Samsung Galaxy S24 FE 128GB", sku:"SM-S724B", qty:1, price:"R$ 3.499,00",
+              steps:[
+                { label:"Abertura de Solicitação",          icon:"📝", status:"done",    agent:true,  time:"01/06/2026 18:32" },
+                { label:"Validar Elegibilidade",            icon:"🔍", status:"done",    agent:true,  time:"01/06/2026 18:33" },
+                { label:"Classificar (Troca / Devolução)",  icon:"📋", status:"done",    agent:true,  time:"01/06/2026 18:33", note:"Classificado como: Devolução com estorno." },
+                { label:"Gerar Etiqueta Reversa",           icon:"🏷️", status:"done",    agent:true,  time:"01/06/2026 18:35" },
+                { label:"Notificar Cliente",                icon:"🔔", status:"done",    agent:true,  time:"01/06/2026 18:36" },
+                { label:"Confirmar Postagem",               icon:"📮", status:"active",  agent:true,  time:null, note:"Aguardando postagem pelo cliente." },
+                { label:"Receber Produto no CD",            icon:"📦", status:"pending", agent:false, time:null },
+                { label:"Conferir Estado do Produto",       icon:"🔎", status:"pending", agent:false, time:null },
+                { label:"Processar Estorno",                icon:"💰", status:"pending", agent:true,  time:null },
+                { label:"Notificar Cliente — Concluído",    icon:"✅", status:"pending", agent:true,  time:null },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+
+    /* ══ Pedido 3 · DrogariaSP · Item virtual + item físico ══ */
+    {
+      id:"1631808945903-01", short:"68945903",
+      date:"02/06/2026 - 10:14", customer:"Patrícia Souza",
+      origin:"Loja própria", qty:2, total:"R$ 318,90",
+      status:"processing", statusLabel:"Em processamento",
+      sla:"6h", seller:"DrogariaSP", eta:"03/06/2026",
+      note:{
+        useCase:"Carrinho misto: produto virtual e produto físico no mesmo pedido",
+        text:"Cenário típico em farmácias e plataformas de saúde com serviços digitais. O cliente comprou uma assinatura de consulta online (produto virtual) e um suplemento vitamínico (produto físico). O OMS separou os itens em dois Order Jobs com workflows distintos — Entrega Produto Virtual para a assinatura e Entrega em Domicílio para o suplemento. A assinatura está com a chave gerada aguardando envio por e-mail; o produto físico está em processo de embalagem.",
+      },
+      itemGroups:[
+        {
+          id:"g-virtual", workflow:"entrega-produto-virtual", type:"virtual",
+          fulfillmentType:"virtual",
+          label:"Entrega Produto Virtual · Acesso Digital",
+          stages:[
+            { icon:"💳", label:"Confirmação de Pagamento", status:"done"    },
+            { icon:"💻", label:"Ativação Digital",          status:"active"  },
+            { icon:"📧", label:"Entrega Digital",           status:"pending" },
+          ],
+          items:[
+            { name:"Consulta Online — Assinatura 3 meses", sku:"DS-CO-3M", qty:1, price:"R$ 149,90",
+              steps:[
+                { label:"Autorização de Pagamento", icon:"💳", status:"done",    agent:true,  time:"02/06/2026 10:15" },
+                { label:"Captura de Pagamento",     icon:"💳", status:"done",    agent:true,  time:"02/06/2026 10:15" },
+                { label:"Gerar Chave / Licença",    icon:"🔑", status:"done",    agent:true,  time:"02/06/2026 10:16" },
+                { label:"Emissão de NF-e",          icon:"🧾", status:"active",  agent:true,  time:null },
+                { label:"Enviar por E-mail",        icon:"📧", status:"pending", agent:true,  time:null },
+                { label:"Confirmação de Acesso",    icon:"✅", status:"pending", agent:true,  time:null },
+              ],
+            },
+          ],
+        },
+        {
+          id:"g-physical", workflow:"entrega-domicilio", fulfillmentType:"delivery",
+          label:"Entrega em Domicílio · Correios SEDEX",
+          stages:[
+            { icon:"💳", label:"Confirmação de Pagamento", status:"done"    },
+            { icon:"📦", label:"Handling",                 status:"active"  },
+            { icon:"🧾", label:"Faturamento",              status:"pending" },
+            { icon:"🚚", label:"Entrega",                  status:"pending" },
+          ],
+          items:[
+            { name:"Vitamina C 1000mg — 60 comprimidos", sku:"DS-VC-1000", qty:5, price:"R$ 33,90",
+              steps:[
+                { label:"Autorização de Pagamento", icon:"💳", status:"done",    agent:true,  time:"02/06/2026 10:15" },
+                { label:"Captura de Pagamento",     icon:"💳", status:"done",    agent:true,  time:"02/06/2026 10:15" },
+                { label:"Reserva de Estoque",       icon:"📦", status:"done",    agent:true,  time:"02/06/2026 10:16" },
+                { label:"Picking",                  icon:"🔍", status:"done",    agent:false, time:"02/06/2026 11:00" },
+                { label:"Packing",                  icon:"📦", status:"active",  agent:false, time:null },
+                { label:"Labeling",                 icon:"🏷️", status:"pending", agent:false, time:null },
+                { label:"Emissão de Nota Fiscal",   icon:"🧾", status:"pending", agent:true,  time:null },
+                { label:"Expedição",                icon:"📮", status:"pending", agent:false, time:null },
+                { label:"First Mile",               icon:"🚚", status:"pending", agent:true,  time:null },
+                { label:"Last Mile",                icon:"🚚", status:"pending", agent:true,  time:null },
+                { label:"Proof of Delivery",        icon:"✅", status:"pending", agent:true,  time:null },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+
+    /* ══ Pedido 4 · Oscar Calçados · Kit + individual com cancelamento ══ */
+    {
+      id:"1631808945904-01", short:"68945904",
+      date:"01/06/2026 - 13:58", customer:"Eduardo Nunes",
+      origin:"Loja própria", qty:3, total:"R$ 912,80",
+      status:"processing", statusLabel:"Em processamento",
+      sla:"8h", seller:"Oscar Calçados", eta:"03/06/2026",
+      note:{
+        useCase:"Cancelamento parcial: item individual em processo de cancelamento enquanto kit segue para entrega",
+        text:"Cenário de cancelamento seletivo em pedido com kit e produto individual. O cliente solicitou o cancelamento de 1 item (cola de instalação) enquanto o kit de piso vinílico segue para entrega. O agente identificou que o item individual ainda estava em separação, acionou o workflow de Cancelamento, bloqueou a expedição e iniciou a reversão de estoque e o estorno financeiro proporcional ao item cancelado.",
+      },
+      itemGroups:[
+        {
+          id:"g-kit", workflow:"entrega-domicilio", type:"kit",
+          fulfillmentType:"delivery",
+          label:"Kit Reforma · Entrega via Loggi",
+          stages:[
+            { icon:"💳", label:"Confirmação de Pagamento", status:"done"   },
+            { icon:"📦", label:"Handling",                 status:"done"   },
+            { icon:"🧾", label:"Faturamento",              status:"done"   },
+            { icon:"🚚", label:"Entrega",                  status:"active" },
+          ],
+          items:[
+            {
+              name:"Kit Piso Vinílico + Rodapé",
+              sku:"KIT-PISO-RODAPE", qty:1, price:"R$ 780,00",
+              isKit:true,
+              kitComponents:[
+                { name:"Piso Vinílico Premium 2m²",  sku:"PV-2M2-04",  qty:4, unit:"caixas" },
+                { name:"Rodapé Vinílico 6cm × 3m",   sku:"RV-6CM-02",  qty:2, unit:"unidades" },
+              ],
+              steps:[
+                { label:"Autorização de Pagamento", icon:"💳", status:"done",    agent:true,  time:"01/06/2026 14:00" },
+                { label:"Captura de Pagamento",     icon:"💳", status:"done",    agent:true,  time:"01/06/2026 14:00" },
+                { label:"Reserva de Estoque",       icon:"📦", status:"done",    agent:true,  time:"01/06/2026 14:01" },
+                { label:"Picking",                  icon:"🔍", status:"done",    agent:false, time:"01/06/2026 15:30" },
+                { label:"Packing",                  icon:"📦", status:"done",    agent:false, time:"01/06/2026 16:00" },
+                { label:"Labeling",                 icon:"🏷️", status:"done",    agent:false, time:"01/06/2026 16:15" },
+                { label:"Emissão de Nota Fiscal",   icon:"🧾", status:"done",    agent:true,  time:"01/06/2026 16:16" },
+                { label:"Expedição",                icon:"📮", status:"done",    agent:false, time:"01/06/2026 17:00" },
+                { label:"First Mile",               icon:"🚚", status:"done",    agent:true,  time:"01/06/2026 19:00" },
+                { label:"Last Mile",                icon:"🚚", status:"active",  agent:true,  time:null },
+                { label:"Proof of Delivery",        icon:"✅", status:"pending", agent:true,  time:null },
+              ],
+            },
+          ],
+        },
+        {
+          id:"g-individual", workflow:"entrega-domicilio", type:"canceling",
+          fulfillmentType:"delivery",
+          label:"Produto Individual · Entrega via Correios",
+          stages:[
+            { icon:"💳", label:"Confirmação de Pagamento", status:"done"    },
+            { icon:"📦", label:"Handling",                 status:"active"  },
+            { icon:"🧾", label:"Faturamento",              status:"pending" },
+            { icon:"🚚", label:"Entrega",                  status:"pending" },
+          ],
+          items:[
+            { name:"Cola de Instalação Vinílica 1kg", sku:"CI-1KG-VIN", qty:2, price:"R$ 45,90",
+              steps:[
+                { label:"Autorização de Pagamento", icon:"💳", status:"done",    agent:true,  time:"01/06/2026 14:00" },
+                { label:"Captura de Pagamento",     icon:"💳", status:"done",    agent:true,  time:"01/06/2026 14:00" },
+                { label:"Reserva de Estoque",       icon:"📦", status:"done",    agent:true,  time:"01/06/2026 14:01" },
+                { label:"Picking",                  icon:"🔍", status:"active",  agent:false, time:null, cancelSignal:true },
+                { label:"Packing",                  icon:"📦", status:"pending", agent:false, time:null },
+                { label:"Labeling",                 icon:"🏷️", status:"pending", agent:false, time:null },
+                { label:"Emissão de Nota Fiscal",   icon:"🧾", status:"pending", agent:true,  time:null },
+                { label:"Expedição",                icon:"📮", status:"pending", agent:false, time:null },
+                { label:"First Mile",               icon:"🚚", status:"pending", agent:true,  time:null },
+                { label:"Last Mile",                icon:"🚚", status:"pending", agent:true,  time:null },
+                { label:"Proof of Delivery",        icon:"✅", status:"pending", agent:true,  time:null },
+              ],
+            },
+          ],
+          cancelGroup:{
+            id:"g-cancel", workflow:"cancelamento",
+            label:"Cancelamento em andamento",
+            stages:[
+              { icon:"📝", label:"Solicitação",         status:"done"    },
+              { icon:"🔄", label:"Reversão Fulfillment", status:"active"  },
+              { icon:"💰", label:"Estorno Financeiro",   status:"pending" },
+            ],
+            steps:[
+              { label:"Receber Solicitação",              icon:"📝", status:"done",    agent:true,  time:"02/06/2026 11:45" },
+              { label:"Validar Janela de Cancelamento",   icon:"🔍", status:"done",    agent:true,  time:"02/06/2026 11:46" },
+              { label:"Bloquear Expedição",               icon:"🚫", status:"active",  agent:true,  time:null },
+              { label:"Estornar Estoque",                 icon:"📦", status:"pending", agent:true,  time:null },
+              { label:"Processar Estorno",                icon:"💰", status:"pending", agent:true,  time:null },
+              { label:"Notificar Cliente",                icon:"🔔", status:"pending", agent:true,  time:null },
+            ],
+          },
+        },
+      ],
+    },
+
   ];
 
   // wfNaturezas is the canonical name per IA; wfCategories kept for backward compat

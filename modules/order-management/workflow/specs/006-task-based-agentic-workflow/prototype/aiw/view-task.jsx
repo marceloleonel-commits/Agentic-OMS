@@ -124,87 +124,9 @@ function buildOrderDetail(order) {
    Item Groups / Raias  (Itens do Pedido — Tarefas por Item)
    ══════════════════════════════════════════════════════════ */
 
-const OD_STAGE_DEFS = [
-  { key: "payment",     icon: "💳", label: "Confirmação de Pagamentos" },
-  { key: "preparation", icon: "📦", label: "Preparando os itens"        },
-  { key: "invoice",     icon: "🧾", label: "NFes Emitidas"              },
-  { key: "delivery",    icon: "🚚", label: "Recebido pelo Cliente"       },
-];
-
-const OD_PRODUCT_POOL = [
-  { name: "Tênis Running Air Pro",        price: "R$ 249,90" },
-  { name: "Camiseta Premium Slim Fit",    price: "R$ 89,90"  },
-  { name: "Kit Meias Esportivas 6 pares", price: "R$ 45,00"  },
-  { name: "Mochila Urban 25L",            price: "R$ 189,90" },
-  { name: "Polo Masculina Bordada",       price: "R$ 119,90" },
-  { name: "Calça Jogger Cargo",           price: "R$ 159,90" },
-  { name: "Bermuda Surf Quick-dry",       price: "R$ 79,90"  },
-  { name: "Mouse Ergonômico sem fio",     price: "R$ 149,90" },
-  { name: "Fone Bluetooth Over-ear",      price: "R$ 399,90" },
-  { name: "Óculos de Sol Polarizado",     price: "R$ 229,90" },
-];
-
+// Usa dados explícitos do pedido (fullOrder.itemGroups) quando disponíveis
 function buildOrderItemGroups(fullOrder) {
-  if (!fullOrder) return [];
-  const seed     = hashStr(fullOrder.id);
-  const status   = fullOrder.status || "processing";
-  const qty      = fullOrder.qty    || 2;
-  const datePfx  = (fullOrder.date  || "13/05/2026 - 16:48").slice(0, 10).replace(/-/g, "/");
-
-  const progress = { pending: 0, processing: 2, invoiced: 3, delivered: 4 }[status] ?? 1;
-  const carriers  = ["Jadlog", "Total Express", "Correios SEDEX", "Loggi"];
-  const groupTypes = ["Separação e Envio", "Fulfillment Parceiro", "Envio Expresso", "Cross-docking"];
-
-  function stageStatus(idx, prog) {
-    return idx < prog ? "done" : idx === prog ? "active" : "pending";
-  }
-  function makeStages(prog) {
-    return OD_STAGE_DEFS.map((def, i) => ({ ...def, status: stageStatus(i, prog) }));
-  }
-  function makeItems(startIdx, count, prog) {
-    const stepHours = [14, 15, 16, 18];
-    const items = [];
-    for (let i = 0; i < count; i++) {
-      const p = OD_PRODUCT_POOL[(seed + startIdx + i) % OD_PRODUCT_POOL.length];
-      items.push({
-        name:  p.name,
-        sku:   String(100000 + (seed % 899900) + startIdx + i),
-        qty:   1,
-        price: p.price,
-        steps: OD_STAGE_DEFS.map((def, si) => ({
-          ...def,
-          status: stageStatus(si, prog),
-          agent:  si === 0 || si === 2,    // payment + invoice triggered by agent
-          time:   si < prog
-            ? `${datePfx} ${String(stepHours[si] || 14).padStart(2, "0")}:${si % 2 === 0 ? "00" : "30"}`
-            : null,
-        })),
-      });
-    }
-    return items;
-  }
-
-  const g1Count = Math.max(1, Math.floor(qty / 2));
-  const g2Count = qty - g1Count;
-
-  const groups = [{
-    id:     "g1",
-    label:  `${groupTypes[seed % groupTypes.length]} · ${carriers[seed % carriers.length]}`,
-    stages: makeStages(progress),
-    items:  makeItems(0, g1Count, progress),
-  }];
-
-  if (g2Count > 0) {
-    const g2Progress = Math.max(0, progress - 1);
-    groups.push({
-      id:     "g2",
-      label:  `${groupTypes[(seed + 1) % groupTypes.length]} · ${carriers[(seed + 1) % carriers.length]}`,
-      stages: makeStages(g2Progress),
-      items:  makeItems(g1Count, g2Count, g2Progress),
-    });
-  }
-
-  return groups;
+  return (fullOrder && fullOrder.itemGroups) ? fullOrder.itemGroups : [];
 }
 
 /* ── Stage card (horizontal strip) ── */
@@ -232,18 +154,25 @@ function OdStepRow({ step }) {
   const colorMap = { done: "#169B61", active: "var(--primary)", pending: "#D1D5DB" };
   const labelMap = { done: "Concluído", active: "Em andamento", pending: "Pendente" };
   const badgeMap = {
-    done:    { bg: "#F0FDF4",             color: "#169B61",         border: "#BBF7D0" },
-    active:  { bg: "var(--primary-soft)", color: "var(--primary)",  border: "var(--primary)" },
-    pending: { bg: "#F9FAFB",             color: "var(--fg-3)",     border: "var(--border)" },
+    done:    { bg: "#F0FDF4",             color: "#169B61",        border: "#BBF7D0" },
+    active:  { bg: "var(--primary-soft)", color: "var(--primary)", border: "var(--primary)" },
+    pending: { bg: "#F9FAFB",             color: "var(--fg-3)",    border: "var(--border)"  },
   };
   const b  = badgeMap[step.status] || badgeMap.pending;
   const lc = colorMap[step.status] || colorMap.pending;
   return (
     <div className="od-step-row">
-      <div className="od-step-bar" style={{ background: lc }} />
+      <div className="od-step-bar" style={{ background: step.cancelSignal ? "#EF4444" : lc }} />
       <div className="od-step-content">
         <div className="od-step-head">
-          <span className="od-step-label" style={{ color: lc }}>{step.label}</span>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <span className="od-step-label" style={{ color: lc }}>{step.label}</span>
+            {step.cancelSignal && (
+              <span style={{ fontSize: 10, fontWeight: 700, background: "#FEF2F2", color: "#EF4444", border: "1px solid #FECACA", borderRadius: 6, padding: "1px 7px" }}>
+                ⚠ Cancelamento sinalizado
+              </span>
+            )}
+          </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <span className="od-step-badge" style={{ background: b.bg, color: b.color, borderColor: b.border }}>
               {labelMap[step.status]}
@@ -257,7 +186,38 @@ function OdStepRow({ step }) {
             Acionado por Agente AI · {step.time}
           </div>
         )}
+        {step.note && !step.time && (
+          <div className="od-step-trigger" style={{ color: "var(--fg-2)" }}>
+            <Icon name="clock" size={10} />
+            {step.note}
+          </div>
+        )}
+        {step.note && step.time && (
+          <div className="od-step-trigger" style={{ color: "var(--fg-2)", marginTop: 2 }}>
+            {step.note}
+          </div>
+        )}
       </div>
+    </div>
+  );
+}
+
+/* ── Kit components sub-list ── */
+function OdKitComponents({ components }) {
+  return (
+    <div style={{ margin: "0 0 0 56px", padding: "8px 14px", borderTop: "1px solid var(--border)", background: "#FAFAFA" }}>
+      <div style={{ fontSize: 10.5, fontWeight: 700, color: "var(--fg-3)", textTransform: "uppercase", letterSpacing: ".5px", marginBottom: 8 }}>
+        Itens do kit
+      </div>
+      {components.map((c, i) => (
+        <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "5px 0", borderBottom: i < components.length - 1 ? "1px solid var(--border)" : "none" }}>
+          <div style={{ width: 32, height: 32, borderRadius: 4, background: "var(--bg-muted)", flexShrink: 0 }} />
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 12.5, fontWeight: 500 }}>{c.name}</div>
+            <div style={{ fontSize: 11, color: "var(--fg-3)" }}>SKU {c.sku} · {c.qty} {c.unit}</div>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
@@ -269,13 +229,97 @@ function OdItemRow({ item }) {
       <div className="od-item-head">
         <div className="od-item-thumb" />
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div className="od-item-name">{item.name}</div>
+          <div className="od-item-name">
+            {item.name}
+            {item.isKit && (
+              <span style={{ fontSize: 10, fontWeight: 700, background: "#F5F3FF", color: "#7C3AED", border: "1px solid #DDD6FE", borderRadius: 6, padding: "1px 8px", marginLeft: 8 }}>
+                KIT
+              </span>
+            )}
+          </div>
           <div className="od-item-meta">Qtd: {item.qty} · {item.price} · SKU {item.sku}</div>
         </div>
       </div>
+      {item.isKit && item.kitComponents && <OdKitComponents components={item.kitComponents} />}
       <div className="od-item-steps">
         {item.steps.map((step, i) => <OdStepRow key={i} step={step} />)}
       </div>
+    </div>
+  );
+}
+
+/* ── Return detail card (Pedido 2) ── */
+function OdReturnCard({ detail }) {
+  if (!detail) return null;
+  return (
+    <div style={{ margin: "12px 16px", padding: "14px 16px", background: "#FFF7ED", border: "1px solid #FED7AA", borderRadius: 10 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+        <span style={{ fontSize: 15 }}>↩</span>
+        <div>
+          <div style={{ fontSize: 12.5, fontWeight: 700, color: "#C2410C" }}>{detail.reason}</div>
+          <div style={{ fontSize: 11, color: "#92400E", marginTop: 1 }}>
+            Solicitado em {detail.requestedAt}
+            {detail.classification && <span style={{ marginLeft: 8, background: "#FEF3C7", color: "#92400E", border: "1px solid #FDE68A", padding: "1px 8px", borderRadius: 8, fontWeight: 600 }}>{detail.classification}</span>}
+          </div>
+        </div>
+      </div>
+      <div style={{ fontSize: 12.5, color: "#78350F", fontStyle: "italic", lineHeight: 1.55, padding: "10px 12px", background: "rgba(255,255,255,.55)", borderRadius: 8, border: "1px solid #FDE68A" }}>
+        "{detail.customerText}"
+      </div>
+    </div>
+  );
+}
+
+/* ── Cancel group section (Pedido 4) ── */
+function OdCancelSection({ cancelGroup }) {
+  if (!cancelGroup) return null;
+  const done  = cancelGroup.stages.filter(s => s.status === "done").length;
+  const total = cancelGroup.stages.length;
+  return (
+    <div style={{ margin: "8px 0 0", borderTop: "2px dashed #FECACA" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 16px 8px", background: "#FEF2F2" }}>
+        <span style={{ fontSize: 14 }}>🚫</span>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 12.5, fontWeight: 700, color: "#EF4444" }}>{cancelGroup.label}</div>
+          <div style={{ fontSize: 11, color: "#B91C1C", marginTop: 1 }}>{done}/{total} etapas concluídas · Workflow: Cancelamento de Pedido</div>
+        </div>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: `repeat(${cancelGroup.stages.length}, 1fr)`, borderBottom: "1px solid #FECACA" }}>
+        {cancelGroup.stages.map((st, i) => {
+          const dotColor = st.status === "done" ? "#169B61" : st.status === "active" ? "#EF4444" : "#D1D5DB";
+          const bg       = st.status === "done" ? "#F0FDF4" : st.status === "active" ? "#FEF2F2" : "#F9FAFB";
+          return (
+            <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, padding: "12px 8px", textAlign: "center", background: bg, borderRight: i < cancelGroup.stages.length - 1 ? "1px solid #FECACA" : "none" }}>
+              <span style={{ fontSize: 18 }}>{st.icon}</span>
+              <span style={{ fontSize: 11, fontWeight: 500 }}>{st.label}</span>
+              <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 10.5, color: dotColor }}>
+                <span style={{ width: 6, height: 6, borderRadius: "50%", background: dotColor, display: "inline-block" }} />
+                {st.status === "done" ? "Concluído" : st.status === "active" ? "Em andamento" : "Pendente"}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+      <div>
+        {cancelGroup.steps.map((step, i) => <OdStepRow key={i} step={step} />)}
+      </div>
+    </div>
+  );
+}
+
+/* ── Note card ("Sobre este caso de uso") ── */
+function OdNote({ note, seller }) {
+  if (!note) return null;
+  return (
+    <div style={{ padding: "14px 16px", background: "var(--primary-soft)", border: "1px solid rgba(41,98,255,.15)", borderRadius: 10, marginTop: 4 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
+        <Icon name="sparkle" size={12} />
+        <span style={{ fontSize: 10.5, fontWeight: 700, color: "var(--primary)", textTransform: "uppercase", letterSpacing: ".6px" }}>
+          Caso de uso · {seller}
+        </span>
+      </div>
+      <div style={{ fontSize: 13, fontWeight: 600, color: "var(--fg)", marginBottom: 5 }}>{note.useCase}</div>
+      <div style={{ fontSize: 12.5, color: "var(--fg-2)", lineHeight: 1.6 }}>{note.text}</div>
     </div>
   );
 }
@@ -286,17 +330,42 @@ function OdRail({ group }) {
   const done   = group.stages.filter(s => s.status === "done").length;
   const total  = group.stages.length;
   const active = group.stages.find(s => s.status === "active");
-  const dotColor = active ? "var(--primary)" : done === total ? "#169B61" : "#D1D5DB";
+
+  const isCanceling = group.type === "canceling";
+  const isReturn    = group.type === "return";
+  const isVirtual   = group.type === "virtual";
+  const isKit       = group.type === "kit";
+
+  const dotColor = isCanceling ? "#EF4444"
+    : isReturn ? "#F97316"
+    : active    ? "var(--primary)"
+    : done === total ? "#169B61" : "#D1D5DB";
+
+  const headerBg = isCanceling ? "#FEF2F2" : isReturn ? "#FFF7ED" : "var(--bg-soft)";
+
+  const typeBadge = isReturn    ? { label: "Troca e Devolução", bg: "#FFF7ED", color: "#C2410C", border: "#FED7AA" }
+    : isVirtual   ? { label: "Virtual",         bg: "#F5F3FF", color: "#7C3AED", border: "#DDD6FE" }
+    : isKit       ? { label: "Kit",              bg: "#F0FDF4", color: "#059669", border: "#BBF7D0" }
+    : isCanceling ? { label: "Cancelamento",     bg: "#FEF2F2", color: "#EF4444", border: "#FECACA" }
+    : null;
+
   return (
-    <div className="od-rail">
-      <button className="od-rail-header" onClick={() => setOpen(o => !o)}>
+    <div className="od-rail" style={isCanceling ? { borderColor: "#FECACA" } : isReturn ? { borderColor: "#FED7AA" } : {}}>
+      <button className="od-rail-header" style={{ background: headerBg }} onClick={() => setOpen(o => !o)}>
         <div className="od-rail-left">
           <span className="od-rail-dot" style={{ background: dotColor }} />
           <div>
-            <div className="od-rail-name">{group.label}</div>
+            <div className="od-rail-name" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              {group.label}
+              {typeBadge && (
+                <span style={{ fontSize: 10, fontWeight: 700, background: typeBadge.bg, color: typeBadge.color, border: `1px solid ${typeBadge.border}`, borderRadius: 6, padding: "1px 7px" }}>
+                  {typeBadge.label}
+                </span>
+              )}
+            </div>
             <div className="od-rail-meta">
               {group.items.length} item{group.items.length !== 1 ? "s" : ""} · {done}/{total} etapas concluídas
-              {active && <span style={{ color: "var(--primary)", marginLeft: 6 }}>· {active.label}</span>}
+              {active && <span style={{ color: isCanceling ? "#EF4444" : "var(--primary)", marginLeft: 6 }}>· {active.label}</span>}
             </div>
           </div>
         </div>
@@ -307,12 +376,14 @@ function OdRail({ group }) {
       </button>
       {open && (
         <div className="od-rail-body">
+          {isReturn && group.returnDetail && <OdReturnCard detail={group.returnDetail} />}
           <div className="od-stage-strip">
             {group.stages.map((st, i) => <OdStageCard key={i} stage={st} />)}
           </div>
           <div className="od-rail-items">
             {group.items.map((item, i) => <OdItemRow key={i} item={item} />)}
           </div>
+          {group.cancelGroup && <OdCancelSection cancelGroup={group.cancelGroup} />}
         </div>
       )}
     </div>
@@ -399,6 +470,9 @@ function OrderDetailView({ task, orderId, onBack, onOpenOrder }) {
         <dt>Last Update</dt>
         <dd>2 minutes ago</dd>
       </dl>
+
+      {/* Nota do caso de uso */}
+      {fullOrder && fullOrder.note && <OdNote note={fullOrder.note} seller={fullOrder.seller} />}
 
       {/* Itens do Pedido — Tarefas por Item */}
       <section className="detail-section flush">
