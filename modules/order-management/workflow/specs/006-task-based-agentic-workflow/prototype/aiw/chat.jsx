@@ -119,11 +119,37 @@ function ChatPanel({
           <div className="chat-action-card">
             <div className="chat-action-card-body">
               <span className="chat-action-card-title">{m.title}</span>
-              {m.body && <span className="chat-action-card-desc">{m.body}</span>}
+              {m.body && <span className="chat-action-card-desc" style={{ whiteSpace: "pre-line" }}>{m.body}</span>}
             </div>
             <button className="btn btn-sm btn-primary chat-action-apply" onClick={m.onApply}>
               Aplicar
             </button>
+          </div>
+        )}
+
+        {m.type === "order-list" && m.orders && m.orders.length > 0 && (
+          <div className="chat-order-list">
+            {m.orders.map(function(o) {
+              return (
+                <button
+                  key={o.id}
+                  className="chat-order-row"
+                  onClick={() => m.onOpenOrder && m.onOpenOrder(o.id)}
+                >
+                  <span className="chat-order-id">
+                    <span>{o.id}</span>
+                    <span className="muted" style={{ fontSize: 10 }}>({o.short})</span>
+                  </span>
+                  <span className="chat-order-customer">{o.customer}</span>
+                  <span className="chat-order-meta">
+                    <span className="chat-order-sla">SLA {o.sla}</span>
+                    <span className="chat-order-eta">ETA {o.eta}</span>
+                  </span>
+                  <span className={`orders-status orders-status-${o.status}`} style={{ fontSize: 11 }}>{o.statusLabel}</span>
+                  <Icon name="chevron-right" size={12} style={{ flexShrink: 0, color: "var(--fg-3)" }} />
+                </button>
+              );
+            })}
           </div>
         )}
 

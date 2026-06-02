@@ -2352,3 +2352,57 @@ body.resizing-x .split-resizer::before { background: var(--primary); }
 .aiteam-sub  { font-size: 12px; color: var(--fg-3); }
 .aiteam-stat .lbl { font-size: 11px; color: var(--fg-3); }
 .aiteam-stat .val { font-size: 13px; font-weight: 500; }
+
+/* ── Chat order list (chat-engine order query results) ───────── */
+.chat-order-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 6px;
+  width: 100%;
+}
+.chat-order-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto 16px;
+  gap: 8px;
+  align-items: center;
+  padding: 8px 10px;
+  background: var(--bg, #fff);
+  border: 1px solid var(--border, #e5e7eb);
+  border-radius: 8px;
+  text-align: left;
+  width: 100%;
+  cursor: pointer;
+  transition: border-color .15s, background .15s;
+}
+.chat-order-row:hover {
+  border-color: var(--primary, #2962ff);
+  background: var(--primary-soft, #eff4ff);
+}
+.chat-order-id {
+  display: flex;
+  flex-direction: column;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--fg, #111);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.chat-order-customer {
+  font-size: 12px;
+  color: var(--fg-2, #444);
+  white-space: nowrap;
+}
+.chat-order-meta {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.chat-order-sla,
+.chat-order-eta {
+  font-size: 11px;
+  color: var(--fg-3, #888);
+  white-space: nowrap;
+}

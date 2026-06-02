@@ -1,5 +1,5 @@
-/* global React, Icon, AIWData, ChatPanel, ResizableSplit */
-const { useState } = React;
+/* global React, Icon, AIWData, ChatPanel, ResizableSplit, ChatEngine */
+const { useState, useEffect, useRef } = React;
 
 function Toggle({ on, onChange }) {
   return (
@@ -78,7 +78,7 @@ function SkillRow({ id, label, desc, defaultOn }) {
   );
 }
 
-function OrchestrationCanvas() {
+function OrchestrationCanvas({ customRules }) {
   const [threshold, setThreshold] = useState(75);
   const [hours, setHours] = useState(4);
 
@@ -211,6 +211,39 @@ function OrchestrationCanvas() {
 
           </section>
 
+          {/* ── Regras Customizadas (adicionadas pelo agente via chat) ── */}
+          {customRules && customRules.length > 0 && (
+            <section className="detail-section">
+              <div className="detail-section-head" style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <h3>Regras Customizadas</h3>
+                <span style={{ fontSize: 10.5, fontWeight: 600, color: "#059669", background: "#ecfdf5", border: "1px solid #6ee7b7", padding: "2px 9px", borderRadius: 10 }}>
+                  {customRules.length} ativa{customRules.length !== 1 ? "s" : ""}
+                </span>
+              </div>
+              <p className="detail-desc" style={{ marginTop: -8, marginBottom: 12 }}>
+                Regras adicionadas conversacionalmente via agente. Ficam ativas até serem removidas pelo operador.
+              </p>
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {customRules.map((rule) => (
+                  <div key={rule.id} style={{ background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: 8, padding: "10px 14px" }}>
+                    <div style={{ fontSize: 12.5, fontWeight: 600, color: "#1a1a1a", marginBottom: 6 }}>{rule.title}</div>
+                    <div style={{ display: "flex", gap: 6, alignItems: "flex-start", marginBottom: 4 }}>
+                      <span style={{ fontSize: 10, fontWeight: 700, background: "#eff6ff", color: "#2962ff", border: "1px solid #bfdbfe", borderRadius: 4, padding: "1px 6px", flexShrink: 0, marginTop: 1 }}>SE</span>
+                      <span style={{ fontSize: 11.5, color: "#374151" }}>{rule.condition}</span>
+                    </div>
+                    <div style={{ display: "flex", gap: 6, alignItems: "flex-start" }}>
+                      <span style={{ fontSize: 10, fontWeight: 700, background: "#f0fdf4", color: "#059669", border: "1px solid #bbf7d0", borderRadius: 4, padding: "1px 5px", flexShrink: 0, marginTop: 1 }}>ENTÃO</span>
+                      <span style={{ fontSize: 11.5, color: "#374151" }}>{rule.action}</span>
+                    </div>
+                    <div style={{ fontSize: 10.5, color: "#9ca3af", marginTop: 6 }}>
+                      Adicionada pelo agente · Escopo: {rule.scope === "escalation" ? "Escalação" : "Orquestração"}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
           <div style={{ height: 40 }} />
         </div>
       </div>
@@ -218,29 +251,52 @@ function OrchestrationCanvas() {
   );
 }
 
-function OrchestrationView({ onBack }) {
-  const messages = [
+function OrchestrationView({ onBack, onOpenOrder }) {
+  const [chatMsgs, setChatMsgs] = useState([
     { from: "agent", text: "Olá. Sou o Agente de Pedidos. Estou monitorando 4.256 pedidos ativos com confiança mínima de 75%." },
-    { from: "agent", text: "Nas últimas 24h: 87% dos casos foram resolvidos automaticamente, 13% escalados. Quer ver onde está o gargalo?" }
-  ];
+    { from: "agent", text: "Nas últimas 24h: 87% dos casos foram resolvidos automaticamente, 13% escalados. Descreva uma regra, consulte pedidos ou peça uma ação." }
+  ]);
+  const [isTyping, setIsTyping] = useState(false);
+  const [customRules, setCustomRules] = useState([]);
+  const engineRef = useRef(null);
+
+  useEffect(() => {
+    engineRef.current = ChatEngine.create({
+      context: "orchestration",
+      data: AIWData,
+      onNavigate: (route) => { if (onOpenOrder && route.orderId) onOpenOrder(route.orderId); },
+      onApplyRule: (rule) => setCustomRules((r) => [...r, rule]),
+      onCreateExperience: () => {},
+      onAgentSay: (msgs) => setChatMsgs((m) => [...m, ...msgs]),
+      onTyping: setIsTyping,
+    });
+  }, []);
+
   const chips = [
-    { icon: "graph",   label: "Show escalated orders today" },
-    { icon: "edit",    label: "Raise threshold to 85%"      },
-    { icon: "doc",     label: "Summarize last week"         },
-    { icon: "search",  label: "List current bottlenecks"    }
+    { icon: "edit",   label: "Adicionar regra de escalação" },
+    { icon: "search", label: "Pedidos com risco de SLA"     },
+    { icon: "sparkle", label: "Criar nova experiência"      },
+    { icon: "graph",  label: "Ver capacidades do agente"    }
   ];
+
+  const handleSend = (text) => {
+    setChatMsgs((m) => [...m, { from: "user", text }]);
+    engineRef.current && engineRef.current.send(text);
+  };
 
   return (
     <ResizableSplit screenLabel="04 Orchestration Agent">
       <ChatPanel
         title="Agentes de Pedidos"
-        intro="Configure how the orchestration agent runs your operation. It currently monitors 4,256 orders with a 75% confidence threshold."
+        intro="Configure o comportamento do agente em linguagem natural. Monitora 4.256 pedidos com threshold de 75%."
         chips={chips}
-        initialMessages={messages}
-        placeholder="Ask about the orchestration agent..."
+        messages={chatMsgs}
+        onSend={handleSend}
+        isTyping={isTyping}
+        placeholder="Descreva uma regra ou consulte pedidos…"
         onBack={onBack}
       />
-      <OrchestrationCanvas />
+      <OrchestrationCanvas customRules={customRules} />
     </ResizableSplit>
   );
 }

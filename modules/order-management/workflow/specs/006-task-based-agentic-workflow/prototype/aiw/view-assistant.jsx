@@ -1,5 +1,5 @@
-/* global React, Icon, AIWData, MessageComposer */
-const { useState } = React;
+/* global React, Icon, AIWData, MessageComposer, ChatEngine */
+const { useState, useEffect, useRef } = React;
 
 /* ------- KPI overview card ------- */
 function OverviewCard() {
@@ -173,6 +173,122 @@ function AllOrdersTable({ onOpenOrder }) {
 /* ------- Assistant view (router) ------- */
 function AssistantView({ onOpenTask, onGotoResource, onOpenOrder }) {
   const [tab, setTab] = useState("overview"); // overview | orders
+  const [chatMsgs, setChatMsgs] = useState([]);
+  const [isTyping, setIsTyping] = useState(false);
+  const engineRef = useRef(null);
+  const chatScrollRef = useRef(null);
+
+  useEffect(() => {
+    engineRef.current = ChatEngine.create({
+      context: "assistant",
+      data: AIWData,
+      onNavigate: (route) => { if (onOpenOrder && route.orderId) onOpenOrder(route.orderId); },
+      onCreateExperience: () => {},
+      onAgentSay: (msgs) => setChatMsgs((m) => [...m, ...msgs]),
+      onTyping: setIsTyping,
+    });
+  }, []);
+
+  // Scroll chat tray to bottom on new messages
+  useEffect(() => {
+    if (chatScrollRef.current) {
+      chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
+    }
+  }, [chatMsgs, isTyping]);
+
+  const handleSend = (text) => {
+    if (!text.trim()) return;
+    setChatMsgs((m) => [...m, { from: "user", text }]);
+    engineRef.current && engineRef.current.send(text);
+  };
+
+  // Render a single chat message inline (uses same CSS classes as ChatPanel)
+  const renderChatMsg = (m, i) => {
+    if (m.from === "user") {
+      return (
+        <div key={i} className="msg msg-user">
+          <div className="bubble">{m.text}</div>
+        </div>
+      );
+    }
+    return (
+      <div key={i} className="msg msg-assistant">
+        {m.text && <div className="msg-text" style={{ whiteSpace: "pre-line" }}>{m.text}</div>}
+
+        {m.type === "action" && (
+          <div className="chat-action-card">
+            <div className="chat-action-card-body">
+              <span className="chat-action-card-title">{m.title}</span>
+              {m.body && <span className="chat-action-card-desc" style={{ whiteSpace: "pre-line" }}>{m.body}</span>}
+            </div>
+            <button className="btn btn-sm btn-primary chat-action-apply" onClick={m.onApply}>
+              Aplicar
+            </button>
+          </div>
+        )}
+
+        {m.type === "wf-draft" && m.draft && (
+          <div className="chat-draft-card">
+            <div className="chat-draft-header"><span>✨</span><span>Nova Experiência</span></div>
+            <div className="chat-draft-rows">
+              <div className="chat-draft-row">
+                <span className="chat-draft-label">Nome</span>
+                <strong>{m.draft.name}</strong>
+              </div>
+              {m.draft.category && (
+                <div className="chat-draft-row">
+                  <span className="chat-draft-label">Modelo</span>
+                  <strong>{m.draft.category}</strong>
+                </div>
+              )}
+              <div className="chat-draft-row">
+                <span className="chat-draft-label">Agente AI</span>
+                <strong>{m.draft.aiOrch ? "Ativo" : "Desativado"}</strong>
+              </div>
+            </div>
+            <button className="btn btn-sm btn-primary" style={{ width: "100%", marginTop: 10 }} onClick={m.onConfirm}>
+              Criar Experiência
+            </button>
+          </div>
+        )}
+
+        {m.type === "order-list" && m.orders && m.orders.length > 0 && (
+          <div className="chat-order-list">
+            {m.orders.map((o) => (
+              <button key={o.id} className="chat-order-row"
+                onClick={() => m.onOpenOrder && m.onOpenOrder(o.id)}>
+                <span className="chat-order-id">
+                  <span>{o.id}</span>
+                  <span className="muted" style={{ fontSize: 10 }}>({o.short})</span>
+                </span>
+                <span className="chat-order-customer">{o.customer}</span>
+                <span className="chat-order-meta">
+                  <span className="chat-order-sla">SLA {o.sla}</span>
+                  <span className="chat-order-eta">ETA {o.eta}</span>
+                </span>
+                <span className={`orders-status orders-status-${o.status}`} style={{ fontSize: 11 }}>{o.statusLabel}</span>
+                <Icon name="chevron-right" size={12} />
+              </button>
+            ))}
+          </div>
+        )}
+
+        {m.quickReplies && m.quickReplies.length > 0 && (
+          <div className="chat-quick-replies">
+            {m.quickReplies.map((r, j) => {
+              const label = typeof r === "string" ? r : r.label;
+              return (
+                <button key={j} className="chat-quick-reply"
+                  onClick={() => handleSend(label)}>
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className="main">
@@ -199,9 +315,33 @@ function AssistantView({ onOpenTask, onGotoResource, onOpenOrder }) {
         </div>
       </div>
 
+      {/* Chat tray — appears above the composer when there are messages */}
+      {tab === "overview" && (chatMsgs.length > 0 || isTyping) && (
+        <div
+          ref={chatScrollRef}
+          style={{
+            maxHeight: 320,
+            overflowY: "auto",
+            borderTop: "1px solid var(--border, #e5e7eb)",
+            background: "var(--bg, #fff)",
+            padding: "12px 16px 4px",
+          }}
+        >
+          {chatMsgs.map(renderChatMsg)}
+          {isTyping && (
+            <div className="msg msg-assistant">
+              <div className="chat-typing"><span /><span /><span /></div>
+            </div>
+          )}
+        </div>
+      )}
+
       {tab === "overview" &&
         <div className="aiw-composer-bar">
-          <MessageComposer placeholder="Message VTEX My Assistant..." />
+          <MessageComposer
+            placeholder="Pergunte sobre pedidos, regras ou crie uma experiência…"
+            onSend={handleSend}
+          />
         </div>
       }
     </div>

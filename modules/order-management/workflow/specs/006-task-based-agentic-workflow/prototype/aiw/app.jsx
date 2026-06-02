@@ -1,5 +1,5 @@
-/* global React, ReactDOM, Sidebar, Icon, AppData, AIWData, AssistantView, TaskView, OrderDetailView, WorkflowBoardView, OrchestrationView, ChatPanel, ResizableSplit, AITeamDrawer, TweaksPanel, useTweaks, TweakSection, TweakRadio, TweakColor */
-const { useState, useEffect, useRef } = React;
+/* global React, ReactDOM, Sidebar, Icon, AppData, AIWData, AssistantView, TaskView, OrderDetailView, WorkflowBoardView, OrchestrationView, ChatPanel, ResizableSplit, ChatEngine, AITeamDrawer, TweaksPanel, useTweaks, TweakSection, TweakRadio, TweakColor */
+const { useState, useEffect, useRef, useCallback } = React;
 
 const TWEAKS_DEFAULTS = /*EDITMODE-BEGIN*/{
   "density": "comfortable",
@@ -37,6 +37,11 @@ function App() {
   const [collapsed, setCollapsed] = useState(!!tweaks.sidebarCollapsed);
   const [aiOpen, setAIOpen] = useState(false);
 
+  // Order-detail intelligent chat state
+  const [orderChatMsgs, setOrderChatMsgs] = useState([]);
+  const [orderChatTyping, setOrderChatTyping] = useState(false);
+  const orderEngineRef = useRef(null);
+
   useEffect(() => {
     document.documentElement.style.setProperty("--primary", tweaks.accent);
     document.documentElement.style.setProperty("--primary-hover", shade(tweaks.accent, -10));
@@ -63,6 +68,27 @@ function App() {
       document.body.style.fontSize = "14px";
     }
   }, [tweaks.density]);
+
+  // Re-initialise the order-detail chat engine whenever we navigate to a new order
+  useEffect(() => {
+    if (route.name !== "order-detail") return;
+    const orderId = route.orderId;
+    const currentOrder = AIWData.orders.find(o => o.id === orderId);
+    const initialMsgs = currentOrder ? [
+      { from: "agent", text: `Estou monitorando o pedido ${currentOrder.id} (${currentOrder.short}). Status: ${currentOrder.statusLabel}.` },
+      { from: "agent", text: `${currentOrder.qty} item(ns) · ${currentOrder.total} · SLA ${currentOrder.sla}. Quer que eu analise o histórico ou sugira uma ação?` }
+    ] : [{ from: "agent", text: "Selecione um pedido para começar." }];
+    setOrderChatMsgs(initialMsgs);
+    setOrderChatTyping(false);
+    orderEngineRef.current = ChatEngine.create({
+      context: "order-detail",
+      data: AIWData,
+      orderId,
+      onNavigate: (r) => setRoute({ name: "order-detail", orderId: r.orderId }),
+      onAgentSay: (msgs) => setOrderChatMsgs(m => [...m, ...msgs]),
+      onTyping: setOrderChatTyping,
+    });
+  }, [route.name, route.orderId]);
 
   const goHome   = () => setRoute({ name: "orders" });
   const openTask = (id) => setRoute({ name: "task", id });
@@ -164,7 +190,7 @@ function App() {
   } else if (route.name === "workflow-board") {
     view = <WorkflowBoardView onBack={goHome} wfLayout={tweaks.wfLayout} wfGroup={tweaks.wfGroup} />;
   } else if (route.name === "orchestration") {
-    view = <OrchestrationView onBack={goHome} />;
+    view = <OrchestrationView onBack={goHome} onOpenOrder={openOrder} />;
   } else if (route.name === "order-detail") {
     const currentOrder = AIWData.orders.find(o => o.id === route.orderId);
     const syntheticTask = {
@@ -177,23 +203,25 @@ function App() {
         }))
       }
     };
-    const orderMessages = currentOrder ? [
-      { from: "agent", text: `Estou monitorando o pedido ${currentOrder.id} (${currentOrder.short}). Status atual: ${currentOrder.statusLabel}.` },
-      { from: "agent", text: `${currentOrder.qty} item(ns) · ${currentOrder.total} · SLA ${currentOrder.sla}. Quer que eu analise o histórico ou sugira uma ação?` }
-    ] : [];
     const orderChips = [
       { icon: "search", label: "Analisar histórico" },
       { icon: "sparkle", label: "Sugerir próxima ação" },
       { icon: "graph",   label: "Verificar SLA restante" },
       { icon: "edit",    label: "Escalar para operador" }
     ];
+    const handleOrderChatSend = (text) => {
+      setOrderChatMsgs(m => [...m, { from: "user", text }]);
+      orderEngineRef.current && orderEngineRef.current.send(text);
+    };
     view = (
       <ResizableSplit screenLabel="Order Detail">
         <ChatPanel
           title={currentOrder ? `Pedido ${currentOrder.short}` : "Detalhe do Pedido"}
           intro={currentOrder ? `${currentOrder.id} · ${currentOrder.statusLabel}` : ""}
           chips={orderChips}
-          initialMessages={orderMessages}
+          messages={orderChatMsgs}
+          onSend={handleOrderChatSend}
+          isTyping={orderChatTyping}
           placeholder="Pergunte sobre este pedido…"
           onBack={goHome}
         />
