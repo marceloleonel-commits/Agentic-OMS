@@ -4,15 +4,15 @@ window.AIWData = (function () {
 
   const kpis = {
     primary: [
-      { label: "Pedidos Hoje",   value: "4.399", delta: "15%", up: false },
-      { label: "Pedidos Ontem",  value: "5.197", delta: "18%", up: false },
-      { label: "Últimos 7 Dias", value: "5.378", delta: "4%",  up: true  },
-      { label: "Último Ano",     value: "3.319", delta: "33%", up: true  }
+      { label: "Pedidos Hoje",   value: "2", delta: "100%", up: true  },
+      { label: "Pedidos Ontem",  value: "1", delta: "50%",  up: false },
+      { label: "Últimos 7 Dias", value: "4", delta: "33%",  up: true  },
+      { label: "Último Ano",     value: "4", delta: "100%", up: true  }
     ],
     secondary: [
-      { label: "Pedidos",      value: "R$ 496.277"          },
-      { label: "Ticket Médio", value: "R$ 145,53"           },
-      { label: "Total Bruto",  value: "R$ 72.214.954,79"    }
+      { label: "Pedidos",      value: "4"           },
+      { label: "Ticket Médio", value: "R$ 1.477,25" },
+      { label: "Total Bruto",  value: "R$ 5.909,00" }
     ]
   };
 
