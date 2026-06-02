@@ -417,7 +417,7 @@ window.AIWData = (function () {
     {
       id:"1631808945901-01", short:"68945901",
       date:"02/06/2026 - 09:42", customer:"Mariana Figueiredo",
-      origin:"Marketplace", qty:5, total:"R$ 1.240,00",
+      origin:"Marketplace", qty:5, total:"R$ 1.139,20",
       status:"processing", statusLabel:"Em processamento",
       sla:"4h", seller:"C&A", eta:"02/06/2026",
       note:{
@@ -461,7 +461,7 @@ window.AIWData = (function () {
     {
       id:"1631808945902-01", short:"68945902",
       date:"30/05/2026 - 14:17", customer:"Ricardo Alves",
-      origin:"Marketplace", qty:1, total:"R$ 3.499,00",
+      origin:"Marketplace", qty:1, total:"R$ 3.518,90",
       status:"return", statusLabel:"Troca e devolução",
       sla:"—", seller:"Samsung", eta:"—",
       note:{
@@ -522,7 +522,7 @@ window.AIWData = (function () {
     {
       id:"1631808945903-01", short:"68945903",
       date:"02/06/2026 - 10:14", customer:"Patrícia Souza",
-      origin:"Loja própria", qty:2, total:"R$ 318,90",
+      origin:"Loja própria", qty:2, total:"R$ 339,30",
       status:"processing", statusLabel:"Em processamento",
       sla:"6h", seller:"DrogariaSP", eta:"03/06/2026",
       note:{
@@ -586,7 +586,7 @@ window.AIWData = (function () {
     {
       id:"1631808945904-01", short:"68945904",
       date:"01/06/2026 - 13:58", customer:"Eduardo Nunes",
-      origin:"Loja própria", qty:3, total:"R$ 912,80",
+      origin:"Loja própria", qty:3, total:"R$ 911,60",
       status:"processing", statusLabel:"Em processamento",
       sla:"8h", seller:"ObraMax", eta:"03/06/2026",
       note:{
@@ -597,7 +597,7 @@ window.AIWData = (function () {
         {
           id:"g-kit", workflow:"entrega-domicilio", type:"kit",
           fulfillmentType:"delivery",
-          label:"Kit Reforma · Entrega via Loggi",
+          label:"Entrega em Domicílio · Loggi",
           stages:[
             { icon:"💳", label:"Confirmação de Pagamento", status:"done"   },
             { icon:"📦", label:"Handling",                 status:"done"   },
@@ -632,7 +632,7 @@ window.AIWData = (function () {
         {
           id:"g-individual", workflow:"entrega-domicilio", type:"canceling",
           fulfillmentType:"delivery",
-          label:"Produto Individual · Entrega via Correios",
+          label:"Entrega em Domicílio · Correios",
           stages:[
             { icon:"💳", label:"Confirmação de Pagamento", status:"done"    },
             { icon:"📦", label:"Handling",                 status:"active"  },

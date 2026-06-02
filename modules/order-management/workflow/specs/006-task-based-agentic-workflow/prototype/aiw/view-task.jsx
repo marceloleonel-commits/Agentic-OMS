@@ -575,8 +575,13 @@ function OdRail({ group }) {
   );
 }
 
-function fmtCurrency(v) {
-  return v.toFixed(2).replace(".", ",") + " USD";
+function parseBRL(s) {
+  if (!s) return 0;
+  return parseFloat(s.replace('R$ ', '').replace(/\./g, '').replace(',', '.')) || 0;
+}
+function fmtBRL(v) {
+  const parts = v.toFixed(2).split('.');
+  return 'R$ ' + parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ',' + parts[1];
 }
 
 function Field({ label, value }) {
@@ -599,6 +604,22 @@ function OrderDetailView({ task, orderId, onBack, onOpenOrder }) {
   const fullOrder = AIWData.orders.find(o => o.id === orderId);
   const itemGroups = buildOrderItemGroups(fullOrder);
   const totalItems = itemGroups.reduce((s, g) => s + g.items.length, 0);
+
+  // Real payment breakdown — computed from item groups
+  const SHIPPING_RATE = 19.90; // flat rate per delivery group
+  const realBreakdown = { subtotal: 0, discounts: 0, taxes: 0, shipping: 0, total: 0 };
+  if (fullOrder && fullOrder.itemGroups) {
+    fullOrder.itemGroups.forEach(function(group) {
+      if (group.type === 'return') return; // return group = refund in progress, not original charge
+      (group.items || []).forEach(function(item) {
+        realBreakdown.subtotal += parseBRL(item.price) * (item.qty || 1);
+      });
+      if (group.fulfillmentType === 'delivery') {
+        realBreakdown.shipping += SHIPPING_RATE; // only home delivery charges shipping
+      }
+    });
+    realBreakdown.total = realBreakdown.subtotal - realBreakdown.discounts + realBreakdown.taxes + realBreakdown.shipping;
+  }
 
   const prev = idx > 0 ? impacted[idx - 1] : null;
   const next = idx < impacted.length - 1 ? impacted[idx + 1] : null;
@@ -682,24 +703,40 @@ function OrderDetailView({ task, orderId, onBack, onOpenOrder }) {
 
       {/* Payment */}
       <section className="detail-section flush">
-        <div className="detail-section-head"><h3>Payment</h3></div>
+        <div className="detail-section-head"><h3>Pagamento</h3></div>
         <div className="od-fields">
           <Field label="Endereço de cobrança" value={d.customer.address} />
-          <Field label="Cobrança" value={"R$ " + d.breakdown.total.toFixed(2).replace(".", ",")} />
-          <Field label="Data" value={"14 de outubro de 2024"} />
-          <Field label="Cartão" value={d.card} />
+          <Field label="Total cobrado"        value={fmtBRL(realBreakdown.total)} />
+          <Field label="Data"                 value={"14 de outubro de 2024"} />
+          <Field label="Cartão"               value={d.card} />
         </div>
-      
+
         <div style={{ marginTop: 20 }} />
         <div className="od-breakdown">
-          <div className="od-bd-row"><span>Items</span>     <span>{fmtCurrency(d.breakdown.subtotal)}</span></div>
-          <div className="od-bd-row"><span>Discounts</span> <span>- {fmtCurrency(d.breakdown.discounts)}</span></div>
-          <div className="od-bd-row"><span>Taxes</span>     <span>{fmtCurrency(d.breakdown.taxes)}</span></div>
-          <div className="od-bd-row"><span>Shipping</span>  <span>Free</span></div>
+          <div className="od-bd-row">
+            <span>Itens</span>
+            <span>{fmtBRL(realBreakdown.subtotal)}</span>
+          </div>
+          {realBreakdown.discounts > 0 && (
+            <div className="od-bd-row">
+              <span>Descontos</span>
+              <span style={{ color: "#169B61" }}>- {fmtBRL(realBreakdown.discounts)}</span>
+            </div>
+          )}
+          {realBreakdown.taxes > 0 && (
+            <div className="od-bd-row">
+              <span>Taxas</span>
+              <span>{fmtBRL(realBreakdown.taxes)}</span>
+            </div>
+          )}
+          <div className="od-bd-row">
+            <span>Frete</span>
+            <span>{realBreakdown.shipping > 0 ? fmtBRL(realBreakdown.shipping) : <span style={{ color: "#169B61" }}>Grátis</span>}</span>
+          </div>
         </div>
         <div className="od-bd-total">
           <span>Total</span>
-          <span>{fmtCurrency(d.breakdown.total)}</span>
+          <span>{fmtBRL(realBreakdown.total)}</span>
         </div>
       </section>
 
