@@ -15,7 +15,7 @@
 The [Create AI Workspace Agent template](https://darkkitchen.vtex.com/create/templates/default/create-ai-workspace-agent) automates 7 setup steps that would otherwise be done manually and inconsistently: Agent ID generation, repo creation, Tech Catalog registration, deployment pipeline configuration, and credentials provisioning. It ensures the Delivery Options Agent follows VTEX's standard agentic architecture from the start and reduces setup risk.
 
 **What agent type should be selected?**
-The template offers 6 types: Vanilla, Strands, UI, Full-stack, MCP. The choice determines the pre-configured dev containers, Building Blocks integrations, and UI scaffolding included. This decision must be made with Ricardinho before running the template. Given the Delivery Options Agent will eventually need an Agentic UI in Admin Shell (Raccoon), a type that includes UI scaffolding is likely the right fit.
+Decided — **Backend (Strands) only** for the main agent repo (`fulfillment-config-agent`), and **MCP Instructions** for the shared platform service (`fulfillment-mcp-server`). The template is run twice. Strands natively supports the Orchestrator + Sub-agent pattern chosen in [ADR-001](./ADR-001-fulfillment-agent.html). UI scaffolding is deferred to a future frontend spec.
 
 **Is this spec blocking spec 001?**
 For Q2C2, spec 001 (Same Day DO automation) is deterministic and does not require the AI Workspace to run. This spec sets up the infrastructure that will host spec 001's output and future agent tasks when they are ready for deployment. Running in parallel is the right approach.
@@ -134,9 +134,9 @@ Reference: [Create AI Workspace Agent](https://darkkitchen.vtex.com/create/templ
 
 | Decision | Status | Owner |
 | --- | --- | --- |
-| Agent type selection (Vanilla / Strands / UI / Full-stack / MCP) | Open — must be decided before running template | Ricardinho + Carol |
-| Include Admin UI scaffolding now or defer to frontend spec (Admin v4)? | Defer — out of scope this cycle | Carol |
-| Repository name for the agent | Open | Ricardinho |
+| Agent type selection (Vanilla / Strands / UI / Full-stack / MCP) | ✅ Decided — **Backend (Strands) only** for `fulfillment-config-agent`; **MCP Instructions** for `fulfillment-mcp-server` (two separate template runs). See [ADR-001](./ADR-001-fulfillment-agent.html). | Ricardinho |
+| Include Admin UI scaffolding now or defer to frontend spec (Admin v4)? | ✅ Decided — Defer. Backend is decoupled from UI; frontend connects via API in a future spec. | Carol |
+| Repository name for the agent | ✅ Decided — `fulfillment-config-agent` (monorepo: Orchestrator + Sub-agents) + `fulfillment-mcp-server` (shared MCP platform service). | Ricardinho |
 
 ---
 

@@ -64,4 +64,4 @@ The frontend of the Delivery Options Agent will live in Admin v4. Components and
 - GitHub repository created with correct permissions and branch protection
 - Deployment pipeline operational (`agent-deploy-v1`)
 - Application credentials provisioned and PR merged to `application-credentials`
-- [PM INPUT NEEDED: confirm agent type with Ricardinho — Vanilla, Strands, UI, Full-stack, or MCP?]
+- Agent type confirmed: **Backend (Strands) only** for `fulfillment-config-agent`; **MCP Instructions** for `fulfillment-mcp-server`. See [ADR-001](./ADR-001-fulfillment-agent.html) for architecture rationale.
