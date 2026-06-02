@@ -644,9 +644,6 @@ function OrderDetailView({ task, orderId, onBack, onOpenOrder }) {
         <dd>2 minutes ago</dd>
       </dl>
 
-      {/* Nota do caso de uso */}
-      {fullOrder && fullOrder.note && <OdNote note={fullOrder.note} seller={fullOrder.seller} />}
-
       {/* Itens do Pedido — Tarefas por Item */}
       <section className="detail-section flush">
         <div className="detail-section-head" style={{ alignItems: "center" }}>

@@ -146,7 +146,6 @@ function AllOrdersTable({ onOpenOrder }) {
           <span>Total</span>
           <span>Status</span>
           <span>Caso de Uso</span>
-          <span />
         </div>
         {orders.map((o, i) =>
           <div key={i} className="orders-row" style={{ cursor: "pointer" }}
@@ -161,9 +160,11 @@ function AllOrdersTable({ onOpenOrder }) {
             <span>{o.qty}</span>
             <span>{o.total}</span>
             <span><span className={`orders-status orders-status-${o.status}`}>{o.statusLabel}</span></span>
-            <span style={{ fontSize: 12, fontWeight: 600, color: "var(--fg-2)" }}>{o.seller || "—"}</span>
-            <span>
-              <button className="icon-btn" onClick={e => e.stopPropagation()}><Icon name="more" size={16} /></button>
+            <span style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+              <span style={{ fontSize: 12, fontWeight: 700, color: "var(--fg)" }}>{o.seller || "—"}</span>
+              {o.note && o.note.useCase && (
+                <span style={{ fontSize: 11.5, color: "var(--fg-2)", lineHeight: 1.45 }}>{o.note.useCase}</span>
+              )}
             </span>
           </div>
         )}
