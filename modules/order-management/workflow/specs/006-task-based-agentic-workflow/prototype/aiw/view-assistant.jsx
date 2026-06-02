@@ -119,48 +119,49 @@ function ResourcesCard({ onGoto }) {
 }
 
 /* ------- All orders table ------- */
-function AllOrdersTable() {
+function AllOrdersTable({ onOpenOrder }) {
   const { orders } = AIWData;
-  const statusLabel = (s) => s === "approved" ? "approved" : s;
   return (
     <section className="aiw-section">
       <div className="orders-filterbar">
         <div className="orders-search">
           <Icon name="search" size={14} />
-          <input placeholder="Search" />
+          <input placeholder="Buscar pedido…" />
         </div>
         <span className="orders-chip">
-          <span className="orders-chip-lbl">Order date :</span>
-          <span className="orders-chip-val">Today</span>
-          <button className="orders-chip-x" aria-label="Remove filter"><Icon name="x" size={12} /></button>
+          <span className="orders-chip-lbl">Data do pedido:</span>
+          <span className="orders-chip-val">Hoje</span>
+          <button className="orders-chip-x" aria-label="Remover filtro"><Icon name="x" size={12} /></button>
         </span>
-        <button className="orders-addfilter"><Icon name="plus" size={14} /> Add filter</button>
+        <button className="orders-addfilter"><Icon name="plus" size={14} /> Adicionar filtro</button>
       </div>
 
       <div className="orders-table">
         <div className="orders-thead">
-          <span>Order ID</span>
-          <span>Creation date</span>
-          <span>Customer</span>
-          <span>Origin</span>
-          <span>Qty</span>
+          <span>ID do pedido</span>
+          <span>Data de criação</span>
+          <span>Cliente</span>
+          <span>Origem</span>
+          <span>Itens</span>
           <span>Total</span>
-          <span>Payment</span>
           <span>Status</span>
           <span />
         </div>
         {orders.map((o, i) =>
-          <div key={i} className="orders-row">
-            <span className="orders-id">{o.id}</span>
+          <div key={i} className="orders-row" style={{ cursor: "pointer" }}
+               onClick={() => onOpenOrder && onOpenOrder(o.id)}>
+            <span className="orders-id">
+              {o.id}<br/>
+              <span className="muted" style={{ fontSize: 11 }}>({o.short})</span>
+            </span>
             <span className="muted">{o.date}</span>
             <span>{o.customer}</span>
             <span>{o.origin}</span>
             <span>{o.qty}</span>
             <span>{o.total}</span>
-            <span><span className="amex-badge">AMEX</span></span>
             <span><span className={`orders-status orders-status-${o.status}`}>{o.statusLabel}</span></span>
             <span>
-              <button className="icon-btn"><Icon name="more" size={16} /></button>
+              <button className="icon-btn" onClick={e => e.stopPropagation()}><Icon name="more" size={16} /></button>
             </span>
           </div>
         )}
@@ -170,7 +171,7 @@ function AllOrdersTable() {
 }
 
 /* ------- Assistant view (router) ------- */
-function AssistantView({ onOpenTask, onGotoResource }) {
+function AssistantView({ onOpenTask, onGotoResource, onOpenOrder }) {
   const [tab, setTab] = useState("overview"); // overview | orders
 
   return (
@@ -194,7 +195,7 @@ function AssistantView({ onOpenTask, onGotoResource }) {
               <OpenTasksCard onOpen={onOpenTask} />
             </>
           }
-          {tab === "orders" && <AllOrdersTable />}
+          {tab === "orders" && <AllOrdersTable onOpenOrder={onOpenOrder} />}
         </div>
       </div>
 

@@ -1,4 +1,4 @@
-/* global React, ReactDOM, Sidebar, Icon, AppData, AIWData, AssistantView, TaskView, WorkflowBoardView, OrchestrationView, AITeamDrawer, TweaksPanel, useTweaks, TweakSection, TweakRadio, TweakColor */
+/* global React, ReactDOM, Sidebar, Icon, AppData, AIWData, AssistantView, TaskView, OrderDetailView, WorkflowBoardView, OrchestrationView, AITeamDrawer, TweaksPanel, useTweaks, TweakSection, TweakRadio, TweakColor */
 const { useState, useEffect, useRef } = React;
 
 const TWEAKS_DEFAULTS = /*EDITMODE-BEGIN*/{
@@ -66,6 +66,7 @@ function App() {
 
   const goHome   = () => setRoute({ name: "orders" });
   const openTask = (id) => setRoute({ name: "task", id });
+  const openOrder = (id) => setRoute({ name: "order-detail", orderId: id });
   const gotoResource = (id) => {
     if (id === "workflow-board") setRoute({ name: "workflow-board" });
     else if (id === "orchestration") setRoute({ name: "orchestration" });
@@ -117,7 +118,7 @@ function App() {
         <button className="dd-item" onClick={() => setRoute({ name: "orchestration" })}>
           <span className="dd-item-icon ai"><Icon name="sparkle" size={14} /></span>
           <span>
-            <span className="dd-item-label">Agente de Orquestração</span>
+            <span className="dd-item-label">Agentes de Pedidos</span>
             <span className="dd-item-sub">Ativo · 4.256 pedidos monitorados</span>
           </span>
         </button>
@@ -135,7 +136,7 @@ function App() {
   /* ---------- view selection ---------- */
   let view;
   if (route.name === "orders") {
-    view = <AssistantView onOpenTask={openTask} onGotoResource={gotoResource} />;
+    view = <AssistantView onOpenTask={openTask} onGotoResource={gotoResource} onOpenOrder={openOrder} />;
   } else if (route.name === "assistant") {
     view = (
       <div className="main">
@@ -164,6 +165,37 @@ function App() {
     view = <WorkflowBoardView onBack={goHome} wfLayout={tweaks.wfLayout} wfGroup={tweaks.wfGroup} />;
   } else if (route.name === "orchestration") {
     view = <OrchestrationView onBack={goHome} />;
+  } else if (route.name === "order-detail") {
+    const syntheticTask = {
+      detail: {
+        impacted: AIWData.orders.map(o => ({
+          id: o.id,
+          sla: o.sla || "—",
+          seller: o.seller || o.origin,
+          eta: o.eta || "—"
+        }))
+      }
+    };
+    view = (
+      <div className="main">
+        <header className="topbar">
+          <button className="od-back-link" onClick={goHome} style={{ display: "flex", alignItems: "center", gap: 4, background: "none", border: "none", cursor: "pointer", color: "var(--fg-2)", fontSize: 13 }}>
+            <Icon name="chevron-left" size={14} /> Todos os Pedidos
+          </button>
+          <h1 className="crumb" style={{ marginLeft: 12 }}>Pedido {route.orderId}</h1>
+        </header>
+        <div className="scroll">
+          <div className="detail-body" style={{ maxWidth: 700, margin: "0 auto", padding: "24px 16px" }}>
+            <OrderDetailView
+              task={syntheticTask}
+              orderId={route.orderId}
+              onBack={goHome}
+              onOpenOrder={(id) => setRoute({ name: "order-detail", orderId: id })}
+            />
+          </div>
+        </div>
+      </div>
+    );
   } else {
     // Other routes (initiatives, conversations) keep an empty placeholder for now
     view = (
@@ -202,7 +234,7 @@ function App() {
       {view}
 
       {/* Floating topbar actions (Settings + My AI team) — only on non-split routes */}
-      {!["task", "workflow-board", "orchestration", "assistant"].includes(route.name) &&
+      {!["task", "workflow-board", "orchestration", "assistant", "order-detail"].includes(route.name) &&
         <div className="aiw-global-actions">
           {renderTopbarActions()}
         </div>
@@ -246,7 +278,7 @@ function App() {
             </button>
             <button className={`tweak-nav ${route.name === "orchestration" ? "active" : ""}`} onClick={() => setRoute({ name: "orchestration" })}>
               <span className="tweak-nav-icon ai"><Icon name="sparkle" size={14} /></span>
-              <span>Agente de orquestração</span>
+              <span>Agentes de Pedidos</span>
             </button>
           </div>
         </TweakSection>

@@ -47,11 +47,11 @@ window.AIWData = (function () {
           { state: "done", title: "Identificar pedidos com SLA crítico nas próximas 8h", assignee: "OMS Agent", agent: true }
         ],
         impacted: [
-          { id: "512431311314431", sla: "4h",  seller: "CD São Paulo",   eta: "22-05-2026" },
-          { id: "512431311314432", sla: "6h",  seller: "CD São Paulo",   eta: "22-05-2026" },
-          { id: "512431311314433", sla: "5h",  seller: "CD São Paulo",   eta: "22-05-2026" },
-          { id: "512431311314434", sla: "7h",  seller: "Loja Centro",    eta: "23-05-2026" },
-          { id: "512431311314435", sla: "12h", seller: "CD #3 Campinas", eta: "23-05-2026" }
+          { id: "1631888948228-01 (68948228)", sla: "4h",  seller: "CD São Paulo",   eta: "22-05-2026" },
+          { id: "1631828946500-01 (68946500)", sla: "6h",  seller: "CD São Paulo",   eta: "22-05-2026" },
+          { id: "1631818946200-01 (68946200)", sla: "5h",  seller: "CD São Paulo",   eta: "22-05-2026" },
+          { id: "1631910950000-01 (68950000)", sla: "7h",  seller: "Loja Centro",    eta: "23-05-2026" },
+          { id: "1631920951000-01 (68951000)", sla: "12h", seller: "CD #3 Campinas", eta: "23-05-2026" }
         ],
         activities: [
           { time: "12:22", actor: "SLA Monitor Agent", agent: true,  action: "detectou 48 pedidos travados em separação", note: "Padrão identificado: 80% dos pedidos pertencem ao CD #1." },
@@ -86,10 +86,10 @@ window.AIWData = (function () {
           { state: "done", title: "Listar todas as solicitações abertas há mais de 24h", assignee: "Returns Agent", agent: true }
         ],
         impacted: [
-          { id: "612431311314501", sla: "48h", seller: "Loja Online",      eta: "15-05-2026" },
-          { id: "612431311314502", sla: "52h", seller: "Seller Decathlon", eta: "14-05-2026" },
-          { id: "612431311314503", sla: "60h", seller: "Seller Centauro",  eta: "14-05-2026" },
-          { id: "612431311314504", sla: "72h", seller: "Loja Online",      eta: "13-05-2026" }
+          { id: "1631808945900-01 (68945900)", sla: "48h", seller: "Loja Online",      eta: "15-05-2026" },
+          { id: "1631858947234-01 (68947234)", sla: "52h", seller: "Seller Decathlon", eta: "14-05-2026" },
+          { id: "1631848947052-01 (68947052)", sla: "60h", seller: "Seller Centauro",  eta: "14-05-2026" },
+          { id: "1631848946980-01 (68946980)", sla: "72h", seller: "Loja Online",      eta: "13-05-2026" }
         ],
         activities: [
           { time: "09:22", actor: "Returns Agent", agent: true, action: "identificou 23 devoluções fora do SLA" },
@@ -123,11 +123,11 @@ window.AIWData = (function () {
           { state: "done", title: "Priorizar pedidos por risco de SLA",  assignee: "OMS Agent", agent: true }
         ],
         impacted: [
-          { id: "312431311314431", sla: "8h",  seller: "Loja Vila Mariana", eta: "21-05-2026" },
-          { id: "312431311314432", sla: "8h",  seller: "Loja Moema",        eta: "21-05-2026" },
-          { id: "312431311314433", sla: "8h",  seller: "Loja Jardins",      eta: "21-05-2026" },
-          { id: "312431311314434", sla: "8h",  seller: "Loja Paulista",     eta: "21-05-2026" },
-          { id: "312431311314435", sla: "22h", seller: "Loja Morumbi",      eta: "22-05-2026" }
+          { id: "1631900949000-01 (68949000)", sla: "8h",  seller: "Loja Vila Mariana", eta: "21-05-2026" },
+          { id: "1631910950000-01 (68950000)", sla: "8h",  seller: "Loja Moema",        eta: "21-05-2026" },
+          { id: "1631920951000-01 (68951000)", sla: "8h",  seller: "Loja Jardins",      eta: "21-05-2026" },
+          { id: "1632000952000-01 (68952000)", sla: "8h",  seller: "Loja Paulista",     eta: "21-05-2026" },
+          { id: "1631888948228-01 (68948228)", sla: "22h", seller: "Loja Morumbi",      eta: "22-05-2026" }
         ],
         activities: [
           { time: "11:34", actor: "Order Management Agent", agent: true, action: "criou nova iniciativa recomendada", note: "12 pedidos com risco de quebra de SLA." },
@@ -162,10 +162,10 @@ window.AIWData = (function () {
           { state: "done", title: "Verificar último callback recebido por integração", assignee: "Marketplace Agent", agent: true }
         ],
         impacted: [
-          { id: "712431311314701", sla: "—", seller: "Amazon BR · Eletrônicos", eta: "23-05-2026" },
-          { id: "712431311314702", sla: "—", seller: "Amazon BR · Casa",        eta: "23-05-2026" },
-          { id: "712431311314703", sla: "—", seller: "Amazon BR · Eletrônicos", eta: "24-05-2026" },
-          { id: "712431311314704", sla: "—", seller: "Amazon BR · Moda",        eta: "24-05-2026" }
+          { id: "1631848946980-01 (68946980)", sla: "—", seller: "Amazon BR · Eletrônicos", eta: "23-05-2026" },
+          { id: "1631828946500-01 (68946500)", sla: "—", seller: "Amazon BR · Casa",        eta: "23-05-2026" },
+          { id: "1631910950000-01 (68950000)", sla: "—", seller: "Amazon BR · Eletrônicos", eta: "24-05-2026" },
+          { id: "1631920951000-01 (68951000)", sla: "—", seller: "Amazon BR · Moda",        eta: "24-05-2026" }
         ],
         activities: [
           { time: "10:18", actor: "Marketplace Agent", agent: true, action: "detectou 7 pedidos Amazon parados em aprovação" },
@@ -183,7 +183,7 @@ window.AIWData = (function () {
   const resources = [
     { id: "all-orders",       icon: "grid", label: "Todos os pedidos",         sub: "4.256 pedidos · 13 filtros AI ativos" },
     { id: "workflow-board",   icon: "board", label: "Workflow Board",          sub: "7 workflows · Padrão e customizados" },
-    { id: "orchestration",    icon: "sparkle", label: "Agente de Orquestração", sub: "Ativo · 4.256 pedidos monitorados" }
+    { id: "orchestration",    icon: "sparkle", label: "Agentes de Pedidos", sub: "Ativo · 4.256 pedidos monitorados" }
   ];
 
   const wfCategories = [
@@ -316,17 +316,17 @@ window.AIWData = (function () {
   ];
 
   const orchestrationActivity = [
-    { time: "12 min", kind: "warning",  actor: "Pedido 68948228", action: "separação travada — agente sugeriu CD Rio como alternativa", note: "Parada há 3h. Confiança 88%." },
-    { time: "38 min", kind: "success",  actor: "Pedido 68947234", action: "realocação aprovada — agente avançou automaticamente após confirmação do CD Rio" },
-    { time: "1 h",    kind: "info",     actor: "Pedido 68946500", action: "status avançado — embalagem concluída via WMS" },
-    { time: "2 h",    kind: "critical", actor: "Pedido 68946980", action: "escalado ao operador — confiança abaixo do threshold", note: "Confiança 62%. Task criada para operações." },
-    { time: "3 h",    kind: "info",     actor: "Workflow Troca e Devolução", action: "acionado automaticamente após Workflow Padrão concluir para o pedido 68947234" }
+    { time: "12 min", kind: "warning",  actor: "Pedido 1631888948228-01 (68948228)", action: "separação travada — agente sugeriu CD Rio como alternativa", note: "Parada há 3h. Confiança 88%." },
+    { time: "38 min", kind: "success",  actor: "Pedido 1631858947234-01 (68947234)", action: "realocação aprovada — agente avançou automaticamente após confirmação do CD Rio" },
+    { time: "1 h",    kind: "info",     actor: "Pedido 1631828946500-01 (68946500)", action: "status avançado — embalagem concluída via WMS" },
+    { time: "2 h",    kind: "critical", actor: "Pedido 1631848946980-01 (68946980)", action: "escalado ao operador — confiança abaixo do threshold", note: "Confiança 62%. Task criada para operações." },
+    { time: "3 h",    kind: "info",     actor: "Workflow Troca e Devolução", action: "acionado automaticamente após Workflow Padrão concluir para o pedido 1631858947234-01 (68947234)" }
   ];
 
   // My AI Team — replaces existing AppData.aiTeam with order-related agents
   const aiTeam = [
     { id: "assistant",      name: "Meu Assistente",          emoji: "✨", color: "linear-gradient(135deg,#FF3D6E,#9747FF)", tasks: 28430, credits: 142500, sub: "Visão geral · pedidos · workflows" },
-    { id: "orchestration",  name: "Agente de Orquestração", emoji: "🛠", color: "linear-gradient(135deg,#9747FF,#2962FF)", tasks: 18620, credits: 98400,  sub: "Ativo · 4.256 pedidos monitorados" },
+    { id: "orchestration",  name: "Agentes de Pedidos",      emoji: "🛠", color: "linear-gradient(135deg,#9747FF,#2962FF)", tasks: 18620, credits: 98400,  sub: "Ativo · 4.256 pedidos monitorados" },
     { id: "sla",            name: "SLA Monitor Agent",       emoji: "⏱", color: "#FFE3E3", tasks: 8240,  credits: 32100, sub: "Detecta pedidos travados acima do SLA" },
     { id: "returns",        name: "Returns Agent",           emoji: "↩",  color: "#E5F0FF", tasks: 4120,  credits: 19800, sub: "Logística reversa e devoluções" },
     { id: "marketplace",    name: "Marketplace Agent",       emoji: "🛒", color: "#FFF3C7", tasks: 6840,  credits: 28700, sub: "Integrações de marketplace" },
@@ -334,16 +334,17 @@ window.AIWData = (function () {
   ];
 
   const orders = [
-    { id: "v35698448cea-01 35698448",     date: "11/05/2021 - 12:57", customer: "Neusa Maria",            origin: "Marketplace", qty: 1,  total: "84.42 BRL",  status: "processing", statusLabel: "Processing" },
-    { id: "v35698431cea-01 35698431",     date: "11/05/2021 - 12:57", customer: "Anisia Sousa Rocha",     origin: "Marketplace", qty: 2,  total: "59.90 BRL",  status: "invoiced",   statusLabel: "Invoiced" },
-    { id: "v35698429cea-01 35698429",     date: "11/05/2021 - 12:57", customer: "Aline Selau da Costa",   origin: "Marketplace", qty: 3,  total: "189.99 BRL", status: "processing", statusLabel: "Processing" },
-    { id: "v35698419cea-01 35698419",     date: "11/05/2021 - 12:57", customer: "Maria Conceição",        origin: "Marketplace", qty: 1,  total: "99.98 BRL",  status: "canceled",   statusLabel: "Canceled" },
-    { id: "v35698417cea-01 35698417",     date: "11/05/2021 - 12:57", customer: "Ranner Pinheiro",        origin: "Marketplace", qty: 30, total: "158.46 BRL", status: "approved",   statusLabel: "Payment approved" },
-    { id: "v35698448cea-02 35698448",     date: "11/05/2021 - 12:57", customer: "Neusa Maria",            origin: "Marketplace", qty: 1,  total: "84.42 BRL",  status: "processing", statusLabel: "Processing" },
-    { id: "v35698431cea-02 35698431",     date: "11/05/2021 - 12:57", customer: "Anisia Sousa Rocha",     origin: "Marketplace", qty: 2,  total: "59.90 BRL",  status: "invoiced",   statusLabel: "Invoiced" },
-    { id: "v35698429cea-02 35698429",     date: "11/05/2021 - 12:57", customer: "Aline Selau da Costa",   origin: "Marketplace", qty: 3,  total: "189.99 BRL", status: "processing", statusLabel: "Processing" },
-    { id: "v35698419cea-02 35698419",     date: "11/05/2021 - 12:57", customer: "Maria Conceição",        origin: "Marketplace", qty: 1,  total: "99.98 BRL",  status: "canceled",   statusLabel: "Canceled" },
-    { id: "v35698417cea-02 35698417",     date: "11/05/2021 - 12:57", customer: "Ranner Pinheiro",        origin: "Marketplace", qty: 30, total: "158.46 BRL", status: "approved",   statusLabel: "Payment approved" }
+    { id:"1631888948228-01", short:"68948228", date:"13/05/2026 - 16:48", customer:"Paulo Bernardo",  origin:"Marketplace",  qty:3, total:"R$ 502,00",    status:"processing", statusLabel:"Em processamento", sla:"6h",  seller:"CD São Paulo",   eta:"14/05/2026" },
+    { id:"1631858947234-01", short:"68947234", date:"13/05/2026 - 13:33", customer:"Ana Carvalho",    origin:"Marketplace",  qty:2, total:"R$ 1.230,00",  status:"invoiced",   statusLabel:"Faturado",         sla:"24h", seller:"CD São Paulo",   eta:"14/05/2026" },
+    { id:"1631848947052-01", short:"68947052", date:"13/05/2026 - 12:56", customer:"Carlos Mendes",   origin:"Loja própria", qty:1, total:"R$ 89,90",     status:"invoiced",   statusLabel:"Faturado",         sla:"24h", seller:"Loja própria",   eta:"14/05/2026" },
+    { id:"1631848946980-01", short:"68946980", date:"13/05/2026 - 12:43", customer:"Fernanda Lima",   origin:"Marketplace",  qty:4, total:"R$ 345,00",    status:"pending",    statusLabel:"Não processado",   sla:"48h", seller:"Marketplace",    eta:"15/05/2026" },
+    { id:"1631828946500-01", short:"68946500", date:"13/05/2026 - 11:30", customer:"Mariana Costa",   origin:"Marketplace",  qty:5, total:"R$ 890,00",    status:"processing", statusLabel:"Em processamento", sla:"8h",  seller:"CD São Paulo",   eta:"14/05/2026" },
+    { id:"1631818946200-01", short:"68946200", date:"13/05/2026 - 10:55", customer:"Diego Ferreira",  origin:"Loja própria", qty:2, total:"R$ 155,00",    status:"invoiced",   statusLabel:"Faturado",         sla:"24h", seller:"Loja própria",   eta:"14/05/2026" },
+    { id:"1631900949000-01", short:"68949000", date:"25/05/2026 - 09:14", customer:"Luiza Torres",    origin:"Loja própria", qty:2, total:"R$ 380,00",    status:"processing", statusLabel:"Em processamento", sla:"12h", seller:"Loja própria",   eta:"26/05/2026" },
+    { id:"1631910950000-01", short:"68950000", date:"26/05/2026 - 14:30", customer:"João Eduardo",    origin:"Loja própria", qty:3, total:"R$ 890,00",    status:"processing", statusLabel:"Em processamento", sla:"8h",  seller:"Loja própria",   eta:"27/05/2026" },
+    { id:"1631808945900-01", short:"68945900", date:"13/05/2026 - 10:12", customer:"Juliana Santos",  origin:"Marketplace",  qty:3, total:"R$ 220,00",    status:"canceled",   statusLabel:"Cancelado",        sla:"—",   seller:"Marketplace",    eta:"—"         },
+    { id:"1631920951000-01", short:"68951000", date:"26/05/2026 - 16:45", customer:"Geraldo Thomaz",  origin:"Marketplace",  qty:4, total:"R$ 1.139,00",  status:"processing", statusLabel:"Em processamento", sla:"6h",  seller:"CD #3 Campinas", eta:"27/05/2026" },
+    { id:"1632000952000-01", short:"68952000", date:"28/05/2026 - 10:05", customer:"John Crimber",    origin:"Loja própria", qty:3, total:"R$ 2.930,00",  status:"processing", statusLabel:"Em processamento", sla:"12h", seller:"Loja própria",   eta:"29/05/2026" }
   ];
 
   // wfNaturezas is the canonical name per IA; wfCategories kept for backward compat

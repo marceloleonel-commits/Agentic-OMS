@@ -545,4 +545,5 @@ function TaskView({ taskId, onBack }) {
 
 }
 
+window.OrderDetailView = OrderDetailView;
 window.TaskView = TaskView;

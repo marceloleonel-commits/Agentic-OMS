@@ -86,7 +86,7 @@ function OrchestrationCanvas() {
     <div className="detail-panel">
       <div className="detail-head no-border">
         <div className="detail-head-left">
-          <span className="canvas-name">Agente de Orquestração</span>
+          <span className="canvas-name">Agentes de Pedidos</span>
         </div>
         <div className="detail-head-right">
           <button className="btn btn-primary">Salvar</button>
@@ -94,8 +94,8 @@ function OrchestrationCanvas() {
       </div>
       <div className="detail-scroll">
         <div className="detail-body">
-          <h1 className="detail-title">Agente de Orquestração</h1>
-          <p className="detail-desc">Configure o comportamento do agente AI que orquestra os workflows de pedidos.</p>
+          <h1 className="detail-title">Agentes de Pedidos</h1>
+          <p className="detail-desc">Configure o comportamento dos agentes AI que orquestram os workflows de pedidos.</p>
           <div className="active-line">
             <span className="status-dot active" />
             <span className="muted">Agente ativo · 4.256 pedidos monitorados</span>
@@ -117,9 +117,7 @@ function OrchestrationCanvas() {
                 { emoji: "🏠", title: "Modelo de fulfillment",
                   desc: "Entrega em domicílio e Retirada em loja geram experiências separadas — cada modalidade tem seu próprio fluxo de execução." },
                 { emoji: "⏱️", title: "Prazo de entrega (SLA)",
-                  desc: "Itens com SLAs incompatíveis dentro de um mesmo pedido são divididos em experiências distintas." },
-                { emoji: "🏪", title: "Seller / Supplier",
-                  desc: "Itens de sellers diferentes são agrupados em experiências independentes, cada uma com seu próprio ciclo de fulfillment." }
+                  desc: "Itens com SLAs incompatíveis dentro de um mesmo pedido são divididos em experiências distintas." }
               ].map((item) => (
                 <div key={item.title} style={{ display: "flex", gap: 10, alignItems: "flex-start", padding: "9px 12px", background: "#f9fafb", border: "1px solid #e5e7eb", borderRadius: 8 }}>
                   <span style={{ fontSize: 16, lineHeight: 1.3 }}>{item.emoji}</span>
@@ -222,7 +220,7 @@ function OrchestrationCanvas() {
 
 function OrchestrationView({ onBack }) {
   const messages = [
-    { from: "agent", text: "Olá. Sou o Agente de Orquestração. Estou monitorando 4.256 pedidos ativos com confiança mínima de 75%." },
+    { from: "agent", text: "Olá. Sou o Agente de Pedidos. Estou monitorando 4.256 pedidos ativos com confiança mínima de 75%." },
     { from: "agent", text: "Nas últimas 24h: 87% dos casos foram resolvidos automaticamente, 13% escalados. Quer ver onde está o gargalo?" }
   ];
   const chips = [
@@ -235,7 +233,7 @@ function OrchestrationView({ onBack }) {
   return (
     <ResizableSplit screenLabel="04 Orchestration Agent">
       <ChatPanel
-        title="Agente de Orquestração"
+        title="Agentes de Pedidos"
         intro="Configure how the orchestration agent runs your operation. It currently monitors 4,256 orders with a 75% confidence threshold."
         chips={chips}
         initialMessages={messages}
