@@ -588,7 +588,7 @@ window.AIWData = (function () {
       date:"01/06/2026 - 13:58", customer:"Eduardo Nunes",
       origin:"Loja própria", qty:3, total:"R$ 912,80",
       status:"processing", statusLabel:"Em processamento",
-      sla:"8h", seller:"Oscar Calçados", eta:"03/06/2026",
+      sla:"8h", seller:"ObraMax", eta:"03/06/2026",
       note:{
         useCase:"Cancelamento parcial: item individual em processo de cancelamento enquanto kit segue para entrega",
         text:"Cenário de cancelamento seletivo em pedido com kit e produto individual. O cliente solicitou o cancelamento de 1 item (cola de instalação) enquanto o kit de piso vinílico segue para entrega. O agente identificou que o item individual ainda estava em separação, acionou o workflow de Cancelamento, bloqueou a expedição e iniciou a reversão de estoque e o estorno financeiro proporcional ao item cancelado.",
