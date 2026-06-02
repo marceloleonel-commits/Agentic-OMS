@@ -6,7 +6,7 @@
 | **Pillar** | Agentic Operations / Workflow |
 | **Spec** | 006 — Task-Based Agentic Workflow |
 | **Status** | Draft |
-| **Prototype** | [prototype.html](prototype/prototype.html) · [prototype-wsai.html](prototype/prototype-wsai.html) |
+| **Prototype** | [Admin](prototype/admin/prototype.html) · [AIW](prototype/aiw/AIW%20Shell.html) |
 
 ---
 
@@ -38,7 +38,7 @@
 | ID | Requisito |
 |---|---|
 | RF-03.1 | O sistema deve exibir as informações do pedido (identificador, status, data, origem), dados do cliente, dados de pagamento e o histórico de status do pedido. |
-| RF-03.2 | O sistema deve exibir, por item do pedido, cada workflow ativo como uma seção independente e identificada. A ordem das seções deve seguir a sequência de ativação definida pelos gatilhos dos workflows. (ex.: 💳 Pagamentos, 📦 Entrega pela loja, 🎨 Personalização de Produtos). A ordem das seções segue a sequência de ativação definida pelos gatilhos dos workflows. |
+| RF-03.2 | O sistema deve exibir, por item do pedido, cada workflow ativo como uma seção independente e identificada. A ordem das seções deve seguir a sequência de ativação definida pelos gatilhos dos workflows (ex.: 💳 Pagamentos, 📦 Entrega em domicílio, 🎨 Personalização de Produtos). As seções de pipeline são exibidas **colapsadas por padrão**; o operador expande individualmente cada seção para inspecionar as tarefas. |
 | RF-03.3 | Cada etapa do pipeline deve apresentar um dos 4 estados visuais com label textual: **Pendente**, **Completado**, **Cancelado** e **Ignorado**. |
 | RF-03.4 | Quando uma tarefa estiver com status Cancelado ou Bloqueado, o sistema deve exibir: motivo registrado, sugestão do agente e ações disponíveis para o operador. |
 | RF-03.5 | ~~Variáveis de contexto intermediárias exibidas no detalhe do pedido.~~ *Removido do escopo do MLP.* O detalhe do pedido não deve exibir variáveis de contexto geradas por ações anteriores do workflow. |
@@ -51,13 +51,13 @@
 
 ---
 
-### RF-04 · Lista e Visualização de Order Jobs
+### RF-04 · Lista e Visualização de Experiências
 
 | ID | Requisito |
 |---|---|
-| RF-04.1 | O sistema deve exibir todos os Order Jobs disponíveis via navegação "Gerenciar Order Jobs", com as seguintes informações por job: ícone, nome, descrição, contagem de pedidos ativos e status (ativo/arquivado). |
-| RF-04.2 | O sistema deve permitir abrir um Order Job para edição, onde o operador visualiza os marcos do job e as tarefas associadas a cada marco. |
-| RF-04.3 | O sistema deve permitir criar um novo Order Job coletando: nome, modelo base (4 templates disponíveis + estrutura vazia) ícone, descrição e preview dos marcos antes da confirmação. |
+| RF-04.1 | O sistema deve exibir todas as Experiências disponíveis via navegação "Gerenciar Experiências", com as seguintes informações por Experiência: ícone, nome, descrição, contagem de pedidos ativos e status (ativo/arquivado). |
+| RF-04.2 | O sistema deve permitir abrir uma Experiência para edição, onde o operador visualiza os marcos da Experiência e as tarefas associadas a cada marco. |
+| RF-04.3 | O sistema deve permitir criar uma nova Experiência coletando: nome, modelo base (3 templates disponíveis: Entrega em domicílio, Retirada na loja, Entrega digital + estrutura vazia), ícone, descrição e preview dos marcos antes da confirmação. |
 
 ---
 
@@ -109,12 +109,12 @@
 
 | ID | Requisito |
 |---|---|
-| RF-08.1 | O sistema deve oferecer uma tela de configuração do agente com duas colunas: chat conversacional (esquerda) e painel de configuração (direita). O painel direito contém duas seções: **Order Job** (agrupamento e cobertura por Order Job) e **Agentes & Skills** (3 sub-agentes configuráveis). |
+| RF-08.1 | O sistema deve oferecer uma tela de configuração do agente com duas colunas: chat conversacional (esquerda) e painel de configuração (direita). O painel direito contém duas seções: **Experiências** (leitura somente, definido pelo sistema — explica que uma Experiência é criada automaticamente para cada combinação de modelo de fulfillment + prazo SLA + seller dentro de um pedido, com os 3 critérios de agrupamento exibidos como cards informativos) e **Agentes & Skills** (3 sub-agentes configuráveis). A seção Experiências não é editável pelo merchant; está sinalizada como "definido pelo sistema". |
 | RF-08.2 | O sistema deve oferecer toggle master para habilitar/desabilitar completamente a orquestração por IA. |
 | RF-08.3 | O sistema deve permitir configurar o limiar de confiança do agente (0–100%) por slider, com explicação de impacto. |
 | RF-08.4 | O sistema deve permitir configurar o SLA de monitoramento (horas sem movimentação) e o horário de operação (24/7 ou horário comercial). |
 | RF-08.5 | O sistema deve oferecer toggles individuais para cada capacidade do agente: detectar pedidos travados, sugerir realocação de estoque, avançar status automaticamente, criar tarefas manuais, cancelar pedidos automaticamente (este último requer ≥ 95% de confiança e aprovação de gerente). |
-| RF-08.6 | O sistema deve exibir a cobertura do agente agrupada por **Order Job** (não por workflow individual), mostrando contagem de marcos e pedidos ativos por OJ. |
+| RF-08.6 | ~~Cobertura do agente agrupada por Order Job com contagem de pedidos ativos.~~ *Substituído.* A seção de cobertura foi removida do painel de configuração; o agente exibe o total de pedidos monitorados no cabeçalho da tela (ex.: "4.256 pedidos monitorados"). Os critérios de agrupamento (fulfillment model, SLA, seller) são apresentados como cards explicativos na seção **Experiências** (RF-08.1). |
 | RF-08.7 | O sistema deve oferecer 3 sub-agentes configuráveis na seção **Agentes & Skills**, cada um com toggle master e toggles de skill individuais: **(a) 🗺️ Roteamento** — seleciona modo de fulfillment e provider; **(b) ⚙️ Orquestração** — monitora gates, avança status quando sistemas reportam conclusão; **(c) 🚨 Escalação** — detecta inatividade acima do SLA, cria task para operador, dispara alerta Slack. |
 | RF-08.8 | O sistema deve permitir expandir/recolher cada sub-agente via accordion para configurar suas skills individualmente. |
 | RF-08.9 | O sistema deve permitir configurar canais de notificação: e-mail, Slack e webhook customizado. |

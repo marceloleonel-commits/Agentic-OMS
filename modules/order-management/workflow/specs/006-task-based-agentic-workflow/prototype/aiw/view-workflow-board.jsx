@@ -1203,7 +1203,6 @@ function simulateChain(context) {
   const delivMap = {
     "domicilio": { id: "entrega-domicilio", label: "Entrega em domicílio" },
     "retirada":  { id: "retirada-loja",     label: "Retirada na loja"     },
-    "loja":      { id: "entrega-loja",       label: "Entrega pela loja"    },
     "troca":     { id: "troca-devolucao",    label: "Troca e devolução"    },
   };
 
@@ -1229,7 +1228,6 @@ function WorkflowSimulator({ workflow, onBack }) {
       options: [
         { value: "domicilio", icon: "🏠", label: "Entrega em domicílio", desc: "CD → transportadora → endereço do cliente" },
         { value: "retirada",  icon: "🏪", label: "Retirada na loja",     desc: "Cliente retira pessoalmente na loja física" },
-        { value: "loja",      icon: "🚚", label: "Entrega pela loja",    desc: "Loja física despacha direto para o cliente" },
         { value: "troca",     icon: "↩",  label: "Troca e devolução",    desc: "Logística reversa com estorno ou reenvio" },
       ]
     },

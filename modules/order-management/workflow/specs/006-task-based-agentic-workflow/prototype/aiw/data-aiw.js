@@ -275,35 +275,6 @@ window.AIWData = (function () {
         ]},
       ]},
 
-    /* ── OJ-04 (adaptado): Entrega pela loja (Ship from Store) ─────────── */
-    { id: "entrega-loja", name: "Entrega pela loja", icon: "🚚",
-      category: "fulfillment", status: "active",
-      desc: "Pedido processado e despachado diretamente pela loja física como origem (Ship from Store).",
-      orders: "348", custom: false,
-      trigger: { type: "order-start" },
-      agentEnabled: true,
-      dependencies: [],
-      stages: [
-        { id: "el-s1", name: "Confirmação de Pagamento", linkedToNext: true, category: "PAYMENT", tasks: [
-          { id: "el-1", name: "Autorização de Pagamento", type: "auto", owner: "Gateway", desc: "Pré-autorização do valor junto à adquirente/gateway." },
-          { id: "el-2", name: "Captura de Pagamento",     type: "auto", owner: "Gateway", desc: "Confirmação e captura definitiva do valor autorizado." },
-        ]},
-        { id: "el-s2", name: "Processamento na Loja", linkedToNext: true, category: "FULFILLMENT", tasks: [
-          { id: "el-3", name: "Aceite do Pedido", type: "manual", owner: "Operador Loja", desc: "Loja confirma disponibilidade e aceita o pedido." },
-          { id: "el-4", name: "Picking",          type: "manual", owner: "Operador Loja", desc: "Separação dos produtos no armazém da loja." },
-          { id: "el-5", name: "Packing",          type: "manual", owner: "Operador Loja", desc: "Embalagem dos produtos pela loja." },
-        ]},
-        { id: "el-s3", name: "Faturamento", linkedToNext: true, category: "FULFILLMENT", tasks: [
-          { id: "el-6", name: "Emissão de Nota Fiscal", type: "auto", owner: "Fiscal Service", desc: "Loja emite NF-e com dados do comprador final." },
-        ]},
-        { id: "el-s4", name: "Entrega pela Loja", linkedToNext: false, category: "DELIVERY", tasks: [
-          { id: "el-7", name: "Carrier Dispatch",  type: "manual", owner: "Operador Loja", desc: "Loja despacha o pedido pela transportadora contratada." },
-          { id: "el-8", name: "First Mile",        type: "auto",   owner: "Carrier",       desc: "Coleta na loja de origem pelo operador logístico." },
-          { id: "el-9", name: "Last Mile",         type: "auto",   owner: "Carrier",       desc: "Entrega final no endereço do cliente." },
-          { id: "el-10",name: "Proof of Delivery", type: "auto",   owner: "Carrier",       desc: "Confirmação da entrega com registro." },
-        ]},
-      ]},
-
     /* ── Troca e devolução (logística reversa) ──────────────────────────── */
     { id: "troca-devolucao", name: "Troca e devolução", icon: "↩",
       category: "logistica-reversa", status: "active",
@@ -311,7 +282,7 @@ window.AIWData = (function () {
       orders: "83", custom: false,
       trigger: { type: "task-completion", triggerWfId: "entrega-domicilio", triggerTaskId: "ed-11" },
       agentEnabled: true,
-      dependencies: ["entrega-domicilio", "retirada-loja", "entrega-loja"],
+      dependencies: ["entrega-domicilio", "retirada-loja"],
       stages: [
         { id: "td-s1", name: "Solicitação", linkedToNext: true, category: "FULFILLMENT", tasks: [
           { id: "td-1", name: "Abertura de Solicitação",          type: "auto",   owner: "Portal",        desc: "Cliente abre solicitação de troca ou devolução no portal." },
@@ -341,7 +312,6 @@ window.AIWData = (function () {
   const orchestrationCoverage = [
     { name: "Entrega em domicílio", meta: "4 etapas · 4.256 pedidos ativos" },
     { name: "Retirada na loja",     meta: "4 etapas · 127 pedidos ativos"   },
-    { name: "Entrega pela loja",    meta: "4 etapas · 348 pedidos ativos"   },
     { name: "Troca e devolução",    meta: "4 etapas · 83 pedidos ativos"    },
   ];
 
