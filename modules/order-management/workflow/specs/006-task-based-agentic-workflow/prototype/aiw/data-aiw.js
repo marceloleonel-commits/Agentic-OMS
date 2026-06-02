@@ -582,7 +582,7 @@ window.AIWData = (function () {
       ],
     },
 
-    /* ══ Pedido 4 · Oscar Calçados · Kit + individual com cancelamento ══ */
+    /* ══ Pedido 4 · ObraMax · Kit + individual com cancelamento ══ */
     {
       id:"1631808945904-01", short:"68945904",
       date:"01/06/2026 - 13:58", customer:"Eduardo Nunes",
