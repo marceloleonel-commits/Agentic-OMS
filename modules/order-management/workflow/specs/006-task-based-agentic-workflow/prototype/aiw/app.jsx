@@ -1,4 +1,4 @@
-/* global React, ReactDOM, Sidebar, Icon, AppData, AIWData, AssistantView, TaskView, OrderDetailView, WorkflowBoardView, OrchestrationView, AITeamDrawer, TweaksPanel, useTweaks, TweakSection, TweakRadio, TweakColor */
+/* global React, ReactDOM, Sidebar, Icon, AppData, AIWData, AssistantView, TaskView, OrderDetailView, WorkflowBoardView, OrchestrationView, ChatPanel, ResizableSplit, AITeamDrawer, TweaksPanel, useTweaks, TweakSection, TweakRadio, TweakColor */
 const { useState, useEffect, useRef } = React;
 
 const TWEAKS_DEFAULTS = /*EDITMODE-BEGIN*/{
@@ -166,6 +166,7 @@ function App() {
   } else if (route.name === "orchestration") {
     view = <OrchestrationView onBack={goHome} />;
   } else if (route.name === "order-detail") {
+    const currentOrder = AIWData.orders.find(o => o.id === route.orderId);
     const syntheticTask = {
       detail: {
         impacted: AIWData.orders.map(o => ({
@@ -176,25 +177,50 @@ function App() {
         }))
       }
     };
+    const orderMessages = currentOrder ? [
+      { from: "agent", text: `Estou monitorando o pedido ${currentOrder.id} (${currentOrder.short}). Status atual: ${currentOrder.statusLabel}.` },
+      { from: "agent", text: `${currentOrder.qty} item(ns) · ${currentOrder.total} · SLA ${currentOrder.sla}. Quer que eu analise o histórico ou sugira uma ação?` }
+    ] : [];
+    const orderChips = [
+      { icon: "search", label: "Analisar histórico" },
+      { icon: "sparkle", label: "Sugerir próxima ação" },
+      { icon: "graph",   label: "Verificar SLA restante" },
+      { icon: "edit",    label: "Escalar para operador" }
+    ];
     view = (
-      <div className="main">
-        <header className="topbar">
-          <button className="od-back-link" onClick={goHome} style={{ display: "flex", alignItems: "center", gap: 4, background: "none", border: "none", cursor: "pointer", color: "var(--fg-2)", fontSize: 13 }}>
-            <Icon name="chevron-left" size={14} /> Todos os Pedidos
-          </button>
-          <h1 className="crumb" style={{ marginLeft: 12 }}>Pedido {route.orderId}</h1>
-        </header>
-        <div className="scroll">
-          <div className="detail-body" style={{ maxWidth: 700, margin: "0 auto", padding: "24px 16px" }}>
-            <OrderDetailView
-              task={syntheticTask}
-              orderId={route.orderId}
-              onBack={goHome}
-              onOpenOrder={(id) => setRoute({ name: "order-detail", orderId: id })}
-            />
+      <ResizableSplit screenLabel="Order Detail">
+        <ChatPanel
+          title={currentOrder ? `Pedido ${currentOrder.short}` : "Detalhe do Pedido"}
+          intro={currentOrder ? `${currentOrder.id} · ${currentOrder.statusLabel}` : ""}
+          chips={orderChips}
+          initialMessages={orderMessages}
+          placeholder="Pergunte sobre este pedido…"
+          onBack={goHome}
+        />
+        <div className="detail-panel">
+          <div className="detail-head no-border">
+            <div className="detail-head-left">
+              <button
+                className="od-back-link"
+                onClick={goHome}
+                style={{ display: "flex", alignItems: "center", gap: 4, background: "none", border: "none", cursor: "pointer", color: "var(--fg-2)", fontSize: 13 }}
+              >
+                <Icon name="chevron-left" size={14} /> Todos os Pedidos
+              </button>
+            </div>
+          </div>
+          <div className="detail-scroll">
+            <div className="detail-body">
+              <OrderDetailView
+                task={syntheticTask}
+                orderId={route.orderId}
+                onBack={goHome}
+                onOpenOrder={(id) => setRoute({ name: "order-detail", orderId: id })}
+              />
+            </div>
           </div>
         </div>
-      </div>
+      </ResizableSplit>
     );
   } else {
     // Other routes (initiatives, conversations) keep an empty placeholder for now
