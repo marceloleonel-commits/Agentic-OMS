@@ -120,6 +120,212 @@ function buildOrderDetail(order) {
   return { customer: c, card, carrier, products, breakdown: { subtotal, taxes, discounts, total }, stages, stageIdx, activities };
 }
 
+/* ══════════════════════════════════════════════════════════
+   Item Groups / Raias  (Itens do Pedido — Tarefas por Item)
+   ══════════════════════════════════════════════════════════ */
+
+const OD_STAGE_DEFS = [
+  { key: "payment",     icon: "💳", label: "Confirmação de Pagamentos" },
+  { key: "preparation", icon: "📦", label: "Preparando os itens"        },
+  { key: "invoice",     icon: "🧾", label: "NFes Emitidas"              },
+  { key: "delivery",    icon: "🚚", label: "Recebido pelo Cliente"       },
+];
+
+const OD_PRODUCT_POOL = [
+  { name: "Tênis Running Air Pro",        price: "R$ 249,90" },
+  { name: "Camiseta Premium Slim Fit",    price: "R$ 89,90"  },
+  { name: "Kit Meias Esportivas 6 pares", price: "R$ 45,00"  },
+  { name: "Mochila Urban 25L",            price: "R$ 189,90" },
+  { name: "Polo Masculina Bordada",       price: "R$ 119,90" },
+  { name: "Calça Jogger Cargo",           price: "R$ 159,90" },
+  { name: "Bermuda Surf Quick-dry",       price: "R$ 79,90"  },
+  { name: "Mouse Ergonômico sem fio",     price: "R$ 149,90" },
+  { name: "Fone Bluetooth Over-ear",      price: "R$ 399,90" },
+  { name: "Óculos de Sol Polarizado",     price: "R$ 229,90" },
+];
+
+function buildOrderItemGroups(fullOrder) {
+  if (!fullOrder) return [];
+  const seed     = hashStr(fullOrder.id);
+  const status   = fullOrder.status || "processing";
+  const qty      = fullOrder.qty    || 2;
+  const datePfx  = (fullOrder.date  || "13/05/2026 - 16:48").slice(0, 10).replace(/-/g, "/");
+
+  const progress = { pending: 0, processing: 2, invoiced: 3, delivered: 4 }[status] ?? 1;
+  const carriers  = ["Jadlog", "Total Express", "Correios SEDEX", "Loggi"];
+  const groupTypes = ["Separação e Envio", "Fulfillment Parceiro", "Envio Expresso", "Cross-docking"];
+
+  function stageStatus(idx, prog) {
+    return idx < prog ? "done" : idx === prog ? "active" : "pending";
+  }
+  function makeStages(prog) {
+    return OD_STAGE_DEFS.map((def, i) => ({ ...def, status: stageStatus(i, prog) }));
+  }
+  function makeItems(startIdx, count, prog) {
+    const stepHours = [14, 15, 16, 18];
+    const items = [];
+    for (let i = 0; i < count; i++) {
+      const p = OD_PRODUCT_POOL[(seed + startIdx + i) % OD_PRODUCT_POOL.length];
+      items.push({
+        name:  p.name,
+        sku:   String(100000 + (seed % 899900) + startIdx + i),
+        qty:   1,
+        price: p.price,
+        steps: OD_STAGE_DEFS.map((def, si) => ({
+          ...def,
+          status: stageStatus(si, prog),
+          agent:  si === 0 || si === 2,    // payment + invoice triggered by agent
+          time:   si < prog
+            ? `${datePfx} ${String(stepHours[si] || 14).padStart(2, "0")}:${si % 2 === 0 ? "00" : "30"}`
+            : null,
+        })),
+      });
+    }
+    return items;
+  }
+
+  const g1Count = Math.max(1, Math.floor(qty / 2));
+  const g2Count = qty - g1Count;
+
+  const groups = [{
+    id:     "g1",
+    label:  `${groupTypes[seed % groupTypes.length]} · ${carriers[seed % carriers.length]}`,
+    stages: makeStages(progress),
+    items:  makeItems(0, g1Count, progress),
+  }];
+
+  if (g2Count > 0) {
+    const g2Progress = Math.max(0, progress - 1);
+    groups.push({
+      id:     "g2",
+      label:  `${groupTypes[(seed + 1) % groupTypes.length]} · ${carriers[(seed + 1) % carriers.length]}`,
+      stages: makeStages(g2Progress),
+      items:  makeItems(g1Count, g2Count, g2Progress),
+    });
+  }
+
+  return groups;
+}
+
+/* ── Stage card (horizontal strip) ── */
+function OdStageCard({ stage }) {
+  const map = {
+    done:    { dot: "#169B61", label: "Finalizado",    bg: "#F0FDF4", border: "#BBF7D0" },
+    active:  { dot: "var(--primary)", label: "Em andamento", bg: "var(--primary-soft)", border: "var(--primary)" },
+    pending: { dot: "#D1D5DB", label: "Pendente",      bg: "#F9FAFB", border: "var(--border)" },
+  };
+  const s = map[stage.status] || map.pending;
+  return (
+    <div className="od-stage-card" style={{ background: s.bg }}>
+      <span className="od-stage-card-icon">{stage.icon}</span>
+      <span className="od-stage-card-label">{stage.label}</span>
+      <span className="od-stage-card-status">
+        <span className="od-stage-card-dot" style={{ background: s.dot }} />
+        {s.label}
+      </span>
+    </div>
+  );
+}
+
+/* ── Per-item step row ── */
+function OdStepRow({ step }) {
+  const colorMap = { done: "#169B61", active: "var(--primary)", pending: "#D1D5DB" };
+  const labelMap = { done: "Concluído", active: "Em andamento", pending: "Pendente" };
+  const badgeMap = {
+    done:    { bg: "#F0FDF4",             color: "#169B61",         border: "#BBF7D0" },
+    active:  { bg: "var(--primary-soft)", color: "var(--primary)",  border: "var(--primary)" },
+    pending: { bg: "#F9FAFB",             color: "var(--fg-3)",     border: "var(--border)" },
+  };
+  const b  = badgeMap[step.status] || badgeMap.pending;
+  const lc = colorMap[step.status] || colorMap.pending;
+  return (
+    <div className="od-step-row">
+      <div className="od-step-bar" style={{ background: lc }} />
+      <div className="od-step-content">
+        <div className="od-step-head">
+          <span className="od-step-label" style={{ color: lc }}>{step.label}</span>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span className="od-step-badge" style={{ background: b.bg, color: b.color, borderColor: b.border }}>
+              {labelMap[step.status]}
+            </span>
+            <Icon name="chevron-right" size={14} />
+          </div>
+        </div>
+        {step.agent && step.time && (
+          <div className="od-step-trigger">
+            <Icon name="sparkle" size={10} />
+            Acionado por Agente AI · {step.time}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ── Item row (colapsado por padrão) ── */
+function OdItemRow({ item }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="od-item-row">
+      <button className="od-item-head" onClick={() => setOpen(o => !o)}>
+        <div className="od-item-thumb" />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div className="od-item-name">{item.name}</div>
+          <div className="od-item-meta">Qtd: {item.qty} · {item.price} · SKU {item.sku}</div>
+        </div>
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" width="13" height="13"
+             style={{ flexShrink: 0, transition: "transform .2s", transform: open ? "rotate(180deg)" : "rotate(0)", color: "var(--fg-3)" }}>
+          <path d="M4 6l4 4 4-4" />
+        </svg>
+      </button>
+      {open && (
+        <div className="od-item-steps">
+          {item.steps.map((step, i) => <OdStepRow key={i} step={step} />)}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Group rail — colapsado por padrão ── */
+function OdRail({ group }) {
+  const [open, setOpen] = useState(false);
+  const done   = group.stages.filter(s => s.status === "done").length;
+  const total  = group.stages.length;
+  const active = group.stages.find(s => s.status === "active");
+  const dotColor = active ? "var(--primary)" : done === total ? "#169B61" : "#D1D5DB";
+  return (
+    <div className="od-rail">
+      <button className="od-rail-header" onClick={() => setOpen(o => !o)}>
+        <div className="od-rail-left">
+          <span className="od-rail-dot" style={{ background: dotColor }} />
+          <div>
+            <div className="od-rail-name">{group.label}</div>
+            <div className="od-rail-meta">
+              {group.items.length} item{group.items.length !== 1 ? "s" : ""} · {done}/{total} etapas concluídas
+              {active && <span style={{ color: "var(--primary)", marginLeft: 6 }}>· {active.label}</span>}
+            </div>
+          </div>
+        </div>
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"
+             style={{ flexShrink: 0, transition: "transform .2s", transform: open ? "rotate(180deg)" : "rotate(0)", color: "var(--fg-3)" }}>
+          <path d="M4 6l4 4 4-4" />
+        </svg>
+      </button>
+      {open && (
+        <div className="od-rail-body">
+          <div className="od-stage-strip">
+            {group.stages.map((st, i) => <OdStageCard key={i} stage={st} />)}
+          </div>
+          <div className="od-rail-items">
+            {group.items.map((item, i) => <OdItemRow key={i} item={item} />)}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function fmtCurrency(v) {
   return v.toFixed(2).replace(".", ",") + " USD";
 }
@@ -139,6 +345,11 @@ function OrderDetailView({ task, orderId, onBack, onOpenOrder }) {
   const order = impacted[idx];
   if (!order) return null;
   const d = buildOrderDetail(order);
+
+  // Full order data (for item groups — has qty, status, date)
+  const fullOrder = AIWData.orders.find(o => o.id === orderId);
+  const itemGroups = buildOrderItemGroups(fullOrder);
+  const totalItems = itemGroups.reduce((s, g) => s + g.items.length, 0);
 
   const prev = idx > 0 ? impacted[idx - 1] : null;
   const next = idx < impacted.length - 1 ? impacted[idx + 1] : null;
@@ -196,59 +407,16 @@ function OrderDetailView({ task, orderId, onBack, onOpenOrder }) {
         <dd>2 minutes ago</dd>
       </dl>
 
-      {/* Status */}
-      <section className="detail-section flush">
-        <div className="detail-section-head"><h3>Order Status</h3></div>
-        <div className="od-stages">
-          {d.stages.map((s, i) => {
-            const state = i < d.stageIdx ? "done" : i === d.stageIdx ? "current" : "pending";
-            return (
-              <div key={i} className={`od-stage od-stage-${state}`}>
-                <Icon name={state === "done" ? "check" : "clock"} size={16} />
-                <div className="od-stage-label">{s.label}</div>
-                {s.time && <div className="od-stage-time">{s.time}</div>}
-              </div>);
-
-          })}
-        </div>
-      </section>
-
-      {/* Package */}
+      {/* Itens do Pedido — Tarefas por Item */}
       <section className="detail-section flush">
         <div className="detail-section-head" style={{ alignItems: "center" }}>
-          <h3>Package #1</h3>
-          <span className="sev sev-medium" style={{ marginLeft: 12 }}>Handling</span>
+          <h3>
+            Itens do Pedido — Tarefas por Item
+            <span className="od-items-badge">{totalItems} iten{totalItems !== 1 ? "s" : ""}</span>
+          </h3>
         </div>
-        <div className="od-pkg">
-          <div className="od-pkg-meta">
-            <span><span className="muted">Sold by</span> <b>{order.seller}</b></span>
-            <span><span className="muted">Shipped by</span> <b>{d.carrier}</b></span>
-          </div>
-          <div className="od-pkg-thead">
-            <span>Product</span>
-            <span style={{ textAlign: "right" }}>Units</span>
-            <span style={{ textAlign: "right" }}>Taxes</span>
-            <span style={{ textAlign: "right" }}>Price</span>
-          </div>
-          {d.products.map((p, i) =>
-          <div key={i} className="od-pkg-row">
-              <div className="od-pkg-product">
-                <div className="od-pkg-img" />
-                <div>
-                  <div className="od-pkg-name">{p.name}</div>
-                  <div className="od-pkg-sku">SKU #{p.sku}</div>
-                </div>
-              </div>
-              <span style={{ textAlign: "right" }}>{p.qty}</span>
-              <span style={{ textAlign: "right" }}>{p.tax} USD</span>
-              <div style={{ textAlign: "right" }}>
-                <div>{p.finalPrice.toFixed(0)} USD</div>
-                {p.finalPrice < p.listPrice &&
-              <div className="od-pkg-old">{p.listPrice.toFixed(0)} USD</div>
-              }
-              </div>
-            </div>
-          )}
+        <div className="od-rails">
+          {itemGroups.map((group) => <OdRail key={group.id} group={group} />)}
         </div>
       </section>
 
