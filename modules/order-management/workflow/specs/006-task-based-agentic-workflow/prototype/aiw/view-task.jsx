@@ -387,6 +387,125 @@ function OdNote({ note, seller }) {
   );
 }
 
+/* ── Atividades executadas — colapsada por padrão, dentro da experiência ── */
+function OdRailActivities({ group }) {
+  const [open, setOpen] = useState(false);
+
+  // Collect executed steps from all items (deduplicated by label+time)
+  const seen = new Set();
+  const executed = [];
+  group.items.forEach(item => {
+    (item.steps || []).forEach(step => {
+      if (step.status === "done" || step.status === "active") {
+        const key = `${step.label}|${step.time}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          executed.push({ label: step.label, time: step.time, agent: step.agent, status: step.status, note: step.note });
+        }
+      }
+    });
+  });
+  // Also collect from cancelGroup steps if present
+  if (group.cancelGroup) {
+    (group.cancelGroup.steps || []).forEach(step => {
+      if (step.status === "done" || step.status === "active") {
+        const key = `cancel|${step.label}|${step.time}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          executed.push({ label: step.label, time: step.time, agent: step.agent, status: step.status, note: step.note, sourceGroup: group.cancelGroup.label });
+        }
+      }
+    });
+  }
+
+  if (executed.length === 0) return null;
+
+  return (
+    <div style={{ borderTop: "1px solid var(--border)" }}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        style={{
+          width: "100%", display: "flex", alignItems: "center", gap: 8,
+          padding: "10px 16px", background: "var(--bg-soft)", border: "none",
+          cursor: "pointer", textAlign: "left",
+        }}
+      >
+        <Icon name="clock" size={13} />
+        <span style={{ flex: 1, fontSize: 12.5, fontWeight: 600, color: "var(--fg-2)" }}>
+          Atividades executadas
+        </span>
+        <span style={{ fontSize: 11, color: "var(--fg-3)", marginRight: 6 }}>
+          {executed.length} evento{executed.length !== 1 ? "s" : ""}
+        </span>
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" width="12" height="12"
+             style={{ flexShrink: 0, transition: "transform .2s", transform: open ? "rotate(180deg)" : "rotate(0)", color: "var(--fg-3)" }}>
+          <path d="M4 6l4 4 4-4" />
+        </svg>
+      </button>
+      {open && (
+        <div style={{ padding: "4px 0 8px" }}>
+          {executed.map((e, i) => {
+            const isAuto   = !!e.agent;
+            const isActive = e.status === "active";
+            const dotColor = isActive ? "var(--primary)" : "#169B61";
+            return (
+              <div key={i} style={{
+                display: "flex", alignItems: "flex-start", gap: 12,
+                padding: "9px 16px",
+                borderBottom: i < executed.length - 1 ? "1px solid var(--border)" : "none",
+              }}>
+                {/* icon */}
+                <div style={{
+                  width: 26, height: 26, borderRadius: 7, flexShrink: 0,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  background: isAuto ? "var(--primary-soft)" : "#F3F4F6",
+                  marginTop: 1,
+                }}>
+                  {isAuto
+                    ? <Icon name="sparkle" size={12} />
+                    : <span style={{ fontSize: 12 }}>👤</span>}
+                </div>
+                {/* content */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                    <span style={{ fontSize: 12.5, fontWeight: 500, color: "var(--fg)" }}>{e.label}</span>
+                    {isActive && (
+                      <span style={{ fontSize: 10, fontWeight: 700, background: "var(--primary-soft)", color: "var(--primary)", border: "1px solid var(--primary)", borderRadius: 6, padding: "0px 6px" }}>
+                        Em andamento
+                      </span>
+                    )}
+                    {e.sourceGroup && (
+                      <span style={{ fontSize: 10, color: "var(--fg-3)", fontStyle: "italic" }}>· {e.sourceGroup}</span>
+                    )}
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 3, flexWrap: "wrap" }}>
+                    {e.time && (
+                      <span style={{ fontSize: 11, color: "var(--fg-3)" }}>{e.time}</span>
+                    )}
+                    <span style={{
+                      fontSize: 10, fontWeight: 700, padding: "1px 7px", borderRadius: 6,
+                      background: isAuto ? "var(--primary-soft)" : "#F3F4F6",
+                      color: isAuto ? "var(--primary)" : "var(--fg-2)",
+                      border: isAuto ? "1px solid rgba(41,98,255,.2)" : "1px solid var(--border)",
+                    }}>
+                      {isAuto ? "Automático" : "Manual"}
+                    </span>
+                    {e.note && (
+                      <span style={{ fontSize: 11, color: "var(--fg-3)", fontStyle: "italic" }}>{e.note}</span>
+                    )}
+                  </div>
+                </div>
+                {/* timeline dot */}
+                <span style={{ width: 8, height: 8, borderRadius: "50%", background: dotColor, flexShrink: 0, marginTop: 9 }} />
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ── Group rail — colapsado por padrão ── */
 function OdRail({ group }) {
   const [open, setOpen] = useState(false);
@@ -447,6 +566,7 @@ function OdRail({ group }) {
             {group.items.map((item, i) => <OdItemRow key={i} item={item} group={group} />)}
           </div>
           {group.cancelGroup && <OdCancelSection cancelGroup={group.cancelGroup} />}
+          <OdRailActivities group={group} />
         </div>
       )}
     </div>
@@ -512,18 +632,6 @@ function OrderDetailView({ task, orderId, onBack, onOpenOrder }) {
 
       {/* Order metadata */}
       <dl className="detail-fields od-meta">
-        <dt>Status</dt>
-        <dd>
-          <span className="od-status-pill attention">
-            <span className="status-dot attention" /> Attention
-          </span>
-        </dd>
-
-        <dt>Workflow Status</dt>
-        <dd>
-          <span className="od-wf-pill">{d.workflowStatus || "Handling"}</span>
-        </dd>
-
         <dt>Sold by</dt>
         <dd>{order.seller}</dd>
 
@@ -597,27 +705,6 @@ function OrderDetailView({ task, orderId, onBack, onOpenOrder }) {
       </section>
 
 
-
-      {/* Activities */}
-      <section className="detail-section flush">
-        <div className="detail-section-head"><h3>Atividades</h3></div>
-        <div className="activities">
-          {d.activities.map((a, i) =>
-          <div key={i} className="activity-row">
-              <span className="activity-time">{a.time}</span>
-              <div className="activity-body">
-                <div className="activity-head">
-                  <PersonAvatar initial={a.initial} agent={a.agent} />
-                  <span>
-                    <strong>{a.actor}</strong> <span className="muted">{a.action}</span>
-                  </span>
-                </div>
-                {a.note && <div className="activity-note">{a.note}</div>}
-              </div>
-            </div>
-          )}
-        </div>
-      </section>
 
       <div style={{ height: 40 }} />
     </div>);
