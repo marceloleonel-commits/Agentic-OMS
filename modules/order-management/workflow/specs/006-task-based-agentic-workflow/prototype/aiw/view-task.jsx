@@ -222,8 +222,66 @@ function OdKitComponents({ components }) {
   );
 }
 
-/* ── Item row — tarefas sempre visíveis quando a raia está aberta ── */
-function OdItemRow({ item }) {
+/* ── Stage accordion inside an item row ── */
+function OdStageGroup({ label, icon, status, steps }) {
+  const [open, setOpen] = useState(status === "active");
+  const s = {
+    done:    { dot: "#169B61",         label: "Concluído",    bg: "#F0FDF4",             border: "#BBF7D0" },
+    active:  { dot: "var(--primary)",  label: "Em andamento", bg: "var(--primary-soft)", border: "var(--primary)" },
+    pending: { dot: "#D1D5DB",         label: "Pendente",     bg: "#F9FAFB",             border: "var(--border)" },
+  }[status] || { dot: "#D1D5DB", label: "Pendente", bg: "#F9FAFB", border: "var(--border)" };
+
+  return (
+    <div style={{ borderTop: "1px solid var(--border)" }}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        style={{
+          width: "100%", display: "flex", alignItems: "center", gap: 8,
+          padding: "8px 14px 8px 16px", background: s.bg, border: "none",
+          cursor: "pointer", textAlign: "left",
+          borderLeft: `3px solid ${s.dot}`,
+        }}
+      >
+        {icon && <span style={{ fontSize: 13, lineHeight: 1 }}>{icon}</span>}
+        <span style={{ flex: 1, fontSize: 12.5, fontWeight: 600, color: "var(--fg)" }}>{label}</span>
+        <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 10.5, color: s.dot, fontWeight: 600, flexShrink: 0 }}>
+          <span style={{ width: 6, height: 6, borderRadius: "50%", background: s.dot, display: "inline-block" }} />
+          {s.label} · {steps.length} tarefa{steps.length !== 1 ? "s" : ""}
+        </span>
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" width="12" height="12"
+             style={{ flexShrink: 0, transition: "transform .2s", transform: open ? "rotate(180deg)" : "rotate(0)", color: "var(--fg-3)", marginLeft: 6 }}>
+          <path d="M4 6l4 4 4-4" />
+        </svg>
+      </button>
+      {open && (
+        <div style={{ borderLeft: `3px solid ${s.dot}` }}>
+          {steps.map((step, i) => <OdStepRow key={i} step={step} />)}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Item row — tarefas agrupadas por etapa do workflow ── */
+function OdItemRow({ item, group }) {
+  // Derive grouped steps from the workflow definition
+  const wfDef = group && AIWData.workflows && AIWData.workflows.find(w => w.id === group.workflow);
+  let groupedSteps = null;
+  if (wfDef && item.steps && item.steps.length > 0) {
+    const built = wfDef.stages.map((wfStage, si) => {
+      const taskNames = new Set(wfStage.tasks.map(t => t.name));
+      const stageSteps = item.steps.filter(s => taskNames.has(s.label));
+      const groupStage = group.stages && group.stages[si];
+      return {
+        label:  wfStage.name,
+        icon:   groupStage ? groupStage.icon : null,
+        status: groupStage ? groupStage.status : "pending",
+        steps:  stageSteps,
+      };
+    }).filter(g => g.steps.length > 0);
+    if (built.length > 0) groupedSteps = built;
+  }
+
   return (
     <div className="od-item-row">
       <div className="od-item-head">
@@ -242,7 +300,12 @@ function OdItemRow({ item }) {
       </div>
       {item.isKit && item.kitComponents && <OdKitComponents components={item.kitComponents} />}
       <div className="od-item-steps">
-        {item.steps.map((step, i) => <OdStepRow key={i} step={step} />)}
+        {groupedSteps
+          ? groupedSteps.map((sg, i) => (
+              <OdStageGroup key={i} label={sg.label} icon={sg.icon} status={sg.status} steps={sg.steps} />
+            ))
+          : item.steps.map((step, i) => <OdStepRow key={i} step={step} />)
+        }
       </div>
     </div>
   );
@@ -381,7 +444,7 @@ function OdRail({ group }) {
             {group.stages.map((st, i) => <OdStageCard key={i} stage={st} />)}
           </div>
           <div className="od-rail-items">
-            {group.items.map((item, i) => <OdItemRow key={i} item={item} />)}
+            {group.items.map((item, i) => <OdItemRow key={i} item={item} group={group} />)}
           </div>
           {group.cancelGroup && <OdCancelSection cancelGroup={group.cancelGroup} />}
         </div>
