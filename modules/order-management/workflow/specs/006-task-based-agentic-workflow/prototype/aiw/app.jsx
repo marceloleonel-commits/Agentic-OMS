@@ -77,8 +77,17 @@ function App() {
     const initialMsgs = currentOrder ? [
       {
         from: "agent",
-        text: `O Agente de Orquestração está acompanhando este pedido.\n\n${currentOrder.qty} item(ns) · ${currentOrder.total}${currentOrder.sla !== "—" ? ` · SLA ${currentOrder.sla}` : ""} · ${currentOrder.statusLabel}\n\nO que você deseja fazer?`,
-        quickReplies: ["Alterar item do pedido", "Cancelar o pedido", "Verificar SLA restante", "Escalar para Supervisor"]
+        text: `O Agente de Orquestração está acompanhando este pedido.\n\n${currentOrder.qty} item(ns) · ${currentOrder.total}${currentOrder.sla !== "—" ? ` · SLA ${currentOrder.sla}` : ""}`,
+      },
+      {
+        from: "agent",
+        text: "O que deseja fazer?",
+        quickReplies: [
+          "Alterar item do pedido",
+          "Cancelar o pedido",
+          "Escalar para Supervisor",
+          "Verificar SLA restante",
+        ]
       }
     ] : [{ from: "agent", text: "Selecione um pedido para começar." }];
     setOrderChatMsgs(initialMsgs);
@@ -213,8 +222,7 @@ function App() {
       <ResizableSplit screenLabel="Order Detail">
         <ChatPanel
           title={currentOrder ? `Pedido ${currentOrder.short}` : "Detalhe do Pedido"}
-          intro={currentOrder ? `${currentOrder.id} · ${currentOrder.statusLabel}` : ""}
-          chips={orderChips}
+          chips={[]}
           messages={orderChatMsgs}
           onSend={handleOrderChatSend}
           isTyping={orderChatTyping}
