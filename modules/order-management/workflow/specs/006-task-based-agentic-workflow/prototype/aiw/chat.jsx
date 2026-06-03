@@ -53,6 +53,7 @@ function ChatPanel({
   intro,
   contextCard,
   chips = [],
+  alwaysShowChips = false,
   initialMessages = [],
   placeholder = "Message VTEX My Assistant...",
   agent = "VTEX My Assistant",
@@ -85,20 +86,20 @@ function ChatPanel({
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [messages, isTyping]);
 
-  const send = (text, replyFromMsgIndex) => {
+  const send = (text, replyFromMsgIndex, opts) => {
     if (!text.trim()) return;
     if (replyFromMsgIndex !== undefined) {
       setAnsweredReplies(prev => ({ ...prev, [replyFromMsgIndex]: text.trim() }));
     }
     if (isControlled) {
-      externalOnSend?.(text.trim());
+      externalOnSend?.(text.trim(), opts);
     } else {
       setLocalMessages((m) => [...m, { from: "user", text }]);
     }
   };
 
   const hasUser = messages.some((m) => m.from === "user");
-  const showChips = !hasUser && chips.length > 0;
+  const showChips = (alwaysShowChips || !hasUser) && chips.length > 0;
 
   function renderMessage(m, i) {
     if (m.from === "user") {
@@ -119,11 +120,37 @@ function ChatPanel({
           <div className="chat-action-card">
             <div className="chat-action-card-body">
               <span className="chat-action-card-title">{m.title}</span>
-              {m.body && <span className="chat-action-card-desc">{m.body}</span>}
+              {m.body && <span className="chat-action-card-desc" style={{ whiteSpace: "pre-line" }}>{m.body}</span>}
             </div>
             <button className="btn btn-sm btn-primary chat-action-apply" onClick={m.onApply}>
               Aplicar
             </button>
+          </div>
+        )}
+
+        {m.type === "order-list" && m.orders && m.orders.length > 0 && (
+          <div className="chat-order-list">
+            {m.orders.map(function(o) {
+              return (
+                <button
+                  key={o.id}
+                  className="chat-order-row"
+                  onClick={() => m.onOpenOrder && m.onOpenOrder(o.id)}
+                >
+                  <span className="chat-order-id">
+                    <span>{o.id}</span>
+                    <span className="muted" style={{ fontSize: 10 }}>({o.short})</span>
+                  </span>
+                  <span className="chat-order-customer">{o.customer}</span>
+                  <span className="chat-order-meta">
+                    <span className="chat-order-sla">SLA {o.sla}</span>
+                    <span className="chat-order-eta">ETA {o.eta}</span>
+                  </span>
+                  <span className={`orders-status orders-status-${o.status}`} style={{ fontSize: 11 }}>{o.statusLabel}</span>
+                  <Icon name="chevron-right" size={12} style={{ flexShrink: 0, color: "var(--fg-3)" }} />
+                </button>
+              );
+            })}
           </div>
         )}
 
@@ -175,7 +202,7 @@ function ChatPanel({
                     <button
                       key={j}
                       className={`chat-origin-card${isSelected ? " selected" : ""}${answered && !isSelected ? " dimmed" : ""}`}
-                      onClick={() => !answered && send(label, i)}
+                      onClick={() => !answered && send(label, i, { fromReply: true })}
                       disabled={!!answered && !isSelected}
                     >
                       {r.icon && <span className="chat-origin-card-icon">{r.icon}</span>}
@@ -188,7 +215,7 @@ function ChatPanel({
                   <button
                     key={j}
                     className={`chat-quick-reply${isSelected ? " selected" : ""}${answered && !isSelected ? " dimmed" : ""}`}
-                    onClick={() => !answered && send(label, i)}
+                    onClick={() => !answered && send(label, i, { fromReply: true })}
                     disabled={!!answered && !isSelected}
                   >
                     {label}
@@ -251,10 +278,10 @@ function ChatPanel({
 
         {showChips && (
           <div>
-            <div className="chat-sub-q">What do you want to do first?</div>
+            <div className="chat-sub-q">O que gostaria de fazer?</div>
             <div className="chip-row">
               {chips.map((c, j) => (
-                <button key={j} className="suggest-chip" onClick={() => send(c.label)}>
+                <button key={j} className="suggest-chip" onClick={() => send(c.label, undefined, { fromChip: true })}>
                   <Icon name={c.icon} size={12} /> {c.label}
                 </button>
               ))}

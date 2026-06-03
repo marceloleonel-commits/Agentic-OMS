@@ -278,6 +278,7 @@ function openOrder(idx) {
   const badge = document.getElementById('detail-status-badge');
   badge.textContent = sc.icon + ' ' + sc.label;
   badge.className = 'badge ' + sc.cls;
+  badge.style.display = 'none';
   document.getElementById('detail-meta').textContent = o.date + ' • Vendido por recorrenciacharlie';
   document.getElementById('detail-client-name').textContent = o.client;
   document.getElementById('detail-client-name2').textContent = o.client;
@@ -568,9 +569,9 @@ function renderItemsWithTasks(order) {
             <span style="font-size:18px;line-height:1">${pIcon}</span>
             <span style="font-size:13px;font-weight:700;color:${pBadgeColor};flex:1">${pipeline.wfName}</span>
             <span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;background:${pStatusBg};color:${pStatusColor};border:1px solid ${pStatusColor}25">${pStatusLabel}</span>
-            <svg id="chev-${pipId}" viewBox="0 0 12 12" fill="none" stroke="${pBadgeColor}" stroke-width="2.2" width="12" height="12" style="flex-shrink:0;transition:transform .2s;margin-left:6px"><path d="M2 4l4 4 4-4"/></svg>
+            <svg id="chev-${pipId}" viewBox="0 0 12 12" fill="none" stroke="${pBadgeColor}" stroke-width="2.2" width="12" height="12" style="flex-shrink:0;transition:transform .2s;margin-left:6px;transform:rotate(-90deg)"><path d="M2 4l4 4 4-4"/></svg>
           </button>
-          <div id="${pipId}" style="overflow:hidden">
+          <div id="${pipId}" style="overflow:hidden;display:none">
             <div class="item-pipeline" style="padding-bottom:4px">${buildPipeline(pipeline.tasks, {orderId:order.id,itemIdx,taskType})}</div>
           </div>`;
       }).join('') + ctxVarsHtml + orchPanel;
@@ -642,9 +643,9 @@ function renderItemsWithTasks(order) {
           <span style="font-size:18px;line-height:1">↩️</span>
           <span style="font-size:13px;font-weight:700;color:${swBadgeColor};flex:1">${sw.wfName || 'Troca e Devolução'}</span>
           <span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;background:${swStatusBg};color:${swStatusColor};border:1px solid ${swStatusColor}25">${swStatusLabel}</span>
-          <svg id="chev-${retPipId}" viewBox="0 0 12 12" fill="none" stroke="${swBadgeColor}" stroke-width="2.2" width="12" height="12" style="flex-shrink:0;transition:transform .2s;margin-left:6px"><path d="M2 4l4 4 4-4"/></svg>
+          <svg id="chev-${retPipId}" viewBox="0 0 12 12" fill="none" stroke="${swBadgeColor}" stroke-width="2.2" width="12" height="12" style="flex-shrink:0;transition:transform .2s;margin-left:6px;transform:rotate(-90deg)"><path d="M2 4l4 4 4-4"/></svg>
         </button>
-        <div id="${retPipId}" style="overflow:hidden">
+        <div id="${retPipId}" style="overflow:hidden;display:none">
           ${returnInfoHtml}
           <div class="item-pipeline" style="padding-bottom:4px">${buildPipeline(sw.tasks, {orderId:order.id,itemIdx,taskType:'return'})}</div>
         </div>`;
@@ -660,7 +661,6 @@ function renderItemsWithTasks(order) {
           <div class="item-product-meta">Qtd: ${item.qty} · ${item.price}${item.seller ? '' : ''}</div>
           <div style="margin-top:3px;display:flex;gap:4px;flex-wrap:wrap">${item.seller ? sellerBadge : ''}${item.isService ? serviceBadge : ''}</div>
         </div>
-        ${(item.pipelines && item.pipelines.length) ? '' : `<span class="badge ${iStCls}" style="font-size:11px">${iSt}</span>`}
       </div>
       ${pipelineSection}
       ${chainHtml}
@@ -2535,7 +2535,6 @@ function renderNwfOriginPicker() {
     { id: 'oj-home',   icon: '🚚', name: 'Entrega em domicílio', desc: '4 marcos · transportadora ao endereço' },
     { id: 'oj-bopis',  icon: '🏪', name: 'Retirada na loja',     desc: '4 marcos · BOPIS / pickup in store' },
     { id: 'oj-digital',icon: '💻', name: 'Entrega digital',      desc: '4 marcos · licença, e-mail, acesso' },
-    { id: 'oj-sfs',    icon: '🏬', name: 'Entrega pela loja',    desc: '4 marcos · ship-from-store / courier' },
   ];
   const btnStyle = 'display:flex;align-items:center;gap:10px;background:#f9f9fb;border:1.5px solid #e5e7eb;border-radius:8px;padding:10px 12px;cursor:pointer;text-align:left;width:100%;transition:border-color .15s';
   container.innerHTML = BASE_MODELS.map(m => `
