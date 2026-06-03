@@ -1,5 +1,5 @@
-/* global React, ReactDOM, Sidebar, Icon, AppData, AIWData, AssistantView, TaskView, WorkflowBoardView, OrchestrationView, AITeamDrawer, TweaksPanel, useTweaks, TweakSection, TweakRadio, TweakColor */
-const { useState, useEffect, useRef } = React;
+/* global React, ReactDOM, Sidebar, Icon, AppData, AIWData, AssistantView, TaskView, OrderDetailView, WorkflowBoardView, OrchestrationView, ChatPanel, ResizableSplit, ChatEngine, AITeamDrawer, TweaksPanel, useTweaks, TweakSection, TweakRadio, TweakColor */
+const { useState, useEffect, useRef, useCallback } = React;
 
 const TWEAKS_DEFAULTS = /*EDITMODE-BEGIN*/{
   "density": "comfortable",
@@ -37,6 +37,12 @@ function App() {
   const [collapsed, setCollapsed] = useState(!!tweaks.sidebarCollapsed);
   const [aiOpen, setAIOpen] = useState(false);
 
+  // Order-detail intelligent chat state
+  const [orderChatMsgs, setOrderChatMsgs] = useState([]);
+  const [orderChatTyping, setOrderChatTyping] = useState(false);
+  const [orderDynamicChips, setOrderDynamicChips] = useState([]);
+  const orderEngineRef = useRef(null);
+
   useEffect(() => {
     document.documentElement.style.setProperty("--primary", tweaks.accent);
     document.documentElement.style.setProperty("--primary-hover", shade(tweaks.accent, -10));
@@ -64,8 +70,43 @@ function App() {
     }
   }, [tweaks.density]);
 
+  // Re-initialise the order-detail chat engine whenever we navigate to a new order
+  useEffect(() => {
+    if (route.name !== "order-detail") return;
+    const orderId = route.orderId;
+    const currentOrder = AIWData.orders.find(o => o.id === orderId);
+    const initialMsgs = currentOrder ? [
+      {
+        from: "agent",
+        text: `O Agente de Orquestração está acompanhando este pedido.\n\n${currentOrder.qty} item(ns) · ${currentOrder.total}${currentOrder.sla !== "—" ? ` · SLA ${currentOrder.sla}` : ""}`,
+      },
+      {
+        from: "agent",
+        text: "O que deseja fazer?",
+        quickReplies: [
+          "Alterar item do pedido",
+          "Cancelar o pedido",
+          "Verificar SLA restante",
+        ]
+      }
+    ] : [{ from: "agent", text: "Selecione um pedido para começar." }];
+    setOrderChatMsgs(initialMsgs);
+    setOrderChatTyping(false);
+    setOrderDynamicChips([]);
+    orderEngineRef.current = ChatEngine.create({
+      context: "order-detail",
+      data: AIWData,
+      orderId,
+      onNavigate: (r) => setRoute({ name: "order-detail", orderId: r.orderId }),
+      onAgentSay: (msgs) => setOrderChatMsgs(m => [...m, ...msgs]),
+      onTyping: setOrderChatTyping,
+      onAddChip: (chip) => setOrderDynamicChips(prev => [...prev, chip]),
+    });
+  }, [route.name, route.orderId]);
+
   const goHome   = () => setRoute({ name: "orders" });
   const openTask = (id) => setRoute({ name: "task", id });
+  const openOrder = (id) => setRoute({ name: "order-detail", orderId: id });
   const gotoResource = (id) => {
     if (id === "workflow-board") setRoute({ name: "workflow-board" });
     else if (id === "orchestration") setRoute({ name: "orchestration" });
@@ -114,13 +155,6 @@ function App() {
             My AI Team <Icon name="chevron-down" size={12} />
           </button>
         }>
-        <button className="dd-item" onClick={() => setRoute({ name: "orchestration" })}>
-          <span className="dd-item-icon ai"><Icon name="sparkle" size={14} /></span>
-          <span>
-            <span className="dd-item-label">Agente de Orquestração</span>
-            <span className="dd-item-sub">Ativo · 4.256 pedidos monitorados</span>
-          </span>
-        </button>
         <button className="dd-item" onClick={() => { setAIOpen(true); }}>
           <span className="dd-item-icon ai"><Icon name="grid" size={14} /></span>
           <span>
@@ -135,7 +169,7 @@ function App() {
   /* ---------- view selection ---------- */
   let view;
   if (route.name === "orders") {
-    view = <AssistantView onOpenTask={openTask} onGotoResource={gotoResource} />;
+    view = <AssistantView onOpenTask={openTask} onGotoResource={gotoResource} onOpenOrder={openOrder} />;
   } else if (route.name === "assistant") {
     view = (
       <div className="main">
@@ -159,11 +193,70 @@ function App() {
       </div>
     );
   } else if (route.name === "task") {
-    view = <TaskView taskId={route.id} onBack={goHome} />;
+    view = <TaskView taskId={route.id} onBack={goHome} onOpenOrder={openOrder} />;
   } else if (route.name === "workflow-board") {
     view = <WorkflowBoardView onBack={goHome} wfLayout={tweaks.wfLayout} wfGroup={tweaks.wfGroup} />;
   } else if (route.name === "orchestration") {
-    view = <OrchestrationView onBack={goHome} />;
+    view = <OrchestrationView onBack={goHome} onOpenOrder={openOrder} />;
+  } else if (route.name === "order-detail") {
+    const currentOrder = AIWData.orders.find(o => o.id === route.orderId);
+    const syntheticTask = {
+      detail: {
+        impacted: AIWData.orders.map(o => ({
+          id: o.id,
+          sla: o.sla || "—",
+          seller: o.seller || o.origin,
+          eta: o.eta || "—"
+        }))
+      }
+    };
+    const orderChips = [
+      { icon: "edit",    label: "Alterar item do pedido"  },
+      { icon: "x",       label: "Cancelar o pedido"       },
+      { icon: "graph",   label: "Verificar SLA restante"  },
+      { icon: "sparkle", label: "Escalar para Supervisor" }
+    ];
+    const handleOrderChatSend = (text, opts) => {
+      setOrderChatMsgs(m => [...m, { from: "user", text }]);
+      orderEngineRef.current && orderEngineRef.current.send(text, opts);
+    };
+    view = (
+      <ResizableSplit screenLabel="Order Detail">
+        <ChatPanel
+          title={currentOrder ? `Pedido ${currentOrder.short}` : "Detalhe do Pedido"}
+          chips={orderDynamicChips}
+          alwaysShowChips={true}
+          messages={orderChatMsgs}
+          onSend={handleOrderChatSend}
+          isTyping={orderChatTyping}
+          placeholder="Pergunte sobre este pedido…"
+          onBack={goHome}
+        />
+        <div className="detail-panel">
+          <div className="detail-head no-border">
+            <div className="detail-head-left">
+              <button
+                className="od-back-link"
+                onClick={goHome}
+                style={{ display: "flex", alignItems: "center", gap: 4, background: "none", border: "none", cursor: "pointer", color: "var(--fg-2)", fontSize: 13 }}
+              >
+                <Icon name="chevron-left" size={14} /> Todos os Pedidos
+              </button>
+            </div>
+          </div>
+          <div className="detail-scroll">
+            <div className="detail-body">
+              <OrderDetailView
+                task={syntheticTask}
+                orderId={route.orderId}
+                onBack={goHome}
+                onOpenOrder={(id) => setRoute({ name: "order-detail", orderId: id })}
+              />
+            </div>
+          </div>
+        </div>
+      </ResizableSplit>
+    );
   } else {
     // Other routes (initiatives, conversations) keep an empty placeholder for now
     view = (
@@ -202,7 +295,7 @@ function App() {
       {view}
 
       {/* Floating topbar actions (Settings + My AI team) — only on non-split routes */}
-      {!["task", "workflow-board", "orchestration", "assistant"].includes(route.name) &&
+      {!["task", "workflow-board", "orchestration", "assistant", "order-detail"].includes(route.name) &&
         <div className="aiw-global-actions">
           {renderTopbarActions()}
         </div>
@@ -246,7 +339,7 @@ function App() {
             </button>
             <button className={`tweak-nav ${route.name === "orchestration" ? "active" : ""}`} onClick={() => setRoute({ name: "orchestration" })}>
               <span className="tweak-nav-icon ai"><Icon name="sparkle" size={14} /></span>
-              <span>Agente de orquestração</span>
+              <span>Agentes de Pedidos</span>
             </button>
           </div>
         </TweakSection>

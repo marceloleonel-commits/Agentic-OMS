@@ -1,0 +1,722 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>OMS · Pedido com Múltiplos Fornecedores</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:'Inter',sans-serif;background:#06101e;color:#eef2ff;height:100vh;overflow:hidden;user-select:none}
+
+    /* ── SLIDE ENGINE ── */
+    .pres{width:100vw;height:100vh;position:relative}
+    .slide{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:56px 80px;opacity:0;pointer-events:none;transition:opacity .55s ease}
+    .slide.active{opacity:1;pointer-events:all}
+
+    /* ── CHROME ── */
+    .prog{position:fixed;bottom:0;left:0;height:3px;background:#F71963;transition:width .4s ease;z-index:99}
+    .dotbar{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);display:flex;gap:7px;z-index:99}
+    .dot{width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,.22);cursor:pointer;transition:all .3s}
+    .dot.on{background:#F71963;width:20px;border-radius:3px}
+    .arr{position:fixed;top:50%;transform:translateY(-50%);width:42px;height:42px;border-radius:50%;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);color:rgba(255,255,255,.45);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:99;font-size:17px;transition:all .2s}
+    .arr:hover{background:rgba(255,255,255,.1);color:#fff}
+    .arr.l{left:14px}.arr.r{right:14px}
+    .snum{position:fixed;top:18px;right:22px;font-size:11px;color:rgba(255,255,255,.22);z-index:99;letter-spacing:.3px}
+    .hint{position:fixed;bottom:44px;left:50%;transform:translateX(-50%);font-size:10px;color:rgba(255,255,255,.2);z-index:99;letter-spacing:.3px;pointer-events:none}
+
+    /* ── TYPOGRAPHY ── */
+    .tag{font-size:11px;font-weight:700;letter-spacing:1.6px;text-transform:uppercase;color:#F71963;margin-bottom:14px}
+    .h1{font-size:46px;font-weight:800;line-height:1.1;text-align:center;margin-bottom:14px}
+    .h2{font-size:26px;font-weight:700;line-height:1.2;text-align:center;margin-bottom:10px}
+    .sub{font-size:16px;color:rgba(255,255,255,.42);text-align:center;max-width:600px;line-height:1.6}
+    .grad{background:linear-gradient(90deg,#F71963,#9747FF 60%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+
+    /* ── ITEMS LIST ── */
+    .itbl{width:100%;max-width:780px}
+    .irow{display:grid;grid-template-columns:10px 1fr auto auto;align-items:center;gap:14px;padding:11px 0;border-bottom:1px solid rgba(255,255,255,.055);animation:up .4s ease both}
+    .irow:last-child{border:none}
+    .idot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+    .iname{font-size:13px;font-weight:600}
+    .imeta{font-size:11px;color:rgba(255,255,255,.36);margin-top:2px}
+    .ibadge{font-size:10px;font-weight:600;padding:3px 9px;border-radius:10px;white-space:nowrap}
+    .bd{background:rgba(41,98,255,.16);color:#7ca6ff;border:1px solid rgba(41,98,255,.28)}
+    .bp{background:rgba(0,200,83,.13);color:#5de8a2;border:1px solid rgba(0,200,83,.24)}
+    .iprice{font-size:12px;font-weight:600;color:rgba(255,255,255,.55);min-width:52px;text-align:right}
+
+    /* ── ORDER SUMMARY ASIDE ── */
+    .aside{width:194px;flex-shrink:0;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:18px}
+    .aside-lbl{font-size:9.5px;font-weight:700;letter-spacing:1px;color:rgba(255,255,255,.32);text-transform:uppercase;margin-bottom:14px}
+    .aside-row{margin-bottom:12px}
+    .aside-row .k{font-size:10px;color:rgba(255,255,255,.33)}
+    .aside-row .v{font-size:13px;font-weight:600;margin-top:2px}
+    .aside-total{border-top:1px solid rgba(255,255,255,.07);padding-top:11px;margin-top:4px}
+    .aside-total .k{font-size:10px;color:rgba(255,255,255,.33)}
+    .aside-total .v{font-size:22px;font-weight:800;color:#5de8a2;margin-top:2px}
+
+    /* ── ROUTING SLIDE ── */
+    .route-cols{display:flex;gap:20px;width:100%;max-width:900px;margin-top:26px;align-items:stretch}
+    .rcol{flex:1;border-radius:14px;padding:18px}
+    .rcol.del{background:rgba(41,98,255,.06);border:1px solid rgba(41,98,255,.18)}
+    .rcol.pik{background:rgba(0,200,83,.055);border:1px solid rgba(0,200,83,.18)}
+    .rcol-title{font-size:11px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:7px}
+    .rcol.del .rcol-title{color:#7ca6ff}
+    .rcol.pik .rcol-title{color:#5de8a2}
+    .ritem{background:rgba(255,255,255,.045);border-radius:8px;padding:10px 13px;margin-bottom:8px;animation:up .4s ease both}
+    .ritem:last-child{margin-bottom:0}
+    .ritem-name{font-size:12px;font-weight:600}
+    .ritem-meta{font-size:10.5px;color:rgba(255,255,255,.38);margin-top:3px}
+    .rcenter{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:0 8px;min-width:80px}
+    .rcenter-ico{font-size:26px}
+    .rcenter-lbl{font-size:9.5px;color:rgba(255,255,255,.28);text-align:center;line-height:1.4}
+    .route-note{margin-top:18px;font-size:11.5px;color:rgba(255,255,255,.32);background:rgba(255,255,255,.025);border-radius:8px;padding:9px 16px;animation:up .4s ease .5s both}
+
+    /* ── OJ CARDS ROW ── */
+    .ojrow{display:flex;gap:14px;width:100%;max-width:960px}
+    .ojc{flex:1;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:18px;animation:up .5s ease both}
+    .ojc.del{border-top:3px solid #2962ff}
+    .ojc.pik{border-top:3px solid #00c853}
+    .ojc-head{display:flex;gap:10px;align-items:flex-start;margin-bottom:12px}
+    .ojc-ico{font-size:22px}
+    .ojc-id{font-size:9px;font-weight:700;letter-spacing:.5px;color:rgba(255,255,255,.28);text-transform:uppercase}
+    .ojc-name{font-size:13px;font-weight:700;margin-top:2px}
+    .ojc-sup{font-size:11px;color:rgba(255,255,255,.38);margin-top:2px}
+    .ojc-items{font-size:10.5px;color:rgba(255,255,255,.36);margin-bottom:12px;line-height:1.8}
+    .ojc-val{font-size:16px;font-weight:800;margin-bottom:12px}
+    .glist{display:flex;flex-direction:column;gap:5px}
+    .gr{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:7px;background:rgba(255,255,255,.02);font-size:11px;transition:all .5s}
+    .gr.done{background:rgba(0,200,83,.07)}
+    .gr.active{background:rgba(255,193,7,.07)}
+    .gi{width:13px;height:13px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:700}
+    .gi.done{background:#00c853}
+    .gi.act{background:#ffc107;animation:pulse 1s infinite}
+    .gi.pend{background:rgba(255,255,255,.1)}
+    .gname{flex:1;font-weight:500}
+    .gr:not(.done):not(.active) .gname{color:rgba(255,255,255,.26)}
+    .gby{font-size:9.5px;color:rgba(255,255,255,.26)}
+    .gr.done .gby{color:rgba(0,200,83,.6)}
+
+    /* ── PROGRESSION SLIDE ── */
+    .pslide{width:100%;max-width:800px}
+    .psh{display:flex;align-items:center;gap:16px;margin-bottom:22px;padding-bottom:18px;border-bottom:1px solid rgba(255,255,255,.07)}
+    .psh-ico{font-size:30px}
+    .psh-title{font-size:22px;font-weight:700}
+    .psh-meta{font-size:12px;color:rgba(255,255,255,.38);margin-top:2px}
+    .psh-badge{margin-left:auto;font-size:11px;font-weight:600;padding:4px 13px;border-radius:20px}
+    .psh-badge.del{background:rgba(41,98,255,.16);color:#7ca6ff;border:1px solid rgba(41,98,255,.28)}
+    .psh-badge.pik{background:rgba(0,200,83,.13);color:#5de8a2;border:1px solid rgba(0,200,83,.24)}
+
+    .steps{display:flex;flex-direction:column;gap:7px}
+    .step{display:flex;align-items:flex-start;gap:12px;padding:11px 13px;border-radius:10px;background:rgba(255,255,255,.02);border:1px solid transparent;transition:all .45s ease;opacity:.28}
+    .step.done{opacity:1;background:rgba(0,200,83,.055);border-color:rgba(0,200,83,.16)}
+    .step.active{opacity:1;background:rgba(255,193,7,.055);border-color:rgba(255,193,7,.18)}
+    .st-ico{width:20px;height:20px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;margin-top:1px;transition:all .3s}
+    .st-ico.done{background:#00c853;color:#fff}
+    .st-ico.active{background:#ffc107;color:#1a1a1a;animation:pulse 1s infinite}
+    .st-ico.pend{background:rgba(255,255,255,.1);color:rgba(255,255,255,.3)}
+    .st-body{flex:1}
+    .st-title{font-size:12.5px;font-weight:600;line-height:1.4}
+    .step:not(.done):not(.active) .st-title{color:rgba(255,255,255,.3)}
+    .st-who{font-size:10.5px;color:rgba(255,255,255,.32);margin-top:2px}
+    .step.done .st-who{color:rgba(0,200,83,.65)}
+    .gtag{display:inline-block;font-size:9.5px;font-weight:700;padding:2px 7px;border-radius:5px;margin-left:4px;vertical-align:middle}
+    .gtag.g{background:rgba(0,200,83,.14);color:#5de8a2;border:1px solid rgba(0,200,83,.2)}
+    .gtag.r{background:rgba(247,25,99,.13);color:#f87a9a;border:1px solid rgba(247,25,99,.22)}
+
+    /* ── SUMMARY ── */
+    .sumgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;max-width:840px;width:100%}
+    .sumc{background:rgba(0,200,83,.05);border:1px solid rgba(0,200,83,.17);border-radius:14px;padding:22px;text-align:center;animation:up .5s ease both}
+    .sumc-ico{font-size:30px;margin-bottom:10px}
+    .sumc-lbl{font-size:9.5px;font-weight:700;letter-spacing:1px;color:rgba(255,255,255,.32);text-transform:uppercase;margin-bottom:4px}
+    .sumc-name{font-size:13px;font-weight:700;margin-bottom:8px}
+    .sumc-val{font-size:22px;font-weight:800;color:#5de8a2}
+    .sumc-ok{font-size:10.5px;color:rgba(0,200,83,.7);margin-top:7px}
+
+    /* ── ARCH SLIDE ── */
+    .arch{width:100%;max-width:820px}
+    .arch-agents{display:flex;align-items:stretch;gap:0;margin-bottom:16px}
+    .abox{background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:14px 16px;flex:1}
+    .abox.exp{background:rgba(247,25,99,.04);border-color:rgba(247,25,99,.14)}
+    .abox-e{font-size:20px;margin-bottom:5px}
+    .abox-n{font-size:12px;font-weight:700}
+    .abox-s{font-size:10px;color:rgba(255,255,255,.32);margin-top:2px;margin-bottom:8px}
+    .slist{display:flex;flex-wrap:wrap;gap:5px}
+    .sk{font-size:9.5px;font-weight:500;padding:2px 7px;border-radius:6px;background:rgba(255,255,255,.07);color:rgba(255,255,255,.55)}
+    .ahline{width:24px;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.2);font-size:12px}
+    .gates-row{background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:14px 18px}
+    .gates-row-title{font-size:10px;font-weight:700;letter-spacing:.5px;color:rgba(255,255,255,.35);text-transform:uppercase;margin-bottom:10px}
+    .gates-pills{display:flex;flex-wrap:wrap;gap:7px}
+    .gp{font-size:10.5px;font-weight:600;padding:4px 11px;border-radius:20px}
+    .gp.g{background:rgba(0,200,83,.13);color:#5de8a2;border:1px solid rgba(0,200,83,.22)}
+    .gp.r{background:rgba(247,25,99,.12);color:#f87a9a;border:1px solid rgba(247,25,99,.2)}
+    .gp.n{background:rgba(255,255,255,.06);color:rgba(255,255,255,.5);border:1px solid rgba(255,255,255,.09)}
+
+    /* ── ANIMATIONS ── */
+    @keyframes up{from{opacity:0;transform:translateY(13px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.55;transform:scale(.82)}}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    @keyframes glow{0%,100%{box-shadow:0 0 0 rgba(247,25,99,0)}50%{box-shadow:0 0 20px rgba(247,25,99,.3)}}
+  </style>
+</head>
+<body>
+<div class="pres" id="pres">
+
+<!-- ══ S1: TITLE ══ -->
+<div class="slide active" id="s0">
+  <div class="tag">Arquitetura OMS · Content Platform</div>
+  <div class="h1">Pedido com <span class="grad">múltiplos fornecedores</span><br>e modos de entrega</div>
+  <div class="sub">Da entrada do pedido ao revenue complete — roteamento, orquestração e gates em ação com 3 fornecedores independentes</div>
+  <div style="display:flex;gap:28px;margin-top:36px;align-items:center">
+    <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:rgba(255,255,255,.4)">
+      <span style="width:9px;height:9px;border-radius:50%;background:#2962ff;flex-shrink:0;display:inline-block"></span>
+      Entrega em domicílio
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:rgba(255,255,255,.4)">
+      <span style="width:9px;height:9px;border-radius:50%;background:#00c853;flex-shrink:0;display:inline-block"></span>
+      Retirada na loja
+    </div>
+    <div style="width:1px;height:14px;background:rgba(255,255,255,.12)"></div>
+    <div style="font-size:12px;color:rgba(255,255,255,.28)">5 itens · 3 OrderJobs · 3 fornecedores</div>
+  </div>
+</div>
+
+<!-- ══ S2: O PEDIDO ══ -->
+<div class="slide" id="s1">
+  <div class="tag" style="align-self:flex-start">O Pedido</div>
+  <div style="display:flex;gap:24px;width:100%;max-width:920px;align-items:flex-start">
+    <div style="flex:1">
+      <div style="font-size:22px;font-weight:700;margin-bottom:5px">Pedido #68948228</div>
+      <div style="font-size:12px;color:rgba(255,255,255,.38);margin-bottom:22px">Amazon Marketplace · Bruno Costa · R$ 865,00</div>
+      <div class="itbl">
+        <div class="irow" style="animation-delay:.08s">
+          <div class="idot" style="background:#2962ff"></div>
+          <div><div class="iname">Tênis Air Max</div><div class="imeta">CD São Paulo · Qty 1</div></div>
+          <div class="ibadge bd">🏠 Entrega</div>
+          <div class="iprice">R$ 399</div>
+        </div>
+        <div class="irow" style="animation-delay:.18s">
+          <div class="idot" style="background:#2962ff"></div>
+          <div><div class="iname">Camiseta Dry-Fit</div><div class="imeta">CD São Paulo · Qty 2</div></div>
+          <div class="ibadge bd">🏠 Entrega</div>
+          <div class="iprice">R$ 89</div>
+        </div>
+        <div class="irow" style="animation-delay:.28s">
+          <div class="idot" style="background:#00c853"></div>
+          <div><div class="iname">Livro Clean Code</div><div class="imeta">Loja Centro · Qty 1</div></div>
+          <div class="ibadge bp">🏪 Retirada</div>
+          <div class="iprice">R$ 79</div>
+        </div>
+        <div class="irow" style="animation-delay:.38s">
+          <div class="idot" style="background:#00c853"></div>
+          <div><div class="iname">Fone Bluetooth</div><div class="imeta">Loja Centro · Qty 1</div></div>
+          <div class="ibadge bp">🏪 Retirada</div>
+          <div class="iprice">R$ 249</div>
+        </div>
+        <div class="irow" style="animation-delay:.48s">
+          <div class="idot" style="background:#2962ff"></div>
+          <div><div class="iname">Cabo USB-C</div><div class="imeta">CD Campinas · Qty 1</div></div>
+          <div class="ibadge bd">🏠 Entrega</div>
+          <div class="iprice">R$ 49</div>
+        </div>
+      </div>
+    </div>
+    <div class="aside">
+      <div class="aside-lbl">Resumo</div>
+      <div class="aside-row"><div class="k">Marketplace</div><div class="v">Amazon BR</div></div>
+      <div class="aside-row"><div class="k">Fornecedores</div><div class="v">3 sellers</div></div>
+      <div class="aside-row"><div class="k">Tipos de entrega</div><div class="v">2 modos</div></div>
+      <div class="aside-row"><div class="k">Pagamento</div><div class="v">Adyen</div></div>
+      <div class="aside-total"><div class="k">Total</div><div class="v">R$ 865</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ S3: ROTEAMENTO ══ -->
+<div class="slide" id="s2">
+  <div class="tag">Agente de Roteamento</div>
+  <div class="h2">Classificando itens por fornecedor<br>e modo de entrega</div>
+  <div class="route-cols">
+    <div class="rcol del">
+      <div class="rcol-title"><span>🏠</span> Entrega em domicílio</div>
+      <div class="ritem" style="animation-delay:.12s">
+        <div class="ritem-name">Tênis Air Max + Camiseta Dry-Fit</div>
+        <div class="ritem-meta">📦 CD São Paulo → Transportadora DHL</div>
+      </div>
+      <div class="ritem" style="animation-delay:.28s">
+        <div class="ritem-name">Cabo USB-C</div>
+        <div class="ritem-meta">📦 CD Campinas → Correios</div>
+      </div>
+    </div>
+    <div class="rcenter">
+      <div class="rcenter-ico">🗺️</div>
+      <div class="rcenter-lbl">Routing<br>Sub-Agent</div>
+      <div style="font-size:20px;color:rgba(255,255,255,.18)">↓</div>
+      <div class="rcenter-lbl" style="color:#F71963;font-weight:600">3 OrderJobs</div>
+    </div>
+    <div class="rcol pik">
+      <div class="rcol-title"><span>🏪</span> Retirada na loja</div>
+      <div class="ritem" style="animation-delay:.44s">
+        <div class="ritem-name">Livro Clean Code + Fone Bluetooth</div>
+        <div class="ritem-meta">🏪 Loja Centro · cliente retira no balcão</div>
+      </div>
+    </div>
+  </div>
+  <div class="route-note">
+    Itens com mesmo fornecedor e mesmo modo de entrega são agrupados em um único OrderJob — cada OrderJob tem seu próprio ciclo de vida e set de gates.
+  </div>
+</div>
+
+<!-- ══ S4: ORDERJOBS CRIADOS ══ -->
+<div class="slide" id="s3">
+  <div class="tag">Split em OrderJobs</div>
+  <div class="h2" style="margin-bottom:22px">3 tarefas de entrega independentes</div>
+  <div class="ojrow">
+    <div class="ojc del" style="animation-delay:.08s">
+      <div class="ojc-head">
+        <div class="ojc-ico">📦</div>
+        <div>
+          <div class="ojc-id">OJ-001</div>
+          <div class="ojc-name">CD São Paulo</div>
+          <div class="ojc-sup">Entrega domicílio · DHL</div>
+        </div>
+      </div>
+      <div class="ojc-items">· Tênis Air Max (Qty 1)<br>· Camiseta Dry-Fit (Qty 2)</div>
+      <div class="ojc-val">R$ 488</div>
+      <div class="glist">
+        <div class="gr"><div class="gi pend"></div><div class="gname">deliverable_ready</div></div>
+        <div class="gr"><div class="gi pend"></div><div class="gname">customer_has_goods</div></div>
+        <div class="gr"><div class="gi pend"></div><div class="gname">payment_settled</div></div>
+        <div class="gr"><div class="gi pend"></div><div class="gname">revenue_complete</div></div>
+      </div>
+    </div>
+    <div class="ojc pik" style="animation-delay:.22s">
+      <div class="ojc-head">
+        <div class="ojc-ico">🏪</div>
+        <div>
+          <div class="ojc-id">OJ-002</div>
+          <div class="ojc-name">Loja Centro</div>
+          <div class="ojc-sup">Retirada na loja (BOPIS)</div>
+        </div>
+      </div>
+      <div class="ojc-items">· Livro Clean Code (Qty 1)<br>· Fone Bluetooth (Qty 1)</div>
+      <div class="ojc-val">R$ 328</div>
+      <div class="glist">
+        <div class="gr"><div class="gi pend"></div><div class="gname">deliverable_ready</div></div>
+        <div class="gr"><div class="gi pend"></div><div class="gname">customer_has_goods</div></div>
+        <div class="gr"><div class="gi pend"></div><div class="gname">payment_settled</div></div>
+        <div class="gr"><div class="gi pend"></div><div class="gname">revenue_complete</div></div>
+      </div>
+    </div>
+    <div class="ojc del" style="animation-delay:.38s">
+      <div class="ojc-head">
+        <div class="ojc-ico">📦</div>
+        <div>
+          <div class="ojc-id">OJ-003</div>
+          <div class="ojc-name">CD Campinas</div>
+          <div class="ojc-sup">Entrega domicílio · Correios</div>
+        </div>
+      </div>
+      <div class="ojc-items">· Cabo USB-C (Qty 1)</div>
+      <div class="ojc-val">R$ 49</div>
+      <div class="glist">
+        <div class="gr"><div class="gi pend"></div><div class="gname">deliverable_ready</div></div>
+        <div class="gr"><div class="gi pend"></div><div class="gname">customer_has_goods</div></div>
+        <div class="gr"><div class="gi pend"></div><div class="gname">payment_settled</div></div>
+        <div class="gr"><div class="gi pend"></div><div class="gname">revenue_complete</div></div>
+      </div>
+    </div>
+  </div>
+  <div style="margin-top:18px;font-size:11.5px;color:rgba(255,255,255,.3);animation:up .4s ease .5s both">
+    Cada OrderJob orquestra seus próprios fornecedores de forma independente — pagamento, fulfillment e entrega coordenados pelos gates
+  </div>
+</div>
+
+<!-- ══ S5: OJ-001 ══ -->
+<div class="slide" id="s4">
+  <div class="pslide">
+    <div class="psh">
+      <div class="psh-ico">📦</div>
+      <div>
+        <div class="psh-title">OJ-001 · CD São Paulo + DHL</div>
+        <div class="psh-meta">Tênis Air Max · Camiseta Dry-Fit · R$ 488</div>
+      </div>
+      <div class="psh-badge del">🏠 Entrega em domicílio</div>
+    </div>
+    <div class="steps" id="stps1">
+      <div class="step" data-i="0">
+        <div class="st-ico pend">1</div>
+        <div class="st-body">
+          <div class="st-title">CD São Paulo: Reserva de estoque → Picking → Packing concluído</div>
+          <div class="st-who">CD São Paulo (WMS Operator)</div>
+        </div>
+      </div>
+      <div class="step" data-i="1">
+        <div class="st-ico pend">2</div>
+        <div class="st-body">
+          <div class="st-title">Gate liberado <span class="gtag g">deliverable_ready ✓</span></div>
+          <div class="st-who">Estado "packed" atingido no armazém → clearance automático</div>
+        </div>
+      </div>
+      <div class="step" data-i="2">
+        <div class="st-ico pend">3</div>
+        <div class="st-body">
+          <div class="st-title">DHL: Etiqueta gerada · Coleta agendada · Em rota</div>
+          <div class="st-who">DHL (carrier.request_label → in_transit) — aguardava deliverable_ready</div>
+        </div>
+      </div>
+      <div class="step" data-i="3">
+        <div class="st-ico pend">4</div>
+        <div class="st-body">
+          <div class="st-title">Adyen: Captura de pagamento disparada</div>
+          <div class="st-who">Adyen (payment.capture) — aguardava deliverable_ready</div>
+        </div>
+      </div>
+      <div class="step" data-i="4">
+        <div class="st-ico pend">5</div>
+        <div class="st-body">
+          <div class="st-title">DHL: Pedido entregue ao cliente · Adyen: pagamento liquidado</div>
+          <div class="st-who">DHL estado "delivered" + Adyen estado "settled"</div>
+        </div>
+      </div>
+      <div class="step" data-i="5">
+        <div class="st-ico pend">6</div>
+        <div class="st-body">
+          <div class="st-title">Gates liberados <span class="gtag g">customer_has_goods ✓</span><span class="gtag g">payment_settled ✓</span></div>
+          <div class="st-who">Condições do composto revenue_complete satisfeitas</div>
+        </div>
+      </div>
+      <div class="step" data-i="6">
+        <div class="st-ico pend">✦</div>
+        <div class="st-body">
+          <div class="st-title"><span class="gtag r">revenue_complete ✓</span> · Nota Fiscal emitida · Amazon notificado</div>
+          <div class="st-who">invoice.emit + marketplace.settle_back disparados automaticamente</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ S6: OJ-002 PICKUP ══ -->
+<div class="slide" id="s5">
+  <div class="pslide">
+    <div class="psh">
+      <div class="psh-ico">🏪</div>
+      <div>
+        <div class="psh-title">OJ-002 · Loja Centro (Pickup)</div>
+        <div class="psh-meta">Livro Clean Code · Fone Bluetooth · R$ 328</div>
+      </div>
+      <div class="psh-badge pik">🏪 Retirada na loja</div>
+    </div>
+    <div class="steps" id="stps2">
+      <div class="step" data-i="0">
+        <div class="st-ico pend">1</div>
+        <div class="st-body">
+          <div class="st-title">Loja Centro: Picking → Itens disponíveis no balcão (staged)</div>
+          <div class="st-who">Loja Centro (Operador de Loja)</div>
+        </div>
+      </div>
+      <div class="step" data-i="1">
+        <div class="st-ico pend">2</div>
+        <div class="st-body">
+          <div class="st-title">Gate liberado <span class="gtag g">deliverable_ready ✓</span></div>
+          <div class="st-who">Estado "staged" atingido → clearance automático</div>
+        </div>
+      </div>
+      <div class="step" data-i="2">
+        <div class="st-ico pend">3</div>
+        <div class="st-body">
+          <div class="st-title">Notificação: "Seu pedido está pronto para retirada"</div>
+          <div class="st-who">Notification Agent (send_ready) — aguardava deliverable_ready</div>
+        </div>
+      </div>
+      <div class="step" data-i="3">
+        <div class="st-ico pend">4</div>
+        <div class="st-body">
+          <div class="st-title">Cliente chega na loja · Handover no balcão concluído</div>
+          <div class="st-who">Loja Centro (Handover at POS) → estado "handed_off"</div>
+        </div>
+      </div>
+      <div class="step" data-i="4">
+        <div class="st-ico pend">5</div>
+        <div class="st-body">
+          <div class="st-title">Gate liberado <span class="gtag g">customer_has_goods ✓</span></div>
+          <div class="st-who">Estado "handed_off" — lógica BOPIS: capture ocorre na retirada</div>
+        </div>
+      </div>
+      <div class="step" data-i="5">
+        <div class="st-ico pend">6</div>
+        <div class="st-body">
+          <div class="st-title">Adyen: Captura de pagamento no ato da retirada · liquidado</div>
+          <div class="st-who">Adyen (payment.capture) aguardava customer_has_goods (não deliverable_ready)</div>
+        </div>
+      </div>
+      <div class="step" data-i="6">
+        <div class="st-ico pend">✦</div>
+        <div class="st-body">
+          <div class="st-title"><span class="gtag g">payment_settled ✓</span> → <span class="gtag r">revenue_complete ✓</span> · NF + Amazon</div>
+          <div class="st-who">invoice.emit + marketplace.settle_back disparados automaticamente</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ S7: OJ-003 ══ -->
+<div class="slide" id="s6">
+  <div class="pslide">
+    <div class="psh">
+      <div class="psh-ico">📦</div>
+      <div>
+        <div class="psh-title">OJ-003 · CD Campinas + Correios</div>
+        <div class="psh-meta">Cabo USB-C · R$ 49</div>
+      </div>
+      <div class="psh-badge del">🏠 Entrega em domicílio</div>
+    </div>
+    <div class="steps" id="stps3">
+      <div class="step" data-i="0">
+        <div class="st-ico pend">1</div>
+        <div class="st-body">
+          <div class="st-title">CD Campinas: Picking → Packing concluído</div>
+          <div class="st-who">CD Campinas (WMS Operator)</div>
+        </div>
+      </div>
+      <div class="step" data-i="1">
+        <div class="st-ico pend">2</div>
+        <div class="st-body">
+          <div class="st-title">Gate liberado <span class="gtag g">deliverable_ready ✓</span></div>
+          <div class="st-who">Estado "packed" atingido → clearance automático</div>
+        </div>
+      </div>
+      <div class="step" data-i="2">
+        <div class="st-ico pend">3</div>
+        <div class="st-body">
+          <div class="st-title">Correios: Coleta agendada · Em rota · Entregue ao cliente</div>
+          <div class="st-who">Correios (request_label → in_transit → delivered)</div>
+        </div>
+      </div>
+      <div class="step" data-i="3">
+        <div class="st-ico pend">4</div>
+        <div class="st-body">
+          <div class="st-title">Adyen: Captura disparada + liquidação confirmada</div>
+          <div class="st-who">Adyen (payment.capture → settled) — aguardava deliverable_ready</div>
+        </div>
+      </div>
+      <div class="step" data-i="4">
+        <div class="st-ico pend">5</div>
+        <div class="st-body">
+          <div class="st-title">Gates liberados <span class="gtag g">customer_has_goods ✓</span><span class="gtag g">payment_settled ✓</span></div>
+          <div class="st-who">Correios "delivered" + Adyen "settled"</div>
+        </div>
+      </div>
+      <div class="step" data-i="5">
+        <div class="st-ico pend">✦</div>
+        <div class="st-body">
+          <div class="st-title"><span class="gtag r">revenue_complete ✓</span> · Nota Fiscal emitida · Amazon notificado</div>
+          <div class="st-who">invoice.emit + marketplace.settle_back disparados automaticamente</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ S8: SUMMARY ══ -->
+<div class="slide" id="s7">
+  <div class="tag">Pedido Concluído</div>
+  <div class="h2" style="margin-bottom:8px">Revenue complete em todos os OrderJobs</div>
+  <div class="sub" style="font-size:13.5px;margin-bottom:28px">3 fornecedores · 2 transportadoras · 1 gateway de pagamento · 3 notas fiscais</div>
+  <div class="sumgrid">
+    <div class="sumc" style="animation-delay:.08s">
+      <div class="sumc-ico">📦</div>
+      <div class="sumc-lbl">OJ-001</div>
+      <div class="sumc-name">CD São Paulo + DHL</div>
+      <div class="sumc-val">R$ 488</div>
+      <div class="sumc-ok">✓ Entregue · NF · Amazon ok</div>
+    </div>
+    <div class="sumc" style="animation-delay:.22s">
+      <div class="sumc-ico">🏪</div>
+      <div class="sumc-lbl">OJ-002</div>
+      <div class="sumc-name">Loja Centro (Pickup)</div>
+      <div class="sumc-val">R$ 328</div>
+      <div class="sumc-ok">✓ Retirado · NF · Amazon ok</div>
+    </div>
+    <div class="sumc" style="animation-delay:.38s">
+      <div class="sumc-ico">📦</div>
+      <div class="sumc-lbl">OJ-003</div>
+      <div class="sumc-name">CD Campinas + Correios</div>
+      <div class="sumc-val">R$ 49</div>
+      <div class="sumc-ok">✓ Entregue · NF · Amazon ok</div>
+    </div>
+  </div>
+  <div style="margin-top:26px;display:flex;gap:22px;font-size:11.5px;color:rgba(255,255,255,.38);animation:up .5s ease .5s both;flex-wrap:wrap;justify-content:center">
+    <span>🏦 Adyen: 3 capturas liquidadas</span>
+    <span>📄 3 Notas Fiscais emitidas</span>
+    <span>🛒 Amazon: 3 settle_back enviados</span>
+    <span style="color:#5de8a2;font-weight:600">✓ Total R$ 865</span>
+  </div>
+</div>
+
+<!-- ══ S9: ARQUITETURA ══ -->
+<div class="slide" id="s8">
+  <div class="tag">Arquitetura</div>
+  <div class="h2" style="margin-bottom:22px;font-size:22px">Os agentes que coordenaram tudo isso</div>
+  <div class="arch">
+    <div class="arch-agents">
+      <div class="abox">
+        <div class="abox-e">🗺️</div>
+        <div class="abox-n">Roteamento</div>
+        <div class="abox-s">Dispatcher do Order</div>
+        <div class="slist">
+          <span class="sk">Classificador de Entrega</span>
+          <span class="sk">Agrupador de Fornecedores</span>
+          <span class="sk">Divisor de Pedidos</span>
+        </div>
+      </div>
+      <div class="ahline">→</div>
+      <div class="abox" style="flex:1.2">
+        <div class="abox-e">⚙️</div>
+        <div class="abox-n">Orquestração de Workflow</div>
+        <div class="abox-s">Dispatcher do OrderJob</div>
+        <div class="slist">
+          <span class="sk">Verificador de Próximos Passos</span>
+          <span class="sk">Monitor de Prazo por Etapa</span>
+          <span class="sk">Controle de Cancelamento</span>
+        </div>
+      </div>
+      <div class="ahline">→</div>
+      <div class="abox">
+        <div class="abox-e">🚨</div>
+        <div class="abox-n">Escalação</div>
+        <div class="abox-s">Sub-agente do OrderJob</div>
+        <div class="slist">
+          <span class="sk">Detector de Travados</span>
+          <span class="sk">Preparador de Caso</span>
+        </div>
+      </div>
+      <div class="ahline" style="color:rgba(247,25,99,.4)">⊕</div>
+      <div class="abox exp">
+        <div class="abox-e">🔭</div>
+        <div class="abox-n">Explorer</div>
+        <div class="abox-s">Visão cross-order</div>
+        <div class="slist">
+          <span class="sk">Varredura de Padrões</span>
+          <span class="sk">Alertas Inteligentes</span>
+        </div>
+      </div>
+    </div>
+    <div class="gates-row">
+      <div class="gates-row-title">Gates — coordenação declarativa entre fornecedores</div>
+      <div class="gates-pills">
+        <span class="gp g">deliverable_ready</span>
+        <span class="gp g">customer_has_goods</span>
+        <span class="gp g">payment_settled</span>
+        <span class="gp r">revenue_complete</span>
+        <span class="gp n">cancellation_requested</span>
+        <span class="gp n">cancellation_complete</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /pres -->
+
+<button class="arr l" id="btnL">‹</button>
+<button class="arr r" id="btnR">›</button>
+<div class="dotbar" id="dotbar"></div>
+<div class="snum" id="snum"></div>
+<div class="prog" id="prog"></div>
+<div class="hint">← → para navegar · clique para avançar</div>
+
+<script>
+(function(){
+  var cur = 0;
+  var slides = Array.from(document.querySelectorAll('.slide'));
+  var N = slides.length;
+  var timers = {};
+
+  // Build dots
+  var dotbar = document.getElementById('dotbar');
+  slides.forEach(function(_, i){
+    var d = document.createElement('div');
+    d.className = 'dot' + (i===0?' on':'');
+    d.addEventListener('click', function(){ go(i); });
+    dotbar.appendChild(d);
+  });
+
+  function updateChrome(){
+    document.getElementById('snum').textContent = (cur+1) + ' / ' + N;
+    document.getElementById('prog').style.width = ((cur+1)/N*100) + '%';
+    document.querySelectorAll('.dot').forEach(function(d,i){ d.classList.toggle('on', i===cur); });
+  }
+
+  function go(n){
+    n = Math.max(0, Math.min(N-1, n));
+    if(n === cur) return;
+    slides[cur].classList.remove('active');
+    cur = n;
+    slides[cur].classList.add('active');
+    updateChrome();
+    onEnter(cur);
+  }
+
+  // Step animation engine
+  var STEP_DELAY = 420;    // ms before first step
+  var STEP_INT   = 780;    // ms between steps
+  var ACTIVE_DUR = 540;    // ms step stays "active" before done
+
+  function animateSteps(containerId){
+    if(timers[containerId]){ timers[containerId].forEach(clearTimeout); }
+    var container = document.getElementById(containerId);
+    if(!container) return;
+    var steps = Array.from(container.querySelectorAll('.step'));
+    // Reset all
+    steps.forEach(function(s){
+      s.className = 'step';
+      var ico = s.querySelector('.st-ico');
+      ico.className = 'st-ico pend';
+      ico.textContent = s.dataset.i === '6' ? '✦' : (parseInt(s.dataset.i)+1);
+    });
+    var ts = [];
+    steps.forEach(function(s, i){
+      // Active
+      var t1 = setTimeout(function(){
+        s.className = 'step active';
+        var ico = s.querySelector('.st-ico');
+        ico.className = 'st-ico active';
+      }, STEP_DELAY + i * STEP_INT);
+      // Done
+      var t2 = setTimeout(function(){
+        s.className = 'step done';
+        var ico = s.querySelector('.st-ico');
+        ico.className = 'st-ico done';
+        ico.textContent = '✓';
+      }, STEP_DELAY + i * STEP_INT + ACTIVE_DUR);
+      ts.push(t1, t2);
+    });
+    timers[containerId] = ts;
+  }
+
+  var stepSlides = { 4:'stps1', 5:'stps2', 6:'stps3' };
+
+  function onEnter(idx){
+    if(stepSlides[idx]){ animateSteps(stepSlides[idx]); }
+  }
+
+  // Controls
+  document.getElementById('btnL').addEventListener('click', function(){ go(cur-1); });
+  document.getElementById('btnR').addEventListener('click', function(){ go(cur+1); });
+
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'ArrowRight' || e.key === ' '){ e.preventDefault(); go(cur+1); }
+    if(e.key === 'ArrowLeft'){ e.preventDefault(); go(cur-1); }
+  });
+
+  document.getElementById('pres').addEventListener('click', function(e){
+    if(!e.target.closest('.arr') && !e.target.closest('.dotbar') && !e.target.closest('#dotbar')){ go(cur+1); }
+  });
+
+  updateChrome();
+})();
+</script>
+</body>
+</html>

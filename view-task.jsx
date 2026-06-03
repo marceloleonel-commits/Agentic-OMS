@@ -1,5 +1,5 @@
-/* global React, Icon, AIWData, ChatPanel */
-const { useState, useRef, useEffect } = React;
+/* global React, Icon, AIWData, ChatPanel, ChatEngine */
+const { useState, useRef, useEffect, useCallback } = React;
 
 function SevPill({ level }) {
   const map = { high: "Alta", medium: "Média", low: "Baixa" };
@@ -120,8 +120,481 @@ function buildOrderDetail(order) {
   return { customer: c, card, carrier, products, breakdown: { subtotal, taxes, discounts, total }, stages, stageIdx, activities };
 }
 
-function fmtCurrency(v) {
-  return v.toFixed(2).replace(".", ",") + " USD";
+/* ══════════════════════════════════════════════════════════
+   Item Groups / Raias  (Itens do Pedido — Tarefas por Item)
+   ══════════════════════════════════════════════════════════ */
+
+// Usa dados explícitos do pedido (fullOrder.itemGroups) quando disponíveis
+function buildOrderItemGroups(fullOrder) {
+  return (fullOrder && fullOrder.itemGroups) ? fullOrder.itemGroups : [];
+}
+
+/* ── Stage card (horizontal strip) ── */
+function OdStageCard({ stage }) {
+  const map = {
+    done:    { dot: "#169B61", label: "Finalizado",    bg: "#F0FDF4", border: "#BBF7D0" },
+    active:  { dot: "var(--primary)", label: "Em andamento", bg: "var(--primary-soft)", border: "var(--primary)" },
+    pending: { dot: "#D1D5DB", label: "Pendente",      bg: "#F9FAFB", border: "var(--border)" },
+  };
+  const s = map[stage.status] || map.pending;
+  return (
+    <div className="od-stage-card" style={{ background: s.bg }}>
+      <span className="od-stage-card-icon">{stage.icon}</span>
+      <span className="od-stage-card-label">{stage.label}</span>
+      <span className="od-stage-card-status">
+        <span className="od-stage-card-dot" style={{ background: s.dot }} />
+        {s.label}
+      </span>
+    </div>
+  );
+}
+
+/* ── Per-item step row ── */
+function OdStepRow({ step }) {
+  const colorMap = { done: "#169B61", active: "var(--primary)", pending: "#D1D5DB" };
+  const labelMap = { done: "Concluído", active: "Em andamento", pending: "Pendente" };
+  const badgeMap = {
+    done:    { bg: "#F0FDF4",             color: "#169B61",        border: "#BBF7D0" },
+    active:  { bg: "var(--primary-soft)", color: "var(--primary)", border: "var(--primary)" },
+    pending: { bg: "#F9FAFB",             color: "var(--fg-3)",    border: "var(--border)"  },
+  };
+  const b  = badgeMap[step.status] || badgeMap.pending;
+  const lc = colorMap[step.status] || colorMap.pending;
+  return (
+    <div className="od-step-row">
+      <div className="od-step-bar" style={{ background: step.cancelSignal ? "#EF4444" : lc }} />
+      <div className="od-step-content">
+        <div className="od-step-head">
+          <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+            <span className="od-step-label" style={{ color: lc }}>{step.label}</span>
+            {step.owner && (
+              <span style={{ fontSize: 10.5, fontWeight: 500, color: "var(--fg-3)", background: "var(--bg-muted)", border: "1px solid var(--border)", borderRadius: 5, padding: "1px 6px", lineHeight: 1.5 }}>
+                {step.owner}
+              </span>
+            )}
+            {step.cancelSignal && (
+              <span style={{ fontSize: 10, fontWeight: 700, background: "#FEF2F2", color: "#EF4444", border: "1px solid #FECACA", borderRadius: 6, padding: "1px 7px" }}>
+                ⚠ Cancelamento sinalizado
+              </span>
+            )}
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span className="od-step-badge" style={{ background: b.bg, color: b.color, borderColor: b.border }}>
+              {labelMap[step.status]}
+            </span>
+            <Icon name="chevron-right" size={14} />
+          </div>
+        </div>
+        {step.agent && step.time && (
+          <div className="od-step-trigger">
+            <Icon name="sparkle" size={10} />
+            Acionado por Agente AI · {step.time}
+          </div>
+        )}
+        {step.note && !step.time && (
+          <div className="od-step-trigger" style={{ color: "var(--fg-2)" }}>
+            <Icon name="clock" size={10} />
+            {step.note}
+          </div>
+        )}
+        {step.note && step.time && (
+          <div className="od-step-trigger" style={{ color: "var(--fg-2)", marginTop: 2 }}>
+            {step.note}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ── Kit components sub-list ── */
+function OdKitComponents({ components }) {
+  return (
+    <div style={{ margin: "0 0 0 56px", padding: "8px 14px", borderTop: "1px solid var(--border)", background: "#FAFAFA" }}>
+      <div style={{ fontSize: 10.5, fontWeight: 700, color: "var(--fg-3)", textTransform: "uppercase", letterSpacing: ".5px", marginBottom: 8 }}>
+        Itens do kit
+      </div>
+      {components.map((c, i) => (
+        <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "5px 0", borderBottom: i < components.length - 1 ? "1px solid var(--border)" : "none" }}>
+          <div style={{ width: 32, height: 32, borderRadius: 4, background: "var(--bg-muted)", flexShrink: 0 }} />
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 12.5, fontWeight: 500 }}>{c.name}</div>
+            <div style={{ fontSize: 11, color: "var(--fg-3)" }}>SKU {c.sku} · {c.qty} {c.unit}</div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ── Stage accordion inside an item row ── */
+function OdStageGroup({ label, icon, status, steps }) {
+  const [open, setOpen] = useState(status === "active");
+  const s = {
+    done:    { dot: "#169B61",         label: "Concluído",    bg: "#F0FDF4",             border: "#BBF7D0" },
+    active:  { dot: "var(--primary)",  label: "Em andamento", bg: "var(--primary-soft)", border: "var(--primary)" },
+    pending: { dot: "#D1D5DB",         label: "Pendente",     bg: "#F9FAFB",             border: "var(--border)" },
+  }[status] || { dot: "#D1D5DB", label: "Pendente", bg: "#F9FAFB", border: "var(--border)" };
+
+  return (
+    <div style={{ borderTop: "1px solid var(--border)" }}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        style={{
+          width: "100%", display: "flex", alignItems: "center", gap: 8,
+          padding: "8px 14px 8px 16px", background: s.bg, border: "none",
+          cursor: "pointer", textAlign: "left",
+          borderLeft: `3px solid ${s.dot}`,
+        }}
+      >
+        {icon && <span style={{ fontSize: 13, lineHeight: 1 }}>{icon}</span>}
+        <span style={{ flex: 1, fontSize: 12.5, fontWeight: 600, color: "var(--fg)" }}>{label}</span>
+        <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 10.5, color: s.dot, fontWeight: 600, flexShrink: 0 }}>
+          <span style={{ width: 6, height: 6, borderRadius: "50%", background: s.dot, display: "inline-block" }} />
+          {s.label} · {steps.length} tarefa{steps.length !== 1 ? "s" : ""}
+        </span>
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" width="12" height="12"
+             style={{ flexShrink: 0, transition: "transform .2s", transform: open ? "rotate(180deg)" : "rotate(0)", color: "var(--fg-3)", marginLeft: 6 }}>
+          <path d="M4 6l4 4 4-4" />
+        </svg>
+      </button>
+      {open && (
+        <div style={{ borderLeft: `3px solid ${s.dot}` }}>
+          {steps.map((step, i) => <OdStepRow key={i} step={step} />)}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Item row — tarefas agrupadas por etapa do workflow ── */
+function OdItemRow({ item, group }) {
+  // Derive grouped steps from the workflow definition
+  const wfDef = group && AIWData.workflows && AIWData.workflows.find(w => w.id === group.workflow);
+  let groupedSteps = null;
+  if (wfDef && item.steps && item.steps.length > 0) {
+    const built = wfDef.stages.map((wfStage, si) => {
+      const taskNames = new Set(wfStage.tasks.map(t => t.name));
+      const stageSteps = item.steps.filter(s => taskNames.has(s.label)).map(s => {
+        const wfTask = wfStage.tasks.find(t => t.name === s.label);
+        return wfTask ? { ...s, owner: wfTask.owner } : s;
+      });
+      const groupStage = group.stages && group.stages[si];
+      return {
+        label:  wfStage.name,
+        icon:   groupStage ? groupStage.icon : null,
+        status: groupStage ? groupStage.status : "pending",
+        steps:  stageSteps,
+      };
+    }).filter(g => g.steps.length > 0);
+    if (built.length > 0) groupedSteps = built;
+  }
+
+  return (
+    <div className="od-item-row">
+      <div className="od-item-head">
+        <div className="od-item-thumb">
+          {item.emoji && <span>{item.emoji}</span>}
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div className="od-item-name">
+            {item.name}
+            {item.isKit && (
+              <span style={{ fontSize: 10, fontWeight: 700, background: "#F5F3FF", color: "#7C3AED", border: "1px solid #DDD6FE", borderRadius: 6, padding: "1px 8px", marginLeft: 8 }}>
+                KIT
+              </span>
+            )}
+          </div>
+          <div className="od-item-meta">Qtd: {item.qty} · {item.price} · SKU {item.sku}</div>
+        </div>
+      </div>
+      {item.isKit && item.kitComponents && <OdKitComponents components={item.kitComponents} />}
+      <div className="od-item-steps">
+        {groupedSteps
+          ? groupedSteps.map((sg, i) => (
+              <OdStageGroup key={i} label={sg.label} icon={sg.icon} status={sg.status} steps={sg.steps} />
+            ))
+          : item.steps.map((step, i) => <OdStepRow key={i} step={step} />)
+        }
+      </div>
+    </div>
+  );
+}
+
+/* ── Return detail card (Pedido 2) ── */
+function OdReturnCard({ detail }) {
+  if (!detail) return null;
+  return (
+    <div style={{ margin: "12px 16px", padding: "14px 16px", background: "#FFF7ED", border: "1px solid #FED7AA", borderRadius: 10 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+        <span style={{ fontSize: 15 }}>↩</span>
+        <div>
+          <div style={{ fontSize: 12.5, fontWeight: 700, color: "#C2410C" }}>{detail.reason}</div>
+          <div style={{ fontSize: 11, color: "#92400E", marginTop: 1 }}>
+            Solicitado em {detail.requestedAt}
+            {detail.classification && <span style={{ marginLeft: 8, background: "#FEF3C7", color: "#92400E", border: "1px solid #FDE68A", padding: "1px 8px", borderRadius: 8, fontWeight: 600 }}>{detail.classification}</span>}
+          </div>
+        </div>
+      </div>
+      <div style={{ fontSize: 12.5, color: "#78350F", fontStyle: "italic", lineHeight: 1.55, padding: "10px 12px", background: "rgba(255,255,255,.55)", borderRadius: 8, border: "1px solid #FDE68A" }}>
+        "{detail.customerText}"
+      </div>
+    </div>
+  );
+}
+
+/* ── Cancel group section (Pedido 4) ── */
+function OdCancelSection({ cancelGroup }) {
+  if (!cancelGroup) return null;
+  const done  = cancelGroup.stages.filter(s => s.status === "done").length;
+  const total = cancelGroup.stages.length;
+  return (
+    <div style={{ margin: "8px 0 0", borderTop: "2px dashed #FECACA" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 16px 8px", background: "#FEF2F2" }}>
+        <span style={{ fontSize: 14 }}>🚫</span>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 12.5, fontWeight: 700, color: "#EF4444" }}>{cancelGroup.label}</div>
+          <div style={{ fontSize: 11, color: "#B91C1C", marginTop: 1 }}>{done}/{total} etapas concluídas · Workflow: Cancelamento de Pedido</div>
+        </div>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: `repeat(${cancelGroup.stages.length}, 1fr)`, borderBottom: "1px solid #FECACA" }}>
+        {cancelGroup.stages.map((st, i) => {
+          const dotColor = st.status === "done" ? "#169B61" : st.status === "active" ? "#EF4444" : "#D1D5DB";
+          const bg       = st.status === "done" ? "#F0FDF4" : st.status === "active" ? "#FEF2F2" : "#F9FAFB";
+          return (
+            <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, padding: "12px 8px", textAlign: "center", background: bg, borderRight: i < cancelGroup.stages.length - 1 ? "1px solid #FECACA" : "none" }}>
+              <span style={{ fontSize: 18 }}>{st.icon}</span>
+              <span style={{ fontSize: 11, fontWeight: 500 }}>{st.label}</span>
+              <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 10.5, color: dotColor }}>
+                <span style={{ width: 6, height: 6, borderRadius: "50%", background: dotColor, display: "inline-block" }} />
+                {st.status === "done" ? "Concluído" : st.status === "active" ? "Em andamento" : "Pendente"}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+      <div>
+        {cancelGroup.steps.map((step, i) => <OdStepRow key={i} step={step} />)}
+      </div>
+    </div>
+  );
+}
+
+/* ── Note card ("Sobre este caso de uso") ── */
+function OdNote({ note, seller }) {
+  if (!note) return null;
+  return (
+    <div style={{ padding: "14px 16px", background: "var(--primary-soft)", border: "1px solid rgba(41,98,255,.15)", borderRadius: 10, marginTop: 4 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
+        <Icon name="sparkle" size={12} />
+        <span style={{ fontSize: 10.5, fontWeight: 700, color: "var(--primary)", textTransform: "uppercase", letterSpacing: ".6px" }}>
+          Caso de uso · {seller}
+        </span>
+      </div>
+      <div style={{ fontSize: 13, fontWeight: 600, color: "var(--fg)", marginBottom: 5 }}>{note.useCase}</div>
+      <div style={{ fontSize: 12.5, color: "var(--fg-2)", lineHeight: 1.6 }}>{note.text}</div>
+    </div>
+  );
+}
+
+/* ── Atividades executadas — colapsada por padrão, dentro da experiência ── */
+function OdRailActivities({ group }) {
+  const [open, setOpen] = useState(false);
+
+  // Collect executed steps from all items (deduplicated by label+time)
+  const seen = new Set();
+  const executed = [];
+  group.items.forEach(item => {
+    (item.steps || []).forEach(step => {
+      if (step.status === "done" || step.status === "active") {
+        const key = `${step.label}|${step.time}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          executed.push({ label: step.label, time: step.time, agent: step.agent, status: step.status, note: step.note });
+        }
+      }
+    });
+  });
+  // Also collect from cancelGroup steps if present
+  if (group.cancelGroup) {
+    (group.cancelGroup.steps || []).forEach(step => {
+      if (step.status === "done" || step.status === "active") {
+        const key = `cancel|${step.label}|${step.time}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          executed.push({ label: step.label, time: step.time, agent: step.agent, status: step.status, note: step.note, sourceGroup: group.cancelGroup.label });
+        }
+      }
+    });
+  }
+
+  if (executed.length === 0) return null;
+
+  return (
+    <div style={{ borderTop: "1px solid var(--border)" }}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        style={{
+          width: "100%", display: "flex", alignItems: "center", gap: 8,
+          padding: "10px 16px", background: "var(--bg-soft)", border: "none",
+          cursor: "pointer", textAlign: "left",
+        }}
+      >
+        <Icon name="clock" size={13} />
+        <span style={{ flex: 1, fontSize: 12.5, fontWeight: 600, color: "var(--fg-2)" }}>
+          Atividades executadas
+        </span>
+        <span style={{ fontSize: 11, color: "var(--fg-3)", marginRight: 6 }}>
+          {executed.length} evento{executed.length !== 1 ? "s" : ""}
+        </span>
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" width="12" height="12"
+             style={{ flexShrink: 0, transition: "transform .2s", transform: open ? "rotate(180deg)" : "rotate(0)", color: "var(--fg-3)" }}>
+          <path d="M4 6l4 4 4-4" />
+        </svg>
+      </button>
+      {open && (
+        <div style={{ padding: "4px 0 8px" }}>
+          {executed.map((e, i) => {
+            const isAuto   = !!e.agent;
+            const isActive = e.status === "active";
+            const dotColor = isActive ? "var(--primary)" : "#169B61";
+            return (
+              <div key={i} style={{
+                display: "flex", alignItems: "flex-start", gap: 12,
+                padding: "9px 16px",
+                borderBottom: i < executed.length - 1 ? "1px solid var(--border)" : "none",
+              }}>
+                {/* icon */}
+                <div style={{
+                  width: 26, height: 26, borderRadius: 7, flexShrink: 0,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  background: isAuto ? "var(--primary-soft)" : "#F3F4F6",
+                  marginTop: 1,
+                }}>
+                  {isAuto
+                    ? <Icon name="sparkle" size={12} />
+                    : <span style={{ fontSize: 12 }}>👤</span>}
+                </div>
+                {/* content */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                    <span style={{ fontSize: 12.5, fontWeight: 500, color: "var(--fg)" }}>{e.label}</span>
+                    {isActive && (
+                      <span style={{ fontSize: 10, fontWeight: 700, background: "var(--primary-soft)", color: "var(--primary)", border: "1px solid var(--primary)", borderRadius: 6, padding: "0px 6px" }}>
+                        Em andamento
+                      </span>
+                    )}
+                    {e.sourceGroup && (
+                      <span style={{ fontSize: 10, color: "var(--fg-3)", fontStyle: "italic" }}>· {e.sourceGroup}</span>
+                    )}
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 3, flexWrap: "wrap" }}>
+                    {e.time && (
+                      <span style={{ fontSize: 11, color: "var(--fg-3)" }}>{e.time}</span>
+                    )}
+                    <span style={{
+                      fontSize: 10, fontWeight: 700, padding: "1px 7px", borderRadius: 6,
+                      background: isAuto ? "var(--primary-soft)" : "#F3F4F6",
+                      color: isAuto ? "var(--primary)" : "var(--fg-2)",
+                      border: isAuto ? "1px solid rgba(41,98,255,.2)" : "1px solid var(--border)",
+                    }}>
+                      {isAuto ? "Automático" : "Manual"}
+                    </span>
+                    {e.note && (
+                      <span style={{ fontSize: 11, color: "var(--fg-3)", fontStyle: "italic" }}>{e.note}</span>
+                    )}
+                  </div>
+                </div>
+                {/* timeline dot */}
+                <span style={{ width: 8, height: 8, borderRadius: "50%", background: dotColor, flexShrink: 0, marginTop: 9 }} />
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Group rail — colapsado por padrão ── */
+function OdRail({ group }) {
+  const [open, setOpen] = useState(false);
+  const done   = group.stages.filter(s => s.status === "done").length;
+  const total  = group.stages.length;
+  const active = group.stages.find(s => s.status === "active");
+
+  const isCanceling = group.type === "canceling";
+  const isReturn    = group.type === "return";
+  const isVirtual   = group.type === "virtual";
+  const isKit       = group.type === "kit";
+
+  const dotColor = isCanceling ? "#EF4444"
+    : isReturn ? "#F97316"
+    : active    ? "var(--primary)"
+    : done === total ? "#169B61" : "#D1D5DB";
+
+  const headerBg = isCanceling ? "#FEF2F2" : isReturn ? "#FFF7ED" : "var(--bg-soft)";
+
+  const typeBadge = isReturn    ? { label: "Troca e Devolução", bg: "#FFF7ED", color: "#C2410C", border: "#FED7AA" }
+    : isVirtual   ? { label: "Virtual",         bg: "#F5F3FF", color: "#7C3AED", border: "#DDD6FE" }
+    : isKit       ? { label: "Kit",              bg: "#F0FDF4", color: "#059669", border: "#BBF7D0" }
+    : isCanceling ? { label: "Cancelamento",     bg: "#FEF2F2", color: "#EF4444", border: "#FECACA" }
+    : null;
+
+  return (
+    <div className="od-rail" style={isCanceling ? { borderColor: "#FECACA" } : isReturn ? { borderColor: "#FED7AA" } : {}}>
+      <button className="od-rail-header" style={{ background: headerBg }} onClick={() => setOpen(o => !o)}>
+        <div className="od-rail-left">
+          <span className="od-rail-dot" style={{ background: dotColor }} />
+          <div>
+            <div className="od-rail-name" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              {group.label}
+              {typeBadge && (
+                <span style={{ fontSize: 10, fontWeight: 700, background: typeBadge.bg, color: typeBadge.color, border: `1px solid ${typeBadge.border}`, borderRadius: 6, padding: "1px 7px" }}>
+                  {typeBadge.label}
+                </span>
+              )}
+            </div>
+            <div className="od-rail-meta">
+              {group.supplier && (
+                <span style={{ display: "inline-flex", alignItems: "center", fontSize: 10, fontWeight: 600, color: "#2962FF", background: "#EFF6FF", border: "1px solid #BFDBFE", borderRadius: 5, padding: "1px 8px", marginRight: 7 }}>
+                  {group.supplier}
+                </span>
+              )}
+              {group.items.length} item{group.items.length !== 1 ? "s" : ""} · {done}/{total} etapas concluídas
+              {active && <span style={{ color: isCanceling ? "#EF4444" : "var(--primary)", marginLeft: 6 }}>· {active.label}</span>}
+            </div>
+          </div>
+        </div>
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14"
+             style={{ flexShrink: 0, transition: "transform .2s", transform: open ? "rotate(180deg)" : "rotate(0)", color: "var(--fg-3)" }}>
+          <path d="M4 6l4 4 4-4" />
+        </svg>
+      </button>
+      {open && (
+        <div className="od-rail-body">
+          {isReturn && group.returnDetail && <OdReturnCard detail={group.returnDetail} />}
+          <div className="od-stage-strip">
+            {group.stages.map((st, i) => <OdStageCard key={i} stage={st} />)}
+          </div>
+          <div className="od-rail-items">
+            {group.items.map((item, i) => <OdItemRow key={i} item={item} group={group} />)}
+          </div>
+          {group.cancelGroup && <OdCancelSection cancelGroup={group.cancelGroup} />}
+          <OdRailActivities group={group} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function parseBRL(s) {
+  if (!s) return 0;
+  return parseFloat(s.replace('R$ ', '').replace(/\./g, '').replace(',', '.')) || 0;
+}
+function fmtBRL(v) {
+  const parts = v.toFixed(2).split('.');
+  return 'R$ ' + parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ',' + parts[1];
 }
 
 function Field({ label, value }) {
@@ -139,6 +612,27 @@ function OrderDetailView({ task, orderId, onBack, onOpenOrder }) {
   const order = impacted[idx];
   if (!order) return null;
   const d = buildOrderDetail(order);
+
+  // Full order data (for item groups — has qty, status, date)
+  const fullOrder = AIWData.orders.find(o => o.id === orderId);
+  const itemGroups = buildOrderItemGroups(fullOrder);
+  const totalItems = itemGroups.reduce((s, g) => s + g.items.length, 0);
+
+  // Real payment breakdown — computed from item groups
+  const SHIPPING_RATE = 19.90; // flat rate per delivery group
+  const realBreakdown = { subtotal: 0, discounts: 0, taxes: 0, shipping: 0, total: 0 };
+  if (fullOrder && fullOrder.itemGroups) {
+    fullOrder.itemGroups.forEach(function(group) {
+      if (group.type === 'return') return; // return group = refund in progress, not original charge
+      (group.items || []).forEach(function(item) {
+        realBreakdown.subtotal += parseBRL(item.price) * (item.qty || 1);
+      });
+      if (group.fulfillmentType === 'delivery') {
+        realBreakdown.shipping += SHIPPING_RATE; // only home delivery charges shipping
+      }
+    });
+    realBreakdown.total = realBreakdown.subtotal - realBreakdown.discounts + realBreakdown.taxes + realBreakdown.shipping;
+  }
 
   const prev = idx > 0 ? impacted[idx - 1] : null;
   const next = idx < impacted.length - 1 ? impacted[idx + 1] : null;
@@ -174,18 +668,6 @@ function OrderDetailView({ task, orderId, onBack, onOpenOrder }) {
 
       {/* Order metadata */}
       <dl className="detail-fields od-meta">
-        <dt>Status</dt>
-        <dd>
-          <span className="od-status-pill attention">
-            <span className="status-dot attention" /> Attention
-          </span>
-        </dd>
-
-        <dt>Workflow Status</dt>
-        <dd>
-          <span className="od-wf-pill">{d.workflowStatus || "Handling"}</span>
-        </dd>
-
         <dt>Sold by</dt>
         <dd>{order.seller}</dd>
 
@@ -196,59 +678,16 @@ function OrderDetailView({ task, orderId, onBack, onOpenOrder }) {
         <dd>2 minutes ago</dd>
       </dl>
 
-      {/* Status */}
-      <section className="detail-section flush">
-        <div className="detail-section-head"><h3>Order Status</h3></div>
-        <div className="od-stages">
-          {d.stages.map((s, i) => {
-            const state = i < d.stageIdx ? "done" : i === d.stageIdx ? "current" : "pending";
-            return (
-              <div key={i} className={`od-stage od-stage-${state}`}>
-                <Icon name={state === "done" ? "check" : "clock"} size={16} />
-                <div className="od-stage-label">{s.label}</div>
-                {s.time && <div className="od-stage-time">{s.time}</div>}
-              </div>);
-
-          })}
-        </div>
-      </section>
-
-      {/* Package */}
+      {/* Itens do Pedido — Tarefas por Item */}
       <section className="detail-section flush">
         <div className="detail-section-head" style={{ alignItems: "center" }}>
-          <h3>Package #1</h3>
-          <span className="sev sev-medium" style={{ marginLeft: 12 }}>Handling</span>
+          <h3>
+            Itens do Pedido — Tarefas por Item
+            <span className="od-items-badge">{totalItems} iten{totalItems !== 1 ? "s" : ""}</span>
+          </h3>
         </div>
-        <div className="od-pkg">
-          <div className="od-pkg-meta">
-            <span><span className="muted">Sold by</span> <b>{order.seller}</b></span>
-            <span><span className="muted">Shipped by</span> <b>{d.carrier}</b></span>
-          </div>
-          <div className="od-pkg-thead">
-            <span>Product</span>
-            <span style={{ textAlign: "right" }}>Units</span>
-            <span style={{ textAlign: "right" }}>Taxes</span>
-            <span style={{ textAlign: "right" }}>Price</span>
-          </div>
-          {d.products.map((p, i) =>
-          <div key={i} className="od-pkg-row">
-              <div className="od-pkg-product">
-                <div className="od-pkg-img" />
-                <div>
-                  <div className="od-pkg-name">{p.name}</div>
-                  <div className="od-pkg-sku">SKU #{p.sku}</div>
-                </div>
-              </div>
-              <span style={{ textAlign: "right" }}>{p.qty}</span>
-              <span style={{ textAlign: "right" }}>{p.tax} USD</span>
-              <div style={{ textAlign: "right" }}>
-                <div>{p.finalPrice.toFixed(0)} USD</div>
-                {p.finalPrice < p.listPrice &&
-              <div className="od-pkg-old">{p.listPrice.toFixed(0)} USD</div>
-              }
-              </div>
-            </div>
-          )}
+        <div className="od-rails">
+          {itemGroups.map((group) => <OdRail key={group.id} group={group} />)}
         </div>
       </section>
 
@@ -277,49 +716,44 @@ function OrderDetailView({ task, orderId, onBack, onOpenOrder }) {
 
       {/* Payment */}
       <section className="detail-section flush">
-        <div className="detail-section-head"><h3>Payment</h3></div>
+        <div className="detail-section-head"><h3>Pagamento</h3></div>
         <div className="od-fields">
           <Field label="Endereço de cobrança" value={d.customer.address} />
-          <Field label="Cobrança" value={"R$ " + d.breakdown.total.toFixed(2).replace(".", ",")} />
-          <Field label="Data" value={"14 de outubro de 2024"} />
-          <Field label="Cartão" value={d.card} />
+          <Field label="Total cobrado"        value={fmtBRL(realBreakdown.total)} />
+          <Field label="Data"                 value={"14 de outubro de 2024"} />
+          <Field label="Cartão"               value={d.card} />
         </div>
-      
+
         <div style={{ marginTop: 20 }} />
         <div className="od-breakdown">
-          <div className="od-bd-row"><span>Items</span>     <span>{fmtCurrency(d.breakdown.subtotal)}</span></div>
-          <div className="od-bd-row"><span>Discounts</span> <span>- {fmtCurrency(d.breakdown.discounts)}</span></div>
-          <div className="od-bd-row"><span>Taxes</span>     <span>{fmtCurrency(d.breakdown.taxes)}</span></div>
-          <div className="od-bd-row"><span>Shipping</span>  <span>Free</span></div>
+          <div className="od-bd-row">
+            <span>Itens</span>
+            <span>{fmtBRL(realBreakdown.subtotal)}</span>
+          </div>
+          {realBreakdown.discounts > 0 && (
+            <div className="od-bd-row">
+              <span>Descontos</span>
+              <span style={{ color: "#169B61" }}>- {fmtBRL(realBreakdown.discounts)}</span>
+            </div>
+          )}
+          {realBreakdown.taxes > 0 && (
+            <div className="od-bd-row">
+              <span>Taxas</span>
+              <span>{fmtBRL(realBreakdown.taxes)}</span>
+            </div>
+          )}
+          <div className="od-bd-row">
+            <span>Frete</span>
+            <span>{realBreakdown.shipping > 0 ? fmtBRL(realBreakdown.shipping) : <span style={{ color: "#169B61" }}>Grátis</span>}</span>
+          </div>
         </div>
         <div className="od-bd-total">
           <span>Total</span>
-          <span>{fmtCurrency(d.breakdown.total)}</span>
+          <span>{fmtBRL(realBreakdown.total)}</span>
         </div>
       </section>
 
 
-
-      {/* Activities */}
-      <section className="detail-section flush">
-        <div className="detail-section-head"><h3>Atividades</h3></div>
-        <div className="activities">
-          {d.activities.map((a, i) =>
-          <div key={i} className="activity-row">
-              <span className="activity-time">{a.time}</span>
-              <div className="activity-body">
-                <div className="activity-head">
-                  <PersonAvatar initial={a.initial} agent={a.agent} />
-                  <span>
-                    <strong>{a.actor}</strong> <span className="muted">{a.action}</span>
-                  </span>
-                </div>
-                {a.note && <div className="activity-note">{a.note}</div>}
-              </div>
-            </div>
-          )}
-        </div>
-      </section>
 
       <div style={{ height: 40 }} />
     </div>);
@@ -476,7 +910,7 @@ function TaskCanvas({ task, onBack }) {
 
 }
 
-function TaskView({ taskId, onBack }) {
+function TaskView({ taskId, onBack, onOpenOrder }) {
   const task = AIWData.tasks.find((t) => t.id === taskId);
   if (!task) return null;
   const d = task.detail;
@@ -485,6 +919,30 @@ function TaskView({ taskId, onBack }) {
   const dragRef = useRef(false);
   const rootRef = useRef(null);
 
+  // Chat engine state
+  const [chatMsgs, setChatMsgs] = useState(d.chat || []);
+  const [isTyping, setIsTyping] = useState(false);
+  const engineRef = useRef(null);
+
+  // Initialise / re-initialise engine when taskId changes
+  useEffect(() => {
+    setChatMsgs(d.chat || []);
+    setIsTyping(false);
+    engineRef.current = ChatEngine.create({
+      context: "task",
+      data: AIWData,
+      task: task,
+      onNavigate: (route) => { if (onOpenOrder) onOpenOrder(route.orderId); },
+      onAddFollowUp: (newItem) => {
+        // Add to task's followUp array in-memory (prototype only)
+        if (task.detail.followUp) task.detail.followUp.push(newItem);
+      },
+      onAgentSay: (msgs) => setChatMsgs((m) => [...m, ...msgs]),
+      onTyping: setIsTyping,
+    });
+  }, [taskId]);
+
+  // Drag-to-resize
   useEffect(() => {
     const onMove = (e) => {
       if (!dragRef.current || !rootRef.current) return;
@@ -505,14 +963,14 @@ function TaskView({ taskId, onBack }) {
     };
   }, []);
 
-  const chips = [
-  { icon: "list", label: "Summarize the initiative" },
-  { icon: "plus", label: "Create new task" },
-  { icon: "sparkle", label: "Suggest next steps" },
-  { icon: "search", label: "Analyze impacted orders" }];
+  const chips = task.chips || [];
 
+  const handleSend = (text) => {
+    setChatMsgs((m) => [...m, { from: "user", text }]);
+    engineRef.current && engineRef.current.send(text);
+  };
 
-  const intro = `Esta iniciativa foi reportada por ${d.reportedBy.agent} em ${d.reportedBy.at}. ${d.summary}`;
+  const intro = `Reportada por ${d.reportedBy.agent} · ${d.reportedBy.at}`;
 
   return (
     <div
@@ -520,13 +978,15 @@ function TaskView({ taskId, onBack }) {
       className="main split-main resizable-split"
       style={{ gridTemplateColumns: `${chatWidth}px 6px 1fr` }}
       data-screen-label={`02 Task ${taskId}`}>
-      
+
       <ChatPanel
         title={d.title}
         intro={intro}
         chips={chips}
-        initialMessages={d.chat}
-        placeholder={`Ask about initiative ${task.id}...`}
+        messages={chatMsgs}
+        onSend={handleSend}
+        isTyping={isTyping}
+        placeholder={`Pergunte sobre a iniciativa ${task.id}…`}
         onBack={onBack} />
       
       <div
@@ -545,4 +1005,5 @@ function TaskView({ taskId, onBack }) {
 
 }
 
+window.OrderDetailView = OrderDetailView;
 window.TaskView = TaskView;
