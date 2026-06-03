@@ -219,6 +219,7 @@ window.AIWData = (function () {
     { id: "fulfillment",      label: "Fulfillment Físico",  desc: "Preparação e envio de produtos físicos ao cliente",    color: "#00897B" },
     { id: "logistica-reversa",label: "Logística Reversa",   desc: "Retorno de produtos — trocas e devoluções",            color: "#D97706" },
     { id: "servicos",         label: "Serviços",            desc: "Workflows de valor agregado e pós-venda",              color: "#7C3AED" },
+    { id: "producao",         label: "Produção sob Medida", desc: "Workflows com ciclo de fabricação externa antes da entrega", color: "#0891B2" },
   ];
 
   /* Task status vocabulary — OMS Workflow v0.1 (OrderJobs_Workflow_Spec) */
@@ -271,7 +272,7 @@ window.AIWData = (function () {
           deltas: [{ entity: "general config", change: "changed", detail: "Workflow criado" }] },
       ],
       stages: [
-        { id: "ed-s1", name: "Confirmação de Pagamento", linkedToNext: true, category: "PAYMENT", tasks: [
+        { id: "ed-s1", name: "Confirmação de Pagamento", gate: "payment_settled", linkedToNext: true, category: "PAYMENT", tasks: [
           { id: "ed-1", name: "Autorização de Pagamento", type: "auto",   owner: "Gateway",        desc: "Pré-autorização do valor junto à adquirente/gateway." },
           { id: "ed-2", name: "Captura de Pagamento",     type: "auto",   owner: "Gateway",        desc: "Confirmação e captura definitiva do valor autorizado." },
         ]},
@@ -281,10 +282,10 @@ window.AIWData = (function () {
           { id: "ed-5", name: "Packing",            type: "manual", owner: "WMS Operator",desc: "Embalagem dos produtos selecionados para envio ao cliente." },
           { id: "ed-6", name: "Labeling",           type: "manual", owner: "WMS Operator",desc: "Etiquetagem da embalagem com dados do destinatário e transportadora." },
         ]},
-        { id: "ed-s3", name: "Faturamento", linkedToNext: true, category: "FULFILLMENT", tasks: [
+        { id: "ed-s3", name: "Faturamento", gate: "deliverable_ready", linkedToNext: true, category: "FULFILLMENT", tasks: [
           { id: "ed-7", name: "Emissão de Nota Fiscal", type: "auto", owner: "Fiscal Service", desc: "Geração da NF-e para o cliente final." },
         ]},
-        { id: "ed-s4", name: "Entrega", linkedToNext: false, category: "DELIVERY", tasks: [
+        { id: "ed-s4", name: "Entrega", gate: "customer_has_goods", linkedToNext: false, category: "DELIVERY", tasks: [
           { id: "ed-8",  name: "Expedição",        type: "manual", owner: "WMS Operator", desc: "Despacho do pedido para a transportadora." },
           { id: "ed-9",  name: "First Mile",       type: "auto",   owner: "Carrier",      desc: "Transporte inicial do centro de distribuição até o hub." },
           { id: "ed-10", name: "Last Mile",        type: "auto",   owner: "Carrier",      desc: "Entrega final no endereço do cliente." },
@@ -318,7 +319,7 @@ window.AIWData = (function () {
           deltas: [{ entity: "general config", change: "changed", detail: "Workflow criado" }] },
       ],
       stages: [
-        { id: "rl-s1", name: "Confirmação de Pagamento", linkedToNext: true, category: "PAYMENT", tasks: [
+        { id: "rl-s1", name: "Confirmação de Pagamento", gate: "payment_settled", linkedToNext: true, category: "PAYMENT", tasks: [
           { id: "rl-1", name: "Autorização de Pagamento", type: "auto", owner: "Gateway", desc: "Pré-autorização do valor junto à adquirente/gateway." },
           { id: "rl-2", name: "Captura de Pagamento",     type: "auto", owner: "Gateway", desc: "Confirmação e captura definitiva do valor autorizado." },
         ]},
@@ -328,10 +329,10 @@ window.AIWData = (function () {
           { id: "rl-5", name: "Packing",            type: "manual", owner: "Operador Loja",desc: "Embalagem dos produtos para disponibilização ao cliente." },
           { id: "rl-6", name: "Ready for Pickup",   type: "auto",   owner: "Notif. Agent", desc: "Notificação ao cliente de que o pedido está pronto para retirada." },
         ]},
-        { id: "rl-s3", name: "Faturamento", linkedToNext: true, category: "FULFILLMENT", tasks: [
+        { id: "rl-s3", name: "Faturamento", gate: "deliverable_ready", linkedToNext: true, category: "FULFILLMENT", tasks: [
           { id: "rl-7", name: "Emissão de Nota Fiscal", type: "auto", owner: "Fiscal Service", desc: "Geração da NF-e no momento do pickup ou pré-emissão." },
         ]},
-        { id: "rl-s4", name: "Entrega em Loja", linkedToNext: false, category: "DELIVERY", tasks: [
+        { id: "rl-s4", name: "Entrega em Loja", gate: "customer_has_goods", linkedToNext: false, category: "DELIVERY", tasks: [
           { id: "rl-8", name: "Customer Check-in",  type: "manual", owner: "Operador Loja", desc: "Confirmação da chegada do cliente na loja." },
           { id: "rl-9", name: "Handover at POS",    type: "manual", owner: "Operador Loja", desc: "Entrega física do pedido ao cliente no ponto de venda." },
         ]},
@@ -359,7 +360,7 @@ window.AIWData = (function () {
           deltas: [{ entity: "general config", change: "changed", detail: "Workflow criado" }] },
       ],
       stages: [
-        { id: "el-s1", name: "Confirmação de Pagamento", linkedToNext: true, category: "PAYMENT", tasks: [
+        { id: "el-s1", name: "Confirmação de Pagamento", gate: "payment_settled", linkedToNext: true, category: "PAYMENT", tasks: [
           { id: "el-1", name: "Autorização de Pagamento", type: "auto", owner: "Gateway", desc: "Pré-autorização do valor junto à adquirente/gateway." },
           { id: "el-2", name: "Captura de Pagamento",     type: "auto", owner: "Gateway", desc: "Confirmação e captura definitiva do valor autorizado." },
         ]},
@@ -368,10 +369,10 @@ window.AIWData = (function () {
           { id: "el-4", name: "Picking",          type: "manual", owner: "Operador Loja", desc: "Separação dos produtos no armazém da loja." },
           { id: "el-5", name: "Packing",          type: "manual", owner: "Operador Loja", desc: "Embalagem dos produtos pela loja." },
         ]},
-        { id: "el-s3", name: "Faturamento", linkedToNext: true, category: "FULFILLMENT", tasks: [
+        { id: "el-s3", name: "Faturamento", gate: "deliverable_ready", linkedToNext: true, category: "FULFILLMENT", tasks: [
           { id: "el-6", name: "Emissão de Nota Fiscal", type: "auto", owner: "Fiscal Service", desc: "Loja emite NF-e com dados do comprador final." },
         ]},
-        { id: "el-s4", name: "Entrega pela Loja", linkedToNext: false, category: "DELIVERY", tasks: [
+        { id: "el-s4", name: "Entrega pela Loja", gate: "customer_has_goods", linkedToNext: false, category: "DELIVERY", tasks: [
           { id: "el-7", name: "Carrier Dispatch",  type: "manual", owner: "Operador Loja", desc: "Loja despacha o pedido pela transportadora contratada." },
           { id: "el-8", name: "First Mile",        type: "auto",   owner: "Carrier",       desc: "Coleta na loja de origem pelo operador logístico." },
           { id: "el-9", name: "Last Mile",         type: "auto",   owner: "Carrier",       desc: "Entrega final no endereço do cliente." },
@@ -397,15 +398,15 @@ window.AIWData = (function () {
           deltas: [{ entity: "general config", change: "changed", detail: "Workflow criado" }] },
       ],
       stages: [
-        { id: "vd-s1", name: "Confirmação de Pagamento", linkedToNext: true, category: "PAYMENT", tasks: [
+        { id: "vd-s1", name: "Confirmação de Pagamento", gate: "payment_settled", linkedToNext: true, category: "PAYMENT", tasks: [
           { id: "vd-1", name: "Autorização de Pagamento", type: "auto", owner: "Gateway",         desc: "Pré-autorização do valor junto à adquirente/gateway." },
           { id: "vd-2", name: "Captura de Pagamento",     type: "auto", owner: "Gateway",         desc: "Confirmação e captura definitiva do valor autorizado." },
         ]},
-        { id: "vd-s2", name: "Ativação Digital", linkedToNext: true, category: "FULFILLMENT", tasks: [
+        { id: "vd-s2", name: "Ativação Digital", gate: "deliverable_ready", linkedToNext: true, category: "FULFILLMENT", tasks: [
           { id: "vd-3", name: "Gerar Chave / Licença",    type: "auto", owner: "Digital Service", desc: "Geração automática da chave de ativação ou licença digital." },
           { id: "vd-4", name: "Emissão de NF-e",          type: "auto", owner: "Fiscal Service",  desc: "Emissão da nota fiscal para produto digital." },
         ]},
-        { id: "vd-s3", name: "Entrega Digital", linkedToNext: false, category: "DELIVERY", tasks: [
+        { id: "vd-s3", name: "Entrega Digital", gate: "customer_has_goods", linkedToNext: false, category: "DELIVERY", tasks: [
           { id: "vd-5", name: "Enviar por E-mail",         type: "auto", owner: "Notif. Agent",    desc: "Envio da chave / link de acesso ao e-mail do cliente." },
           { id: "vd-6", name: "Confirmação de Acesso",     type: "auto", owner: "Digital Service", desc: "Verificação de que o cliente acessou ou ativou o produto." },
         ]},
@@ -429,7 +430,7 @@ window.AIWData = (function () {
           deltas: [{ entity: "general config", change: "changed", detail: "Workflow criado" }] },
       ],
       stages: [
-        { id: "ca-s1", name: "Solicitação", linkedToNext: true, category: "FULFILLMENT", tasks: [
+        { id: "ca-s1", name: "Solicitação", gate: "cancellation_requested", linkedToNext: true, category: "FULFILLMENT", tasks: [
           { id: "ca-1", name: "Receber Solicitação",              type: "auto",   owner: "Portal",         desc: "Registro da solicitação de cancelamento." },
           { id: "ca-2", name: "Validar Janela de Cancelamento",   type: "auto",   owner: "Returns Agent",  desc: "Verifica se o pedido ainda pode ser cancelado." },
         ]},
@@ -437,7 +438,7 @@ window.AIWData = (function () {
           { id: "ca-3", name: "Bloquear Expedição",               type: "auto",   owner: "WMS",            desc: "Interrompe separação/expedição caso ainda em andamento." },
           { id: "ca-4", name: "Estornar Estoque",                 type: "auto",   owner: "WMS",            desc: "Devolução das unidades canceladas ao estoque disponível." },
         ]},
-        { id: "ca-s3", name: "Estorno Financeiro", linkedToNext: false, category: "PAYMENT", tasks: [
+        { id: "ca-s3", name: "Estorno Financeiro", gate: "cancellation_complete", linkedToNext: false, category: "PAYMENT", tasks: [
           { id: "ca-5", name: "Processar Estorno",                type: "auto",   owner: "Gateway",        desc: "Devolução do valor ao cliente pelo método de pagamento original." },
           { id: "ca-6", name: "Notificar Cliente",                type: "auto",   owner: "Notif. Agent",   desc: "Confirmação do cancelamento e prazo de estorno ao cliente." },
         ]},
@@ -481,6 +482,27 @@ window.AIWData = (function () {
           { id: "td-11", name: "Notificar Cliente — Concluído", type: "auto",   owner: "Notif. Agent", desc: "Confirmação final do processo para o cliente." },
         ]},
       ]},
+
+    /* ── Fabricação de Lente ────────────────────────────────────────────── */
+    { id: "fabricacao-lente", name: "Fabricação de Lente", icon: "🔬",
+      category: "producao", status: "active",
+      desc: "Validação da receita médica e produção da lente em laboratório parceiro. Pré-requisito para entrega de óculos de grau e lentes especiais.",
+      orders: "0", custom: false,
+      trigger: { type: "order-start" },
+      agentEnabled: true,
+      dependencies: [],
+      stages: [
+        { id: "fl-s1", name: "Validação de Receita", gate: "prescription_approved", linkedToNext: true, category: "COMPLIANCE", tasks: [
+          { id: "fl-1", name: "Verificar anexo de receita",   type: "manual", owner: "Atendimento", desc: "Confirmar que o cliente anexou a receita médica no momento da compra." },
+          { id: "fl-2", name: "Validar dados da prescrição",  type: "manual", owner: "Atendimento", desc: "Conferir grau, eixo, curvatura e demais parâmetros técnicos da lente." },
+          { id: "fl-3", name: "Aprovar receita",              type: "manual", owner: "Atendimento", desc: "Aprovação libera o pedido para produção. Sem aprovação, o pedido não avança." },
+        ]},
+        { id: "fl-s2", name: "Produção da Lente", linkedToNext: false, category: "PRODUCTION", tasks: [
+          { id: "fl-4", name: "Acionar laboratório",     type: "auto",   owner: "Lab Monitor Agent", desc: "Agente notifica o laboratório parceiro para iniciar a fabricação." },
+          { id: "fl-5", name: "Monitorar produção",      type: "auto",   owner: "Lab Monitor Agent", desc: "Agente acompanha o prazo de produção junto ao laboratório." },
+          { id: "fl-6", name: "Confirmar lente pronta",  type: "auto",   owner: "Lab Monitor Agent", desc: "Laboratório confirma produto finalizado e enviado ao centro de distribuição." },
+        ]},
+      ]},
   ];
 
   /* exported for rendering */
@@ -493,6 +515,7 @@ window.AIWData = (function () {
     { name: "Entrega produto virtual",   meta: "3 etapas · 234 pedidos ativos"   },
     { name: "Cancelamento de Pedido",    meta: "3 etapas · 142 pedidos ativos"   },
     { name: "Troca e devolução",         meta: "4 etapas · 83 pedidos ativos"    },
+    { name: "Fabricação de Lente",       meta: "2 etapas · 0 pedidos ativos"     },
   ];
 
   const orchestrationActivity = [
@@ -561,6 +584,11 @@ window.AIWData = (function () {
           id:"g-bopis", workflow:"retirada-loja", fulfillmentType:"pickup",
           supplier:"C&A · Botafogo RJ",
           label:"Retirada na Loja · C&A Botafogo – RJ",
+          projections:[
+            { name:"warehouse",      connector:"wms",             status:"done"    },
+            { name:"payment",        connector:"payment-gateway",  status:"done"    },
+            { name:"invoice",        connector:"fiscal-service",   status:"pending" },
+          ],
           stages:[
             { icon:"💳", label:"Confirmação de Pagamento", status:"done" },
             { icon:"🏪", label:"Handling na Loja",          status:"done" },
@@ -577,6 +605,12 @@ window.AIWData = (function () {
           id:"g-delivery", workflow:"entrega-domicilio", fulfillmentType:"delivery",
           supplier:"Jadlog",
           label:"Entrega em Domicílio · Jadlog",
+          projections:[
+            { name:"warehouse",      connector:"wms",             status:"done" },
+            { name:"carrier",        connector:"jadlog",           status:"done" },
+            { name:"payment",        connector:"payment-gateway",  status:"done" },
+            { name:"invoice",        connector:"fiscal-service",   status:"done" },
+          ],
           stages:[
             { icon:"💳", label:"Confirmação de Pagamento", status:"done" },
             { icon:"📦", label:"Handling",                 status:"done" },
@@ -607,6 +641,12 @@ window.AIWData = (function () {
           id:"g-delivery", workflow:"entrega-domicilio", fulfillmentType:"delivery",
           supplier:"Total Express",
           label:"Entrega em Domicílio · Total Express",
+          projections:[
+            { name:"warehouse",      connector:"wms",             status:"done" },
+            { name:"carrier",        connector:"total-express",    status:"done" },
+            { name:"payment",        connector:"payment-gateway",  status:"done" },
+            { name:"invoice",        connector:"fiscal-service",   status:"done" },
+          ],
           stages:[
             { icon:"💳", label:"Confirmação de Pagamento", status:"done" },
             { icon:"📦", label:"Handling",                 status:"done" },
@@ -622,6 +662,11 @@ window.AIWData = (function () {
           fulfillmentType:"return",
           supplier:"Total Express",
           label:"Troca e Devolução",
+          projections:[
+            { name:"carrier",        connector:"total-express",    status:"active"  },
+            { name:"warehouse",      connector:"wms",              status:"pending" },
+            { name:"payment",        connector:"payment-gateway",  status:"pending" },
+          ],
           returnDetail:{
             reason:"Produto com defeito de fabricação",
             customerText:"Recebi o aparelho e na primeira semana de uso a tela começou a apresentar linhas horizontais. Tentei reiniciar e o problema persiste. Gostaria de trocar por um novo ou receber o reembolso integral.",
@@ -671,6 +716,11 @@ window.AIWData = (function () {
           fulfillmentType:"virtual",
           supplier:"Digital Service",
           label:"Entrega Produto Virtual · Acesso Digital",
+          projections:[
+            { name:"digital",        connector:"digital-service",  status:"active"  },
+            { name:"payment",        connector:"payment-gateway",   status:"done"    },
+            { name:"invoice",        connector:"fiscal-service",    status:"error"   },
+          ],
           stages:[
             { icon:"💳", label:"Confirmação de Pagamento", status:"done"    },
             { icon:"💻", label:"Ativação Digital",          status:"active"  },
@@ -682,7 +732,7 @@ window.AIWData = (function () {
                 { label:"Autorização de Pagamento", icon:"💳", status:"done",    agent:true,  time:"02/06/2026 10:15" },
                 { label:"Captura de Pagamento",     icon:"💳", status:"done",    agent:true,  time:"02/06/2026 10:15" },
                 { label:"Gerar Chave / Licença",    icon:"🔑", status:"done",    agent:true,  time:"02/06/2026 10:16" },
-                { label:"Emissão de NF-e",          icon:"🧾", status:"active",  agent:true,  time:null },
+                { label:"Emissão de NF-e",          icon:"🧾", status:"active",  agent:true,  time:null, connectorStatus:"api_error", connectorNote:"Fiscal Service retornou 503 — retry em andamento" },
                 { label:"Enviar por E-mail",        icon:"📧", status:"pending", agent:true,  time:null },
                 { label:"Confirmação de Acesso",    icon:"✅", status:"pending", agent:true,  time:null },
               ],
@@ -693,6 +743,12 @@ window.AIWData = (function () {
           id:"g-physical", workflow:"entrega-domicilio", fulfillmentType:"delivery",
           supplier:"Correios SEDEX",
           label:"Entrega em Domicílio · Correios SEDEX",
+          projections:[
+            { name:"warehouse",      connector:"wms",              status:"active"  },
+            { name:"carrier",        connector:"correios-sedex",    status:"pending" },
+            { name:"payment",        connector:"payment-gateway",   status:"done"    },
+            { name:"invoice",        connector:"fiscal-service",    status:"pending" },
+          ],
           stages:[
             { icon:"💳", label:"Confirmação de Pagamento", status:"done"    },
             { icon:"📦", label:"Handling",                 status:"active"  },
@@ -737,6 +793,12 @@ window.AIWData = (function () {
           fulfillmentType:"delivery",
           supplier:"Loggi",
           label:"Entrega em Domicílio · Loggi",
+          projections:[
+            { name:"warehouse",      connector:"wms",              status:"done"   },
+            { name:"carrier",        connector:"loggi",             status:"active" },
+            { name:"payment",        connector:"payment-gateway",   status:"done"   },
+            { name:"invoice",        connector:"fiscal-service",    status:"done"   },
+          ],
           stages:[
             { icon:"💳", label:"Confirmação de Pagamento", status:"done"   },
             { icon:"📦", label:"Handling",                 status:"done"   },
@@ -773,6 +835,12 @@ window.AIWData = (function () {
           fulfillmentType:"delivery",
           supplier:"Correios",
           label:"Entrega em Domicílio · Correios",
+          projections:[
+            { name:"warehouse",      connector:"wms",              status:"active"  },
+            { name:"carrier",        connector:"correios",          status:"pending" },
+            { name:"payment",        connector:"payment-gateway",   status:"done"    },
+            { name:"invoice",        connector:"fiscal-service",    status:"pending" },
+          ],
           stages:[
             { icon:"💳", label:"Confirmação de Pagamento", status:"done"    },
             { icon:"📦", label:"Handling",                 status:"active"  },
