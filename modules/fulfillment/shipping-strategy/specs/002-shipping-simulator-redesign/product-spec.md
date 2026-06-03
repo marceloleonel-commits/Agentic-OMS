@@ -248,7 +248,7 @@ The full HTML element → Shoreline component mapping is documented in [`prototy
 | Confirmation dialog (agentic carrier activation) | `Modal` with `ModalHeader`, `ModalBody`, `ModalFooter` | Required before any carrier activate/deactivate action per FR-020 and FR-021 |
 
 ### Shared component across both tracks
-Both the classic UI and the agentic UI render the same simulation results. The prototype has this as duplicated markup. In production, extract as a shared component:
+Both the Admin UI and the agentic UI render the same simulation results. The prototype has this as duplicated markup. In production, extract as a shared component:
 
 ```tsx
 <ShippingResultsTable
@@ -259,7 +259,7 @@ Both the classic UI and the agentic UI render the same simulation results. The p
 />
 ```
 
-The agentic UI additionally needs `<RejectedCarriersModal />` inline in the chat response. The classic UI renders it as a collapsible section below the SLA table.
+The agentic UI additionally needs `<RejectedCarriersModal />` inline in the chat response. The Admin UI renders it as a collapsible section below the SLA table.
 
 ### Why `carriersNotChosenList` is a frontend-only change
 The simulation API (`POST /api/logistics/pvt/shipping/calculate`, pvt version) already returns `carriersNotChosenList` with `reasonCode` per excluded carrier. The legacy Knockout.js simulator receives this data and silently discards it. Surfacing rejection reasons is a **frontend-only change** — no backend work required.

@@ -47,6 +47,43 @@ This MMR replaces the current simulator with a Shoreline-based experience that r
 
 ---
 
+## Current Simulator: What to Keep, What to Review
+
+The new simulator must preserve all data currently exposed, unless explicitly decided otherwise with engineering. The table below summarizes what carries forward, what needs a second look, and what is intentionally dropped.
+
+| Status | What | Notes |
+|---|---|---|
+| ✅ Keep | Core flow: input form → simulation results | Same mental model, new UI |
+| ✅ Keep | Result fields: carrier name, SLA tag, shipping price, lead time, available quantity | Already well understood by operators |
+| ✅ Keep | Expanded detail: dock, warehouse, postal code range, weight range, absolute value, per-gram surcharge, % surcharge over order total, dock→warehouse cost, scheduled delivery flag, time costs (dock, warehouse, transport, with cutoff hours) | Carry forward as-is; may reorganize layout |
+| ✅ Keep | Carrier rejection motive | Already shown today — goal is to improve specificity, not remove |
+| ✅ Keep | Simulate items individually | Checkbox already exists today — allows running each SKU as a separate simulation when items have incompatible logistics configurations; preserve as-is |
+| 🔍 Review with eng | Cubic weight factor, max order value, cubic weight | Confirm whether these are actionable for operators or can be simplified/hidden |
+| 🔍 Review with eng | Time cost breakdown (dock / warehouse / transport shown separately) | May consolidate into a single readable line (e.g., "5 days transport + 0 dock handling") |
+| ❌ Remove | Manual country input | Replaced by auto-resolution from the selected sales channel |
+| ❌ Remove | SKU search with indistinguishable variant names | Replaced by new picker showing SKU ID, variant name, EAN, reference code |
+
+---
+
+## New Functionalities — Priority Order
+
+What is new compared to the current simulator, ordered by priority:
+
+| # | Functionality | Today | New |
+|---|---|---|---|
+| P0 | **Seller-level simulation** | Simulation always runs against the main account — no way to scope to a specific seller | Operators can select a seller and simulate within its logistics configuration |
+| P0 | **Usage metrics** | No instrumentation — no visibility into how the tool is used by VTEX accounts | Establish a pre-migration baseline via legacy API logs (`POST /api/logistics/pvt/shipping/calculate`), then track post-launch events per account: unique users per account, usage frequency per account, sales channel, seller, result count, and errors — enabling before/after comparison to measure adoption impact across the merchant base |
+| P1 | **Logistics route visibility** | Expanded detail already shows dock and warehouse, but does not display which shipping policy is applied — making root-cause diagnosis incomplete | Each result shows the full route: warehouse → dock → shipping policy; detail panel also highlights whether the carrier operates on weekends (`worksOnWeekends`) as a visual badge rather than a plain text field |
+| P1 | **Scheduled delivery visibility** | Scheduled delivery support is shown as a plain text field ("Entrega agendada: não") buried in the expanded detail — not visible at a glance | When a shipping option supports scheduled delivery, this is surfaced prominently in the result row (e.g., badge or indicator), making it immediately visible without expanding the detail panel |
+| P1 | **Clear SKU variant identification** | All variants of the same product appear with identical names in the search dropdown — operator cannot tell which SKU they are simulating | Search dropdown shows differentiating attributes per variant: SKU ID, variant name, EAN, reference code — making each option unambiguous |
+| P1 | **Carrier rejection reasons** | Rejection motive is already shown (e.g., "dismissed due to priority"), but the reason is generic — operator cannot identify the root configuration issue | Review and improve rejection reasons to be actionable and specific: out of postal code range, above weight limit, outside business hours, dimensions exceeded, etc. |
+| P2 | **Recent simulations history** | Every session starts blank — no memory of previous simulations | Last 5 simulations saved and restorable with one click (30-day TTL, per user) — covered in spec 002 |
+| P2 | **Kit SKU simulation fix** | Kit SKUs return empty metadata fields (postal code range, weight range) in simulation results (KI 1382356) — operator has no freight data for kits | Display correct fields computed from combined weight and dimensions of kit components — subject to eng investigation on whether fix is frontend-only or requires backend changes |
+| P2 | **Delivery date display** | Results show lead time in days only (e.g., "3 dias") — no calendar date shown | Results display the estimated delivery date (e.g., "Arrives June 5"), computed from lead time, business days, and cutoff hours |
+| P3 | **Delivery vs. pickup separation** | Results mix delivery and pickup options without clear distinction | Separate tabs or sections for delivery and pickup; each clearly labeled |
+| P3 | **Correct local currency** | Always shows the platform default currency, ignoring the sales channel's configured currency (KI 514551) | Currency auto-resolved from the selected sales channel |
+---
+
 ## Scope
 
 ### Form — Input redesign
@@ -83,7 +120,7 @@ This MMR replaces the current simulator with a Shoreline-based experience that r
 ### Not in scope
 - **Checkout simulation** — The VTEX checkout simulation (`POST /api/checkout/pub/orderForms/simulation`) is intentionally excluded. Although it resolves some logistics parameters as a side effect, it is a different API with a different contract: it requires a full cart payload, applies pricing rules, promotions, and payment conditions, and is scoped to a buyer session. Using it here would significantly increase implementation complexity without improving the core value of this tool, which is logistics-level diagnostics. This simulator is explicitly backed by `POST /api/logistics/pvt/shipping/calculate`, which exposes full carrier-level detail (rejection reasons, route breakdown, warehouse/dock chain) that the checkout simulation does not surface. The right scope for this MMR is: **improve the logistics simulation experience as-is, with seller selection and proper error handling** — not to replicate checkout behavior.
 - Exporting simulation results (CSV, PDF)
-- Agentic UI track (separate development path) — note: the agentic prototype includes carrier activation/deactivation as a conversational action, which is intentionally out of scope for the classic UI MMR but documented as a capability of the agentic track
+- Agentic UI track (separate development path) — a Shipping Simulator Agent prototype already exists and covers the same core functionalities as this redesign. The Admin UI redesign is being prioritized first deliberately: without instrumentation data, any decision about the agent would be based on assumption. The redesigned simulator ships with usage metrics (P0) that will establish a baseline — how many operators use the tool, how often, and in what context — and that data will inform if, when, and how the agentic track makes sense as the next investment. The agent prototype includes carrier activation/deactivation as a conversational action; whether an agent should take actions (vs. only diagnose and suggest) is an open product decision not resolved in this MMR.
 
 ---
 
@@ -96,6 +133,21 @@ This MMR replaces the current simulator with a Shoreline-based experience that r
 | **App name** | `admin-shipping-simulation` |
 | **Vendor** | `vtex` |
 | **Migration note** | The legacy route should redirect to the new route on GA. During the transition period both routes may coexist. |
+
+---
+
+## Under Exploration
+
+Ideas that have potential but require validation before becoming a spec. Not committed to any release.
+
+### Configuration Preview ("What-if simulation")
+
+**Hypothesis:** Operators would benefit from simulating the impact of a configuration change *before* applying it — e.g., "if I activate this carrier, what freight options would appear for this SKU and ZIP?" This differs from the standard simulator, which only reflects the current live configuration.
+
+**Why it's not in scope yet:** The complexity is significant — it requires ephemeral config state, a before/after comparison view, and a clear rollback path. The value needs to be proven before investing. The agentic prototype already touches this space (carrier activation with explicit confirmation), and usage data from the Admin UI track will help determine whether a dedicated "what-if" mode is warranted in the form-based experience.
+
+**What would validate it:** Operator interviews or session data showing that a significant share of simulations happen *after* a config change, as a verification step — rather than as a diagnostic for an existing problem.
+
 
 ---
 

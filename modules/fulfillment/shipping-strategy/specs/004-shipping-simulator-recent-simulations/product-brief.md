@@ -18,7 +18,7 @@
 
 **Title:** Shipping Simulator — Recent Simulations with 30-Day History
 
-**Description:** With this release, logistics operators will be able to see and restore their last 5 simulations directly from the simulator interface, without re-entering parameters. Each simulation is saved automatically after execution, persisted across sessions via browser storage, scoped to the logged-in user, and expires after 30 days. The feature is available in both the classic UI (as a collapsible panel above the form) and the agentic UI (as clickable cards on the home screen).
+**Description:** With this release, logistics operators will be able to see and restore their last 5 simulations directly from the simulator interface, without re-entering parameters. Each simulation is saved automatically after execution, persisted across sessions via browser storage, scoped to the logged-in user, and expires after 30 days. The feature is available in both the Admin UI (as a collapsible panel above the form) and the agentic UI (as clickable cards on the home screen).
 
 **Availability:** TBD
 
@@ -67,7 +67,7 @@ This MMR adds a lightweight history layer: auto-save on execution, user-scoped p
 - Maximum of 5 entries per user context
 - When the limit is exceeded, the oldest entry is dropped to make room for the new one
 
-### Classic UI surface
+### Admin UI surface
 - Collapsible "Últimas simulações / Recent simulations" panel above the form
 - Default state: collapsed
 - Each entry shows: SKU name, quantity (if > 1), ZIP, seller, sales channel, relative timestamp ("há 2h", "3d ago")

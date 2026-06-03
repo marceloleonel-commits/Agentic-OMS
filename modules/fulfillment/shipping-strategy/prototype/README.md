@@ -8,7 +8,7 @@ The current Shipping Simulator (`/admin/logistics#/freight-simulation`) is a min
 
 ## Prototype Tracks
 
-### 1. Classic UI (`/classic-ui`)
+### 1. Admin UI (`/admin-ui`)
 A redesigned version of the current simulator using Shoreline (VTEX's design system) and Raccoon (the VTEX Admin framework). Maintains the familiar form-based interaction model but significantly improves result visibility, error explanations, and overall UX.
 
 **Goals:**
@@ -26,12 +26,22 @@ A conversational AI-native experience where merchants interact with a shipping s
 - Leverage the rich `freightSimulatedForAi` API response for intelligent explanations
 - Render structured results inline via the `ShippingResults` component
 
+## Track Prioritization
+
+The Admin UI is being built before the Agentic UI — not because the agentic track is less valuable, but because we need usage data before making that investment confidently.
+
+The current simulator has no instrumentation. Without knowing how many operators use it, how often, and in what context, any decision about the agent would be based on assumption. The redesigned Admin UI ships with usage metrics (P0) that establish a baseline per account: unique users, frequency, sales channel, seller, result count, errors. That data will inform if, when, and how the agentic track makes sense as the next investment.
+
+Additionally, a key product question remains open for the Agentic UI: **should the agent take actions** (e.g., activate/deactivate carriers) or primarily diagnose and suggest? This decision has meaningful implications for operator trust and operational risk, and should be informed by real usage patterns from the Admin UI.
+
+For the full product strategy, specs, and prioritized feature list, see [`specs/002-shipping-simulator-redesign/product-brief.md`](../specs/002-shipping-simulator-redesign/product-brief.md).
+
 ## Known Issues Addressed
 
-| KI | Description | Track |
-|---|---|---|
-| 514551 | Wrong currency displayed in simulator | Classic UI |
-| 1382356 | Empty postal/weight range for kit SKUs | Classic UI |
+| KI | Description | Track | Status |
+|---|---|---|---|
+| 514551 | Wrong currency displayed in simulator | Admin UI | Planned fix (P3) |
+| 1382356 | Empty postal/weight range for kit SKUs | Admin UI | Planned fix (P2) — subject to eng investigation on whether fix is frontend-only or requires backend changes |
 
 ## Why HTML — and What That Means for Shoreline
 
@@ -72,7 +82,7 @@ Sidebar nav, client/language toggle pill, SKU chip selection state, expandable S
 
 Both prototypes are self-contained HTML files (no external JS dependencies) to ensure they work when opened locally via `file://`. This means some logic is intentionally duplicated. The table below maps shared concepts so that the implementation team does not rebuild them independently.
 
-| Concept | Classic UI | Agentic UI | Notes |
+| Concept | Admin UI | Agentic UI | Notes |
 |---|---|---|---|
 | Mock data (`DATA` object) | `DATA` (top of file) | `DATA` (top of file) | Identical structure. PT-BR and EN datasets with accounts, sellers, sales channels, SKUs, SLAs, pickups, i18n |
 | Client/language switch | `setClient(c)` | `setClient(c)` | Resets state and re-renders the interface for PT-BR or EN |
@@ -90,10 +100,13 @@ When moving from prototype to production (Raccoon + React), these shared concept
 <ShippingResultsTable slas={slas} pickups={pickups} currency={currency} />
 ```
 
-Both the classic form page and the agentic chat interface would consume this component. The agentic UI additionally needs `<RejectedCarriersModal />` (not present in classic UI) and the classic UI needs the form components (`<SellerCombobox />`, `<SkuSearch />`, etc.).
+Both the classic form page and the agentic chat interface would consume this component. The agentic UI additionally needs `<RejectedCarriersModal />` (not present in Admin UI) and the Admin UI needs the form components (`<SellerCombobox />`, `<SkuSearch />`, etc.).
 
 ---
 
 ## Status
 
-> Work in progress — prototypes under active development.
+| Track | Prototype | Spec | Production |
+|---|---|---|---|
+| Admin UI | ✅ Complete | [`002-shipping-simulator-redesign`](../specs/002-shipping-simulator-redesign/product-brief.md) | In definition |
+| Agentic UI | ✅ Complete | No formal spec yet | Pending metrics baseline from Admin UI |

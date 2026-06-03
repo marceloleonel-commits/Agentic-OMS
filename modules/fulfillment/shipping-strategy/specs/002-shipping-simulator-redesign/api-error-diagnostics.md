@@ -83,7 +83,7 @@ GET /api/logistics/pvt/inventory/items/{skuId}/warehouses
 
 Full mapping: [`vtex/shipping-simulator-agent → messages/pt.json`](https://github.com/vtex/shipping-simulator-agent)
 
-**Implementation note:** The classic UI currently ignores these reason codes. They are already available in the response — surfacing them is a frontend-only change.
+**Implementation note:** The Admin UI currently ignores these reason codes. They are already available in the response — surfacing them is a frontend-only change.
 
 ---
 

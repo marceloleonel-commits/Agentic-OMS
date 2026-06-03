@@ -25,7 +25,7 @@ function showScreen(name) {
   if (name === 'workflow') renderWorkflowBoard();
   if (name === 'workflow-list') renderWorkflowList();
   if (name === 'workflow-settings') renderWorkflowSettings();
-  if (name === 'agent-config') { el.style.display = 'flex'; initOrchChat(); }
+  if (name === 'agent-config') { el.style.display = 'flex'; initOrchChat(); setTimeout(renderOrchConnectors, 50); }
 }
 
 function renderWorkflowList() {
