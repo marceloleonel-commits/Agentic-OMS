@@ -1,4 +1,4 @@
-/* global React, Icon, AIWData, ChatPanel, ResizableSplit */
+/* global React, Icon, IconSparkleFill, IconHandFill, IconPencil, IconCursorFill, IconDragDots, IconPlayCircleFill, AIWData, ChatPanel, ResizableSplit */
 const { useState, useRef, useEffect, useCallback } = React;
 
 /* ---------- Filter Dropdown (rules section) ---------- */
@@ -626,11 +626,12 @@ function StageCard({ stage, startNum, onOpenTask, onOpenStage, canMoveUp, canMov
   return (
     <div className="stage-card">
       <div className="stage-card-head">
-        <button className="stage-card-title-btn" onClick={() => onOpenStage?.(stage.id ?? stage.name)}>
-          <span className="stage-card-title">{stage.name}</span>
-          <Icon name="edit" size={11} style={{ marginLeft: 4, opacity: 0.4 }} />
+        <span className="stage-card-title">{stage.name}</span>
+        <button data-sl-button data-variant="tertiary" data-size="large"
+          onClick={() => onOpenStage?.(stage.id ?? stage.name)} title="Editar etapa">
+          <IconPencil size={16} />
         </button>
-        <div className="stage-card-reorder">
+        <div className="stage-card-reorder" style={{ display: "none" }}>
           <button className="stage-reorder-btn" title="Subir etapa" onClick={onMoveUp} disabled={!canMoveUp}>
             <Icon name="chevron-down" size={16} style={{ transform: "rotate(180deg)" }} />
           </button>
@@ -656,11 +657,12 @@ function StageCard({ stage, startNum, onOpenTask, onOpenStage, canMoveUp, canMov
           onDragEnd={handleDragEnd}
           onClick={() => onOpenTask(task.id)}
         >
-          <span className="stage-task-num">{startNum + idx}</span>
-          <span className="stage-task-name">{task.name}</span>
-          <span className={`stage-task-tag ${task.type}`}>{task.type === "auto" ? "Automática" : "Manual"}</span>
           <span className="stage-task-grip" aria-hidden="true">
-            <span /><span /><span /><span /><span /><span />
+            <IconDragDots size={20} />
+          </span>
+          <span className="stage-task-name">{task.name}</span>
+          <span className={`stage-task-tag ${task.type}`}>
+            {task.type === "auto" ? <IconSparkleFill size={12} /> : <IconCursorFill size={12} />}
           </span>
         </button>
       )}
@@ -697,6 +699,137 @@ function StageCard({ stage, startNum, onOpenTask, onOpenStage, canMoveUp, canMov
 }
 
 /* ---------- Workflow detail (stages + tasks grouped) ---------- */
+
+/* ── Shared date formatter for workflow meta ─────────────────────────────── */
+function fmtWfDate(iso) {
+  const d = new Date(iso);
+  const months = ["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
+  const hh = String(d.getHours()).padStart(2, "0");
+  const mm = String(d.getMinutes()).padStart(2, "0");
+  return `${d.getDate()} ${months[d.getMonth()]} às ${hh}:${mm}`;
+}
+
+const WF_STATUS_META = {
+  draft:           { label: "Rascunho",                          color: "gray"    },
+  published:       { label: "Publicado",                         color: "green"   },
+  published_dirty: { label: "Publicado · alterações pendentes",  color: "amber"   },
+  archived:        { label: "Arquivado",                         color: "neutral" },
+};
+
+/* ── Inline actor span — mirrors span.reporter from view-task.jsx ──────── */
+function WfActorSpan({ who, date }) {
+  const isHuman = who && who.includes("@");
+  const initial = who ? who[0].toUpperCase() : "?";
+  return (
+    <span className="reporter">
+      {isHuman
+        ? <span className="person-avatar">{initial}</span>
+        : <span className="agent-avatar-mini" title="Agent"><Icon name="sparkle" size={12} /></span>
+      }
+      <span><b>{who}</b> em {date}</span>
+    </span>
+  );
+}
+
+/* ── Workflow metadata fields (version, edit dates, config chips) ────────── */
+function WfMetaSection({ workflow, onOpenSettings }) {
+  const sm  = WF_STATUS_META[workflow.wfStatus] || WF_STATUS_META.draft;
+  const log = workflow.versionLog || [];
+  const runningVersion = (workflow.wfStatus === "published_dirty" && log.length > 0) ? log[0].version : null;
+
+  return (
+    <dl className="detail-fields" style={{ marginBottom: 24 }}>
+      <dt>Status</dt>
+      <dd>
+        <span className={`wf-list-status ${workflow.status === "active" ? "active" : "archived"}`}>
+          {workflow.status === "active" ? "Ativo" : "Inativo"}
+        </span>
+      </dd>
+
+      <dt>Orquestração</dt>
+      <dd>
+        <sl-tag variant="secondary" size="normal"
+          data-color={workflow.agentEnabled ? "blue" : "neutral"}>
+          {workflow.agentEnabled
+            ? <><Icon name="sparkle" size={11} /> Agêntica</>
+            : <><Icon name="hand" size={11} /> Manual</>}
+        </sl-tag>
+      </dd>
+
+      <dt>Versão</dt>
+      <dd>
+        <span className={`wf-meta-badge wf-meta-badge--${sm.color}`}>{sm.label}</span>
+        {' '}
+        <span className="wf-meta-ver">(v{workflow.version})</span>
+        {runningVersion && (
+          <span className="wf-meta-running">v{runningVersion} em produção</span>
+        )}
+      </dd>
+      {workflow.lastEditedAt && <>
+        <dt>Última edição</dt>
+        <dd className="wf-meta-actor"><WfActorSpan who={workflow.lastEditedBy} date={fmtWfDate(workflow.lastEditedAt)} /></dd>
+      </>}
+      {workflow.publishedAt && <>
+        <dt>Publicado em</dt>
+        <dd className="wf-meta-actor"><WfActorSpan who={workflow.publishedBy} date={fmtWfDate(workflow.publishedAt)} /></dd>
+      </>}
+    </dl>
+  );
+}
+
+/* ── Version history (shown at the bottom of the workflow detail) ─────────── */
+function WfVersionHistory({ workflow }) {
+  const [histOpen, setHistOpen] = useState(false);
+
+  const ENTITY_LABEL = { task: "Tarefa", dependency: "Dependência", trigger: "Gatilho", supplier: "Fornecedor", contingency: "Contingência", "general config": "Config. geral" };
+  const CHANGE_LABEL = { added: "adicionado", removed: "removido", renamed: "renomeado", edited: "editado", changed: "alterado", connected: "conectado", disconnected: "desconectado", replaced: "substituído" };
+  const CHANGE_SIGN  = { added: "+", removed: "−", replaced: "⇄", renamed: "~", edited: "~", changed: "~", connected: "+", disconnected: "−" };
+
+  const log = workflow.versionLog || [];
+  if (log.length === 0) return null;
+
+  return (
+    <section className="detail-section flush">
+      <div className="detail-section-head">
+        <h3>
+          Histórico de versões
+          <span className="wf-meta-hist-count">{log.length}</span>
+        </h3>
+        <button className="icon-btn" onClick={() => setHistOpen(v => !v)} title={histOpen ? "Ocultar histórico" : "Ver histórico"}>
+          <Icon name={histOpen ? "chevron-down" : "chevron-right"} size={14} />
+        </button>
+      </div>
+      {histOpen && (
+        <div className="wf-meta-hist-list">
+          {log.map((entry) => (
+            <div key={entry.version} className="wf-meta-hist-entry">
+              <div className="wf-meta-hist-head">
+                <span className="wf-meta-hist-ver">v{entry.version}</span>
+                <span className="wf-meta-hist-when">{fmtWfDate(entry.publishedAt)}</span>
+                <span className="wf-meta-hist-who">{entry.publishedBy}</span>
+              </div>
+              <p className="wf-meta-hist-desc">"{entry.description}"</p>
+              <ul className="wf-meta-hist-deltas">
+                {entry.deltas.map((d, i) => (
+                  <li key={i} className={`wf-meta-delta wf-meta-delta--${d.change}`}>
+                    <span className="wf-meta-delta-sign">{CHANGE_SIGN[d.change] || "·"}</span>
+                    <span className="wf-meta-delta-entity">{ENTITY_LABEL[d.entity] || d.entity}</span>
+                    <span className="wf-meta-delta-change">{CHANGE_LABEL[d.change] || d.change}</span>
+                    <span className="wf-meta-delta-detail">{d.detail}</span>
+                  </li>
+                ))}
+              </ul>
+              <div className="wf-meta-hist-footer">
+                <span>{entry.appliedTo === "all_orders" ? "Aplicado a todos os pedidos" : "Somente pedidos novos"}</span>
+                <span>{entry.activeOrdersAtPublish.toLocaleString("pt-BR")} pedidos ativos na publicação</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
 
 function WorkflowDetailView({ workflow, onOpenTask, onOpenStage, onOpenSettings, onOpenSimulator, detailActionsRef, onDirtyChange }) {
   const [stages, setStages] = useState(() => workflow.stages);
@@ -767,29 +900,7 @@ function WorkflowDetailView({ workflow, onOpenTask, onOpenStage, onOpenSettings,
         <h1 className="detail-title">{workflow.name}</h1>
       </div>
 
-      <div className="wf-config-card">
-        <div className="wf-config-chips">
-          <button className="wf-config-chip" data-sl-tag="" data-variant="secondary" data-size="normal" data-color="gray"
-            onClick={() => onOpenSettings("gatilho")} title="Alterar gatilho de ativação">
-            <Icon name="play" size={11} /> Gatilho: Início do pedido
-          </button>
-          <button className="wf-config-chip" data-sl-tag="" data-variant="secondary" data-size="normal" data-color="blue"
-            onClick={() => onOpenSettings("gatilho")} title="Configurar Agente AI">
-            <Icon name="sparkle" size={11} /> Agente AI: On
-          </button>
-          <button className="wf-config-chip" data-sl-tag="" data-variant="secondary" data-size="normal" data-color="gray"
-            onClick={() => onOpenSettings("dependencias")} title="Gerenciar dependências">
-            <Icon name="link" size={11} /> Sem dependências
-          </button>
-          <button className="wf-config-chip wf-config-chip-simulate" data-sl-tag="" data-variant="secondary" data-size="normal" data-color="green"
-            onClick={onOpenSimulator} title="Simular">
-            <Icon name="play" size={11} /> Simular
-          </button>
-        </div>
-        <button className="icon-btn" onClick={() => onOpenSettings("geral")} title="Configurações do workflow">
-          <Icon name="settings" size={14} />
-        </button>
-      </div>
+      {(workflow.version || workflow.wfStatus) && <WfMetaSection workflow={workflow} onOpenSettings={onOpenSettings} />}
 
       <div className="stages-section">
         <div className="stage-stack">
@@ -852,15 +963,7 @@ function WorkflowDetailView({ workflow, onOpenTask, onOpenStage, onOpenSettings,
         </div>
       </div>
 
-      <button className="wf-new-step" style={{ marginTop: 18 }}>
-        <Icon name="plus" size={14} /> Nova etapa
-      </button>
-      {isDirty && (
-        <div className="wf-warn">
-          <Icon name="clock" size={14} />
-          <span>Alterações valem apenas para pedidos novos. Pedidos em andamento não serão afetados.</span>
-        </div>
-      )}
+      <WfVersionHistory workflow={workflow} />
     </>
   );
 }
@@ -1195,72 +1298,108 @@ function NewWorkflowWizard({ existingWorkflows, categories, onClose, preFill }) 
 
 /* ---------- Workflow Simulator ---------- */
 
+function buildSteps(context) {
+  const isPhysical = context.productType === "physical";
+  return [
+    {
+      key: "productType", label: "O que está no carrinho?",
+      options: [
+        { value: "physical", icon: "📦", label: "Produto físico",  desc: "Eletrônicos, moda, casa e outros itens físicos" },
+        { value: "digital",  icon: "💻", label: "Produto digital", desc: "Software, assinatura, ingresso digital" },
+        { value: "service",  icon: "🔧", label: "Serviço",         desc: "Instalação, reparo, garantia estendida" },
+      ],
+    },
+    {
+      key: "deliveryType", label: "Tipo de entrega",
+      options: isPhysical
+        ? [
+            { value: "domicilio", icon: "🏠", label: "Entrega em domicílio", desc: "CD → transportadora → endereço do cliente" },
+            { value: "retirada",  icon: "🏪", label: "Retirada na loja",     desc: "Cliente retira pessoalmente no PDV" },
+            { value: "loja",      icon: "🚚", label: "Ship from Store",      desc: "Loja física despacha direto ao cliente" },
+          ]
+        : [
+            { value: "digital", icon: "📩", label: "Entrega digital", desc: "Acesso imediato por link ou e-mail" },
+          ],
+    },
+    {
+      key: "paymentMethod", label: "Método de pagamento",
+      options: [
+        { value: "credit", icon: "💳", label: "Cartão de Crédito", desc: "À vista ou parcelado" },
+        { value: "pix",    icon: "⚡", label: "PIX",               desc: "Confirmação instantânea" },
+        { value: "boleto", icon: "📄", label: "Boleto Bancário",   desc: "Compensação em até 3 dias úteis" },
+        { value: "debit",  icon: "🏦", label: "Cartão de Débito",  desc: "Débito imediato na conta" },
+      ],
+    },
+  ];
+}
+
 function simulateChain(context) {
-  const { deliveryType } = context;
+  const { productType, deliveryType } = context;
   const allWfs = AIWData.workflows;
   const chain = [];
 
+  if (productType !== "physical") return chain;
+
   const delivMap = {
-    "domicilio": { id: "entrega-domicilio", label: "Entrega em domicílio" },
-    "retirada":  { id: "retirada-loja",     label: "Retirada na loja"     },
-    "troca":     { id: "troca-devolucao",    label: "Troca e devolução"    },
+    domicilio: { id: "entrega-domicilio", rule: "Ativado no início do pedido" },
+    retirada:  { id: "retirada-loja",     rule: "Ativado no início do pedido" },
+    loja:      { id: "entrega-loja",       rule: "Ativado no início do pedido" },
   };
 
   const entry = delivMap[deliveryType];
   if (entry) {
     const wf = allWfs.find(w => w.id === entry.id);
-    if (wf) chain.push({ workflow: wf, rule: "Fluxo de entrega: " + entry.label });
+    if (wf) chain.push({ workflow: wf, rule: entry.rule, downstream: false });
+  }
+
+  if (chain.length > 0) {
+    const trocaWf = allWfs.find(w => w.id === "troca-devolucao");
+    if (trocaWf) chain.push({ workflow: trocaWf, rule: "Disponível após conclusão da entrega", downstream: true });
   }
 
   return chain;
 }
 
+const PAYMENT_LABELS = { credit: "Cartão de Crédito", pix: "PIX", boleto: "Boleto Bancário", debit: "Cartão de Débito" };
+const DELIVERY_LABELS = { domicilio: "Entrega em domicílio", retirada: "Retirada na loja", loja: "Ship from Store", digital: "Entrega digital" };
+const PRODUCT_LABELS  = { physical: "Produto físico", digital: "Produto digital", service: "Serviço" };
+
 function WorkflowSimulator({ workflow, onBack }) {
-  const [phase, setPhase] = useState(1);
-  const [step, setStep] = useState(0); // within phase 1 stepper
-  const [context, setContext] = useState({ deliveryType: null });
-  const [chain, setChain] = useState(null);
+  const [phase, setPhase]   = useState(1);
+  const [step, setStep]     = useState(0);
+  const [context, setContext] = useState({ productType: null, deliveryType: null, paymentMethod: null });
+  const [chain, setChain]   = useState(null);
 
-  // Phase 1 stepper definition
-  const STEPS = [
-    {
-      key: "deliveryType", label: "Tipo de fluxo",
-      options: [
-        { value: "domicilio", icon: "🏠", label: "Entrega em domicílio", desc: "CD → transportadora → endereço do cliente" },
-        { value: "retirada",  icon: "🏪", label: "Retirada na loja",     desc: "Cliente retira pessoalmente na loja física" },
-        { value: "troca",     icon: "↩",  label: "Troca e devolução",    desc: "Logística reversa com estorno ou reenvio" },
-      ]
-    },
-  ];
-
+  const STEPS = buildSteps(context);
   const currentStep = STEPS[step];
   const canGoBack = step > 0;
 
   function pickOption(value) {
     const newCtx = { ...context, [currentStep.key]: value };
+    // reset downstream keys when product type changes
+    if (currentStep.key === "productType") newCtx.deliveryType = null;
     setContext(newCtx);
     if (step < STEPS.length - 1) {
       setStep(s => s + 1);
     } else {
-      const result = simulateChain({ ...newCtx });
-      setChain(result);
+      setChain(simulateChain(newCtx));
       setPhase(2);
     }
   }
 
+  function resetSimulator() {
+    setPhase(1); setStep(0); setChain(null);
+    setContext({ productType: null, deliveryType: null, paymentMethod: null });
+  }
+
+  const contextLabel = [
+    PRODUCT_LABELS[context.productType],
+    DELIVERY_LABELS[context.deliveryType],
+    PAYMENT_LABELS[context.paymentMethod],
+  ].filter(Boolean).join(" · ");
+
   return (
     <div className="simulator-wrap">
-      {/* Header */}
-      <div className="simulator-header">
-        <button className="simulator-back-btn" onClick={phase === 2 ? () => { setPhase(1); setStep(0); setChain(null); setContext({ deliveryType: null }); } : onBack}>
-          <Icon name="chevron-left" size={16} />
-          {phase === 2 ? "Refazer contexto" : `Voltar para ${workflow.name}`}
-        </button>
-        <span className="simulator-title">
-          <Icon name="play" size={13} /> Simulador
-        </span>
-      </div>
-
       {/* Phase 1 — context stepper */}
       {phase === 1 && (
         <div className="simulator-body">
@@ -1296,58 +1435,58 @@ function WorkflowSimulator({ workflow, onBack }) {
       {phase === 2 && chain && (
         <div className="simulator-body">
           <div className="simulator-result-header">
-            <h2 className="simulator-question">Cadeia ativada</h2>
-            <span className="simulator-context-summary">
-              {[
-                { digital: "Digital", physical: "Físico", service: "Serviço" }[context.productType],
-                { standard: "Entrega padrão", express: "Entrega expressa", pickup: "Retirada na loja", sfs: "Ship from Store", virtual: null }[context.deliveryType],
-                { cc: "Cartão de Crédito", pix: "PIX", debit: "Cartão de Débito", boleto: "Boleto" }[context.paymentMethod],
-              ].filter(Boolean).join(" · ")}
-            </span>
+            <h2 className="simulator-question">Workflows ativados</h2>
+            {contextLabel && <span className="simulator-context-summary">{contextLabel}</span>}
           </div>
 
-          {chain.length === 0 && (
-            <p className="setting-help" style={{ marginTop: 20 }}>Nenhum workflow encontrado para esta combinação.</p>
+          {chain.length === 0 ? (
+            <div className="sim-empty">
+              <span style={{ fontSize: 28 }}>💻</span>
+              <p>Nenhum workflow de fulfillment para este contexto.</p>
+              <span className="setting-help">Produtos digitais e serviços não ativam fluxos de entrega físicos.</span>
+            </div>
+          ) : (
+            <div className="simulator-chain">
+              {chain.map((item, idx) => (
+                <React.Fragment key={item.workflow.id}>
+                  {item.downstream && (
+                    <div className="simulator-chain-arrow">
+                      <Icon name="chevron-down" size={14} />
+                      <span>disponível após conclusão</span>
+                    </div>
+                  )}
+                  <div className={`simulator-chain-card${item.downstream ? " sim-chain-downstream" : ""}`}>
+                    <div className="simulator-chain-card-head">
+                      <span className="simulator-chain-icon">{item.workflow.icon}</span>
+                      <div>
+                        <span className="simulator-chain-name">{item.workflow.name}</span>
+                        <span className="simulator-chain-rule">{item.rule}</span>
+                      </div>
+                      <span className="simulator-chain-badge">
+                        {item.workflow.stages.length} etapas · {item.workflow.stages.reduce((s, st) => s + st.tasks.length, 0)} tarefas
+                      </span>
+                    </div>
+                    <div className="simulator-chain-stages">
+                      {item.workflow.stages.map((stage, si) => (
+                        <div key={si} className="simulator-chain-stage">
+                          <span className="simulator-chain-stage-name">{stage.name}</span>
+                          <div className="simulator-chain-tasks">
+                            {stage.tasks.map(task => (
+                              <span key={task.id} className={`simulator-chain-task ${task.type}`}>{task.name}</span>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </React.Fragment>
+              ))}
+            </div>
           )}
 
-          <div className="simulator-chain">
-            {chain.map((item, idx) => (
-              <React.Fragment key={item.workflow.id}>
-                <div className="simulator-chain-card">
-                  <div className="simulator-chain-card-head">
-                    <span className="simulator-chain-icon">{item.workflow.icon}</span>
-                    <div>
-                      <span className="simulator-chain-name">{item.workflow.name}</span>
-                      <span className="simulator-chain-rule">{item.rule}</span>
-                    </div>
-                    <span className="simulator-chain-badge">{item.workflow.stages.length} etapas · {item.workflow.stages.reduce((s, st) => s + st.tasks.length, 0)} tarefas</span>
-                  </div>
-                  <div className="simulator-chain-stages">
-                    {item.workflow.stages.map((stage, si) => (
-                      <div key={si} className="simulator-chain-stage">
-                        <span className="simulator-chain-stage-name">{stage.name}</span>
-                        <div className="simulator-chain-tasks">
-                          {stage.tasks.map(task => (
-                            <span key={task.id} className={`simulator-chain-task ${task.type}`}>{task.name}</span>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                {idx < chain.length - 1 && (
-                  <div className="simulator-chain-arrow">
-                    <Icon name="chevron-down" size={14} />
-                    <span>após conclusão</span>
-                  </div>
-                )}
-              </React.Fragment>
-            ))}
-          </div>
-
           <div className="simulator-result-actions">
-            <button className="btn btn-sm btn-ghost" onClick={() => { setPhase(1); setStep(0); setChain(null); setContext({ productType: null, deliveryType: null, paymentMethod: null }); }}>
-              <Icon name="search" size={12} /> Novo contexto
+            <button className="btn btn-sm btn-ghost" onClick={resetSimulator}>
+              <Icon name="search" size={12} /> Nova simulação
             </button>
           </div>
         </div>
@@ -1387,7 +1526,7 @@ function WorkflowBoardCanvas({
       </button>
     );
   } else if (isList) {
-    headerLeft = <span className="canvas-name" style={{ fontWeight: 600, fontSize: 16 }}>Controle de Fluxos</span>;
+    headerLeft = <span className="canvas-name" style={{ fontWeight: 600, fontSize: 20 }}>Controle de Fluxos</span>;
   } else if (isDetail) {
     headerLeft = (
       <button className="od-back-link" onClick={back}>
@@ -1407,17 +1546,26 @@ function WorkflowBoardCanvas({
       <div className="detail-head no-border">
         <div className="detail-head-left">{headerLeft}</div>
         <div className="detail-head-right">
-          {isList && !showWizard &&
-            <button data-sl-button data-variant="primary" onClick={() => { setWizardPreFill(null); setShowWizard(true); }}>
-              <Icon name="plus" size={12} /> Novo workflow
+          {isList && (
+            <button data-sl-button data-variant="secondary" data-size="normal"
+              onClick={() => setMode({ kind: "simulator", workflowId: AIWData.workflows[0]?.id })} title="Simular">
+              <span data-sl-button-content>
+                <IconPlayCircleFill size={16} data-sl-icon />
+                Simular
+              </span>
             </button>
-          }
+          )}
+          {isDetail && workflow && (
+            <button className="icon-btn" onClick={() => setMode({ kind: "settings", workflowId: workflow.id, section: "geral" })} title="Configurações do workflow">
+              <Icon name="settings" size={14} />
+            </button>
+          )}
           {(isDetail || isTask || isStage || isSettings) && detailHasChanges &&
             <button className="btn btn-primary btn-sm" onClick={() => {
               detailActionsRef.current?.save?.();
               setDetailHasChanges(false);
             }}>
-              <Icon name="check" size={12} /> Salvar alterações
+              <Icon name="check" size={12} /> Publicar
             </button>
           }
         </div>
@@ -1442,24 +1590,27 @@ function WorkflowBoardCanvas({
                         onClick={() => setMode({ kind: "detail", workflowId: w.id })}>
                   <div className="wf-list-card-head">
                     <span className="wf-list-body">
-                      <span className="wf-list-name">{w.name}</span>
-                      <span className="wf-list-meta">
-                        {w.stages.length} etapas&nbsp;|&nbsp;{tt} tarefas&nbsp;|&nbsp;{w.orders} pedidos ativos
+                      <button className={`wf-list-agent-btn${w.agentEnabled ? " agent-on" : " agent-off"}`}
+                              onClick={e => e.stopPropagation()}
+                              title={w.agentEnabled ? "Agente AI ativo" : "Manual"}>
+                        {w.agentEnabled ? <IconSparkleFill size={16} /> : <IconHandFill size={16} />}
+                      </button>
+                      <span className="wf-list-body-text">
+                        <span className="wf-list-name">{w.name}</span>
+                        <span className="wf-list-meta">
+                          {w.orders} pedidos ativos
+                        </span>
                       </span>
                     </span>
                     <span className="wf-list-head-right">
                       <span className={`wf-list-status ${w.archived ? "archived" : "active"}`}>
                         {w.archived ? "Arquivado" : "Ativo"}
                       </span>
-                      <button className={`wf-list-agent-btn${w.agentEnabled ? " agent-on" : " agent-off"}`}
-                              onClick={e => e.stopPropagation()}
-                              title={w.agentEnabled ? "Agente AI ativo" : "Agente AI inativo"}>
-                        <Icon name="sparkle" size={12} />
-                      </button>
-                      <button className="wf-list-edit-btn"
-                              onClick={e => { e.stopPropagation(); setMode({ kind: "settings", workflowId: w.id }); }}
+                      <button data-sl-button data-variant="tertiary" data-size="large"
+                              className="wf-list-edit-btn"
+                              onClick={e => { e.stopPropagation(); setMode({ kind: "detail", workflowId: w.id }); }}
                               title="Editar workflow">
-                        <Icon name="edit" size={14} />
+                        <IconPencil size={16} />
                       </button>
                     </span>
                   </div>
@@ -1468,7 +1619,9 @@ function WorkflowBoardCanvas({
                       <React.Fragment key={stage.id}>
                         <div className="wf-list-stage-col">
                           <div className="wf-list-stage-head">
-                            <span className="wf-list-stage-name">{stage.name}</span>
+                            <div style={{ padding: '8px 8px', background: 'rgb(247, 248, 250)', borderRadius: '4px' }}>
+                              <span className="wf-list-stage-name">{stage.name}</span>
+                            </div>
                           </div>
                           <div className="wf-list-task-list">
                             {stage.tasks.map((t, ti) => (
@@ -1482,7 +1635,7 @@ function WorkflowBoardCanvas({
                         {si < w.stages.length - 1 && (
                           <div className="wf-list-stage-arrow">
                             <Icon name="chevron-right" size={16} />
-                            {stage.linkedToNext && <Icon name="link" size={13} />}
+                            {stage.linkedToNext && <Icon name="link" size={16} />}
                           </div>
                         )}
                       </React.Fragment>
@@ -1495,93 +1648,65 @@ function WorkflowBoardCanvas({
             const renderCompact = (w) => {
               const tt = w.stages.reduce((s, st) => s + st.tasks.length, 0);
               return (
-                <button key={w.id} className="wf-list-card wf-list-card--compact"
-                        onClick={() => setMode({ kind: "detail", workflowId: w.id })}>
-                  <span className="wf-list-name">{w.name}</span>
-                  <span className="wf-list-compact-meta">{w.stages.length} etapas · {tt} tarefas</span>
-                  <span className="wf-list-compact-fill" />
-                  <span className="wf-list-orders">{w.orders} pedidos ativos</span>
-                  <button className={`wf-list-agent-btn${w.agentEnabled ? " agent-on" : " agent-off"}`}
-                          onClick={e => e.stopPropagation()}
-                          title={w.agentEnabled ? "Agente AI ativo" : "Agente AI inativo"}>
-                    <Icon name="sparkle" size={12} />
-                  </button>
-                  <span className={`wf-list-status ${w.archived ? "archived" : "active"}`}>
-                    {w.archived ? "Arquivado" : "Ativo"}
-                  </span>
-                </button>
+                <div key={w.id} className="wf-list-card wf-list-card--expanded"
+                     onClick={() => setMode({ kind: "detail", workflowId: w.id })}
+                     role="button" tabIndex={0}
+                     onKeyDown={e => e.key === "Enter" && setMode({ kind: "detail", workflowId: w.id })}>
+                  <div className="wf-list-card-head">
+                    <span className="wf-list-body">
+                      <span className="wf-list-name">{w.name}</span>
+                      <span className="wf-list-meta">{w.stages.length} etapas · {tt} tarefas</span>
+                    </span>
+                    <span className="wf-list-head-right">
+                      <span className="wf-list-orders">{w.orders} pedidos ativos</span>
+                      <button className={`wf-list-agent-btn${w.agentEnabled ? " agent-on" : " agent-off"}`}
+                              onClick={e => e.stopPropagation()}
+                              title={w.agentEnabled ? "Agente AI ativo" : "Manual"}>
+                        {w.agentEnabled ? <IconSparkleFill size={16} /> : <IconHandFill size={16} />}
+                      </button>
+                      <span className={`wf-list-status ${w.archived ? "archived" : "active"}`}>
+                        {w.archived ? "Arquivado" : "Ativo"}
+                      </span>
+                      <button
+                        data-sl-button data-variant="tertiary" data-size="large"
+                        className="wf-list-edit-btn"
+                        onClick={e => { e.stopPropagation(); setMode({ kind: "detail", workflowId: w.id }); }}
+                        title="Editar workflow">
+                        <IconPencil size={16} />
+                      </button>
+                    </span>
+                  </div>
+                  <div className="wf-list-stages wf-list-stages--compact">
+                    {w.stages.map((stage, si) => (
+                      <React.Fragment key={stage.id}>
+                        <div className="wf-list-stage-col wf-list-stage-col--compact">
+                          <span className="wf-list-stage-name">{stage.name}</span>
+                        </div>
+                        {si < w.stages.length - 1 && (
+                          <span className="wf-list-stage-arrow wf-list-stage-arrow--compact">
+                            <Icon name="chevron-right" size={16} />
+                          </span>
+                        )}
+                      </React.Fragment>
+                    ))}
+                  </div>
+                </div>
               );
             };
 
-            const renderCard = (w) => renderExpanded(w);
+            const renderCard = (w) => (wfLayout === "compact" || wfLayout === "table") ? renderCompact(w) : renderExpanded(w);
 
             const groupByCat = (items) =>
               AIWData.wfCategories
                 .map(cat => ({ cat, items: items.filter(w => w.category === cat.id) }))
                 .filter(g => g.items.length > 0);
 
-            // ── Table layout ──────────────────────────────────────────────
-            if (wfLayout === "table") {
-              const groups = wfGroup === "category" ? groupByCat(wfs) : [{ cat: null, items: wfs }];
-              return (
-                <div className="wf-list">
-                  <table className="wf-table">
-                    <thead>
-                      <tr>
-                        <th className="wf-th">Nome</th>
-                        <th className="wf-th wf-th-num">Etapas</th>
-                        <th className="wf-th wf-th-num">Tarefas</th>
-                        <th className="wf-th wf-th-num">Pedidos ativos</th>
-                        <th className="wf-th">Agente AI</th>
-                        <th className="wf-th">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {groups.map(({ cat, items }) => (
-                        <React.Fragment key={cat ? cat.id : "all"}>
-                          {cat && (
-                            <tr className="wf-table-cat-row">
-                              <td colSpan={6}>
-                                <span className="wf-table-cat-dot" style={{ background: cat.color }} />
-                                {cat.label}
-                              </td>
-                            </tr>
-                          )}
-                          {items.map(w => {
-                            const tt = w.stages.reduce((s, st) => s + st.tasks.length, 0);
-                            return (
-                              <tr key={w.id} className="wf-table-row"
-                                  onClick={() => setMode({ kind: "detail", workflowId: w.id })}>
-                                <td className="wf-td wf-td-name">{w.name}</td>
-                                <td className="wf-td wf-td-num">{w.stages.length}</td>
-                                <td className="wf-td wf-td-num">{tt}</td>
-                                <td className="wf-td wf-td-num">{w.orders}</td>
-                                <td className="wf-td">
-                                  <span className={`wf-table-agent-badge${w.agentEnabled ? " agent-on" : " agent-off"}`}>
-                                    <Icon name="sparkle" size={11} />
-                                    {w.agentEnabled ? "Ativo" : "Inativo"}
-                                  </span>
-                                </td>
-                                <td className="wf-td">
-                                  <span className={`wf-list-status ${w.archived ? "archived" : "active"}`}>
-                                    {w.archived ? "Arquivado" : "Ativo"}
-                                  </span>
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </React.Fragment>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              );
-            }
 
             // ── Expanded / compact with optional grouping ─────────────────
+            const docCls = wfLayout === "table" ? " wf-list--documento" : "";
             if (wfGroup === "category") {
               return (
-                <div className="wf-list">
+                <div className={`wf-list${docCls}`}>
                   {groupByCat(wfs).map(({ cat, items }) => (
                     <div key={cat.id} className="wf-category-group">
                       <div className="wf-category-header">
@@ -1604,7 +1729,8 @@ function WorkflowBoardCanvas({
             }
 
             // ── Flat list ─────────────────────────────────────────────────
-            return <div className="wf-list">{wfs.map(renderCard)}</div>;
+            const docClass = wfLayout === "table" ? " wf-list--documento" : "";
+            return <div className={`wf-list${docClass}`}>{wfs.map(renderCard)}</div>;
           })()}
 
 

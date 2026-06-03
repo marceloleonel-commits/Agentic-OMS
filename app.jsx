@@ -354,16 +354,8 @@ function App() {
           <TweakRadio label="Layout" value={tweaks.wfLayout}
             options={[
               { value: "expanded", label: "Expandido" },
-              { value: "compact",  label: "Compacto"  },
-              { value: "table",    label: "Tabela"    },
             ]}
             onChange={(v) => setTweak("wfLayout", v)} />
-          <TweakRadio label="Agrupar por" value={tweaks.wfGroup}
-            options={[
-              { value: "flat",     label: "Nenhum"    },
-              { value: "category", label: "Categoria" },
-            ]}
-            onChange={(v) => setTweak("wfGroup", v)} />
         </>}
       </TweaksPanel>
     </div>
