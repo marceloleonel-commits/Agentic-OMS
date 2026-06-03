@@ -25,159 +25,163 @@ window.AIWData = (function () {
   ];
 
   const tasks = [
+
+    /* ── TA-1 · Interromper separação — cancelamento ObraMax ── */
     {
-      id: "TA431431",
+      id: "TA431435",
       priority: "high",
-      title: "Pedidos parados nos status por mais tempo que o indicado nas configurações",
-      tag: "Monitoramento de SLA",
-      assigneeInitial: "M",
+      title: "Picking ativo com sinal de cancelamento — interromper separação físicamente",
+      tag: "Cancelamento",
+      assigneeInitial: "G",
       detail: {
-        title: "Pedidos parados em separação acima do SLA",
-        reportedBy: { agent: "SLA Monitor Agent", at: "19 mai às 14:07" },
-        summary: "48 pedidos ainda não atrasaram, mas estão travados há mais de 6h sem registro de avanço operacional.",
-        diagnosis: "80% dos pedidos travados pertencem ao CD #1, sugerindo possível problema no WMS local. Os demais estão distribuídos por Sellers Loja Centro e CD #3 com volumes equivalentes.",
+        title: "Interromper separação — Cola de Instalação (ObraMax)",
+        reportedBy: { agent: "Orchestration Agent", at: "02 jun às 11:47" },
+        summary: "Cancelamento parcial recebido para o pedido 68945904 (ObraMax). A Cola de Instalação Vinílica (SKU CI-1KG-VIN) ainda está em Picking ativo no WMS. O agente bloqueou a expedição, mas a parada física da separação requer ação manual do operador.",
+        diagnosis: "Cancelamento recebido às 11:45. O workflow de Cancelamento foi acionado e o agente validou a janela — item ainda não expedido, elegível. A etapa 'Bloquear Expedição' está em andamento, mas o WMS não confirmou a interrupção do Picking. O agente sinalizou cancelSignal no step e aguarda confirmação manual. SLA do pedido expirou às 21:58 de 01/06.",
         attributedTo: { name: "Guilherme Vecchi", initial: "G" },
         severity: "high",
         followUp: [
-          { state: "loading",  title: "Verificar status do WMS do CD #1",        assignee: "Guilherme Vecchi",  initial: "G" },
-          { state: "attention", title: "Reatribuir pedidos críticos para CD #2", assignee: "Maria Santos",      initial: "M" }
+          { state: "attention", title: "Confirmar parada do Picking no WMS (Cola CI-1KG-VIN)",   assignee: "WMS Operator",        initial: "G" },
+          { state: "loading",   title: "Concluir Bloquear Expedição e acionar estorno de estoque", assignee: "Orchestration Agent", agent: true }
         ],
         resolved: [
-          { state: "done", title: "Agrupar pedidos por CD de origem",                    assignee: "OMS Agent", agent: true },
-          { state: "done", title: "Identificar pedidos com SLA crítico nas próximas 8h", assignee: "OMS Agent", agent: true }
+          { state: "done", title: "Receber solicitação de cancelamento parcial",        assignee: "Orchestration Agent", agent: true },
+          { state: "done", title: "Validar janela de cancelamento — item não expedido", assignee: "Orchestration Agent", agent: true },
+          { state: "done", title: "Acionar workflow de Cancelamento",                   assignee: "Orchestration Agent", agent: true }
         ],
         impacted: [
-          { id: "1631888948228-01 (68948228)", sla: "4h",  seller: "CD São Paulo",   eta: "22-05-2026" },
-          { id: "1631828946500-01 (68946500)", sla: "6h",  seller: "CD São Paulo",   eta: "22-05-2026" },
-          { id: "1631818946200-01 (68946200)", sla: "5h",  seller: "CD São Paulo",   eta: "22-05-2026" },
-          { id: "1631910950000-01 (68950000)", sla: "7h",  seller: "Loja Centro",    eta: "23-05-2026" },
-          { id: "1631920951000-01 (68951000)", sla: "12h", seller: "CD #3 Campinas", eta: "23-05-2026" }
+          { id: "1631808945904-01", sla: "Expirado (8h desde 01/06 13:58)", seller: "ObraMax", eta: "03/06/2026" }
         ],
         activities: [
-          { time: "12:22", actor: "SLA Monitor Agent", agent: true,  action: "detectou 48 pedidos travados em separação", note: "Padrão identificado: 80% dos pedidos pertencem ao CD #1." },
-          { time: "13:04", actor: "Marcelo", initial: "M", action: "declarou o diagnóstico como Iniciativa" },
-          { time: "13:05", actor: "Marcelo", initial: "M", action: "adicionou Guilherme Vecchi e Maria Santos como participantes" },
-          { time: "14:07", actor: "Guilherme Vecchi", initial: "G", action: "iniciou validação manual com o WMS" }
+          { time: "11:45", actor: "Orchestration Agent", agent: true, action: "recebeu solicitação de cancelamento parcial", note: "Item: Cola de Instalação Vinílica 1kg × 2 (SKU CI-1KG-VIN)." },
+          { time: "11:46", actor: "Orchestration Agent", agent: true, action: "validou janela de cancelamento — item ainda em Picking, não expedido" },
+          { time: "11:46", actor: "Orchestration Agent", agent: true, action: "acionou workflow de Cancelamento e marcou cancelSignal no step Picking" },
+          { time: "11:47", actor: "Orchestration Agent", agent: true, action: "tentou bloquear expedição no WMS — Picking não respondeu ao sinal automático", note: "Ação manual necessária: operador WMS deve interromper a separação física." },
+          { time: "11:47", actor: "Orchestration Agent", agent: true, action: "criou esta tarefa para o operador confirmar a parada no WMS" }
         ],
         chat: [
-          { from: "agent", text: "Identifiquei 48 pedidos travados em separação há mais de 6h. 80% deles vêm do CD #1 — provável problema no WMS local." },
-          { from: "agent", text: "Posso reatribuir os 12 pedidos mais críticos (SLA < 6h) para o CD #2, ou abrir um chamado interno com o time de operações do CD #1. Qual prefere?" }
+          { from: "agent", text: "Recebi o cancelamento parcial do pedido 68945904 (ObraMax). O cliente quer cancelar a Cola de Instalação, mas o item ainda está em Picking no WMS." },
+          { from: "agent", text: "Já acionei o workflow de Cancelamento e sinalizo o step, mas a separação física precisa ser interrompida manualmente. Posso continuar com estorno de estoque e financeiro após a confirmação. Confirmar parada?" }
         ]
       }
     },
+
+    /* ── TA-2 · SLA em risco — DrogariaSP ── */
     {
-      id: "TA431432",
+      id: "TA431436",
+      priority: "high",
+      title: "SLA em risco: Packing + NF-e virtual pendentes com ~4h restantes",
+      tag: "Risco de SLA",
+      assigneeInitial: "M",
+      detail: {
+        title: "SLA em risco — DrogariaSP (68945903)",
+        reportedBy: { agent: "SLA Monitor Agent", at: "02 jun às 10:30" },
+        summary: "Pedido 68945903 criado às 10:14 com SLA de 6h (deadline ~16:14). Packing em andamento (manual), mais Labeling, Emissão de NF e Expedição ainda pendentes. Produto virtual tem NF-e travada em 'Ativo' bloqueando o envio por e-mail. Estimativa de conclusão: 17h30 — quebra de SLA provável.",
+        diagnosis: "O pedido tem dois Order Jobs: produto virtual (NF-e em processamento → bloqueando entrega digital) e produto físico (Packing ativo, 4 etapas manuais ou dependentes à frente). O caminho crítico do físico exige Packing → Labeling → NF → Expedição antes de 16:14. O agente projeta que o tempo médio restante para concluir todas as etapas supera o SLA em ~1h15.",
+        attributedTo: { name: "Maria Santos", initial: "M" },
+        severity: "high",
+        followUp: [
+          { state: "attention", title: "Priorizar Packing e Labeling na fila WMS (SKU DS-VC-1000)", assignee: "WMS Operator",     initial: "G" },
+          { state: "attention", title: "Verificar e desbloquear emissão de NF-e produto virtual",    assignee: "Fiscal Service",   initial: "M" },
+          { state: "loading",   title: "Monitorar avanço e alertar se deadline se aproximar",         assignee: "SLA Monitor Agent", agent: true }
+        ],
+        resolved: [
+          { state: "done", title: "Calcular tempo estimado × deadline de SLA",               assignee: "SLA Monitor Agent", agent: true },
+          { state: "done", title: "Identificar etapas manuais no caminho crítico",            assignee: "SLA Monitor Agent", agent: true },
+          { state: "done", title: "Detectar NF-e virtual travada como bloqueio secundário",   assignee: "SLA Monitor Agent", agent: true }
+        ],
+        impacted: [
+          { id: "1631808945903-01", sla: "~4h restantes (deadline 16:14)", seller: "DrogariaSP", eta: "03/06/2026" }
+        ],
+        activities: [
+          { time: "10:14", actor: "SLA Monitor Agent", agent: true, action: "pedido criado — início do monitoramento de SLA" },
+          { time: "10:30", actor: "SLA Monitor Agent", agent: true, action: "projeção de SLA calculada: 4 etapas restantes com estimativa acima do deadline", note: "Deadline 16:14 · Estimativa de conclusão: 17:30." },
+          { time: "10:31", actor: "SLA Monitor Agent", agent: true, action: "detectou NF-e virtual em status 'ativo' sem avanço há 15 min", note: "Fiscal Service possivelmente com fila ou integração travada." },
+          { time: "10:31", actor: "Orchestration Agent", agent: true, action: "criou esta tarefa e atribuiu ao operador responsável" }
+        ],
+        chat: [
+          { from: "agent", text: "O pedido 68945903 da DrogariaSP tem SLA de 6h com deadline às 16:14. Ainda faltam Packing (ativo), Labeling, NF e Expedição no físico — mais a NF-e do produto virtual travada." },
+          { from: "agent", text: "Posso priorizar este pedido na fila do WMS e notificar o Fiscal Service para destravar a NF-e. Avanço automático após cada etapa. Confirmar?" }
+        ]
+      }
+    },
+
+    /* ── TA-3 · BOPIS C&A — cliente ainda não retirou ── */
+    {
+      id: "TA431437",
       priority: "medium",
-      title: "Pedidos pendentes de troca e devolução acima do prazo de resposta",
-      tag: "Logística reversa",
+      title: "Cliente notificado há 2h+ e ainda não fez check-in para retirada BOPIS",
+      tag: "BOPIS · Retirada na Loja",
       assigneeInitial: "A",
       detail: {
-        title: "Pedidos pendentes de troca e devolução acima do prazo",
-        reportedBy: { agent: "Returns Agent", at: "18 mai às 09:22" },
-        summary: "23 solicitações de devolução estão pendentes há mais de 48h sem resposta do atendimento.",
-        diagnosis: "Time de atendimento sobrecarregado nas segundas-feiras. Picos coincidem com retornos de fim de semana sem cobertura de plantão.",
+        title: "Check-in BOPIS pendente — C&A Botafogo (68945901)",
+        reportedBy: { agent: "Orchestration Agent", at: "02 jun às 13:30" },
+        summary: "O pedido BOPIS 68945901 (C&A) teve 'Ready for Pickup' concluído às 11:22. O cliente foi notificado por e-mail e SMS, mas não realizou o check-in na loja até o momento (13:30 — 2h08 depois). Faturamento e Handover at POS seguem pendentes.",
+        diagnosis: "Fluxo BOPIS: Picking e Packing concluídos pela loja, cliente notificado às 11:22. O SLA de retirada é de 4h (deadline ~15:22). Faltam Customer Check-in → Emissão de NF → Handover at POS. A loja precisa estar ciente e preparada para atender quando o cliente chegar. Se não houver check-in até 14:45, o agente sugere reenviar a notificação ao cliente.",
         attributedTo: { name: "Ana Pessoa", initial: "A" },
         severity: "medium",
         followUp: [
-          { state: "attention", title: "Validar SLA do time de atendimento",                  assignee: "Ana Pessoa", initial: "A" },
-          { state: "loading",   title: "Agrupar solicitações por seller p/ tratamento em lote", assignee: "Returns Agent", agent: true }
+          { state: "attention", title: "Confirmar que loja C&A Botafogo está pronta para atendimento", assignee: "Operador Loja", initial: "A" },
+          { state: "loading",   title: "Reenviar notificação ao cliente se não houver check-in às 14:45", assignee: "Orchestration Agent", agent: true }
         ],
         resolved: [
-          { state: "done", title: "Listar todas as solicitações abertas há mais de 24h", assignee: "Returns Agent", agent: true }
+          { state: "done", title: "Confirmar Picking e Packing concluídos na loja", assignee: "Operador Loja", initial: "A" },
+          { state: "done", title: "Enviar notificação Ready for Pickup por e-mail e SMS", assignee: "Orchestration Agent", agent: true }
         ],
         impacted: [
-          { id: "1631808945900-01 (68945900)", sla: "48h", seller: "Loja Online",      eta: "15-05-2026" },
-          { id: "1631858947234-01 (68947234)", sla: "52h", seller: "Seller Decathlon", eta: "14-05-2026" },
-          { id: "1631848947052-01 (68947052)", sla: "60h", seller: "Seller Centauro",  eta: "14-05-2026" },
-          { id: "1631848946980-01 (68946980)", sla: "72h", seller: "Loja Online",      eta: "13-05-2026" }
+          { id: "1631808945901-01", sla: "~2h restantes (deadline 15:22)", seller: "C&A · Botafogo RJ", eta: "02/06/2026" }
         ],
         activities: [
-          { time: "09:22", actor: "Returns Agent", agent: true, action: "identificou 23 devoluções fora do SLA" },
-          { time: "10:15", actor: "Ana Pessoa",  initial: "A", action: "declarou como Iniciativa e atribuiu a si mesma" },
-          { time: "11:40", actor: "Returns Agent", agent: true, action: "sugeriu agrupamento por seller para reduzir tempo de tratamento" }
+          { time: "11:22", actor: "Orchestration Agent", agent: true, action: "concluiu Ready for Pickup e disparou notificação ao cliente", note: "E-mail e SMS enviados com link de instruções de retirada." },
+          { time: "13:30", actor: "Orchestration Agent", agent: true, action: "detectou ausência de check-in após 2h08 da notificação", note: "SLA de retirada: 4h. Deadline: 15:22." },
+          { time: "13:30", actor: "Orchestration Agent", agent: true, action: "criou esta tarefa para o operador de loja verificar prontidão" }
         ],
         chat: [
-          { from: "agent", text: "Tenho 23 solicitações de devolução pendentes há mais de 48h. Quer que eu agrupe por seller pra você responder em lote?" }
+          { from: "agent", text: "O pedido BOPIS 68945901 está pronto na C&A Botafogo desde 11:22, mas o cliente ainda não apareceu (são 13:30 agora — 2h08 depois)." },
+          { from: "agent", text: "Posso reenviar a notificação ao cliente agora ou agendar para às 14:45 se não houver check-in. Também posso alertar a loja para estar preparada. O que prefere?" }
         ]
       }
     },
+
+    /* ── TA-4 · Samsung — postagem reversa sem confirmação ── */
     {
-      id: "TA431433",
-      priority: "high",
-      title: "Pedidos com risco de não cumprir o SLA de entrega",
-      tag: "Fulfillment",
+      id: "TA431438",
+      priority: "low",
+      title: "Postagem reversa aguardada há +24h sem confirmação do cliente",
+      tag: "Logística Reversa",
       assigneeInitial: "R",
       detail: {
-        title: "Múltiplos pedidos em risco de entrega",
-        reportedBy: { agent: "Order Management Agent", at: "19 mai às 11:34" },
-        summary: "12 pedidos ainda não atrasaram, mas têm risco de quebra de SLA por falta de avanço operacional suficiente.",
-        diagnosis: "Os pedidos têm o mesmo padrão: entrega próxima e etapa operacional em separação sem avanço esperado. Os suppliers são Store #1, CD #2 e CD #3.",
+        title: "Postagem reversa pendente — Samsung Galaxy (68945902)",
+        reportedBy: { agent: "Returns Agent", at: "02 jun às 09:00" },
+        summary: "A etiqueta reversa para devolução do Samsung Galaxy S24 FE foi enviada ao cliente em 01/06 às 18:36. Já se passaram mais de 24h sem confirmação de postagem. As etapas de Inspeção no CD e Estorno Financeiro estão bloqueadas até a postagem ser confirmada.",
+        diagnosis: "Fluxo de devolução iniciado em 01/06/2026 18:32. Etiqueta reversa gerada e enviada por e-mail 4 minutos depois. O passo 'Confirmar Postagem' está ativo há +24h. O cliente pode não ter visto o e-mail, ter dúvidas sobre o processo, ou estar aguardando conveniência para ir à agência. Não há SLA formal para esta etapa, mas o agente monitora para evitar que o prazo de devolução expire.",
         attributedTo: { name: "Rafael Vianna", initial: "R" },
-        severity: "high",
+        severity: "low",
         followUp: [
-          { state: "loading",   title: "Validar fila logística com Sellers",       assignee: "Guilherme Vecchi", initial: "G" },
-          { state: "attention", title: "Enviar e-mail para clientes críticos",     assignee: "Maria Santos",     initial: "M" }
+          { state: "attention", title: "Entrar em contato com o cliente para confirmar recebimento da etiqueta", assignee: "CS Operator", initial: "R" },
+          { state: "loading",   title: "Monitorar status de postagem via API da Carrier", assignee: "Returns Agent", agent: true }
         ],
         resolved: [
-          { state: "done", title: "Agrupar pedidos por etapa crítica",   assignee: "OMS Agent", agent: true },
-          { state: "done", title: "Priorizar pedidos por risco de SLA",  assignee: "OMS Agent", agent: true }
+          { state: "done", title: "Validar elegibilidade da solicitação de devolução",   assignee: "Returns Agent", agent: true },
+          { state: "done", title: "Classificar como devolução com estorno",               assignee: "Returns Agent", agent: true },
+          { state: "done", title: "Gerar e enviar etiqueta reversa ao cliente",           assignee: "Returns Agent", agent: true }
         ],
         impacted: [
-          { id: "1631900949000-01 (68949000)", sla: "8h",  seller: "Loja Vila Mariana", eta: "21-05-2026" },
-          { id: "1631910950000-01 (68950000)", sla: "8h",  seller: "Loja Moema",        eta: "21-05-2026" },
-          { id: "1631920951000-01 (68951000)", sla: "8h",  seller: "Loja Jardins",      eta: "21-05-2026" },
-          { id: "1632000952000-01 (68952000)", sla: "8h",  seller: "Loja Paulista",     eta: "21-05-2026" },
-          { id: "1631888948228-01 (68948228)", sla: "22h", seller: "Loja Morumbi",      eta: "22-05-2026" }
+          { id: "1631808945902-01", sla: "Sem SLA formal — monitorando", seller: "Samsung", eta: "—" }
         ],
         activities: [
-          { time: "11:34", actor: "Order Management Agent", agent: true, action: "criou nova iniciativa recomendada", note: "12 pedidos com risco de quebra de SLA." },
-          { time: "12:10", actor: "Marcelo", initial: "M", action: "declarou a recomendação como Iniciativa" },
-          { time: "15:42", actor: "Guilherme Vecchi", initial: "G", action: "concluiu validação da fila logística" }
+          { time: "01/06 18:32", actor: "Returns Agent", agent: true, action: "recebeu e validou solicitação de devolução por defeito de fabricação" },
+          { time: "01/06 18:35", actor: "Returns Agent", agent: true, action: "gerou etiqueta reversa Total Express e enviou ao cliente por e-mail" },
+          { time: "02/06 09:00", actor: "Returns Agent", agent: true, action: "detectou ausência de postagem após 14h28 do envio da etiqueta", note: "Nenhuma leitura de rastreamento registrada pela Total Express." },
+          { time: "02/06 09:00", actor: "Returns Agent", agent: true, action: "criou esta tarefa para acompanhamento pelo time de CS" }
         ],
         chat: [
-          { from: "agent", text: "Encontrei 12 pedidos em risco de quebra de SLA. Todos com etapa em separação parada nos suppliers Store #1, CD #2 e CD #3." },
-          { from: "agent", text: "Posso agrupar por supplier e enviar um alerta operacional para cada um. Ou prefere que eu sugira realocação de fulfillment?" }
-        ]
-      }
-    },
-    {
-      id: "TA431434",
-      priority: "high",
-      title: "Pedidos do marketplace Amazon parados em aprovação de pagamento por mais de 2h",
-      tag: "Marketplace",
-      assigneeInitial: "J",
-      detail: {
-        title: "Pedidos Amazon parados em aprovação de pagamento",
-        reportedBy: { agent: "Marketplace Agent", at: "19 mai às 10:18" },
-        summary: "7 pedidos da integração Amazon estão em 'Aguardando aprovação' há mais de 2 horas sem resposta do canal.",
-        diagnosis: "Webhook de confirmação de pagamento não está retornando do endpoint Amazon nos últimos ciclos. Possível instabilidade na API do canal — últimos 3 polls falharam com timeout.",
-        attributedTo: { name: "João Pereira", initial: "J" },
-        severity: "high",
-        followUp: [
-          { state: "loading",   title: "Reprocessar pedidos manualmente via console",  assignee: "João Pereira", initial: "J" },
-          { state: "attention", title: "Abrir chamado técnico com Amazon Seller Tech", assignee: "João Pereira", initial: "J" }
-        ],
-        resolved: [
-          { state: "done", title: "Listar pedidos Amazon parados há mais de 2h",     assignee: "Marketplace Agent", agent: true },
-          { state: "done", title: "Verificar último callback recebido por integração", assignee: "Marketplace Agent", agent: true }
-        ],
-        impacted: [
-          { id: "1631848946980-01 (68946980)", sla: "—", seller: "Amazon BR · Eletrônicos", eta: "23-05-2026" },
-          { id: "1631828946500-01 (68946500)", sla: "—", seller: "Amazon BR · Casa",        eta: "23-05-2026" },
-          { id: "1631910950000-01 (68950000)", sla: "—", seller: "Amazon BR · Eletrônicos", eta: "24-05-2026" },
-          { id: "1631920951000-01 (68951000)", sla: "—", seller: "Amazon BR · Moda",        eta: "24-05-2026" }
-        ],
-        activities: [
-          { time: "10:18", actor: "Marketplace Agent", agent: true, action: "detectou 7 pedidos Amazon parados em aprovação" },
-          { time: "10:32", actor: "Marketplace Agent", agent: true, action: "tentou reprocessamento automático — sem sucesso", note: "Endpoint da Amazon retornando timeout em 3 polls consecutivos." },
-          { time: "11:05", actor: "João Pereira", initial: "J", action: "declarou como Iniciativa" }
-        ],
-        chat: [
-          { from: "agent", text: "7 pedidos Amazon estão travados em aprovação de pagamento há mais de 2h. O webhook da Amazon parou de retornar." },
-          { from: "agent", text: "Posso tentar reprocessar manualmente os 7 pedidos via API REST direta, ou aguardar resposta do chamado técnico. O que prefere?" }
+          { from: "agent", text: "Enviei a etiqueta reversa para o Samsung Galaxy em 01/06 às 18:35, mas o cliente ainda não postou o produto — já se passaram +24h." },
+          { from: "agent", text: "Posso reenviar a etiqueta com instruções de postagem ou sugerir um texto de follow-up para o time de CS entrar em contato. O que prefere?" }
         ]
       }
     }
+
   ];
 
   const resources = [
