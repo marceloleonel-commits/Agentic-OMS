@@ -33,6 +33,12 @@ window.AIWData = (function () {
       title: "Picking ativo com sinal de cancelamento — interromper separação físicamente",
       tag: "Cancelamento",
       assigneeInitial: "G",
+      chips: [
+        { icon: "check",  label: "Confirmar parada do Picking no WMS"    },
+        { icon: "x",      label: "Iniciar estorno de estoque"             },
+        { icon: "send",   label: "Notificar cliente sobre o cancelamento" },
+        { icon: "search", label: "Ver pedido ObraMax no detalhe"          },
+      ],
       detail: {
         title: "Interromper separação — Cola de Instalação (ObraMax)",
         reportedBy: { agent: "Orchestration Agent", at: "02 jun às 11:47" },
@@ -73,6 +79,12 @@ window.AIWData = (function () {
       title: "SLA em risco: Packing + NF-e virtual pendentes com ~4h restantes",
       tag: "Risco de SLA",
       assigneeInitial: "M",
+      chips: [
+        { icon: "clock",   label: "Priorizar pedido na fila WMS"              },
+        { icon: "sparkle", label: "Desbloquear NF-e produto virtual"           },
+        { icon: "graph",   label: "Ver estimativa de SLA"                      },
+        { icon: "send",    label: "Escalar para Supervisor"                    },
+      ],
       detail: {
         title: "SLA em risco — DrogariaSP (68945903)",
         reportedBy: { agent: "SLA Monitor Agent", at: "02 jun às 10:30" },
@@ -113,6 +125,12 @@ window.AIWData = (function () {
       title: "Cliente notificado há 2h+ e ainda não fez check-in para retirada BOPIS",
       tag: "BOPIS · Retirada na Loja",
       assigneeInitial: "A",
+      chips: [
+        { icon: "check",   label: "Confirmar prontidão da loja C&A Botafogo"   },
+        { icon: "send",    label: "Reenviar notificação ao cliente agora"       },
+        { icon: "edit",    label: "Registrar check-in manualmente"              },
+        { icon: "search",  label: "Ver pedido C&A no detalhe"                  },
+      ],
       detail: {
         title: "Check-in BOPIS pendente — C&A Botafogo (68945901)",
         reportedBy: { agent: "Orchestration Agent", at: "02 jun às 13:30" },
@@ -150,6 +168,12 @@ window.AIWData = (function () {
       title: "Postagem reversa aguardada há +24h sem confirmação do cliente",
       tag: "Logística Reversa",
       assigneeInitial: "R",
+      chips: [
+        { icon: "send",    label: "Reenviar etiqueta reversa ao cliente"        },
+        { icon: "chat",    label: "Sugerir texto de follow-up para CS"          },
+        { icon: "edit",    label: "Registrar postagem manualmente"              },
+        { icon: "search",  label: "Ver pedido Samsung no detalhe"               },
+      ],
       detail: {
         title: "Postagem reversa pendente — Samsung Galaxy (68945902)",
         reportedBy: { agent: "Returns Agent", at: "02 jun às 09:00" },

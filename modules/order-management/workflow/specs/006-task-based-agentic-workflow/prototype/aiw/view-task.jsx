@@ -958,12 +958,7 @@ function TaskView({ taskId, onBack, onOpenOrder }) {
     };
   }, []);
 
-  const chips = [
-    { icon: "list",    label: "Summarize the initiative"                  },
-    { icon: "plus",    label: "+ create new task"                         },
-    { icon: "sparkle", label: "Suggest next steps"                        },
-    { icon: "search",  label: "Analize impacted orders and sugest actions" }
-  ];
+  const chips = task.chips || [];
 
   const handleSend = (text) => {
     setChatMsgs((m) => [...m, { from: "user", text }]);
