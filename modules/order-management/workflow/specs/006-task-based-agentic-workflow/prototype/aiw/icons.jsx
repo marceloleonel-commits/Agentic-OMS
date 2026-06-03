@@ -73,7 +73,51 @@ const Icon = ({ name, size = 16, ...rest }) => {
   }
 };
 
+/* ── Extra icons used by view-workflow-board.jsx (PR #67) ──────────────── */
+const IconSparkleFill = ({ size = 16, ...rest }) => (
+  <svg width={size} height={size} viewBox="0 0 256 256" fill="currentColor" xmlns="http://www.w3.org/2000/svg" {...rest}>
+    <path d="M208,144a15.78,15.78,0,0,1-10.42,14.94L146,178l-19,51.62a15.92,15.92,0,0,1-29.88,0L78,178l-51.62-19a15.92,15.92,0,0,1,0-29.88L78,110l19-51.62a15.92,15.92,0,0,1,29.88,0L146,110l51.62,19A15.78,15.78,0,0,1,208,144ZM152,48h16V64a8,8,0,0,0,16,0V48h16a8,8,0,0,0,0-16H184V16a8,8,0,0,0-16,0V32H152a8,8,0,0,0,0,16Zm88,32h-8V72a8,8,0,0,0-16,0v8h-8a8,8,0,0,0,0,16h8v8a8,8,0,0,0,16,0V96h8a8,8,0,0,0,0-16Z" />
+  </svg>
+);
+const IconPencil = ({ size = 16, ...rest }) => (
+  <svg width={size} height={size} viewBox="0 0 256 256" fill="currentColor" xmlns="http://www.w3.org/2000/svg" {...rest}>
+    <path d="M227.31,73.37,182.63,28.68a16,16,0,0,0-22.63,0L36.69,152A15.86,15.86,0,0,0,32,163.31V208a16,16,0,0,0,16,16H92.69A15.86,15.86,0,0,0,104,219.31L227.31,96a16,16,0,0,0,0-22.63ZM92.69,208H48V163.31l88-88L180.69,120ZM192,108.68,147.31,64l24-24L216,84.68Z"/>
+  </svg>
+);
+const IconCube = ({ size = 16, ...rest }) => (
+  <svg width={size} height={size} viewBox="0 0 256 256" fill="currentColor" xmlns="http://www.w3.org/2000/svg" {...rest}>
+    <path d="M223.68,66.15,135.68,18a15.88,15.88,0,0,0-15.36,0l-88,48.17a16,16,0,0,0-8.32,14v95.64a16,16,0,0,0,8.32,14l88,48.17a15.88,15.88,0,0,0,15.36,0l88-48.17a16,16,0,0,0,8.32-14V80.18A16,16,0,0,0,223.68,66.15ZM128,32l80.34,44-29.77,16.3-80.35-44Zm0,88L47.66,76l33.9-18.56,80.34,44ZM40,90l80,43.78v85.79L40,175.82Zm96,129.57V133.77l32-17.51V168a8,8,0,0,0,16,0V107.55L216,90v85.78Z"/>
+  </svg>
+);
+const IconHandFill = ({ size = 16, ...rest }) => (
+  <svg width={size} height={size} viewBox="0 0 256 256" fill="currentColor" xmlns="http://www.w3.org/2000/svg" {...rest}>
+    <path d="M196,88a27.86,27.86,0,0,0-13.35,3.39A28,28,0,0,0,144,74.7V44a28,28,0,0,0-56,0v80l-3.82-6.13A28,28,0,0,0,35.73,146l4.67,8.23C74.81,214.89,89.05,240,136,240a88.1,88.1,0,0,0,88-88V116A28,28,0,0,0,196,88Zm12,64a72.08,72.08,0,0,1-72,72c-37.63,0-47.84-18-81.68-77.68l-4.69-8.27,0-.05A12,12,0,0,1,54,121.61a11.88,11.88,0,0,1,6-1.6,12,12,0,0,1,10.41,6,1.76,1.76,0,0,0,.14.23l18.67,30A8,8,0,0,0,104,152V44a12,12,0,0,1,24,0v68a8,8,0,0,0,16,0V100a12,12,0,0,1,24,0v20a8,8,0,0,0,16,0v-4a12,12,0,0,1,24,0Z"/>
+  </svg>
+);
+const IconCursorFill = ({ size = 16, ...rest }) => (
+  <svg width={size} height={size} viewBox="0 0 256 256" fill="currentColor" xmlns="http://www.w3.org/2000/svg" {...rest}>
+    <path d="M216,107.51a20,20,0,0,0-13.28-18.81L72,40.39a20,20,0,0,0-25.81,25.82l48.29,130.69A20,20,0,0,0,113.14,210a20.3,20.3,0,0,0,6-.91A20,20,0,0,0,133,195.36l13.14-37.69,37.68-13.15A20,20,0,0,0,216,107.51Z"/>
+  </svg>
+);
+const IconPlayCircleFill = ({ size = 16, ...rest }) => (
+  <svg width={size} height={size} viewBox="0 0 256 256" fill="currentColor" fillRule="evenodd" xmlns="http://www.w3.org/2000/svg" {...rest}>
+    <path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm36.44,111.44-48,32A8,8,0,0,1,104,160V96a8,8,0,0,1,12.44-6.44l48,32a8,8,0,0,1,0,12.88Z"/>
+  </svg>
+);
+const IconDragDots = ({ size = 16, ...rest }) => (
+  <svg width={size} height={size} viewBox="0 0 256 256" fill="currentColor" xmlns="http://www.w3.org/2000/svg" {...rest}>
+    <path d="M104,60a12,12,0,1,1-12-12A12,12,0,0,1,104,60Zm60,12a12,12,0,1,0-12-12A12,12,0,0,0,164,72ZM92,116a12,12,0,1,0,12,12A12,12,0,0,0,92,116Zm72,0a12,12,0,1,0,12,12A12,12,0,0,0,164,116ZM92,172a12,12,0,1,0,12,12A12,12,0,0,0,92,172Zm72,0a12,12,0,1,0,12,12A12,12,0,0,0,164,172Z"/>
+  </svg>
+);
+
 window.Icon = Icon;
+window.IconSparkleFill = IconSparkleFill;
+window.IconHandFill = IconHandFill;
+window.IconPencil = IconPencil;
+window.IconCube = IconCube;
+window.IconCursorFill = IconCursorFill;
+window.IconDragDots = IconDragDots;
+window.IconPlayCircleFill = IconPlayCircleFill;
 window.useState = useState;
 window.useMemo = useMemo;
 window.useRef = useRef;
