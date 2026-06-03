@@ -38,9 +38,8 @@ function ActBadge({ kind }) {
   );
 }
 
-function AgentCard({ emoji, title, subtitle, defaultOn, children }) {
+function AgentCard({ emoji, title, subtitle, children }) {
   const [open, setOpen] = useState(false);
-  const [on, setOn] = useState(defaultOn !== false);
   return (
     <div style={{ border: "1px solid #e5e7eb", borderRadius: 8, overflow: "hidden", marginBottom: 8 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "12px 14px", background: "#f9fafb", cursor: "pointer" }}
@@ -50,7 +49,6 @@ function AgentCard({ emoji, title, subtitle, defaultOn, children }) {
           <div style={{ fontSize: 13, fontWeight: 600, color: "#1a1a1a" }}>{title}</div>
           <div style={{ fontSize: 11.5, color: "#888", marginTop: 1 }}>{subtitle}</div>
         </div>
-        <Toggle on={on} onChange={(v) => { setOn(v); }} />
         <svg viewBox="0 0 16 16" fill="none" stroke="#888" strokeWidth="2" width="14" height="14"
              style={{ flexShrink: 0, transition: "transform .2s", transform: open ? "rotate(180deg)" : "rotate(0deg)" }}>
           <path d="M4 6l4 4 4-4"/>
@@ -244,10 +242,12 @@ function OrchestrationView({ onBack, onOpenOrder }) {
   }, []);
 
   const chips = [
-    { icon: "edit",   label: "Adicionar regra de escalação" },
-    { icon: "search", label: "Pedidos com risco de SLA"     },
-    { icon: "sparkle", label: "Criar nova experiência"      },
-    { icon: "graph",  label: "Ver capacidades do agente"    }
+    { icon: "link",     label: "Adicionar nova skill para roteamento"  },
+    { icon: "settings", label: "Adicionar nova skill para orquestração" },
+    { icon: "bell",     label: "Adicionar nova skill para escalação"    },
+    { icon: "search",   label: "Adicionar nova skill para exploração"   },
+    { icon: "x",        label: "Desativar skill"                        },
+    { icon: "sparkle",  label: "Ver capacidades do agente"              },
   ];
 
   const handleSend = (text) => {

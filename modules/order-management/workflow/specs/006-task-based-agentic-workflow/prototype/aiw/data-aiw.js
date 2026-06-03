@@ -455,6 +455,7 @@ window.AIWData = (function () {
       itemGroups:[
         {
           id:"g-bopis", workflow:"retirada-loja", fulfillmentType:"pickup",
+          supplier:"C&A · Botafogo RJ",
           label:"Retirada na Loja · C&A Botafogo – RJ",
           stages:[
             { icon:"💳", label:"Confirmação de Pagamento", status:"done" },
@@ -470,6 +471,7 @@ window.AIWData = (function () {
         },
         {
           id:"g-delivery", workflow:"entrega-domicilio", fulfillmentType:"delivery",
+          supplier:"Jadlog",
           label:"Entrega em Domicílio · Jadlog",
           stages:[
             { icon:"💳", label:"Confirmação de Pagamento", status:"done" },
@@ -499,6 +501,7 @@ window.AIWData = (function () {
       itemGroups:[
         {
           id:"g-delivery", workflow:"entrega-domicilio", fulfillmentType:"delivery",
+          supplier:"Total Express",
           label:"Entrega em Domicílio · Total Express",
           stages:[
             { icon:"💳", label:"Confirmação de Pagamento", status:"done" },
@@ -513,6 +516,7 @@ window.AIWData = (function () {
         {
           id:"g-return", workflow:"troca-devolucao", type:"return",
           fulfillmentType:"return",
+          supplier:"Total Express",
           label:"Troca e Devolução",
           returnDetail:{
             reason:"Produto com defeito de fabricação",
@@ -561,6 +565,7 @@ window.AIWData = (function () {
         {
           id:"g-virtual", workflow:"entrega-produto-virtual", type:"virtual",
           fulfillmentType:"virtual",
+          supplier:"Digital Service",
           label:"Entrega Produto Virtual · Acesso Digital",
           stages:[
             { icon:"💳", label:"Confirmação de Pagamento", status:"done"    },
@@ -582,6 +587,7 @@ window.AIWData = (function () {
         },
         {
           id:"g-physical", workflow:"entrega-domicilio", fulfillmentType:"delivery",
+          supplier:"Correios SEDEX",
           label:"Entrega em Domicílio · Correios SEDEX",
           stages:[
             { icon:"💳", label:"Confirmação de Pagamento", status:"done"    },
@@ -625,6 +631,7 @@ window.AIWData = (function () {
         {
           id:"g-kit", workflow:"entrega-domicilio", type:"kit",
           fulfillmentType:"delivery",
+          supplier:"Loggi",
           label:"Entrega em Domicílio · Loggi",
           stages:[
             { icon:"💳", label:"Confirmação de Pagamento", status:"done"   },
@@ -660,6 +667,7 @@ window.AIWData = (function () {
         {
           id:"g-individual", workflow:"entrega-domicilio", type:"canceling",
           fulfillmentType:"delivery",
+          supplier:"Correios",
           label:"Entrega em Domicílio · Correios",
           stages:[
             { icon:"💳", label:"Confirmação de Pagamento", status:"done"    },

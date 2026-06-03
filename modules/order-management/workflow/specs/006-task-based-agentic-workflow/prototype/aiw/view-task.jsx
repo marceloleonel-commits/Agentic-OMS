@@ -556,6 +556,11 @@ function OdRail({ group }) {
               )}
             </div>
             <div className="od-rail-meta">
+              {group.supplier && (
+                <span style={{ display: "inline-flex", alignItems: "center", fontSize: 10, fontWeight: 600, color: "#2962FF", background: "#EFF6FF", border: "1px solid #BFDBFE", borderRadius: 5, padding: "1px 8px", marginRight: 7 }}>
+                  {group.supplier}
+                </span>
+              )}
               {group.items.length} item{group.items.length !== 1 ? "s" : ""} · {done}/{total} etapas concluídas
               {active && <span style={{ color: isCanceling ? "#EF4444" : "var(--primary)", marginLeft: 6 }}>· {active.label}</span>}
             </div>

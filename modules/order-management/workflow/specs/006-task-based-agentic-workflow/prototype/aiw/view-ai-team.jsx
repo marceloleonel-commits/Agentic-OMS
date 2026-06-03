@@ -42,7 +42,7 @@ function AITeamDrawer({ open, onClose, onPick }) {
 
         <div className="aiteam-section-title">Agentes especializados</div>
         <div className="aiteam-list">
-          {team.filter((a) => a.id !== "assistant" && a.id !== "orchestration").map((a) =>
+          {team.filter((a) => a.id !== "assistant" && a.id !== "orchestration").sort((a, b) => a.name.localeCompare(b.name)).map((a) =>
             <div key={a.id} className="aiteam-row">
               <div className="aiteam-avatar" style={{ background: a.color }}>{a.emoji}</div>
               <div className="aiteam-body">

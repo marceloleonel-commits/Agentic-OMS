@@ -101,17 +101,27 @@
     var onAddFollowUp    = options.onAddFollowUp; // callback for new task in task context
     var onAgentSay       = options.onAgentSay;
     var onTyping         = options.onTyping;
+    var onAddChip        = options.onAddChip;   // callback(chip) to add dynamic action chip
 
-    var experienceDraft = null;
-    var newTaskDraft    = null; // state machine for "Create new task" in task context
+    var experienceDraft  = null;
+    var newTaskDraft     = null; // state machine for "Create new task" in task context
+    var lastFreeAction   = null; // last free-typed action text (for "Criar botão de ação")
 
-    /* Simulate async agent response */
-    function agentSay(msgs, delay) {
+    /* Simulate async agent response.
+       If addMeta === true, appends a "save this action?" prompt at the end. */
+    function agentSay(msgs, delay, addMeta) {
       var d = (delay != null ? delay : 850) + Math.random() * 180;
       if (onTyping) onTyping(true);
       setTimeout(function () {
         if (onTyping) onTyping(false);
         var arr = Array.isArray(msgs) ? msgs : [msgs];
+        if (addMeta) {
+          arr = arr.concat([{
+            from: 'agent',
+            text: 'Deseja salvar esta ação para uso rápido?',
+            quickReplies: ['Executar sempre que entrar no pedido', 'Criar botão de ação no chat']
+          }]);
+        }
         if (onAgentSay) onAgentSay(arr);
       }, d);
     }
@@ -385,7 +395,8 @@
       });
     }
 
-    function handleOrderDetailMessage(text) {
+    function handleOrderDetailMessage(text, opts) {
+      var isFromButton = !!(opts && (opts.fromChip || opts.fromReply));
       var lower = text.toLowerCase();
       var orders = (data && data.orders) || [];
       var currentOrder = contextOrderId
@@ -393,13 +404,35 @@
         : null;
       var orderId = currentOrder ? currentOrder.short || currentOrder.id : contextOrderId;
 
+      /* ── Meta-option responses ── */
+      if (/executar sempre que entrar no pedido/i.test(lower)) {
+        agentSay({ from: 'agent', text: '✅ Feito. Esta ação será executada automaticamente sempre que você entrar neste pedido.' });
+        return;
+      }
+
+      if (/criar botão de ação no chat/i.test(lower)) {
+        if (lastFreeAction && onAddChip) {
+          onAddChip({ icon: 'play', label: lastFreeAction });
+        }
+        agentSay({ from: 'agent', text: lastFreeAction
+          ? '✅ Botão "' + lastFreeAction + '" adicionado ao chat. Ele ficará disponível para uso rápido.'
+          : '✅ Botão de ação adicionado ao chat.' });
+        lastFreeAction = null;
+        return;
+      }
+
+      /* Track the free action label for meta-options */
+      if (!isFromButton) {
+        lastFreeAction = text.length > 38 ? text.slice(0, 35) + '…' : text;
+      }
+
       /* ── Alterar item ── */
       if (/alterar.*item|modificar.*item|change.*item|trocar.*item/i.test(lower)) {
         agentSay([
           { from: 'agent', text: 'Para alterar um item, preciso identificar qual item e o tipo de alteração (quantidade, endereço ou substituição de produto).' },
           { from: 'agent', text: '⚠️ Alterações de item exigem confirmação do seller e podem impactar o SLA. Deseja prosseguir?',
-            quickReplies: ['Sim, prosseguir', 'Escalar para Supervisor', 'Cancelar'] }
-        ]);
+            quickReplies: ['Sim, prosseguir', 'Cancelar'] }
+        ], undefined, !isFromButton);
         return;
       }
 
@@ -409,7 +442,7 @@
           { from: 'agent', text: '⚠️ O cancelamento do pedido ' + orderId + ' é uma ação irreversível e requer autorização.' },
           { from: 'agent', text: 'Posso escalar esta solicitação para um Supervisor para análise e aprovação.',
             quickReplies: ['Escalar para Supervisor', 'Não, manter pedido'] }
-        ]);
+        ], undefined, !isFromButton);
         return;
       }
 
@@ -429,40 +462,39 @@
               }]);
             }
           }
-        ]);
+        ], undefined, !isFromButton);
         return;
       }
 
       /* ── SLA ── */
       if (/sla|prazo|tempo restante|verificar sla/i.test(lower)) {
         if (!currentOrder || currentOrder.eta === '—') {
-          agentSay({ from: 'agent', text: 'Sem ETA definido para este pedido.' });
+          agentSay({ from: 'agent', text: 'Sem ETA definido para este pedido.' }, undefined, !isFromButton);
         } else {
           var p = currentOrder.eta.split('/').map(Number);
           var etaDate = new Date(p[2], p[1] - 1, p[0]);
           var hoursLeft = Math.round((etaDate - PROTOTYPE_DATE) / 3600000);
-          var slaH = SLA_MAP[currentOrder.sla] || '?';
           var risk = isAtSlaRisk(currentOrder);
           agentSay({ from: 'agent',
             text: (risk ? '⚠️ ' : '✅ ') + 'SLA: ' + currentOrder.sla + ' · Tempo restante: ' + (hoursLeft > 0 ? hoursLeft + 'h' : 'VENCIDO') + ' · ETA: ' + currentOrder.eta,
             quickReplies: risk ? ['Escalar para Supervisor', 'Alterar item do pedido'] : ['Alterar item do pedido', 'Cancelar o pedido']
-          });
+          }, undefined, !isFromButton);
         }
         return;
       }
 
       /* ── Histórico ── */
       if (/histórico|history|auditoria/i.test(lower)) {
-        agentSay({ from: 'agent', text: 'Histórico do pedido ' + orderId + ':\n\n• Pedido criado e pagamento confirmado\n• Separação iniciada\n• Status atual: ' + (currentOrder ? currentOrder.statusLabel : 'Em processamento') });
+        agentSay({ from: 'agent', text: 'Histórico do pedido ' + orderId + ':\n\n• Pedido criado e pagamento confirmado\n• Separação iniciada\n• Status atual: ' + (currentOrder ? currentOrder.statusLabel : 'Em processamento') }, undefined, !isFromButton);
         return;
       }
 
-      /* ── Fallback: ação não mapeada → sugerir escalação ── */
+      /* ── Fallback: ação não mapeada ── */
       agentSay({
         from: 'agent',
-        text: 'Não consigo executar esta ação automaticamente. Posso escalar a solicitação para um Supervisor que poderá analisá-la.',
-        quickReplies: ['Escalar para Supervisor', 'Alterar item do pedido', 'Cancelar o pedido']
-      });
+        text: 'Não identifiquei uma ação mapeada para este pedido. Tente descrever o que precisa fazer ou escolha uma das opções abaixo.',
+        quickReplies: ['Alterar item do pedido', 'Cancelar o pedido', 'Verificar SLA restante']
+      }, undefined, !isFromButton);
     }
 
     /* ── Task context ─────────────────────────────────────────── */
@@ -668,11 +700,11 @@
 
     /* ── Public API ── */
     return {
-      send: function (userText) {
+      send: function (userText, opts) {
         if (!userText || !userText.trim()) return;
         if (context === 'assistant')          handleAssistantMessage(userText);
         else if (context === 'orchestration') handleOrchestrationMessage(userText);
-        else if (context === 'order-detail')  handleOrderDetailMessage(userText);
+        else if (context === 'order-detail')  handleOrderDetailMessage(userText, opts);
         else if (context === 'task')          handleTaskMessage(userText);
       },
       reset: function () {

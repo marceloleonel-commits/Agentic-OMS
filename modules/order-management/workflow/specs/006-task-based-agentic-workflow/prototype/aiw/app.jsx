@@ -40,6 +40,7 @@ function App() {
   // Order-detail intelligent chat state
   const [orderChatMsgs, setOrderChatMsgs] = useState([]);
   const [orderChatTyping, setOrderChatTyping] = useState(false);
+  const [orderDynamicChips, setOrderDynamicChips] = useState([]);
   const orderEngineRef = useRef(null);
 
   useEffect(() => {
@@ -85,13 +86,13 @@ function App() {
         quickReplies: [
           "Alterar item do pedido",
           "Cancelar o pedido",
-          "Escalar para Supervisor",
           "Verificar SLA restante",
         ]
       }
     ] : [{ from: "agent", text: "Selecione um pedido para começar." }];
     setOrderChatMsgs(initialMsgs);
     setOrderChatTyping(false);
+    setOrderDynamicChips([]);
     orderEngineRef.current = ChatEngine.create({
       context: "order-detail",
       data: AIWData,
@@ -99,6 +100,7 @@ function App() {
       onNavigate: (r) => setRoute({ name: "order-detail", orderId: r.orderId }),
       onAgentSay: (msgs) => setOrderChatMsgs(m => [...m, ...msgs]),
       onTyping: setOrderChatTyping,
+      onAddChip: (chip) => setOrderDynamicChips(prev => [...prev, chip]),
     });
   }, [route.name, route.orderId]);
 
@@ -214,15 +216,16 @@ function App() {
       { icon: "graph",   label: "Verificar SLA restante"  },
       { icon: "sparkle", label: "Escalar para Supervisor" }
     ];
-    const handleOrderChatSend = (text) => {
+    const handleOrderChatSend = (text, opts) => {
       setOrderChatMsgs(m => [...m, { from: "user", text }]);
-      orderEngineRef.current && orderEngineRef.current.send(text);
+      orderEngineRef.current && orderEngineRef.current.send(text, opts);
     };
     view = (
       <ResizableSplit screenLabel="Order Detail">
         <ChatPanel
           title={currentOrder ? `Pedido ${currentOrder.short}` : "Detalhe do Pedido"}
-          chips={[]}
+          chips={orderDynamicChips}
+          alwaysShowChips={true}
           messages={orderChatMsgs}
           onSend={handleOrderChatSend}
           isTyping={orderChatTyping}

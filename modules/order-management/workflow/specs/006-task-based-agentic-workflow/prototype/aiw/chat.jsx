@@ -53,6 +53,7 @@ function ChatPanel({
   intro,
   contextCard,
   chips = [],
+  alwaysShowChips = false,
   initialMessages = [],
   placeholder = "Message VTEX My Assistant...",
   agent = "VTEX My Assistant",
@@ -85,20 +86,20 @@ function ChatPanel({
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [messages, isTyping]);
 
-  const send = (text, replyFromMsgIndex) => {
+  const send = (text, replyFromMsgIndex, opts) => {
     if (!text.trim()) return;
     if (replyFromMsgIndex !== undefined) {
       setAnsweredReplies(prev => ({ ...prev, [replyFromMsgIndex]: text.trim() }));
     }
     if (isControlled) {
-      externalOnSend?.(text.trim());
+      externalOnSend?.(text.trim(), opts);
     } else {
       setLocalMessages((m) => [...m, { from: "user", text }]);
     }
   };
 
   const hasUser = messages.some((m) => m.from === "user");
-  const showChips = !hasUser && chips.length > 0;
+  const showChips = (alwaysShowChips || !hasUser) && chips.length > 0;
 
   function renderMessage(m, i) {
     if (m.from === "user") {
@@ -201,7 +202,7 @@ function ChatPanel({
                     <button
                       key={j}
                       className={`chat-origin-card${isSelected ? " selected" : ""}${answered && !isSelected ? " dimmed" : ""}`}
-                      onClick={() => !answered && send(label, i)}
+                      onClick={() => !answered && send(label, i, { fromReply: true })}
                       disabled={!!answered && !isSelected}
                     >
                       {r.icon && <span className="chat-origin-card-icon">{r.icon}</span>}
@@ -214,7 +215,7 @@ function ChatPanel({
                   <button
                     key={j}
                     className={`chat-quick-reply${isSelected ? " selected" : ""}${answered && !isSelected ? " dimmed" : ""}`}
-                    onClick={() => !answered && send(label, i)}
+                    onClick={() => !answered && send(label, i, { fromReply: true })}
                     disabled={!!answered && !isSelected}
                   >
                     {label}
@@ -277,10 +278,10 @@ function ChatPanel({
 
         {showChips && (
           <div>
-            <div className="chat-sub-q">What do you want to do first?</div>
+            <div className="chat-sub-q">O que gostaria de fazer?</div>
             <div className="chip-row">
               {chips.map((c, j) => (
-                <button key={j} className="suggest-chip" onClick={() => send(c.label)}>
+                <button key={j} className="suggest-chip" onClick={() => send(c.label, undefined, { fromChip: true })}>
                   <Icon name={c.icon} size={12} /> {c.label}
                 </button>
               ))}
