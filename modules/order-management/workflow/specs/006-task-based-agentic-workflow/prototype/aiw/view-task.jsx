@@ -129,6 +129,34 @@ function buildOrderItemGroups(fullOrder) {
   return (fullOrder && fullOrder.itemGroups) ? fullOrder.itemGroups : [];
 }
 
+/* ── Projections strip (connector bindings) ── */
+function ProjectionsStrip({ projections }) {
+  if (!projections || projections.length === 0) return null;
+  const statusStyle = {
+    done:    { dot: "#169B61", bg: "#F0FDF4", color: "#169B61", border: "#BBF7D0" },
+    active:  { dot: "var(--primary)", bg: "var(--primary-soft)", color: "var(--primary)", border: "var(--primary)" },
+    pending: { dot: "#9CA3AF", bg: "#F9FAFB", color: "var(--fg-3)", border: "var(--border)" },
+    error:   { dot: "#DC2626", bg: "#FEF2F2", color: "#DC2626", border: "#FECACA" },
+  };
+  return (
+    <div style={{ display: "flex", flexWrap: "wrap", gap: 6, padding: "8px 14px 4px", borderBottom: "1px solid var(--border)" }}>
+      <span style={{ fontSize: 10, fontWeight: 700, color: "var(--fg-3)", textTransform: "uppercase", letterSpacing: ".5px", alignSelf: "center", marginRight: 2 }}>
+        Connectors
+      </span>
+      {projections.map((p, i) => {
+        const s = statusStyle[p.status] || statusStyle.pending;
+        return (
+          <span key={i} style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 10.5, fontWeight: 500, background: s.bg, color: s.color, border: `1px solid ${s.border}`, borderRadius: 6, padding: "2px 8px" }}>
+            <span style={{ width: 5, height: 5, borderRadius: "50%", background: s.dot, flexShrink: 0 }} />
+            <span style={{ fontFamily: "monospace", letterSpacing: ".2px" }}>{p.connector}</span>
+            <span style={{ opacity: .65 }}>/{p.name}</span>
+          </span>
+        );
+      })}
+    </div>
+  );
+}
+
 /* ── Stage card (horizontal strip) ── */
 function OdStageCard({ stage }) {
   const map = {
@@ -150,6 +178,16 @@ function OdStageCard({ stage }) {
 }
 
 /* ── Per-item step row ── */
+const CONNECTOR_STATUS_MAP = {
+  success:          { label: "success",          bg: "#F0FDF4", color: "#169B61", border: "#BBF7D0" },
+  validation_error: { label: "validation_error", bg: "#FFF7ED", color: "#C2410C", border: "#FED7AA" },
+  api_error:        { label: "api_error",        bg: "#FEF2F2", color: "#DC2626", border: "#FECACA" },
+  rate_limited:     { label: "rate_limited",     bg: "#FEFCE8", color: "#A16207", border: "#FEF08A" },
+  network_error:    { label: "network_error",    bg: "#FEF2F2", color: "#DC2626", border: "#FECACA" },
+  not_supported:    { label: "not_supported",    bg: "#F9FAFB", color: "var(--fg-3)", border: "var(--border)" },
+  unrecoverable:    { label: "unrecoverable",    bg: "#FDF2F8", color: "#9D174D", border: "#FBCFE8" },
+};
+
 function OdStepRow({ step }) {
   const colorMap = { done: "#169B61", active: "var(--primary)", pending: "#D1D5DB" };
   const labelMap = { done: "Concluído", active: "Em andamento", pending: "Pendente" };
@@ -160,6 +198,7 @@ function OdStepRow({ step }) {
   };
   const b  = badgeMap[step.status] || badgeMap.pending;
   const lc = colorMap[step.status] || colorMap.pending;
+  const cs = step.connectorStatus ? (CONNECTOR_STATUS_MAP[step.connectorStatus] || null) : null;
   return (
     <div className="od-step-row">
       <div className="od-step-bar" style={{ background: step.cancelSignal ? "#EF4444" : lc }} />
@@ -185,6 +224,16 @@ function OdStepRow({ step }) {
             <Icon name="chevron-right" size={14} />
           </div>
         </div>
+        {cs && (
+          <div className="od-step-trigger" style={{ marginTop: 3, gap: 5 }}>
+            <span style={{ fontSize: 10, fontWeight: 700, background: cs.bg, color: cs.color, border: `1px solid ${cs.border}`, borderRadius: 5, padding: "1px 7px", fontFamily: "monospace", letterSpacing: ".2px" }}>
+              {cs.label}
+            </span>
+            {step.connectorNote && (
+              <span style={{ fontSize: 11, color: cs.color }}>{step.connectorNote}</span>
+            )}
+          </div>
+        )}
         {step.agent && step.time && (
           <div className="od-step-trigger">
             <Icon name="sparkle" size={10} />
@@ -574,6 +623,7 @@ function OdRail({ group }) {
       {open && (
         <div className="od-rail-body">
           {isReturn && group.returnDetail && <OdReturnCard detail={group.returnDetail} />}
+          <ProjectionsStrip projections={group.projections} />
           <div className="od-stage-strip">
             {group.stages.map((st, i) => <OdStageCard key={i} stage={st} />)}
           </div>

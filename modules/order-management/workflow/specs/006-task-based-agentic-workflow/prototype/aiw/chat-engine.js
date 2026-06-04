@@ -20,13 +20,6 @@
     { label: 'Do zero',              icon: '✨', desc: 'Experiência em branco para configurar livremente'  }
   ];
 
-  var MILESTONE_DEFAULTS = [
-    '💳 Confirmação de Pagamento',
-    '📦 Preparando Itens',
-    '🧾 NFes Emitidas',
-    '📬 Recebido pelo Cliente'
-  ];
-
   /* ─── Intent detection ──────────────────────────────────────── */
 
   var INTENT_PATTERNS = [
@@ -231,7 +224,7 @@
       if (/^(nova|um|uma|criar|quero|para|de|um|a)$/i.test(preName)) preName = '';
 
       if (preName) {
-        experienceDraft = { step: 'model', name: preName, model: '', icon: '', description: '', milestones: MILESTONE_DEFAULTS.slice() };
+        experienceDraft = { step: 'model', name: preName, model: '', icon: '', description: '' };
         agentSay([
           { from: 'agent', text: 'Ótimo! Vou ajudar a criar a experiência "' + preName + '".' },
           {
@@ -241,7 +234,7 @@
           }
         ]);
       } else {
-        experienceDraft = { step: 'name', name: '', model: '', icon: '', description: '', milestones: MILESTONE_DEFAULTS.slice() };
+        experienceDraft = { step: 'name', name: '', model: '', icon: '', description: '' };
         agentSay({ from: 'agent', text: 'Vamos criar uma nova Experiência! Como ela vai se chamar?' });
       }
     }
@@ -304,13 +297,7 @@
       if (step === 'description') {
         experienceDraft.description = /pular|skip/.test(lower) ? '' : text.trim();
         experienceDraft.step = 'preview';
-        agentSay({
-          from: 'agent',
-          text: 'Os marcos padrão da experiência "' + experienceDraft.name + '":\n\n'
-            + MILESTONE_DEFAULTS.join('\n')
-            + '\n\nVocê pode personalizar tarefas de cada marco depois da criação.',
-          quickReplies: ['Continuar', 'Personalizar depois']
-        });
+        agentSay({ from: 'agent', text: 'Perfeito! Vamos revisar o resumo da experiência antes de criar.' });
         return true;
       }
 
@@ -320,8 +307,7 @@
           name: experienceDraft.name,
           model: experienceDraft.model,
           icon: experienceDraft.icon,
-          description: experienceDraft.description,
-          milestones: experienceDraft.milestones.slice()
+          description: experienceDraft.description
         };
         // Two-message response: summary text + wf-draft card
         if (onTyping) onTyping(true);
@@ -341,7 +327,7 @@
               onConfirm: function () {
                 if (onAgentSay) onAgentSay([{
                   from: 'agent',
-                  text: 'Experiência "' + snapshot.name + '" criada com sucesso! Acesse o Workflow Board para configurar as tarefas de cada marco. ✨'
+                  text: 'Experiência "' + snapshot.name + '" criada com sucesso! Acesse o Workflow Board para configurar as etapas e tarefas do workflow. ✨'
                 }]);
                 if (onCreateExperience) onCreateExperience(snapshot);
                 experienceDraft = null;
