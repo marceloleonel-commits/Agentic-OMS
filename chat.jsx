@@ -1,8 +1,18 @@
 /* global React, Icon */
 const { useState, useRef, useEffect } = React;
 
-function MessageComposer({ placeholder = "Message VTEX My Assistant...", onSend, agent = "VTEX My Assistant" }) {
+function MessageComposer({ placeholder = "Message VTEX My Assistant...", onSend, agent = "VTEX My Assistant", composerRef }) {
   const [v, setV] = useState("");
+  const textareaRef = useRef(null);
+  React.useImperativeHandle(composerRef, () => ({
+    append: (text) => {
+      setV(prev => {
+        const sep = prev.trim() ? " " : "";
+        return prev + sep + text;
+      });
+      setTimeout(() => textareaRef.current?.focus(), 0);
+    },
+  }));
   const submit = () => {
     if (!v.trim()) return;
     onSend && onSend(v.trim());
@@ -12,6 +22,7 @@ function MessageComposer({ placeholder = "Message VTEX My Assistant...", onSend,
     <div className="composer">
       <div className="composer-inner">
         <textarea
+          ref={textareaRef}
           rows={1}
           placeholder={placeholder}
           value={v}
@@ -62,6 +73,7 @@ function ChatPanel({
   messages: controlledMessages,
   onSend: externalOnSend,
   isTyping = false,
+  composerRef,
 }) {
   const isControlled = controlledMessages !== undefined;
   const [localMessages, setLocalMessages] = useState(initialMessages);
@@ -291,7 +303,7 @@ function ChatPanel({
       </div>
 
       <div className="chat-composer-wrap">
-        <MessageComposer placeholder={placeholder} agent={agent} onSend={send} />
+        <MessageComposer placeholder={placeholder} agent={agent} onSend={send} composerRef={composerRef} />
       </div>
     </div>
   );

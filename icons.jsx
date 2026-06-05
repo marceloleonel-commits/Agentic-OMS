@@ -14,6 +14,8 @@ const Icon = ({ name, size = 16, ...rest }) => {
       return (<svg {...common}><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M3 9h18M8 14h6"/></svg>);
     case "chat":
       return (<svg {...common}><path d="M4 5h16v11H8l-4 4V5z"/></svg>);
+    case "chat-circle":
+      return (<svg {...common}><path d="M12 3C7.03 3 3 6.58 3 11c0 2.18.81 4.17 2.14 5.72L4 21l4.55-1.49A9.27 9.27 0 0 0 12 20c4.97 0 9-3.58 9-9s-4.03-8-9-8z"/></svg>);
     case "chevron-left":
       return (<svg {...common}><path d="M15 6l-6 6 6 6"/></svg>);
     case "chevron-right":
@@ -109,6 +111,11 @@ const IconDragDots = ({ size = 16, ...rest }) => (
     <path d="M104,60a12,12,0,1,1-12-12A12,12,0,0,1,104,60Zm60,12a12,12,0,1,0-12-12A12,12,0,0,0,164,72ZM92,116a12,12,0,1,0,12,12A12,12,0,0,0,92,116Zm72,0a12,12,0,1,0,12,12A12,12,0,0,0,164,116ZM92,172a12,12,0,1,0,12,12A12,12,0,0,0,92,172Zm72,0a12,12,0,1,0,12,12A12,12,0,0,0,164,172Z"/>
   </svg>
 );
+const IconCaretLeftSmall = ({ size = 16, ...rest }) => (
+  <svg width={size} height={size} viewBox="0 0 256 256" fill="currentColor" xmlns="http://www.w3.org/2000/svg" {...rest}>
+    <path d="M165.66,202.34a8,8,0,0,1-11.32,11.32l-80-80a8,8,0,0,1,0-11.32l80-80a8,8,0,0,1,11.32,11.32L91.31,128Z"/>
+  </svg>
+);
 
 window.Icon = Icon;
 window.IconSparkleFill = IconSparkleFill;
@@ -118,6 +125,7 @@ window.IconCube = IconCube;
 window.IconCursorFill = IconCursorFill;
 window.IconDragDots = IconDragDots;
 window.IconPlayCircleFill = IconPlayCircleFill;
+window.IconCaretLeftSmall = IconCaretLeftSmall;
 window.useState = useState;
 window.useMemo = useMemo;
 window.useRef = useRef;

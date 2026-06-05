@@ -156,6 +156,14 @@
 }
 [data-sl-button][data-variant="tertiary"]:hover { background: var(--bg-soft); color: var(--fg); }
 [data-sl-button][data-variant="tertiary"]:active { background: var(--border); }
+/* Tertiary button with text label — overrides fixed icon-only sizing */
+[data-sl-button][data-variant="tertiary"][data-has-label] {
+  width: auto; min-width: auto; max-width: none;
+  padding: 0 10px;
+  gap: 4px;
+  font-size: 13px; font-weight: 500;
+  display: inline-flex; align-items: center;
+}
 
 /* ---------- Floating top-right actions (Settings + AI team) ---------- */
 .aiw-global-actions {
@@ -576,6 +584,8 @@
 .person-avatar {
   display: inline-grid; place-items: center;
   width: 1.375rem; height: 1.375rem; border-radius: 50%;
+  aspect-ratio: 1 / 1;
+  flex-shrink: 0;
   background: linear-gradient(135deg, #5d6c83, #2a3f5e);
   color: #fff;
   font-size: 0.656rem; font-weight: 500;
@@ -772,7 +782,11 @@
   border-radius: 16px;
   overflow-x: auto; overflow-y: hidden;
   background: var(--bg-soft);
+  /* hide scrollbar visually, keep scroll functionality */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
+.wf-list-stages::-webkit-scrollbar { display: none; }
 .wf-list-stage-col {
   display: flex; flex-direction: column;
   flex: 1; min-width: 140px; max-width: 220px;
@@ -812,6 +826,8 @@
   color: var(--fg-4, #d1d5db);
   padding: 4px;
   align-self: flex-start;
+  background-color: var(--bg-muted);
+  border-radius: 4px;
 }
 .wf-list-stage-arrow svg {
   border-radius: 2px;
@@ -974,6 +990,8 @@
 .wf-list-status { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 500; padding: 2px 8px; border-radius: 3px; height: 24px; }
 .wf-list-status.active { background: #D1FAE5; color: #00a81c; font-weight: 600; }
 .wf-list-status.archived { background: #F3F4F6; color: #6B7280; border: 1px solid var(--border); }
+.wf-list-status--purple { background: #ede9fe; color: #7c3aed; font-weight: 600; }
+.wf-list-status--neutral { background: #F3F4F6; color: #6B7280; border: 1px solid var(--border); }
 .wf-custom-badge {
   display: inline-flex; align-items: center; gap: 4px;
   margin-left: 8px;
@@ -1061,8 +1079,8 @@
 }
 .setting-row.first, .setting-field > .setting-row:first-of-type { border-top: none; padding-top: 16px; padding-bottom: 16px; }
 .setting-row-body { display: flex; flex-direction: column; gap: 2px; }
-.setting-row-title { font-size: 13px; font-weight: 500; color: var(--fg); }
-.setting-row-desc  { font-size: 12px; color: var(--fg-3); }
+.setting-row-title { font-size: 14px; font-weight: 500; color: var(--fg); }
+.setting-row-desc  { font-size: 13px; color: var(--fg-3); }
 .setting-radio {
   display: flex; align-items: center; gap: 12px;
   width: 100%;
@@ -1224,10 +1242,10 @@ body.resizing-x .split-resizer::before { background: var(--primary); }
 /* Shadow between chat and canvas */
 .resizable-split .chat-panel {
   border-right: none;
-  box-shadow: 6px 0 14px -8px rgba(15, 17, 21, .12);
+  box-shadow: none;
 }
 .resizable-split .detail-panel {
-  box-shadow: -6px 0 14px -8px rgba(15, 17, 21, .12);
+  box-shadow: none;
 }
 
 /* No border on chat-head / detail-head in task open view */
@@ -1543,7 +1561,7 @@ body.resizing-x .split-resizer::before { background: var(--primary); }
 /* ---------- Tweaks navigation shortcuts ---------- */
 .tweak-nav-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: 6px;
 }
 .tweak-nav {
@@ -1732,6 +1750,55 @@ sl-tag[data-color="blue"] {
 .stages-section {
   display: flex; flex-direction: column;
   gap: 12px;
+  padding: 0;
+  background-color: #fff;
+  border-radius: 12px;
+}
+.stages-section:has(.stage-stack) {
+  padding: 0;
+  background-color: #fff;
+}
+
+/* ── 1-passo detail view ─────────────────────────────────────────── */
+.wf-detail-stages-1step {
+  display: flex; align-items: flex-start;
+  gap: 8px;
+  margin-left: 0;
+  padding: 16px;
+  background-color: var(--bg-soft);
+  border-radius: 24px;
+  overflow-x: auto; overflow-y: visible;
+  scrollbar-width: none;
+}
+.wf-detail-stages-1step::-webkit-scrollbar {
+  display: none;
+}
+.wf-detail-1step-col {
+  flex-shrink: 0;
+  width: 260px;
+}
+.wf-detail-1step-col .stage-card {
+  border-radius: 8px;
+}
+.wf-detail-1step-arrow {
+  flex-shrink: 0;
+  align-self: flex-start;
+  margin-top: 14px;
+}
+/* Scoped overrides for stage elements inside 1-passo — don't affect 2-passos */
+.wf-detail-stages-1step .stage-card-head {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+.wf-detail-stages-1step .stage-task {
+  padding: 8px 2px 8px 2px;
+}
+.wf-detail-stages-1step .stage-task-name {
+  font-size: 12px;
+}
+.wf-detail-stages-1step .stage-add-task-btn {
+  padding-top: 12px;
+  padding-bottom: 12px;
 }
 
 /* Shoreline Heading display3: small container title (form section, card) */
@@ -1756,6 +1823,16 @@ sl-tag[data-color="blue"] {
   background: #fff;
   box-shadow: 0 1px 2px rgba(0,0,0,0.08);
   overflow: hidden;
+  cursor: grab;
+  transition: opacity 0.15s, box-shadow 0.15s;
+}
+.stage-card--dragging {
+  opacity: 0.45;
+  box-shadow: none;
+  cursor: grabbing;
+}
+.stage-card--drag-over {
+  box-shadow: 0 0 0 2px var(--primary, #1E6BC2), 0 4px 16px rgba(30,107,194,0.15);
 }
 .stage-card-head {
   display: flex; align-items: center; justify-content: space-between;
@@ -1786,10 +1863,9 @@ sl-tag[data-color="blue"] {
 .stage-reorder-btn:disabled { color: #ccc; cursor: default; }
 
 .stage-task {
-  display: grid;
-  grid-template-columns: 24px 1fr auto auto;
-  gap: 12px;
+  display: flex;
   align-items: center;
+  gap: 8px;
   padding: 16px 16px 16px 8px;
   border-top: 1px solid #EDEDED;
   background: transparent;
@@ -1807,6 +1883,7 @@ sl-tag[data-color="blue"] {
   font-size: 14px;
   letter-spacing: -0.02em;
   color: #1F1F1F;
+  flex: none;
 }
 .stage-task-tag {
   display: inline-flex; align-items: center; justify-content: center;
@@ -1827,6 +1904,12 @@ sl-tag[data-color="blue"] {
   flex-shrink: 0;
 }
 .stage-task-grip:active { cursor: grabbing; }
+
+/* Prevent SVGs inside task rows from being squashed by flex layout recalculations */
+.stage-task svg {
+  flex-shrink: 0;
+  min-width: 0;
+}
 
 .stage-task.is-dragging {
   opacity: 0.35;
@@ -1928,16 +2011,277 @@ sl-tag[data-color="blue"] {
 }
 .wf-settings-crumb .od-back-link:hover { color: var(--primary); text-decoration: none; }
 
+/* ── Settings view/edit toggle ──────────────────────────────────── */
+/* ── Inline workflow settings ─────────────────────────────────────────────── */
+.wf-settings-inline {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #fff;
+  margin-bottom: 20px;
+  overflow: hidden;
+}
+.wf-settings-inline-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border-bottom: 1px solid transparent;
+  cursor: default;
+}
+.wf-settings-inline--editing .wf-settings-inline-head {
+  border-bottom-color: var(--border);
+  background: var(--bg-soft, #f8f9fc);
+}
+.wf-settings-inline-icon {
+  font-size: 18px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.wf-settings-inline-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fg-1);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.wf-settings-inline-name.editing-label {
+  color: var(--fg-2);
+  font-weight: 500;
+}
+.wf-settings-inline-edit-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: #fff;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--fg-2);
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s;
+  flex-shrink: 0;
+}
+.wf-settings-inline-edit-btn:hover {
+  background: var(--bg-soft);
+  color: var(--fg-1);
+}
+.wf-settings-inline-close-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px; height: 28px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--fg-3);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.wf-settings-inline-close-btn:hover {
+  background: var(--border);
+  color: var(--fg-1);
+}
+.wf-settings-inline-dl {
+  padding: 10px 16px 12px;
+  margin: 0;
+}
+.wf-settings-inline-desc {
+  font-size: 12.5px;
+  color: var(--fg-2);
+}
+.wf-settings-inline-section {
+  padding: 14px 16px;
+  border-top: 1px solid var(--border);
+}
+.wf-settings-inline-section:first-of-type {
+  border-top: none;
+}
+.wf-settings-inline-section-title {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--fg-3);
+  margin-bottom: 10px;
+}
+/* Scoped field-row inside inline settings — match task config alignment */
+.wf-settings-inline .field-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 0;
+}
+.wf-settings-inline .field-label {
+  flex: none;
+  width: 120px;
+  font-size: 12.5px;
+  color: var(--fg-2);
+}
+.wf-settings-inline .field-value-pill {
+  background: transparent;
+  border-radius: 4px;
+  border: none;
+  padding: 3px 8px;
+  font-size: 12.5px;
+  color: var(--fg-1);
+  cursor: pointer;
+  text-align: right;
+  margin-left: auto;
+}
+.wf-settings-inline .field-value-pill:hover {
+  background: var(--bg-soft);
+}
+.wf-settings-inline select.field-value-pill {
+  appearance: none;
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 12.5px;
+  color: var(--fg-1);
+  cursor: pointer;
+}
+.wf-settings-inline .field-cite-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 22px; height: 22px;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  color: var(--fg-3);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.12s, background 0.1s, color 0.1s;
+}
+.wf-settings-inline .field-row:hover .field-cite-btn {
+  opacity: 1;
+}
+.wf-settings-inline .field-cite-btn:hover {
+  background: var(--primary-soft, #eff4ff);
+  color: var(--primary);
+}
+.inline-icon-grid {
+  display: flex; gap: 4px; flex-wrap: wrap;
+}
+/* dep chip removable variant */
+.wf-settings-dep-chip--removable {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.dep-chip-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px; height: 14px;
+  border: none;
+  background: transparent;
+  color: var(--fg-3);
+  cursor: pointer;
+  border-radius: 3px;
+  padding: 0;
+}
+.dep-chip-remove:hover { background: rgba(0,0,0,0.1); }
+/* read-mode "value tag" pill */
+.field-value-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: var(--bg-soft, #f4f5f8);
+  font-size: 12px;
+  color: var(--fg-2);
+}
+
+.wf-settings-view {
+  display: flex; flex-direction: column; gap: 20px;
+}
+.wf-settings-view-section {
+  display: flex; flex-direction: column; gap: 8px;
+}
+.wf-settings-view-section-title {
+  margin: 0;
+  font-size: 12px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: .04em; color: var(--fg-3);
+}
+.wf-settings-view-header {
+  display: flex; align-items: center; gap: 10px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+.wf-settings-view-icon {
+  font-size: 22px; line-height: 1; flex-shrink: 0;
+}
+.wf-settings-view-name {
+  flex: 1; margin: 0;
+  font-size: 18px; font-weight: 600; color: var(--fg);
+  letter-spacing: -.01em;
+}
+.wf-settings-view-desc {
+  margin: 0;
+  font-size: 13px; color: var(--fg-3); line-height: 1.5;
+}
+.wf-settings-edit-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 0 14px; height: 32px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: #fff; color: var(--fg-2);
+  font-size: 13px; font-weight: 500;
+  cursor: pointer; flex-shrink: 0;
+}
+.wf-settings-edit-btn:hover { background: var(--bg-soft); color: var(--fg); }
+.wf-settings-dl {
+  display: flex; flex-direction: column; gap: 0;
+  border: none;
+  border-radius: var(--radius-lg);
+  background: #fff;
+  overflow: hidden;
+}
+.wf-settings-dl-row {
+  display: flex; gap: 16px;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--border);
+}
+.wf-settings-dl-row:last-child { border-bottom: none; }
+.wf-settings-dl-row dt {
+  width: 120px; flex-shrink: 0;
+  font-size: 12.5px; font-weight: 500; color: var(--fg-3);
+  padding-top: 2px;
+}
+.wf-settings-dl-row dd {
+  margin: 0; flex: 1;
+  display: flex; flex-direction: column; gap: 2px;
+}
+.wf-settings-dep-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: var(--bg-soft); border: 1px solid var(--border);
+  border-radius: 5px; padding: 2px 8px;
+  font-size: 12px; color: var(--fg-2);
+  margin-right: 6px;
+}
+.wf-settings-edit-bar {
+  margin-bottom: 4px;
+}
+
 .wf-settings-row {
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
 .wf-settings-card {
-  border: 1px solid var(--border);
+  border: none;
   border-radius: var(--radius-lg);
   background: #fff;
-  padding: 18px 20px;
+  padding: 0;
   display: flex;
   flex-direction: column;
   gap: 0;
@@ -1956,6 +2300,111 @@ sl-tag[data-color="blue"] {
   gap: 14px;
 }
 .wf-icon-grid { display: flex; gap: 6px; flex-wrap: wrap; }
+
+/* ── Inline click-to-edit field rows ──────────────────────────── */
+.field-rows {
+  display: flex;
+  flex-direction: column;
+}
+.field-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+.field-rows .field-row:last-child {
+  border-bottom: none;
+  padding-bottom: 12px;
+}
+.field-rows .field-row:first-child {
+  padding-top: 0;
+}
+.field-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--fg);
+  flex-shrink: 0;
+}
+.field-operator {
+  font-weight: 400;
+  color: var(--fg-3);
+}
+.field-value-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 20px;
+  background: #f0f1f3;
+  border: 1px solid transparent;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--fg);
+  cursor: text;
+  transition: background .12s, border-color .12s;
+  max-width: 320px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.field-value-pill:hover {
+  background: #e4e6ea;
+  border-color: var(--border);
+}
+.field-value-pill.empty {
+  background: #f0f1f3;
+  border: 1px solid transparent;
+  color: var(--fg-4);
+}
+.field-value-pill.empty:hover {
+  background: #e4e6ea;
+  border-color: var(--border);
+}
+.field-value-pill.disabled {
+  cursor: default;
+  pointer-events: none;
+  color: var(--fg-3);
+  background: #f7f8fa;
+}
+.field-empty {
+  font-style: normal;
+  font-size: 12px;
+  color: var(--fg-4);
+}
+.field-value-input {
+  max-width: 280px;
+  height: 32px !important;
+  padding: 4px 10px !important;
+  font-size: 13px !important;
+}
+.field-pills-select {
+  display: flex;
+  gap: 6px;
+}
+.field-option-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 4px;
+  background: #f0f1f3;
+  border: 1px solid transparent;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+  color: var(--fg-2);
+  cursor: pointer;
+  transition: background .12s, border-color .12s, color .12s;
+}
+.field-option-pill:hover {
+  background: #e4e6ea;
+  color: var(--fg);
+}
+.field-option-pill.selected {
+  background: var(--fg);
+  color: #fff;
+  border-color: var(--fg);
+}
 .wf-icon-pick {
   width: 34px; height: 34px;
   border: 1px solid var(--border);
@@ -2103,15 +2552,561 @@ sl-tag[data-color="blue"] {
 }
 .stage-add-task-btn:hover { background: var(--bg-soft); color: var(--primary); }
 
-.stage-add-task-form {
-  display: flex; flex-direction: column; gap: 7px;
-  padding: 10px 12px;
+.stage-add-task-actions {
+  display: flex; justify-content: flex-end; gap: 6px;
+  padding: 8px 12px 10px;
+}
+
+/* ── Task library panel (step 1 of add-task flow) ─────────────────── */
+.task-lib-panel {
+  border-top: 1px solid var(--border);
+  background: var(--bg, #fff);
+  display: flex;
+  flex-direction: column;
+}
+.task-lib-search-row {
+  display: flex;
+  gap: 6px;
+  padding: 10px 12px 8px;
+  border-bottom: 1px solid var(--border);
+}
+.task-lib-search {
+  flex: 1;
+  font-size: 12.5px !important;
+  height: 30px !important;
+  padding: 0 10px !important;
+}
+.task-lib-list {
+  max-height: 260px;
+  overflow-y: auto;
+  padding: 6px 0;
+}
+.task-lib-group {
+  display: flex;
+  flex-direction: column;
+}
+.task-lib-group-label {
+  font-size: 10.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--fg-4, #9ca3af);
+  padding: 6px 14px 3px;
+}
+.task-lib-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  width: 100%;
+  text-align: left;
+  font-size: 12.5px;
+  color: var(--fg);
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.task-lib-item:hover { background: var(--bg-soft); }
+.task-lib-item-name { flex: 1; font-size: 14px; }
+.task-lib-item-owner {
+  font-size: 12px;
+  color: var(--fg-3);
+}
+.task-lib-item-tag {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 1px 6px;
+  border-radius: 99px;
+  flex-shrink: 0;
+}
+.task-lib-item-tag--auto   { background: #dbeafe; color: #1d4ed8; }
+.task-lib-item-tag--manual { background: #fef3c7; color: #92400e; }
+.task-lib-empty {
+  font-size: 12.5px;
+  color: var(--fg-3);
+  padding: 10px 14px;
+  margin: 0;
+}
+.task-lib-custom {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 8px 14px;
+  font-size: 12.5px;
+  color: var(--primary);
+  background: transparent;
+  cursor: pointer;
+  border-top: 1px dashed var(--border);
+  margin-top: 4px;
+  transition: background 0.1s;
+}
+.task-lib-custom:hover { background: var(--bg-soft); }
+
+/* ── Task create form (step 2 of add-task flow) ───────────────────── */
+.task-create-form {
+  border-top: 1px solid var(--border);
+  background: #fff;
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  padding: 16px 16px 0;
+}
+.task-create-form-title {
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: capitalize;
+  letter-spacing: 0;
+  color: var(--fg);
+  padding: 0 0 12px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 0;
+}
+.task-create-section {
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  padding: 12px 0 8px;
+}
+.task-create-section:last-of-type {
+  border-bottom: none;
+}
+.task-create-section-label {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: capitalize;
+  letter-spacing: 0;
+  color: var(--fg);
+  padding: 0 0 10px;
+}
+
+/* Scoped overrides: stage-prop-* inside task-create-form match field-row language */
+.task-create-form .stage-prop-row {
+  padding: 8px 0;
+  min-height: unset;
+  gap: 16px;
+  border-bottom: none;
+}
+.task-create-form .stage-prop-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--fg-3);
+  flex: 0 0 130px;
+  width: 130px;
+}
+.task-create-form .stage-prop-input {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  padding: 4px 10px;
+  height: 32px;
+  font-size: 14px;
+  transition: background .12s, border-color .12s;
+}
+.task-create-form .stage-prop-input:hover {
+  background: #e4e6ea;
+}
+.task-create-form .stage-prop-input:focus {
+  background: #fff;
+  border-color: var(--primary);
+  outline: none;
+}
+.task-create-form .stage-add-task-actions {
+  padding: 10px 0 12px;
+  border-top: 1px solid var(--border);
+  margin-top: 4px;
+}
+
+.stage-card-head--clickable {
+  cursor: pointer;
+  user-select: none;
+}
+.stage-card-head--clickable:hover {
+  background: var(--bg-soft);
+}
+.stage-config-inline {
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+}
+.stage-config-inline-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: #fff;
+  border-bottom: 1px solid var(--border);
+}
+.stage-config-inline-label {
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: capitalize;
+  letter-spacing: 0;
+  color: var(--fg);
+}
+
+/* Scoped overrides: stage-prop rows inside stage-config-inline match stage-task-config field-row language */
+.stage-config-inline .stage-prop-row {
+  padding: 12px 16px;
+  min-height: unset;
+  gap: 16px;
+  border-bottom: 1px solid var(--border);
+}
+.stage-config-inline .stage-prop-row:last-child {
+  border-bottom: none;
+}
+.stage-config-inline .stage-prop-label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--fg-3);
+  flex: 0 0 130px;
+}
+/* Inputs styled as pill-like values — transparent at rest, visible on interaction */
+.stage-config-inline .stage-prop-input {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  padding: 4px 10px;
+  height: 32px;
+  font-size: 14px;
+  transition: background .12s, border-color .12s;
+}
+.stage-config-inline .stage-prop-input:hover {
+  background: #e4e6ea;
+}
+.stage-config-inline .stage-prop-input:focus {
+  background: #fff;
+  border-color: var(--primary);
+  outline: none;
+}
+/* Toggle rows: align items center, no input box */
+.stage-config-inline .stage-prop-row--toggle {
+  padding: 10px 16px;
+}
+.stage-config-close-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--fg-3);
+  transition: background .12s, color .12s;
+}
+.stage-config-close-btn:hover {
+  background: var(--border);
+  color: var(--fg);
+}
+.stage-prop-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 16px;
+  min-height: 40px;
+  border-bottom: 1px solid var(--border);
+}
+.stage-prop-row--first {
+  border-top: none;
+}
+.stage-prop-row:last-child {
+  border-bottom: none;
+}
+.stage-prop-label {
+  flex: 0 0 130px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--fg-3);
+  white-space: nowrap;
+}
+.stage-prop-input {
+  flex: 1;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 13px;
+  color: var(--fg);
+  outline: none;
+  min-width: 0;
+  transition: border-color .12s;
+}
+.stage-prop-input:focus {
+  border-color: var(--primary);
+}
+.stage-prop-input::placeholder {
+  color: var(--fg-3);
+}
+.stage-prop-row--toggle {
+  align-items: center;
+}
+
+/* Cite-in-chat button on prop rows */
+.stage-prop-cite-btn {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  color: var(--fg-3);
+  cursor: pointer;
+  opacity: 0;
+  margin-left: auto;
+  transition: opacity .12s, background .12s, color .12s;
+}
+.stage-prop-row:hover .stage-prop-cite-btn {
+  opacity: 1;
+}
+.stage-prop-cite-btn:hover {
+  background: var(--primary-light, #ede9fe);
+  color: var(--primary);
+}
+
+/* Stage prop pills (visibility selector) */
+.stage-prop-pills {
+  display: flex;
+  gap: 4px;
+  flex: 1;
+}
+.stage-prop-pill {
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--fg-2);
+  cursor: pointer;
+  transition: background .12s, color .12s, border-color .12s;
+}
+.stage-prop-pill.selected {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
+/* Readonly prop value */
+.stage-prop-input--readonly {
+  flex: 1;
+  font-size: 13px;
+  color: var(--fg-2);
+  padding: 4px 2px;
+  display: block;
+}
+
+/* Inline type tag next to task title */
+.stage-task-type-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 7px;
+  border-radius: 4px;
+  font-size: 10.5px;
+  font-weight: 600;
+  background: #F3F4F6;
+  color: var(--fg-2);
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+  letter-spacing: 0.01em;
+}
+
+/* Unsaved-changes badge on task row */
+.stage-task-dirty-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 20px;
+  background: var(--primary);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+/* Task inline config collapse */
+.stage-task--open {
+  background: var(--bg-soft);
+  border-bottom: none;
+}
+.stage-task-chevron {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  color: var(--fg-3);
+  flex-shrink: 0;
+}
+.stage-task-config {
+  border-bottom: 1px solid var(--border);
+  background: #fff;
+  padding: 16px 16px 8px;
+}
+.stage-task-config .wf-settings-card {
+  border-radius: 0;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0;
+  margin-bottom: 0;
+}
+.stage-task-config .wf-settings-card + .wf-settings-card {
+  margin-top: 16px;
+}
+.stage-task-config .wf-settings-card:last-child {
+  border-bottom: none;
+  padding-bottom: 4px;
+}
+.stage-task-config .wf-settings-title {
+  font-size: 14px;
+  text-transform: capitalize;
+  letter-spacing: 0;
+  color: var(--fg);
+  margin-bottom: 10px;
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
+.stage-task-config .field-row {
+  justify-content: flex-start;
+}
+.stage-task-config .field-label {
+  flex: 0 0 130px;
+  width: 130px;
+  font-weight: 500;
+  color: var(--fg-3);
+}
+.stage-task-config .field-value-pill,
+.stage-task-config .field-value-input {
+  flex: 1;
+  min-width: 0;
+  justify-content: flex-start;
+}
+.stage-task-config .field-value-pill {
+  background: transparent;
+  border-radius: 4px;
+}
+.stage-task-config .field-value-pill:hover {
+  background: #e4e6ea;
+}
+
+/* Task config footer — remove action */
+.stage-task-config-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
   border-top: 1px solid var(--border);
   background: var(--bg-soft);
 }
-.stage-add-task-type { width: 130px; flex-shrink: 0; }
-.stage-add-task-actions {
-  display: flex; justify-content: flex-end; gap: 6px;
+.stage-task-remove-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--fg-3);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: 4px;
+  transition: color .12s, background .12s;
+}
+.stage-task-remove-btn:hover {
+  color: #DC2626;
+  background: #FEF2F2;
+}
+.stage-task-remove-confirm-text {
+  flex: 1;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: #DC2626;
+}
+.btn-danger {
+  background: #DC2626;
+  color: #fff;
+  border: none;
+}
+.btn-danger:hover {
+  background: #B91C1C;
+}
+
+/* Cite-in-chat button — field-row and setting-row, scoped to task collapse */
+.field-cite-btn {
+  display: none; /* hidden everywhere by default */
+}
+.stage-task-config .field-cite-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  border: none;
+  background: transparent;
+  color: var(--fg-3);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity .12s, background .12s, color .12s;
+  margin-left: auto;
+}
+.stage-task-config .field-row:hover .field-cite-btn,
+.stage-task-config .setting-row:hover .field-cite-btn,
+.stage-task-config .task-cond-row:hover .field-cite-btn {
+  opacity: 1;
+}
+.stage-task-config .field-cite-btn:hover {
+  background: var(--primary-soft, #eff4ff);
+  color: var(--primary);
+}
+@keyframes cite-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(var(--primary-rgb, 59,130,246), 0.45); }
+  60%  { box-shadow: 0 0 0 6px rgba(var(--primary-rgb, 59,130,246), 0); }
+  100% { box-shadow: 0 0 0 0 rgba(var(--primary-rgb, 59,130,246), 0); }
+}
+.stage-task-config .field-cite-btn.cited {
+  animation: cite-pulse 0.5s ease-out;
+  color: var(--primary);
+}
+/* Keep field-row layout intact with cite btn at far right */
+.stage-task-config .field-row {
+  position: relative;
+}
+.stage-task-config .setting-row {
+  position: relative;
+}
+
+/* Dirty / changed field indicator — scoped to task collapse */
+.stage-task-config .field-row--dirty {
+  position: relative;
+}
+.stage-task-config .field-row--dirty::before {
+  content: "";
+  position: absolute;
+  left: -16px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--primary);
+}
+.stage-task-config .field-value-pill--dirty {
+  color: var(--primary);
+  background: var(--primary-soft, #eff4ff);
+  border-radius: 4px;
+}
+.stage-task-config .field-value-pill--dirty:hover {
+  background: #dce8ff;
+}
+.stage-task-config .field-pills-select {
+  justify-content: flex-start;
 }
 
 /* ── Config card chip simulate variant ───────────────────────────────── */
@@ -2426,6 +3421,13 @@ sl-tag[data-color="blue"] {
 }
 
 /* ─────────────────────────────────────────────────────────────────────── */
+
+/* ── Workflow detail header group (title + meta) ─────────────────────────── */
+.wf-detail-header-group {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
 
 /* ── Workflow metadata section ───────────────────────────────────────────── */
 .wf-meta-section {
@@ -2773,6 +3775,83 @@ sl-tag[data-color="blue"] {
   display: flex; align-items: center; gap: 5px;
 }
 .od-step-trigger svg { color: var(--primary); }
+
+/* ── Detail sector titles ────────────────────────────────────────────── */
+.detail-sector-title {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 0 0 20px;
+}
+.detail-sector-title--spaced {
+  margin-top: 12px;
+}
+.detail-sector-title h2 {
+  font-size: 20px;
+  font-weight: 600;
+  text-transform: capitalize;
+  letter-spacing: 0;
+  color: var(--fg);
+  white-space: nowrap;
+  margin: 0;
+}
+.detail-sector-title::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* ── Version history popup ───────────────────────────────────────────── */
+.wf-ver-hist-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  color: var(--fg-3);
+  transition: background 0.12s, color 0.12s;
+  margin-left: 4px;
+}
+.wf-ver-hist-btn:hover,
+.wf-ver-hist-btn--active {
+  background: var(--bg-soft);
+  color: var(--fg);
+}
+.wf-ver-hist-btn .wf-meta-hist-count {
+  margin-left: 0;
+}
+.wf-ver-hist-popup {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 400;
+  width: 380px;
+  max-height: 480px;
+  overflow-y: auto;
+  background: var(--bg, #fff);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.13), 0 2px 8px rgba(0,0,0,0.07);
+  padding: 0 16px 16px;
+}
+.wf-ver-hist-popup-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0 10px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 12px;
+  position: sticky;
+  top: 0;
+  background: var(--bg, #fff);
+  z-index: 1;
+}
+.wf-ver-hist-popup-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fg);
+}
 
 /* ── Workflow metadata section (WfMetaSection) ───────────────────────── */
 .wf-meta-section {

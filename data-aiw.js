@@ -338,48 +338,6 @@ window.AIWData = (function () {
         ]},
       ]},
 
-    /* ── OJ-04: Entrega pela loja (Ship from Store) ─────────────────────── */
-    { id: "entrega-loja", name: "Entrega pela loja", icon: "🚚",
-      category: "fulfillment", status: "active",
-      desc: "Pedido processado e despachado diretamente pela loja física como origem (Ship from Store).",
-      orders: "348", custom: false,
-      trigger: { type: "order-start" },
-      agentEnabled: true,
-      dependencies: [],
-      version: "1.1", wfStatus: "published_dirty",
-      lastEditedAt: "2025-06-03T08:45:00Z", lastEditedBy: "jackeline@vtex.com",
-      publishedAt:  "2025-05-20T16:30:00Z", publishedBy:  "jackeline@vtex.com",
-      versionLog: [
-        { version: "1.1", publishedAt: "2025-05-20T16:30:00Z", publishedBy: "jackeline@vtex.com",
-          description: "Contingência de atraso adicionada à tarefa Last Mile",
-          appliedTo: "new_orders_only", activeOrdersAtPublish: 348,
-          deltas: [{ entity: "contingency", change: "added", detail: "Atraso > 48h — Task: Last Mile" }] },
-        { version: "1.0", publishedAt: "2025-05-01T09:00:00Z", publishedBy: "ana@vtex.com",
-          description: "Versão inicial do workflow",
-          appliedTo: "new_orders_only", activeOrdersAtPublish: 0,
-          deltas: [{ entity: "general config", change: "changed", detail: "Workflow criado" }] },
-      ],
-      stages: [
-        { id: "el-s1", name: "Confirmação de Pagamento", gate: "payment_settled", linkedToNext: true, category: "PAYMENT", tasks: [
-          { id: "el-1", name: "Autorização de Pagamento", type: "auto", owner: "Gateway", desc: "Pré-autorização do valor junto à adquirente/gateway." },
-          { id: "el-2", name: "Captura de Pagamento",     type: "auto", owner: "Gateway", desc: "Confirmação e captura definitiva do valor autorizado." },
-        ]},
-        { id: "el-s2", name: "Processamento na Loja", linkedToNext: true, category: "FULFILLMENT", tasks: [
-          { id: "el-3", name: "Aceite do Pedido", type: "manual", owner: "Operador Loja", desc: "Loja confirma disponibilidade e aceita o pedido." },
-          { id: "el-4", name: "Picking",          type: "manual", owner: "Operador Loja", desc: "Separação dos produtos no armazém da loja." },
-          { id: "el-5", name: "Packing",          type: "manual", owner: "Operador Loja", desc: "Embalagem dos produtos pela loja." },
-        ]},
-        { id: "el-s3", name: "Faturamento", gate: "deliverable_ready", linkedToNext: true, category: "FULFILLMENT", tasks: [
-          { id: "el-6", name: "Emissão de Nota Fiscal", type: "auto", owner: "Fiscal Service", desc: "Loja emite NF-e com dados do comprador final." },
-        ]},
-        { id: "el-s4", name: "Entrega pela Loja", gate: "customer_has_goods", linkedToNext: false, category: "DELIVERY", tasks: [
-          { id: "el-7", name: "Carrier Dispatch",  type: "manual", owner: "Operador Loja", desc: "Loja despacha o pedido pela transportadora contratada." },
-          { id: "el-8", name: "First Mile",        type: "auto",   owner: "Carrier",       desc: "Coleta na loja de origem pelo operador logístico." },
-          { id: "el-9", name: "Last Mile",         type: "auto",   owner: "Carrier",       desc: "Entrega final no endereço do cliente." },
-          { id: "el-10",name: "Proof of Delivery", type: "auto",   owner: "Carrier",       desc: "Confirmação da entrega com registro." },
-        ]},
-      ]},
-
     /* ── Entrega produto virtual ─────────────────────────────────────────── */
     { id: "entrega-produto-virtual", name: "Entrega produto virtual", icon: "💻",
       category: "servicos", status: "active",
@@ -451,7 +409,7 @@ window.AIWData = (function () {
       orders: "83", custom: false,
       trigger: { type: "task-completion", triggerWfId: "entrega-domicilio", triggerTaskId: "ed-11" },
       agentEnabled: false,
-      dependencies: ["entrega-domicilio", "retirada-loja", "entrega-loja"],
+      dependencies: ["entrega-domicilio", "retirada-loja"],
       version: "1.0", wfStatus: "published",
       lastEditedAt: "2025-05-25T11:00:00Z", lastEditedBy: "ana@vtex.com",
       publishedAt:  "2025-05-25T11:00:00Z", publishedBy:  "ana@vtex.com",
@@ -511,7 +469,6 @@ window.AIWData = (function () {
   const orchestrationCoverage = [
     { name: "Entrega em domicílio",      meta: "4 etapas · 4.256 pedidos ativos" },
     { name: "Retirada na loja",          meta: "4 etapas · 127 pedidos ativos"   },
-    { name: "Entrega pela loja",         meta: "4 etapas · 348 pedidos ativos"   },
     { name: "Entrega produto virtual",   meta: "3 etapas · 234 pedidos ativos"   },
     { name: "Cancelamento de Pedido",    meta: "3 etapas · 142 pedidos ativos"   },
     { name: "Troca e devolução",         meta: "4 etapas · 83 pedidos ativos"    },
