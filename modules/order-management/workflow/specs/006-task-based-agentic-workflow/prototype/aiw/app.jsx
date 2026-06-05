@@ -5,10 +5,46 @@ const TWEAKS_DEFAULTS = /*EDITMODE-BEGIN*/{
   "density": "comfortable",
   "accent": "#2962FF",
   "sidebarTone": "navy",
-  "sidebarCollapsed": false,
+  "sidebarCollapsed": true,
   "wfLayout": "expanded",
-  "wfGroup": "flat"
+  "wfGroup": "flat",
+  "wfDetailView": "2-passos"
 }/*EDITMODE-END*/;
+
+/* ── Hash-based routing ─────────────────────────────────────────────────── */
+function parseHash() {
+  const raw = window.location.hash.replace(/^#\/?/, '') || 'orders';
+  const [top, ...rest] = raw.split('/');
+  if (!top || top === 'orders') return { name: 'orders' };
+  if (top === 'order-detail') return { name: 'order-detail', orderId: rest[0] };
+  if (top === 'task') return { name: 'task', id: rest[0] };
+  if (top === 'orchestration') return { name: 'orchestration' };
+  if (top === 'assistant') return { name: 'assistant' };
+  if (top === 'workflow-board') {
+    const wfId = rest[0];
+    if (!wfId) return { name: 'workflow-board', wfMode: { kind: 'list' } };
+    if (!rest[1]) return { name: 'workflow-board', wfMode: { kind: 'detail', workflowId: wfId } };
+    if (rest[1] === 'task')     return { name: 'workflow-board', wfMode: { kind: 'task',     workflowId: wfId, taskId:  rest[2] } };
+    if (rest[1] === 'stage')    return { name: 'workflow-board', wfMode: { kind: 'stage',    workflowId: wfId, stageId: rest[2] } };
+    if (rest[1] === 'settings') return { name: 'workflow-board', wfMode: { kind: 'settings', workflowId: wfId, section: rest[2] || 'geral' } };
+    return { name: 'workflow-board', wfMode: { kind: 'detail', workflowId: wfId } };
+  }
+  return { name: top };
+}
+function modeToHash(m) {
+  if (!m || m.kind === 'list') return '#/workflow-board';
+  if (m.kind === 'detail')   return `#/workflow-board/${m.workflowId}`;
+  if (m.kind === 'task')     return `#/workflow-board/${m.workflowId}/task/${m.taskId}`;
+  if (m.kind === 'stage')    return `#/workflow-board/${m.workflowId}/stage/${m.stageId}`;
+  if (m.kind === 'settings') return `#/workflow-board/${m.workflowId}/settings/${m.section || 'geral'}`;
+  return '#/workflow-board';
+}
+function routeToHash(r) {
+  if (r.name === 'order-detail')   return `#/order-detail/${r.orderId}`;
+  if (r.name === 'task')           return `#/task/${r.id}`;
+  if (r.name === 'workflow-board') return modeToHash(r.wfMode);
+  return `#/${r.name}`;
+}
 
 /* -------- tiny dropdown helper for topbar -------- */
 function Dropdown({ trigger, children, align = "right" }) {
@@ -32,7 +68,47 @@ function Dropdown({ trigger, children, align = "right" }) {
 
 function App() {
   const [tweaks, setTweak] = useTweaks(TWEAKS_DEFAULTS);
-  const [route, setRoute] = useState({ name: "orders" });
+
+  // ── URL-driven routing ───────────────────────────────────────────────────
+  const _init = parseHash();
+  const [route, setRouteState] = useState(_init);
+  const [wfMode, setWfMode] = useState(_init.wfMode || { kind: 'list' });
+  const [wfBoardKey, setWfBoardKey] = useState(0);
+
+  const setRoute = (r) => {
+    setRouteState(r);
+    if (r.name === 'workflow-board') {
+      const m = r.wfMode || { kind: 'list' };
+      setWfMode(m);
+      window.history.pushState(null, '', modeToHash(m));
+    } else {
+      window.history.pushState(null, '', routeToHash(r));
+    }
+  };
+
+  const handleWfModeChange = (m) => {
+    setWfMode(m);
+    window.history.pushState(null, '', modeToHash(m));
+  };
+
+  // Browser back / forward
+  useEffect(() => {
+    // Set initial URL if hash is missing
+    if (!window.location.hash) {
+      window.history.replaceState(null, '', routeToHash(_init));
+    }
+    const onPop = () => {
+      const parsed = parseHash();
+      setRouteState(parsed);
+      if (parsed.name === 'workflow-board') {
+        setWfMode(parsed.wfMode || { kind: 'list' });
+        setWfBoardKey(k => k + 1);
+      }
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
+
   const [activeConvId, setActiveConvId] = useState(null);
   const [collapsed, setCollapsed] = useState(!!tweaks.sidebarCollapsed);
   const [aiOpen, setAIOpen] = useState(false);
@@ -195,7 +271,7 @@ function App() {
   } else if (route.name === "task") {
     view = <TaskView taskId={route.id} onBack={goHome} onOpenOrder={openOrder} />;
   } else if (route.name === "workflow-board") {
-    view = <WorkflowBoardView onBack={goHome} wfLayout={tweaks.wfLayout} wfGroup={tweaks.wfGroup} />;
+    view = <WorkflowBoardView key={wfBoardKey} onBack={goHome} wfLayout={tweaks.wfLayout} wfGroup={tweaks.wfGroup} wfDetailView={tweaks.wfDetailView} initialMode={wfMode} onModeChange={handleWfModeChange} />;
   } else if (route.name === "orchestration") {
     view = <OrchestrationView onBack={goHome} onOpenOrder={openOrder} />;
   } else if (route.name === "order-detail") {
@@ -344,11 +420,6 @@ function App() {
           </div>
         </TweakSection>
 
-        <TweakSection label="Accent">
-          <TweakColor value={tweaks.accent} onChange={(v) => setTweak("accent", v)}
-            options={["#2962FF", "#7C5CFF", "#F71963", "#22C55E"]} />
-        </TweakSection>
-
         {route.name === "workflow-board" && <>
           <TweakSection label="Controle de fluxos" />
           <TweakRadio label="Layout" value={tweaks.wfLayout}
@@ -356,6 +427,13 @@ function App() {
               { value: "expanded", label: "Expandido" },
             ]}
             onChange={(v) => setTweak("wfLayout", v)} />
+          <TweakSection label="Detalhe do Workflow" />
+          <TweakRadio label="Visualização" value={tweaks.wfDetailView}
+            options={[
+              { value: "2-passos", label: "2 passos" },
+              { value: "1-passo",  label: "1 passo"  },
+            ]}
+            onChange={(v) => setTweak("wfDetailView", v)} />
         </>}
       </TweaksPanel>
     </div>

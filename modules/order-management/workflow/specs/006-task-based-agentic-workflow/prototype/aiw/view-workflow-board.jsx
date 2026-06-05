@@ -1,4 +1,4 @@
-/* global React, Icon, IconSparkleFill, IconHandFill, IconPencil, IconCursorFill, IconDragDots, IconPlayCircleFill, AIWData, ChatPanel, ResizableSplit */
+/* global React, Icon, IconSparkleFill, IconHandFill, IconPencil, IconCursorFill, IconDragDots, IconPlayCircleFill, IconCaretLeftSmall, AIWData, ChatPanel, ResizableSplit */
 const { useState, useRef, useEffect, useCallback } = React;
 
 /* ---------- Filter Dropdown (rules section) ---------- */
@@ -40,6 +40,7 @@ function FilterDropdown({ label, options, checked, onChange }) {
 /* ---------- Workflow Settings (per workflow) ---------- */
 
 function WorkflowSettingsView({ workflow, onBack, actionsRef, initialSection, onDirtyChange }) {
+  const [viewMode, setViewMode] = useState(true);
   const [name, setName] = useState(workflow.name);
   const [desc, setDesc] = useState(workflow.desc || "");
   const [iconIdx, setIconIdx] = useState(0);
@@ -99,6 +100,12 @@ function WorkflowSettingsView({ workflow, onBack, actionsRef, initialSection, on
 
   const mark = () => onDirtyChange?.(true);
 
+  const TRIGGER_OPTS = [
+    { key: "order-start",     name: "Início do pedido",               desc: "Ativado assim que um novo pedido é criado no sistema" },
+    { key: "wf-completion",   name: "Conclusão de outro workflow",    desc: "Ativado quando um workflow específico for concluído" },
+    { key: "task-completion", name: "Conclusão de tarefa específica", desc: "Ativado quando uma tarefa de outro workflow for concluída" },
+  ];
+
   const allWorkflows = (AIWData && AIWData.workflows) ? AIWData.workflows.filter(w => w.id !== workflow.id) : [];
   // For trigger type "task-completion"
   const triggerWfObj = allWorkflows.find(w => w.id === triggerWfId);
@@ -117,8 +124,105 @@ function WorkflowSettingsView({ workflow, onBack, actionsRef, initialSection, on
 
   const ICONS = ["📦", "↩", "💳", "📋", "🛒", "🔄", "⚡", "🏪"];
 
+  if (viewMode) {
+    const currentTrigger = TRIGGER_OPTS.find(o => o.key === trigger);
+    const unlockedBy = allWorkflows.filter(w =>
+      (w.deps || []).some(d => d.wfId === workflow.id)
+    );
+    return (
+      <div className="wf-settings-view">
+        <div className="wf-settings-view-header">
+          <span className="wf-settings-view-icon">{ICONS[iconIdx]}</span>
+          <h2 className="wf-settings-view-name">{name}</h2>
+          <button className="wf-settings-edit-btn" data-sl-button data-variant="secondary" onClick={() => setViewMode(false)}>
+            <IconPencil size={13} /> Editar
+          </button>
+        </div>
+
+        <div className="wf-settings-view-section">
+          <h3 className="wf-settings-view-section-title">Informações Gerais</h3>
+          <dl className="wf-settings-dl">
+            <div className="wf-settings-dl-row">
+              <dt>Nome</dt>
+              <dd><span className="setting-row-title">{name}</span></dd>
+            </div>
+            <div className="wf-settings-dl-row">
+              <dt>Ícone</dt>
+              <dd><span style={{ fontSize: 18 }}>{ICONS[iconIdx]}</span></dd>
+            </div>
+            <div className="wf-settings-dl-row">
+              <dt>Descrição</dt>
+              <dd>
+                {desc
+                  ? <span className="setting-row-title" style={{ fontWeight: 400 }}>{desc}</span>
+                  : <span className="setting-row-desc">Sem descrição</span>}
+              </dd>
+            </div>
+          </dl>
+        </div>
+
+        <div className="wf-settings-view-section">
+          <h3 className="wf-settings-view-section-title">Gatilho &amp; Orquestração</h3>
+          <dl className="wf-settings-dl">
+            <div className="wf-settings-dl-row">
+              <dt>Gatilho</dt>
+              <dd>
+                <span className="setting-row-title">{currentTrigger?.name}</span>
+                <span className="setting-row-desc">{currentTrigger?.desc}</span>
+              </dd>
+            </div>
+            <div className="wf-settings-dl-row">
+              <dt>Orquestração</dt>
+              <dd>
+                <span className={`wf-list-status ${aiOrch ? "wf-list-status--purple" : "wf-list-status--neutral"}`} style={{ height: 22, fontSize: 11.5 }}>
+                  {aiOrch ? <><IconSparkleFill size={11} /> Agêntica</> : <><IconHandFill size={11} /> Manual</>}
+                </span>
+              </dd>
+            </div>
+          </dl>
+        </div>
+
+        <div className="wf-settings-view-section">
+          <h3 className="wf-settings-view-section-title">Dependências</h3>
+          <dl className="wf-settings-dl">
+            <div className="wf-settings-dl-row">
+              <dt>Requer</dt>
+              <dd>
+                {deps.length > 0
+                  ? <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                      {deps.map((dep, i) => (
+                        <span key={i} className="wf-settings-dep-chip">{dep.wfIcon} {dep.wfName}</span>
+                      ))}
+                    </div>
+                  : <span className="setting-row-desc">Nenhuma dependência configurada</span>}
+              </dd>
+            </div>
+            <div className="wf-settings-dl-row">
+              <dt>Desbloqueia</dt>
+              <dd>
+                {unlockedBy.length > 0
+                  ? <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                      {unlockedBy.map((w, i) => (
+                        <span key={i} className="wf-settings-dep-chip">{w.icon} {w.name}</span>
+                      ))}
+                    </div>
+                  : <span className="setting-row-desc">Calculado automaticamente</span>}
+              </dd>
+            </div>
+          </dl>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
+      <div className="wf-settings-edit-bar">
+        <button className="wf-settings-cancel-btn" data-sl-button data-variant="tertiary" data-has-label
+          onClick={() => { setViewMode(true); onDirtyChange?.(false); }}>
+          <IconCaretLeftSmall size={14} /> Voltar para visão geral
+        </button>
+      </div>
       <section className="wf-settings-card" id="wf-section-geral">
         <h3 className="wf-settings-title">Informações Gerais</h3>
         <div className="wf-settings-grid">
@@ -146,11 +250,7 @@ function WorkflowSettingsView({ workflow, onBack, actionsRef, initialSection, on
           <h3 className="wf-settings-title">Gatilho de Ativação</h3>
           <div className="setting-field">
             <label>Quando este workflow é iniciado</label>
-            {[
-              { key: "order-start",     name: "Início do pedido",                    desc: "Ativado assim que um novo pedido é criado no sistema" },
-              { key: "wf-completion",   name: "Conclusão de outro workflow",         desc: "Ativado quando um workflow específico for concluído" },
-              { key: "task-completion", name: "Conclusão de tarefa específica",      desc: "Ativado quando uma tarefa de outro workflow for concluída" },
-            ].map((opt) =>
+            {TRIGGER_OPTS.map((opt) =>
               <button key={opt.key} className="setting-radio" onClick={() => { setTrigger(opt.key); mark(); }}>
                 <span className={`radio-dot ${trigger === opt.key ? "checked" : ""}`} />
                 <div className="setting-row-body">
@@ -246,6 +346,96 @@ function WorkflowSettingsView({ workflow, onBack, actionsRef, initialSection, on
   );
 }
 
+/* ---------- Chat cite context ---------- */
+const ChatCiteContext = React.createContext(null);
+function pulseCiteBtn(btn) {
+  if (!btn) return;
+  btn.classList.add("cited");
+  setTimeout(() => btn.classList.remove("cited"), 520);
+}
+
+/* ---------- Dirty-fields context (for counting unsaved changes) ---------- */
+
+const DirtyFieldsContext = React.createContext(null);
+
+function DirtyFieldsProvider({ children, onCountChange }) {
+  const mapRef = React.useRef({});
+  const register = React.useCallback((id, dirty) => {
+    const prev = mapRef.current[id] || false;
+    if (prev === dirty) return;
+    mapRef.current = { ...mapRef.current, [id]: dirty };
+    onCountChange?.(Object.values(mapRef.current).filter(Boolean).length);
+  }, [onCountChange]);
+  return (
+    <DirtyFieldsContext.Provider value={register}>
+      {children}
+    </DirtyFieldsContext.Provider>
+  );
+}
+
+/* ---------- Inline click-to-edit field row ---------- */
+
+function InlineField({ label, value, onChange, disabled, placeholder, operator }) {
+  const [editing, setEditing] = React.useState(false);
+  const inputRef = React.useRef(null);
+  const initialValueRef = React.useRef(value);
+  const isDirty = !disabled && value !== initialValueRef.current;
+  const registerDirty = React.useContext(DirtyFieldsContext);
+  const chatCite = React.useContext(ChatCiteContext);
+  const fieldId = label + (placeholder || "");
+  React.useEffect(() => {
+    registerDirty?.(fieldId, isDirty);
+  }, [isDirty]);
+
+  React.useEffect(() => {
+    if (editing && inputRef.current) inputRef.current.focus();
+  }, [editing]);
+
+  const commit = () => setEditing(false);
+
+  return (
+    <div className={`field-row${isDirty ? " field-row--dirty" : ""}`}>
+      <span className="field-label">
+        {label}
+        {operator && <span className="field-operator"> {operator}</span>}
+      </span>
+      {disabled ? (
+        <span className="field-value-pill disabled">
+          {value || <em className="field-empty">—</em>}
+        </span>
+      ) : editing ? (
+        <input
+          ref={inputRef}
+          className="input field-value-input"
+          value={value}
+          placeholder={placeholder}
+          onChange={(e) => onChange(e.target.value)}
+          onBlur={commit}
+          onKeyDown={(e) => { if (e.key === "Enter" || e.key === "Escape") commit(); }}
+        />
+      ) : (
+        <button
+          className={`field-value-pill${!value ? " empty" : ""}${isDirty ? " field-value-pill--dirty" : ""}`}
+          onClick={() => setEditing(true)}
+        >
+          {value || <em className="field-empty">{placeholder || "—"}</em>}
+        </button>
+      )}
+      <button
+        className="field-cite-btn"
+        title="Citar no chat"
+        onClick={e => {
+          e.stopPropagation();
+          chatCite?.(`[${label}: ${value || placeholder || "—"}]`);
+          pulseCiteBtn(e.currentTarget);
+        }}
+      >
+        <Icon name="chat-circle" size={16} />
+      </button>
+    </div>
+  );
+}
+
 /* ---------- Task config (deeper flow) ---------- */
 
 function TaskConfigView({ workflow, taskId, taskActionsRef, onDirtyChange }) {
@@ -278,6 +468,29 @@ function TaskConfigView({ workflow, taskId, taskActionsRef, onDirtyChange }) {
 
   const mark = () => onDirtyChange?.(true);
 
+  // Register non-InlineField changes to DirtyFieldsContext so the badge counts them
+  const registerDirty = React.useContext(DirtyFieldsContext);
+  const initVisibility  = useRef("internal");
+  const initCheckpoints = useRef(JSON.stringify([{ id: "cp1", label: "Validação inicial", failAction: "Escalar para operador" }]));
+  const initAgentOrch   = useRef(false);
+  const initMcpEnabled  = useRef(false);
+  const initMcpServer   = useRef("");
+  const initApiEnabled  = useRef(false);
+  const initApiUrl      = useRef("");
+  const initScript      = useRef(false);
+  const initScriptBody  = useRef("");
+  const initActive      = useRef(true);
+  useEffect(() => { registerDirty?.("visibility",   visibility  !== initVisibility.current);  }, [visibility]);
+  useEffect(() => { registerDirty?.("checkpoints",  JSON.stringify(checkpoints) !== initCheckpoints.current); }, [checkpoints]);
+  useEffect(() => { registerDirty?.("agentOrch",    agentOrch   !== initAgentOrch.current);   }, [agentOrch]);
+  useEffect(() => { registerDirty?.("mcpEnabled",   mcpEnabled  !== initMcpEnabled.current);  }, [mcpEnabled]);
+  useEffect(() => { registerDirty?.("mcpServer",    mcpServer   !== initMcpServer.current);   }, [mcpServer]);
+  useEffect(() => { registerDirty?.("apiEnabled",   apiEnabled  !== initApiEnabled.current);  }, [apiEnabled]);
+  useEffect(() => { registerDirty?.("apiUrl",       apiUrl      !== initApiUrl.current);       }, [apiUrl]);
+  useEffect(() => { registerDirty?.("scriptEnabled",scriptEnabled !== initScript.current);    }, [scriptEnabled]);
+  useEffect(() => { registerDirty?.("scriptBody",   scriptBody  !== initScriptBody.current);  }, [scriptBody]);
+  useEffect(() => { registerDirty?.("active",       active      !== initActive.current);      }, [active]);
+
   const agentOrchRef = useRef(agentOrch);
   useEffect(() => { agentOrchRef.current = agentOrch; }, [agentOrch]);
 
@@ -292,6 +505,8 @@ function TaskConfigView({ workflow, taskId, taskActionsRef, onDirtyChange }) {
     return () => { if (taskActionsRef) taskActionsRef.current = null; };
   }, []);
 
+  const chatCite = React.useContext(ChatCiteContext);
+
   // Safe early return after all hooks
   if (!foundTask) return null;
 
@@ -302,44 +517,33 @@ function TaskConfigView({ workflow, taskId, taskActionsRef, onDirtyChange }) {
       {/* Identificação */}
       <section className="wf-settings-card">
         <h3 className="wf-settings-title">Identificação</h3>
-        <div className="wf-settings-grid">
-          <div className="setting-field">
-            <label>Nome da tarefa</label>
-            <input className="input" value={name} onChange={(e) => { setName(e.target.value); mark(); }} />
-          </div>
-          <div className="setting-field">
-            <label>Responsável</label>
-            <input className="input" value={owner} onChange={(e) => { setOwner(e.target.value); mark(); }} placeholder="Ex: Gateway, WMS Operator" />
-          </div>
-        </div>
-        <div className="wf-settings-grid" style={{ marginTop: 12 }}>
-          <div className="setting-field">
-            <label>Categoria</label>
-            <input className="input" value={category} onChange={(e) => { setCategory(e.target.value); mark(); }} placeholder="Ex: Pagamento, Fulfillment, Reversa" />
-          </div>
-          <div className="setting-field">
-            <label>Etapa</label>
-            <input className="input" value={stage.name} disabled />
-          </div>
-        </div>
-      </section>
-
-      {/* Visibilidade */}
-      <section className="wf-settings-card">
-        <h3 className="wf-settings-title">Visibilidade</h3>
-        <p className="setting-help" style={{ marginBottom: 12 }}>Define se o progresso desta tarefa é comunicado ao cliente.</p>
-        {[
-          { key: "internal", name: "internal", desc: "Tarefa operacional interna — não exposta ao shopper" },
-          { key: "user",     name: "user",     desc: "Shopper-facing — progresso pode ser comunicado ao cliente" },
-        ].map((opt) =>
-          <button key={opt.key} className="setting-radio" onClick={() => { setVisibility(opt.key); mark(); }}>
-            <span className={`radio-dot ${visibility === opt.key ? "checked" : ""}`} />
-            <div className="setting-row-body">
-              <span className="setting-row-title"><code style={{ fontFamily: "monospace", fontSize: 12 }}>{opt.name}</code></span>
-              <span className="setting-row-desc">{opt.desc}</span>
+        <div className="field-rows">
+          <InlineField label="Nome da tarefa" value={name} onChange={v => { setName(v); mark(); }} />
+          <InlineField label="Responsável" value={owner} onChange={v => { setOwner(v); mark(); }} placeholder="Ex: Gateway, WMS Operator" />
+          <InlineField label="Categoria" value={category} onChange={v => { setCategory(v); mark(); }} placeholder="Ex: Pagamento, Fulfillment, Reversa" />
+          <InlineField label="Etapa" value={stage.name} disabled />
+          <div className="field-row">
+            <span className="field-label">Visibilidade <span className="field-operator">é</span></span>
+            <div className="field-pills-select">
+              {[
+                { key: "internal", label: "internal", desc: "Tarefa operacional interna — não exposta ao shopper" },
+                { key: "user",     label: "user",     desc: "Shopper-facing — progresso pode ser comunicado ao cliente" },
+              ].map(opt => (
+                <button
+                  key={opt.key}
+                  className={`field-option-pill${visibility === opt.key ? " selected" : ""}`}
+                  title={opt.desc}
+                  onClick={() => { setVisibility(opt.key); mark(); }}
+                >
+                  {opt.label}
+                </button>
+              ))}
             </div>
-          </button>
-        )}
+            <button className="field-cite-btn" title="Citar no chat" onClick={e => { e.stopPropagation(); chatCite?.(`[Visibilidade: ${visibility}]`); pulseCiteBtn(e.currentTarget); }}>
+              <Icon name="chat-circle" size={16} />
+            </button>
+          </div>
+        </div>
       </section>
 
       {/* Checkpoints */}
@@ -356,6 +560,7 @@ function TaskConfigView({ workflow, taskId, taskActionsRef, onDirtyChange }) {
               <button className="icon-btn" onClick={() => { setCheckpoints(cs => cs.filter((_, j) => j !== i)); mark(); }}>
                 <Icon name="x" size={14} />
               </button>
+              <button className="field-cite-btn" title="Citar no chat" onClick={e => { e.stopPropagation(); chatCite?.(`[Checkpoint: ${cp.label || "—"}]`); pulseCiteBtn(e.currentTarget); }}><Icon name="chat-circle" size={16} /></button>
             </div>
           )}
         </div>
@@ -377,6 +582,7 @@ function TaskConfigView({ workflow, taskId, taskActionsRef, onDirtyChange }) {
           <button className={`aiw-toggle ${agentOrch ? "on" : ""}`} onClick={() => { setAgentOrch(!agentOrch); mark(); }}>
             <span className="aiw-toggle-knob" />
           </button>
+          <button className="field-cite-btn" title="Citar no chat" onClick={e => { e.stopPropagation(); chatCite?.(`[Agente AI: ${agentOrch ? "ativado" : "desativado"}]`); pulseCiteBtn(e.currentTarget); }}><Icon name="chat-circle" size={16} /></button>
         </div>
 
         <div className="setting-divider" />
@@ -388,6 +594,7 @@ function TaskConfigView({ workflow, taskId, taskActionsRef, onDirtyChange }) {
           <button className={`aiw-toggle ${mcpEnabled ? "on" : ""}`} onClick={() => { setMcpEnabled(v => !v); mark(); }}>
             <span className="aiw-toggle-knob" />
           </button>
+          <button className="field-cite-btn" title="Citar no chat" onClick={e => { e.stopPropagation(); chatCite?.(`[Servidor MCP: ${mcpEnabled ? (mcpServer || "ativado") : "desativado"}]`); pulseCiteBtn(e.currentTarget); }}><Icon name="chat-circle" size={16} /></button>
         </div>
         {mcpEnabled && (
           <div className="setting-field" style={{ marginTop: 10 }}>
@@ -404,6 +611,7 @@ function TaskConfigView({ workflow, taskId, taskActionsRef, onDirtyChange }) {
           <button className={`aiw-toggle ${apiEnabled ? "on" : ""}`} onClick={() => { setApiEnabled(v => !v); mark(); }}>
             <span className="aiw-toggle-knob" />
           </button>
+          <button className="field-cite-btn" title="Citar no chat" onClick={e => { e.stopPropagation(); chatCite?.(`[API Externa: ${apiEnabled ? (apiUrl || "ativada") : "desativada"}]`); pulseCiteBtn(e.currentTarget); }}><Icon name="chat-circle" size={16} /></button>
         </div>
         {apiEnabled && (
           <div className="setting-field" style={{ marginTop: 10 }}>
@@ -420,6 +628,7 @@ function TaskConfigView({ workflow, taskId, taskActionsRef, onDirtyChange }) {
           <button className={`aiw-toggle ${scriptEnabled ? "on" : ""}`} onClick={() => { setScriptEnabled(v => !v); mark(); }}>
             <span className="aiw-toggle-knob" />
           </button>
+          <button className="field-cite-btn" title="Citar no chat" onClick={e => { e.stopPropagation(); chatCite?.(`[Script customizado: ${scriptEnabled ? "ativado" : "desativado"}]`); pulseCiteBtn(e.currentTarget); }}><Icon name="chat-circle" size={16} /></button>
         </div>
         {scriptEnabled && (
           <div className="setting-field" style={{ marginTop: 10 }}>
@@ -440,6 +649,7 @@ function TaskConfigView({ workflow, taskId, taskActionsRef, onDirtyChange }) {
           <button className={`aiw-toggle ${active ? "on" : ""}`} onClick={() => { setActive(v => !v); mark(); }}>
             <span className="aiw-toggle-knob" />
           </button>
+          <button className="field-cite-btn" title="Citar no chat" onClick={e => e.stopPropagation()}><Icon name="chat-circle" size={16} /></button>
         </div>
       </section>
     </>
@@ -555,31 +765,117 @@ const VTEX_TASK_TYPES = [
   { name: "Aprovar pedido manualmente",  natureza: "OMS",                owner: "Operador",         type: "manual" },
 ];
 
+/* ---------- Inline task row with collapse ---------- */
+
+function StageTaskRow({ task, workflow, idx, dragging, dragOver, onDragStart, onDragOver, onDrop, onDragEnd, onChanged, onRemove }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [dirtyCount, setDirtyCount] = useState(0);
+  const [confirmRemove, setConfirmRemove] = useState(false);
+
+  return (
+    <>
+      <button
+        className={`stage-task${dragging === idx ? " is-dragging" : ""}${dragOver === idx ? " drag-over" : ""}${isOpen ? " stage-task--open" : ""}`}
+        draggable
+        onDragStart={onDragStart}
+        onDragOver={onDragOver}
+        onDrop={onDrop}
+        onDragEnd={onDragEnd}
+        onClick={() => setIsOpen(v => !v)}
+      >
+        <span className="stage-task-grip" aria-hidden="true">
+          <IconDragDots size={20} />
+        </span>
+        <span className="stage-task-name">{task.name}</span>
+        {task.type === "manual" && (
+          <span className="stage-task-type-tag">manual</span>
+        )}
+        {dirtyCount > 0 && (
+          <span className="stage-task-dirty-badge" title={`${dirtyCount} alteração${dirtyCount !== 1 ? "ões" : ""} não salva${dirtyCount !== 1 ? "s" : ""}`}>
+            {dirtyCount}
+          </span>
+        )}
+        <span className="stage-task-chevron">
+          <Icon name="chevron-down" size={12} style={{ transform: isOpen ? "rotate(180deg)" : undefined, transition: "transform .15s" }} />
+        </span>
+      </button>
+      {isOpen && (
+        <div className="stage-task-config">
+          <DirtyFieldsProvider onCountChange={setDirtyCount}>
+            <TaskConfigView workflow={workflow} taskId={task.id} onDirtyChange={onChanged} />
+          </DirtyFieldsProvider>
+          <div className="stage-task-config-footer">
+            {confirmRemove ? (
+              <>
+                <span className="stage-task-remove-confirm-text">Remover tarefa permanentemente?</span>
+                <button className="btn btn-sm btn-ghost" onClick={() => setConfirmRemove(false)}>Cancelar</button>
+                <button className="btn btn-sm btn-danger" onClick={() => onRemove?.()}>
+                  <Icon name="x" size={12} /> Remover
+                </button>
+              </>
+            ) : (
+              <button className="stage-task-remove-btn" onClick={() => setConfirmRemove(true)}>
+                <Icon name="x" size={12} /> Remover tarefa
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
 /* ---------- Stage card (Figma-spec layout) ---------- */
 
-function StageCard({ stage, startNum, onOpenTask, onOpenStage, canMoveUp, canMoveDown, onMoveUp, onMoveDown, onChanged }) {
+function StageCard({ stage, workflow, startNum, onOpenTask, onOpenStage, canMoveUp, canMoveDown, onMoveUp, onMoveDown, onChanged, stageDragging, stageDragOver, onStageDragStart, onStageDragOver, onStageDrop, onStageDragEnd }) {
   const [tasks, setTasks] = useState(() => stage.tasks);
   const [dragging, setDragging] = useState(null);
   const [dragOver, setDragOver] = useState(null);
-  const [addingTask, setAddingTask] = useState(false);
-  const [newTaskName, setNewTaskName] = useState("");
-  const [newTaskType, setNewTaskType] = useState("auto");
-  const newTaskRef = useRef(null);
+  const [addStep, setAddStep] = useState(null); // null | "library" | "config"
+  const [draftName, setDraftName] = useState("");
+  const [draftType, setDraftType] = useState("auto");
+  const [draftOwner, setDraftOwner] = useState("");
+  const [draftCategory, setDraftCategory] = useState("");
+  const [draftVisibility, setDraftVisibility] = useState("internal");
+  const [draftCheckpoints, setDraftCheckpoints] = useState([]);
+  const [draftAgentOrch, setDraftAgentOrch] = useState(false);
+  const [draftMcpEnabled, setDraftMcpEnabled] = useState(false);
+  const [draftMcpServer, setDraftMcpServer] = useState("");
+  const [draftApiEnabled, setDraftApiEnabled] = useState(false);
+  const [draftApiUrl, setDraftApiUrl] = useState("");
+  const [draftScriptEnabled, setDraftScriptEnabled] = useState(false);
+  const [draftScriptBody, setDraftScriptBody] = useState("");
+  const [draftActive, setDraftActive] = useState(true);
+  const [libSearch, setLibSearch] = useState("");
+  const libSearchRef = useRef(null);
+  const draftNameRef = useRef(null);
+
+  // Inline stage config
+  const [isConfigOpen, setIsConfigOpen] = useState(false);
+  const [stageName, setStageName] = useState(stage.name ?? "");
+  const [responsible, setResponsible] = useState("");
+  const [stageCategory, setStageCategory] = useState("");
+  const [mcpEnabled, setMcpEnabled] = useState(false);
+  const [mcpServer, setMcpServer] = useState("");
+  const [agentEnabled, setAgentEnabled] = useState(false);
 
   const handleDragStart = (e, idx) => {
+    e.stopPropagation();
     setDragging(idx);
     e.dataTransfer.effectAllowed = "move";
-    e.dataTransfer.setData("text/plain", idx);
+    e.dataTransfer.setData("text/plain", String(idx));
   };
 
   const handleDragOver = (e, idx) => {
     e.preventDefault();
+    e.stopPropagation();
     e.dataTransfer.dropEffect = "move";
     if (idx !== dragging) setDragOver(idx);
   };
 
   const handleDrop = (e, toIdx) => {
     e.preventDefault();
+    e.stopPropagation();
     if (dragging === null || dragging === toIdx) { setDragging(null); setDragOver(null); return; }
     const next = [...tasks];
     const [moved] = next.splice(dragging, 1);
@@ -587,109 +883,354 @@ function StageCard({ stage, startNum, onOpenTask, onOpenStage, canMoveUp, canMov
     setTasks(next);
     setDragging(null);
     setDragOver(null);
+    onChanged?.();
   };
 
   const handleDragEnd = () => { setDragging(null); setDragOver(null); };
 
-  // When user types a task name, auto-detect type and owner from VTEX taxonomy
-  const handleTaskNameChange = (val) => {
-    setNewTaskName(val);
-    const match = VTEX_TASK_TYPES.find(t => t.name.toLowerCase() === val.toLowerCase());
-    if (match) setNewTaskType(match.type);
+  const resetDraft = () => {
+    setDraftName(""); setDraftType("auto"); setDraftOwner(""); setDraftCategory("");
+    setDraftVisibility("internal"); setDraftCheckpoints([]);
+    setDraftAgentOrch(false); setDraftMcpEnabled(false); setDraftMcpServer("");
+    setDraftApiEnabled(false); setDraftApiUrl(""); setDraftScriptEnabled(false); setDraftScriptBody("");
+    setDraftActive(true); setLibSearch("");
   };
 
   const openAddTask = () => {
-    setAddingTask(true);
-    setNewTaskName("");
-    setNewTaskType("auto");
-    setTimeout(() => newTaskRef.current?.focus(), 50);
+    resetDraft();
+    setAddStep("library");
+    setTimeout(() => libSearchRef.current?.focus(), 50);
+  };
+
+  const selectLibTask = (t) => {
+    setDraftName(t.name); setDraftType(t.type); setDraftOwner(t.owner); setDraftCategory(t.natureza);
+    setAddStep("config");
+    setTimeout(() => draftNameRef.current?.focus(), 50);
+  };
+
+  const selectCustomTask = () => {
+    setDraftName(libSearch); setDraftType("auto"); setDraftOwner(""); setDraftCategory("");
+    setAddStep("config");
+    setTimeout(() => draftNameRef.current?.focus(), 50);
   };
 
   const confirmAddTask = () => {
-    if (!newTaskName.trim()) return;
-    const match = VTEX_TASK_TYPES.find(t => t.name.toLowerCase() === newTaskName.trim().toLowerCase());
-    const newTask = {
-      id: "t_" + Date.now(),
-      name: newTaskName.trim(),
-      type: match?.type || newTaskType,
-      owner: match?.owner || "",
-    };
-    setTasks(prev => [...prev, newTask]);
-    setAddingTask(false);
-    setNewTaskName("");
-    setNewTaskType("auto");
+    if (!draftName.trim()) return;
+    setTasks(prev => [...prev, {
+      id: "t_" + Date.now(), name: draftName.trim(), type: draftType, owner: draftOwner,
+      category: draftCategory, visibility: draftVisibility, checkpoints: draftCheckpoints,
+      agentOrch: draftAgentOrch, mcpEnabled: draftMcpEnabled, mcpServer: draftMcpServer,
+      apiEnabled: draftApiEnabled, apiUrl: draftApiUrl,
+      scriptEnabled: draftScriptEnabled, scriptBody: draftScriptBody, active: draftActive,
+    }]);
+    setAddStep(null);
     onChanged?.();
   };
 
-  const cancelAddTask = () => { setAddingTask(false); setNewTaskName(""); };
+  const cancelAddTask = () => { setAddStep(null); resetDraft(); };
 
   return (
-    <div className="stage-card">
-      <div className="stage-card-head">
-        <span className="stage-card-title">{stage.name}</span>
-        <button data-sl-button data-variant="tertiary" data-size="large"
-          onClick={() => onOpenStage?.(stage.id ?? stage.name)} title="Editar etapa">
-          <IconPencil size={16} />
-        </button>
-        <div className="stage-card-reorder" style={{ display: "none" }}>
-          <button className="stage-reorder-btn" title="Subir etapa" onClick={onMoveUp} disabled={!canMoveUp}>
-            <Icon name="chevron-down" size={16} style={{ transform: "rotate(180deg)" }} />
-          </button>
-          <button className="stage-reorder-btn" title="Descer etapa" onClick={onMoveDown} disabled={!canMoveDown}>
-            <Icon name="chevron-down" size={16} />
-          </button>
-        </div>
-      </div>
+    <div
+      className={`stage-card${isConfigOpen ? " stage-card--config-open" : ""}${stageDragging ? " stage-card--dragging" : ""}${stageDragOver ? " stage-card--drag-over" : ""}`}
+      draggable={!isConfigOpen}
+      onDragStart={onStageDragStart}
+      onDragOver={(e) => { e.preventDefault(); onStageDragOver?.(e); }}
+      onDrop={onStageDrop}
+      onDragEnd={onStageDragEnd}
+    >
 
-      {/* datalist for VTEX task taxonomy */}
-      <datalist id="vtex-task-types">
-        {VTEX_TASK_TYPES.map(t => <option key={t.name} value={t.name} />)}
-      </datalist>
+      {isConfigOpen ? (
+        <div className="stage-config-inline">
+          <div className="stage-config-inline-header">
+            <span className="stage-config-inline-label">Propriedades da etapa</span>
+            <button className="stage-config-close-btn" onClick={() => setIsConfigOpen(false)} title="Fechar configurações">
+              <Icon name="chevron-down" size={14} style={{ transform: "rotate(180deg)" }} />
+            </button>
+          </div>
+
+          <div className="stage-prop-row stage-prop-row--first">
+            <span className="stage-prop-label">Nome da etapa</span>
+            <input
+              className="stage-prop-input"
+              value={stageName}
+              onChange={(e) => { setStageName(e.target.value); onChanged?.(); }}
+            />
+            <button className="stage-prop-cite-btn" title="Citar no chat"><Icon name="chat-circle" size={16} /></button>
+          </div>
+          <div className="stage-prop-row">
+            <span className="stage-prop-label">Responsável</span>
+            <input
+              className="stage-prop-input"
+              value={responsible}
+              onChange={(e) => { setResponsible(e.target.value); onChanged?.(); }}
+              placeholder="Ex: WMS, Gateway, Operador"
+            />
+            <button className="stage-prop-cite-btn" title="Citar no chat"><Icon name="chat-circle" size={16} /></button>
+          </div>
+          <div className="stage-prop-row">
+            <span className="stage-prop-label">Categoria</span>
+            <input
+              className="stage-prop-input"
+              value={stageCategory}
+              onChange={(e) => { setStageCategory(e.target.value); onChanged?.(); }}
+              placeholder="Ex: Pagamento, Fulfillment"
+            />
+            <button className="stage-prop-cite-btn" title="Citar no chat"><Icon name="chat-circle" size={16} /></button>
+          </div>
+          <div className="stage-prop-row stage-prop-row--toggle">
+            <span className="stage-prop-label">Agente AI</span>
+            <button className={`aiw-toggle ${agentEnabled ? "on" : ""}`} onClick={() => { setAgentEnabled(v => !v); onChanged?.(); }}>
+              <span className="aiw-toggle-knob" />
+            </button>
+            <button className="stage-prop-cite-btn" title="Citar no chat"><Icon name="chat-circle" size={16} /></button>
+          </div>
+          <div className="stage-prop-row stage-prop-row--toggle">
+            <span className="stage-prop-label">Servidor MCP</span>
+            <button className={`aiw-toggle ${mcpEnabled ? "on" : ""}`} onClick={() => { setMcpEnabled(v => !v); onChanged?.(); }}>
+              <span className="aiw-toggle-knob" />
+            </button>
+            <button className="stage-prop-cite-btn" title="Citar no chat"><Icon name="chat-circle" size={16} /></button>
+          </div>
+          {mcpEnabled && (
+            <div className="stage-prop-row">
+              <span className="stage-prop-label">Endereço MCP</span>
+              <input
+                className="stage-prop-input"
+                value={mcpServer}
+                onChange={(e) => { setMcpServer(e.target.value); onChanged?.(); }}
+                placeholder="Nome do servidor"
+              />
+              <button className="stage-prop-cite-btn" title="Citar no chat"><Icon name="chat-circle" size={16} /></button>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="stage-card-head stage-card-head--clickable" onClick={() => setIsConfigOpen(true)}>
+          <span className="stage-card-title">{stageName}</span>
+          <button data-sl-button data-variant="tertiary" data-size="large"
+            onClick={(e) => { e.stopPropagation(); setIsConfigOpen(true); }}
+            title="Editar etapa">
+            <IconPencil size={16} />
+          </button>
+          <div className="stage-card-reorder" style={{ display: "none" }}>
+            <button className="stage-reorder-btn" title="Subir etapa" onClick={onMoveUp} disabled={!canMoveUp}>
+              <Icon name="chevron-down" size={16} style={{ transform: "rotate(180deg)" }} />
+            </button>
+            <button className="stage-reorder-btn" title="Descer etapa" onClick={onMoveDown} disabled={!canMoveDown}>
+              <Icon name="chevron-down" size={16} />
+            </button>
+          </div>
+        </div>
+      )}
 
       {tasks.map((task, idx) =>
-        <button
+        <StageTaskRow
           key={task.id}
-          className={`stage-task${dragging === idx ? " is-dragging" : ""}${dragOver === idx ? " drag-over" : ""}`}
-          draggable
+          task={task}
+          stage={stage}
+          workflow={workflow}
+          idx={idx}
+          dragging={dragging}
+          dragOver={dragOver}
           onDragStart={(e) => handleDragStart(e, idx)}
           onDragOver={(e) => handleDragOver(e, idx)}
           onDrop={(e) => handleDrop(e, idx)}
           onDragEnd={handleDragEnd}
-          onClick={() => onOpenTask(task.id)}
-        >
-          <span className="stage-task-grip" aria-hidden="true">
-            <IconDragDots size={20} />
-          </span>
-          <span className="stage-task-name">{task.name}</span>
-          <span className={`stage-task-tag ${task.type}`}>
-            {task.type === "auto" ? <IconSparkleFill size={12} /> : <IconCursorFill size={12} />}
-          </span>
-        </button>
+          onChanged={onChanged}
+          onRemove={() => { setTasks(prev => prev.filter(t => t.id !== task.id)); onChanged?.(); }}
+        />
       )}
 
-      {addingTask ? (
-        <div className="stage-add-task-form">
-          <input
-            ref={newTaskRef}
-            list="vtex-task-types"
-            className="input"
-            value={newTaskName}
-            onChange={e => handleTaskNameChange(e.target.value)}
-            onKeyDown={e => { if (e.key === "Enter") confirmAddTask(); if (e.key === "Escape") cancelAddTask(); }}
-            placeholder="Nome da tarefa..."
-          />
-          <select className="input stage-add-task-type" value={newTaskType} onChange={e => setNewTaskType(e.target.value)}>
-            <option value="auto">Automática</option>
-            <option value="manual">Manual</option>
-          </select>
+      {addStep === "library" && (() => {
+        const filtered = VTEX_TASK_TYPES.filter(t =>
+          !libSearch || t.name.toLowerCase().includes(libSearch.toLowerCase()) || t.natureza.toLowerCase().includes(libSearch.toLowerCase())
+        );
+        const grouped = filtered.reduce((acc, t) => {
+          (acc[t.natureza] = acc[t.natureza] || []).push(t);
+          return acc;
+        }, {});
+        return (
+          <div className="task-lib-panel">
+            <div className="task-lib-search-row">
+              <input
+                ref={libSearchRef}
+                className="input task-lib-search"
+                placeholder="Buscar tarefa ou digitar nome..."
+                value={libSearch}
+                onChange={e => setLibSearch(e.target.value)}
+                onKeyDown={e => { if (e.key === "Escape") cancelAddTask(); if (e.key === "Enter" && libSearch.trim()) selectCustomTask(); }}
+              />
+              <button className="btn btn-sm btn-ghost" onClick={cancelAddTask}>Cancelar</button>
+            </div>
+            <div className="task-lib-list">
+              {Object.entries(grouped).map(([cat, items]) => (
+                <div key={cat} className="task-lib-group">
+                  <span className="task-lib-group-label">{cat}</span>
+                  {items.map(t => (
+                    <button key={t.name} className="task-lib-item" onClick={() => selectLibTask(t)}>
+                      <span className="task-lib-item-name">{t.name}</span>
+                      <span className={`task-lib-item-owner`}>{t.owner}</span>
+                      <span className={`task-lib-item-tag task-lib-item-tag--${t.type}`}>{t.type === "auto" ? "Auto" : "Manual"}</span>
+                    </button>
+                  ))}
+                </div>
+              ))}
+              {filtered.length === 0 && (
+                <p className="task-lib-empty">Nenhuma tarefa encontrada</p>
+              )}
+              <button className="task-lib-custom" onClick={selectCustomTask}>
+                <Icon name="plus" size={12} />
+                {libSearch.trim() ? `Criar "${libSearch.trim()}"` : "Criar tarefa personalizada"}
+              </button>
+            </div>
+          </div>
+        );
+      })()}
+
+      {addStep === "config" && (
+        <div className="task-create-form">
+          <div className="task-create-form-title">Nova tarefa</div>
+
+          {/* Identificação */}
+          <div className="task-create-section">
+            <span className="task-create-section-label">Identificação</span>
+            <div className="stage-prop-row stage-prop-row--first">
+              <span className="stage-prop-label">Nome</span>
+              <input ref={draftNameRef} className="stage-prop-input" value={draftName}
+                onChange={e => setDraftName(e.target.value)}
+                onKeyDown={e => { if (e.key === "Escape") cancelAddTask(); }}
+                placeholder="Nome da tarefa..." />
+            </div>
+            <div className="stage-prop-row">
+              <span className="stage-prop-label">Tipo</span>
+              <select className="stage-prop-input" value={draftType} onChange={e => setDraftType(e.target.value)}>
+                <option value="auto">Automática</option>
+                <option value="manual">Manual</option>
+              </select>
+            </div>
+            <div className="stage-prop-row">
+              <span className="stage-prop-label">Responsável</span>
+              <input className="stage-prop-input" value={draftOwner} onChange={e => setDraftOwner(e.target.value)} placeholder="Ex: Gateway, WMS, Operador" />
+            </div>
+            <div className="stage-prop-row">
+              <span className="stage-prop-label">Categoria</span>
+              <input className="stage-prop-input" value={draftCategory} onChange={e => setDraftCategory(e.target.value)} placeholder="Ex: Pagamento, Fulfillment" />
+            </div>
+          </div>
+
+          {/* Visibilidade */}
+          <div className="task-create-section">
+            <span className="task-create-section-label">Visibilidade</span>
+            <div className="stage-prop-row stage-prop-row--first">
+              <span className="stage-prop-label">Visível para</span>
+              <div className="field-pills-select">
+                {[
+                  { key: "internal", label: "internal", desc: "Tarefa operacional interna — não exposta ao shopper" },
+                  { key: "user",     label: "user",     desc: "Shopper-facing — progresso pode ser comunicado ao cliente" },
+                ].map(opt => (
+                  <button key={opt.key} className={`field-option-pill${draftVisibility === opt.key ? " selected" : ""}`}
+                    title={opt.desc} onClick={() => setDraftVisibility(opt.key)}>
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Checkpoints */}
+          <div className="task-create-section">
+            <span className="task-create-section-label">Checkpoints</span>
+            <div className="task-cond-list" style={{ padding: "6px 12px 0" }}>
+              {draftCheckpoints.map((cp, i) => (
+                <div key={cp.id} className="task-cond-row">
+                  <input className="input" value={cp.label} placeholder="Descrição do checkpoint"
+                    onChange={e => setDraftCheckpoints(cs => cs.map((x, j) => j === i ? { ...x, label: e.target.value } : x))} />
+                  <input className="input" value={cp.failAction} placeholder="Ação em falha"
+                    onChange={e => setDraftCheckpoints(cs => cs.map((x, j) => j === i ? { ...x, failAction: e.target.value } : x))} />
+                  <button className="icon-btn" onClick={() => setDraftCheckpoints(cs => cs.filter((_, j) => j !== i))}>
+                    <Icon name="x" size={14} />
+                  </button>
+                </div>
+              ))}
+            </div>
+            <button className="wf-new-step" style={{ margin: "6px 12px 8px" }}
+              onClick={() => setDraftCheckpoints(cs => [...cs, { id: "cp" + Date.now(), label: "", failAction: "" }])}>
+              <Icon name="plus" size={14} /> Adicionar checkpoint
+            </button>
+          </div>
+
+          {/* Integrações */}
+          <div className="task-create-section">
+            <span className="task-create-section-label">Integrações</span>
+            <div className="stage-prop-row stage-prop-row--first stage-prop-row--toggle">
+              <span className="stage-prop-label">Agente AI</span>
+              <button className={`aiw-toggle ${draftAgentOrch ? "on" : ""}`} onClick={() => setDraftAgentOrch(v => !v)}>
+                <span className="aiw-toggle-knob" />
+              </button>
+            </div>
+            <div className="stage-prop-row stage-prop-row--toggle">
+              <span className="stage-prop-label">Servidor MCP</span>
+              <button className={`aiw-toggle ${draftMcpEnabled ? "on" : ""}`} onClick={() => setDraftMcpEnabled(v => !v)}>
+                <span className="aiw-toggle-knob" />
+              </button>
+            </div>
+            {draftMcpEnabled && (
+              <div className="stage-prop-row">
+                <span className="stage-prop-label"></span>
+                <input className="stage-prop-input" value={draftMcpServer} onChange={e => setDraftMcpServer(e.target.value)} placeholder="Nome do servidor MCP" />
+              </div>
+            )}
+            <div className="stage-prop-row stage-prop-row--toggle">
+              <span className="stage-prop-label">API Externa</span>
+              <button className={`aiw-toggle ${draftApiEnabled ? "on" : ""}`} onClick={() => setDraftApiEnabled(v => !v)}>
+                <span className="aiw-toggle-knob" />
+              </button>
+            </div>
+            {draftApiEnabled && (
+              <div className="stage-prop-row">
+                <span className="stage-prop-label"></span>
+                <input className="stage-prop-input" value={draftApiUrl} onChange={e => setDraftApiUrl(e.target.value)} placeholder="https://api.exemplo.com/endpoint" />
+              </div>
+            )}
+            <div className="stage-prop-row stage-prop-row--toggle">
+              <span className="stage-prop-label">Script custom</span>
+              <button className={`aiw-toggle ${draftScriptEnabled ? "on" : ""}`} onClick={() => setDraftScriptEnabled(v => !v)}>
+                <span className="aiw-toggle-knob" />
+              </button>
+            </div>
+            {draftScriptEnabled && (
+              <div className="stage-prop-row">
+                <span className="stage-prop-label"></span>
+                <textarea className="stage-prop-input" value={draftScriptBody} rows={3}
+                  onChange={e => setDraftScriptBody(e.target.value)}
+                  placeholder={"// JavaScript\nreturn { status: 'completed' };"}
+                  style={{ fontFamily: "monospace", fontSize: 11.5, resize: "vertical" }} />
+              </div>
+            )}
+          </div>
+
+          {/* Estado */}
+          <div className="task-create-section">
+            <span className="task-create-section-label">Estado</span>
+            <div className="stage-prop-row stage-prop-row--first stage-prop-row--toggle">
+              <span className="stage-prop-label">Tarefa ativa</span>
+              <button className={`aiw-toggle ${draftActive ? "on" : ""}`} onClick={() => setDraftActive(v => !v)}>
+                <span className="aiw-toggle-knob" />
+              </button>
+            </div>
+          </div>
+
           <div className="stage-add-task-actions">
+            <button className="btn btn-sm btn-ghost" onClick={() => setAddStep("library")}>← Voltar</button>
             <button className="btn btn-sm btn-ghost" onClick={cancelAddTask}>Cancelar</button>
-            <button className="btn btn-sm btn-primary" onClick={confirmAddTask} disabled={!newTaskName.trim()}>
+            <button className="btn btn-sm btn-primary" onClick={confirmAddTask} disabled={!draftName.trim()}>
               <Icon name="plus" size={12} /> Adicionar
             </button>
           </div>
         </div>
-      ) : (
+      )}
+
+      {addStep === null && (
         <button className="stage-add-task-btn" onClick={openAddTask}>
           <Icon name="plus" size={12} /> Adicionar tarefa
         </button>
@@ -736,6 +1277,25 @@ function WfMetaSection({ workflow, onOpenSettings }) {
   const sm  = WF_STATUS_META[workflow.wfStatus] || WF_STATUS_META.draft;
   const log = workflow.versionLog || [];
   const runningVersion = (workflow.wfStatus === "published_dirty" && log.length > 0) ? log[0].version : null;
+  const [histOpen, setHistOpen] = useState(false);
+  const histBtnRef = useRef(null);
+  const histPopRef = useRef(null);
+
+  const ENTITY_LABEL = { task: "Tarefa", dependency: "Dependência", trigger: "Gatilho", supplier: "Fornecedor", contingency: "Contingência", "general config": "Config. geral" };
+  const CHANGE_LABEL = { added: "adicionado", removed: "removido", renamed: "renomeado", edited: "editado", changed: "alterado", connected: "conectado", disconnected: "desconectado", replaced: "substituído" };
+  const CHANGE_SIGN  = { added: "+", removed: "−", replaced: "⇄", renamed: "~", edited: "~", changed: "~", connected: "+", disconnected: "−" };
+
+  useEffect(() => {
+    if (!histOpen) return;
+    const handler = (e) => {
+      if (histPopRef.current && !histPopRef.current.contains(e.target) &&
+          histBtnRef.current && !histBtnRef.current.contains(e.target)) {
+        setHistOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [histOpen]);
 
   return (
     <dl className="detail-fields" style={{ marginBottom: 24 }}>
@@ -746,34 +1306,309 @@ function WfMetaSection({ workflow, onOpenSettings }) {
         </span>
       </dd>
 
-      <dt>Orquestração</dt>
-      <dd>
-        <sl-tag variant="secondary" size="normal"
-          data-color={workflow.agentEnabled ? "blue" : "neutral"}>
-          {workflow.agentEnabled
-            ? <><Icon name="sparkle" size={11} /> Agêntica</>
-            : <><Icon name="hand" size={11} /> Manual</>}
-        </sl-tag>
-      </dd>
 
       <dt>Versão</dt>
       <dd>
-        <span className={`wf-meta-badge wf-meta-badge--${sm.color}`}>{sm.label}</span>
+        <span className="wf-meta-ver">{sm.label}</span>
         {' '}
         <span className="wf-meta-ver">(v{workflow.version})</span>
         {runningVersion && (
           <span className="wf-meta-running">v{runningVersion} em produção</span>
         )}
+        {log.length > 0 && (
+          <span style={{ position: "relative", display: "inline-flex", alignItems: "center" }}>
+            <button
+              ref={histBtnRef}
+              className={`icon-btn wf-ver-hist-btn${histOpen ? " wf-ver-hist-btn--active" : ""}`}
+              onClick={() => setHistOpen(v => !v)}
+              title="Histórico de versões"
+            >
+              <Icon name="clock" size={13} />
+              <span className="wf-meta-hist-count">{log.length}</span>
+            </button>
+            {histOpen && (
+              <div ref={histPopRef} className="wf-ver-hist-popup">
+                <div className="wf-ver-hist-popup-head">
+                  <span className="wf-ver-hist-popup-title">Histórico de versões</span>
+                  <button className="icon-btn" onClick={() => setHistOpen(false)} title="Fechar">
+                    <Icon name="x" size={14} />
+                  </button>
+                </div>
+                <div className="wf-meta-hist-list">
+                  {log.map((entry) => (
+                    <div key={entry.version} className="wf-meta-hist-entry">
+                      <div className="wf-meta-hist-head">
+                        <span className="wf-meta-hist-ver">v{entry.version}</span>
+                        <span className="wf-meta-hist-when">{fmtWfDate(entry.publishedAt)}</span>
+                        <span className="wf-meta-hist-who">{entry.publishedBy}</span>
+                      </div>
+                      <p className="wf-meta-hist-desc">"{entry.description}"</p>
+                      <ul className="wf-meta-hist-deltas">
+                        {entry.deltas.map((d, i) => (
+                          <li key={i} className={`wf-meta-delta wf-meta-delta--${d.change}`}>
+                            <span className="wf-meta-delta-sign">{CHANGE_SIGN[d.change] || "·"}</span>
+                            <span className="wf-meta-delta-entity">{ENTITY_LABEL[d.entity] || d.entity}</span>
+                            <span className="wf-meta-delta-change">{CHANGE_LABEL[d.change] || d.change}</span>
+                            <span className="wf-meta-delta-detail">{d.detail}</span>
+                          </li>
+                        ))}
+                      </ul>
+                      <div className="wf-meta-hist-footer">
+                        <span>{entry.appliedTo === "all_orders" ? "Aplicado a todos os pedidos" : "Somente pedidos novos"}</span>
+                        <span>{entry.activeOrdersAtPublish.toLocaleString("pt-BR")} pedidos ativos na publicação</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </span>
+        )}
       </dd>
-      {workflow.lastEditedAt && <>
-        <dt>Última edição</dt>
-        <dd className="wf-meta-actor"><WfActorSpan who={workflow.lastEditedBy} date={fmtWfDate(workflow.lastEditedAt)} /></dd>
-      </>}
       {workflow.publishedAt && <>
         <dt>Publicado em</dt>
         <dd className="wf-meta-actor"><WfActorSpan who={workflow.publishedBy} date={fmtWfDate(workflow.publishedAt)} /></dd>
       </>}
     </dl>
+  );
+}
+
+/* ── Inline workflow settings (replaces separate settings route) ─────────── */
+function WfSettingsInline({ workflow, onDirtyChange }) {
+  const [isEditing, setIsEditing] = useState(false);
+
+  const [name,    setName]    = useState(workflow.name ?? "");
+  const [desc,    setDesc]    = useState(workflow.desc ?? "");
+  const [iconIdx, setIconIdx] = useState(0);
+  const [trigger, setTrigger] = useState("order-start");
+  const [triggerWfId,   setTriggerWfId]   = useState("");
+  const [triggerTaskId, setTriggerTaskId] = useState("");
+  const [aiOrch,  setAiOrch]  = useState(workflow.agentEnabled ?? true);
+  const [deps,    setDeps]    = useState([]);
+  const [depOpen,  setDepOpen]  = useState(false);
+  const [depSelWf, setDepSelWf] = useState(null);
+  const depBtnRef  = useRef(null);
+  const depDropRef = useRef(null);
+  const depPos = useRef(null);
+
+  const chatCite = React.useContext(ChatCiteContext);
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (depDropRef.current && !depDropRef.current.contains(e.target) &&
+          depBtnRef.current  && !depBtnRef.current.contains(e.target)) {
+        setDepOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const mark = () => onDirtyChange?.(true);
+
+  const ICONS = ["📦", "↩", "💳", "📋", "🛒", "🔄", "⚡", "🏪"];
+
+  const TRIGGER_OPTS = [
+    { key: "order-start",     label: "Início do pedido" },
+    { key: "wf-completion",   label: "Conclusão de workflow" },
+    { key: "task-completion", label: "Conclusão de tarefa" },
+  ];
+
+  const allWorkflows = (AIWData && AIWData.workflows)
+    ? AIWData.workflows.filter(w => w.id !== workflow.id)
+    : [];
+  const triggerWfObj   = allWorkflows.find(w => w.id === triggerWfId);
+  const triggerWfTasks = triggerWfObj ? triggerWfObj.stages.flatMap(s => s.tasks) : [];
+
+  const addDep = () => {
+    if (!depSelWf) return;
+    const wf = allWorkflows.find(w => w.id === depSelWf);
+    if (!wf || deps.find(d => d.wfId === depSelWf)) return;
+    setDeps(d => [...d, { wfId: depSelWf, wfName: wf.name, wfIcon: wf.icon }]);
+    setDepOpen(false); setDepSelWf(null); mark();
+  };
+
+  const currentTrigger = TRIGGER_OPTS.find(o => o.key === trigger);
+
+  // ── Read mode ──────────────────────────────────────────────────────────────
+  if (!isEditing) {
+    return (
+      <div className="wf-settings-inline">
+        <div className="wf-settings-inline-head">
+          <button
+            className="wf-settings-inline-edit-btn"
+            data-sl-button data-variant="tertiary" data-size="small"
+            onClick={() => setIsEditing(true)}
+          >
+            <IconPencil size={13} /> Editar
+          </button>
+        </div>
+
+        <dl className="wf-settings-dl wf-settings-inline-dl">
+          {desc && (
+            <div className="wf-settings-dl-row">
+              <dt>Descrição</dt>
+              <dd><span className="wf-settings-inline-desc">{desc}</span></dd>
+            </div>
+          )}
+          <div className="wf-settings-dl-row">
+            <dt>Gatilho</dt>
+            <dd><span className="field-value-tag">{currentTrigger?.label}</span></dd>
+          </div>
+          <div className="wf-settings-dl-row">
+            <dt>Orquestração</dt>
+            <dd>
+              <span className={`wf-list-status ${aiOrch ? "wf-list-status--purple" : "wf-list-status--neutral"}`} style={{ height: 22, fontSize: 11.5 }}>
+                {aiOrch ? <><IconSparkleFill size={11} /> Agêntica</> : <><IconHandFill size={11} /> Manual</>}
+              </span>
+            </dd>
+          </div>
+          {deps.length > 0 && (
+            <div className="wf-settings-dl-row">
+              <dt>Requer</dt>
+              <dd style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                {deps.map((d, i) => <span key={i} className="wf-settings-dep-chip">{d.wfIcon} {d.wfName}</span>)}
+              </dd>
+            </div>
+          )}
+        </dl>
+      </div>
+    );
+  }
+
+  // ── Edit mode ──────────────────────────────────────────────────────────────
+  return (
+    <div className="wf-settings-inline wf-settings-inline--editing">
+      <div className="wf-settings-inline-head">
+        <span className="wf-settings-inline-icon">{ICONS[iconIdx]}</span>
+        <span className="wf-settings-inline-name editing-label">Configurações do workflow</span>
+        <button
+          className="wf-settings-inline-close-btn"
+          onClick={() => setIsEditing(false)}
+          title="Fechar"
+        >
+          <Icon name="chevron-down" size={14} style={{ transform: "rotate(180deg)" }} />
+        </button>
+      </div>
+
+      {/* Informações gerais */}
+      <section className="wf-settings-inline-section">
+        <span className="wf-settings-inline-section-title">Informações gerais</span>
+        <div className="field-rows">
+          <InlineField label="Nome" value={name} onChange={v => { setName(v); mark(); }} />
+          <InlineField label="Descrição" value={desc} onChange={v => { setDesc(v); mark(); }} placeholder="Sem descrição" />
+        </div>
+      </section>
+
+      {/* Gatilho */}
+      <section className="wf-settings-inline-section">
+        <span className="wf-settings-inline-section-title">Gatilho &amp; Orquestração</span>
+        <div className="field-rows">
+          <div className="field-row">
+            <span className="field-label">Gatilho</span>
+            <div className="field-pills-select">
+              {TRIGGER_OPTS.map(opt => (
+                <button
+                  key={opt.key}
+                  className={`field-option-pill${trigger === opt.key ? " selected" : ""}`}
+                  onClick={() => { setTrigger(opt.key); setTriggerWfId(""); setTriggerTaskId(""); mark(); }}
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
+            <button className="field-cite-btn" title="Citar no chat" onClick={e => { e.stopPropagation(); chatCite?.(`[Gatilho: ${currentTrigger?.label}]`); pulseCiteBtn(e.currentTarget); }}>
+              <Icon name="chat-circle" size={16} />
+            </button>
+          </div>
+          {(trigger === "wf-completion" || trigger === "task-completion") && (
+            <div className="field-row">
+              <span className="field-label">Workflow origem</span>
+              <select className="field-value-pill" value={triggerWfId} onChange={e => { setTriggerWfId(e.target.value); setTriggerTaskId(""); mark(); }}>
+                <option value="">Selecionar...</option>
+                {allWorkflows.map(w => <option key={w.id} value={w.id}>{w.icon} {w.name}</option>)}
+              </select>
+            </div>
+          )}
+          {trigger === "task-completion" && triggerWfId && (
+            <div className="field-row">
+              <span className="field-label">Tarefa origem</span>
+              <select className="field-value-pill" value={triggerTaskId} onChange={e => { setTriggerTaskId(e.target.value); mark(); }}>
+                <option value="">Selecionar...</option>
+                {triggerWfTasks.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+              </select>
+            </div>
+          )}
+          <div className="field-row">
+            <span className="field-label">Orquestração</span>
+            <div className="field-pills-select">
+              <button className={`field-option-pill${aiOrch ? " selected" : ""}`} onClick={() => { setAiOrch(true); mark(); }}>
+                <IconSparkleFill size={11} /> Agêntica
+              </button>
+              <button className={`field-option-pill${!aiOrch ? " selected" : ""}`} onClick={() => { setAiOrch(false); mark(); }}>
+                <IconHandFill size={11} /> Manual
+              </button>
+            </div>
+            <button className="field-cite-btn" title="Citar no chat" onClick={e => { e.stopPropagation(); chatCite?.(`[Orquestração: ${aiOrch ? "Agêntica" : "Manual"}]`); pulseCiteBtn(e.currentTarget); }}>
+              <Icon name="chat-circle" size={16} />
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* Dependências */}
+      <section className="wf-settings-inline-section">
+        <span className="wf-settings-inline-section-title">Dependências</span>
+        {deps.length > 0 && (
+          <div className="field-row" style={{ alignItems: "flex-start", paddingTop: 6 }}>
+            <span className="field-label">Requer</span>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+              {deps.map((dep, i) => (
+                <span key={i} className="wf-settings-dep-chip wf-settings-dep-chip--removable">
+                  {dep.wfIcon} {dep.wfName}
+                  <button className="dep-chip-remove" onClick={() => { setDeps(d => d.filter((_, j) => j !== i)); mark(); }}>
+                    <Icon name="x" size={10} />
+                  </button>
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+        <div className="field-row">
+          <span className="field-label" />
+          <button ref={depBtnRef} className="wf-new-step" style={{ marginTop: 2 }} onClick={() => {
+            if (!depOpen && depBtnRef.current) {
+              const r = depBtnRef.current.getBoundingClientRect();
+              depPos.current = { top: r.bottom + 6, left: r.left, width: Math.max(r.width, 260) };
+            }
+            setDepOpen(o => !o);
+          }}>
+            <Icon name="plus" size={13} /> Adicionar dependência
+          </button>
+        </div>
+        {depOpen && depPos.current && ReactDOM.createPortal(
+          <div className="dep-dropdown" ref={depDropRef} style={{ position: "fixed", top: depPos.current.top, left: depPos.current.left, width: depPos.current.width, zIndex: 9999 }}>
+            <div className="dep-dropdown-section">
+              <div className="dep-dropdown-label">Selecionar workflow precedente</div>
+              <div className="dep-wf-list">
+                {allWorkflows.map(w => (
+                  <button key={w.id}
+                    className={`dep-wf-item${depSelWf === w.id ? " selected" : ""}`}
+                    onClick={() => setDepSelWf(w.id)}>
+                    {w.icon} {w.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="dep-dropdown-footer">
+              <button className="btn btn-sm btn-ghost" onClick={() => setDepOpen(false)}>Cancelar</button>
+              <button className="btn btn-sm btn-primary" onClick={addDep} disabled={!depSelWf}>Adicionar</button>
+            </div>
+          </div>,
+          document.body
+        )}
+      </section>
+    </div>
   );
 }
 
@@ -831,15 +1666,42 @@ function WfVersionHistory({ workflow }) {
   );
 }
 
-function WorkflowDetailView({ workflow, onOpenTask, onOpenStage, onOpenSettings, onOpenSimulator, detailActionsRef, onDirtyChange }) {
+// ── 1-passo detail view ───────────────────────────────────────────────────────
+function WorkflowDetailView1Passo({ workflow, onOpenTask, onOpenStage, onOpenSettings, detailActionsRef, onDirtyChange }) {
   const [stages, setStages] = useState(() => workflow.stages);
   const [isDirty, setIsDirty] = useState(false);
 
   const markDirty = () => { setIsDirty(true); onDirtyChange?.(true); };
   const clearDirty = () => { setIsDirty(false); onDirtyChange?.(false); };
-  const [insertingAt, setInsertingAt] = useState(null);
-  const [newStageName, setNewStageName] = useState("");
-  const newStageRef = useRef(null);
+
+  // Stage drag-and-drop
+  const [stageDraggingIdx, setStageDraggingIdx] = useState(null);
+  const [stageDragOverIdx, setStageDragOverIdx] = useState(null);
+
+  const handleStageDragStart = (e, idx) => {
+    setStageDraggingIdx(idx);
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", String(idx));
+  };
+  const handleStageDragOver = (e, idx) => {
+    e.preventDefault();
+    if (idx !== stageDraggingIdx) setStageDragOverIdx(idx);
+  };
+  const handleStageDrop = (e, toIdx) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (stageDraggingIdx === null || stageDraggingIdx === toIdx) {
+      setStageDraggingIdx(null); setStageDragOverIdx(null); return;
+    }
+    const next = [...stages];
+    const [moved] = next.splice(stageDraggingIdx, 1);
+    next.splice(toIdx, 0, moved);
+    setStages(next);
+    setStageDraggingIdx(null);
+    setStageDragOverIdx(null);
+    markDirty();
+  };
+  const handleStageDragEnd = () => { setStageDraggingIdx(null); setStageDragOverIdx(null); };
 
   const moveStage = (idx, dir) => {
     const next = [...stages];
@@ -850,32 +1712,8 @@ function WorkflowDetailView({ workflow, onOpenTask, onOpenStage, onOpenSettings,
     markDirty();
   };
 
-  const toggleLink = (idx) => {
-    setStages(prev => prev.map((s, i) => i === idx ? { ...s, linkedToNext: !s.linkedToNext } : s));
-    markDirty();
-  };
-
   const handleSave = () => clearDirty();
 
-  const openInsert = (idx) => {
-    setInsertingAt(idx);
-    setNewStageName("");
-    setTimeout(() => newStageRef.current?.focus(), 50);
-  };
-
-  const confirmInsert = () => {
-    if (!newStageName.trim()) return;
-    const next = [...stages];
-    next.splice(insertingAt + 1, 0, { name: newStageName, linkedToNext: false, tasks: [] });
-    setStages(next);
-    setInsertingAt(null);
-    setNewStageName("");
-    markDirty();
-  };
-
-  const cancelInsert = () => { setInsertingAt(null); setNewStageName(""); };
-
-  // Register actions for the chat companion
   const stagesRef = useRef(stages);
   useEffect(() => { stagesRef.current = stages; }, [stages]);
 
@@ -883,7 +1721,7 @@ function WorkflowDetailView({ workflow, onOpenTask, onOpenStage, onOpenSettings,
     if (detailActionsRef) {
       detailActionsRef.current = {
         addStage: (stageName) => {
-          setStages(prev => [...prev, { name: stageName, linkedToNext: false, tasks: [] }]);
+          setStages(prev => [...prev, { name: stageName, tasks: [] }]);
           markDirty();
         },
         save: handleSave,
@@ -902,6 +1740,155 @@ function WorkflowDetailView({ workflow, onOpenTask, onOpenStage, onOpenSettings,
 
       {(workflow.version || workflow.wfStatus) && <WfMetaSection workflow={workflow} onOpenSettings={onOpenSettings} />}
 
+      <WfSettingsInline workflow={workflow} onDirtyChange={onDirtyChange} />
+
+      <div className="detail-sector-title detail-sector-title--spaced">
+        <h2>Etapas</h2>
+      </div>
+
+      <div className="stages-section">
+        <div className="wf-detail-stages-1step">
+          {stages.reduce((acc, stage, si) => {
+            const startNum = acc.n;
+            acc.n += stage.tasks.length;
+            acc.els.push(
+              <React.Fragment key={stage.id ?? si}>
+                <div className="wf-detail-1step-col">
+                  <StageCard
+                    stage={stage}
+                    workflow={workflow}
+                    startNum={startNum}
+                    onOpenTask={onOpenTask}
+                    onOpenStage={onOpenStage}
+                    canMoveUp={si > 0}
+                    canMoveDown={si < stages.length - 1}
+                    onMoveUp={() => moveStage(si, -1)}
+                    onMoveDown={() => moveStage(si, 1)}
+                    onChanged={markDirty}
+                    stageDragging={stageDraggingIdx === si}
+                    stageDragOver={stageDragOverIdx === si}
+                    onStageDragStart={(e) => handleStageDragStart(e, si)}
+                    onStageDragOver={(e) => handleStageDragOver(e, si)}
+                    onStageDrop={(e) => handleStageDrop(e, si)}
+                    onStageDragEnd={handleStageDragEnd}
+                  />
+                </div>
+                {si < stages.length - 1 && (
+                  <div className="wf-list-stage-arrow wf-detail-1step-arrow">
+                    <Icon name="chevron-right" size={16} />
+                  </div>
+                )}
+              </React.Fragment>
+            );
+            return acc;
+          }, { n: 1, els: [] }).els}
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ── 2-passos detail view ──────────────────────────────────────────────────────
+function WorkflowDetailView2Passos({ workflow, onOpenTask, onOpenStage, onOpenSettings, detailActionsRef, onDirtyChange }) {
+  const [stages, setStages] = useState(() => workflow.stages);
+  const [isDirty, setIsDirty] = useState(false);
+
+  const markDirty = () => { setIsDirty(true); onDirtyChange?.(true); };
+  const clearDirty = () => { setIsDirty(false); onDirtyChange?.(false); };
+  const [insertingAt, setInsertingAt] = useState(null);
+  const [newStageName, setNewStageName] = useState("");
+  const newStageRef = useRef(null);
+
+  // Stage drag-and-drop
+  const [stageDraggingIdx, setStageDraggingIdx] = useState(null);
+  const [stageDragOverIdx, setStageDragOverIdx] = useState(null);
+
+  const handleStageDragStart = (e, idx) => {
+    setStageDraggingIdx(idx);
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", String(idx));
+  };
+  const handleStageDragOver = (e, idx) => {
+    e.preventDefault();
+    if (idx !== stageDraggingIdx) setStageDragOverIdx(idx);
+  };
+  const handleStageDrop = (e, toIdx) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (stageDraggingIdx === null || stageDraggingIdx === toIdx) {
+      setStageDraggingIdx(null); setStageDragOverIdx(null); return;
+    }
+    const next = [...stages];
+    const [moved] = next.splice(stageDraggingIdx, 1);
+    next.splice(toIdx, 0, moved);
+    setStages(next);
+    setStageDraggingIdx(null);
+    setStageDragOverIdx(null);
+    markDirty();
+  };
+  const handleStageDragEnd = () => { setStageDraggingIdx(null); setStageDragOverIdx(null); };
+
+  const moveStage = (idx, dir) => {
+    const next = [...stages];
+    const target = idx + dir;
+    if (target < 0 || target >= next.length) return;
+    [next[idx], next[target]] = [next[target], next[idx]];
+    setStages(next);
+    markDirty();
+  };
+
+  const handleSave = () => clearDirty();
+
+  const openInsert = (idx) => {
+    setInsertingAt(idx);
+    setNewStageName("");
+    setTimeout(() => newStageRef.current?.focus(), 50);
+  };
+
+  const confirmInsert = () => {
+    if (!newStageName.trim()) return;
+    const next = [...stages];
+    next.splice(insertingAt + 1, 0, { name: newStageName, tasks: [] });
+    setStages(next);
+    setInsertingAt(null);
+    setNewStageName("");
+    markDirty();
+  };
+
+  const cancelInsert = () => { setInsertingAt(null); setNewStageName(""); };
+
+  const stagesRef = useRef(stages);
+  useEffect(() => { stagesRef.current = stages; }, [stages]);
+
+  useEffect(() => {
+    if (detailActionsRef) {
+      detailActionsRef.current = {
+        addStage: (stageName) => {
+          setStages(prev => [...prev, { name: stageName, tasks: [] }]);
+          markDirty();
+        },
+        save: handleSave,
+        getStageCount: () => stagesRef.current.length,
+        getStageNames: () => stagesRef.current.map(s => s.name),
+      };
+    }
+    return () => { if (detailActionsRef) detailActionsRef.current = null; };
+  }, []);
+
+  return (
+    <>
+      <div className="wf-detail-head">
+        <h1 className="detail-title">{workflow.name}</h1>
+      </div>
+
+      {(workflow.version || workflow.wfStatus) && <WfMetaSection workflow={workflow} onOpenSettings={onOpenSettings} />}
+
+      <WfSettingsInline workflow={workflow} onDirtyChange={onDirtyChange} />
+
+      <div className="detail-sector-title detail-sector-title--spaced">
+        <h2>Etapas</h2>
+      </div>
+
       <div className="stages-section">
         <div className="stage-stack">
           {stages.reduce((acc, stage, si) => {
@@ -911,6 +1898,7 @@ function WorkflowDetailView({ workflow, onOpenTask, onOpenStage, onOpenSettings,
               <React.Fragment key={stage.id ?? si}>
                 <StageCard
                   stage={stage}
+                  workflow={workflow}
                   startNum={startNum}
                   onOpenTask={onOpenTask}
                   onOpenStage={onOpenStage}
@@ -919,17 +1907,17 @@ function WorkflowDetailView({ workflow, onOpenTask, onOpenStage, onOpenSettings,
                   onMoveUp={() => moveStage(si, -1)}
                   onMoveDown={() => moveStage(si, 1)}
                   onChanged={markDirty}
+                  stageDragging={stageDraggingIdx === si}
+                  stageDragOver={stageDragOverIdx === si}
+                  onStageDragStart={(e) => handleStageDragStart(e, si)}
+                  onStageDragOver={(e) => handleStageDragOver(e, si)}
+                  onStageDrop={(e) => handleStageDrop(e, si)}
+                  onStageDragEnd={handleStageDragEnd}
                 />
                 {si < stages.length - 1 && (
                   <>
-                    <div className={`stage-linker${!stage.linkedToNext ? " can-insert" : ""}`}>
-                      <button className={`stage-link-chip ${stage.linkedToNext ? "on" : "off"}`}
-                        title={stage.linkedToNext ? "Etapas encadeadas" : "Etapas independentes"}
-                        onClick={() => toggleLink(si)}>
-                        <Icon name={stage.linkedToNext ? "link" : "link-off"} size={12} />
-                        {stage.linkedToNext ? "Linked" : "Link Off"}
-                      </button>
-                      {!stage.linkedToNext && insertingAt !== si && (
+                    <div className="stage-linker can-insert">
+                      {insertingAt !== si && (
                         <button className="stage-insert-btn" onClick={() => openInsert(si)}>
                           <Icon name="plus" size={12} /> Nova etapa
                         </button>
@@ -962,10 +1950,14 @@ function WorkflowDetailView({ workflow, onOpenTask, onOpenStage, onOpenSettings,
           }, { n: 1, els: [] }).els}
         </div>
       </div>
-
-      <WfVersionHistory workflow={workflow} />
     </>
   );
+}
+
+// ── Dispatcher ────────────────────────────────────────────────────────────────
+function WorkflowDetailView({ wfDetailView = "2-passos", ...props }) {
+  if (wfDetailView === "1-passo") return <WorkflowDetailView1Passo {...props} />;
+  return <WorkflowDetailView2Passos {...props} />;
 }
 
 /* ---------- Library of pre-set workflows (not yet active) ---------- */
@@ -1296,205 +2288,6 @@ function NewWorkflowWizard({ existingWorkflows, categories, onClose, preFill }) 
   );
 }
 
-/* ---------- Workflow Simulator ---------- */
-
-function buildSteps(context) {
-  const isPhysical = context.productType === "physical";
-  return [
-    {
-      key: "productType", label: "O que está no carrinho?",
-      options: [
-        { value: "physical", icon: "📦", label: "Produto físico",  desc: "Eletrônicos, moda, casa e outros itens físicos" },
-        { value: "digital",  icon: "💻", label: "Produto digital", desc: "Software, assinatura, ingresso digital" },
-        { value: "service",  icon: "🔧", label: "Serviço",         desc: "Instalação, reparo, garantia estendida" },
-      ],
-    },
-    {
-      key: "deliveryType", label: "Tipo de entrega",
-      options: isPhysical
-        ? [
-            { value: "domicilio", icon: "🏠", label: "Entrega em domicílio", desc: "CD → transportadora → endereço do cliente" },
-            { value: "retirada",  icon: "🏪", label: "Retirada na loja",     desc: "Cliente retira pessoalmente no PDV" },
-            { value: "loja",      icon: "🚚", label: "Ship from Store",      desc: "Loja física despacha direto ao cliente" },
-          ]
-        : [
-            { value: "digital", icon: "📩", label: "Entrega digital", desc: "Acesso imediato por link ou e-mail" },
-          ],
-    },
-    {
-      key: "paymentMethod", label: "Método de pagamento",
-      options: [
-        { value: "credit", icon: "💳", label: "Cartão de Crédito", desc: "À vista ou parcelado" },
-        { value: "pix",    icon: "⚡", label: "PIX",               desc: "Confirmação instantânea" },
-        { value: "boleto", icon: "📄", label: "Boleto Bancário",   desc: "Compensação em até 3 dias úteis" },
-        { value: "debit",  icon: "🏦", label: "Cartão de Débito",  desc: "Débito imediato na conta" },
-      ],
-    },
-  ];
-}
-
-function simulateChain(context) {
-  const { productType, deliveryType } = context;
-  const allWfs = AIWData.workflows;
-  const chain = [];
-
-  if (productType !== "physical") return chain;
-
-  const delivMap = {
-    domicilio: { id: "entrega-domicilio", rule: "Ativado no início do pedido" },
-    retirada:  { id: "retirada-loja",     rule: "Ativado no início do pedido" },
-    loja:      { id: "entrega-loja",       rule: "Ativado no início do pedido" },
-  };
-
-  const entry = delivMap[deliveryType];
-  if (entry) {
-    const wf = allWfs.find(w => w.id === entry.id);
-    if (wf) chain.push({ workflow: wf, rule: entry.rule, downstream: false });
-  }
-
-  if (chain.length > 0) {
-    const trocaWf = allWfs.find(w => w.id === "troca-devolucao");
-    if (trocaWf) chain.push({ workflow: trocaWf, rule: "Disponível após conclusão da entrega", downstream: true });
-  }
-
-  return chain;
-}
-
-const PAYMENT_LABELS = { credit: "Cartão de Crédito", pix: "PIX", boleto: "Boleto Bancário", debit: "Cartão de Débito" };
-const DELIVERY_LABELS = { domicilio: "Entrega em domicílio", retirada: "Retirada na loja", loja: "Ship from Store", digital: "Entrega digital" };
-const PRODUCT_LABELS  = { physical: "Produto físico", digital: "Produto digital", service: "Serviço" };
-
-function WorkflowSimulator({ workflow, onBack }) {
-  const [phase, setPhase]   = useState(1);
-  const [step, setStep]     = useState(0);
-  const [context, setContext] = useState({ productType: null, deliveryType: null, paymentMethod: null });
-  const [chain, setChain]   = useState(null);
-
-  const STEPS = buildSteps(context);
-  const currentStep = STEPS[step];
-  const canGoBack = step > 0;
-
-  function pickOption(value) {
-    const newCtx = { ...context, [currentStep.key]: value };
-    // reset downstream keys when product type changes
-    if (currentStep.key === "productType") newCtx.deliveryType = null;
-    setContext(newCtx);
-    if (step < STEPS.length - 1) {
-      setStep(s => s + 1);
-    } else {
-      setChain(simulateChain(newCtx));
-      setPhase(2);
-    }
-  }
-
-  function resetSimulator() {
-    setPhase(1); setStep(0); setChain(null);
-    setContext({ productType: null, deliveryType: null, paymentMethod: null });
-  }
-
-  const contextLabel = [
-    PRODUCT_LABELS[context.productType],
-    DELIVERY_LABELS[context.deliveryType],
-    PAYMENT_LABELS[context.paymentMethod],
-  ].filter(Boolean).join(" · ");
-
-  return (
-    <div className="simulator-wrap">
-      {/* Phase 1 — context stepper */}
-      {phase === 1 && (
-        <div className="simulator-body">
-          <div className="simulator-steps-bar">
-            {STEPS.map((s, i) => (
-              <div key={s.key} className={`sim-step${i < step ? " done" : ""}${i === step ? " active" : ""}`}>
-                <span className="sim-step-dot">{i < step ? <Icon name="check" size={9} /> : i + 1}</span>
-                <span className="sim-step-label">{s.label}</span>
-              </div>
-            ))}
-          </div>
-
-          <h2 className="simulator-question">{currentStep.label}</h2>
-          <div className="simulator-options">
-            {currentStep.options.map(opt => (
-              <button key={opt.value} className="simulator-option-card" onClick={() => pickOption(opt.value)}>
-                <span className="simulator-option-icon">{opt.icon}</span>
-                <strong>{opt.label}</strong>
-                <span>{opt.desc}</span>
-              </button>
-            ))}
-          </div>
-
-          {canGoBack && (
-            <button className="btn btn-sm btn-ghost" style={{ marginTop: 20 }} onClick={() => setStep(s => s - 1)}>
-              <Icon name="chevron-left" size={12} /> Voltar
-            </button>
-          )}
-        </div>
-      )}
-
-      {/* Phase 2 — simulation result */}
-      {phase === 2 && chain && (
-        <div className="simulator-body">
-          <div className="simulator-result-header">
-            <h2 className="simulator-question">Workflows ativados</h2>
-            {contextLabel && <span className="simulator-context-summary">{contextLabel}</span>}
-          </div>
-
-          {chain.length === 0 ? (
-            <div className="sim-empty">
-              <span style={{ fontSize: 28 }}>💻</span>
-              <p>Nenhum workflow de fulfillment para este contexto.</p>
-              <span className="setting-help">Produtos digitais e serviços não ativam fluxos de entrega físicos.</span>
-            </div>
-          ) : (
-            <div className="simulator-chain">
-              {chain.map((item, idx) => (
-                <React.Fragment key={item.workflow.id}>
-                  {item.downstream && (
-                    <div className="simulator-chain-arrow">
-                      <Icon name="chevron-down" size={14} />
-                      <span>disponível após conclusão</span>
-                    </div>
-                  )}
-                  <div className={`simulator-chain-card${item.downstream ? " sim-chain-downstream" : ""}`}>
-                    <div className="simulator-chain-card-head">
-                      <span className="simulator-chain-icon">{item.workflow.icon}</span>
-                      <div>
-                        <span className="simulator-chain-name">{item.workflow.name}</span>
-                        <span className="simulator-chain-rule">{item.rule}</span>
-                      </div>
-                      <span className="simulator-chain-badge">
-                        {item.workflow.stages.length} etapas · {item.workflow.stages.reduce((s, st) => s + st.tasks.length, 0)} tarefas
-                      </span>
-                    </div>
-                    <div className="simulator-chain-stages">
-                      {item.workflow.stages.map((stage, si) => (
-                        <div key={si} className="simulator-chain-stage">
-                          <span className="simulator-chain-stage-name">{stage.name}</span>
-                          <div className="simulator-chain-tasks">
-                            {stage.tasks.map(task => (
-                              <span key={task.id} className={`simulator-chain-task ${task.type}`}>{task.name}</span>
-                            ))}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </React.Fragment>
-              ))}
-            </div>
-          )}
-
-          <div className="simulator-result-actions">
-            <button className="btn btn-sm btn-ghost" onClick={resetSimulator}>
-              <Icon name="search" size={12} /> Nova simulação
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
 /* ---------- Workflow Board Canvas ---------- */
 
 function WorkflowBoardCanvas({
@@ -1503,40 +2296,45 @@ function WorkflowBoardCanvas({
   showWizard, setShowWizard, wizardPreFill, setWizardPreFill,
   detailHasChanges, setDetailHasChanges,
   wfLayout = "expanded", wfGroup = "flat",
+  wfDetailView = "2-passos",
 }) {
   const isList       = mode.kind === "list";
   const isDetail     = mode.kind === "detail";
   const isTask       = mode.kind === "task";
   const isStage      = mode.kind === "stage";
   const isSettings   = mode.kind === "settings";
-  const isSimulator  = mode.kind === "simulator";
   const workflow     = mode.workflowId ? AIWData.workflows.find((w) => w.id === mode.workflowId) : null;
 
   const back = () => {
     if (showWizard) { setShowWizard(false); setWizardPreFill(null); return; }
-    if (isTask || isStage || isSettings || isSimulator) setMode({ kind: "detail", workflowId: mode.workflowId });
+    if (isTask || isStage || isSettings) setMode({ kind: "detail", workflowId: mode.workflowId });
     else if (isDetail) { setDetailHasChanges(false); setMode({ kind: "list" }); }
   };
 
   let headerLeft;
   if (isList && showWizard) {
     headerLeft = (
-      <button className="od-back-link" onClick={back}>
-        <Icon name="chevron-left" size={12} /> Voltar para Controle de Fluxos
+      <button className="od-back-link" data-sl-button data-variant="tertiary" data-has-label onClick={back}>
+        <IconCaretLeftSmall size={14} /> Voltar para Workflow Builder
       </button>
     );
   } else if (isList) {
-    headerLeft = <span className="canvas-name" style={{ fontWeight: 600, fontSize: 20 }}>Controle de Fluxos</span>;
+    headerLeft = (
+      <>
+        <span className="id-chip">WFB</span>
+        <span className="canvas-name">Workflow Builder</span>
+      </>
+    );
   } else if (isDetail) {
     headerLeft = (
-      <button className="od-back-link" onClick={back}>
-        <Icon name="chevron-left" size={12} /> Voltar para Controle de Fluxos
+      <button className="od-back-link" data-sl-button data-variant="tertiary" data-has-label onClick={back}>
+        <IconCaretLeftSmall size={14} /> Voltar para Workflow Builder
       </button>
     );
   } else {
     headerLeft = (
-      <button className="od-back-link" onClick={back}>
-        <Icon name="chevron-left" size={12} /> Voltar para {workflow?.name}
+      <button className="od-back-link" data-sl-button data-variant="tertiary" data-has-label onClick={back}>
+        <IconCaretLeftSmall size={14} /> Voltar para {workflow?.name}
       </button>
     );
   }
@@ -1546,22 +2344,19 @@ function WorkflowBoardCanvas({
       <div className="detail-head no-border">
         <div className="detail-head-left">{headerLeft}</div>
         <div className="detail-head-right">
-          {isList && (
-            <button data-sl-button data-variant="secondary" data-size="normal"
-              onClick={() => setMode({ kind: "simulator", workflowId: AIWData.workflows[0]?.id })} title="Simular">
-              <span data-sl-button-content>
-                <IconPlayCircleFill size={16} data-sl-icon />
-                Simular
-              </span>
-            </button>
-          )}
-          {isDetail && workflow && (
-            <button className="icon-btn" onClick={() => setMode({ kind: "settings", workflowId: workflow.id, section: "geral" })} title="Configurações do workflow">
-              <Icon name="settings" size={14} />
-            </button>
-          )}
+          {isList && !showWizard && (() => {
+            const activeWfs = AIWData.workflows.filter(w => !w.archived);
+            const totalOrders = AIWData.workflows.reduce((s, w) => s + (w.orders || 0), 0);
+            return (
+              <>
+                <span className="canvas-meta-count"><Icon name="list" size={14} /> {activeWfs.length}</span>
+                <span className="canvas-meta-count"><Icon name="cart" size={14} /> {totalOrders.toLocaleString("pt-BR")}</span>
+                <button className="icon-btn" title="Mais opções"><Icon name="more" size={16} /></button>
+              </>
+            );
+          })()}
           {(isDetail || isTask || isStage || isSettings) && detailHasChanges &&
-            <button className="btn btn-primary btn-sm" onClick={() => {
+            <button data-sl-button data-variant="primary" data-size="small" data-has-label onClick={() => {
               detailActionsRef.current?.save?.();
               setDetailHasChanges(false);
             }}>
@@ -1635,7 +2430,6 @@ function WorkflowBoardCanvas({
                         {si < w.stages.length - 1 && (
                           <div className="wf-list-stage-arrow">
                             <Icon name="chevron-right" size={16} />
-                            {stage.linkedToNext && <Icon name="link" size={16} />}
                           </div>
                         )}
                       </React.Fragment>
@@ -1740,9 +2534,9 @@ function WorkflowBoardCanvas({
               onOpenTask={(id) => setMode({ kind: "task", workflowId: workflow.id, taskId: id })}
               onOpenStage={(sid) => setMode({ kind: "stage", workflowId: workflow.id, stageId: sid })}
               onOpenSettings={(section) => setMode({ kind: "settings", workflowId: workflow.id, section: section || "geral" })}
-              onOpenSimulator={() => setMode({ kind: "simulator", workflowId: workflow.id })}
               detailActionsRef={detailActionsRef}
               onDirtyChange={setDetailHasChanges}
+              wfDetailView={wfDetailView}
             />
           }
 
@@ -1752,10 +2546,6 @@ function WorkflowBoardCanvas({
 
           {isStage && workflow &&
             <StageConfigView workflow={workflow} stageId={mode.stageId} onDirtyChange={setDetailHasChanges} />
-          }
-
-          {isSimulator && workflow &&
-            <WorkflowSimulator workflow={workflow} onBack={back} />
           }
 
           {isSettings && workflow &&
@@ -1772,7 +2562,7 @@ function WorkflowBoardCanvas({
 function chatFor(mode) {
   if (mode.kind === "list") {
     return {
-      title: "Controle de Fluxos",
+      title: "Workflow Builder",
       placeholder: "Criar workflow, auditar, otimizar...",
       chips: [
         { icon: "plus",    label: "Criar novo workflow"     },
@@ -1781,7 +2571,7 @@ function chatFor(mode) {
         { icon: "graph",   label: "Resumir cobertura"       }
       ],
       messages: [
-        { from: "agent", text: "Olá! Sou o Agente de Workflow. Posso ajudar você a criar, editar ou auditar os workflows de **Controle de Fluxos**." },
+        { from: "agent", text: "Olá! Sou o Agente de Workflow. Posso ajudar você a criar, editar ou auditar os workflows de **Workflow Builder**." },
         { from: "agent", text: "Há 5 workflows ativos cobrindo 4.826 pedidos. Quer criar um novo ou ajustar algum existente?" }
       ]
     };
@@ -1837,20 +2627,6 @@ function chatFor(mode) {
       ]
     };
   }
-  if (mode.kind === "simulator") {
-    return {
-      title: `Simulador · ${wf.name}`,
-      placeholder: "Simular contexto de pedido...",
-      chips: [
-        { icon: "play",    label: "Simular pedido físico + cartão"  },
-        { icon: "search",  label: "Simular pedido digital + PIX"    },
-        { icon: "sparkle", label: "Ver workflows ativados"           },
-      ],
-      messages: [
-        { from: "agent", text: `Simulando a cadeia de workflows para um pedido. Escolha o contexto para ver quais workflows serão ativados.` },
-      ]
-    };
-  }
   if (mode.kind === "settings") {
     return {
       title: `${wf.name} · Configurações`,
@@ -1871,12 +2647,14 @@ function chatFor(mode) {
 
 /* ---------- Workflow Board View (orchestrator with AI chat engine) ---------- */
 
-function WorkflowBoardView({ onBack, wfLayout = "expanded", wfGroup = "flat" }) {
-  const [mode, setMode] = useState({ kind: "list" });
+function WorkflowBoardView({ onBack, wfLayout = "expanded", wfGroup = "flat", wfDetailView = "2-passos", initialMode, onModeChange }) {
+  const [mode, setModeState] = useState(initialMode || { kind: "list" });
+  const setMode = (m) => { setModeState(m); onModeChange && onModeChange(m); };
 
   // Chat state — controlled from here so the engine can drive both sides
   const [chatMsgs, setChatMsgs] = useState([]);
   const [isTyping, setIsTyping] = useState(false);
+  const chatComposerRef = useRef(null);
 
   // New-workflow conversational draft
   const [wfDraftState, setWfDraftState] = useState(null);
@@ -2320,33 +3098,41 @@ function WorkflowBoardView({ onBack, wfLayout = "expanded", wfGroup = "flat" }) 
 
   const ctx = chatFor(mode);
 
+  const citeFn = React.useCallback((text) => {
+    chatComposerRef.current?.append(text);
+  }, []);
+
   return (
-    <ResizableSplit screenLabel="03 Controle de Fluxos">
-      <ChatPanel
-        title={ctx.title}
-        chips={ctx.chips}
-        placeholder={ctx.placeholder}
-        onBack={onBack}
-        messages={chatMsgs}
-        onSend={handleSend}
-        isTyping={isTyping}
-      />
-      <WorkflowBoardCanvas
-        mode={mode}
-        setMode={setMode}
-        settingsActionsRef={settingsActionsRef}
-        detailActionsRef={detailActionsRef}
-        taskActionsRef={taskActionsRef}
-        showWizard={showWizard}
-        setShowWizard={setShowWizard}
-        wizardPreFill={wizardPreFill}
-        setWizardPreFill={setWizardPreFill}
-        detailHasChanges={detailHasChanges}
-        setDetailHasChanges={setDetailHasChanges}
-        wfLayout={wfLayout}
-        wfGroup={wfGroup}
-      />
-    </ResizableSplit>
+    <ChatCiteContext.Provider value={citeFn}>
+      <ResizableSplit screenLabel="03 Workflow Builder" initialWidth={343}>
+        <ChatPanel
+          title={ctx.title}
+          chips={ctx.chips}
+          placeholder={ctx.placeholder}
+          onBack={onBack}
+          messages={chatMsgs}
+          onSend={handleSend}
+          isTyping={isTyping}
+          composerRef={chatComposerRef}
+        />
+        <WorkflowBoardCanvas
+          mode={mode}
+          setMode={setMode}
+          settingsActionsRef={settingsActionsRef}
+          detailActionsRef={detailActionsRef}
+          taskActionsRef={taskActionsRef}
+          showWizard={showWizard}
+          setShowWizard={setShowWizard}
+          wizardPreFill={wizardPreFill}
+          setWizardPreFill={setWizardPreFill}
+          detailHasChanges={detailHasChanges}
+          setDetailHasChanges={setDetailHasChanges}
+          wfLayout={wfLayout}
+          wfGroup={wfGroup}
+          wfDetailView={wfDetailView}
+        />
+      </ResizableSplit>
+    </ChatCiteContext.Provider>
   );
 }
 

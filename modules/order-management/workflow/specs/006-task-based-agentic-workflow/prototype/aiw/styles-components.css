@@ -406,12 +406,12 @@
 
 .detail-scroll { flex: 1; min-height: 0; overflow-y: auto; }
 .detail-body {
-  padding: 32px 48px 80px;
+  padding: 32px 72px 80px;
   max-width: 800px;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 40px;
+  gap: 24px;
 }
 .detail-title { font-size: 22px; font-weight: 600; line-height: 1.3; margin: 0; letter-spacing: -.01em; text-wrap: pretty; }
 .detail-desc  { font-size: 14px; color: var(--fg-2); line-height: 1.55; margin: 8px 0 0; text-wrap: pretty; }
