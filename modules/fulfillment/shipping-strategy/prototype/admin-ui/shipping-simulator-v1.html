@@ -3,147 +3,242 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Shipping Simulator — VTEX Admin</title>
+<title>Simulador de envio</title>
 <style>
+:root {
+  --sl-bg-base: #F8F7FC;
+  --sl-bg-surface: #FFFFFF;
+  --sl-bg-muted: #F8F7FC;
+  --sl-border: #E7E9EE;
+  --sl-border-strong: #B4B9C2;
+  --sl-fg: #142032;
+  --sl-fg-muted: #5B6E84;
+  --sl-fg-soft: #8C95A0;
+  --sl-fg-disabled: #A1AAB7;
+  --sl-accent: #0C2DCC;
+  --sl-accent-hover: #0927b3;
+  --sl-critical: #F71963;
+  --sl-critical-bg: #FFF1F3;
+  --sl-radius-sm: 4px;
+  --sl-radius-md: 8px;
+  --sl-shadow-popover: 0 8px 24px rgba(20, 32, 50, 0.12);
+  --sl-focus-ring: 0 0 0 2px rgba(12, 45, 204, 0.16);
+}
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif; background: #f4f4f4; color: #142032; font-size: 14px; display: flex; height: 100vh; overflow: hidden; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif; background: var(--sl-bg-base); color: var(--sl-fg); font-size: 14px; line-height: 1.5; min-height: 100vh; -webkit-font-smoothing: antialiased; }
 
-/* ── Sidebar ── */
-.sidebar { width: 192px; background: #fff; border-right: 1px solid #E7E9EE; display: flex; flex-direction: column; flex-shrink: 0; }
-.sidebar-header { padding: 14px 16px 12px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #E7E9EE; }
-.sidebar-nav { padding: 6px 0; flex: 1; overflow-y: auto; }
-.nav-group-label { padding: 8px 16px 3px; font-size: 11px; font-weight: 600; color: #A1AAB7; text-transform: uppercase; letter-spacing: 0.05em; display: flex; align-items: center; justify-content: space-between; }
-.nav-item { display: flex; align-items: center; padding: 6px 16px; font-size: 12.5px; color: #4a4a4a; cursor: pointer; text-decoration: none; }
-.nav-item:hover { background: #f7f7f9; }
-.nav-item.active { color: #0C2DCC; font-weight: 600; background: #EEF1FF; }
-.nav-sub .nav-item { padding: 5px 16px 5px 24px; font-size: 12px; }
+/* ── Demo disclaimer top bar ── */
+.demo-top-bar {
+  position: sticky;
+  top: 0;
+  z-index: 200;
+  width: 100%;
+  background: #FFF3F6;
+  border-bottom: 1px solid #FFC4DD;
+  padding: 10px 20px;
+}
+.demo-top-bar-inner {
+  max-width: 980px;
+  margin: 0 auto;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.demo-top-bar-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  margin-top: 1px;
+  border-radius: 50%;
+  background: #FFC4DD;
+  color: #142032;
+}
+.demo-top-bar-text {
+  font-size: 13px;
+  line-height: 1.45;
+  color: #142032;
+  font-weight: 500;
+}
 
-/* ── Main ── */
-.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+/* ── Prototype shell (standalone — no admin chrome) ── */
+.prototype-shell { max-width: 980px; margin: 0 auto; }
 
-/* ── Topbar ── */
-.topbar { height: 50px; background: #fff; border-bottom: 1px solid #E7E9EE; display: flex; align-items: center; padding: 0 18px; gap: 10px; flex-shrink: 0; }
-.topbar-hamburger { color: #5B6E84; font-size: 17px; cursor: pointer; }
-.topbar-account { font-size: 13px; font-weight: 500; color: #142032; }
-.topbar-search { flex: 1; max-width: 320px; display: flex; align-items: center; gap: 8px; background: #F8F7FC; border: 1px solid #E7E9EE; border-radius: 6px; padding: 6px 12px; color: #A1AAB7; font-size: 13px; margin: 0 auto; }
-.topbar-right { display: flex; align-items: center; gap: 8px; margin-left: auto; }
-.topbar-btn { font-size: 12px; color: #5B6E84; cursor: pointer; display: flex; align-items: center; gap: 4px; padding: 5px 8px; border-radius: 5px; border: none; background: none; }
-.topbar-btn:hover { background: #F8F7FC; }
-.topbar-avatar { width: 28px; height: 28px; border-radius: 50%; background: #F71963; color: #fff; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
-
-/* ── Client toggle ── */
-.client-toggle { display: flex; align-items: center; background: #142032; border-radius: 22px; padding: 3px; gap: 2px; box-shadow: 0 2px 8px rgba(20,32,50,0.22); }
-.client-btn { display: flex; align-items: center; gap: 5px; padding: 5px 13px; border-radius: 18px; border: none; cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.15s; background: transparent; color: rgba(255,255,255,0.45); white-space: nowrap; }
-.client-btn .flag { font-size: 14px; }
-.client-btn.active { background: #F71963; color: #fff; box-shadow: 0 1px 4px rgba(247,25,99,0.35); }
-.client-btn:not(.active):hover { color: rgba(255,255,255,0.8); }
+/* ── Demo toggles ── */
+.demo-toggles { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; flex-shrink: 0; }
+.demo-toggles-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-start; }
+.client-toggle { display: flex; align-items: center; background: var(--sl-bg-surface); border: 1px solid var(--sl-border); border-radius: 999px; padding: 3px; gap: 2px; flex-shrink: 0; }
+.client-btn { display: flex; align-items: center; gap: 5px; padding: 5px 11px; border-radius: 999px; border: none; cursor: pointer; font-size: 11px; font-weight: 600; transition: background 0.15s, color 0.15s; background: transparent; color: var(--sl-fg-muted); white-space: nowrap; }
+.client-btn.active { background: var(--sl-accent); color: #fff; }
+.client-btn:not(.active):hover { color: var(--sl-fg); background: var(--sl-bg-muted); }
+.client-btn:focus-visible { outline: 2px solid var(--sl-accent); outline-offset: 2px; }
+.client-btn-icon { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; line-height: 0; }
+.client-btn-icon svg { display: block; }
+.account-badge-locked {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  background: var(--sl-bg-surface);
+  border: 1px solid var(--sl-border);
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #142032;
+  white-space: nowrap;
+}
+.vertical-toggle-wrap {
+  display: flex;
+  flex-shrink: 0;
+}
+.vertical-toggle-hint {
+  font-size: 10px;
+  line-height: 1.35;
+  color: var(--sl-fg-muted);
+  max-width: 420px;
+  text-align: left;
+  margin: 0;
+}
 
 /* ── Content ── */
-.content { flex: 1; overflow-y: auto; padding: 22px 28px 48px; }
-.page-breadcrumb { font-size: 12px; color: #A1AAB7; margin-bottom: 5px; }
+.content { padding: 32px 24px 48px; }
 
-/* ── Recent simulations ── */
-.recents-bar { background: #fff; border: 1px solid #E7E9EE; border-radius: 8px; margin-bottom: 16px; overflow: hidden; }
-.recents-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; cursor: pointer; user-select: none; }
-.recents-header:hover { background: #F8F7FC; }
-.recents-title { font-size: 12px; font-weight: 600; color: #5B6E84; text-transform: uppercase; letter-spacing: .05em; display: flex; align-items: center; gap: 6px; }
-.recents-badge { background: #F71963; color: #fff; border-radius: 10px; font-size: 10px; font-weight: 700; padding: 1px 6px; }
+/* ── Recent simulations — Shoreline: collapsible section ── */
+.recents-bar { background: var(--sl-bg-surface); border: 1px solid var(--sl-border); border-radius: var(--sl-radius-md); margin-bottom: 16px; overflow: hidden; }
+.recents-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; cursor: pointer; user-select: none; }
+.recents-header:hover { background: var(--sl-bg-muted); }
+.recents-title { font-size: 11px; font-weight: 600; color: var(--sl-fg-muted); text-transform: uppercase; letter-spacing: .06em; display: flex; align-items: center; gap: 6px; }
+.recents-badge { background: #EBEDF0; color: var(--sl-fg-muted); border-radius: var(--sl-radius-sm); font-size: 11px; font-weight: 600; padding: 1px 7px; min-width: 20px; text-align: center; }
 .recents-chevron { color: #A1AAB7; font-size: 11px; transition: transform .2s; }
 .recents-chevron.open { transform: rotate(180deg); }
 .recents-body { display: none; padding: 0 14px 12px; }
 .recents-body.open { display: block; }
 .recents-list { display: flex; flex-direction: column; gap: 6px; }
-.recent-item { display: flex; align-items: center; justify-content: space-between; padding: 9px 12px; border-radius: 6px; border: 1px solid #E7E9EE; cursor: pointer; background: #fff; transition: background .12s; }
-.recent-item:hover { background: #FFF3F6; border-color: #F71963; }
+.recent-item { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; border-radius: var(--sl-radius-sm); border: 1px solid var(--sl-border); cursor: pointer; background: var(--sl-bg-surface); transition: background .12s, border-color .12s; }
+.recent-item:hover { background: var(--sl-bg-muted); border-color: var(--sl-border-strong); }
 .recent-item-left { display: flex; flex-direction: column; gap: 3px; }
-.recent-item-title { font-size: 13px; font-weight: 500; color: #142032; }
-.recent-item-meta { font-size: 11px; color: #A1AAB7; display: flex; gap: 8px; flex-wrap: wrap; }
-.recent-item-time { font-size: 11px; color: #A1AAB7; white-space: nowrap; flex-shrink: 0; }
-.recent-item-restore { font-size: 11px; color: #134cd8; cursor: pointer; border: none; background: none; padding: 0; font-family: inherit; }
-.recents-empty { font-size: 12px; color: #A1AAB7; padding: 8px 0; font-style: italic; }
-.page-breadcrumb a { color: #134cd8; text-decoration: none; }
-.page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
-.page-title { font-size: 20px; font-weight: 600; }
-.back-link { font-size: 12px; color: #134cd8; text-decoration: none; }
+.recent-item-title { font-size: 13px; font-weight: 500; color: var(--sl-fg); }
+.recent-item-meta { font-size: 11px; color: var(--sl-fg-disabled); display: flex; gap: 8px; flex-wrap: wrap; }
+.recent-item-time { font-size: 11px; color: var(--sl-fg-disabled); white-space: nowrap; flex-shrink: 0; }
+.recent-item-restore { font-size: 12px; color: var(--sl-accent); cursor: pointer; border: none; background: none; padding: 0; font-family: inherit; font-weight: 500; }
+.recent-item-restore:hover { text-decoration: underline; color: var(--sl-accent-hover); }
+.recents-empty { font-size: 13px; color: var(--sl-fg-disabled); padding: 8px 0; }
+.page-header { display: flex; align-items: flex-start; justify-content: flex-start; gap: 20px; flex-wrap: wrap; margin-bottom: 12px; }
+.page-header-title { flex: 0 1 auto; }
+.page-title { font-size: 20px; font-weight: 600; line-height: 1.25; letter-spacing: -0.01em; color: var(--sl-fg); }
+.page-subtitle { font-size: 13px; color: var(--sl-fg-muted); margin-top: 4px; }
 
-/* ── Card ── */
-.card { background: #fff; border: 1px solid #E7E9EE; border-radius: 8px; padding: 22px; margin-bottom: 14px; }
-.card-section-title { font-size: 13px; font-weight: 600; color: #142032; margin-bottom: 14px; padding-bottom: 9px; border-bottom: 1px solid #F8F7FC; }
+/* ── Card — Shoreline: surface panel ── */
+.card { background: var(--sl-bg-surface); border: 1px solid var(--sl-border); border-radius: var(--sl-radius-md); padding: 24px; margin-bottom: 16px; }
+.card-section-title { font-size: 13px; font-weight: 600; color: var(--sl-fg); margin-bottom: 16px; padding-bottom: 10px; border-bottom: 1px solid var(--sl-border); }
 
 /* ── Form ── */
 .form-row { display: flex; gap: 14px; margin-bottom: 14px; flex-wrap: wrap; }
 .form-group { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 130px; }
-label { font-size: 12px; font-weight: 500; color: #5B6E84; }
-.req { color: #F71963; margin-left: 2px; }
-.opt { color: #A1AAB7; font-weight: 400; font-size: 11px; margin-left: 3px; }
+label { font-size: 12px; font-weight: 500; color: var(--sl-fg-muted); line-height: 1.4; }
+.req { color: var(--sl-critical); margin-left: 2px; }
+.opt { color: var(--sl-fg-disabled); font-weight: 400; font-size: 11px; margin-left: 3px; }
 .input-wrap { position: relative; }
-/* Shoreline: Input component */
-.input { height: 36px; border: 1px solid #B4B9C2; border-radius: 4px; padding: 0 12px; font-size: 14px; color: #142032; background: #fff; width: 100%; outline: none; appearance: none; transition: border-color 0.15s, box-shadow 0.15s; font-family: inherit; }
-.input:focus { border-color: #0C2DCC; box-shadow: 0 0 0 2px rgba(12,45,204,0.16); }
-.input::placeholder { color: #8C95A0; }
+/* Shoreline: Input / Select */
+.input { height: 32px; border: 1px solid var(--sl-border-strong); border-radius: var(--sl-radius-sm); padding: 0 12px; font-size: 14px; color: var(--sl-fg); background: var(--sl-bg-surface); width: 100%; outline: none; appearance: none; transition: border-color 0.15s, box-shadow 0.15s; font-family: inherit; }
+.input:hover:not(:focus) { border-color: #8C95A0; }
+.input:focus { border-color: var(--sl-accent); box-shadow: var(--sl-focus-ring); }
+.input::placeholder { color: var(--sl-fg-soft); }
 select.input { padding-right: 28px; cursor: pointer; }
-.sel-arrow { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); pointer-events: none; color: #A1AAB7; font-size: 10px; }
-.ctx-badge { display: inline-flex; align-items: center; gap: 5px; background: #edf0fc; color: #134cd8; border-radius: 4px; padding: 3px 9px; font-size: 11px; font-weight: 600; margin-top: 3px; }
+select.input.select-ph { color: var(--sl-fg-soft); }
+.sel-arrow { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); pointer-events: none; color: var(--sl-fg-disabled); font-size: 10px; }
+.ctx-badge { display: inline-flex; align-items: center; gap: 5px; background: var(--sl-bg-muted); color: var(--sl-fg-muted); border: 1px solid var(--sl-border); border-radius: var(--sl-radius-sm); padding: 2px 8px; font-size: 11px; font-weight: 500; margin-top: 4px; }
 
-/* ── Seller combobox ── */
+/* ── Seller combobox — Shoreline: Combobox ── */
 .combo-wrap { position: relative; }
-.combo-input { height: 36px; border: 1px solid #B4B9C2; border-radius: 4px; padding: 0 30px 0 12px; font-size: 14px; color: #142032; width: 100%; outline: none; transition: border-color 0.15s, box-shadow 0.15s; font-family: inherit; }
-.combo-input:focus { border-color: #0C2DCC; box-shadow: 0 0 0 2px rgba(12,45,204,0.16); }
-.combo-input::placeholder { color: #8C95A0; }
-.combo-clear { position: absolute; right: 9px; top: 50%; transform: translateY(-50%); color: #A1AAB7; cursor: pointer; font-size: 13px; line-height: 1; display: none; background: none; border: none; }
-.combo-clear:hover { color: #F71963; }
-.combo-dropdown { position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: #fff; border: 1px solid #E7E9EE; border-radius: 6px; box-shadow: 0 6px 20px rgba(20,32,50,0.10); z-index: 300; max-height: 220px; overflow-y: auto; }
-.combo-opt { padding: 9px 12px; cursor: pointer; border-bottom: 1px solid #F8F7FC; }
+.combo-input { height: 32px; border: 1px solid var(--sl-border-strong); border-radius: var(--sl-radius-sm); padding: 0 30px 0 12px; font-size: 14px; color: var(--sl-fg); width: 100%; outline: none; background: var(--sl-bg-surface); transition: border-color 0.15s, box-shadow 0.15s; font-family: inherit; }
+.combo-input:hover:not(:focus) { border-color: #8C95A0; }
+.combo-input:focus { border-color: var(--sl-accent); box-shadow: var(--sl-focus-ring); }
+.combo-input::placeholder { color: var(--sl-fg-soft); }
+.combo-clear { position: absolute; right: 9px; top: 50%; transform: translateY(-50%); color: var(--sl-fg-disabled); cursor: pointer; font-size: 13px; line-height: 1; display: none; background: none; border: none; }
+.combo-clear:hover { color: var(--sl-fg-muted); }
+.combo-dropdown { position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: var(--sl-bg-surface); border: 1px solid var(--sl-border); border-radius: var(--sl-radius-sm); box-shadow: var(--sl-shadow-popover); z-index: 300; max-height: 220px; overflow-y: auto; }
+.combo-opt { padding: 8px 12px; cursor: pointer; border-bottom: 1px solid var(--sl-border); }
 .combo-opt:last-child { border-bottom: none; }
-.combo-opt:hover { background: #F0F4FF; }
-.combo-opt-name { font-size: 13px; font-weight: 500; color: #142032; }
-.combo-opt-id { font-size: 11px; color: #A1AAB7; font-family: 'SF Mono','Fira Mono',monospace; margin-top: 2px; }
-.combo-selected-badge { background: #F0F4FF; border: 1px solid #c5d0f5; border-radius: 6px; padding: 7px 10px; display: flex; align-items: center; justify-content: space-between; }
-.combo-sel-name { font-size: 13px; font-weight: 500; color: #142032; }
-.combo-sel-id { font-size: 11px; color: #A1AAB7; font-family: 'SF Mono','Fira Mono',monospace; margin-top: 2px; }
-.combo-sel-clear { color: #A1AAB7; cursor: pointer; font-size: 13px; background: none; border: none; }
-.combo-sel-clear:hover { color: #F71963; }
-.combo-empty { padding: 10px 12px; font-size: 12px; color: #A1AAB7; text-align: center; }
+.combo-opt:hover { background: var(--sl-bg-muted); }
+.combo-opt-name { font-size: 14px; font-weight: 500; color: var(--sl-fg); }
+.combo-opt-id { font-size: 11px; color: var(--sl-fg-disabled); font-family: 'SF Mono','Fira Mono',monospace; margin-top: 2px; }
+.combo-selected-badge { background: var(--sl-bg-muted); border: 1px solid var(--sl-border-strong); border-radius: var(--sl-radius-sm); padding: 6px 10px; display: flex; align-items: center; justify-content: space-between; min-height: 32px; }
+.combo-sel-name { font-size: 14px; font-weight: 500; color: var(--sl-fg); }
+.combo-sel-id { font-size: 11px; color: var(--sl-fg-disabled); font-family: 'SF Mono','Fira Mono',monospace; margin-top: 2px; }
+.combo-sel-clear { color: var(--sl-fg-disabled); cursor: pointer; font-size: 13px; background: none; border: none; }
+.combo-sel-clear:hover { color: var(--sl-fg-muted); }
+.combo-empty { padding: 10px 12px; font-size: 13px; color: var(--sl-fg-disabled); text-align: center; }
 
 /* ── SKU search ── */
 .sku-wrapper { position: relative; }
-.sku-dd { position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: #fff; border: 1px solid #E7E9EE; border-radius: 6px; box-shadow: 0 6px 20px rgba(20,32,50,0.10); z-index: 200; overflow: hidden; }
-.sku-opt { padding: 10px 12px; cursor: pointer; border-bottom: 1px solid #F8F7FC; }
+.sku-dd { position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: var(--sl-bg-surface); border: 1px solid var(--sl-border); border-radius: var(--sl-radius-sm); box-shadow: var(--sl-shadow-popover); z-index: 200; overflow: hidden; }
+.sku-opt { padding: 8px 12px; cursor: pointer; border-bottom: 1px solid var(--sl-border); }
 .sku-opt:last-child { border-bottom: none; }
-.sku-opt:hover { background: #F0F4FF; }
-.sku-opt-name { font-size: 13px; font-weight: 500; color: #142032; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-.sku-opt-meta { font-size: 11px; color: #A1AAB7; margin-top: 3px; display: flex; gap: 10px; flex-wrap: wrap; }
-.tag-kit { background: #FFE0EF; color: #F71963; padding: 1px 6px; border-radius: 3px; font-size: 10px; font-weight: 700; }
-.sku-chip { background: #F0F4FF; border: 1px solid #c5d0f5; border-radius: 6px; padding: 7px 10px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.sku-chip-name { font-size: 13px; font-weight: 500; color: #142032; }
-.sku-chip-meta { font-size: 11px; color: #A1AAB7; margin-top: 1px; }
-.sku-chip-clear { color: #A1AAB7; cursor: pointer; font-size: 13px; flex-shrink: 0; background: none; border: none; }
-.sku-chip-clear:hover { color: #F71963; }
+.sku-opt:hover { background: var(--sl-bg-muted); }
+.sku-opt-name { font-size: 14px; font-weight: 500; color: var(--sl-fg); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.sku-opt-meta { font-size: 11px; color: var(--sl-fg-disabled); margin-top: 3px; display: flex; gap: 10px; flex-wrap: wrap; }
+.section-divider-spaced { margin-top: 20px; }
+.sku-chip-content { flex: 1; min-width: 0; }
+.sku-opt-empty { color: var(--sl-fg-disabled); cursor: default; }
+.tag-kit { background: var(--sl-critical-bg); color: var(--sl-critical); padding: 1px 6px; border-radius: var(--sl-radius-sm); font-size: 10px; font-weight: 600; line-height: 1.4; margin-left: 6px; }
+.tag-pickup-only { background: #DBEAFE; color: #1E40AF; padding: 1px 6px; border-radius: var(--sl-radius-sm); font-size: 10px; font-weight: 600; line-height: 1.4; margin-left: 6px; }
+.delivery-only-notice { font-size: 13px; color: var(--sl-fg-muted); padding: 12px 0 4px; line-height: 1.5; }
+.item-sim-block { border: 1px solid #E7E9EE; border-radius: 8px; padding: 16px; background: #fff; }
+.item-sim-block + .item-sim-block { margin-top: 20px; }
+.item-sim-header { margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid #E7E9EE; }
+.item-sim-name { display: block; font-size: 14px; font-weight: 600; color: var(--sl-fg); margin-bottom: 4px; }
+.item-sim-meta { font-size: 12px; color: var(--sl-fg-muted); }
+.item-sim-block .section-divider { margin-top: 0; }
+.item-sim-block .section-divider-spaced { margin-top: 16px; }
+.sku-chip { background: var(--sl-bg-muted); border: 1px solid var(--sl-border-strong); border-radius: var(--sl-radius-sm); padding: 6px 10px; display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 32px; }
+.sku-chip-name { font-size: 14px; font-weight: 500; color: var(--sl-fg); }
+.sku-chip-meta { font-size: 11px; color: var(--sl-fg-disabled); margin-top: 1px; }
+.sku-chip-clear { color: var(--sl-fg-disabled); cursor: pointer; font-size: 13px; flex-shrink: 0; background: none; border: none; }
+.sku-chip-clear:hover { color: var(--sl-fg-muted); }
 
 /* ── Item row ── */
 .item-row { display: flex; gap: 10px; align-items: flex-end; margin-bottom: 12px; }
 .item-row .fg-sku { flex: 3; position: relative; }
 .item-row .fg-qty { flex: 0 0 88px; }
 .item-row .fg-price { flex: 0 0 110px; }
-.btn-remove { width: 36px; height: 36px; border: 1px solid #E7E9EE; border-radius: 6px; background: #fff; color: #A1AAB7; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; transition: all 0.15s; }
-.btn-remove:hover { border-color: #F71963; color: #F71963; }
+.btn-remove { width: 32px; height: 32px; border: 1px solid var(--sl-border-strong); border-radius: var(--sl-radius-sm); background: var(--sl-bg-surface); color: var(--sl-fg-disabled); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; transition: border-color 0.15s, color 0.15s, background 0.15s; }
+.btn-remove:hover { border-color: var(--sl-critical); color: var(--sl-critical); background: var(--sl-critical-bg); }
 .check-row { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
-.check-row input { accent-color: #134cd8; width: 14px; height: 14px; cursor: pointer; }
-.check-row label { font-size: 12.5px; color: #5B6E84; cursor: pointer; margin: 0; }
-.divider { height: 1px; background: #F8F7FC; margin: 18px 0; }
+.check-row input { accent-color: var(--sl-accent); width: 16px; height: 16px; cursor: pointer; }
+.check-row label { font-size: 14px; color: var(--sl-fg); cursor: pointer; margin: 0; font-weight: 400; }
+.divider { height: 1px; background: var(--sl-border); margin: 20px 0; }
 
 /* Shoreline: Alert variant="critical" */
-.error-box { background: #FFF1F3; border: 1px solid #F71963; border-left: 4px solid #F71963; border-radius: 4px; padding: 10px 14px; margin-bottom: 14px; font-size: 14px; display: none; align-items: flex-start; gap: 8px; color: #142032; }
+.error-box { background: var(--sl-critical-bg); border: 1px solid var(--sl-critical); border-left: 4px solid var(--sl-critical); border-radius: var(--sl-radius-sm); padding: 12px 14px; margin-bottom: 16px; font-size: 14px; display: none; align-items: flex-start; gap: 8px; color: var(--sl-fg); }
 .error-box.show { display: flex; }
-.error-icon { color: #F71963; flex-shrink: 0; }
+.error-icon { color: var(--sl-critical); flex-shrink: 0; }
 
-/* ── Buttons — Shoreline: Button variant="primary" / "secondary" / tertiary ── */
-.btn-primary { height: 32px; padding: 0 16px; background: #0C2DCC; color: #fff; border: 1px solid transparent; border-radius: 4px; font-size: 14px; font-weight: 500; cursor: pointer; font-family: inherit; transition: background 0.15s; }
-.btn-primary:hover { background: #0927b3; }
-.btn-primary:focus-visible { outline: 2px solid #0C2DCC; outline-offset: 2px; }
-.btn-secondary { height: 32px; padding: 0 16px; background: #fff; color: #142032; border: 1px solid #B4B9C2; border-radius: 4px; font-size: 14px; font-weight: 500; cursor: pointer; font-family: inherit; transition: background 0.15s; }
-.btn-secondary:hover { background: #F0F2F5; }
-.btn-link { background: none; border: none; color: #0C2DCC; font-size: 13px; font-weight: 500; cursor: pointer; padding: 0; display: flex; align-items: center; gap: 4px; font-family: inherit; }
+/* Shoreline: Button primary / secondary / tertiary */
+.btn-primary { height: 32px; padding: 0 16px; background: var(--sl-accent); color: #fff; border: 1px solid transparent; border-radius: var(--sl-radius-sm); font-size: 14px; font-weight: 500; cursor: pointer; font-family: inherit; transition: background 0.15s; }
+.btn-primary:hover { background: var(--sl-accent-hover); }
+.btn-primary:focus-visible { outline: 2px solid var(--sl-accent); outline-offset: 2px; }
+.btn-secondary { height: 32px; padding: 0 16px; background: var(--sl-bg-surface); color: var(--sl-fg); border: 1px solid var(--sl-border-strong); border-radius: var(--sl-radius-sm); font-size: 14px; font-weight: 500; cursor: pointer; font-family: inherit; transition: background 0.15s, border-color 0.15s; }
+.btn-secondary:hover { background: var(--sl-bg-muted); }
+.btn-secondary:focus-visible { outline: 2px solid var(--sl-accent); outline-offset: 2px; }
+.btn-link { background: none; border: none; color: var(--sl-accent); font-size: 14px; font-weight: 500; cursor: pointer; padding: 0; display: inline-flex; align-items: center; gap: 4px; font-family: inherit; }
+.btn-link:hover { color: var(--sl-accent-hover); text-decoration: underline; }
+
+.form-group-short { max-width: 175px; }
+.combo-input-wrap { position: relative; }
+.add-item-row { margin-bottom: 12px; }
+.row-action-spacer { width: 32px; flex-shrink: 0; }
+.route-id { color: var(--sl-fg-disabled); font-size: 10.5px; font-family: 'SF Mono','Fira Mono',monospace; margin-left: 4px; }
+.detail-block-full { grid-column: 1 / -1; }
+.combo-note { color: var(--sl-fg-disabled); font-weight: 400; font-size: 11px; }
+.recent-qty { font-size: 11px; color: var(--sl-fg-muted); }
+.recent-item-actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.pickup-meta-inline { margin-top: 0; }
+.badge-muted { opacity: .65; margin-left: 6px; }
+
+.form-actions { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
 
 /* ── Section divider ── */
 .section-divider { display: flex; align-items: center; gap: 10px; margin: 16px 0 10px; }
@@ -151,43 +246,146 @@ select.input { padding-right: 28px; cursor: pointer; }
 .section-divider-line { flex: 1; height: 1px; background: #E7E9EE; }
 
 /* ── Results header ── */
-.results-header-row { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.results-header-row { margin-bottom: 14px; }
 .results-title { font-size: 14px; font-weight: 600; }
-/* Shoreline: Tag color="blue" */
-.results-count { background: #DBEAFE; color: #1E40AF; border-radius: 10px; padding: 1px 9px; font-size: 12px; font-weight: 600; }
-.results-subtitle { font-size: 12px; color: #A1AAB7; margin-bottom: 14px; }
 
-/* ── SLA table — Shoreline: Table + TableHeader + TableBody + TableRow + TableCell ── */
+/* ── SLA table — Shoreline: Table ── */
 .sla-table { width: 100%; border-collapse: collapse; font-size: 14px; }
-.sla-table th { background: #F8F7FC; font-size: 11px; font-weight: 600; color: #8C95A0; text-transform: uppercase; letter-spacing: 0.06em; padding: 8px 12px; text-align: left; border-bottom: 1px solid #E2E5E9; }
+.sla-table th { background: var(--sl-bg-muted); font-size: 11px; font-weight: 600; color: var(--sl-fg-soft); text-transform: uppercase; letter-spacing: 0.06em; padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--sl-border); }
 .sla-table th:last-child { width: 130px; }
-.sla-row td { padding: 12px 12px; border-bottom: 1px solid #F0F2F5; vertical-align: middle; color: #142032; }
+.sla-row td { padding: 12px; border-bottom: 1px solid var(--sl-border); vertical-align: middle; color: var(--sl-fg); }
+.sla-row:hover td { background: var(--sl-bg-muted); }
 .sla-row:last-of-type td { border-bottom: none; }
 .sla-carrier-col { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .sla-carrier-name { font-weight: 500; font-size: 14px; }
-/* Shoreline: Tag component — color="gray" / "orange" / "blue" */
-.type-badge { border-radius: 4px; padding: 2px 8px; font-size: 12px; font-weight: 500; background: #EBEDF0; color: #4A5568; display: inline-flex; align-items: center; }
+/* Shoreline: Tag — gray / orange / blue */
+.type-badge { border-radius: var(--sl-radius-sm); padding: 2px 8px; font-size: 12px; font-weight: 500; line-height: 1.4; background: #EBEDF0; color: #4A5568; display: inline-flex; align-items: center; }
 .type-badge.express { background: #FEF3C7; color: #92400E; }
-.weekend-badge { border-radius: 4px; padding: 2px 8px; font-size: 12px; font-weight: 500; background: #DBEAFE; color: #1E40AF; display: inline-flex; align-items: center; }
+.weekend-badge { border-radius: var(--sl-radius-sm); padding: 2px 8px; font-size: 12px; font-weight: 500; background: #DBEAFE; color: #1E40AF; display: inline-flex; align-items: center; }
+.scheduled-badge { border-radius: var(--sl-radius-sm); padding: 2px 8px; font-size: 12px; font-weight: 500; background: var(--sl-critical-bg); color: var(--sl-critical); display: inline-flex; align-items: center; }
+.excluded-section { margin-top: 16px; background: var(--sl-bg-surface); border: 1px solid var(--sl-border); border-radius: var(--sl-radius-md); overflow: hidden; }
+.excluded-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; cursor: pointer; user-select: none; }
+.excluded-header:hover { background: var(--sl-bg-muted); }
+.excluded-header-left { display: flex; align-items: center; gap: 8px; }
+.excluded-title { font-size: 11px; font-weight: 600; color: var(--sl-fg-muted); text-transform: uppercase; letter-spacing: 0.06em; }
+.excluded-count { background: #EBEDF0; color: var(--sl-fg-muted); border-radius: var(--sl-radius-sm); font-size: 11px; font-weight: 600; padding: 1px 7px; min-width: 20px; text-align: center; }
+.excluded-chevron { color: #A1AAB7; font-size: 11px; transition: transform .2s; }
+.excluded-chevron.open { transform: rotate(180deg); }
+.excluded-body { display: none; padding: 0 14px 12px; }
+.excluded-body.open { display: block; }
+.excluded-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.excluded-table th { text-align: left; font-size: 11px; font-weight: 600; color: #5B6E84; text-transform: uppercase; letter-spacing: 0.04em; padding: 0 10px 8px; border-bottom: 1px solid #E7E9EE; }
+.excluded-table td { padding: 9px 10px; border-bottom: 1px solid #F3F4F6; vertical-align: top; color: #5B6E84; }
+.excluded-table tr:last-child td { border-bottom: none; }
+.excluded-table .excluded-name-cell { font-weight: 500; color: #142032; }
+.feedback-callout {
+  margin-top: 16px;
+  padding: 14px 16px;
+  background: #FFF3F6;
+  border: 1px solid var(--sl-critical);
+  border-radius: var(--sl-radius-sm);
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.feedback-callout-header {
+  margin-top: 0;
+  margin-bottom: 16px;
+  padding: 8px 14px;
+  align-items: center;
+  width: 100%;
+  gap: 10px;
+}
+.feedback-callout-header .feedback-callout-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+}
+.feedback-callout-header .feedback-callout-icon svg {
+  width: 13px;
+  height: 13px;
+}
+.feedback-callout-header .feedback-callout-body {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+  flex-wrap: nowrap;
+}
+.feedback-callout-header .feedback-callout-title {
+  margin-bottom: 0;
+  font-size: 12px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.feedback-callout-header .feedback-callout-sep {
+  color: #A1AAB7;
+  font-size: 12px;
+  flex-shrink: 0;
+}
+.feedback-callout-header .feedback-callout-text {
+  margin-bottom: 0;
+  font-size: 12px;
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+.feedback-callout-header .feedback-callout-link {
+  font-size: 12px;
+  margin-left: auto;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.feedback-callout-icon {
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  background: #FFC4DD;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #F71963;
+}
+.feedback-callout-body { flex: 1; min-width: 0; }
+.feedback-callout-title { font-size: 13px; font-weight: 600; color: #142032; margin-bottom: 4px; }
+.feedback-callout-text { font-size: 12px; color: #5B6E84; line-height: 1.45; margin-bottom: 10px; }
+.feedback-callout-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--sl-accent);
+  text-decoration: none;
+}
+.feedback-callout-link:hover { text-decoration: underline; color: var(--sl-accent-hover); }
 .sla-price { font-weight: 600; }
 .sla-deadline { font-size: 13px; }
 .sla-deadline-sub { font-size: 11px; color: #A1AAB7; margin-top: 2px; }
-.sla-qty { font-size: 13px; color: #5B6E84; }
-.btn-details { background: none; border: none; color: #0C2DCC; font-size: 13px; font-weight: 400; font-family: inherit; cursor: pointer; display: flex; align-items: center; gap: 4px; white-space: nowrap; }
-.btn-details:hover { color: #0927b3; }
+.sla-qty { font-size: 13px; color: var(--sl-fg-muted); }
+.btn-details { background: none; border: none; color: var(--sl-accent); font-size: 14px; font-weight: 500; font-family: inherit; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; padding: 0; }
+.btn-details:hover { color: var(--sl-accent-hover); text-decoration: underline; }
 .btn-details svg { transition: transform 0.2s; }
 .btn-details.open svg { transform: rotate(180deg); }
 
 /* ── Detail panel ── */
 .sla-details-row td { padding: 0; border-bottom: 1px solid #E7E9EE; }
-.details-panel { padding: 14px 16px; background: #F8F7FC; display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.details-panel { padding: 16px; background: var(--sl-bg-muted); display: grid; grid-template-columns: 1fr 1fr; gap: 16px; border-top: 1px solid var(--sl-border); }
 .detail-block { }
 .detail-block-title { font-size: 10.5px; font-weight: 600; color: #A1AAB7; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
 .route-chain { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 12.5px; }
-.route-node { background: #fff; border: 1px solid #E7E9EE; border-radius: 4px; padding: 3px 9px; color: #142032; font-size: 12px; }
+.route-node { background: var(--sl-bg-surface); border: 1px solid var(--sl-border); border-radius: var(--sl-radius-sm); padding: 4px 10px; color: var(--sl-fg); font-size: 12px; }
+.route-node.policy { background: #E8F0FE; border-color: var(--sl-accent); color: var(--sl-fg); font-weight: 500; }
 .route-arrow { color: #A1AAB7; font-size: 11px; }
+.route-sla-note { margin-top: 8px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 12px; color: #5B6E84; }
+.route-sla-label { font-size: 10.5px; font-weight: 600; color: #A1AAB7; text-transform: uppercase; letter-spacing: 0.04em; }
+.route-sla-name { font-weight: 500; color: #142032; }
 .calc-row { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; padding: 3px 0; border-bottom: 1px solid #E7E9EE; }
-.calc-row:last-child { border-bottom: none; font-weight: 600; color: #142032; }
+.calc-row-total { border-bottom: none; margin-top: 4px; padding-top: 8px; border-top: 1px solid #E7E9EE; font-weight: 600; color: #142032; }
 .calc-label { color: #5B6E84; }
 .calc-val { color: #142032; font-weight: 500; }
 .detail-meta-row { display: flex; gap: 16px; margin-top: 4px; flex-wrap: wrap; }
@@ -203,100 +401,82 @@ select.input { padding-right: 28px; cursor: pointer; }
 .excluded-reason { font-size: 12px; color: #A1AAB7; }
 .excluded-x { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; border-radius: 50%; background: #E7E9EE; flex-shrink: 0; }
 
-/* ── Pickup cards ── */
+/* ── Pickup table — Shoreline: Table ── */
 .pickup-table { width: 100%; border-collapse: collapse; }
-.pickup-table th { text-align: left; font-size: 11px; font-weight: 600; color: #A1AAB7; text-transform: uppercase; letter-spacing: .04em; padding: 0 12px 10px; border-bottom: 1px solid #E7E9EE; }
+.pickup-table th { text-align: left; font-size: 11px; font-weight: 600; color: var(--sl-fg-soft); text-transform: uppercase; letter-spacing: .06em; padding: 10px 12px; border-bottom: 1px solid var(--sl-border); background: var(--sl-bg-muted); }
 .pickup-table th:not(:first-child) { text-align: right; }
-.pickup-table td { padding: 13px 12px; border-bottom: 1px solid #F3F4F6; vertical-align: top; }
+.pickup-table td { padding: 12px; border-bottom: 1px solid var(--sl-border); vertical-align: top; }
 .pickup-table tr:last-child td { border-bottom: none; }
-.pickup-store-name { font-size: 13px; font-weight: 600; color: #142032; }
-.pickup-meta { display: flex; align-items: flex-start; gap: 5px; font-size: 12px; color: #5B6E84; margin-top: 3px; }
+.pickup-store-name { font-size: 14px; font-weight: 500; color: var(--sl-fg); }
+.pickup-meta { display: flex; align-items: flex-start; gap: 5px; font-size: 12px; color: var(--sl-fg-muted); margin-top: 3px; }
 .pickup-meta svg { flex-shrink: 0; margin-top: 1px; }
-.pickup-price { font-size: 14px; font-weight: 700; color: #142032; text-align: right; }
-.pickup-date { font-size: 12px; color: #5B6E84; text-align: right; margin-top: 2px; }
-.pickup-label { font-size: 12px; color: #134cd8; font-weight: 500; text-align: right; }
+.pickup-price { font-size: 14px; font-weight: 600; color: var(--sl-fg); text-align: right; }
+.pickup-date { font-size: 12px; color: var(--sl-fg-muted); text-align: right; margin-top: 2px; }
+.pickup-label { font-size: 12px; color: var(--sl-accent); font-weight: 500; text-align: right; }
+.pickup-empty { font-size: 13px; color: var(--sl-fg-disabled); padding: 8px 0; line-height: 1.5; }
 
 /* ── Icon helpers ── */
 .icon { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+
+.search-hit { background: #E8F0FE; color: var(--sl-fg); border-radius: 2px; padding: 0 1px; }
 
 .hidden { display: none !important; }
 </style>
 </head>
 <body>
 
-<!-- Sidebar -->
-<aside class="sidebar">
-  <div class="sidebar-header">
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 73 18" width="62" height="15">
-      <path d="M0,0 H3.5 L8,13.5 L12.5,0 H16 L8,18 Z" fill="#F71963"/>
-      <path d="M19,0 H35 V3.5 H29 V18 H25 V3.5 H19 Z" fill="#F71963"/>
-      <path d="M38,0 H54 V3.5 H42 V7 H52 V10.5 H42 V14.5 H54 V18 H38 Z" fill="#F71963"/>
-      <polygon points="57,0 60.5,0 73,18 69.5,18" fill="#F71963"/>
-      <polygon points="73,0 69.5,0 57,18 60.5,18" fill="#F71963"/>
-    </svg>
-    <span style="font-size:11.5px;color:#A1AAB7" id="sidebar-acct"></span>
+<div class="demo-top-bar" role="note">
+  <div class="demo-top-bar-inner">
+    <span class="demo-top-bar-icon" aria-hidden="true">
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><circle cx="6" cy="6" r="5" stroke="currentColor" stroke-width="1.2"/><path d="M6 5.2V8.2M6 3.6h.01" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+    </span>
+    <p class="demo-top-bar-text" data-i18n="scope-note">As lojas PharmaTech e FashionPrime são contas fictícias. Não estamos usando dados reais; é apenas para validar o funcionamento do simulador.</p>
   </div>
-  <nav class="sidebar-nav">
-    <a class="nav-item" href="#"><span data-i18n="nav-dashboards">Dashboards</span></a>
-    <a class="nav-item" href="#"><span data-i18n="nav-orders">Pedidos</span></a>
-    <a class="nav-item" href="#"><span data-i18n="nav-catalog">Catálogo</span></a>
-    <a class="nav-item" href="#"><span data-i18n="nav-promos">Promoções</span></a>
-    <a class="nav-item" href="#"><span data-i18n="nav-storefront">Storefront</span></a>
-    <div class="nav-group-label"><span data-i18n="nav-shipping-group">Envio</span> <span>∧</span></div>
-    <div class="nav-sub">
-      <a class="nav-item" href="#"><span data-i18n="nav-strategy">Estratégia de envio</span></a>
-      <a class="nav-item" href="#"><span data-i18n="nav-capacity">Capacidade de entrega</span></a>
-      <a class="nav-item" href="#"><span data-i18n="nav-pickup">Pontos de retirada</span></a>
-      <a class="nav-item" href="#"><span data-i18n="nav-rates">Tarifas de envio</span></a>
-      <a class="nav-item active" href="#"><span data-i18n="nav-simulator">Simulador de envio</span></a>
-      <a class="nav-item" href="#"><span data-i18n="nav-options">Opções de envio</span></a>
-      <a class="nav-item" href="#"><span data-i18n="nav-opcap">Capacidade operacional</span></a>
-    </div>
-    <a class="nav-item" href="#"><span data-i18n="nav-marketplace">Marketplace</span></a>
-    <a class="nav-item" href="#"><span data-i18n="nav-apps">Aplicativos</span></a>
-    <a class="nav-item" href="#"><span data-i18n="nav-settings">Configurações da loja</span></a>
-  </nav>
-</aside>
+</div>
 
-<!-- Main -->
-<div class="main">
-  <header class="topbar">
-    <span class="topbar-hamburger">☰</span>
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 73 18" width="48" height="12">
-      <path d="M0,0 H3.5 L8,13.5 L12.5,0 H16 L8,18 Z" fill="#F71963"/>
-      <path d="M19,0 H35 V3.5 H29 V18 H25 V3.5 H19 Z" fill="#F71963"/>
-      <path d="M38,0 H54 V3.5 H42 V7 H52 V10.5 H42 V14.5 H54 V18 H38 Z" fill="#F71963"/>
-      <polygon points="57,0 60.5,0 73,18 69.5,18" fill="#F71963"/>
-      <polygon points="73,0 69.5,0 57,18 60.5,18" fill="#F71963"/>
-    </svg>
-    <span class="topbar-account" id="topbar-acct"></span>
-    <div class="topbar-search">
-      <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><circle cx="6" cy="6" r="4.5" stroke="#A1AAB7" stroke-width="1.5"/><path d="M10 10l2.5 2.5" stroke="#A1AAB7" stroke-width="1.5" stroke-linecap="round"/></svg>
-      <span style="color:#A1AAB7;font-size:13px" data-i18n="search-hint">Buscar VTEX</span>
-    </div>
-    <div class="topbar-right">
-      <div class="client-toggle">
-        <button class="client-btn active" id="btn-pt" onclick="setClient('pt')">
-          <span class="flag">🇧🇷</span> Drogarias Pacheco
-        </button>
-        <button class="client-btn" id="btn-en" onclick="setClient('en')">
-          <span class="flag">🇺🇸</span> Road Runners
-        </button>
-      </div>
-      <button class="topbar-btn">Copilot</button>
-      <button class="topbar-btn" data-i18n="topbar-visit">Visite a loja</button>
-      <button class="topbar-btn" data-i18n="topbar-help">Ajuda</button>
-      <div class="topbar-avatar">C</div>
-    </div>
-  </header>
-
+<div class="prototype-shell">
   <div class="content">
-    <div class="page-breadcrumb">
-      <a href="#" data-i18n="bc-shipping">Envio</a> › <span data-i18n="bc-simulator">Simulador de envio</span>
-    </div>
     <div class="page-header">
-      <h1 class="page-title" data-i18n="page-title">Simulador de envio</h1>
-      <a class="back-link" href="#" data-i18n="back-link">← Voltar à Estratégia de Envio</a>
+      <div class="page-header-title">
+        <h1 class="page-title" data-i18n="page-title">Simulador de envio</h1>
+        <p class="page-subtitle" id="page-subtitle"></p>
+      </div>
+      <div class="demo-toggles">
+        <div class="demo-toggles-row">
+          <div class="account-badge-locked hidden" id="account-badge-locked">
+            <span class="client-btn-icon" id="account-badge-icon"></span>
+            <span id="account-badge-name">FashionPrime</span>
+          </div>
+          <div class="client-toggle" id="lang-toggle">
+            <button class="client-btn active" id="btn-lang-pt" onclick="setLang('pt')">PT</button>
+            <button class="client-btn" id="btn-lang-en" onclick="setLang('en')">EN</button>
+            <button class="client-btn" id="btn-lang-es" onclick="setLang('es')">ES</button>
+          </div>
+          <div class="vertical-toggle-wrap" id="vertical-toggle-wrap">
+            <div class="client-toggle" id="vertical-toggle">
+              <button class="client-btn active" id="btn-vert-pharma" onclick="setVertical('pharma')">
+                <span class="client-btn-icon" id="icon-vert-pharma"></span>PharmaTech
+              </button>
+              <button class="client-btn" id="btn-vert-fashion" onclick="setVertical('fashion')">
+                <span class="client-btn-icon" id="icon-vert-fashion"></span>FashionPrime
+              </button>
+            </div>
+          </div>
+        </div>
+        <p class="vertical-toggle-hint hidden" id="vertical-toggle-hint" data-i18n="vertical-hint">Aqui você pode mudar o tipo de loja que você está simulando.</p>
+      </div>
+    </div>
+
+    <div class="feedback-callout feedback-callout-header hidden" id="feedback-callout-top">
+      <div class="feedback-callout-icon" aria-hidden="true">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1.5l1.2 3.7H13l-3.1 2.3 1.2 3.7L8 8.9 4.9 11.2l1.2-3.7L3 5.2h3.8L8 1.5z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="feedback-callout-body">
+        <span class="feedback-callout-title" data-i18n="feedback-title">Sua opinião importa</span>
+        <span class="feedback-callout-sep" aria-hidden="true">·</span>
+        <span class="feedback-callout-text" data-i18n="feedback-desc">Testou o novo simulador? Conte o que achou — leva poucos minutos e ajuda o time a priorizar melhorias.</span>
+      </div>
+      <a class="feedback-callout-link" id="feedback-link-top" href="#" target="_blank" rel="noopener noreferrer"><span data-i18n="feedback-link">Formulário de feedback</span> →</a>
     </div>
 
     <!-- Recent simulations -->
@@ -322,7 +502,7 @@ select.input { padding-right: 28px; cursor: pointer; }
         <div class="form-group">
           <label><span data-i18n="lbl-sc">Política comercial</span><span class="req">*</span></label>
           <div class="input-wrap">
-            <select class="input" id="sel-sc" onchange="onScChange()"></select>
+            <select class="input select-ph" id="sel-sc" onchange="onScChange()" required></select>
             <span class="sel-arrow">▾</span>
           </div>
           <div class="ctx-badge hidden" id="ctx-badge"><span id="ctx-val"></span></div>
@@ -332,7 +512,7 @@ select.input { padding-right: 28px; cursor: pointer; }
           <label><span data-i18n="lbl-seller">Seller</span><span class="req">*</span></label>
           <div class="combo-wrap" id="seller-combo">
             <div id="seller-input-state">
-              <div style="position:relative">
+              <div class="combo-input-wrap">
                 <input class="combo-input" id="seller-search" oninput="onSellerSearch()" onfocus="onSellerFocus()" data-i18n-ph="seller-ph">
                 <button class="combo-clear" id="seller-search-clear" onclick="clearSellerSearch()">✕</button>
               </div>
@@ -358,9 +538,9 @@ select.input { padding-right: 28px; cursor: pointer; }
       </div>
 
       <div id="sku-rows"></div>
-      <div style="margin-bottom:12px">
+      <div class="add-item-row">
         <button class="btn-link" onclick="addRow()">
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 2v10M2 7h10" stroke="#134cd8" stroke-width="1.5" stroke-linecap="round"/></svg>
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
           <span data-i18n="btn-add">Adicionar item</span>
         </button>
       </div>
@@ -372,30 +552,43 @@ select.input { padding-right: 28px; cursor: pointer; }
       <div class="divider"></div>
       <div class="card-section-title" data-i18n="section-dest">Destino</div>
       <div class="form-row">
-        <div class="form-group" style="max-width:175px">
+        <div class="form-group form-group-short">
           <label><span data-i18n="lbl-zip">Código postal</span><span class="req">*</span></label>
           <input class="input" id="zip-input" oninput="fmtZip(this)">
         </div>
       </div>
-      <div style="display:flex;gap:10px;margin-top:4px">
+      <div class="form-actions">
         <button class="btn-primary" onclick="simulate()" data-i18n="btn-simulate">Simular envio</button>
         <button class="btn-secondary" onclick="resetForm()" data-i18n="btn-clear">Limpar</button>
+      </div>
+      <div class="feedback-callout hidden" id="feedback-callout-bottom">
+        <div class="feedback-callout-icon" aria-hidden="true">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1.5l1.2 3.7H13l-3.1 2.3 1.2 3.7L8 8.9 4.9 11.2l1.2-3.7L3 5.2h3.8L8 1.5z" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="feedback-callout-body">
+          <div class="feedback-callout-title" data-i18n="feedback-title">Sua opinião importa</div>
+          <div class="feedback-callout-text" data-i18n="feedback-desc">Testou o novo simulador? Conte o que achou — leva poucos minutos e ajuda o time a priorizar melhorias.</div>
+          <a class="feedback-callout-link" id="feedback-link-bottom" href="#" target="_blank" rel="noopener noreferrer"><span data-i18n="feedback-link">Formulário de feedback</span> →</a>
+        </div>
       </div>
     </div>
 
     <!-- Results -->
     <div class="card hidden" id="results-card">
       <div class="results-header-row">
-        <span class="results-title" data-i18n="res-title">Opções de envio disponíveis</span>
-        <span class="results-count" id="res-count">4</span>
+        <span class="results-title" data-i18n="res-title">Opções disponíveis</span>
       </div>
-      <div class="results-subtitle" data-i18n="res-subtitle">Melhores opções segundo custo-benefício</div>
 
+      <div id="individual-results-wrap" class="hidden"></div>
+
+      <div id="combined-results-wrap">
       <!-- Delivery section -->
-      <div class="section-divider">
+      <div class="section-divider" id="delivery-section-divider">
         <span class="section-divider-label" data-i18n="lbl-delivery-section">Entrega em domicílio</span>
         <span class="section-divider-line"></span>
       </div>
+      <p class="delivery-only-notice hidden" id="pickup-only-notice"></p>
+      <div id="delivery-table-wrap">
       <table class="sla-table">
         <thead>
           <tr>
@@ -408,13 +601,37 @@ select.input { padding-right: 28px; cursor: pointer; }
         </thead>
         <tbody id="sla-tbody"></tbody>
       </table>
+      </div>
+
+      <!-- Excluded carriers (P1) -->
+      <div class="excluded-section hidden" id="excluded-section">
+        <div class="excluded-header" onclick="toggleExcluded()">
+          <div class="excluded-header-left">
+            <span class="excluded-title" data-i18n="lbl-excluded-section">Transportadoras indisponíveis</span>
+            <span class="excluded-count" id="excluded-count">0</span>
+          </div>
+          <span class="excluded-chevron" id="excluded-chevron">▾</span>
+        </div>
+        <div class="excluded-body" id="excluded-body">
+          <table class="excluded-table">
+            <thead>
+              <tr>
+                <th data-i18n="col-carrier">Transportadora</th>
+                <th data-i18n="col-excluded-reason">Motivo</th>
+              </tr>
+            </thead>
+            <tbody id="excluded-tbody"></tbody>
+          </table>
+        </div>
+      </div>
 
       <!-- Pickup section -->
-      <div class="section-divider" style="margin-top:20px">
+      <div class="section-divider section-divider-spaced">
         <span class="section-divider-label" data-i18n="lbl-pickup-section">Retirada em loja</span>
         <span class="section-divider-line"></span>
       </div>
       <div id="pickup-list"></div>
+      </div>
     </div>
   </div>
 </div>
@@ -424,262 +641,650 @@ select.input { padding-right: 28px; cursor: pointer; }
 const ICON = {
   pin: `<svg width="12" height="14" viewBox="0 0 12 14" fill="none"><path d="M6 0a5 5 0 00-5 5c0 3.5 5 9 5 9s5-5.5 5-9a5 5 0 00-5-5zm0 7a2 2 0 110-4 2 2 0 010 4z" fill="#5B6E84"/></svg>`,
   clock: `<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="5.5" stroke="#5B6E84" stroke-width="1.2"/><path d="M6.5 4v3l2 1.5" stroke="#5B6E84" stroke-width="1.2" stroke-linecap="round"/></svg>`,
-  globe: `<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="5.5" stroke="#134cd8" stroke-width="1.2"/><path d="M6.5 1C5 3 4.5 5 4.5 6.5s.5 3.5 2 5.5M6.5 1c1.5 2 2 4 2 5.5s-.5 3.5-2 5.5M1 6.5h11" stroke="#134cd8" stroke-width="1.2"/></svg>`,
+  globe: `<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="5.5" stroke="#5B6E84" stroke-width="1.2"/><path d="M6.5 1C5 3 4.5 5 4.5 6.5s.5 3.5 2 5.5M6.5 1c1.5 2 2 4 2 5.5s-.5 3.5-2 5.5M1 6.5h11" stroke="#5B6E84" stroke-width="1.2"/></svg>`,
   chevron: `<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
-  store: `<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M1 5.5L2.5 2h8L12 5.5" stroke="#134cd8" stroke-width="1.2" stroke-linecap="round"/><path d="M1 5.5h11v6a.5.5 0 01-.5.5h-10A.5.5 0 011 11.5V5.5z" stroke="#134cd8" stroke-width="1.2"/><rect x="4.5" y="8" width="4" height="4" rx=".5" stroke="#134cd8" stroke-width="1.2"/></svg>`
+  store: `<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M1 5.5L2.5 2h8L12 5.5" stroke="#5B6E84" stroke-width="1.2" stroke-linecap="round"/><path d="M1 5.5h11v6a.5.5 0 01-.5.5h-10A.5.5 0 011 11.5V5.5z" stroke="#5B6E84" stroke-width="1.2"/><rect x="4.5" y="8" width="4" height="4" rx=".5" stroke="#5B6E84" stroke-width="1.2"/></svg>`
 };
 
-// ── Data ──────────────────────────────────────────────────────────────────────
+// ── i18n (shared by language, not by fake account) ───────────────────────────
+const I18N_PT = {
+  'nav-dashboards':'Dashboards','nav-orders':'Pedidos','nav-catalog':'Catálogo',
+  'nav-promos':'Promoções','nav-storefront':'Storefront','nav-shipping-group':'Envio',
+  'nav-strategy':'Estratégia de envio','nav-capacity':'Capacidade de entrega',
+  'nav-pickup':'Pontos de retirada','nav-rates':'Tarifas de envio',
+  'nav-simulator':'Simulador de envio','nav-options':'Opções de envio',
+  'nav-opcap':'Capacidade operacional','nav-marketplace':'Marketplace',
+  'nav-apps':'Aplicativos','nav-settings':'Configurações da loja',
+  'search-hint':'Buscar VTEX','topbar-visit':'Visite a loja','topbar-help':'Ajuda',
+  'bc-shipping':'Envio','bc-simulator':'Simulador de envio',
+  'page-title':'Simulador de envio','back-link':'← Voltar à Estratégia de Envio',
+  'section-context':'Contexto da simulação','lbl-sc':'Política comercial',
+  'sc-ph':'Selecionar política comercial',
+  'seller-ph':'Buscar por nome ou ID do seller...','lbl-seller':'Seller',
+  'section-items':'Itens','lbl-sku':'Produto / SKU',
+  'sku-ph':'Nome do produto, ID do SKU, EAN...','lbl-qty-field':'Quantidade',
+  'lbl-price':'Preço','lbl-opt':'(opcional)','btn-add':'Adicionar item',
+  'lbl-individual':'Simular itens individualmente',
+  'section-dest':'Destino','lbl-zip':'Código postal',
+  'btn-simulate':'Simular envio','btn-clear':'Limpar',
+  'recents-title':'Últimas simulações','recents-empty':'Nenhuma simulação salva ainda. Execute uma simulação para começar.',
+  'recents-restore':'Restaurar',
+  'res-title':'Opções disponíveis',
+  'lbl-delivery-section':'Entrega em domicílio',
+  'lbl-pickup-section':'Retirada em loja',
+  'col-carrier':'Transportadora','col-price':'Tarifa de envio',
+  'col-deadline':'Prazo de entrega','col-qty':'Qtd. disponível',
+  'btn-show-details':'Mostrar detalhes','btn-hide-details':'Ocultar detalhes',
+  'lbl-route':'Rota logística',
+  'lbl-sla-type':'Tipo de SLA',
+  'lbl-calc':'Cálculo do prazo',
+  'lbl-transit':'Trânsito (transportadora)',
+  'lbl-processing':'Processamento (estoque + doca)',
+  'lbl-estimate-date':'Data estimada',
+  'lbl-total':'Total',
+  'lbl-postal':'Faixa de CEP','lbl-weight':'Faixa de peso',
+  'pickup-badge':'Retirada em loja',
+  'lbl-ready':'Disponível para retirada',
+  'lbl-address':'Endereço','lbl-hours':'Horário',
+  'col-pickup-store':'Ponto de retirada','col-pickup-hours':'Horário de funcionamento','col-pickup-price':'Custo','col-pickup-avail':'Disponibilidade',
+  'weekend-badge':'Opera aos sábados',
+  'scheduled-badge':'Entrega agendada',
+  'lbl-scheduled':'Entrega agendada',
+  'lbl-yes':'Sim','lbl-no':'Não',
+  'lbl-excluded-section':'Transportadoras indisponíveis',
+  'col-excluded-reason':'Motivo',
+  'scope-note':'As lojas PharmaTech e FashionPrime são contas fictícias. Não estamos usando dados reais — é apenas para validar o funcionamento do simulador.',
+  'feedback-title':'Sua opinião importa',
+  'feedback-desc':'Testou o novo simulador? Conte o que achou — leva poucos minutos e ajuda o time a priorizar melhorias.',
+  'feedback-link':'Formulário de feedback',
+  'vertical-hint':'Aqui você pode mudar o tipo de loja que você está simulando.',
+  'tag-pickup-only':'Só retirada',
+  'pickup-only-notice':'Estes produtos estão disponíveis apenas para retirada em loja PharmaTech. Não há opções de entrega em domicílio.',
+  'pickup-only-notice-item': name => `${name} está disponível apenas para retirada em loja. Não há opções de entrega em domicílio para este item.`,
+  'item-qty': qty => qty === 1 ? '1 un.' : `${qty} un.`,
+  'pickup-empty-region':'Nenhum ponto de retirada disponível para esta região.',
+  'pickup-empty-zip':'Informe o CEP completo para ver pontos de retirada na sua região.',
+  'sc-err': s => `${s} não está associado à política comercial selecionada.`
+};
+
+const I18N_EN = {
+  'nav-dashboards':'Dashboards','nav-orders':'Orders','nav-catalog':'Catalog',
+  'nav-promos':'Promotions','nav-storefront':'Storefront','nav-shipping-group':'Shipping',
+  'nav-strategy':'Shipping strategy','nav-capacity':'Delivery capacity',
+  'nav-pickup':'Pickup points','nav-rates':'Shipping rates',
+  'nav-simulator':'Shipping simulator','nav-options':'Delivery options',
+  'nav-opcap':'Operational capacity','nav-marketplace':'Marketplace',
+  'nav-apps':'Apps','nav-settings':'Store settings',
+  'search-hint':'Search VTEX','topbar-visit':'Visit store','topbar-help':'Help',
+  'bc-shipping':'Shipping','bc-simulator':'Shipping simulator',
+  'page-title':'Shipping Simulator','back-link':'← Back to Shipping Strategy',
+  'section-context':'Simulation context','lbl-sc':'Sales channel',
+  'sc-ph':'Select sales channel',
+  'seller-ph':'Search by seller name or ID...','lbl-seller':'Seller',
+  'section-items':'Items','lbl-sku':'Product / SKU',
+  'sku-ph':'Product name, SKU ID, EAN...','lbl-qty-field':'Quantity',
+  'lbl-price':'Price','lbl-opt':'(optional)','btn-add':'Add item',
+  'lbl-individual':'Simulate items individually',
+  'section-dest':'Destination','lbl-zip':'ZIP code',
+  'btn-simulate':'Simulate shipping','btn-clear':'Clear',
+  'recents-title':'Recent simulations','recents-empty':'No simulations saved yet. Run a simulation to get started.',
+  'recents-restore':'Restore',
+  'res-title':'Available options',
+  'lbl-delivery-section':'Home delivery',
+  'lbl-pickup-section':'Store pickup',
+  'col-carrier':'Carrier','col-price':'Shipping rate',
+  'col-deadline':'Delivery time','col-qty':'Available qty',
+  'btn-show-details':'Show details','btn-hide-details':'Hide details',
+  'lbl-route':'Logistics route',
+  'lbl-sla-type':'SLA type',
+  'lbl-calc':'Delivery time breakdown',
+  'lbl-transit':'Transit (carrier)',
+  'lbl-processing':'Processing (warehouse + dock)',
+  'lbl-estimate-date':'Estimated delivery',
+  'lbl-total':'Total',
+  'lbl-postal':'Postal code range','lbl-weight':'Weight range',
+  'pickup-badge':'Store pickup',
+  'lbl-ready':'Ready for pickup',
+  'lbl-address':'Address','lbl-hours':'Hours',
+  'col-pickup-store':'Pickup location','col-pickup-hours':'Store hours','col-pickup-price':'Cost','col-pickup-avail':'Availability',
+  'weekend-badge':'Operates on Saturdays',
+  'scheduled-badge':'Scheduled delivery',
+  'lbl-scheduled':'Scheduled delivery',
+  'lbl-yes':'Yes','lbl-no':'No',
+  'lbl-excluded-section':'Carriers not available',
+  'col-excluded-reason':'Reason',
+  'scope-note':'PharmaTech and FashionPrime are fictional stores. We are not using real data — this is only to validate how the shipping simulator works.',
+  'feedback-title':'Your feedback matters',
+  'feedback-desc':'Tried the new simulator? Share your experience — it only takes a few minutes and helps us prioritize improvements.',
+  'feedback-link':'Feedback form',
+  'pickup-empty-region':'No pickup locations available in this region.',
+  'pickup-empty-zip':'Enter the full ZIP code to see pickup locations in your region.',
+  'tag-pickup-only':'Pickup only',
+  'pickup-only-notice':'These products are available for store pickup only. There are no home delivery options.',
+  'pickup-only-notice-item': name => `${name} is available for store pickup only. There are no home delivery options for this item.`,
+  'item-qty': qty => qty === 1 ? '1 unit' : `${qty} units`,
+  'sc-err': s => `${s} is not associated with the selected sales channel.`
+};
+
+const I18N_ES = {
+  'page-title':'Simulador de envío',
+  'section-context':'Contexto de la simulación','lbl-sc':'Política comercial',
+  'sc-ph':'Seleccionar política comercial',
+  'seller-ph':'Buscar por nombre o ID del seller...','lbl-seller':'Seller',
+  'section-items':'Artículos','lbl-sku':'Producto / SKU',
+  'sku-ph':'Nombre del producto, ID del SKU, EAN...','lbl-qty-field':'Cantidad',
+  'lbl-price':'Precio','lbl-opt':'(opcional)','btn-add':'Agregar artículo',
+  'lbl-individual':'Simular artículos individualmente',
+  'section-dest':'Destino','lbl-zip':'Código postal',
+  'btn-simulate':'Simular envío','btn-clear':'Limpiar',
+  'recents-title':'Últimas simulaciones','recents-empty':'Aún no hay simulaciones guardadas. Ejecuta una simulación para comenzar.',
+  'recents-restore':'Restaurar',
+  'res-title':'Opciones disponibles',
+  'lbl-delivery-section':'Entrega a domicilio',
+  'lbl-pickup-section':'Retiro en tienda',
+  'col-carrier':'Transportista','col-price':'Tarifa de envío',
+  'col-deadline':'Plazo de entrega','col-qty':'Cant. disponible',
+  'btn-show-details':'Mostrar detalles','btn-hide-details':'Ocultar detalles',
+  'lbl-route':'Ruta logística',
+  'lbl-sla-type':'Tipo de SLA',
+  'lbl-calc':'Cálculo del plazo',
+  'lbl-transit':'Tránsito (transportista)',
+  'lbl-processing':'Procesamiento (warehouse + muelle)',
+  'lbl-estimate-date':'Fecha estimada',
+  'lbl-total':'Total',
+  'lbl-postal':'Rango de CP','lbl-weight':'Rango de peso',
+  'col-pickup-store':'Punto de retiro','col-pickup-hours':'Horario','col-pickup-price':'Costo','col-pickup-avail':'Disponibilidad',
+  'scheduled-badge':'Entrega programada',
+  'weekend-badge':'Opera los sábados',
+  'lbl-scheduled':'Entrega programada',
+  'lbl-excluded-section':'Transportistas no disponibles',
+  'col-excluded-reason':'Motivo',
+  'scope-note':'FashionPrime es una tienda ficticia. No usamos datos reales; es solo para validar el funcionamiento del simulador.',
+  'feedback-title':'Tu opinión importa',
+  'feedback-desc':'¿Probaste el nuevo simulador? Cuéntanos tu experiencia — solo toma unos minutos y ayuda al equipo a priorizar mejoras.',
+  'feedback-link':'Formulario de feedback',
+  'pickup-empty-region':'No hay puntos de retiro disponibles para esta región.',
+  'pickup-empty-zip':'Ingresa el CP completo para ver puntos de retiro en tu región.',
+  'tag-pickup-only':'Solo retiro',
+  'pickup-only-notice':'Estos productos están disponibles solo para retiro en tienda. No hay opciones de entrega a domicilio.',
+  'pickup-only-notice-item': name => `${name} está disponible solo para retiro en tienda. No hay opciones de entrega a domicilio para este artículo.`,
+  'item-qty': qty => qty === 1 ? '1 ud.' : `${qty} uds.`,
+  'sc-err': s => `${s} no está asociado a la política comercial seleccionada.`
+};
+
+const BR_SC = [
+  { v:'1', label:'1 — E-commerce',     country:'BRA', currency:'BRL', symbol:'R$' },
+  { v:'2', label:'2 — Mercado Livre',  country:'BRA', currency:'BRL', symbol:'R$' },
+  { v:'3', label:'3 — Amazon',         country:'BRA', currency:'BRL', symbol:'R$' },
+  { v:'4', label:'4 — Tele vendas',    country:'BRA', currency:'BRL', symbol:'R$' }
+];
+const EN_SC = [
+  { v:'1', label:'1 — E-commerce',     country:'USA', currency:'USD', symbol:'$' },
+  { v:'2', label:'2 — Mercado Livre',  country:'USA', currency:'USD', symbol:'$' },
+  { v:'3', label:'3 — Amazon',         country:'USA', currency:'USD', symbol:'$' },
+  { v:'4', label:'4 — Telesales',      country:'USA', currency:'USD', symbol:'$' }
+];
+const ES_SC = [
+  { v:'1', label:'1 — E-commerce',     country:'MEX', currency:'MXN', symbol:'MX$' },
+  { v:'2', label:'2 — Mercado Libre',  country:'MEX', currency:'MXN', symbol:'MX$' },
+  { v:'3', label:'3 — Amazon',         country:'MEX', currency:'MXN', symbol:'MX$' },
+  { v:'4', label:'4 — Televentas',     country:'MEX', currency:'MXN', symbol:'MX$' }
+];
+// Referência de prazo: "hoje" = 8 jun 2026 (data de envio aos clientes)
+const ES_SLAS = [
+  {
+    name:'Estafeta Estándar', type:'Estándar', typeClass:'',
+    price:'MX$ 89', qty:'38 unidades',
+    shippingEstimate:'7 días hábiles', arrivalDate:'17 jun 2026',
+    transitTime:'2 días hábiles', processingTime:'5 días hábiles',
+    warehouseName:'CD Ciudad de México', warehouseId:'cd-cdmx',
+    dockName:'Muelle Centro', dockId:'muelle-centro',
+    policyName:'Estafeta Estándar', policyId:'estafeta-estandar',
+    courierId:'estafeta-estandar',
+    postalRange:'01000 – 99999', weightRange:'0 – 30.000 g'
+  },
+  {
+    name:'DHL Express', type:'Exprés', typeClass:'express',
+    price:'MX$ 199', qty:'12 unidades',
+    shippingEstimate:'2 días hábiles', arrivalDate:'10 jun 2026',
+    transitTime:'1 día hábil', processingTime:'1 día hábil',
+    warehouseName:'CD Monterrey', warehouseId:'cd-monterrey',
+    dockName:'Muelle Norte', dockId:'muelle-norte',
+    policyName:'DHL Express', policyId:'dhl-express',
+    courierId:'dhl-express',
+    postalRange:'01000 – 59999', weightRange:'0 – 15.000 g'
+  },
+  {
+    name:'Lala Move', type:'Exprés', typeClass:'express',
+    price:'MX$ 149', qty:'5 unidades',
+    shippingEstimate:'1 día hábil', arrivalDate:'9 jun 2026',
+    transitTime:'1 día hábil', processingTime:'—',
+    warehouseName:'CD Guadalajara', warehouseId:'cd-guadalajara',
+    dockName:'Muelle Occidente', dockId:'muelle-occidente',
+    policyName:'Lala Move Agendada', policyId:'lala-move-mx',
+    courierId:'lala-move', scheduledDelivery: true,
+    postalRange:'01000 – 59999', weightRange:'0 – 10.000 g'
+  }
+];
+const ES_EXCLUDED = [
+  { name:'Paquetexpress', type:'Estándar', typeClass:'', reason:'CP fuera del rango de entrega del transportista' },
+  { name:'Redpack',       type:'Estándar', typeClass:'', reason:'Transportista inactivo en la política de envío' },
+  { name:'Tres Guerras',  type:'Estándar', typeClass:'', reason:'Transportista no conectado a ningún muelle' },
+  { name:'Castores',      type:'Estándar', typeClass:'', reason:'Muelle sin stock vinculado — sin ruta logística' }
+];
+const BR_SLAS = [
+  {
+    name:'Correios PAC', type:'Padrão', typeClass:'',
+    price:'R$ 12,90', qty:'38 unidades',
+    shippingEstimate:'7 dias úteis', arrivalDate:'17 jun 2026',
+    transitTime:'2 dias úteis', processingTime:'5 dias úteis',
+    warehouseName:'CD São Paulo', warehouseId:'cd-sao-paulo',
+    dockName:'Doca Centro', dockId:'doca-centro',
+    policyName:'Correios PAC', policyId:'correios-pac',
+    courierId:'correios-pac',
+    postalRange:'01000-000 a 99999-999', weightRange:'0 – 30.000 g'
+  },
+  {
+    name:'Correios SEDEX', type:'Expresso', typeClass:'express',
+    price:'R$ 28,50', qty:'12 unidades',
+    shippingEstimate:'2 dias úteis', arrivalDate:'10 jun 2026',
+    transitTime:'1 dia útil', processingTime:'1 dia útil',
+    warehouseName:'CD Rio de Janeiro', warehouseId:'cd-rio-de-janeiro',
+    dockName:'Doca Sul', dockId:'doca-sul',
+    policyName:'Correios SEDEX', policyId:'correios-sedex',
+    courierId:'correios-sedex',
+    postalRange:'01000-000 a 05999-999', weightRange:'0 – 15.000 g'
+  },
+  {
+    name:'Lala Move', type:'Expresso', typeClass:'express',
+    price:'R$ 19,90', qty:'5 unidades',
+    shippingEstimate:'1 dia útil', arrivalDate:'9 jun 2026',
+    transitTime:'1 dia útil', processingTime:'—',
+    warehouseName:'CD Campinas', warehouseId:'cd-campinas',
+    dockName:'Doca Interior', dockId:'doca-interior',
+    policyName:'Lala Move Agendada', policyId:'lala-move-agendada',
+    courierId:'lala-move', scheduledDelivery: true,
+    postalRange:'01000-000 a 05999-999', weightRange:'0 – 10.000 g'
+  }
+];
+const PHARMA_SLAS = [
+  {
+    name:'PharmaTech Expressa 2h', type:'Expresso', typeClass:'express',
+    price:'R$ 9,90', qty:'5 unidades',
+    shippingEstimate:'2 horas', arrivalDate:'8 jun 2026',
+    transitTime:'2 horas', processingTime:'—',
+    warehouseName:'PharmaTech Jardins', warehouseId:'loja-jardins',
+    dockName:'Doca Entrega Rápida', dockId:'doca-expressa',
+    policyName:'Entrega Expressa 2h', policyId:'pharma-express-2h',
+    courierId:'pharma-express-2h', metroOnly: true,
+    postalRange:'01000-000 a 05999-999', weightRange:'0 – 5.000 g'
+  },
+  {
+    name:'PharmaTech Expressa 3h', type:'Expresso', typeClass:'express',
+    price:'R$ 8,90', qty:'8 unidades',
+    shippingEstimate:'3 horas', arrivalDate:'8 jun 2026',
+    transitTime:'3 horas', processingTime:'—',
+    warehouseName:'PharmaTech Jardins', warehouseId:'loja-jardins',
+    dockName:'Doca Entrega Rápida', dockId:'doca-expressa',
+    policyName:'Entrega Expressa 3h', policyId:'pharma-express-3h',
+    courierId:'pharma-express-3h', metroOnly: true,
+    postalRange:'01000-000 a 05999-999', weightRange:'0 – 5.000 g'
+  },
+  {
+    name:'PharmaTech Expressa 4h', type:'Expresso', typeClass:'express',
+    price:'R$ 7,50', qty:'12 unidades',
+    shippingEstimate:'4 horas', arrivalDate:'8 jun 2026',
+    transitTime:'4 horas', processingTime:'—',
+    warehouseName:'PharmaTech Pinheiros', warehouseId:'loja-pinheiros',
+    dockName:'Doca Entrega Rápida', dockId:'doca-expressa',
+    policyName:'Entrega Expressa 4h', policyId:'pharma-express-4h',
+    courierId:'pharma-express-4h',
+    postalRange:'01000-000 a 99999-999', weightRange:'0 – 5.000 g'
+  },
+  {
+    name:'PharmaTech Expressa 6h', type:'Expresso', typeClass:'express',
+    price:'R$ 8,50', qty:'9 unidades',
+    shippingEstimate:'6 horas', arrivalDate:'8 jun 2026',
+    transitTime:'6 horas', processingTime:'—',
+    warehouseName:'PharmaTech Savassi', warehouseId:'loja-savassi',
+    dockName:'Doca Entrega Rápida', dockId:'doca-expressa',
+    policyName:'Entrega Expressa 6h', policyId:'pharma-express-6h',
+    courierId:'pharma-express-6h', regionalOnly: true,
+    postalRange:'01000-000 a 99999-999', weightRange:'0 – 5.000 g'
+  },
+  {
+    name:'Lala Move', type:'Expresso', typeClass:'express',
+    price:'R$ 6,90', qty:'5 unidades',
+    shippingEstimate:'4 horas', arrivalDate:'8 jun 2026',
+    transitTime:'4 horas', processingTime:'—',
+    warehouseName:'CD Campinas', warehouseId:'cd-campinas',
+    dockName:'Doca Interior', dockId:'doca-interior',
+    policyName:'Lala Move Agendada', policyId:'lala-move-agendada',
+    courierId:'lala-move', scheduledDelivery: true,
+    postalRange:'01000-000 a 99999-999', weightRange:'0 – 10.000 g'
+  },
+  {
+    name:'PharmaTech Entrega 1 dia', type:'Expresso', typeClass:'express',
+    price:'R$ 7,90', qty:'10 unidades',
+    shippingEstimate:'1 dia útil', arrivalDate:'9 jun 2026',
+    transitTime:'1 dia útil', processingTime:'—',
+    warehouseName:'PharmaTech Jardins', warehouseId:'loja-jardins',
+    dockName:'Doca Entrega Rápida', dockId:'doca-expressa',
+    policyName:'Entrega 1 dia', policyId:'pharma-express-1d',
+    courierId:'pharma-express-1d', metroOnly: true,
+    postalRange:'01000-000 a 05999-999', weightRange:'0 – 5.000 g'
+  },
+  {
+    name:'Correios SEDEX', type:'Expresso', typeClass:'express',
+    price:'R$ 8,50', qty:'12 unidades',
+    shippingEstimate:'2 dias úteis', arrivalDate:'10 jun 2026',
+    transitTime:'1 dia útil', processingTime:'1 dia útil',
+    warehouseName:'CD Rio de Janeiro', warehouseId:'cd-rio-de-janeiro',
+    dockName:'Doca Sul', dockId:'doca-sul',
+    policyName:'Correios SEDEX Farmácia', policyId:'correios-sedex',
+    courierId:'correios-sedex',
+    postalRange:'01000-000 a 05999-999', weightRange:'0 – 15.000 g'
+  },
+  {
+    name:'Correios PAC', type:'Padrão', typeClass:'',
+    price:'R$ 5,90', qty:'38 unidades',
+    shippingEstimate:'4 dias úteis', arrivalDate:'12 jun 2026',
+    transitTime:'2 dias úteis', processingTime:'2 dias úteis',
+    warehouseName:'CD São Paulo', warehouseId:'cd-sao-paulo',
+    dockName:'Doca Centro', dockId:'doca-centro',
+    policyName:'Correios PAC Farmácia', policyId:'correios-pac',
+    courierId:'correios-pac',
+    postalRange:'01000-000 a 99999-999', weightRange:'0 – 30.000 g'
+  }
+];
+const BR_EXCLUDED = [
+  { name:'Total Express',  type:'Padrão', typeClass:'', reason:'CEP fora da faixa de entrega da transportadora' },
+  { name:'Jadlog Package', type:'Padrão', typeClass:'', reason:'Transportadora inativa na política de envio' },
+  { name:'Braspress',      type:'Padrão', typeClass:'', reason:'Transportadora não conectada a nenhuma doca' },
+  { name:'TNT Mercúrio',   type:'Padrão', typeClass:'', reason:'Doca sem estoque vinculado — sem rota logística' }
+];
+const BR_FASHION_EXCLUDED = [
+  { name:'Jadlog Package',  type:'Padrão', typeClass:'', reason:'Peso do pedido acima do limite da transportadora' },
+  { name:'Loggi Econômico', type:'Padrão', typeClass:'', reason:'Peso cubado excede o máximo permitido pela transportadora' },
+  { name:'Total Express',   type:'Padrão', typeClass:'', reason:'CEP fora da faixa de entrega da transportadora' },
+  { name:'Braspress',       type:'Padrão', typeClass:'', reason:'Transportadora não conectada a nenhuma doca' }
+];
+const EN_FASHION_EXCLUDED = [
+  { name:'OnTrac Economy',        type:'Standard', typeClass:'', reason:'Item weight exceeds carrier limit' },
+  { name:'USPS Ground Advantage', type:'Standard', typeClass:'', reason:'Combined item weight exceeds carrier maximum' },
+  { name:'Estes Express',         type:'Standard', typeClass:'', reason:'Carrier not connected to any dock' },
+  { name:'Old Dominion',          type:'Standard', typeClass:'', reason:'Carrier inactive in shipping policy' }
+];
+const ES_FASHION_EXCLUDED = [
+  { name:'Paquetexpress', type:'Estándar', typeClass:'', reason:'Peso del pedido supera el límite del transportista' },
+  { name:'Redpack',       type:'Estándar', typeClass:'', reason:'Peso volumétrico excede el máximo del transportista' },
+  { name:'Tres Guerras',  type:'Estándar', typeClass:'', reason:'CP fuera del rango de entrega del transportista' },
+  { name:'Castores',      type:'Estándar', typeClass:'', reason:'Transportista inactivo en la política de envío' }
+];
+
 const DATA = {
-  pt: {
-    account: 'drogariaspacheco',
-    sc: [
-      { v:'1', label:'1 — Ecommerce BR', country:'BRA', currency:'BRL', symbol:'R$' },
-      { v:'2', label:'2 — Ecommerce PT', country:'PRT', currency:'EUR', symbol:'€' }
-    ],
+  'pt-pharma': {
+    account: 'pharmatech', accountLabel: 'PharmaTech',
+    sc: BR_SC,
     sellers: [
-      { v:'drogariaspacheco',         name:'Drogarias Pacheco',          note:'conta principal' },
-      { v:'drogariaspachecobotafogo', name:'Drogarias Pacheco Botafogo', note:'' },
-      { v:'drogariaspachecobarra',    name:'Drogarias Pacheco Barra',    note:'' },
-      { v:'drogariaspachecotiuca',    name:'Drogarias Pacheco Tijuca',    note:'' },
-      { v:'drogariaspachecomeier',    name:'Drogarias Pacheco Méier',    note:'' }
+      { v:'pharmatech',              name:'PharmaTech',                  note:'conta principal · SP' },
+      { v:'pharmatechjardins',       name:'PharmaTech Jardins',          note:'São Paulo · SP' },
+      { v:'pharmatechpinheiros',     name:'PharmaTech Pinheiros',        note:'São Paulo · SP' },
+      { v:'pharmatechcopacabana',    name:'PharmaTech Copacabana',       note:'Rio de Janeiro · RJ' },
+      { v:'pharmatechbarra',         name:'PharmaTech Barra',            note:'Rio de Janeiro · RJ' },
+      { v:'pharmatechboaviagem',     name:'PharmaTech Boa Viagem',       note:'Recife · PE' },
+      { v:'pharmatechsalvador',      name:'PharmaTech Salvador',         note:'Salvador · BA' },
+      { v:'pharmatechsavassi',       name:'PharmaTech Savassi',          note:'Belo Horizonte · MG' },
+      { v:'pharmatechadrianopolis',  name:'PharmaTech Adrianópolis',     note:'Manaus · AM' },
+      { v:'pharmatechmoinhos',       name:'PharmaTech Moinhos de Vento', note:'Porto Alegre · RS' }
     ],
     sellerScMap: {
-      'drogariaspacheco':'1,2', 'drogariaspachecobotafogo':'1',
-      'drogariaspachecobarra':'1,2', 'drogariaspachecotiuca':'1', 'drogariaspachecomeier':'1'
+      'pharmatech':'1,2,3,4',
+      'pharmatechjardins':'1', 'pharmatechpinheiros':'1,2',
+      'pharmatechcopacabana':'1,2', 'pharmatechbarra':'2,3',
+      'pharmatechboaviagem':'3,4', 'pharmatechsalvador':'3,4',
+      'pharmatechsavassi':'1,2,3', 'pharmatechadrianopolis':'4',
+      'pharmatechmoinhos':'1,4'
     },
     skus: [
-      { name:'Dipirona Sódica 500mg 20 comp.', meta:'SKU 1234 · EAN 7891234561001 · Ref. DIP500-20' },
-      { name:'Dipirona Sódica 500mg 50 comp.', meta:'SKU 1235 · EAN 7891234561018 · Ref. DIP500-50' },
-      { name:'Vitamina C 1000mg 60 comp.',     meta:'SKU 2001 · EAN 7891234562001 · Ref. VITC-60' },
-      { name:'Protetor Solar FPS 50 120ml',    meta:'SKU 3100 · EAN 7891234563100 · Ref. PROT-50' },
-      { name:'Kit Vitaminas A+D (combo)',       meta:'SKU 9901 · EAN 7891234569001 · Ref. KIT-VITAD', kit:true }
+      { name:'Mounjaro 2,5mg — 4 canetas',              meta:'SKU 8001 · EAN 7891234568001 · Ref. MONJ-25-4', pickupOnly:true },
+      { name:'Wegovy 0,25mg — 4 canetas',               meta:'SKU 8002 · EAN 7891234568002 · Ref. WEG-025-4', pickupOnly:true },
+      { name:'Novalgina 500mg — 10 comprimidos',         meta:'SKU 1234 · EAN 7891234561001 · Ref. NOV500-10' },
+      { name:'Dorflex — 20 comprimidos',                 meta:'SKU 2100 · EAN 7891234562100 · Ref. DORFL-20' },
+      { name:'Neosaldina — 20 drágeas',                  meta:'SKU 2200 · EAN 7891234562200 · Ref. NEOS-20' },
+      { name:'Advil 400mg — 8 comprimidos',              meta:'SKU 2300 · EAN 7891234562300 · Ref. ADV400-8' },
+      { name:'Fralda Pampers Confort Sec — Tam. P — 40 un.', meta:'SKU 5100 · EAN 7891234565100 · Ref. PMP-P-40' },
+      { name:'Fralda Pampers Confort Sec — Tam. M — 40 un.', meta:'SKU 5101 · EAN 7891234565101 · Ref. PMP-M-40' },
+      { name:'Fralda Pampers Confort Sec — Tam. G — 40 un.', meta:'SKU 5102 · EAN 7891234565102 · Ref. PMP-G-40' },
+      { name:'Kit Resfriado — Lenços de papel + Chá',    meta:'SKU 9901 · EAN 7891234569001 · Ref. KIT-GRIP', kit:true }
     ],
     zipPh:'00000-000', zipMax:9,
-    // Fields sourced directly from the simulate API response
-    slas: [
-      {
-        name:'Correios PAC', type:'Padrão', typeClass:'',
-        price:'R$ 12,90', qty:'38 unidades',
-        shippingEstimate:'7 dias úteis', arrivalDate:'22 mai 2026',
-        transitTime:'2 dias úteis', processingTime:'5 dias úteis',
-        warehouseName:'CD São Paulo', warehouseId:'cd-sao-paulo',
-        dockName:'Doca Centro', dockId:'doca-centro', courierId:'correios-pac',
-        postalRange:'01000-000 a 99999-999', weightRange:'0 – 30.000 g'
-      },
-      {
-        name:'Correios SEDEX', type:'Expresso', typeClass:'express',
-        price:'R$ 28,50', qty:'12 unidades',
-        shippingEstimate:'2 dias úteis', arrivalDate:'17 mai 2026',
-        transitTime:'1 dia útil', processingTime:'1 dia útil',
-        warehouseName:'CD Rio de Janeiro', warehouseId:'cd-rio-de-janeiro',
-        dockName:'Doca Sul', dockId:'doca-sul', courierId:'correios-sedex',
-        postalRange:'01000-000 a 05999-999', weightRange:'0 – 15.000 g'
-      },
-      {
-        name:'Jadlog Flash Sábado', type:'Expresso', typeClass:'express',
-        price:'R$ 19,90', qty:'5 unidades',
-        shippingEstimate:'1 dia útil', arrivalDate:'16 mai 2026 (sáb)',
-        transitTime:'1 dia', processingTime:'—',
-        warehouseName:'CD Campinas', warehouseId:'cd-campinas',
-        dockName:'Doca Interior', dockId:'doca-interior', courierId:'jadlog-flash',
-        postalRange:'01000-000 a 05999-999', weightRange:'0 – 10.000 g',
-        worksOnWeekends: true
-      }
-    ],
-    excluded: [
-      { name:'Total Express',  type:'Padrão', typeClass:'', reason:'Não atende este CEP' },
-      { name:'Jadlog Package', type:'Padrão', typeClass:'', reason:'Transportadora inativa' },
-      { name:'Braspress',    type:'Padrão', typeClass:'', reason:'Transportadora não está conectada a nenhuma doca' },
-      { name:'TNT Mercúrio', type:'Padrão', typeClass:'', reason:'Doca não está vinculada a nenhum estoque/armazém' }
-    ],
+    slas: PHARMA_SLAS, excluded: BR_EXCLUDED,
     pickups: [
-      {
-        storeName:'Drogarias Pacheco Botafogo',
-        address:'Rua São Clemente, 123 — Botafogo, Rio de Janeiro - RJ',
-        hours:'Seg – Sex: 08h às 20h  |  Sáb: 09h às 18h',
-        readyDate:'16 mai 2026', readyLabel:'Disponível amanhã', price:'Grátis'
-      },
-      {
-        storeName:'Drogarias Pacheco Barra',
-        address:'Av. das Américas, 500 — Barra da Tijuca, Rio de Janeiro - RJ',
-        hours:'Seg – Dom: 08h às 22h',
-        readyDate:'17 mai 2026', readyLabel:'Disponível em 2 dias', price:'Grátis'
-      }
-    ],
-    i18n: {
-      'nav-dashboards':'Dashboards','nav-orders':'Pedidos','nav-catalog':'Catálogo',
-      'nav-promos':'Promoções','nav-storefront':'Storefront','nav-shipping-group':'Envio',
-      'nav-strategy':'Estratégia de envio','nav-capacity':'Capacidade de entrega',
-      'nav-pickup':'Pontos de retirada','nav-rates':'Tarifas de envio',
-      'nav-simulator':'Simulador de envio','nav-options':'Opções de envio',
-      'nav-opcap':'Capacidade operacional','nav-marketplace':'Marketplace',
-      'nav-apps':'Aplicativos','nav-settings':'Configurações da loja',
-      'search-hint':'Buscar VTEX','topbar-visit':'Visite a loja','topbar-help':'Ajuda',
-      'bc-shipping':'Envio','bc-simulator':'Simulador de envio',
-      'page-title':'Simulador de envio','back-link':'← Voltar à Estratégia de Envio',
-      'section-context':'Contexto da simulação','lbl-sc':'Política comercial',
-      'seller-ph':'Buscar por nome ou ID do seller...','lbl-seller':'Seller',
-      'section-items':'Itens','lbl-sku':'Produto / SKU',
-      'sku-ph':'Nome do produto, ID do SKU, EAN...','lbl-qty-field':'Quantidade',
-      'lbl-price':'Preço','lbl-opt':'(opcional)','btn-add':'Adicionar item',
-      'lbl-individual':'Simular itens individualmente',
-      'section-dest':'Destino','lbl-zip':'Código postal',
-      'btn-simulate':'Simular envio','btn-clear':'Limpar',
-      'recents-title':'Últimas simulações','recents-empty':'Nenhuma simulação salva ainda. Execute uma simulação para começar.',
-      'recents-restore':'Restaurar',
-      'res-title':'Opções de envio disponíveis',
-      'res-subtitle':'Melhores opções segundo custo-benefício',
-      'lbl-delivery-section':'Entrega em domicílio',
-      'lbl-pickup-section':'Retirada em loja',
-      'col-carrier':'Transportadora','col-price':'Tarifa de envio',
-      'col-deadline':'Prazo de entrega','col-qty':'Qtd. disponível',
-      'btn-show-details':'Mostrar detalhes','btn-hide-details':'Ocultar detalhes',
-      'lbl-route':'Rota logística',
-      'lbl-calc':'Cálculo do prazo',
-      'lbl-transit':'Trânsito (transportadora)',
-      'lbl-processing':'Processamento (warehouse + doca)',
-      'lbl-estimate-date':'Data estimada',
-      'lbl-postal':'Faixa de CEP','lbl-weight':'Faixa de peso',
-      'pickup-badge':'Retirada em loja',
-      'lbl-ready':'Disponível para retirada',
-      'lbl-address':'Endereço','lbl-hours':'Horário',
-      'col-pickup-store':'Ponto de retirada','col-pickup-hours':'Horário de funcionamento','col-pickup-price':'Custo','col-pickup-avail':'Disponibilidade',
-      'weekend-badge':'Opera aos sábados',
-      'sc-err': s => `${s} não está associado à política comercial selecionada.`
-    }
+      { storeName:'PharmaTech Jardins',        address:'Alameda Lorena, 1200 — Jardins, São Paulo - SP', hours:'Seg – Sex: 08h às 20h  |  Sáb: 09h às 18h', readyDate:'9 jun 2026', readyLabel:'Disponível amanhã', price:'Grátis', region:'sp' },
+      { storeName:'PharmaTech Pinheiros',      address:'Rua dos Pinheiros, 800 — Pinheiros, São Paulo - SP', hours:'Seg – Dom: 08h às 22h', readyDate:'10 jun 2026', readyLabel:'Disponível em 2 dias', price:'Grátis', region:'sp' },
+      { storeName:'PharmaTech Copacabana',     address:'Av. Nossa Sra. de Copacabana, 540 — Copacabana, Rio de Janeiro - RJ', hours:'Seg – Sáb: 08h às 20h', readyDate:'9 jun 2026', readyLabel:'Disponível amanhã', price:'Grátis', region:'rj' },
+      { storeName:'PharmaTech Barra',          address:'Av. das Américas, 4666 — Barra da Tijuca, Rio de Janeiro - RJ', hours:'Seg – Dom: 09h às 21h', readyDate:'10 jun 2026', readyLabel:'Disponível em 2 dias', price:'Grátis', region:'rj' },
+      { storeName:'PharmaTech Savassi',        address:'Rua Sergipe, 855 — Savassi, Belo Horizonte - MG', hours:'Seg – Sáb: 08h às 20h', readyDate:'10 jun 2026', readyLabel:'Disponível em 2 dias', price:'Grátis', region:'mg' },
+      { storeName:'PharmaTech Pampulha',       address:'Av. Antônio Carlos, 6627 — Pampulha, Belo Horizonte - MG', hours:'Seg – Sex: 08h às 19h', readyDate:'11 jun 2026', readyLabel:'Disponível em 3 dias', price:'Grátis', region:'mg' },
+      { storeName:'PharmaTech Boa Viagem',     address:'Rua Setúbal, 450 — Boa Viagem, Recife - PE', hours:'Seg – Sex: 08h às 19h', readyDate:'10 jun 2026', readyLabel:'Disponível em 2 dias', price:'Grátis', region:'ne' },
+      { storeName:'PharmaTech Salvador',       address:'Av. Tancredo Neves, 620 — Caminho das Árvores, Salvador - BA', hours:'Seg – Sáb: 09h às 20h', readyDate:'11 jun 2026', readyLabel:'Disponível em 3 dias', price:'Grátis', region:'ne' },
+      { storeName:'PharmaTech Adrianópolis',   address:'Rua Paraíba, 125 — Adrianópolis, Manaus - AM', hours:'Seg – Sex: 08h às 18h', readyDate:'12 jun 2026', readyLabel:'Disponível em 3 dias', price:'Grátis', region:'n' },
+      { storeName:'PharmaTech Moinhos de Vento', address:'Rua Padre Chagas, 80 — Moinhos de Vento, Porto Alegre - RS', hours:'Seg – Sáb: 09h às 20h', readyDate:'10 jun 2026', readyLabel:'Disponível em 2 dias', price:'Grátis', region:'sul' },
+      { storeName:'PharmaTech Batel',          address:'Av. do Batel, 1860 — Batel, Curitiba - PR', hours:'Seg – Dom: 09h às 21h', readyDate:'11 jun 2026', readyLabel:'Disponível em 3 dias', price:'Grátis', region:'sul' }
+    ]
   },
-  en: {
-    account: 'roadrunners',
-    sc: [
-      { v:'1', label:'1 — US Ecommerce',     country:'USA', currency:'USD', symbol:'$' },
-      { v:'2', label:'2 — Canada Ecommerce', country:'CAN', currency:'CAD', symbol:'CA$' }
-    ],
+  'pt-fashion': {
+    account: 'modaprime', accountLabel: 'FashionPrime',
+    sc: BR_SC,
     sellers: [
-      { v:'roadrunners',          name:'Road Runners',            note:'main account' },
-      { v:'roadrunnersandiego',   name:'Road Runner San Diego',   note:'' },
-      { v:'roadrunnerlosangeles', name:'Road Runner Los Angeles', note:'' },
-      { v:'roadrunnerseattle',    name:'Road Runner Seattle',     note:'' },
-      { v:'roadrunnerhouston',    name:'Road Runner Houston',     note:'' }
+      { v:'modaprime',              name:'FashionPrime',                  note:'conta principal · SP' },
+      { v:'modaprimejardins',       name:'FashionPrime Jardins',          note:'São Paulo · SP' },
+      { v:'modaprimepinheiros',     name:'FashionPrime Pinheiros',        note:'São Paulo · SP' },
+      { v:'modaprimeipanema',       name:'FashionPrime Ipanema',          note:'Rio de Janeiro · RJ' },
+      { v:'modaprimebarra',         name:'FashionPrime Barra',            note:'Rio de Janeiro · RJ' },
+      { v:'modaprimesavassi',       name:'FashionPrime Savassi',          note:'Belo Horizonte · MG' },
+      { v:'modaprimeboaviagem',     name:'FashionPrime Boa Viagem',       note:'Recife · PE' },
+      { v:'modaprimesalvador',      name:'FashionPrime Salvador',         note:'Salvador · BA' },
+      { v:'modaprimemoinhos',       name:'FashionPrime Moinhos de Vento', note:'Porto Alegre · RS' },
+      { v:'modaprimeadrianopolis',  name:'FashionPrime Adrianópolis',     note:'Manaus · AM' }
     ],
     sellerScMap: {
-      'roadrunners':'1,2', 'roadrunnersandiego':'1',
-      'roadrunnerlosangeles':'1,2', 'roadrunnerseattle':'1', 'roadrunnerhouston':'1'
+      'modaprime':'1,2,3,4',
+      'modaprimejardins':'1,2', 'modaprimepinheiros':'1,2,3',
+      'modaprimeipanema':'1', 'modaprimebarra':'2,3',
+      'modaprimesavassi':'1,2,3', 'modaprimeboaviagem':'3,4',
+      'modaprimesalvador':'3,4', 'modaprimemoinhos':'1,4',
+      'modaprimeadrianopolis':'4'
     },
     skus: [
-      { name:'Running Shoes Air X — Size 10',  meta:'SKU 5001 · EAN 0123456789001 · Ref. SHOE-AIRX-10' },
-      { name:'Running Shoes Air X — Size 11',  meta:'SKU 5002 · EAN 0123456789002 · Ref. SHOE-AIRX-11' },
-      { name:'Compression Socks Pro — Medium', meta:'SKU 5010 · EAN 0123456789010 · Ref. SOCK-PRO-M' },
-      { name:'Hydration Vest 10L',             meta:'SKU 5020 · EAN 0123456789020 · Ref. VEST-10L' },
-      { name:'Kit Trail Runner Starter Pack',  meta:'SKU 5099 · EAN 0123456789099 · Ref. KIT-TRAIL', kit:true }
+      { name:'Camisa Masculina — Tam. M',      meta:'SKU 7101 · EAN 7891234567101 · Ref. SHIRT-M-M' },
+      { name:'Camisa Feminina — Tam. M',       meta:'SKU 7102 · EAN 7891234567102 · Ref. SHIRT-W-M' },
+      { name:'Camiseta Masculina — Tam. M',    meta:'SKU 7111 · EAN 7891234567111 · Ref. TSHIRT-M-M' },
+      { name:'Camiseta Feminina — Tam. M',     meta:'SKU 7112 · EAN 7891234567112 · Ref. TSHIRT-W-M' },
+      { name:'Blusa Feminina — Tam. M',        meta:'SKU 7121 · EAN 7891234567121 · Ref. BLOUSE-W-M' },
+      { name:'Blusa Masculina — Tam. M',       meta:'SKU 7122 · EAN 7891234567122 · Ref. BLOUSE-M-M' },
+      { name:'Tênis Run Max — Tam. 40',        meta:'SKU 7001 · EAN 7891234567001 · Ref. SHOE-RM-40' },
+      { name:'Tênis Run Max — Tam. 41',        meta:'SKU 7002 · EAN 7891234567002 · Ref. SHOE-RM-41' },
+      { name:'Vestido Midi Floral — Tam. M',   meta:'SKU 7010 · EAN 7891234567010 · Ref. DRS-MIDI-M' },
+      { name:'Bolsa Couro Premium — Preta',    meta:'SKU 7020 · EAN 7891234567020 · Ref. BAG-LEA-BK · Peso ref. 2,8 kg' },
+      { name:'Kit Look Verão (combo)',         meta:'SKU 7099 · EAN 7891234567099 · Ref. KIT-SUMMER', kit:true }
+    ],
+    zipPh:'00000-000', zipMax:9,
+    slas: BR_SLAS, excluded: BR_FASHION_EXCLUDED,
+    pickups: [
+      { storeName:'FashionPrime Jardins',        address:'Alameda Lorena, 1200 — Jardins, São Paulo - SP', hours:'Seg – Dom: 10h às 22h', readyDate:'10 jun 2026', readyLabel:'Disponível em 2 dias', price:'Grátis', region:'sp' },
+      { storeName:'FashionPrime Pinheiros',      address:'Rua dos Pinheiros, 800 — Pinheiros, São Paulo - SP', hours:'Seg – Sáb: 10h às 21h', readyDate:'9 jun 2026', readyLabel:'Disponível amanhã', price:'Grátis', region:'sp' },
+      { storeName:'FashionPrime Ipanema',        address:'Rua Visconde de Pirajá, 550 — Ipanema, Rio de Janeiro - RJ', hours:'Seg – Sáb: 10h às 21h', readyDate:'9 jun 2026', readyLabel:'Disponível amanhã', price:'Grátis', region:'rj' },
+      { storeName:'FashionPrime Barra',          address:'Av. das Américas, 3900 — Barra da Tijuca, Rio de Janeiro - RJ', hours:'Seg – Dom: 10h às 22h', readyDate:'10 jun 2026', readyLabel:'Disponível em 2 dias', price:'Grátis', region:'rj' },
+      { storeName:'FashionPrime Savassi',        address:'Rua Sergipe, 855 — Savassi, Belo Horizonte - MG', hours:'Seg – Sáb: 10h às 21h', readyDate:'10 jun 2026', readyLabel:'Disponível em 2 dias', price:'Grátis', region:'mg' },
+      { storeName:'FashionPrime Pampulha',       address:'Av. Antônio Carlos, 6627 — Pampulha, Belo Horizonte - MG', hours:'Seg – Sex: 10h às 20h', readyDate:'11 jun 2026', readyLabel:'Disponível em 3 dias', price:'Grátis', region:'mg' },
+      { storeName:'FashionPrime Boa Viagem',     address:'Rua Padre Carapuceiro, 777 — Boa Viagem, Recife - PE', hours:'Seg – Dom: 10h às 22h', readyDate:'11 jun 2026', readyLabel:'Disponível em 3 dias', price:'Grátis', region:'ne' },
+      { storeName:'FashionPrime Salvador',       address:'Av. Tancredo Neves, 620 — Caminho das Árvores, Salvador - BA', hours:'Seg – Sáb: 10h às 21h', readyDate:'11 jun 2026', readyLabel:'Disponível em 3 dias', price:'Grátis', region:'ne' },
+      { storeName:'FashionPrime Adrianópolis',   address:'Rua Paraíba, 125 — Adrianópolis, Manaus - AM', hours:'Seg – Sáb: 10h às 20h', readyDate:'12 jun 2026', readyLabel:'Disponível em 3 dias', price:'Grátis', region:'n' },
+      { storeName:'FashionPrime Moinhos de Vento', address:'Rua Padre Chagas, 80 — Moinhos de Vento, Porto Alegre - RS', hours:'Seg – Sáb: 10h às 21h', readyDate:'10 jun 2026', readyLabel:'Disponível em 2 dias', price:'Grátis', region:'sul' },
+      { storeName:'FashionPrime Batel',          address:'Av. do Batel, 1860 — Batel, Curitiba - PR', hours:'Seg – Dom: 10h às 22h', readyDate:'11 jun 2026', readyLabel:'Disponível em 3 dias', price:'Grátis', region:'sul' }
+    ]
+  },
+  'en-fashion': {
+    account: 'modaprime', accountLabel: 'FashionPrime',
+    sc: EN_SC,
+    sellers: [
+      { v:'modaprime',         name:'FashionPrime',           note:'main account' },
+      { v:'modaprimesoho',     name:'FashionPrime SoHo',      note:'' },
+      { v:'modaprimebrooklyn', name:'FashionPrime Brooklyn',  note:'' },
+      { v:'modaprimeseattle',  name:'FashionPrime Seattle',   note:'' },
+      { v:'modaprimehouston',  name:'FashionPrime Houston',   note:'' }
+    ],
+    sellerScMap: {
+      'modaprime':'1,2,3,4', 'modaprimesoho':'1', 'modaprimebrooklyn':'1,2',
+      'modaprimeseattle':'3', 'modaprimehouston':'4'
+    },
+    skus: [
+      { name:"Men's Dress Shirt — Size M",     meta:'SKU 7101 · EAN 0123456787101 · Ref. SHIRT-M-M' },
+      { name:"Women's Dress Shirt — Size M",   meta:'SKU 7102 · EAN 0123456787102 · Ref. SHIRT-W-M' },
+      { name:"Men's T-Shirt — Size M",         meta:'SKU 7111 · EAN 0123456787111 · Ref. TSHIRT-M-M' },
+      { name:"Women's T-Shirt — Size M",       meta:'SKU 7112 · EAN 0123456787112 · Ref. TSHIRT-W-M' },
+      { name:"Women's Blouse — Size M",        meta:'SKU 7121 · EAN 0123456787121 · Ref. BLOUSE-W-M' },
+      { name:"Men's Blouse — Size M",          meta:'SKU 7122 · EAN 0123456787122 · Ref. BLOUSE-M-M' },
+      { name:'Run Max Sneaker — Size 10',      meta:'SKU 7001 · EAN 0123456787001 · Ref. SHOE-RM-10' },
+      { name:'Run Max Sneaker — Size 11',      meta:'SKU 7002 · EAN 0123456787002 · Ref. SHOE-RM-11' },
+      { name:'Floral Midi Dress — Size M',     meta:'SKU 7010 · EAN 0123456787010 · Ref. DRS-MIDI-M' },
+      { name:'Premium Leather Bag — Black',    meta:'SKU 7020 · EAN 0123456787020 · Ref. BAG-LEA-BK · Ref. weight 2.8 kg' },
+      { name:'Summer Look Kit (bundle)',       meta:'SKU 7099 · EAN 0123456787099 · Ref. KIT-SUMMER', kit:true }
     ],
     zipPh:'00000', zipMax:5,
     slas: [
-      {
-        name:'UPS Ground', type:'Standard', typeClass:'',
-        price:'$ 8.90', qty:'42 units',
-        shippingEstimate:'5 business days', arrivalDate:'May 22, 2026',
-        transitTime:'2 business days', processingTime:'3 business days',
-        warehouseName:'Warehouse Los Angeles', warehouseId:'wh-los-angeles',
-        dockName:'Dock West', dockId:'dock-west', courierId:'ups-ground',
-        postalRange:'00000 – 99999', weightRange:'0 – 30,000 g'
-      },
-      {
-        name:'FedEx Express', type:'Express', typeClass:'express',
-        price:'$ 24.50', qty:'18 units',
-        shippingEstimate:'2 business days', arrivalDate:'May 17, 2026',
-        transitTime:'1 business day', processingTime:'1 business day',
-        warehouseName:'Warehouse Seattle', warehouseId:'wh-seattle',
-        dockName:'Dock North', dockId:'dock-north', courierId:'fedex-express',
-        postalRange:'00000 – 95999', weightRange:'0 – 15,000 g'
-      },
-      {
-        name:'FedEx Saturday Delivery', type:'Express', typeClass:'express',
-        price:'$ 32.00', qty:'7 units',
-        shippingEstimate:'1 business day', arrivalDate:'May 16, 2026 (Sat)',
-        transitTime:'1 day', processingTime:'—',
-        warehouseName:'Warehouse Los Angeles', warehouseId:'wh-los-angeles',
-        dockName:'Dock West', dockId:'dock-west', courierId:'fedex-saturday',
-        postalRange:'00000 – 95999', weightRange:'0 – 15,000 g',
-        worksOnWeekends: true
-      }
+      { name:'UPS Ground', type:'Standard', typeClass:'', price:'$ 8.90', qty:'42 units', shippingEstimate:'5 business days', arrivalDate:'Jun 17, 2026', transitTime:'2 business days', processingTime:'3 business days', warehouseName:'Warehouse Los Angeles', warehouseId:'wh-los-angeles', dockName:'Dock West', dockId:'dock-west', policyName:'UPS Ground', policyId:'ups-ground', courierId:'ups-ground', postalRange:'00000 – 99999', weightRange:'0 – 30,000 g' },
+      { name:'FedEx Express', type:'Express', typeClass:'express', price:'$ 24.50', qty:'18 units', shippingEstimate:'2 business days', arrivalDate:'Jun 10, 2026', transitTime:'1 business day', processingTime:'1 business day', warehouseName:'Warehouse Seattle', warehouseId:'wh-seattle', dockName:'Dock North', dockId:'dock-north', policyName:'FedEx Express', policyId:'fedex-express', courierId:'fedex-express', postalRange:'00000 – 95999', weightRange:'0 – 15,000 g' },
+      { name:'FedEx Saturday Delivery', type:'Express', typeClass:'express', price:'$ 32.00', qty:'7 units', shippingEstimate:'1 business day', arrivalDate:'Jun 13, 2026 (Sat)', transitTime:'1 day', processingTime:'—', warehouseName:'Warehouse Los Angeles', warehouseId:'wh-los-angeles', dockName:'Dock West', dockId:'dock-west', policyName:'FedEx Saturday Delivery', policyId:'fedex-saturday', courierId:'fedex-saturday', postalRange:'00000 – 95999', weightRange:'0 – 15,000 g', worksOnWeekends: true }
     ],
-    excluded: [
-      { name:'USPS Priority',  type:'Standard', typeClass:'', reason:'Does not deliver to this ZIP code' },
-      { name:'OnTrac Economy', type:'Standard', typeClass:'', reason:'Item weight exceeds carrier limit' },
-      { name:'Estes Express',  type:'Standard', typeClass:'', reason:'Carrier is not connected to any dock' },
-      { name:'Old Dominion',   type:'Standard', typeClass:'', reason:'Dock is not linked to any warehouse/inventory location' }
-    ],
+    excluded: EN_FASHION_EXCLUDED,
     pickups: [
-      {
-        storeName:'Road Runner San Diego',
-        address:'2500 El Cajon Blvd, San Diego, CA 92104',
-        hours:'Mon – Fri: 9 AM – 8 PM  |  Sat: 10 AM – 6 PM',
-        readyDate:'May 16, 2026', readyLabel:'Ready tomorrow', price:'Free'
-      },
-      {
-        storeName:'Road Runner Los Angeles',
-        address:'800 W Olympic Blvd, Los Angeles, CA 90015',
-        hours:'Mon – Sun: 9 AM – 9 PM',
-        readyDate:'May 17, 2026', readyLabel:'Ready in 2 days', price:'Free'
-      }
+      { storeName:'FashionPrime SoHo',     address:'120 Spring St, New York, NY 10012', hours:'Mon – Fri: 10 AM – 8 PM  |  Sat: 11 AM – 7 PM', readyDate:'Jun 9, 2026', readyLabel:'Ready tomorrow', price:'Free', region:'ny' },
+      { storeName:'FashionPrime Brooklyn', address:'85 Flatbush Ave, Brooklyn, NY 11217', hours:'Mon – Sun: 10 AM – 9 PM', readyDate:'Jun 10, 2026', readyLabel:'Ready in 2 days', price:'Free', region:'ny' },
+      { storeName:'FashionPrime Houston Galleria', address:'5085 Westheimer Rd, Houston, TX 77056', hours:'Mon – Sat: 10 AM – 9 PM  |  Sun: 11 AM – 7 PM', readyDate:'Jun 10, 2026', readyLabel:'Ready in 2 days', price:'Free', region:'tx' },
+      { storeName:'FashionPrime Seattle Pike', address:'1520 5th Ave, Seattle, WA 98101', hours:'Mon – Sun: 10 AM – 8 PM', readyDate:'Jun 11, 2026', readyLabel:'Ready in 3 days', price:'Free', region:'wa' },
+      { storeName:'FashionPrime Beverly Hills', address:'9600 Wilshire Blvd, Beverly Hills, CA 90210', hours:'Mon – Sat: 10 AM – 8 PM', readyDate:'Jun 10, 2026', readyLabel:'Ready in 2 days', price:'Free', region:'ca' }
+    ]
+  },
+  'es-fashion': {
+    account: 'modaprime', accountLabel: 'FashionPrime',
+    sc: ES_SC,
+    sellers: [
+      { v:'modaprime',          name:'FashionPrime',           note:'cuenta principal' },
+      { v:'modaprimepolanco',   name:'FashionPrime Polanco',   note:'' },
+      { v:'modaprimeroma',      name:'FashionPrime Roma',      note:'' },
+      { v:'modaprimecondesa',   name:'FashionPrime Condesa',   note:'' },
+      { v:'modaprimecentro',    name:'FashionPrime Centro',    note:'' }
     ],
-    i18n: {
-      'nav-dashboards':'Dashboards','nav-orders':'Orders','nav-catalog':'Catalog',
-      'nav-promos':'Promotions','nav-storefront':'Storefront','nav-shipping-group':'Shipping',
-      'nav-strategy':'Shipping strategy','nav-capacity':'Delivery capacity',
-      'nav-pickup':'Pickup points','nav-rates':'Shipping rates',
-      'nav-simulator':'Shipping simulator','nav-options':'Delivery options',
-      'nav-opcap':'Operational capacity','nav-marketplace':'Marketplace',
-      'nav-apps':'Apps','nav-settings':'Store settings',
-      'search-hint':'Search VTEX','topbar-visit':'Visit store','topbar-help':'Help',
-      'bc-shipping':'Shipping','bc-simulator':'Shipping simulator',
-      'page-title':'Shipping Simulator','back-link':'← Back to Shipping Strategy',
-      'section-context':'Simulation context','lbl-sc':'Sales channel',
-      'seller-ph':'Search by seller name or ID...','lbl-seller':'Seller',
-      'section-items':'Items','lbl-sku':'Product / SKU',
-      'sku-ph':'Product name, SKU ID, EAN...','lbl-qty-field':'Quantity',
-      'lbl-price':'Price','lbl-opt':'(optional)','btn-add':'Add item',
-      'lbl-individual':'Simulate items individually',
-      'section-dest':'Destination','lbl-zip':'ZIP code',
-      'btn-simulate':'Simulate shipping','btn-clear':'Clear',
-      'recents-title':'Recent simulations','recents-empty':'No simulations saved yet. Run a simulation to get started.',
-      'recents-restore':'Restore',
-      'res-title':'Available shipping options',
-      'res-subtitle':'Best options by cost-benefit',
-      'lbl-delivery-section':'Home delivery',
-      'lbl-pickup-section':'Store pickup',
-      'col-carrier':'Carrier','col-price':'Shipping rate',
-      'col-deadline':'Delivery time','col-qty':'Available qty',
-      'btn-show-details':'Show details','btn-hide-details':'Hide details',
-      'lbl-route':'Logistics route',
-      'lbl-calc':'Delivery time breakdown',
-      'lbl-transit':'Transit (carrier)',
-      'lbl-processing':'Processing (warehouse + dock)',
-      'lbl-estimate-date':'Estimated delivery',
-      'lbl-postal':'Postal code range','lbl-weight':'Weight range',
-      'pickup-badge':'Store pickup',
-      'lbl-ready':'Ready for pickup',
-      'lbl-address':'Address','lbl-hours':'Hours',
-      'col-pickup-store':'Pickup location','col-pickup-hours':'Store hours','col-pickup-price':'Cost','col-pickup-avail':'Availability',
-      'weekend-badge':'Operates on Saturdays',
-      'sc-err': s => `${s} is not associated with the selected sales channel.`
-    }
+    sellerScMap: {
+      'modaprime':'1,2,3,4', 'modaprimepolanco':'1', 'modaprimeroma':'1,2',
+      'modaprimecondesa':'3', 'modaprimecentro':'4'
+    },
+    skus: [
+      { name:'Camisa Masculina — Talla M',       meta:'SKU 7101 · EAN 7501234567101 · Ref. SHIRT-M-M' },
+      { name:'Camisa Femenina — Talla M',        meta:'SKU 7102 · EAN 7501234567102 · Ref. SHIRT-W-M' },
+      { name:'Camiseta Masculina — Talla M',     meta:'SKU 7111 · EAN 7501234567111 · Ref. TSHIRT-M-M' },
+      { name:'Camiseta Femenina — Talla M',      meta:'SKU 7112 · EAN 7501234567112 · Ref. TSHIRT-W-M' },
+      { name:'Blusa Femenina — Talla M',         meta:'SKU 7121 · EAN 7501234567121 · Ref. BLOUSE-W-M' },
+      { name:'Blusa Masculina — Talla M',        meta:'SKU 7122 · EAN 7501234567122 · Ref. BLOUSE-M-M' },
+      { name:'Tenis Run Max — Talla 40',           meta:'SKU 7001 · EAN 7501234567001 · Ref. SHOE-RM-40' },
+      { name:'Tenis Run Max — Talla 41',           meta:'SKU 7002 · EAN 7501234567002 · Ref. SHOE-RM-41' },
+      { name:'Vestido Midi Floral — Talla M',      meta:'SKU 7010 · EAN 7501234567010 · Ref. DRS-MIDI-M' },
+      { name:'Bolsa Piel Premium — Negra',         meta:'SKU 7020 · EAN 7501234567020 · Ref. BAG-LEA-BK · Peso ref. 2,8 kg' },
+      { name:'Kit Look Verano (combo)',            meta:'SKU 7099 · EAN 7501234567099 · Ref. KIT-SUMMER', kit:true }
+    ],
+    zipPh:'00000', zipMax:5,
+    slas: ES_SLAS, excluded: ES_FASHION_EXCLUDED,
+    pickups: [
+      { storeName:'FashionPrime Polanco', address:'Av. Presidente Masaryk 360 — Polanco, Ciudad de México', hours:'Lun – Sáb: 10:00 a 21:00', readyDate:'9 jun 2026', readyLabel:'Disponible mañana', price:'Gratis', region:'cdmx' },
+      { storeName:'FashionPrime Roma',    address:'Álvaro Obregón 150 — Roma Norte, Ciudad de México', hours:'Lun – Dom: 10:00 a 22:00', readyDate:'10 jun 2026', readyLabel:'Disponible en 2 días', price:'Gratis', region:'cdmx' },
+      { storeName:'FashionPrime Andares', address:'Av. Patria 2087 — Zapopan, Guadalajara, Jalisco', hours:'Lun – Sáb: 10:00 a 21:00', readyDate:'10 jun 2026', readyLabel:'Disponible en 2 días', price:'Gratis', region:'occidente' },
+      { storeName:'FashionPrime Cancún',  address:'Blvd. Kukulcán Km 9.5 — Zona Hotelera, Cancún, Quintana Roo', hours:'Lun – Dom: 10:00 a 22:00', readyDate:'11 jun 2026', readyLabel:'Disponible en 3 días', price:'Gratis', region:'sureste' }
+    ]
   }
 };
 
-let client = 'pt';
+const FEEDBACK_FORM_URLS = {
+  pt: 'https://forms.gle/fZH6qC9T77cLJH82A',
+  en: 'https://forms.gle/rdmPrYi7aWb8w4RU7',
+  es: 'https://forms.gle/fZH6qC9T77cLJH82A'
+};
+
+const ACCOUNT_ICONS = {
+  pharma: `<svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><rect width="14" height="14" rx="4" fill="#E8F0FE"/><path d="M7 4v6M4 7h6" stroke="#0C2DCC" stroke-width="1.4" stroke-linecap="round"/></svg>`,
+  fashion: `<svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true"><rect width="14" height="14" rx="4" fill="#FFE0EF"/><path d="M4.5 9.5h5l-1.4-2.3a2 2 0 00-2.2 0L4.5 9.5zM7 4.2a.9.9 0 110 1.8.9.9 0 010-1.8z" stroke="#F71963" stroke-width="1.1" stroke-linejoin="round"/></svg>`
+};
+
+let currentLang = 'pt';
+let currentVertical = 'pharma';
 let rowCount = 0;
 let selectedSkus = {};
 let selectedSeller = null;
 let openDetails = new Set();
 
-function init() { setClient('pt'); }
+function getDatasetKey() {
+  if (currentLang === 'en') return 'en-fashion';
+  if (currentLang === 'es') return 'es-fashion';
+  return currentVertical === 'pharma' ? 'pt-pharma' : 'pt-fashion';
+}
+function getData() { return DATA[getDatasetKey()]; }
+function getI18n() {
+  if (currentLang === 'pt') return I18N_PT;
+  if (currentLang === 'es') return I18N_ES;
+  return I18N_EN;
+}
+function isPtLang() { return currentLang === 'pt'; }
+function isEsLang() { return currentLang === 'es'; }
+function msgNoSellers() {
+  if (isPtLang()) return 'Nenhum seller encontrado';
+  if (isEsLang()) return 'No se encontraron sellers';
+  return 'No sellers found';
+}
+function msgNoSkuResults() {
+  if (isPtLang()) return 'Nenhum resultado encontrado';
+  if (isEsLang()) return 'No se encontraron resultados';
+  return 'No results found';
+}
 
-function setClient(c) {
-  client = c;
-  document.getElementById('btn-pt').classList.toggle('active', c === 'pt');
-  document.getElementById('btn-en').classList.toggle('active', c === 'en');
+function init() { injectAccountIcons(); setLang('pt'); setVertical('pharma'); }
+
+function injectAccountIcons() {
+  document.getElementById('icon-vert-pharma').innerHTML = ACCOUNT_ICONS.pharma;
+  document.getElementById('icon-vert-fashion').innerHTML = ACCOUNT_ICONS.fashion;
+}
+
+function updateAccountBadge() {
+  const locked = document.getElementById('account-badge-locked');
+  const showLocked = currentLang === 'en' || isEsLang();
+  locked.classList.toggle('hidden', !showLocked);
+  if (showLocked) {
+    document.getElementById('account-badge-icon').innerHTML = ACCOUNT_ICONS.fashion;
+    document.getElementById('account-badge-name').textContent = getData().accountLabel;
+  }
+}
+
+function setLang(lang) {
+  currentLang = lang;
+  document.getElementById('btn-lang-pt').classList.toggle('active', lang === 'pt');
+  document.getElementById('btn-lang-en').classList.toggle('active', lang === 'en');
+  document.getElementById('btn-lang-es').classList.toggle('active', lang === 'es');
+  const showVertical = lang === 'pt';
+  document.getElementById('vertical-toggle-wrap').classList.toggle('hidden', !showVertical);
+  document.getElementById('vertical-toggle-hint').classList.toggle('hidden', !showVertical);
+  updateAccountBadge();
+  refreshContext();
+}
+
+function setVertical(vertical) {
+  currentVertical = vertical;
+  document.getElementById('btn-vert-pharma').classList.toggle('active', vertical === 'pharma');
+  document.getElementById('btn-vert-fashion').classList.toggle('active', vertical === 'fashion');
+  refreshContext();
+}
+
+function refreshContext() {
   applyI18n();
   buildScSelect();
   buildSellerList();
@@ -688,29 +1293,40 @@ function setClient(c) {
 }
 
 function applyI18n() {
-  const i = DATA[client].i18n;
+  const i = getI18n();
   document.querySelectorAll('[data-i18n]').forEach(el => {
     const k = el.getAttribute('data-i18n');
     if (typeof i[k] === 'string') el.textContent = i[k];
+    else if (typeof i[k] === 'function') { /* skip fn keys */ }
   });
   document.querySelectorAll('[data-i18n-ph]').forEach(el => {
     const k = el.getAttribute('data-i18n-ph');
     if (typeof i[k] === 'string') el.placeholder = i[k];
   });
-  const d = DATA[client];
-  document.getElementById('sidebar-acct').textContent = d.account;
-  document.getElementById('topbar-acct').textContent = d.account;
-  document.getElementById('seller-search').placeholder = d.i18n['seller-ph'];
+  const d = getData();
+  document.getElementById('page-subtitle').textContent = d.accountLabel;
+  document.getElementById('seller-search').placeholder = i['seller-ph'];
   document.getElementById('zip-input').placeholder = d.zipPh;
   document.getElementById('zip-input').maxLength = d.zipMax;
+  updateFeedbackCallouts();
+}
+
+function updateFeedbackCallouts() {
+  const showFeedback = isPtLang() || currentLang === 'en' || isEsLang();
+  const url = FEEDBACK_FORM_URLS[currentLang];
+  ['top', 'bottom'].forEach(pos => {
+    document.getElementById(`feedback-callout-${pos}`).classList.toggle('hidden', !showFeedback);
+    if (showFeedback) document.getElementById(`feedback-link-${pos}`).href = url;
+  });
 }
 
 // ── Sales Channel ─────────────────────────────────────────────────────────────
 function buildScSelect() {
   const sel = document.getElementById('sel-sc');
-  const i = DATA[client].i18n;
-  sel.innerHTML = `<option value="">${i['lbl-sc']}</option>`;
-  DATA[client].sc.forEach(o => {
+  const i = getI18n();
+  sel.innerHTML = `<option value="">${i['sc-ph']}</option>`;
+  sel.classList.add('select-ph');
+  getData().sc.forEach(o => {
     const opt = document.createElement('option');
     opt.value = o.v; opt.textContent = o.label;
     opt.dataset.country = o.country; opt.dataset.currency = o.currency; opt.dataset.symbol = o.symbol;
@@ -719,6 +1335,7 @@ function buildScSelect() {
 }
 function onScChange() {
   const sel = document.getElementById('sel-sc');
+  sel.classList.toggle('select-ph', !sel.value);
   const opt = sel.options[sel.selectedIndex];
   const badge = document.getElementById('ctx-badge');
   if (opt.dataset.country) {
@@ -745,14 +1362,14 @@ function onSellerSearch() {
 }
 function renderSellerDropdown(q) {
   const dd = document.getElementById('seller-dd');
-  const sellers = DATA[client].sellers;
+  const sellers = getData().sellers;
   const filtered = q ? sellers.filter(s => s.name.toLowerCase().includes(q.toLowerCase()) || s.v.includes(q.toLowerCase())) : sellers;
-  if (!filtered.length) { dd.innerHTML = `<div class="combo-empty">Nenhum seller encontrado</div>`; return; }
+  if (!filtered.length) { dd.innerHTML = `<div class="combo-empty">${msgNoSellers()}</div>`; return; }
   dd.innerHTML = '';
   filtered.forEach(s => {
     const div = document.createElement('div');
     div.className = 'combo-opt';
-    div.innerHTML = `<div class="combo-opt-name">${s.name}${s.note ? ` <span style="color:#A1AAB7;font-weight:400;font-size:11px">(${s.note})</span>` : ''}</div><div class="combo-opt-id">${s.v}</div>`;
+    div.innerHTML = `<div class="combo-opt-name">${s.name}${s.note ? ` <span class="combo-note">(${s.note})</span>` : ''}</div><div class="combo-opt-id">${s.v}</div>`;
     div.onclick = () => pickSeller(s);
     dd.appendChild(div);
   });
@@ -782,31 +1399,31 @@ function clearSellerSelection() {
 function addRow() {
   rowCount++;
   const id = rowCount;
-  const d = DATA[client];
+  const i = getI18n();
   const container = document.getElementById('sku-rows');
   const row = document.createElement('div');
   row.className = 'item-row'; row.id = `row-${id}`;
   row.innerHTML = `
     <div class="fg-sku form-group">
-      ${id===1?`<label>${d.i18n['lbl-sku']}<span class="req">*</span></label>`:''}
+      ${id===1?`<label>${i['lbl-sku']}<span class="req">*</span></label>`:''}
       <div class="sku-wrapper" id="sku-w-${id}">
-        <input class="input" id="sku-inp-${id}" placeholder="${d.i18n['sku-ph']}" oninput="onSkuInput(${id})" autocomplete="off">
+        <input class="input" id="sku-inp-${id}" placeholder="${i['sku-ph']}" oninput="onSkuInput(${id})" autocomplete="off">
         <div class="sku-dd hidden" id="sku-dd-${id}"></div>
         <div class="sku-chip hidden" id="sku-chip-${id}">
-          <div style="flex:1"><div class="sku-chip-name" id="chip-name-${id}"></div><div class="sku-chip-meta" id="chip-meta-${id}"></div></div>
+          <div class="sku-chip-content"><div class="sku-chip-name" id="chip-name-${id}"></div><div class="sku-chip-meta" id="chip-meta-${id}"></div></div>
           <button class="sku-chip-clear" onclick="clearSku(${id})">✕</button>
         </div>
       </div>
     </div>
     <div class="fg-qty form-group">
-      ${id===1?`<label>${d.i18n['lbl-qty-field']}<span class="req">*</span></label>`:''}
-      <input class="input" type="number" value="1" min="1">
+      ${id===1?`<label>${i['lbl-qty-field']}<span class="req">*</span></label>`:''}
+      <input class="input" type="number" id="qty-inp-${id}" value="1" min="1">
     </div>
     <div class="fg-price form-group">
-      ${id===1?`<label>${d.i18n['lbl-price']}<span class="opt">${d.i18n['lbl-opt']}</span></label>`:''}
+      ${id===1?`<label>${i['lbl-price']}<span class="opt">${i['lbl-opt']}</span></label>`:''}
       <input class="input" type="text" placeholder="0,00">
     </div>
-    ${id>1?`<button class="btn-remove" onclick="removeRow(${id})">✕</button>`:'<div style="width:36px"></div>'}
+    ${id>1?`<button class="btn-remove" onclick="removeRow(${id})">✕</button>`:'<div class="row-action-spacer"></div>'}
   `;
   container.appendChild(row);
 }
@@ -834,7 +1451,18 @@ function scoreSkuMatch(s, q) {
 function highlightMatch(text, q) {
   if (!q) return text;
   const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  return text.replace(new RegExp(`(${escaped})`, 'gi'), '<mark style="background:#FFE0EF;color:#142032;border-radius:2px;padding:0 1px">$1</mark>');
+  return text.replace(new RegExp(`(${escaped})`, 'gi'), '<mark class="search-hit">$1</mark>');
+}
+
+function skuExtraTags(s) {
+  let tags = '';
+  if (s.kit) tags += '<span class="tag-kit">KIT</span>';
+  if (s.pickupOnly) tags += `<span class="tag-pickup-only">${getI18n()['tag-pickup-only']}</span>`;
+  return tags;
+}
+
+function hasPickupOnlyItems() {
+  return Object.values(selectedSkus).some(s => s.pickupOnly);
 }
 
 function onSkuInput(id) {
@@ -843,12 +1471,12 @@ function onSkuInput(id) {
   const q   = inp.value;
   if (q.length < 1) { dd.classList.add('hidden'); return; }
   // Score, filter (score > -1) and sort by relevance descending
-  const results = DATA[client].skus
+  const results = getData().skus
     .map(s => ({ s, score: scoreSkuMatch(s, q) }))
     .filter(r => r.score > -1)
     .sort((a, b) => b.score - a.score);
   if (results.length === 0) {
-    dd.innerHTML = `<div class="sku-opt" style="color:#A1AAB7;cursor:default">${client==='pt'?'Nenhum resultado encontrado':'No results found'}</div>`;
+    dd.innerHTML = `<div class="sku-opt sku-opt-empty">${msgNoSkuResults()}</div>`;
     dd.classList.remove('hidden');
     return;
   }
@@ -858,7 +1486,7 @@ function onSkuInput(id) {
     item.className = 'sku-opt';
     const highlightedName = highlightMatch(s.name, q);
     const metaParts = s.meta.split(' · ').map(p => `<span>${highlightMatch(p, q)}</span>`).join('');
-    item.innerHTML = `<div class="sku-opt-name">${highlightedName}${s.kit?'<span class="tag-kit">KIT</span>':''}</div><div class="sku-opt-meta">${metaParts}</div>`;
+    item.innerHTML = `<div class="sku-opt-name">${highlightedName}${skuExtraTags(s)}</div><div class="sku-opt-meta">${metaParts}</div>`;
     item.onclick = () => pickSku(id, s);
     dd.appendChild(item);
   });
@@ -868,7 +1496,7 @@ function pickSku(id, s) {
   selectedSkus[id] = s;
   document.getElementById(`sku-inp-${id}`).classList.add('hidden');
   document.getElementById(`sku-dd-${id}`).classList.add('hidden');
-  document.getElementById(`chip-name-${id}`).innerHTML = s.name + (s.kit?'<span class="tag-kit" style="margin-left:6px">KIT</span>':'');
+  document.getElementById(`chip-name-${id}`).innerHTML = s.name + skuExtraTags(s);
   document.getElementById(`chip-meta-${id}`).textContent = s.meta;
   document.getElementById(`sku-chip-${id}`).classList.remove('hidden');
 }
@@ -881,17 +1509,223 @@ function clearSku(id) {
 }
 
 function fmtZip(el) {
-  if (client === 'pt') {
+  if (isPtLang()) {
     let v = el.value.replace(/\D/g,'').slice(0,8);
     if (v.length > 5) v = v.slice(0,5)+'-'+v.slice(5);
     el.value = v;
+  } else {
+    el.value = el.value.replace(/\D/g,'').slice(0, getData().zipMax);
   }
+}
+
+function cloneRows(arr) {
+  return (arr || []).map(item => ({ ...item }));
+}
+
+function resolveLangKey() {
+  if (currentLang === 'pt') return 'pt';
+  if (isEsLang()) return 'es';
+  return 'en';
+}
+
+function minZipDigitsForPickups(lang) {
+  return lang === 'pt' ? 8 : 5;
+}
+
+// Maps destination ZIP/CEP to a pickup region code used in mock store data.
+function resolvePickupRegion(zip, lang) {
+  if (!zip) return null;
+  if (lang === 'pt') {
+    if (zip.length < 5) return null;
+    const prefix = parseInt(zip.slice(0, 2), 10);
+    if (prefix >= 1 && prefix <= 5) return 'sp';
+    if (prefix >= 20 && prefix <= 28) return 'rj';
+    if (prefix >= 30 && prefix <= 39) return 'mg';
+    if (prefix >= 40 && prefix <= 49) return 'ne';
+    if (prefix >= 60 && prefix <= 69) return 'n';
+    if (prefix >= 80 && prefix <= 99) return 'sul';
+    return null;
+  }
+  if (lang === 'es') {
+    if (zip.length < 5) return null;
+    const prefix = parseInt(zip.slice(0, 2), 10);
+    if (prefix >= 1 && prefix <= 16) return 'cdmx';
+    if (prefix >= 20 && prefix <= 49) return 'occidente';
+    if (prefix >= 77 && prefix <= 79) return 'sureste';
+    return null;
+  }
+  if (zip.length < 5) return null;
+  const prefix3 = parseInt(zip.slice(0, 3), 10);
+  if ((prefix3 >= 100 && prefix3 <= 104) || (prefix3 >= 112 && prefix3 <= 114)) return 'ny';
+  if (prefix3 >= 770 && prefix3 <= 799) return 'tx';
+  if (prefix3 >= 980 && prefix3 <= 994) return 'wa';
+  if (prefix3 >= 900 && prefix3 <= 966) return 'ca';
+  return null;
+}
+
+function filterPickupsByRegion(pickups, zip, lang) {
+  const region = resolvePickupRegion(zip, lang);
+  if (!region) return [];
+  return pickups.filter(p => p.region === region);
+}
+
+// Varies mock results by ZIP/CEP prefix — enough difference to feel regional, not exhaustive.
+function resolveResultsByZip(d) {
+  const zip = document.getElementById('zip-input').value.replace(/\D/g, '');
+  const lang = resolveLangKey();
+  let slas = cloneRows(d.slas);
+  let excluded = cloneRows(d.excluded);
+  let pickups = filterPickupsByRegion(cloneRows(d.pickups), zip, lang);
+
+  if (currentLang === 'pt') {
+    const prefix = parseInt(zip.slice(0, 2) || '01', 10);
+    const isPharma = getDatasetKey() === 'pt-pharma';
+
+    if (isPharma) {
+      // PharmaTech — prazos curtos (máx. 4 dias úteis); regional só ajusta disponibilidade
+      if (prefix >= 20 && prefix <= 28) {
+        slas = slas.map(s => ({
+          ...s,
+          shippingEstimate: s.courierId === 'correios-pac' ? '4 dias úteis'
+            : s.courierId === 'correios-sedex' ? '3 dias úteis'
+            : s.shippingEstimate,
+          arrivalDate: s.courierId === 'correios-pac' ? '12 jun 2026'
+            : s.courierId === 'correios-sedex' ? '11 jun 2026'
+            : s.arrivalDate,
+          transitTime: s.courierId === 'correios-pac' ? '2 dias úteis'
+            : s.courierId === 'correios-sedex' ? '2 dias úteis'
+            : s.transitTime,
+          processingTime: s.courierId === 'correios-pac' ? '2 dias úteis'
+            : s.courierId === 'correios-sedex' ? '1 dia útil'
+            : s.processingTime
+        }));
+      } else if (prefix >= 40 && prefix <= 49) {
+        slas = slas.filter(s => !s.metroOnly).map(s => ({
+          ...s,
+          shippingEstimate: s.courierId === 'correios-pac' ? '4 dias úteis'
+            : s.courierId === 'correios-sedex' ? '3 dias úteis'
+            : s.shippingEstimate,
+          arrivalDate: s.courierId === 'correios-pac' ? '12 jun 2026'
+            : s.courierId === 'correios-sedex' ? '11 jun 2026'
+            : s.arrivalDate
+        }));
+        excluded = excluded.slice(0, 3);
+      } else if (prefix >= 60 && prefix <= 69) {
+        slas = slas.filter(s =>
+          s.courierId === 'correios-pac'
+          || s.courierId === 'correios-sedex'
+          || s.courierId === 'pharma-express-4h'
+          || s.courierId === 'pharma-express-6h'
+          || s.courierId === 'lala-move'
+        ).map(s => ({
+          ...s,
+          shippingEstimate: s.courierId === 'correios-pac' ? '4 dias úteis'
+            : s.courierId === 'correios-sedex' ? '3 dias úteis'
+            : s.shippingEstimate,
+          arrivalDate: s.courierId === 'correios-pac' ? '12 jun 2026'
+            : s.courierId === 'correios-sedex' ? '11 jun 2026'
+            : s.arrivalDate,
+          transitTime: s.courierId === 'correios-pac' ? '2 dias úteis'
+            : s.courierId === 'correios-sedex' ? '2 dias úteis'
+            : s.transitTime,
+          processingTime: s.courierId === 'correios-pac' ? '2 dias úteis'
+            : s.courierId === 'correios-sedex' ? '1 dia útil'
+            : s.processingTime,
+          qty: s.courierId === 'correios-pac' ? '15 unidades'
+            : s.courierId === 'correios-sedex' ? '4 unidades'
+            : s.qty
+        }));
+        excluded = excluded.slice(0, 3);
+      } else if (zip.length >= 5 && !(prefix >= 1 && prefix <= 5)) {
+        slas = slas.filter(s => !s.metroOnly).slice(0, 6);
+        excluded = excluded.slice(0, 2);
+      }
+      if (isMetroCep(prefix)) {
+        slas = slas.filter(s => !s.regionalOnly);
+      } else {
+        slas = slas.filter(s => !s.metroOnly);
+      }
+    } else if (prefix >= 1 && prefix <= 5) {
+      // FashionPrime SP — baseline
+    } else if (prefix >= 20 && prefix <= 28) {
+      // FashionPrime RJ — prazos maiores e tarifas mais altas
+      slas = slas.filter(s => !s.worksOnWeekends).map(s => ({
+        ...s,
+        price: s.courierId === 'correios-pac' ? 'R$ 14,50'
+          : s.courierId === 'correios-sedex' ? 'R$ 32,90'
+          : s.price,
+        shippingEstimate: s.courierId === 'correios-pac' ? '9 dias úteis' : s.shippingEstimate,
+        arrivalDate: s.courierId === 'correios-pac' ? '19 jun 2026' : s.arrivalDate
+      }));
+    } else if (prefix >= 40 && prefix <= 49) {
+      slas = slas.filter(s => !s.worksOnWeekends);
+      excluded = excluded.slice(0, 3);
+    } else if (prefix >= 60 && prefix <= 69) {
+      slas = slas.filter(s => s.courierId === 'correios-pac' || s.courierId === 'correios-sedex').map(s => ({
+        ...s,
+        shippingEstimate: s.courierId === 'correios-pac' ? '11 dias úteis' : '4 dias úteis',
+        arrivalDate: s.courierId === 'correios-pac' ? '23 jun 2026' : '13 jun 2026',
+        qty: s.courierId === 'correios-pac' ? '15 unidades' : '4 unidades'
+      }));
+      excluded = excluded.slice(0, 3);
+    } else if (zip.length >= 5) {
+      slas = slas.filter(s => !s.worksOnWeekends).slice(0, 2);
+      excluded = excluded.slice(0, 2);
+    }
+  } else if (isEsLang()) {
+    const prefix = parseInt(zip.slice(0, 2) || '01', 10);
+    if (prefix >= 1 && prefix <= 16) {
+      // CDMX y área metropolitana — baseline
+    } else if (prefix >= 20 && prefix <= 29) {
+      // Occidente — plazos un poco mayores
+      slas = slas.map(s => ({
+        ...s,
+        price: s.courierId === 'estafeta-estandar' ? 'MX$ 109' : s.price,
+        shippingEstimate: s.courierId === 'estafeta-estandar' ? '9 días hábiles' : s.shippingEstimate,
+        arrivalDate: s.courierId === 'estafeta-estandar' ? '19 jun 2026' : s.arrivalDate
+      }));
+    } else if (prefix >= 77 && prefix <= 79) {
+      // Sureste — mix reducido
+      slas = slas.filter(s => s.courierId === 'estafeta-estandar' || s.courierId === 'dhl-express').map(s => ({
+        ...s,
+        shippingEstimate: s.courierId === 'estafeta-estandar' ? '10 días hábiles' : s.shippingEstimate,
+        arrivalDate: s.courierId === 'estafeta-estandar' ? '22 jun 2026' : s.arrivalDate
+      }));
+      excluded = excluded.slice(0, 3);
+    } else if (zip.length >= 5) {
+      slas = slas.slice(0, 2);
+      excluded = excluded.slice(0, 2);
+    }
+  } else {
+    const prefix = parseInt(zip.slice(0, 3) || '100', 10);
+    if (prefix >= 995) {
+      // Zona remota — só ground
+      slas = slas.filter(s => s.courierId === 'ups-ground').map(s => ({
+        ...s,
+        shippingEstimate: '8 business days',
+        arrivalDate: 'Jun 18, 2026',
+        qty: '18 units'
+      }));
+      excluded = excluded.slice(0, 2);
+    } else if (prefix >= 770 && prefix <= 799) {
+      // Sul EUA — sem entrega de sábado
+      slas = slas.filter(s => !s.worksOnWeekends);
+    } else if (prefix >= 900 && prefix <= 966) {
+      // Costa oeste — expresso um pouco mais caro
+      slas = slas.map(s => ({
+        ...s,
+        price: s.courierId === 'fedex-express' ? '$ 27.90' : s.price
+      }));
+    }
+  }
+
+  return { slas, excluded, pickups };
 }
 
 // ── Simulate ──────────────────────────────────────────────────────────────────
 function simulate() {
-  const d = DATA[client];
-  const i = d.i18n;
+  const d = getData();
+  const i = getI18n();
   const scVal = document.getElementById('sel-sc').value;
   const errBox = document.getElementById('err-box');
 
@@ -913,49 +1747,146 @@ function simulate() {
 }
 
 // ── Build results ─────────────────────────────────────────────────────────────
-function buildResults(d, i) {
-  document.getElementById('res-count').textContent = d.slas.length + d.pickups.length;
+function slaBadges(sla) {
+  const i = getI18n();
+  let html = `<span class="type-badge ${sla.typeClass}">${sla.type}</span>`;
+  if (sla.scheduledDelivery) {
+    html += `<span class="scheduled-badge">${i['scheduled-badge']}</span>`;
+  }
+  if (sla.worksOnWeekends) {
+    html += `<span class="weekend-badge">${i['weekend-badge']}</span>`;
+  }
+  return html;
+}
 
-  const tbody = document.getElementById('sla-tbody');
-  tbody.innerHTML = '';
+function parseLeadDays(str) {
+  if (!str || str === '—') return 0;
+  const m = String(str).match(/(\d+)/);
+  return m ? parseInt(m[1], 10) : 0;
+}
 
-  // Delivery SLA rows
-  d.slas.forEach((sla, idx) => {
-    const hasKit = Object.values(selectedSkus).some(s => s.kit);
-    const detailId = `detail-${idx}`;
+function calcTotalLeadTime(sla) {
+  const estimate = sla.shippingEstimate || '';
+  if (/hora/i.test(estimate) || /hour/i.test(estimate)) return estimate;
+  const total = parseLeadDays(sla.transitTime) + parseLeadDays(sla.processingTime);
+  if (!total) return sla.shippingEstimate;
+  if (isEsLang()) return total === 1 ? '1 día hábil' : `${total} días hábiles`;
+  if (currentLang === 'en') return total === 1 ? '1 business day' : `${total} business days`;
+  return total === 1 ? '1 dia útil' : `${total} dias úteis`;
+}
 
-    // Main row
+function isPharmaDataset() {
+  return getDatasetKey() === 'pt-pharma';
+}
+
+function isMetroCep(prefix) {
+  return (prefix >= 1 && prefix <= 5) || (prefix >= 20 && prefix <= 28);
+}
+
+function isIndividualSimulation() {
+  return document.getElementById('chk-individual').checked;
+}
+
+function getSimulationItems() {
+  return Object.keys(selectedSkus)
+    .sort((a, b) => Number(a) - Number(b))
+    .map(id => ({
+      id,
+      sku: selectedSkus[id],
+      qty: parseInt(document.getElementById(`qty-inp-${id}`)?.value, 10) || 1
+    }));
+}
+
+function setCombinedResultsVisible(visible) {
+  document.getElementById('combined-results-wrap').classList.toggle('hidden', !visible);
+}
+
+function appendPickupTable(container, pickups, i) {
+  container.innerHTML = '';
+  const zipDigits = document.getElementById('zip-input').value.replace(/\D/g, '');
+  const langKey = resolveLangKey();
+  const zipComplete = zipDigits.length >= minZipDigitsForPickups(langKey);
+
+  if (!zipComplete) {
+    container.innerHTML = `<p class="pickup-empty">${i['pickup-empty-zip']}</p>`;
+    return;
+  }
+  if (!pickups.length) {
+    container.innerHTML = `<p class="pickup-empty">${i['pickup-empty-region']}</p>`;
+    return;
+  }
+
+  const tbl = document.createElement('table');
+  tbl.className = 'pickup-table';
+  tbl.innerHTML = `<thead><tr>
+    <th>${i['col-pickup-store']}</th>
+    <th>${i['col-pickup-hours']}</th>
+    <th>${i['col-pickup-price']}</th>
+    <th>${i['col-pickup-avail']}</th>
+  </tr></thead><tbody></tbody>`;
+  const pickupTbody = tbl.querySelector('tbody');
+  pickups.forEach(p => {
     const tr = document.createElement('tr');
-    tr.className = 'sla-row';
-    tr.id = `sla-row-${idx}`;
     tr.innerHTML = `
       <td>
-        <div class="sla-carrier-col">
-          <span class="sla-carrier-name">${sla.name}</span>
-          <span class="type-badge ${sla.typeClass}">${sla.type}</span>
-        </div>
+        <div class="pickup-store-name">${p.storeName}</div>
+        <div class="pickup-meta">${ICON.pin} ${p.address}</div>
       </td>
-      <td><span class="sla-price">${sla.price}</span></td>
+      <td><div class="pickup-meta pickup-meta-inline">${ICON.clock} ${p.hours}</div></td>
+      <td><div class="pickup-price">${p.price}</div></td>
       <td>
-        <div class="sla-deadline">${sla.shippingEstimate}</div>
-        <div class="sla-deadline-sub">${sla.arrivalDate}</div>
-      </td>
-      <td><span class="sla-qty">${sla.qty}</span></td>
-      <td>
-        <button class="btn-details" id="btn-${idx}" onclick="toggleDetails(${idx})">
-          ${i['btn-show-details']} ${ICON.chevron}
-        </button>
+        <div class="pickup-date">${p.readyDate}</div>
+        <div class="pickup-label">${p.readyLabel}</div>
       </td>`;
-    tbody.appendChild(tr);
+    pickupTbody.appendChild(tr);
+  });
+  container.appendChild(tbl);
+}
 
-    // Detail row (hidden by default)
-    const trDetail = document.createElement('tr');
-    trDetail.className = 'sla-details-row hidden';
-    trDetail.id = detailId;
+function appendExcludedSection(parent, excluded, i, blockId) {
+  if (!excluded.length) return;
+  const section = document.createElement('div');
+  section.className = 'excluded-section';
+  section.innerHTML = `
+    <div class="excluded-header" onclick="toggleExcludedBlock('${blockId}')">
+      <div class="excluded-header-left">
+        <span class="excluded-title">${i['lbl-excluded-section']}</span>
+        <span class="excluded-count">${excluded.length}</span>
+      </div>
+      <span class="excluded-chevron" id="excluded-chevron-${blockId}">▾</span>
+    </div>
+    <div class="excluded-body" id="excluded-body-${blockId}">
+      <table class="excluded-table">
+        <thead>
+          <tr>
+            <th>${i['col-carrier']}</th>
+            <th>${i['col-excluded-reason']}</th>
+          </tr>
+        </thead>
+        <tbody id="excluded-tbody-${blockId}"></tbody>
+      </table>
+    </div>`;
+  parent.appendChild(section);
+  const exTbody = section.querySelector(`#excluded-tbody-${blockId}`);
+  excluded.forEach(ex => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="excluded-name-cell">
+        ${ex.name}
+        <span class="type-badge ${ex.typeClass} badge-muted">${ex.type}</span>
+      </td>
+      <td>${ex.reason}</td>`;
+    exTbody.appendChild(tr);
+  });
+}
 
+function appendSlaRows(tbody, slas, i, hasKit, keyPrefix) {
+  slas.forEach((sla, idx) => {
+    const detailKey = keyPrefix ? `${keyPrefix}-${idx}` : String(idx);
+    const totalLeadTime = calcTotalLeadTime(sla);
     const processingTime = sla.processingTime || '—';
     const kitExtra = hasKit ? `
-      <div class="detail-block" style="grid-column:1/-1">
+      <div class="detail-block detail-block-full">
         <div class="detail-block-title">${i['lbl-postal']} / ${i['lbl-weight']}</div>
         <div class="detail-meta-row">
           <div class="detail-meta-item">
@@ -969,6 +1900,32 @@ function buildResults(d, i) {
         </div>
       </div>` : '';
 
+    const tr = document.createElement('tr');
+    tr.className = 'sla-row';
+    tr.id = `sla-row-${detailKey}`;
+    tr.innerHTML = `
+      <td>
+        <div class="sla-carrier-col">
+          <span class="sla-carrier-name">${sla.name}</span>
+          ${slaBadges(sla)}
+        </div>
+      </td>
+      <td><span class="sla-price">${sla.price}</span></td>
+      <td>
+        <div class="sla-deadline">${sla.shippingEstimate}</div>
+        <div class="sla-deadline-sub">${sla.arrivalDate}</div>
+      </td>
+      <td><span class="sla-qty">${sla.qty}</span></td>
+      <td>
+        <button class="btn-details" id="btn-${detailKey}" onclick="toggleDetails('${detailKey}')">
+          ${i['btn-show-details']} ${ICON.chevron}
+        </button>
+      </td>`;
+    tbody.appendChild(tr);
+
+    const trDetail = document.createElement('tr');
+    trDetail.className = 'sla-details-row hidden';
+    trDetail.id = `detail-${detailKey}`;
     trDetail.innerHTML = `<td colspan="5">
       <div class="details-panel">
         <div class="detail-block">
@@ -976,15 +1933,22 @@ function buildResults(d, i) {
           <div class="route-chain">
             <span class="route-node">
               ${sla.warehouseName}
-              <span style="color:#A1AAB7;font-size:10.5px;font-family:'SF Mono','Fira Mono',monospace;margin-left:4px">${sla.warehouseId}</span>
+              <span class="route-id">${sla.warehouseId}</span>
             </span>
             <span class="route-arrow">→</span>
             <span class="route-node">
               ${sla.dockName}
-              <span style="color:#A1AAB7;font-size:10.5px;font-family:'SF Mono','Fira Mono',monospace;margin-left:4px">${sla.dockId}</span>
+              <span class="route-id">${sla.dockId}</span>
             </span>
             <span class="route-arrow">→</span>
-            <span class="route-node">${sla.name}</span>
+            <span class="route-node policy">
+              ${sla.policyName}
+              <span class="route-id">${sla.policyId}</span>
+            </span>
+          </div>
+          <div class="route-sla-note">
+            <span class="route-sla-label">${i['lbl-sla-type']}</span>
+            <span class="type-badge ${sla.typeClass}">${sla.type}</span>
           </div>
         </div>
         <div class="detail-block">
@@ -1001,79 +1965,180 @@ function buildResults(d, i) {
             <span class="calc-label">${i['lbl-estimate-date']}</span>
             <span class="calc-val">${sla.arrivalDate}</span>
           </div>
-          ${sla.worksOnWeekends ? `<div class="calc-row"><span class="calc-label">${i['weekend-badge']}</span><span class="calc-val"><svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2.5 7L5.5 10L11.5 4" stroke="#142032" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div>` : ''}
+          <div class="calc-row calc-row-total">
+            <span class="calc-label">${i['lbl-total']}</span>
+            <span class="calc-val">${totalLeadTime}</span>
+          </div>
         </div>
         ${kitExtra}
       </div>
     </td>`;
     tbody.appendChild(trDetail);
   });
-
-  // Excluded carriers
-  d.excluded.forEach(ex => {
-    const tr = document.createElement('tr');
-    tr.className = 'sla-excluded-row';
-    tr.innerHTML = `
-      <td>
-        <div class="excluded-carrier">
-          <span class="excluded-x">
-            <svg width="8" height="8" viewBox="0 0 8 8" fill="none"><path d="M1 1l6 6M7 1L1 7" stroke="#A1AAB7" stroke-width="1.5" stroke-linecap="round"/></svg>
-          </span>
-          <span class="excluded-name">${ex.name}</span>
-          <span class="type-badge ${ex.typeClass}" style="opacity:.6">${ex.type}</span>
-        </div>
-      </td>
-      <td colspan="3" class="excluded-reason">${ex.reason}</td>
-      <td></td>`;
-    tbody.appendChild(tr);
-  });
-
-  // Pickup cards
-  const pickupList = document.getElementById('pickup-list');
-  pickupList.innerHTML = '';
-  const tbl = document.createElement('table');
-  tbl.className = 'pickup-table';
-  tbl.innerHTML = `<thead><tr>
-    <th>${i['col-pickup-store']}</th>
-    <th>${i['col-pickup-hours']}</th>
-    <th>${i['col-pickup-price']}</th>
-    <th>${i['col-pickup-avail']}</th>
-  </tr></thead><tbody></tbody>`;
-  const pickupTbody = tbl.querySelector('tbody');
-  d.pickups.forEach(p => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>
-        <div class="pickup-store-name">${p.storeName}</div>
-        <div class="pickup-meta">${ICON.pin} ${p.address}</div>
-      </td>
-      <td><div class="pickup-meta" style="margin-top:0">${ICON.clock} ${p.hours}</div></td>
-      <td><div class="pickup-price">${p.price}</div></td>
-      <td>
-        <div class="pickup-date">${p.readyDate}</div>
-        <div class="pickup-label">${p.readyLabel}</div>
-      </td>`;
-    pickupTbody.appendChild(tr);
-  });
-  pickupList.appendChild(tbl);
 }
 
-function toggleDetails(idx) {
-  const row = document.getElementById(`detail-${idx}`);
-  const btn = document.getElementById(`btn-${idx}`);
-  const i = DATA[client].i18n;
+function buildIndividualResults(d, i) {
+  const wrap = document.getElementById('individual-results-wrap');
+  wrap.innerHTML = '';
+  const items = getSimulationItems();
+  const { slas, excluded, pickups } = resolveResultsByZip(d);
+
+  if (!items.length) {
+    wrap.innerHTML = `<p class="delivery-only-notice">${i['recents-empty']}</p>`;
+    return;
+  }
+
+  items.forEach(item => {
+    const block = document.createElement('div');
+    block.className = 'item-sim-block';
+
+    const header = document.createElement('div');
+    header.className = 'item-sim-header';
+    header.innerHTML = `
+      <span class="item-sim-name">${item.sku.name}${skuExtraTags(item.sku)}</span>
+      <span class="item-sim-meta">${item.sku.meta} · ${i['item-qty'](item.qty)}</span>`;
+    block.appendChild(header);
+
+    if (item.sku.pickupOnly) {
+      const notice = document.createElement('p');
+      notice.className = 'delivery-only-notice';
+      notice.textContent = i['pickup-only-notice-item'](item.sku.name);
+      block.appendChild(notice);
+
+      const pickupDivider = document.createElement('div');
+      pickupDivider.className = 'section-divider section-divider-spaced';
+      pickupDivider.innerHTML = `
+        <span class="section-divider-label">${i['lbl-pickup-section']}</span>
+        <span class="section-divider-line"></span>`;
+      block.appendChild(pickupDivider);
+
+      const pickupContainer = document.createElement('div');
+      appendPickupTable(pickupContainer, pickups, i);
+      block.appendChild(pickupContainer);
+    } else {
+      const deliveryDivider = document.createElement('div');
+      deliveryDivider.className = 'section-divider';
+      deliveryDivider.innerHTML = `
+        <span class="section-divider-label">${i['lbl-delivery-section']}</span>
+        <span class="section-divider-line"></span>`;
+      block.appendChild(deliveryDivider);
+
+      const table = document.createElement('table');
+      table.className = 'sla-table';
+      table.innerHTML = `<thead><tr>
+        <th>${i['col-carrier']}</th>
+        <th>${i['col-price']}</th>
+        <th>${i['col-deadline']}</th>
+        <th>${i['col-qty']}</th>
+        <th></th>
+      </tr></thead><tbody></tbody>`;
+      const tbody = table.querySelector('tbody');
+      appendSlaRows(tbody, slas, i, !!item.sku.kit, `item-${item.id}`);
+      block.appendChild(table);
+      appendExcludedSection(block, excluded, i, `item-${item.id}`);
+    }
+
+    wrap.appendChild(block);
+  });
+}
+
+function buildCombinedResults(d, i) {
+  const blockAllDelivery = hasPickupOnlyItems();
+  let { slas, excluded, pickups } = resolveResultsByZip(d);
+
+  if (blockAllDelivery) {
+    slas = [];
+    excluded = [];
+  }
+
+  const deliveryTableWrap = document.getElementById('delivery-table-wrap');
+  const pickupOnlyNotice = document.getElementById('pickup-only-notice');
+  if (blockAllDelivery) {
+    deliveryTableWrap.classList.add('hidden');
+    pickupOnlyNotice.textContent = i['pickup-only-notice'];
+    pickupOnlyNotice.classList.remove('hidden');
+  } else {
+    deliveryTableWrap.classList.remove('hidden');
+    pickupOnlyNotice.classList.add('hidden');
+  }
+
+  const tbody = document.getElementById('sla-tbody');
+  tbody.innerHTML = '';
+  const hasKit = Object.values(selectedSkus).some(s => s.kit);
+  appendSlaRows(tbody, slas, i, hasKit, '');
+
+  const exSection = document.getElementById('excluded-section');
+  const exTbody = document.getElementById('excluded-tbody');
+  exTbody.innerHTML = '';
+  if (excluded.length) {
+    exSection.classList.remove('hidden');
+    document.getElementById('excluded-count').textContent = excluded.length;
+    document.getElementById('excluded-body').classList.remove('open');
+    document.getElementById('excluded-chevron').classList.remove('open');
+    excluded.forEach(ex => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td class="excluded-name-cell">
+          ${ex.name}
+          <span class="type-badge ${ex.typeClass} badge-muted">${ex.type}</span>
+        </td>
+        <td>${ex.reason}</td>`;
+      exTbody.appendChild(tr);
+    });
+  } else {
+    exSection.classList.add('hidden');
+  }
+
+  appendPickupTable(document.getElementById('pickup-list'), pickups, i);
+}
+
+function buildResults(d, i) {
+  if (isIndividualSimulation()) {
+    setCombinedResultsVisible(false);
+    document.getElementById('individual-results-wrap').classList.remove('hidden');
+    buildIndividualResults(d, i);
+    return;
+  }
+
+  document.getElementById('individual-results-wrap').classList.add('hidden');
+  document.getElementById('individual-results-wrap').innerHTML = '';
+  setCombinedResultsVisible(true);
+  buildCombinedResults(d, i);
+}
+
+function toggleDetails(detailKey) {
+  const row = document.getElementById(`detail-${detailKey}`);
+  const btn = document.getElementById(`btn-${detailKey}`);
+  if (!row || !btn) return;
+  const i = getI18n();
   const isOpen = !row.classList.contains('hidden');
   row.classList.toggle('hidden', isOpen);
   btn.classList.toggle('open', !isOpen);
   btn.innerHTML = `${isOpen ? i['btn-show-details'] : i['btn-hide-details']} ${ICON.chevron}`;
 }
 
+function toggleExcluded() {
+  document.getElementById('excluded-body').classList.toggle('open');
+  document.getElementById('excluded-chevron').classList.toggle('open');
+}
+
+function toggleExcludedBlock(blockId) {
+  document.getElementById(`excluded-body-${blockId}`).classList.toggle('open');
+  document.getElementById(`excluded-chevron-${blockId}`).classList.toggle('open');
+}
+
 function resetForm() {
-  document.getElementById('sel-sc').selectedIndex = 0;
+  const sel = document.getElementById('sel-sc');
+  sel.selectedIndex = 0;
+  sel.classList.add('select-ph');
   document.getElementById('ctx-badge').classList.add('hidden');
   document.getElementById('zip-input').value = '';
   document.getElementById('err-box').classList.remove('show');
   document.getElementById('results-card').classList.add('hidden');
+  document.getElementById('excluded-section').classList.add('hidden');
+  document.getElementById('individual-results-wrap').classList.add('hidden');
+  document.getElementById('individual-results-wrap').innerHTML = '';
+  setCombinedResultsVisible(true);
   document.getElementById('sku-rows').innerHTML = '';
   rowCount = 0; selectedSkus = {}; openDetails.clear();
   buildSellerList();
@@ -1095,7 +2160,7 @@ let recentSimulations = [];
 function recentsStorageKey() {
   // Format: vtex_sim_recents_{accountName}_{userId}
   // Prototype mock: vtex_sim_recents_{client}_demo_user
-  return `vtex_sim_recents_${DATA[client].account}_demo_user`;
+  return `vtex_sim_recents_${getDatasetKey()}_demo_user`;
 }
 
 function loadRecentsFromStorage() {
@@ -1116,21 +2181,32 @@ function saveRecentsToStorage(entries) {
 
 // Mock data — pre-populated past simulations
 const MOCK_RECENTS = {
-  pt: [
-    { sc:'1 — Ecommerce BR', seller:'Drogarias Pacheco Botafogo', sku:'Vitamina C 1000mg 60 comp.', zip:'01310-100', qty:2, ts: Date.now() - 1000*60*47 },
-    { sc:'1 — Ecommerce BR', seller:'Drogarias Pacheco',          sku:'Dipirona Sódica 500mg 20 comp.', zip:'22241-000', qty:1, ts: Date.now() - 1000*60*60*3 },
-    { sc:'2 — Ecommerce RJ', seller:'Drogarias Pacheco Barra',    sku:'Protetor Solar FPS 50 120ml', zip:'22070-010', qty:1, ts: Date.now() - 1000*60*60*26 },
+  'pt-pharma': [
+    { sc:'1 — E-commerce',    seller:'PharmaTech Jardins',      sku:'Mounjaro 2,5mg — 4 canetas', zip:'01426-000', qty:1, ts: Date.now() - 1000*60*47 },
+    { sc:'2 — Mercado Livre', seller:'PharmaTech Copacabana',   sku:'Novalgina 500mg — 10 comprimidos', zip:'22041-000', qty:2, ts: Date.now() - 1000*60*60*3 },
+    { sc:'3 — Amazon',        seller:'PharmaTech Boa Viagem',   sku:'Fralda Pampers Confort Sec — Tam. M — 40 un.', zip:'51020-000', qty:1, ts: Date.now() - 1000*60*60*26 },
   ],
-  en: [
-    { sc:'1 — US Ecommerce',     seller:'Road Runner San Diego',   sku:'Running Shoe X Pro', zip:'92101', qty:1, ts: Date.now() - 1000*60*32 },
-    { sc:'2 — Canada Ecommerce', seller:'Road Runner Los Angeles', sku:'Trail Vest Lite',    zip:'90210', qty:2, ts: Date.now() - 1000*60*60*5 },
+  'pt-fashion': [
+    { sc:'1 — E-commerce',    seller:'FashionPrime Ipanema',    sku:'Vestido Midi Floral — Tam. M', zip:'22410-000', qty:1, ts: Date.now() - 1000*60*40 },
+    { sc:'2 — Mercado Livre', seller:'FashionPrime Savassi',    sku:'Tênis Run Max — Tam. 40', zip:'30130-100', qty:1, ts: Date.now() - 1000*60*60*2 },
+    { sc:'4 — Tele vendas',   seller:'FashionPrime Moinhos de Vento', sku:'Bolsa Couro Premium — Preta', zip:'90430-000', qty:1, ts: Date.now() - 1000*60*60*20 },
+  ],
+  'en-fashion': [
+    { sc:'1 — E-commerce',    seller:'FashionPrime SoHo',     sku:'Run Max Sneaker — Size 10', zip:'10012', qty:1, ts: Date.now() - 1000*60*32 },
+    { sc:'3 — Amazon',        seller:'FashionPrime Brooklyn', sku:'Floral Midi Dress — Size M', zip:'11217', qty:2, ts: Date.now() - 1000*60*60*5 },
+    { sc:'4 — Telesales',     seller:'FashionPrime Houston',  sku:'Premium Leather Bag — Black', zip:'77002', qty:1, ts: Date.now() - 1000*60*60*8 },
+  ],
+  'es-fashion': [
+    { sc:'1 — E-commerce',    seller:'FashionPrime Polanco', sku:'Tenis Run Max — Talla 40', zip:'11560', qty:1, ts: Date.now() - 1000*60*35 },
+    { sc:'3 — Amazon',        seller:'FashionPrime Roma',    sku:'Vestido Midi Floral — Talla M', zip:'06700', qty:2, ts: Date.now() - 1000*60*60*4 },
+    { sc:'4 — Televentas',    seller:'FashionPrime Condesa', sku:'Bolsa Piel Premium — Negra', zip:'06140', qty:1, ts: Date.now() - 1000*60*60*18 },
   ]
 };
 
 function initRecents() {
   const stored = loadRecentsFromStorage();
   // Use stored entries if they exist; otherwise seed with mock data for demo purposes
-  recentSimulations = stored.length ? stored : [...MOCK_RECENTS[client]];
+  recentSimulations = stored.length ? stored : [...(MOCK_RECENTS[getDatasetKey()] || [])];
   if (!stored.length) saveRecentsToStorage(recentSimulations); // persist mock seed
   renderRecents();
 }
@@ -1140,14 +2216,26 @@ function formatRelativeTime(ts) {
   const m = Math.floor(diff / 60000);
   const h = Math.floor(m / 60);
   const d = Math.floor(h / 24);
-  if (m < 1)  return client === 'pt' ? 'agora mesmo' : 'just now';
-  if (m < 60) return client === 'pt' ? `há ${m} min` : `${m}m ago`;
-  if (h < 24) return client === 'pt' ? `há ${h}h` : `${h}h ago`;
-  return client === 'pt' ? `há ${d}d` : `${d}d ago`;
+  if (isPtLang()) {
+    if (m < 1) return 'agora mesmo';
+    if (m < 60) return `há ${m} min`;
+    if (h < 24) return `há ${h}h`;
+    return `há ${d}d`;
+  }
+  if (isEsLang()) {
+    if (m < 1) return 'ahora mismo';
+    if (m < 60) return `hace ${m} min`;
+    if (h < 24) return `hace ${h} h`;
+    return `hace ${d} d`;
+  }
+  if (m < 1) return 'just now';
+  if (m < 60) return `${m}m ago`;
+  if (h < 24) return `${h}h ago`;
+  return `${d}d ago`;
 }
 
 function renderRecents() {
-  const i = DATA[client].i18n;
+  const i = getI18n();
   const list = document.getElementById('recents-list');
   const badge = document.getElementById('recents-badge');
   badge.textContent = recentSimulations.length;
@@ -1158,7 +2246,7 @@ function renderRecents() {
   list.innerHTML = recentSimulations.map((r, idx) => `
     <div class="recent-item" onclick="restoreRecent(${idx})">
       <div class="recent-item-left">
-        <div class="recent-item-title">${r.sku}${r.qty > 1 ? ` <span style="font-size:11px;color:#5B6E84;">×${r.qty}</span>` : ''}</div>
+        <div class="recent-item-title">${r.sku}${r.qty > 1 ? ` <span class="recent-qty">×${r.qty}</span>` : ''}</div>
         <div class="recent-item-meta">
           <span>${r.zip}</span>
           <span>·</span>
@@ -1167,7 +2255,7 @@ function renderRecents() {
           <span>${r.sc}</span>
         </div>
       </div>
-      <div style="display:flex;align-items:center;gap:10px;flex-shrink:0">
+      <div class="recent-item-actions">
         <span class="recent-item-time">${formatRelativeTime(r.ts)}</span>
         <button class="recent-item-restore" onclick="event.stopPropagation();restoreRecent(${idx})">${i['recents-restore']} →</button>
       </div>
@@ -1182,17 +2270,51 @@ function toggleRecents() {
   chevron.classList.toggle('open', !isOpen);
 }
 
+function normalizeText(s) {
+  return String(s || '').toLowerCase().replace(/[—–-]/g, '-').replace(/\s+/g, ' ').trim();
+}
+
+function findSkuByName(name, skus) {
+  const target = normalizeText(name);
+  return skus.find(s => normalizeText(s.name) === target)
+    || skus.find(s => normalizeText(s.name).includes(target) || target.includes(normalizeText(s.name)));
+}
+
+function setScFromRecent(r) {
+  const scSel = document.getElementById('sel-sc');
+  if (r.scId) {
+    scSel.value = r.scId;
+    if (scSel.value === r.scId) {
+      onScChange();
+      return;
+    }
+  }
+  for (let i = 0; i < scSel.options.length; i++) {
+    if (scSel.options[i].text === r.sc) {
+      scSel.selectedIndex = i;
+      onScChange();
+      return;
+    }
+  }
+  const scNum = String(r.sc || '').match(/^(\d+)/)?.[1];
+  if (scNum) {
+    scSel.value = scNum;
+    onScChange();
+  }
+}
+
 function saveCurrentSimulation() {
-  const d = DATA[client];
   const scEl = document.getElementById('sel-sc');
   const scLabel = scEl.options[scEl.selectedIndex]?.text || '';
   const skuNames = Object.values(selectedSkus).map(s => s.name);
   if (!skuNames.length) return;
   const zip = document.getElementById('zip-input').value;
-  const qty = parseInt(document.getElementById('qty-inp-1')?.value || 1);
+  const qty = parseInt(document.getElementById('qty-inp-1')?.value || 1, 10);
   const entry = {
     sc: scLabel,
+    scId: scEl.value,
     seller: selectedSeller?.name || '—',
+    sellerId: selectedSeller?.v || '',
     sku: skuNames.join(', '),
     zip,
     qty,
@@ -1204,18 +2326,40 @@ function saveCurrentSimulation() {
   if (recentSimulations.length > MAX_RECENTS) recentSimulations = recentSimulations.slice(0, MAX_RECENTS);
   saveRecentsToStorage(recentSimulations);
   renderRecents();
-  // Auto-open the recents bar to show the saved entry
-  document.getElementById('recents-body').classList.add('open');
-  document.getElementById('recents-chevron').classList.add('open');
 }
 
 function restoreRecent(idx) {
   const r = recentSimulations[idx];
-  // Restore ZIP
+  const d = getData();
+
+  setScFromRecent(r);
+
+  const seller = r.sellerId
+    ? d.sellers.find(s => s.v === r.sellerId)
+    : d.sellers.find(s => s.name === r.seller);
+  if (seller) pickSeller(seller);
+  else if (r.seller && r.seller !== '—') {
+    clearSellerSelection();
+    document.getElementById('seller-search').value = r.seller;
+  }
+
+  document.getElementById('sku-rows').innerHTML = '';
+  rowCount = 0;
+  selectedSkus = {};
+  addRow();
+
+  const skuName = r.sku.split(',')[0].trim();
+  const sku = findSkuByName(skuName, d.skus);
+  if (sku) pickSku(1, sku);
+
+  const qtyInp = document.getElementById('qty-inp-1');
+  if (qtyInp && r.qty) qtyInp.value = r.qty;
   document.getElementById('zip-input').value = r.zip;
-  // Scroll to form and highlight ZIP
-  document.getElementById('zip-input').focus();
-  // Show a subtle toast
+
+  document.getElementById('err-box').classList.remove('show');
+  openDetails.clear();
+
+  simulate();
   showRestoreToast(r);
 }
 
@@ -1224,11 +2368,14 @@ function showRestoreToast(r) {
   if (!toast) {
     toast = document.createElement('div');
     toast.id = 'restore-toast';
-    toast.style.cssText = 'position:fixed;bottom:24px;right:24px;background:#142032;color:#fff;padding:10px 16px;border-radius:8px;font-size:12px;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,0.18);transition:opacity .3s';
+    toast.style.cssText = 'position:fixed;bottom:24px;right:24px;background:#142032;color:#fff;padding:12px 16px;border-radius:4px;font-size:13px;font-weight:500;line-height:1.4;z-index:9999;box-shadow:0 8px 24px rgba(20,32,50,0.24);transition:opacity .3s;max-width:360px';
     document.body.appendChild(toast);
   }
-  const isBR = client === 'pt';
-  toast.textContent = isBR ? `Simulação restaurada: ${r.sku} · ${r.zip}` : `Simulation restored: ${r.sku} · ${r.zip}`;
+  toast.textContent = isPtLang()
+    ? `Simulação restaurada e executada: ${r.sku} · ${r.zip}`
+    : isEsLang()
+      ? `Simulación restaurada y ejecutada: ${r.sku} · ${r.zip}`
+      : `Simulation restored and run: ${r.sku} · ${r.zip}`;
   toast.style.opacity = '1';
   clearTimeout(toast._t);
   toast._t = setTimeout(() => { toast.style.opacity = '0'; }, 2800);

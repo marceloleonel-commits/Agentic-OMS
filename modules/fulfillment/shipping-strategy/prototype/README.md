@@ -15,6 +15,7 @@ A redesigned version of the current simulator using Shoreline (VTEX's design sys
 - Replace legacy UI components with Shoreline equivalents
 - Fix known issues: currency display (KI 514551) and kit metadata display (KI 1382356)
 - Expose rejection reasons, inventory details, and route analysis in a structured way
+- Surface **scheduled delivery** prominently in the result row (P0 — **Entrega agendada** badge on carriers like Lala Move)
 - Support multi-item simulation
 
 ### 2. Agentic UI (`/agentic-ui`)
@@ -65,6 +66,7 @@ Accessibility behavior, exact prop/variant APIs, and runtime design system integ
 | `.combo-input` + `.combo-dropdown` | `Combobox` (`ComboboxInput`, `ComboboxItem`, `ComboboxList`, `ComboboxPopover`) | Seller search + SKU search |
 | `.type-badge` (gray) | `Tag color="gray"` | Shipping type: Standard/Padrão |
 | `.type-badge.express` | `Tag color="orange"` | Shipping type: Express |
+| `.scheduled-badge` | Custom badge (Tag-like) | **P0** — Scheduled delivery / Entrega agendada in result row |
 | `.weekend-badge` | `Tag color="blue"` | Works on weekends indicator |
 | `.results-count` | `Tag color="blue"` | Result count pill |
 | `.error-box` | `Alert variant="critical"` | Left 4px border, `#FFF1F3` bg |
