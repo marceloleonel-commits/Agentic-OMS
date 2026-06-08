@@ -38,16 +38,33 @@ Supply Lot, API-only since 2020 with no Admin UI and no updates since 2021, does
 
 ## Who Benefits
 
-| Account | Need | Workaround today |
+Only **Fast Shop** and **Samsung** are current clients; the remaining accounts are prospects. The prospects are relevant because they raised this requirement in their **RFPs** — VTEX is being actively evaluated on it, so the gap has a direct impact on deal qualification.
+
+| Account | Type | Need | Workaround today |
+|---|---|---|---|
+| Fast Shop | Client | Anchored delivery promise for scheduled replenishments | Manual daily lead time adjustment |
+| Samsung | Client | Sell high-ticket electronics during the pre-arrival window | Manual daily lead time adjustment |
+| Container Store | Prospect | Automatic backorder release when stock arrives | Manual WMS-to-VTEX intervention |
+| World Wide Golf | Prospect | Automatic backorder release when stock arrives | Manual WMS-to-VTEX intervention |
+| ODP | Prospect | Future stock visibility — today SKUs go unavailable with no workaround | None |
+| NFI Parts | Prospect | Track backordered inventory and sell with a scheduled availability date | `[PM INPUT NEEDED]` |
+| Kirklands | Prospect | Pre-order with quantity cap and shopper notification on availability | Not possible today |
+| Chick-fil-A | Prospect | Native item status signals: in stock / out of stock / back ordered / pre-order | Not possible today |
+
+---
+
+## Discovery & Feedback Outcomes
+
+The discovery feedback round — interviews with solution engineers, solution architects, and commerce engineers from the Growth team (captured on the Miro board) — produced the outcomes below. Some are decided; others remain open and shape scope before engineering handoff. Detailed per-case context lives in `product-spec.md`.
+
+| Topic | What we learned | Status |
 |---|---|---|
-| Fast Shop | Anchored delivery promise for scheduled replenishments | Manual daily lead time adjustment |
-| Samsung | Sell high-ticket electronics during the pre-arrival window | Manual daily lead time adjustment |
-| Container Store | Automatic backorder release when stock arrives | Manual WMS-to-VTEX intervention |
-| World Wide Golf | Automatic backorder release when stock arrives | Manual WMS-to-VTEX intervention |
-| ODP | Future stock visibility — today SKUs go unavailable with no workaround | None |
-| NFI Parts | Track backordered inventory and sell with a scheduled availability date | `[PM INPUT NEEDED]` |
-| Kirklands | Pre-order with quantity cap and shopper notification on availability | Not possible today |
-| Chick-fil-A | Native item status signals: in stock / out of stock / back ordered / pre-order | Not possible today |
+| **Split shipment** — a cart mixes immediate and future stock: ship each item as it becomes available, or wait and send everything together? | The merchant configures the default — always split or always consolidate — since separate shipping doesn't make sense for every merchant. Desired evolution: the rule could also vary by product category, and the shopper could be allowed to choose at checkout (connects to multi-checkout). | **Open** — define v1 scope: merchant-level default only, or also per-category granularity and shopper choice. (Spec Case 6) |
+| **Lot arrival discrepancy** — a lot arrives with fewer units than registered (damaged or lost in transit). | Reservations left over-committed may need a reallocation flow. | **Open** — automatic reallocation vs. merchant action. (Spec Case 16) |
+| **Lifecycle ownership for ERP-driven B2B** — accounts whose ERP already controls inventory stages (e.g., AramisB2B). | Platform visibility of the future lot may be enough; the round leaned toward a passive approach for these accounts. | **Open** — scope boundary: how much of the lifecycle the platform owns natively. (Spec Open Question 6) |
+| **Which lot fulfills an order** — when a SKU has several future lots. | Always FIFO by arrival date — the nearest upcoming date is consumed first. | **Decided.** (Spec Case 10) |
+| **Communication on lot changes** — a lot's date or quantity changes while it has active reservations. | No platform-driven communication to the merchant or the shopper. Behaves exactly like inventory management does today. | **Decided.** (Spec Case 12) |
+| **Seller allocation: future vs. immediate stock** — should immediate stock be preferred over future stock? | Not a hardcoded rule; it should be one of several merchant-defined variables in the future allocation engine. | **Insight to hand off** to the Order Allocation team — not a decision for this spec. (Spec Case 8) |
 
 ---
 
@@ -56,3 +73,4 @@ Supply Lot, API-only since 2020 with no Admin UI and no updates since 2021, does
 | Date | Author | Change |
 |---|---|---|
 | May 2026 | Carolina Tourinho | Initial draft |
+| Jun 2026 | Carolina Tourinho | Added "Discovery & Feedback Outcomes" section from the discovery feedback round (interviews with solution engineers, solution architects, and commerce engineers from the Growth team). Decided: FIFO-by-arrival-date lot allocation and no platform-driven communication on lot changes. Open: split-shipment scope, lot arrival discrepancy, ERP-driven B2B lifecycle ownership. Seller allocation flagged as an insight for the Order Allocation team. |
