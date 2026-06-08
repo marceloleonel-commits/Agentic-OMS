@@ -124,6 +124,7 @@ window.IconPencil = IconPencil;
 window.IconCube = IconCube;
 window.IconCursorFill = IconCursorFill;
 window.IconDragDots = IconDragDots;
+window.IconDotsSixVertical = IconDotsSixVertical;
 window.IconPlayCircleFill = IconPlayCircleFill;
 window.IconCaretLeftSmall = IconCaretLeftSmall;
 window.useState = useState;

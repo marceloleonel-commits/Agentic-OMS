@@ -212,7 +212,7 @@ function App() {
         <button className="dd-item" onClick={() => setRoute({ name: "workflow-board" })}>
           <span className="dd-item-icon"><Icon name="board" size={14} /></span>
           <span>
-            <span className="dd-item-label">Workflow Settings</span>
+            <span className="dd-item-label">Gerenciador de Experiências</span>
             <span className="dd-item-sub">7 workflows configurados</span>
           </span>
         </button>

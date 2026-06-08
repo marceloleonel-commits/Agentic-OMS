@@ -585,7 +585,6 @@ function TaskConfigView({ workflow, taskId, taskActionsRef, onDirtyChange }) {
           <button className="field-cite-btn" title="Citar no chat" onClick={e => { e.stopPropagation(); chatCite?.(`[Agente AI: ${agentOrch ? "ativado" : "desativado"}]`); pulseCiteBtn(e.currentTarget); }}><Icon name="chat-circle" size={16} /></button>
         </div>
 
-        <div className="setting-divider" />
         <div className="setting-row">
           <div className="setting-row-body">
             <span className="setting-row-title">Servidor MCP</span>
@@ -602,7 +601,6 @@ function TaskConfigView({ workflow, taskId, taskActionsRef, onDirtyChange }) {
           </div>
         )}
 
-        <div className="setting-divider" />
         <div className="setting-row">
           <div className="setting-row-body">
             <span className="setting-row-title">API Externa</span>
@@ -619,7 +617,6 @@ function TaskConfigView({ workflow, taskId, taskActionsRef, onDirtyChange }) {
           </div>
         )}
 
-        <div className="setting-divider" />
         <div className="setting-row">
           <div className="setting-row-body">
             <span className="setting-row-title">Script customizado</span>
@@ -1297,14 +1294,14 @@ function WfMetaSection({ workflow, onOpenSettings }) {
     return () => document.removeEventListener("mousedown", handler);
   }, [histOpen]);
 
-  return (
-    <dl className="detail-fields" style={{ marginBottom: 24 }}>
-      <dt>Status</dt>
-      <dd>
-        <span className={`wf-list-status ${workflow.status === "active" ? "active" : "archived"}`}>
-          {workflow.status === "active" ? "Ativo" : "Inativo"}
-        </span>
-      </dd>
+      {/* Informações gerais */}
+      <section className="wf-settings-inline-section">
+        <span className="wf-settings-inline-section-title">Informações gerais</span>
+        <div className="field-rows">
+          <InlineField label="Nome" value={name} onChange={v => { setName(v); mark(); }} />
+          <InlineField label="Descrição" value={desc} onChange={v => { setDesc(v); mark(); }} placeholder="Sem descrição" />
+        </div>
+      </section>
 
 
       <dt>Versão</dt>
@@ -1877,11 +1874,15 @@ function WorkflowDetailView2Passos({ workflow, onOpenTask, onOpenStage, onOpenSe
 
   return (
     <>
-      <div className="wf-detail-head">
-        <h1 className="detail-title">{workflow.name}</h1>
-      </div>
+      <SectionBlock>
+        <div className="wf-detail-head">
+          <h1 className="detail-title">{workflow.name}</h1>
+        </div>
 
-      {(workflow.version || workflow.wfStatus) && <WfMetaSection workflow={workflow} onOpenSettings={onOpenSettings} />}
+        {(workflow.version || workflow.wfStatus) && <WfMetaSection workflow={workflow} onOpenSettings={onOpenSettings} />}
+      </SectionBlock>
+
+      <WfSettingsInline workflow={workflow} onDirtyChange={onDirtyChange} />
 
       <WfSettingsInline workflow={workflow} onDirtyChange={onDirtyChange} />
 
