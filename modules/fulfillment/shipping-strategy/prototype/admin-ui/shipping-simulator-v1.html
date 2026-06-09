@@ -149,7 +149,9 @@ label { font-size: 12px; font-weight: 500; color: var(--sl-fg-muted); line-heigh
 select.input { padding-right: 28px; cursor: pointer; }
 select.input.select-ph { color: var(--sl-fg-soft); }
 .sel-arrow { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); pointer-events: none; color: var(--sl-fg-disabled); font-size: 10px; }
-.ctx-badge { display: inline-flex; align-items: center; gap: 5px; background: var(--sl-bg-muted); color: var(--sl-fg-muted); border: 1px solid var(--sl-border); border-radius: var(--sl-radius-sm); padding: 2px 8px; font-size: 11px; font-weight: 500; margin-top: 4px; }
+/* Moeda — campo read-only preenchido automaticamente pela sales channel */
+.currency-field { height: 32px; display: inline-flex; align-items: center; border: 1px solid var(--sl-border); border-radius: var(--sl-radius-sm); padding: 0 12px; background: var(--sl-bg-muted); color: var(--sl-fg); font-size: 14px; width: 100%; }
+.currency-field.empty { color: var(--sl-fg-soft); }
 
 /* ── Seller combobox — Shoreline: Combobox ── */
 .combo-wrap { position: relative; }
@@ -508,8 +510,22 @@ select.input.select-ph { color: var(--sl-fg-soft); }
             <select class="input select-ph" id="sel-sc" onchange="onScChange()" required></select>
             <span class="sel-arrow">▾</span>
           </div>
-          <div class="ctx-badge hidden" id="ctx-badge"><span id="ctx-val"></span></div>
         </div>
+        <!-- Moeda (auto, read-only) -->
+        <div class="form-group">
+          <label><span data-i18n="lbl-currency">Moeda</span></label>
+          <div class="currency-field empty" id="currency-field"><span id="currency-val">—</span></div>
+        </div>
+        <!-- País de destino -->
+        <div class="form-group">
+          <label><span data-i18n="lbl-country">País de destino</span><span class="req">*</span></label>
+          <div class="input-wrap">
+            <select class="input select-ph" id="sel-country" onchange="onCountryChange()" disabled required></select>
+            <span class="sel-arrow">▾</span>
+          </div>
+        </div>
+      </div>
+      <div class="form-row">
         <!-- Seller combobox -->
         <div class="form-group">
           <label><span data-i18n="lbl-seller">Seller</span><span class="req">*</span></label>
@@ -664,6 +680,7 @@ const I18N_PT = {
   'page-title':'Simulador de envio','back-link':'← Voltar à Estratégia de Envio',
   'section-context':'Contexto da simulação','lbl-sc':'Política comercial',
   'sc-ph':'Selecionar política comercial',
+  'lbl-currency':'Moeda','lbl-country':'País de destino','country-ph':'Selecionar país',
   'seller-ph':'Buscar por nome ou ID do seller...','lbl-seller':'Seller',
   'section-items':'Itens','lbl-sku':'Produto / SKU',
   'sku-ph':'Nome do produto, ID do SKU, EAN...','lbl-qty-field':'Quantidade',
@@ -725,6 +742,7 @@ const I18N_EN = {
   'page-title':'Shipping Simulator','back-link':'← Back to Shipping Strategy',
   'section-context':'Simulation context','lbl-sc':'Sales channel',
   'sc-ph':'Select sales channel',
+  'lbl-currency':'Currency','lbl-country':'Destination country','country-ph':'Select country',
   'seller-ph':'Search by seller name or ID...','lbl-seller':'Seller',
   'section-items':'Items','lbl-sku':'Product / SKU',
   'sku-ph':'Product name, SKU ID, EAN...','lbl-qty-field':'Quantity',
@@ -776,6 +794,7 @@ const I18N_ES = {
   'page-title':'Simulador de envío',
   'section-context':'Contexto de la simulación','lbl-sc':'Política comercial',
   'sc-ph':'Seleccionar política comercial',
+  'lbl-currency':'Moneda','lbl-country':'País de destino','country-ph':'Seleccionar país',
   'seller-ph':'Buscar por nombre o ID del seller...','lbl-seller':'Seller',
   'section-items':'Artículos','lbl-sku':'Selecciona un producto',
   'sku-ph':'Nombre del producto, SKU','lbl-qty-field':'Cantidad',
@@ -837,6 +856,14 @@ const ES_SC = [
   { v:'3', label:'3 — Amazon',         country:'MEX', currency:'MXN', symbol:'MX$' },
   { v:'4', label:'4 — Televentas',     country:'MEX', currency:'MXN', symbol:'MX$' }
 ];
+// Países (country code ISO-3) habilitados por moeda. Uma mesma sales channel pode
+// vender para mais de um país com a mesma moeda — o operador escolhe o destino.
+// O primeiro código é o default herdado da sales channel.
+const CURRENCY_COUNTRIES = {
+  BRL: ['BRA', 'ARG', 'URY'],
+  USD: ['USA', 'MEX', 'CAN'],
+  MXN: ['MEX', 'GTM', 'SLV', 'HND', 'NIC', 'CRI', 'PAN']
+};
 // Referência de prazo: "hoje" = 8 jun 2026 (data de envio aos clientes)
 const ES_SLAS = [
   {
@@ -1352,11 +1379,46 @@ function onScChange() {
   const sel = document.getElementById('sel-sc');
   sel.classList.toggle('select-ph', !sel.value);
   const opt = sel.options[sel.selectedIndex];
-  const badge = document.getElementById('ctx-badge');
-  if (opt.dataset.country) {
-    document.getElementById('ctx-val').textContent = `${opt.dataset.country} · ${opt.dataset.currency} (${opt.dataset.symbol})`;
-    badge.classList.remove('hidden');
-  } else badge.classList.add('hidden');
+  const curField = document.getElementById('currency-field');
+  const curVal = document.getElementById('currency-val');
+  if (opt && opt.dataset.currency) {
+    // Moeda: preenchida automaticamente pela sales channel (read-only)
+    curField.classList.remove('empty');
+    curVal.textContent = `${opt.dataset.currency} (${opt.dataset.symbol})`;
+    // País: dropdown com os países da moeda, default herdado da sales channel
+    buildCountrySelect(opt.dataset.currency, opt.dataset.country);
+  } else {
+    curField.classList.add('empty');
+    curVal.textContent = '—';
+    resetCountrySelect();
+  }
+  updateSimulateButton();
+}
+
+// ── Country (destination) ─────────────────────────────────────────────────────
+function buildCountrySelect(currency, defaultCountry) {
+  const sel = document.getElementById('sel-country');
+  const codes = CURRENCY_COUNTRIES[currency] || (defaultCountry ? [defaultCountry] : []);
+  sel.innerHTML = '';
+  codes.forEach(code => {
+    const opt = document.createElement('option');
+    opt.value = code; opt.textContent = code;
+    sel.appendChild(opt);
+  });
+  if (defaultCountry && codes.includes(defaultCountry)) sel.value = defaultCountry;
+  sel.disabled = false;
+  sel.classList.toggle('select-ph', !sel.value);
+}
+function resetCountrySelect() {
+  const sel = document.getElementById('sel-country');
+  const i = getI18n();
+  sel.innerHTML = `<option value="">${i['country-ph']}</option>`;
+  sel.disabled = true;
+  sel.classList.add('select-ph');
+}
+function onCountryChange() {
+  const sel = document.getElementById('sel-country');
+  sel.classList.toggle('select-ph', !sel.value);
   updateSimulateButton();
 }
 
@@ -1533,7 +1595,8 @@ function clearSku(id) {
 
 function isFormReady() {
   const scVal = document.getElementById('sel-sc').value;
-  if (!scVal || !selectedSeller) return false;
+  const countryVal = document.getElementById('sel-country').value;
+  if (!scVal || !countryVal || !selectedSeller) return false;
   const skuIds = Object.keys(selectedSkus);
   if (!skuIds.length) return false;
   const qtyOk = skuIds.every(id => {
@@ -2177,7 +2240,9 @@ function resetForm() {
   const sel = document.getElementById('sel-sc');
   sel.selectedIndex = 0;
   sel.classList.add('select-ph');
-  document.getElementById('ctx-badge').classList.add('hidden');
+  document.getElementById('currency-field').classList.add('empty');
+  document.getElementById('currency-val').textContent = '—';
+  resetCountrySelect();
   document.getElementById('zip-input').value = '';
   document.getElementById('err-box').classList.remove('show');
   document.getElementById('results-card').classList.add('hidden');
@@ -2330,24 +2395,23 @@ function findSkuByName(name, skus) {
 
 function setScFromRecent(r) {
   const scSel = document.getElementById('sel-sc');
+  let applied = false;
   if (r.scId) {
     scSel.value = r.scId;
-    if (scSel.value === r.scId) {
-      onScChange();
-      return;
+    if (scSel.value === r.scId) { onScChange(); applied = true; }
+  }
+  if (!applied) {
+    for (let i = 0; i < scSel.options.length; i++) {
+      if (scSel.options[i].text === r.sc) { scSel.selectedIndex = i; onScChange(); applied = true; break; }
     }
   }
-  for (let i = 0; i < scSel.options.length; i++) {
-    if (scSel.options[i].text === r.sc) {
-      scSel.selectedIndex = i;
-      onScChange();
-      return;
-    }
+  if (!applied) {
+    const scNum = String(r.sc || '').match(/^(\d+)/)?.[1];
+    if (scNum) { scSel.value = scNum; onScChange(); applied = true; }
   }
-  const scNum = String(r.sc || '').match(/^(\d+)/)?.[1];
-  if (scNum) {
-    scSel.value = scNum;
-    onScChange();
+  if (applied && r.country) {
+    const cSel = document.getElementById('sel-country');
+    if ([...cSel.options].some(o => o.value === r.country)) { cSel.value = r.country; onCountryChange(); }
   }
 }
 
@@ -2361,6 +2425,7 @@ function saveCurrentSimulation() {
   const entry = {
     sc: scLabel,
     scId: scEl.value,
+    country: document.getElementById('sel-country').value || '',
     seller: selectedSeller?.name || '—',
     sellerId: selectedSeller?.v || '',
     sku: skuNames.join(', '),

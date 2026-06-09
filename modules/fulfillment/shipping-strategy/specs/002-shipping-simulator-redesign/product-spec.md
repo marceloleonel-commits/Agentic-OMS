@@ -13,12 +13,19 @@
 
 ---
 
+## Revision history
+
+- **Jun 2026 — Destination country is now operator-selectable (not fixed to the sales channel).** Earlier drafts auto-resolved *both* country and currency from the sales channel and hid them from the form. That was incorrect: a single sales channel can serve **multiple countries that share the same currency** (e.g., a USD channel shipping to USA, MEX, and CAN; a EUR channel across the Eurozone). Hardcoding the country to the sales channel would block operators from simulating legitimate cross-border destinations. **Currency stays auto-resolved and read-only** (it is genuinely 1:1 with the sales channel); the **destination country is now a dropdown** — pre-filled with the sales channel's default country and editable, using ISO-3 country codes.
+
+---
+
 ## Clarifications
 
 - Q: Should the sales channel dropdown show only active sales channels? → A: Yes. Only active sales channels should be listed.
+- Q: Is the destination country fixed by the sales channel? → A: No. The country is pre-filled with the sales channel's default but is operator-selectable, because a sales channel can serve multiple countries with the same currency. The currency, by contrast, is auto-resolved and read-only.
 - Q: What happens if the account has no sellers configured (main account only)? → A: The Seller field is hidden or shows "Main account" as the only pre-selected option. Simulation proceeds without seller selection.
 - Q: Is seller validation (sales channel mapping) a blocking error or a warning? → A: Blocking. The simulation cannot proceed until a valid seller × sales channel combination is selected.
-- Q: Should the ZIP code field enforce country-specific formatting? → A: Yes. Format is derived from the `CountryCode` returned by the sales channel API (e.g., 8 digits for BRA, 5-digit for USA).
+- Q: Should the ZIP code field enforce country-specific formatting? → A: Yes. Format is derived from the **selected destination country** (defaulted from the sales channel's `CountryCode`), e.g., 8 digits for BRA, 5 digits for USA.
 - Q: Can the user simulate without a price? → A: Yes, price is optional. However, if the selected shipping policy has min/max price rules, simulation results should note that price was not provided and results may be incomplete.
 - Q: Should simulation results persist after navigating away? → A: No. Results are session-scoped. This is not in scope for this MMR.
 - Q: Does the kit metadata fix (KI 1382356) require backend changes? → A: To be confirmed by engineering. The spec assumes the UI renders whatever the API returns; if the API returns empty fields for kits, a backend fix may be required independently.
@@ -74,6 +81,20 @@ A logistics manager at Road Runners (a US-based store) selects the "US Ecommerce
 
 ---
 
+### User Story 4 — Operator simulates to a specific destination country (Priority: P1)
+
+A logistics manager at a cross-border store operates a single USD sales channel that ships to the USA, Mexico, and Canada. They select the sales channel, then choose **MEX** as the destination country to validate freight for a Mexican ZIP code — without needing a separate sales channel per country.
+
+**Why this priority:** A sales channel can serve multiple countries with the same currency. Fixing the country to the sales channel would make these destinations impossible to simulate.
+
+**Acceptance Scenarios:**
+
+1. **Given** the operator selects a sales channel, **When** the destination country field loads, **Then** it is pre-filled with the sales channel's default country and lists the other countries served by that sales channel as ISO-3 codes.
+2. **Given** the operator changes the destination country, **When** they run the simulation, **Then** the simulation uses the selected country and the ZIP format adapts to it.
+3. **Given** a sales channel serves a single country, **When** the destination country field loads, **Then** that country is pre-selected.
+
+---
+
 ### User Story 4 — Operator understands why carriers were rejected (Priority: P2)
 
 After running a simulation that returns only one carrier option, a logistics operator wants to understand why the other configured carriers were not offered. The results panel shows a "Carriers not available" section with human-readable reasons per carrier.
@@ -108,12 +129,13 @@ A logistics manager at Road Runners prefers to use the simulator in English. The
 
 **Form**
 - **FR-001**: The system MUST display Sales Channel as the first input field, populated from the active sales channels in the account.
-- **FR-002**: Upon Sales Channel selection, the system MUST automatically resolve and store `CountryCode`, `CurrencyCode`, and `CurrencySymbol` from `GET /api/catalog_system/pub/saleschannel/{salesChannelId}`. These fields MUST NOT be shown as manual inputs.
+- **FR-002**: Upon Sales Channel selection, the system MUST automatically resolve `CurrencyCode` and `CurrencySymbol` from `GET /api/catalog_system/pub/saleschannel/{salesChannelId}` and display the currency as a **read-only** field. Currency MUST NOT be a manual or editable input.
+- **FR-002b**: Upon Sales Channel selection, the system MUST present a **Destination country** dropdown, pre-selected with the sales channel's default `CountryCode` and editable by the operator. Options MUST be shown as ISO-3 country codes and represent the countries the sales channel can serve. The country MUST NOT be a free-text input. Rationale: a sales channel can serve multiple countries that share the same currency, so the country cannot be hardcoded to the sales channel.
 - **FR-003**: The system MUST display a Seller field, populated from `GET /seller-register/pvt/sellers`. If no sellers exist beyond the main account, this field MUST be hidden.
 - **FR-004**: The system MUST validate the seller × sales channel combination when the user clicks Simulate, using `GET /seller-register/pvt/sellers/{sellerId}/sales-channel/mapping`. If invalid, simulation MUST be blocked with a specific error message.
 - **FR-005**: The SKU search field MUST support lookup by: SKU ID (exact), product name (contains), SKU name (contains), EAN (exact), and reference code (exact).
 - **FR-006**: Each SKU result row MUST display: SKU ID, variant name or attributes, EAN, and reference code — sufficient to distinguish between variants of the same product.
-- **FR-007**: The ZIP/postal code field MUST apply formatting rules based on the `CountryCode` resolved from the selected sales channel.
+- **FR-007**: The ZIP/postal code field MUST apply formatting rules based on the **selected destination country** (defaulted from the sales channel's `CountryCode`).
 - **FR-008**: Price input MUST be optional and displayed as a field in the form. If omitted and the shipping policy has price-range rules, the results MUST include a contextual note.
 - **FR-008b**: The system MUST allow adding multiple SKUs to a single simulation. A "simulate items individually" toggle MUST be available, consistent with the current simulator behavior.
 
@@ -151,7 +173,8 @@ This section maps each UI area to the specific API calls required. All calls are
 | Field / Behavior | API | Method | Key response fields |
 |---|---|---|---|
 | Sales channel list | `/api/catalog_system/pub/saleschannel/list` | GET | `Id`, `Name`, `IsActive` |
-| Country, currency, symbol auto-resolution | `/api/catalog_system/pub/saleschannel/{salesChannelId}` | GET | `CountryCode`, `CurrencyCode`, `CurrencySymbol` |
+| Currency + symbol auto-resolution (read-only) | `/api/catalog_system/pub/saleschannel/{salesChannelId}` | GET | `CurrencyCode`, `CurrencySymbol` |
+| Default destination country (editable dropdown) | `/api/catalog_system/pub/saleschannel/{salesChannelId}` | GET | `CountryCode` (default selection); the full list of countries served per sales channel — source TBD with engineering |
 | Seller list | `/seller-register/pvt/sellers` | GET | `id`, `name`, `isActive` |
 | Seller × sales channel validation | `/seller-register/pvt/sellers/{sellerId}/sales-channel/mapping` | GET | Array of mapped sales channel IDs |
 | SKU search by name / ID / EAN / ref | `/api/catalog_system/pub/products/search?fq=skuId:{id}` or `?ft={query}` | GET | `productId`, `skuId`, `nameComplete`, `ean`, `referenceId`, `variations` |
@@ -226,7 +249,8 @@ See [`api-error-diagnostics.md`](./api-error-diagnostics.md) for the full decisi
 
 ## Assumptions
 
-- The `GET /api/catalog_system/pub/saleschannel/{salesChannelId}` endpoint reliably returns `CurrencyCode`, `CurrencySymbol`, and `CountryCode` for all active sales channels.
+- The `GET /api/catalog_system/pub/saleschannel/{salesChannelId}` endpoint reliably returns `CurrencyCode`, `CurrencySymbol`, and `CountryCode` (the default destination country) for all active sales channels.
+- **Open question:** the source for the *full list of countries a sales channel can serve* is not yet confirmed — candidates are the sales channel configuration, trade policy, or the account's country catalog. The prototype uses a currency→countries map as a stand-in until engineering confirms the canonical source. The `CountryCode` from the sales channel API is used only as the default selection.
 - The `GET /seller-register/pvt/sellers/{sellerId}/sales-channel/mapping` endpoint is available and returns the correct sales channel associations for a seller.
 - The existing simulation API (`/api/logistics/pvt/shipping/estimate`) returns the `freightSimulatedForAi` structure with `carriersNotChosenList`, `inventoryDetails`, `routeAnalysis`, and `operationalCapacity` as documented.
 - Kit metadata fields (postal code range, weight range) require investigation to determine if the fix is purely frontend (rendering) or requires a backend change. Engineering input needed.

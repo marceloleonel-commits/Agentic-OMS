@@ -11,6 +11,8 @@ The current Shipping Simulator (`/admin/logistics#/freight-simulation`) is a min
 ### 1. Admin UI (`/admin-ui`)
 A redesigned version of the current simulator using Shoreline (VTEX's design system) and Raccoon (the VTEX Admin framework). Maintains the familiar form-based interaction model but significantly improves result visibility, error explanations, and overall UX.
 
+> **Feature-by-feature guide:** [`admin-ui/FEATURE-GUIDE.md`](./admin-ui/FEATURE-GUIDE.md) documents every function in the Admin UI prototype and marks whether it is **new**, **replicated from the legacy simulator**, **improved**, or **demo-only**. Read it before changing the prototype — it explains intent and prevents "fixing" intentional behavior.
+
 **Goals:**
 - Replace legacy UI components with Shoreline equivalents
 - Fix known issues: currency display (KI 514551) and kit metadata display (KI 1382356)

@@ -60,7 +60,7 @@ The new simulator must preserve all data currently exposed, unless explicitly de
 | ✅ Keep | Simulate items individually | Checkbox already exists today — allows running each SKU as a separate simulation when items have incompatible logistics configurations; preserve as-is |
 | 🔍 Review with eng | Cubic weight factor, max order value, cubic weight | Confirm whether these are actionable for operators or can be simplified/hidden |
 | 🔍 Review with eng | Time cost breakdown (dock / warehouse / transport shown separately) | May consolidate into a single readable line (e.g., "5 days transport + 0 dock handling") |
-| ❌ Remove | Manual country input | Replaced by auto-resolution from the selected sales channel |
+| ❌ Remove | Manual free-text country input | Replaced by a **Destination country** dropdown — pre-filled with the sales channel's default country, but operator-selectable. A sales channel can serve multiple countries with the same currency, so the country is not hardcoded to the sales channel (currency stays auto-resolved and read-only) |
 | ❌ Remove | SKU search with indistinguishable variant names | Replaced by new picker showing SKU ID, variant name, EAN, reference code |
 
 ---
@@ -88,9 +88,10 @@ What is new compared to the current simulator, ordered by priority:
 
 ### Form — Input redesign
 - **Sales Channel** is the first field; selection auto-resolves:
-  - `CountryCode` (no manual country input required)
-  - `CurrencyCode` and `CurrencySymbol` (used to format freight prices in results — fixes KI 514551)
+  - `CurrencyCode` and `CurrencySymbol` → shown as a **read-only Currency field** and used to format freight prices in results (fixes KI 514551)
+  - `CountryCode` → used as the **default** for the Destination country field (see below)
   - Source: `GET /api/catalog_system/pub/saleschannel/{salesChannelId}`
+- **Destination country** is a dropdown (ISO-3 country codes), pre-filled with the sales channel's default country but **operator-selectable** — because a sales channel can serve multiple countries that share the same currency (e.g., a USD channel shipping to USA / MEX / CAN). This refines the original "auto-resolve country" approach, which incorrectly assumed one country per sales channel.
 - **Seller** is a separate field, populated from `GET /seller-register/pvt/sellers`
   - Validated against sales channel at simulation time via `GET /seller-register/pvt/sellers/{sellerId}/sales-channel/mapping`
   - If seller is not associated with the selected sales channel, a clear error is shown on "Simulate" click
@@ -98,7 +99,7 @@ What is new compared to the current simulator, ordered by priority:
   - Direct input by SKU ID
   - Search by product name, SKU name, EAN, or reference code — with explicit match type displayed (similar to Catalog search UX)
   - Each result row shows differentiating attributes: SKU ID, variant name, EAN, reference code — resolving the indistinguishable variants issue
-- **ZIP / Postal code** input, with formatting per country
+- **ZIP / Postal code** input, with formatting based on the selected destination country
 - **Quantity** and optional **Price** (relevant for shipping policies with min/max price rules)
 - **Multi-item support**: operator can add multiple SKUs to a single simulation, matching the current simulator behavior; option to simulate items individually (useful when SKUs have incompatible logistics configurations)
 
