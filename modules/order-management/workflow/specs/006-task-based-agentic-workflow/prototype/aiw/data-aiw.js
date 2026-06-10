@@ -23,15 +23,15 @@ window.AIWData = (function () {
 
   const kpis = {
     primary: [
-      { label: "Pedidos Hoje",   value: "2", delta: "100%", up: true  },
+      { label: "Pedidos Hoje",   value: "3", delta: "50%",  up: true  },
       { label: "Pedidos Ontem",  value: "1", delta: "50%",  up: false },
-      { label: "Últimos 7 Dias", value: "4", delta: "33%",  up: true  },
-      { label: "Último Ano",     value: "4", delta: "100%", up: true  }
+      { label: "Últimos 7 Dias", value: "5", delta: "25%",  up: true  },
+      { label: "Último Ano",     value: "5", delta: "100%", up: true  }
     ],
     secondary: [
-      { label: "Pedidos",      value: "4"           },
-      { label: "Ticket Médio", value: "R$ 1.477,25" },
-      { label: "Total Bruto",  value: "R$ 5.909,00" }
+      { label: "Pedidos",      value: "5"           },
+      { label: "Ticket Médio", value: "R$ 1.551,24" },
+      { label: "Total Bruto",  value: "R$ 7.756,20" }
     ]
   };
 
@@ -221,6 +221,52 @@ window.AIWData = (function () {
         chat: [
           { from: "agent", text: "Enviei a etiqueta reversa para o Samsung Galaxy em 01/06 às 18:35, mas o cliente ainda não postou o produto — já se passaram +24h." },
           { from: "agent", text: "Posso reenviar a etiqueta com instruções de postagem ou sugerir um texto de follow-up para o time de CS entrar em contato. O que prefere?" }
+        ]
+      }
+    },
+
+    /* ── TA-5 · Receita médica pendente — LuzÓtica ── */
+    {
+      id: "TA431439",
+      priority: "high",
+      title: "Receita médica não validada — lente especial bloqueada para fabricação",
+      tag: "Compliance",
+      assigneeInitial: "A",
+      chips: [
+        { icon: "check",  label: "Verificar anexo enviado pelo cliente" },
+        { icon: "check",  label: "Validar dados técnicos da prescrição" },
+        { icon: "send",   label: "Aprovar receita e liberar para produção" },
+        { icon: "search", label: "Ver pedido LuzÓtica no detalhe" },
+      ],
+      detail: {
+        title: "Validar receita médica — Lente Especial Anti-Reflexo (LuzÓtica)",
+        reportedBy: { agent: "SLA Monitor Agent", at: "10 jun às 09:15" },
+        summary: "O pedido 68945905 (LuzÓtica) contém uma lente especial sob medida que exige validação de receita médica antes de entrar em produção no laboratório Essilor. A receita foi anexada pelo cliente no checkout, mas ainda não foi validada pela equipe de Atendimento. Enquanto a aprovação estiver pendente, a etapa de Produção da Lente não pode iniciar. O item de óculos de sol do mesmo pedido segue normalmente pelo workflow de Entrega em Domicílio.",
+        diagnosis: "Pedido recebido em 10/06 às 08:47. Pagamento confirmado às 08:48. O workflow de Fabricação de Lente foi acionado automaticamente. A tarefa 'Verificar anexo de receita' está ativa há +26 min sem resposta do time de Atendimento. O agente identificou risco de atraso: se a receita não for aprovada em até 2h, o prazo de fabricação (10 dias úteis) não será cumprido e o SLA de entrega expirará.",
+        attributedTo: { name: "Atendimento Óptico", initial: "A" },
+        severity: "high",
+        followUp: [
+          { state: "attention", title: "Verificar anexo da receita médica no pedido",         assignee: "Atendimento Óptico", initial: "A" },
+          { state: "attention", title: "Validar grau, eixo e parâmetros técnicos da lente",   assignee: "Atendimento Óptico", initial: "A" },
+          { state: "loading",   title: "Aguardar aprovação para acionar laboratório Essilor", assignee: "SLA Monitor Agent",  agent: true  }
+        ],
+        resolved: [
+          { state: "done", title: "Confirmar pagamento aprovado",                    assignee: "SLA Monitor Agent", agent: true },
+          { state: "done", title: "Acionar workflow de Fabricação de Lente",         assignee: "SLA Monitor Agent", agent: true },
+          { state: "done", title: "Detectar ausência de validação após 20 min",      assignee: "SLA Monitor Agent", agent: true }
+        ],
+        impacted: [
+          { id: "1631808945905-01", sla: "Risco de atraso se não aprovado em 2h", seller: "LuzÓtica", eta: "23/06/2026" }
+        ],
+        activities: [
+          { time: "08:47", actor: "SLA Monitor Agent", agent: true, action: "recebeu pedido LuzÓtica com lente especial e item de óculos de sol" },
+          { time: "08:48", actor: "SLA Monitor Agent", agent: true, action: "confirmou pagamento aprovado e acionou workflows: Fabricação de Lente + Entrega em Domicílio" },
+          { time: "09:08", actor: "SLA Monitor Agent", agent: true, action: "detectou tarefa 'Verificar anexo de receita' sem resposta após 20 min", note: "Nenhuma ação do time de Atendimento registrada." },
+          { time: "09:15", actor: "SLA Monitor Agent", agent: true, action: "criou esta tarefa para priorização pelo time de Atendimento Óptico" }
+        ],
+        chat: [
+          { from: "agent", text: "O pedido de lente especial (LuzÓtica) está aguardando validação da receita médica há mais de 25 minutos. Sem aprovação, a fabricação no laboratório Essilor não pode iniciar." },
+          { from: "agent", text: "O item de óculos de sol do mesmo pedido segue normalmente — já está em Picking. Posso enviar um lembrete ao time de Atendimento ou escalar para um supervisor?" }
         ]
       }
     }
@@ -928,6 +974,121 @@ window.AIWData = (function () {
               { label:"Notificar Cliente",                icon:"🔔", status:"pending", agent:true,  time:null },
             ],
           },
+        },
+      ],
+    },
+
+    /* ══ Pedido 5 · LuzÓtica · Lente especial + Óculos de sol ══ */
+    {
+      id:"1631808945905-01", short:"68945905",
+      date:"10/06/2026 - 08:47", customer:"Beatriz Mendonça",
+      origin:"Loja própria", qty:3, total:"R$ 2.437,00",
+      status:"attention", statusLabel:"Atenção necessária",
+      sla:"2h", seller:"LuzÓtica", eta:"23/06/2026",
+      customerDetail:{
+        taxId:"—",
+        phone:"(11) 97654-3210",
+        email:"beatriz.mendonca@email.com",
+        address:"Rua Oscar Freire, 340, Apto 52 · Jardins – São Paulo, SP · CEP 01426-001",
+        billingAddress:"Rua Oscar Freire, 340, Apto 52 · Jardins – São Paulo, SP · CEP 01426-001",
+        card:"Visa **** 2291",
+      },
+      note:{
+        useCase:"Pedido óptico omnicanal: armação + lente (fabricação → entrega domicílio) + óculos de sol (retirada na loja)",
+        text:"Pedido com dois Order Jobs independentes: (1) armação + lente sob medida — a armação está reservada no CD aguardando a fabricação da lente pelo laboratório Essilor (~10 dias úteis), após a qual os dois itens são embalados juntos e entregues em domicílio; (2) óculos de sol — disponível imediatamente na loja para retirada pelo cliente. A lente está bloqueada aguardando validação da receita médica pelo time de Atendimento.",
+      },
+      itemGroups:[
+        {
+          id:"g-oculos", workflow:"fabricacao-lente", fulfillmentType:"fabrication",
+          supplier:"Essilor · Jadlog",
+          label:"Fabricação e Entrega · Essilor + Jadlog",
+          projections:[
+            { name:"payment",    connector:"payment-gateway", status:"done"    },
+            { name:"compliance", connector:"prescription",    status:"active"  },
+            { name:"production", connector:"essilor-api",     status:"pending" },
+            { name:"warehouse",  connector:"wms",             status:"active"  },
+            { name:"invoice",    connector:"fiscal-service",  status:"pending" },
+            { name:"carrier",    connector:"jadlog",          status:"pending" },
+          ],
+          stages:[
+            { icon:"💳", label:"Confirmação de Pagamento", status:"done"    },
+            { icon:"📋", label:"Validação de Receita",     status:"active"  },
+            { icon:"🔬", label:"Produção da Lente",        status:"pending" },
+            { icon:"📦", label:"Montagem e Manuseio",      status:"pending" },
+            { icon:"🧾", label:"Faturamento",              status:"pending" },
+            { icon:"🚚", label:"Entrega em Domicílio",     status:"pending" },
+          ],
+          items:[
+            /* ── Armação: pronta-entrega, reservada no CD, aguardando lente ── */
+            { name:"Armação Oakley Holbrook RX 54mm", emoji:"👓", sku:"LO-OAK-HOLB-54-PRETO", qty:1, price:"R$ 590,00",
+              steps:[
+                { label:"Autorização de Pagamento", icon:"💳", status:"done",    agent:true,  time:"10/06/2026 08:48" },
+                { label:"Captura de Pagamento",     icon:"💳", status:"done",    agent:true,  time:"10/06/2026 08:48" },
+                { label:"Reserva de Estoque",       icon:"📦", status:"done",    agent:true,  time:"10/06/2026 08:49" },
+                { label:"Picking",                  icon:"🔍", status:"done",    agent:false, time:"10/06/2026 09:15" },
+                { label:"Aguardando lente",         icon:"⏱️", status:"active",  agent:true,  time:null, waitingForFab:true, note:"Armação separada e retida no CD. Será embalada junto com a lente após fabricação." },
+                { label:"Packing (armação + lente)",icon:"📦", status:"pending", agent:false, time:null },
+                { label:"Labeling",                 icon:"🏷️", status:"pending", agent:false, time:null },
+                { label:"Emissão de Nota Fiscal",   icon:"🧾", status:"pending", agent:true,  time:null },
+                { label:"Expedição",                icon:"📮", status:"pending", agent:false, time:null },
+                { label:"First Mile",               icon:"🚚", status:"pending", agent:true,  time:null },
+                { label:"Last Mile",                icon:"🚚", status:"pending", agent:true,  time:null },
+                { label:"Proof of Delivery",        icon:"✅", status:"pending", agent:true,  time:null },
+              ],
+            },
+            /* ── Lente: fabricação externa, bloqueia entrega do grupo inteiro ── */
+            { name:"Lente Especial Anti-Reflexo +2.50/-0.75", emoji:"🔬", sku:"LO-LENTE-AR-250", qty:1, price:"R$ 1.290,00",
+              steps:[
+                { label:"Autorização de Pagamento",    icon:"💳", status:"done",    agent:true,  time:"10/06/2026 08:48" },
+                { label:"Captura de Pagamento",        icon:"💳", status:"done",    agent:true,  time:"10/06/2026 08:48" },
+                { label:"Verificar anexo de receita",  icon:"📋", status:"active",  agent:false, time:null, note:"Aguardando verificação pelo Atendimento Óptico." },
+                { label:"Validar dados da prescrição", icon:"🔍", status:"pending", agent:false, time:null },
+                { label:"Aprovar receita",             icon:"✅", status:"pending", agent:false, time:null },
+                { label:"Acionar laboratório",         icon:"🔬", status:"pending", agent:true,  time:null },
+                { label:"Monitorar produção",          icon:"⏱️", status:"pending", agent:true,  time:null },
+                { label:"Confirmar lente pronta",      icon:"📦", status:"pending", agent:true,  time:null, note:"Lente pronta libera Packing conjunto com a armação." },
+                { label:"Packing (armação + lente)",   icon:"📦", status:"pending", agent:false, time:null },
+                { label:"Labeling",                    icon:"🏷️", status:"pending", agent:false, time:null },
+                { label:"Emissão de Nota Fiscal",      icon:"🧾", status:"pending", agent:true,  time:null },
+                { label:"Expedição",                   icon:"📮", status:"pending", agent:false, time:null },
+                { label:"First Mile",                  icon:"🚚", status:"pending", agent:true,  time:null },
+                { label:"Last Mile",                   icon:"🚚", status:"pending", agent:true,  time:null },
+                { label:"Proof of Delivery",           icon:"✅", status:"pending", agent:true,  time:null },
+              ],
+            },
+          ],
+        },
+        /* ── Group 2: Óculos de Sol — Retirada na Loja ── */
+        {
+          id:"g-sol", workflow:"retirada-loja", fulfillmentType:"pickup",
+          supplier:"LuzÓtica · Loja Jardins SP",
+          label:"Retirada na Loja · LuzÓtica Jardins – SP",
+          projections:[
+            { name:"payment",   connector:"payment-gateway", status:"done"    },
+            { name:"warehouse", connector:"wms",             status:"done"    },
+            { name:"invoice",   connector:"fiscal-service",  status:"pending" },
+          ],
+          stages:[
+            { icon:"💳", label:"Confirmação de Pagamento", status:"done"    },
+            { icon:"🏪", label:"Handling na Loja",          status:"done"    },
+            { icon:"🧾", label:"Faturamento",               status:"pending" },
+            { icon:"🤝", label:"Entrega em Loja",           status:"pending" },
+          ],
+          items:[
+            { name:"Óculos de Sol Ray-Ban Aviador RB3025", emoji:"🕶️", sku:"LO-RB-3025-G15", qty:1, price:"R$ 557,00",
+              steps:[
+                { label:"Autorização de Pagamento", icon:"💳", status:"done",    agent:true,  time:"10/06/2026 08:48" },
+                { label:"Captura de Pagamento",     icon:"💳", status:"done",    agent:true,  time:"10/06/2026 08:48" },
+                { label:"Reserva de Estoque",       icon:"📦", status:"done",    agent:true,  time:"10/06/2026 08:49" },
+                { label:"Picking",                  icon:"🔍", status:"done",    agent:false, time:"10/06/2026 09:10" },
+                { label:"Packing",                  icon:"📦", status:"done",    agent:false, time:"10/06/2026 09:20" },
+                { label:"Ready for Pickup",         icon:"🔔", status:"done",    agent:true,  time:"10/06/2026 09:22", note:"Cliente notificado por e-mail e SMS." },
+                { label:"Emissão de Nota Fiscal",   icon:"🧾", status:"pending", agent:true,  time:null },
+                { label:"Customer Check-in",        icon:"🏪", status:"pending", agent:false, time:null },
+                { label:"Handover at POS",          icon:"🤝", status:"pending", agent:false, time:null },
+              ],
+            },
+          ],
         },
       ],
     },
