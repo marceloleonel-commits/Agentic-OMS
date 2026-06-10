@@ -1,6 +1,25 @@
 /* AIW — extended data for My Assistant (Orders flows merged) */
 window.AIWData = (function () {
-  const AVATARS = window.AppData?.AVATARS || {};
+  /* ── AVATARS (source of truth — previously in data.js) ── */
+  const AVATARS = {
+    alex: "https://i.pravatar.cc/64?img=12",
+    joao: "https://i.pravatar.cc/64?img=33",
+    ana:  "https://i.pravatar.cc/64?img=47",
+    leo:  "https://i.pravatar.cc/64?img=15",
+    mar:  "https://i.pravatar.cc/64?img=49",
+    you:  "https://i.pravatar.cc/64?img=68",
+    cami: "https://i.pravatar.cc/64?img=23"
+  };
+
+  /* ── Conversations (sidebar history — previously in data.js) ── */
+  const conversations = [
+    { id: "c1", title: "Revenue · Report",                   pinned: true,  hasCanvas: true,  preview: "Yesterday's revenue summary..." },
+    { id: "c2", title: "How were my sales yesterday?",       pinned: false, hasCanvas: false, preview: "Total Revenue: $23,456.78..." },
+    { id: "c3", title: "How do I integrate a new payment gateway?", pinned: false, hasCanvas: false, preview: "To integrate a new payment..." },
+    { id: "c4", title: "Is VTEX stable today?",              pinned: false, hasCanvas: false, preview: "All systems operational..." },
+    { id: "c5", title: "Does VTEX have any solutions for B2B?", pinned: false, hasCanvas: false, preview: "Yes — VTEX offers a B2B suite..." },
+    { id: "c6", title: "How do I install a new agent?",      pinned: false, hasCanvas: false, preview: "Open the Agent Marketplace..." }
+  ];
 
   const kpis = {
     primary: [
@@ -208,12 +227,6 @@ window.AIWData = (function () {
 
   ];
 
-  const resources = [
-    { id: "all-orders",       icon: "grid", label: "Todos os pedidos",         sub: "4.256 pedidos · 13 filtros AI ativos" },
-    { id: "workflow-board",   icon: "board", label: "Workflow Board",          sub: "7 workflows · Padrão e customizados" },
-    { id: "orchestration",    icon: "sparkle", label: "Agentes de Pedidos", sub: "Ativo · 4.256 pedidos monitorados" }
-  ];
-
   const wfCategories = [
     { id: "pagamento",        label: "Pagamento",           desc: "Captura, autorização e conciliação financeira",        color: "#2962FF" },
     { id: "fulfillment",      label: "Fulfillment Físico",  desc: "Preparação e envio de produtos físicos ao cliente",    color: "#00897B" },
@@ -273,23 +286,23 @@ window.AIWData = (function () {
       ],
       stages: [
         { id: "ed-s1", name: "Confirmação de Pagamento", gate: "payment_settled", linkedToNext: true, category: "PAYMENT", tasks: [
-          { id: "ed-1", name: "Autorização de Pagamento", type: "auto",   owner: "Gateway",        desc: "Pré-autorização do valor junto à adquirente/gateway." },
-          { id: "ed-2", name: "Captura de Pagamento",     type: "auto",   owner: "Gateway",        desc: "Confirmação e captura definitiva do valor autorizado." },
+          { id: "ed-1", name: "Autorização de Pagamento", type: "auto",   owner: "Adyen",          desc: "Pré-autorização do valor junto à adquirente/gateway." },
+          { id: "ed-2", name: "Captura de Pagamento",     type: "auto",   owner: "Adyen",          desc: "Confirmação e captura definitiva do valor autorizado." },
         ]},
         { id: "ed-s2", name: "Manuseio", linkedToNext: true, category: "FULFILLMENT", tasks: [
-          { id: "ed-3", name: "Reserva de Estoque", type: "auto",   owner: "WMS",         desc: "Reserva dos itens no estoque para garantir disponibilidade." },
-          { id: "ed-4", name: "Picking",            type: "manual", owner: "WMS Operator",desc: "Separação dos produtos no estoque conforme o pedido." },
-          { id: "ed-5", name: "Packing",            type: "manual", owner: "WMS Operator",desc: "Embalagem dos produtos selecionados para envio ao cliente." },
-          { id: "ed-6", name: "Labeling",           type: "manual", owner: "WMS Operator",desc: "Etiquetagem da embalagem com dados do destinatário e transportadora." },
+          { id: "ed-3", name: "Reserva de Estoque", type: "auto",   owner: "GFL Logística", desc: "Reserva dos itens no estoque para garantir disponibilidade." },
+          { id: "ed-4", name: "Picking",            type: "manual", owner: "GFL Logística", desc: "Separação dos produtos no estoque conforme o pedido." },
+          { id: "ed-5", name: "Packing",            type: "manual", owner: "GFL Logística", desc: "Embalagem dos produtos selecionados para envio ao cliente." },
+          { id: "ed-6", name: "Labeling",           type: "manual", owner: "GFL Logística", desc: "Etiquetagem da embalagem com dados do destinatário e transportadora." },
         ]},
         { id: "ed-s3", name: "Faturamento", gate: "deliverable_ready", linkedToNext: true, category: "FULFILLMENT", tasks: [
-          { id: "ed-7", name: "Emissão de Nota Fiscal", type: "auto", owner: "Fiscal Service", desc: "Geração da NF-e para o cliente final." },
+          { id: "ed-7", name: "Emissão de Nota Fiscal", type: "auto", owner: "NFe.io", desc: "Geração da NF-e para o cliente final." },
         ]},
         { id: "ed-s4", name: "Entrega", gate: "customer_has_goods", linkedToNext: false, category: "DELIVERY", tasks: [
-          { id: "ed-8",  name: "Expedição",        type: "manual", owner: "WMS Operator", desc: "Despacho do pedido para a transportadora." },
-          { id: "ed-9",  name: "First Mile",       type: "auto",   owner: "Carrier",      desc: "Transporte inicial do centro de distribuição até o hub." },
-          { id: "ed-10", name: "Last Mile",        type: "auto",   owner: "Carrier",      desc: "Entrega final no endereço do cliente." },
-          { id: "ed-11", name: "Proof of Delivery",type: "auto",   owner: "Carrier",      desc: "Confirmação da entrega com registro de recebimento." },
+          { id: "ed-8",  name: "Expedição",        type: "manual", owner: "GFL Logística", desc: "Despacho do pedido para a transportadora." },
+          { id: "ed-9",  name: "First Mile",       type: "auto",   owner: "Jadlog",        desc: "Transporte inicial do centro de distribuição até o hub." },
+          { id: "ed-10", name: "Last Mile",        type: "auto",   owner: "Jadlog",        desc: "Entrega final no endereço do cliente." },
+          { id: "ed-11", name: "Proof of Delivery",type: "auto",   owner: "Jadlog",        desc: "Confirmação da entrega com registro de recebimento." },
         ]},
       ]},
 
@@ -320,21 +333,21 @@ window.AIWData = (function () {
       ],
       stages: [
         { id: "rl-s1", name: "Confirmação de Pagamento", gate: "payment_settled", linkedToNext: true, category: "PAYMENT", tasks: [
-          { id: "rl-1", name: "Autorização de Pagamento", type: "auto", owner: "Gateway", desc: "Pré-autorização do valor junto à adquirente/gateway." },
-          { id: "rl-2", name: "Captura de Pagamento",     type: "auto", owner: "Gateway", desc: "Confirmação e captura definitiva do valor autorizado." },
+          { id: "rl-1", name: "Autorização de Pagamento", type: "auto", owner: "Cielo", desc: "Pré-autorização do valor junto à adquirente/gateway." },
+          { id: "rl-2", name: "Captura de Pagamento",     type: "auto", owner: "Cielo", desc: "Confirmação e captura definitiva do valor autorizado." },
         ]},
         { id: "rl-s2", name: "Manuseio", linkedToNext: true, category: "FULFILLMENT", tasks: [
-          { id: "rl-3", name: "Reserva de Estoque", type: "auto",   owner: "WMS",          desc: "Reserva dos itens na loja designada para pickup." },
-          { id: "rl-4", name: "Picking",            type: "manual", owner: "Operador Loja",desc: "Separação dos produtos no estoque da loja." },
-          { id: "rl-5", name: "Packing",            type: "manual", owner: "Operador Loja",desc: "Embalagem dos produtos para disponibilização ao cliente." },
-          { id: "rl-6", name: "Ready for Pickup",   type: "auto",   owner: "Notif. Agent", desc: "Notificação ao cliente de que o pedido está pronto para retirada." },
+          { id: "rl-3", name: "Reserva de Estoque", type: "auto",   owner: "Intelipost WMS", desc: "Reserva dos itens na loja designada para pickup." },
+          { id: "rl-4", name: "Picking",            type: "manual", owner: "Equipe Loja",    desc: "Separação dos produtos no estoque da loja." },
+          { id: "rl-5", name: "Packing",            type: "manual", owner: "Equipe Loja",    desc: "Embalagem dos produtos para disponibilização ao cliente." },
+          { id: "rl-6", name: "Ready for Pickup",   type: "auto",   owner: "Brevo",          desc: "Notificação ao cliente de que o pedido está pronto para retirada." },
         ]},
         { id: "rl-s3", name: "Faturamento", gate: "deliverable_ready", linkedToNext: true, category: "FULFILLMENT", tasks: [
-          { id: "rl-7", name: "Emissão de Nota Fiscal", type: "auto", owner: "Fiscal Service", desc: "Geração da NF-e no momento do pickup ou pré-emissão." },
+          { id: "rl-7", name: "Emissão de Nota Fiscal", type: "auto", owner: "Bling", desc: "Geração da NF-e no momento do pickup ou pré-emissão." },
         ]},
         { id: "rl-s4", name: "Entrega em Loja", gate: "customer_has_goods", linkedToNext: false, category: "DELIVERY", tasks: [
-          { id: "rl-8", name: "Customer Check-in",  type: "manual", owner: "Operador Loja", desc: "Confirmação da chegada do cliente na loja." },
-          { id: "rl-9", name: "Handover at POS",    type: "manual", owner: "Operador Loja", desc: "Entrega física do pedido ao cliente no ponto de venda." },
+          { id: "rl-8", name: "Customer Check-in",  type: "manual", owner: "Equipe Loja", desc: "Confirmação da chegada do cliente na loja." },
+          { id: "rl-9", name: "Handover at POS",    type: "manual", owner: "Equipe Loja", desc: "Entrega física do pedido ao cliente no ponto de venda." },
         ]},
       ]},
 
@@ -357,16 +370,16 @@ window.AIWData = (function () {
       ],
       stages: [
         { id: "vd-s1", name: "Confirmação de Pagamento", gate: "payment_settled", linkedToNext: true, category: "PAYMENT", tasks: [
-          { id: "vd-1", name: "Autorização de Pagamento", type: "auto", owner: "Gateway",         desc: "Pré-autorização do valor junto à adquirente/gateway." },
-          { id: "vd-2", name: "Captura de Pagamento",     type: "auto", owner: "Gateway",         desc: "Confirmação e captura definitiva do valor autorizado." },
+          { id: "vd-1", name: "Autorização de Pagamento", type: "auto", owner: "Stripe",      desc: "Pré-autorização do valor junto à adquirente/gateway." },
+          { id: "vd-2", name: "Captura de Pagamento",     type: "auto", owner: "Stripe",      desc: "Confirmação e captura definitiva do valor autorizado." },
         ]},
         { id: "vd-s2", name: "Ativação Digital", gate: "deliverable_ready", linkedToNext: true, category: "FULFILLMENT", tasks: [
-          { id: "vd-3", name: "Gerar Chave / Licença",    type: "auto", owner: "Digital Service", desc: "Geração automática da chave de ativação ou licença digital." },
-          { id: "vd-4", name: "Emissão de NF-e",          type: "auto", owner: "Fiscal Service",  desc: "Emissão da nota fiscal para produto digital." },
+          { id: "vd-3", name: "Gerar Chave / Licença",    type: "auto", owner: "AWS Lambda",  desc: "Geração automática da chave de ativação ou licença digital." },
+          { id: "vd-4", name: "Emissão de NF-e",          type: "auto", owner: "Enotas",      desc: "Emissão da nota fiscal para produto digital." },
         ]},
         { id: "vd-s3", name: "Entrega Digital", gate: "customer_has_goods", linkedToNext: false, category: "DELIVERY", tasks: [
-          { id: "vd-5", name: "Enviar por E-mail",         type: "auto", owner: "Notif. Agent",    desc: "Envio da chave / link de acesso ao e-mail do cliente." },
-          { id: "vd-6", name: "Confirmação de Acesso",     type: "auto", owner: "Digital Service", desc: "Verificação de que o cliente acessou ou ativou o produto." },
+          { id: "vd-5", name: "Enviar por E-mail",         type: "auto", owner: "SendGrid",    desc: "Envio da chave / link de acesso ao e-mail do cliente." },
+          { id: "vd-6", name: "Confirmação de Acesso",     type: "auto", owner: "AWS Lambda",  desc: "Verificação de que o cliente acessou ou ativou o produto." },
         ]},
       ]},
 
@@ -389,16 +402,16 @@ window.AIWData = (function () {
       ],
       stages: [
         { id: "ca-s1", name: "Solicitação", gate: "cancellation_requested", linkedToNext: true, category: "FULFILLMENT", tasks: [
-          { id: "ca-1", name: "Receber Solicitação",              type: "auto",   owner: "Portal",         desc: "Registro da solicitação de cancelamento." },
-          { id: "ca-2", name: "Validar Janela de Cancelamento",   type: "auto",   owner: "Returns Agent",  desc: "Verifica se o pedido ainda pode ser cancelado." },
+          { id: "ca-1", name: "Receber Solicitação",              type: "auto",   owner: "VTEX Portal",        desc: "Registro da solicitação de cancelamento." },
+          { id: "ca-2", name: "Validar Janela de Cancelamento",   type: "auto",   owner: "Intelipost Reverso", desc: "Verifica se o pedido ainda pode ser cancelado." },
         ]},
         { id: "ca-s2", name: "Reversão de Fulfillment", linkedToNext: true, category: "FULFILLMENT", tasks: [
-          { id: "ca-3", name: "Bloquear Expedição",               type: "auto",   owner: "WMS",            desc: "Interrompe separação/expedição caso ainda em andamento." },
-          { id: "ca-4", name: "Estornar Estoque",                 type: "auto",   owner: "WMS",            desc: "Devolução das unidades canceladas ao estoque disponível." },
+          { id: "ca-3", name: "Bloquear Expedição",               type: "auto",   owner: "GFL Logística",      desc: "Interrompe separação/expedição caso ainda em andamento." },
+          { id: "ca-4", name: "Estornar Estoque",                 type: "auto",   owner: "GFL Logística",      desc: "Devolução das unidades canceladas ao estoque disponível." },
         ]},
         { id: "ca-s3", name: "Estorno Financeiro", gate: "cancellation_complete", linkedToNext: false, category: "PAYMENT", tasks: [
-          { id: "ca-5", name: "Processar Estorno",                type: "auto",   owner: "Gateway",        desc: "Devolução do valor ao cliente pelo método de pagamento original." },
-          { id: "ca-6", name: "Notificar Cliente",                type: "auto",   owner: "Notif. Agent",   desc: "Confirmação do cancelamento e prazo de estorno ao cliente." },
+          { id: "ca-5", name: "Processar Estorno",                type: "auto",   owner: "Adyen",              desc: "Devolução do valor ao cliente pelo método de pagamento original." },
+          { id: "ca-6", name: "Notificar Cliente",                type: "auto",   owner: "Brevo",              desc: "Confirmação do cancelamento e prazo de estorno ao cliente." },
         ]},
       ]},
 
@@ -421,23 +434,23 @@ window.AIWData = (function () {
       ],
       stages: [
         { id: "td-s1", name: "Solicitação", linkedToNext: true, category: "FULFILLMENT", tasks: [
-          { id: "td-1", name: "Abertura de Solicitação",          type: "auto",   owner: "Portal",        desc: "Cliente abre solicitação de troca ou devolução no portal." },
-          { id: "td-2", name: "Validar Elegibilidade",            type: "auto",   owner: "Returns Agent", desc: "Verificação de prazo, política e condição do produto." },
-          { id: "td-3", name: "Classificar (Troca / Devolução)",  type: "auto",   owner: "Returns Agent", desc: "Define se o caso é troca por novo item ou devolução com estorno." },
+          { id: "td-1", name: "Abertura de Solicitação",          type: "auto",   owner: "VTEX Portal",        desc: "Cliente abre solicitação de troca ou devolução no portal." },
+          { id: "td-2", name: "Validar Elegibilidade",            type: "auto",   owner: "Intelipost Reverso", desc: "Verificação de prazo, política e condição do produto." },
+          { id: "td-3", name: "Classificar (Troca / Devolução)",  type: "auto",   owner: "Intelipost Reverso", desc: "Define se o caso é troca por novo item ou devolução com estorno." },
         ]},
         { id: "td-s2", name: "Coleta Reversa", linkedToNext: true, category: "DELIVERY", tasks: [
-          { id: "td-4", name: "Gerar Etiqueta Reversa", type: "auto",   owner: "Carrier API",  desc: "Emissão da etiqueta de postagem reversa para o cliente." },
-          { id: "td-5", name: "Notificar Cliente",      type: "auto",   owner: "Notif. Agent", desc: "Envio das instruções de devolução ao cliente." },
-          { id: "td-6", name: "Confirmar Postagem",     type: "auto",   owner: "Carrier",      desc: "Registro da postagem do item pelo cliente." },
+          { id: "td-4", name: "Gerar Etiqueta Reversa", type: "auto",   owner: "Correios API", desc: "Emissão da etiqueta de postagem reversa para o cliente." },
+          { id: "td-5", name: "Notificar Cliente",      type: "auto",   owner: "Zenvia",       desc: "Envio das instruções de devolução ao cliente." },
+          { id: "td-6", name: "Confirmar Postagem",     type: "auto",   owner: "Correios",     desc: "Registro da postagem do item pelo cliente." },
         ]},
         { id: "td-s3", name: "Inspeção no CD", linkedToNext: true, category: "FULFILLMENT", tasks: [
-          { id: "td-7", name: "Receber Produto no CD",       type: "manual", owner: "WMS Operator", desc: "Recebimento e entrada do produto devolvido no centro de distribuição." },
-          { id: "td-8", name: "Conferir Estado do Produto",  type: "manual", owner: "WMS Operator", desc: "Avaliação física do item: aprovado para reenvio ou descarte." },
+          { id: "td-7", name: "Receber Produto no CD",       type: "manual", owner: "FullComm", desc: "Recebimento e entrada do produto devolvido no centro de distribuição." },
+          { id: "td-8", name: "Conferir Estado do Produto",  type: "manual", owner: "FullComm", desc: "Avaliação física do item: aprovado para reenvio ou descarte." },
         ]},
         { id: "td-s4", name: "Resolução", linkedToNext: false, category: "FULFILLMENT", tasks: [
-          { id: "td-9",  name: "Processar Estorno",             type: "auto",   owner: "Gateway",      desc: "Devolução do valor ao cliente via método de pagamento original." },
-          { id: "td-10", name: "Separar e Despachar Novo Item", type: "manual", owner: "WMS Operator", desc: "Fulfillment do item de troca para reenvio ao cliente." },
-          { id: "td-11", name: "Notificar Cliente — Concluído", type: "auto",   owner: "Notif. Agent", desc: "Confirmação final do processo para o cliente." },
+          { id: "td-9",  name: "Processar Estorno",             type: "auto",   owner: "Braspag",  desc: "Devolução do valor ao cliente via método de pagamento original." },
+          { id: "td-10", name: "Separar e Despachar Novo Item", type: "manual", owner: "FullComm", desc: "Fulfillment do item de troca para reenvio ao cliente." },
+          { id: "td-11", name: "Notificar Cliente — Concluído", type: "auto",   owner: "Zenvia",   desc: "Confirmação final do processo para o cliente." },
         ]},
       ]},
 
@@ -456,31 +469,76 @@ window.AIWData = (function () {
           { id: "fl-3", name: "Aprovar receita",              type: "manual", owner: "Atendimento", desc: "Aprovação libera o pedido para produção. Sem aprovação, o pedido não avança." },
         ]},
         { id: "fl-s2", name: "Produção da Lente", linkedToNext: false, category: "PRODUCTION", tasks: [
-          { id: "fl-4", name: "Acionar laboratório",     type: "auto",   owner: "Lab Monitor Agent", desc: "Agente notifica o laboratório parceiro para iniciar a fabricação." },
-          { id: "fl-5", name: "Monitorar produção",      type: "auto",   owner: "Lab Monitor Agent", desc: "Agente acompanha o prazo de produção junto ao laboratório." },
-          { id: "fl-6", name: "Confirmar lente pronta",  type: "auto",   owner: "Lab Monitor Agent", desc: "Laboratório confirma produto finalizado e enviado ao centro de distribuição." },
+          { id: "fl-4", name: "Acionar laboratório",     type: "auto",   owner: "Essilor API", desc: "Agente notifica o laboratório parceiro para iniciar a fabricação." },
+          { id: "fl-5", name: "Monitorar produção",      type: "auto",   owner: "Essilor API", desc: "Agente acompanha o prazo de produção junto ao laboratório." },
+          { id: "fl-6", name: "Confirmar lente pronta",  type: "auto",   owner: "Essilor API", desc: "Laboratório confirma produto finalizado e enviado ao centro de distribuição." },
         ]},
       ]},
   ];
 
-  /* exported for rendering */
-  const wfCategoriesRef = wfCategories;
-
-  const orchestrationCoverage = [
-    { name: "Entrega em domicílio",      meta: "4 etapas · 4.256 pedidos ativos" },
-    { name: "Retirada na loja",          meta: "4 etapas · 127 pedidos ativos"   },
-    { name: "Entrega produto virtual",   meta: "3 etapas · 234 pedidos ativos"   },
-    { name: "Cancelamento de Pedido",    meta: "3 etapas · 142 pedidos ativos"   },
-    { name: "Troca e devolução",         meta: "4 etapas · 83 pedidos ativos"    },
-    { name: "Fabricação de Lente",       meta: "2 etapas · 0 pedidos ativos"     },
+  /* ── Workflow library (templates for wizard — previously in view-workflow-board.jsx) ── */
+  const libraryWfs = [
+    { id: "boleto", name: "Boleto Bancário", icon: "📋", category: "pagamento",
+      desc: "Geração, envio e confirmação de pagamento via boleto bancário",
+      stages: [
+        { name: "Emissão",       linkedToNext: true,  tasks: [{ id: "bl-1", name: "Gerar boleto", type: "auto", owner: "Gateway" }, { id: "bl-2", name: "Enviar por e-mail", type: "auto", owner: "Notif. Agent" }] },
+        { name: "Monitoramento", linkedToNext: true,  tasks: [{ id: "bl-3", name: "Aguardar pagamento", type: "auto", owner: "Gateway" }] },
+        { name: "Confirmação",   tasks: [{ id: "bl-4", name: "Confirmar e liberar pedido", type: "auto", owner: "OMS" }] }
+      ]},
+    { id: "entrega-agendada", name: "Entrega Agendada", icon: "🗓️", category: "fulfillment",
+      desc: "Pedidos com janela de entrega agendada pelo cliente",
+      stages: [
+        { name: "Agendamento", linkedToNext: true, tasks: [{ id: "ea-1", name: "Confirmar janela com cliente", type: "auto", owner: "Notif. Agent" }] },
+        { name: "Preparação",  linkedToNext: true, tasks: [{ id: "ea-2", name: "Separar produto no dia", type: "manual", owner: "WMS Operator" }] },
+        { name: "Entrega",     tasks: [{ id: "ea-3", name: "Cumprir janela agendada", type: "manual", owner: "Carrier" }] }
+      ]},
+    { id: "recusa-pgto", name: "Recusa de Pagamento", icon: "🚫", category: "pagamento",
+      desc: "Retentativa e resolução de pagamentos recusados pela operadora",
+      stages: [
+        { name: "Detecção",    linkedToNext: true,  tasks: [{ id: "rp-1", name: "Detectar recusa", type: "auto", owner: "Gateway" }, { id: "rp-2", name: "Notificar cliente", type: "auto", owner: "Notif. Agent" }] },
+        { name: "Retentativa", linkedToNext: false, tasks: [{ id: "rp-3", name: "Retentar cobrança", type: "auto", owner: "Gateway" }] },
+        { name: "Resolução",   tasks: [{ id: "rp-4", name: "Cancelar ou confirmar pedido", type: "auto", owner: "OMS Agent" }] }
+      ]},
+    { id: "giftcard", name: "Gift Card", icon: "🎁", category: "servicos",
+      desc: "Emissão e validação de gift cards na compra e no resgate",
+      stages: [
+        { name: "Emissão",   linkedToNext: true, tasks: [{ id: "gc-1", name: "Gerar código", type: "auto", owner: "Platform" }, { id: "gc-2", name: "Enviar ao presenteado", type: "auto", owner: "Notif. Agent" }] },
+        { name: "Validação", tasks: [{ id: "gc-3", name: "Validar resgate", type: "auto", owner: "Platform" }] }
+      ]},
+    { id: "assinatura", name: "Assinatura", icon: "🔁", category: "servicos",
+      desc: "Gestão de cobranças recorrentes e renovações automáticas de assinatura",
+      stages: [
+        { name: "Cobrança",    linkedToNext: true, tasks: [{ id: "as-1", name: "Cobrar recorrência", type: "auto", owner: "Gateway" }] },
+        { name: "Fulfillment", linkedToNext: true, tasks: [{ id: "as-2", name: "Gerar pedido automático", type: "auto", owner: "OMS" }] },
+        { name: "Entrega",     tasks: [{ id: "as-3", name: "Despachar pedido", type: "auto", owner: "Carrier" }] }
+      ]},
+    { id: "b2b-faturamento", name: "Faturamento B2B", icon: "📊", category: "pagamento",
+      desc: "Faturamento com prazo e análise de crédito para clientes B2B",
+      stages: [
+        { name: "Crédito",     linkedToNext: true, tasks: [{ id: "b2-1", name: "Verificar limite de crédito", type: "auto", owner: "Finance Agent" }] },
+        { name: "Faturamento", linkedToNext: true, tasks: [{ id: "b2-2", name: "Emitir nota fiscal", type: "auto", owner: "Fiscal Service" }, { id: "b2-3", name: "Enviar ao cliente", type: "auto", owner: "Notif. Agent" }] },
+        { name: "Cobrança",    tasks: [{ id: "b2-4", name: "Monitorar vencimento", type: "auto", owner: "Finance Agent" }] }
+      ]},
   ];
 
-  const orchestrationActivity = [
-    { time: "12 min", kind: "warning",  actor: "Pedido 1631888948228-01 (68948228)", action: "separação travada — agente sugeriu CD Rio como alternativa", note: "Parada há 3h. Confiança 88%." },
-    { time: "38 min", kind: "success",  actor: "Pedido 1631858947234-01 (68947234)", action: "realocação aprovada — agente avançou automaticamente após confirmação do CD Rio" },
-    { time: "1 h",    kind: "info",     actor: "Pedido 1631828946500-01 (68946500)", action: "status avançado — embalagem concluída via WMS" },
-    { time: "2 h",    kind: "critical", actor: "Pedido 1631848946980-01 (68946980)", action: "escalado ao operador — confiança abaixo do threshold", note: "Confiança 62%. Task criada para operações." },
-    { time: "3 h",    kind: "info",     actor: "Workflow Troca e Devolução", action: "acionado automaticamente após Workflow Padrão concluir para o pedido 1631858947234-01 (68947234)" }
+  /* ── Autocomplete suggestions for wizard (previously in view-workflow-board.jsx) ── */
+  const stageSuggestions = [
+    "Recebimento", "Validação", "Triagem", "Processamento", "Análise",
+    "Aprovação", "Emissão", "Envio", "Confirmação", "Monitoramento",
+    "Separação", "Embalagem", "Despacho", "Entrega", "Notificação",
+    "Revisão", "Devolução", "Reembolso", "Cancelamento", "Cobrança",
+    "Suporte", "Auditoria", "Integração", "Sincronização", "Análise de fraude",
+  ];
+
+  const taskSuggestions = [
+    "Verificar dados do pedido", "Notificar cliente por e-mail",
+    "Notificar cliente por SMS", "Atualizar status no sistema",
+    "Aprovar manualmente", "Gerar documento", "Consultar API externa",
+    "Registrar no log", "Validar pagamento", "Confirmar estoque",
+    "Imprimir etiqueta", "Acionar transportadora", "Verificar fraude",
+    "Emitir nota fiscal", "Processar reembolso", "Arquivar pedido",
+    "Escalar para operador", "Enviar webhook", "Cobrar recorrência",
+    "Criar pedido automático",
   ];
 
   // My AI Team — replaces existing AppData.aiTeam with order-related agents
@@ -532,6 +590,14 @@ window.AIWData = (function () {
       origin:"Marketplace", qty:5, total:"R$ 1.139,20",
       status:"processing", statusLabel:"Em processamento",
       sla:"4h", seller:"C&A", eta:"02/06/2026",
+      customerDetail:{
+        taxId:"843.291.752-00",
+        phone:"(21) 99823-4571",
+        email:"mariana.figueiredo@email.com",
+        address:"Rua das Laranjeiras, 142, Apto 301 · Botafogo – Rio de Janeiro, RJ · CEP 22240-003",
+        billingAddress:"Rua das Laranjeiras, 142, Apto 301 · Botafogo – Rio de Janeiro, RJ · CEP 22240-003",
+        card:"Visa **** 4512",
+      },
       note:{
         useCase:"Pedido omnicanal: múltiplas modalidades de entrega no mesmo carrinho",
         text:"Cenário recorrente em varejistas com operação física e digital. O cliente adicionou ao mesmo carrinho itens para retirar na loja e itens para entrega em domicílio. O OMS identificou automaticamente as modalidades, criou Order Jobs separados e acionou os workflows de Retirada na Loja (BOPIS) e Entrega em Domicílio via Jadlog. Os 2 itens de entrega já foram despachados e entregues com sucesso. Os 3 itens de retirada estão prontos na C&A Botafogo aguardando a visita do cliente.",
@@ -589,6 +655,14 @@ window.AIWData = (function () {
       origin:"Marketplace", qty:1, total:"R$ 3.518,90",
       status:"return", statusLabel:"Troca e devolução",
       sla:"—", seller:"Samsung", eta:"—",
+      customerDetail:{
+        taxId:"512.473.890-12",
+        phone:"(11) 98734-2019",
+        email:"r.alves@gmail.com",
+        address:"Av. Paulista, 1578, Conj. 42 · Bela Vista – São Paulo, SP · CEP 01310-200",
+        billingAddress:"Av. Paulista, 1578, Conj. 42 · Bela Vista – São Paulo, SP · CEP 01310-200",
+        card:"Mastercard **** 8834",
+      },
       note:{
         useCase:"Logística reversa pós-entrega: devolução por defeito de produto",
         text:"Cenário de pós-venda em que o cliente reportou defeito no produto após o recebimento. O workflow de Troca e Devolução foi acionado automaticamente após a conclusão do workflow de Entrega. O Returns Agent validou a elegibilidade dentro do prazo de 7 dias, classificou como devolução com estorno e gerou a etiqueta reversa. O processo aguarda a postagem pelo cliente para seguir para inspeção no CD e liberação do estorno.",
@@ -663,6 +737,14 @@ window.AIWData = (function () {
       origin:"Loja própria", qty:2, total:"R$ 339,30",
       status:"processing", statusLabel:"Em processamento",
       sla:"6h", seller:"DrogariaSP", eta:"03/06/2026",
+      customerDetail:{
+        taxId:"234.781.456-09",
+        phone:"(11) 97453-8821",
+        email:"patricia.souza@outlook.com",
+        address:"Rua Augusta, 2345, Apto 12 · Consolação – São Paulo, SP · CEP 01413-100",
+        billingAddress:"Rua Augusta, 2345, Apto 12 · Consolação – São Paulo, SP · CEP 01413-100",
+        card:"Elo **** 2290",
+      },
       note:{
         useCase:"Carrinho misto: produto virtual e produto físico no mesmo pedido",
         text:"Cenário típico em farmácias e plataformas de saúde com serviços digitais. O cliente comprou uma assinatura de consulta online (produto virtual) e um suplemento vitamínico (produto físico). O OMS separou os itens em dois Order Jobs com workflows distintos — Entrega Produto Virtual para a assinatura e Entrega em Domicílio para o suplemento. A assinatura está com a chave gerada aguardando envio por e-mail; o produto físico está em processo de embalagem.",
@@ -740,6 +822,14 @@ window.AIWData = (function () {
       origin:"Loja própria", qty:3, total:"R$ 911,60",
       status:"processing", statusLabel:"Em processamento",
       sla:"8h", seller:"ObraMax", eta:"03/06/2026",
+      customerDetail:{
+        taxId:"678.902.134-88",
+        phone:"(51) 98212-3347",
+        email:"edu.nunes@construmax.com.br",
+        address:"Av. Ipiranga, 6690, Sala 201 · Porto Alegre, RS · CEP 90610-000",
+        billingAddress:"Av. Ipiranga, 6690, Sala 201 · Porto Alegre, RS · CEP 90610-000",
+        card:"Mastercard **** 7751",
+      },
       note:{
         useCase:"Cancelamento parcial: item individual em processo de cancelamento enquanto kit segue para entrega",
         text:"Cenário de cancelamento seletivo em pedido com kit e produto individual. O cliente solicitou o cancelamento de 1 item (cola de instalação) enquanto o kit de piso vinílico segue para entrega. O agente identificou que o item individual ainda estava em separação, acionou o workflow de Cancelamento, bloqueou a expedição e iniciou a reversão de estoque e o estorno financeiro proporcional ao item cancelado.",
@@ -844,8 +934,14 @@ window.AIWData = (function () {
 
   ];
 
-  // wfNaturezas is the canonical name per IA; wfCategories kept for backward compat
-  const wfNaturezas = wfCategories;
+  const resources = [
+    { id: "all-orders",    icon: "grid",    label: "Todos os pedidos",    sub: "4.256 pedidos · 13 filtros AI ativos" },
+    { id: "workflow-board",icon: "board",   label: "Workflow Board",      sub: workflows.length + " workflows · Padrão e customizados" },
+    { id: "orchestration", icon: "sparkle", label: "Agentes de Pedidos",  sub: "Ativo · 4.256 pedidos monitorados" }
+  ];
 
-  return { AVATARS, kpis, workflowStages, tasks, resources, workflows, wfCategories, wfNaturezas, TASK_STATUSES, orchestrationCoverage, orchestrationActivity, aiTeam, orders };
+  return { AVATARS, conversations, kpis, workflowStages, tasks, resources, workflows, wfCategories, aiTeam, orders, libraryWfs, stageSuggestions, taskSuggestions };
 })();
+
+/* ── AppData alias — keeps sidebar.jsx and app.jsx working without changes ── */
+window.AppData = { AVATARS: window.AIWData.AVATARS, conversations: window.AIWData.conversations };

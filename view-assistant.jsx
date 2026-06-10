@@ -1,4 +1,4 @@
-/* global React, Icon, AIWData, MessageComposer, ChatEngine */
+/* global React, Icon, AIWData, MessageComposer, ChatEngine, SevPill */
 const { useState, useEffect, useRef } = React;
 
 /* ------- KPI overview card ------- */
@@ -65,7 +65,6 @@ function WorkflowStagesCard() {
 /* ------- Open tasks (4 cards) ------- */
 function OpenTasksCard({ onOpen }) {
   const { tasks } = AIWData;
-  const sevLabel = { high: "Alta", medium: "Média", low: "Baixa" };
   return (
     <section className="aiw-section">
       <div className="aiw-section-head">
@@ -75,10 +74,7 @@ function OpenTasksCard({ onOpen }) {
         {tasks.map((t) =>
           <button key={t.id} className="task-card" onClick={() => onOpen(t.id)}>
             <div className="task-card-top">
-              <span className={`sev sev-${t.priority}`}>
-                {t.priority === "high" && <span className="dot" />}
-                {sevLabel[t.priority]}
-              </span>
+              <SevPill level={t.priority} />
               <span className="task-active">
                 <span className="status-dot active" /> Ativa
               </span>
@@ -119,8 +115,26 @@ function ResourcesCard({ onGoto }) {
 }
 
 /* ------- All orders table ------- */
+
+// Returns the most anterior (earliest-index) active stage across all item groups of an order.
+// "Active" = first stage whose status is not "done".
+function getCurrentStage(order) {
+  if (!order.itemGroups || order.itemGroups.length === 0) return null;
+  let best = null;
+  order.itemGroups.forEach(group => {
+    if (!group.stages) return;
+    const idx = group.stages.findIndex(s => s.status !== "done");
+    if (idx === -1) return; // this group is fully done
+    if (best === null || idx < best.idx) {
+      best = { idx, stage: group.stages[idx] };
+    }
+  });
+  return best ? best.stage : null;
+}
+
 function AllOrdersTable({ onOpenOrder }) {
   const { orders } = AIWData;
+  const [hoveredId, setHoveredId] = useState(null);
   return (
     <section className="aiw-section">
       <div className="orders-filterbar">
@@ -139,33 +153,53 @@ function AllOrdersTable({ onOpenOrder }) {
       <div className="orders-table">
         <div className="orders-thead">
           <span>ID do pedido</span>
-          <span>Data de criação</span>
+          <span>Tarefa atual</span>
           <span>Cliente</span>
+          <span>Data de criação</span>
           <span>Origem</span>
           <span>Itens</span>
           <span>Total</span>
-          <span>Caso de Uso</span>
         </div>
-        {orders.map((o, i) =>
-          <div key={i} className="orders-row" style={{ cursor: "pointer" }}
-               onClick={() => onOpenOrder && onOpenOrder(o.id)}>
-            <span className="orders-id">
-              {o.id}<br/>
-              <span className="muted" style={{ fontSize: 11 }}>({o.short})</span>
-            </span>
-            <span className="muted">{o.date}</span>
-            <span>{o.customer}</span>
-            <span>{o.origin}</span>
-            <span>{o.qty}</span>
-            <span>{o.total}</span>
-            <span style={{ display: "flex", flexDirection: "column", gap: 3 }}>
-              <span style={{ fontSize: 12, fontWeight: 700, color: "var(--fg)" }}>{o.seller || "—"}</span>
-              {o.note && o.note.useCase && (
-                <span style={{ fontSize: 11.5, color: "var(--fg-2)", lineHeight: 1.45 }}>{o.note.useCase}</span>
-              )}
-            </span>
-          </div>
-        )}
+        {orders.map((o, i) => {
+          const currentStage = getCurrentStage(o);
+          const hasPopover = o.seller || (o.note && o.note.useCase);
+          return (
+            <div key={i} className="orders-row" style={{ cursor: "pointer" }}
+                 onClick={() => onOpenOrder && onOpenOrder(o.id)}>
+              <span className="orders-id-wrap"
+                    onMouseEnter={() => hasPopover && setHoveredId(o.id)}
+                    onMouseLeave={() => setHoveredId(null)}>
+                <span className="orders-id">
+                  {o.id}<br/>
+                  <span className="muted" style={{ fontSize: 11 }}>({o.short})</span>
+                </span>
+                {hoveredId === o.id && hasPopover && (
+                  <div className="orders-usecase-popover" onClick={e => e.stopPropagation()}>
+                    {o.seller && <span className="orders-usecase-seller">{o.seller}</span>}
+                    {o.note && o.note.useCase && (
+                      <span className="orders-usecase-text">{o.note.useCase}</span>
+                    )}
+                  </div>
+                )}
+              </span>
+              <span>
+                {currentStage ? (
+                  <span className="orders-current-stage">
+                    {currentStage.icon && <span className="orders-stage-icon">{currentStage.icon}</span>}
+                    <span className="orders-stage-label">{currentStage.label}</span>
+                  </span>
+                ) : (
+                  <span className="orders-stage-done">Concluído</span>
+                )}
+              </span>
+              <span>{o.customer}</span>
+              <span className="muted">{o.date}</span>
+              <span>{o.origin}</span>
+              <span>{o.qty}</span>
+              <span>{o.total}</span>
+            </div>
+          );
+        })}
       </div>
     </section>
   );

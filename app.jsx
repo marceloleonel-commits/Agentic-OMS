@@ -1,4 +1,4 @@
-/* global React, ReactDOM, Sidebar, Icon, AppData, AIWData, AssistantView, TaskView, OrderDetailView, WorkflowBoardView, OrchestrationView, ChatPanel, ResizableSplit, ChatEngine, AITeamDrawer, TweaksPanel, useTweaks, TweakSection, TweakRadio, TweakColor */
+/* global React, ReactDOM, Sidebar, Icon, AppData, AIWData, AssistantView, TaskView, OrderDetailView, WorkflowBoardView, OrchestrationView, ChatPanel, ResizableSplit, ChatEngine, AITeamDrawer, TweaksPanel, useTweaks, TweakSection, TweakRadio, TweakColor, Dropdown */
 const { useState, useEffect, useRef, useCallback } = React;
 
 const TWEAKS_DEFAULTS = /*EDITMODE-BEGIN*/{
@@ -46,25 +46,6 @@ function routeToHash(r) {
   return `#/${r.name}`;
 }
 
-/* -------- tiny dropdown helper for topbar -------- */
-function Dropdown({ trigger, children, align = "right" }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef(null);
-  useEffect(() => {
-    if (!open) return;
-    const onClick = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
-    document.addEventListener("mousedown", onClick);
-    return () => document.removeEventListener("mousedown", onClick);
-  }, [open]);
-  return (
-    <div className="dd-wrap" ref={ref}>
-      <span onClick={() => setOpen((o) => !o)}>{trigger}</span>
-      {open && (
-        <div className={`dd-menu ${align}`} onClick={() => setOpen(false)}>{children}</div>
-      )}
-    </div>
-  );
-}
 
 function App() {
   const [tweaks, setTweak] = useTweaks(TWEAKS_DEFAULTS);
@@ -74,6 +55,7 @@ function App() {
   const [route, setRouteState] = useState(_init);
   const [wfMode, setWfMode] = useState(_init.wfMode || { kind: 'list' });
   const [wfBoardKey, setWfBoardKey] = useState(0);
+  const [productView, setProductView] = useState(null); // lifted from OrderDetailView for standalone order-detail
 
   const setRoute = (r) => {
     setRouteState(r);
@@ -180,6 +162,9 @@ function App() {
     });
   }, [route.name, route.orderId]);
 
+  // Reset product subview whenever we navigate to a different order
+  useEffect(() => { setProductView(null); }, [route.orderId]);
+
   const goHome   = () => setRoute({ name: "orders" });
   const openTask = (id) => setRoute({ name: "task", id });
   const openOrder = (id) => setRoute({ name: "order-detail", orderId: id });
@@ -213,7 +198,7 @@ function App() {
           <span className="dd-item-icon"><Icon name="board" size={14} /></span>
           <span>
             <span className="dd-item-label">Gerenciador de Experiências</span>
-            <span className="dd-item-sub">7 workflows configurados</span>
+            <span className="dd-item-sub">{AIWData.workflows.length} workflows configurados</span>
           </span>
         </button>
         <button className="dd-item" onClick={() => setRoute({ name: "orders" })}>
@@ -276,14 +261,15 @@ function App() {
     view = <OrchestrationView onBack={goHome} onOpenOrder={openOrder} />;
   } else if (route.name === "order-detail") {
     const currentOrder = AIWData.orders.find(o => o.id === route.orderId);
+    // Standalone order — single-item impacted so the pager nav doesn't appear
     const syntheticTask = {
       detail: {
-        impacted: AIWData.orders.map(o => ({
-          id: o.id,
-          sla: o.sla || "—",
-          seller: o.seller || o.origin,
-          eta: o.eta || "—"
-        }))
+        impacted: currentOrder ? [{
+          id: currentOrder.id,
+          sla: currentOrder.sla || "—",
+          seller: currentOrder.seller || currentOrder.origin,
+          eta: currentOrder.eta || "—"
+        }] : []
       }
     };
     const orderChips = [
@@ -311,13 +297,23 @@ function App() {
         <div className="detail-panel">
           <div className="detail-head no-border">
             <div className="detail-head-left">
-              <button
-                className="od-back-link"
-                onClick={goHome}
-                style={{ display: "flex", alignItems: "center", gap: 4, background: "none", border: "none", cursor: "pointer", color: "var(--fg-2)", fontSize: 13 }}
-              >
-                <Icon name="chevron-left" size={14} /> Todos os Pedidos
-              </button>
+              {productView !== null ? (
+                <button
+                  className="od-back-link"
+                  onClick={() => setProductView(null)}
+                  style={{ display: "flex", alignItems: "center", gap: 4, background: "none", border: "none", cursor: "pointer", color: "var(--fg-2)", fontSize: 13 }}
+                >
+                  <Icon name="chevron-left" size={14} /> Pedido {route.orderId}
+                </button>
+              ) : (
+                <button
+                  className="od-back-link"
+                  onClick={goHome}
+                  style={{ display: "flex", alignItems: "center", gap: 4, background: "none", border: "none", cursor: "pointer", color: "var(--fg-2)", fontSize: 13 }}
+                >
+                  <Icon name="chevron-left" size={14} /> Todos os Pedidos
+                </button>
+              )}
             </div>
           </div>
           <div className="detail-scroll">
@@ -327,6 +323,9 @@ function App() {
                 orderId={route.orderId}
                 onBack={goHome}
                 onOpenOrder={(id) => setRoute({ name: "order-detail", orderId: id })}
+                standalone={true}
+                productView={productView}
+                onProductViewChange={setProductView}
               />
             </div>
           </div>

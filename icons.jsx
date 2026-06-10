@@ -70,6 +70,8 @@ const Icon = ({ name, size = 16, ...rest }) => {
       return (<svg width={s} height={s} viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" {...rest}><path d="M3.24996 9.99999C3.24996 8.57499 4.40829 7.41666 5.83329 7.41666H9.16663V5.83333H5.83329C3.53329 5.83333 1.66663 7.69999 1.66663 9.99999C1.66663 12.3 3.53329 14.1667 5.83329 14.1667H9.16663V12.5833H5.83329C4.40829 12.5833 3.24996 11.425 3.24996 9.99999ZM6.66663 10.8333H13.3333V9.16666H6.66663V10.8333ZM14.1666 5.83333H10.8333V7.41666H14.1666C15.5916 7.41666 16.75 8.57499 16.75 9.99999C16.75 11.425 15.5916 12.5833 14.1666 12.5833H10.8333V14.1667H14.1666C16.4666 14.1667 18.3333 12.3 18.3333 9.99999C18.3333 7.69999 16.4666 5.83333 14.1666 5.83333Z" fill="currentColor"/></svg>);
     case "link-off":
       return (<svg width={s} height={s} viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" {...rest}><path d="M11.9916 9.16667L13.3333 10.5083V9.16667H11.9916ZM14.1666 5.83333H10.8333V7.41666H14.1666C15.5916 7.41666 16.75 8.575 16.75 10C16.75 11.0583 16.1083 11.975 15.1916 12.3667L16.3583 13.5333C17.5416 12.8 18.3333 11.4917 18.3333 10C18.3333 7.7 16.4666 5.83333 14.1666 5.83333ZM1.66663 3.55833L4.25829 6.15C2.74163 6.76667 1.66663 8.25833 1.66663 10C1.66663 12.3 3.53329 14.1667 5.83329 14.1667H9.16663V12.5833H5.83329C4.40829 12.5833 3.24996 11.425 3.24996 10C3.24996 8.675 4.25829 7.58333 5.54996 7.44167L7.27496 9.16667H6.66663V10.8333H8.94163L10.8333 12.725V14.1667H12.275L15.6166 17.5083L16.7916 16.3333L2.84163 2.38333L1.66663 3.55833Z" fill="currentColor"/></svg>);
+    case "arrow-counter-clockwise":
+      return (<svg {...common}><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>);
     default:
       return null;
   }
@@ -111,9 +113,69 @@ const IconDragDots = ({ size = 16, ...rest }) => (
     <path d="M104,60a12,12,0,1,1-12-12A12,12,0,0,1,104,60Zm60,12a12,12,0,1,0-12-12A12,12,0,0,0,164,72ZM92,116a12,12,0,1,0,12,12A12,12,0,0,0,92,116Zm72,0a12,12,0,1,0,12,12A12,12,0,0,0,164,116ZM92,172a12,12,0,1,0,12,12A12,12,0,0,0,92,172Zm72,0a12,12,0,1,0,12,12A12,12,0,0,0,164,172Z"/>
   </svg>
 );
+const IconDotsSixVertical = ({ size = 16, ...rest }) => (
+  <svg width={size} height={size} viewBox="0 0 256 256" fill="currentColor" xmlns="http://www.w3.org/2000/svg" {...rest}>
+    <path d="M108,60A16,16,0,1,1,92,44,16,16,0,0,1,108,60Zm56-16a16,16,0,1,0,16,16A16,16,0,0,0,164,44ZM92,112a16,16,0,1,0,16,16A16,16,0,0,0,92,112Zm72,0a16,16,0,1,0,16,16A16,16,0,0,0,164,112ZM92,180a16,16,0,1,0,16,16A16,16,0,0,0,92,180Zm72,0a16,16,0,1,0,16,16A16,16,0,0,0,164,180Z"/>
+  </svg>
+);
 const IconCaretLeftSmall = ({ size = 16, ...rest }) => (
   <svg width={size} height={size} viewBox="0 0 256 256" fill="currentColor" xmlns="http://www.w3.org/2000/svg" {...rest}>
     <path d="M165.66,202.34a8,8,0,0,1-11.32,11.32l-80-80a8,8,0,0,1,0-11.32l80-80a8,8,0,0,1,11.32,11.32L91.31,128Z"/>
+  </svg>
+);
+const IconCaretDown = ({ size = 16, ...rest }) => (
+  <svg width={size} height={size} viewBox="0 0 256 256" fill="currentColor" xmlns="http://www.w3.org/2000/svg" {...rest}>
+    <path d="M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z"/>
+  </svg>
+);
+const IconCaretDownSmall = ({ size = 12, ...rest }) => (
+  <svg width={size} height={size} viewBox="0 0 256 256" fill="currentColor" xmlns="http://www.w3.org/2000/svg" {...rest}>
+    <path d="M213.66,101.66l-80,80a8,8,0,0,1-11.32,0l-80-80A8,8,0,0,1,53.66,90.34L128,164.69l74.34-74.35a8,8,0,0,1,11.32,11.32Z"/>
+  </svg>
+);
+const IconCaretUp = ({ size = 16, ...rest }) => (
+  <svg width={size} height={size} viewBox="0 0 256 256" fill="currentColor" xmlns="http://www.w3.org/2000/svg" {...rest}>
+    <path d="M213.66,165.66a8,8,0,0,1-11.32,0L128,91.31,53.66,165.66a8,8,0,0,1-11.32-11.32l80-80a8,8,0,0,1,11.32,0l80,80A8,8,0,0,1,213.66,165.66Z"/>
+  </svg>
+);
+const IconTrash = ({ size = 16, ...rest }) => (
+  <svg width={size} height={size} viewBox="0 0 256 256" fill="currentColor" xmlns="http://www.w3.org/2000/svg" {...rest}>
+    <path d="M216,48H176V40a24,24,0,0,0-24-24H104A24,24,0,0,0,80,40v8H40a8,8,0,0,0,0,16h8V208a16,16,0,0,0,16,16H192a16,16,0,0,0,16-16V64h8a8,8,0,0,0,0-16ZM96,40a8,8,0,0,1,8-8h48a8,8,0,0,1,8,8v8H96Zm96,168H64V64H192ZM112,104v64a8,8,0,0,1-16,0V104a8,8,0,0,1,16,0Zm48,0v64a8,8,0,0,1-16,0V104a8,8,0,0,1,16,0Z"/>
+  </svg>
+);
+const IconCheck = ({ size = 16, ...rest }) => (
+  <svg width={size} height={size} viewBox="0 0 256 256" fill="currentColor" xmlns="http://www.w3.org/2000/svg" {...rest}>
+    <path d="M229.66,77.66l-128,128a8,8,0,0,1-11.32,0l-56-56a8,8,0,0,1,11.32-11.32L96,188.69,218.34,66.34a8,8,0,0,1,11.32,11.32Z"/>
+  </svg>
+);
+const IconCheckCircleFill = ({ size = 16, ...rest }) => (
+  <svg width={size} height={size} viewBox="0 0 256 256" fill="currentColor" xmlns="http://www.w3.org/2000/svg" {...rest}>
+    <path fillRule="evenodd" d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm45.66,85.66-56,56a8,8,0,0,1-11.32,0l-24-24a8,8,0,0,1,11.32-11.32L112,148.69l50.34-50.35a8,8,0,0,1,11.32,11.32Z"/>
+  </svg>
+);
+const IconMinusCircleFill = ({ size = 16, ...rest }) => (
+  <svg width={size} height={size} viewBox="0 0 256 256" fill="currentColor" xmlns="http://www.w3.org/2000/svg" {...rest}>
+    <path fillRule="evenodd" d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm40,112H88a8,8,0,0,1,0-16h80a8,8,0,0,1,0,16Z"/>
+  </svg>
+);
+const IconXCircleFill = ({ size = 16, ...rest }) => (
+  <svg width={size} height={size} viewBox="0 0 256 256" fill="currentColor" xmlns="http://www.w3.org/2000/svg" {...rest}>
+    <path fillRule="evenodd" d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm37.66,130.34a8,8,0,0,1-11.32,11.32L128,139.31l-26.34,26.35a8,8,0,0,1-11.32-11.32L116.69,128,90.34,101.66a8,8,0,0,1,11.32-11.32L128,116.69l26.34-26.35a8,8,0,0,1,11.32,11.32Z"/>
+  </svg>
+);
+const IconClock = ({ size = 16, ...rest }) => (
+  <svg width={size} height={size} viewBox="0 0 256 256" fill="currentColor" xmlns="http://www.w3.org/2000/svg" {...rest}>
+    <path fillRule="evenodd" d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Zm64-88a8,8,0,0,1-8,8H128a8,8,0,0,1-8-8V72a8,8,0,0,1,16,0v48h48A8,8,0,0,1,192,128Z"/>
+  </svg>
+);
+const IconCopy = ({ size = 16, ...rest }) => (
+  <svg width={size} height={size} viewBox="0 0 256 256" fill="currentColor" xmlns="http://www.w3.org/2000/svg" {...rest}>
+    <path d="M216,32H88a8,8,0,0,0-8,8V80H40a8,8,0,0,0-8,8V216a8,8,0,0,0,8,8H168a8,8,0,0,0,8-8V176h40a8,8,0,0,0,8-8V40A8,8,0,0,0,216,32Zm-56,176H48V96H160Zm48-48H176V88a8,8,0,0,0-8-8H96V48H208Z"/>
+  </svg>
+);
+const IconArrowUpRight = ({ size = 16, ...rest }) => (
+  <svg width={size} height={size} viewBox="0 0 256 256" fill="currentColor" xmlns="http://www.w3.org/2000/svg" {...rest}>
+    <path d="M200,64V168a8,8,0,0,1-16,0V83.31L69.66,197.66a8,8,0,0,1-11.32-11.32L172.69,72H88a8,8,0,0,1,0-16H192A8,8,0,0,1,200,64Z"/>
   </svg>
 );
 
@@ -127,6 +189,17 @@ window.IconDragDots = IconDragDots;
 window.IconDotsSixVertical = IconDotsSixVertical;
 window.IconPlayCircleFill = IconPlayCircleFill;
 window.IconCaretLeftSmall = IconCaretLeftSmall;
+window.IconCaretDown = IconCaretDown;
+window.IconCaretDownSmall = IconCaretDownSmall;
+window.IconCaretUp = IconCaretUp;
+window.IconTrash = IconTrash;
+window.IconCheck = IconCheck;
+window.IconCheckCircleFill = IconCheckCircleFill;
+window.IconMinusCircleFill = IconMinusCircleFill;
+window.IconXCircleFill = IconXCircleFill;
+window.IconClock = IconClock;
+window.IconCopy = IconCopy;
+window.IconArrowUpRight = IconArrowUpRight;
 window.useState = useState;
 window.useMemo = useMemo;
 window.useRef = useRef;

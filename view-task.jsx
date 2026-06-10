@@ -1,22 +1,5 @@
-/* global React, Icon, AIWData, ChatPanel, ChatEngine */
+/* global React, Icon, IconCopy, IconArrowUpRight, AIWData, ChatPanel, ChatEngine, SevPill, PersonAvatar */
 const { useState, useRef, useEffect, useCallback } = React;
-
-function SevPill({ level }) {
-  const map = { high: "Alta", medium: "Média", low: "Baixa" };
-  return (
-    <span className={`sev sev-${level}`}>
-      {level === "high" && <span className="dot" />}
-      {map[level]}
-    </span>);
-
-}
-
-function PersonAvatar({ initial, agent }) {
-  if (agent) {
-    return <span className="agent-avatar-mini" title="Agent"><Icon name="sparkle" size={12} /></span>;
-  }
-  return <span className="person-avatar">{initial}</span>;
-}
 
 function StatusSegmented({ value, onChange }) {
   const opts = [
@@ -65,59 +48,32 @@ function SubTaskRow({ t, runnable }) {
 
 /* ---------- Order detail sub-view ---------- */
 
-const ORDER_CUSTOMERS = [
-{ name: "Gilberto Gomes", taxId: "990.800.044-77", phone: "+55 21 99230-0420", email: "gilberto.gomes@gmail.com", address: "R Oswaldo Cruz, 97 apt, Flamengo · Rio de Janeiro, RJ - 22230-090" },
-{ name: "Ana Carolina Souza", taxId: "432.110.985-22", phone: "+55 11 97632-1010", email: "ana.souza@gmail.com", address: "Av Paulista, 1230 apt 502 · São Paulo, SP - 01310-100" },
-{ name: "Lucas Oliveira", taxId: "187.554.330-09", phone: "+55 31 99877-3422", email: "lucas.oliv@gmail.com", address: "R Pernambuco, 540 · Belo Horizonte, MG - 30130-150" },
-{ name: "Juliana Costa", taxId: "654.001.882-30", phone: "+55 71 98123-7766", email: "juliana.costa@gmail.com", address: "R Chile, 88 apt 102 · Salvador, BA - 40020-000" }];
-
-const ORDER_CARDS = ["VISA •••• 0200", "Mastercard •••• 7842", "AMEX •••• 1024", "VISA •••• 4321"];
-
-function hashStr(s) {
-  let h = 0;
-  for (let i = 0; i < s.length; i++) h = h * 31 + s.charCodeAt(i) | 0;
-  return Math.abs(h);
-}
-
 function buildOrderDetail(order) {
-  const seed = hashStr(order.id);
-  const c = ORDER_CUSTOMERS[seed % ORDER_CUSTOMERS.length];
-  const card = ORDER_CARDS[(seed >> 3) % ORDER_CARDS.length];
-  const carrier = ["Loggi", "Total Express", "Correios SEDEX", "Jadlog"][(seed >> 5) % 4];
-  const products = [
-  { name: "Running Shoes Pro 42", sku: "139834190834", qty: 1, listPrice: 100.0, finalPrice: 90.0, tax: 10, severity: "Handling", promos: "2 promotions" },
-  { name: "Kit Meias 6 pares", sku: "247109880221", qty: 1, listPrice: 45.0, finalPrice: 45.0, tax: 5, severity: "Manufacturing", promos: null }];
-
-  const subtotal = products.reduce((s, p) => s + p.listPrice, 0);
-  const taxes = products.reduce((s, p) => s + p.tax, 0);
-  const discounts = products.reduce((s, p) => s + (p.listPrice - p.finalPrice), 0);
-  const total = subtotal + taxes - discounts;
-
-  // current stage from SLA hours
-  const slaNum = parseInt(order.sla, 10);
-  let stageIdx = 1;
-  if (Number.isFinite(slaNum)) {
-    if (slaNum < 8) stageIdx = 2;else
-    if (slaNum < 24) stageIdx = 1;else
-    stageIdx = 0;
+  const fullOrder = AIWData.orders.find(o => o.id === order.id);
+  const customerName = fullOrder ? fullOrder.customer : "—";
+  const cd = (fullOrder && fullOrder.customerDetail) || {};
+  let carrier = "—";
+  if (fullOrder && fullOrder.itemGroups) {
+    const dg = fullOrder.itemGroups.find(g => g.fulfillmentType === "delivery");
+    if (dg) carrier = dg.supplier;
   }
-  const stages = [
-  { label: "Preparing for Carrier", time: "05/11/2024 18:00" },
-  { label: "Collecting", time: stageIdx >= 1 ? "05/11/2024 18:00" : "" },
-  { label: "Out for Delivery", time: stageIdx >= 2 ? "Now" : "" },
-  { label: "Proof of Delivery", time: stageIdx >= 3 ? "05/11/2024 16:20" : "" }];
-
-
-  const activities = [
-  { time: "14/10 10:02", actor: "Sistema", system: true, action: `criou o pedido ${order.id}`, note: `Cliente: ${c.name} · ${c.email}` },
-  { time: "14/10 10:03", actor: "Gateway", agent: true, action: "autorizou a cobrança no cartão" },
-  { time: "14/10 11:18", actor: "OMS Agent", agent: true, action: `encaminhou o pedido ao ${order.seller}` }];
-
-  if (stageIdx >= 1) activities.push({ time: "14/10 14:42", actor: "WMS", system: true, action: "iniciou separação no centro de distribuição" });
-  if (stageIdx >= 2) activities.push({ time: "15/10 08:20", actor: carrier, system: true, action: "coletou o pacote", note: "Rastreio enviado ao cliente por e-mail." });
-  if (stageIdx >= 2) activities.push({ time: "15/10 11:05", actor: "Order Management Agent", agent: true, action: "sinalizou risco de quebra de SLA", note: `Pedido em rota com folga inferior a ${order.sla}.` });
-
-  return { customer: c, card, carrier, products, breakdown: { subtotal, taxes, discounts, total }, stages, stageIdx, activities };
+  return {
+    customer: {
+      name:            customerName,
+      taxId:           cd.taxId           || "—",
+      phone:           cd.phone           || "—",
+      email:           cd.email           || "—",
+      address:         cd.address         || "—",
+      billingAddress:  cd.billingAddress  || "—",
+    },
+    card:    cd.card    || "—",
+    carrier,
+    products: [],
+    breakdown: { subtotal: 0, taxes: 0, discounts: 0, total: 0 },
+    stages: [],
+    stageIdx: 0,
+    activities: []
+  };
 }
 
 /* ══════════════════════════════════════════════════════════
@@ -188,70 +144,74 @@ const CONNECTOR_STATUS_MAP = {
   unrecoverable:    { label: "unrecoverable",    bg: "#FDF2F8", color: "#9D174D", border: "#FBCFE8" },
 };
 
-function OdStepRow({ step }) {
-  const colorMap = { done: "#169B61", active: "var(--primary)", pending: "#D1D5DB" };
-  const labelMap = { done: "Concluído", active: "Em andamento", pending: "Pendente" };
-  const badgeMap = {
-    done:    { bg: "#F0FDF4",             color: "#169B61",        border: "#BBF7D0" },
-    active:  { bg: "var(--primary-soft)", color: "var(--primary)", border: "var(--primary)" },
-    pending: { bg: "#F9FAFB",             color: "var(--fg-3)",    border: "var(--border)"  },
+function OdStepRow({ step, stageLabel, stageIcon }) {
+  const colorMap = {
+    done:    "#169B61",
+    active:  "var(--primary)",
+    pending: "var(--fg-3)",
+    error:   "#EF4444",
   };
-  const b  = badgeMap[step.status] || badgeMap.pending;
   const lc = colorMap[step.status] || colorMap.pending;
   const cs = step.connectorStatus ? (CONNECTOR_STATUS_MAP[step.connectorStatus] || null) : null;
+
+  const StatusIcon = () => {
+    const s = step.status;
+    if (s === "done")   return <IconCheckCircleFill size={20} style={{ color: "#169B61",        flexShrink: 0, marginTop: 1 }} />;
+    if (s === "active") return <IconPlayCircleFill  size={20} style={{ color: "var(--primary)", flexShrink: 0, marginTop: 1 }} />;
+    if (s === "error")  return <IconXCircleFill     size={20} style={{ color: "#EF4444",        flexShrink: 0, marginTop: 1 }} />;
+    return                     <IconClock           size={20} style={{ color: "var(--fg-4)",    flexShrink: 0, marginTop: 1 }} />;
+  };
+
+  const executor = step.agent ? "OMS Agent" : (step.executedBy || "Manual");
+
   return (
     <div className="od-step-row">
-      <div className="od-step-bar" style={{ background: step.cancelSignal ? "#EF4444" : lc }} />
-      <div className="od-step-content">
-        <div className="od-step-head">
-          <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-            <span className="od-step-label" style={{ color: lc }}>{step.label}</span>
-            {step.owner && (
-              <span style={{ fontSize: 10.5, fontWeight: 500, color: "var(--fg-3)", background: "var(--bg-muted)", border: "1px solid var(--border)", borderRadius: 5, padding: "1px 6px", lineHeight: 1.5 }}>
-                {step.owner}
-              </span>
-            )}
-            {step.cancelSignal && (
-              <span style={{ fontSize: 10, fontWeight: 700, background: "#FEF2F2", color: "#EF4444", border: "1px solid #FECACA", borderRadius: 6, padding: "1px 7px" }}>
-                ⚠ Cancelamento sinalizado
-              </span>
-            )}
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 12, width: "100%" }}>
+
+          {/* Left: icon + text stack */}
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 8, flex: 1, minWidth: 0 }}>
+            <StatusIcon />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", fontSize: 12 }}>
+                <span className="od-step-label" style={{ color: lc }}>{step.label}</span>
+                {step.cancelSignal && (
+                  <span style={{ fontSize: 10, fontWeight: 700, background: "#FEF2F2", color: "#EF4444", border: "1px solid #FECACA", borderRadius: 6, padding: "1px 7px" }}>
+                    ⚠ Cancelamento sinalizado
+                  </span>
+                )}
+              </div>
+              {step.owner && (
+                <div style={{ fontSize: 12, color: "var(--fg)", marginTop: 4 }}>
+                  Conector: {step.owner}
+                </div>
+              )}
+              {cs && (
+                <div style={{ fontSize: 11.5, color: cs.color, marginTop: 3, display: "flex", alignItems: "center", gap: 5 }}>
+                  <span style={{ fontWeight: 700, background: cs.bg, border: `1px solid ${cs.border}`, borderRadius: 5, padding: "1px 7px", fontFamily: "monospace", letterSpacing: ".2px", fontSize: 10 }}>
+                    {cs.label}
+                  </span>
+                  {step.connectorNote && <span style={{ fontSize: 11 }}>{step.connectorNote}</span>}
+                </div>
+              )}
+              {stageLabel && (
+                <div style={{ fontSize: 13, color: "var(--fg-3)", marginTop: 3 }}>
+                  Etapa: {stageLabel}
+                </div>
+              )}
+            </div>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span className="od-step-badge" style={{ background: b.bg, color: b.color, borderColor: b.border }}>
-              {labelMap[step.status]}
-            </span>
-            <Icon name="chevron-right" size={14} />
+
+          {/* Right: date top, executor bottom */}
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", justifyContent: "space-between", flexShrink: 0, minHeight: 58 }}>
+            {step.time && (
+              <div style={{ fontSize: 11, color: "var(--fg-3)", whiteSpace: "nowrap" }}>{step.time}</div>
+            )}
+            <div style={{ fontSize: 11, color: "var(--fg-3)", whiteSpace: "nowrap" }}>
+              Por {executor}
+            </div>
           </div>
+
         </div>
-        {cs && (
-          <div className="od-step-trigger" style={{ marginTop: 3, gap: 5 }}>
-            <span style={{ fontSize: 10, fontWeight: 700, background: cs.bg, color: cs.color, border: `1px solid ${cs.border}`, borderRadius: 5, padding: "1px 7px", fontFamily: "monospace", letterSpacing: ".2px" }}>
-              {cs.label}
-            </span>
-            {step.connectorNote && (
-              <span style={{ fontSize: 11, color: cs.color }}>{step.connectorNote}</span>
-            )}
-          </div>
-        )}
-        {step.agent && step.time && (
-          <div className="od-step-trigger">
-            <Icon name="sparkle" size={10} />
-            Acionado por Agente AI · {step.time}
-          </div>
-        )}
-        {step.note && !step.time && (
-          <div className="od-step-trigger" style={{ color: "var(--fg-2)" }}>
-            <Icon name="clock" size={10} />
-            {step.note}
-          </div>
-        )}
-        {step.note && step.time && (
-          <div className="od-step-trigger" style={{ color: "var(--fg-2)", marginTop: 2 }}>
-            {step.note}
-          </div>
-        )}
-      </div>
     </div>
   );
 }
@@ -285,19 +245,29 @@ function OdStageGroup({ label, icon, status, steps }) {
     pending: { dot: "#D1D5DB",         label: "Pendente",     bg: "#F9FAFB",             border: "var(--border)" },
   }[status] || { dot: "#D1D5DB", label: "Pendente", bg: "#F9FAFB", border: "var(--border)" };
 
+  const owners = [...new Set(steps.map(st => st.owner).filter(Boolean))];
+
   return (
-    <div style={{ borderTop: "1px solid var(--border)" }}>
+    <div>
       <button
         onClick={() => setOpen(o => !o)}
         style={{
           width: "100%", display: "flex", alignItems: "center", gap: 8,
-          padding: "8px 14px 8px 16px", background: s.bg, border: "none",
-          cursor: "pointer", textAlign: "left",
-          borderLeft: `3px solid ${s.dot}`,
+          padding: "16px 14px 16px 16px", background: s.bg, border: "none",
+          cursor: "pointer", textAlign: "left", borderRadius: 8,
         }}
       >
         {icon && <span style={{ fontSize: 13, lineHeight: 1 }}>{icon}</span>}
         <span style={{ flex: 1, fontSize: 12.5, fontWeight: 600, color: "var(--fg)" }}>{label}</span>
+        {owners.length > 0 && (
+          <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
+            {owners.map((owner, oi) => (
+              <span key={oi} style={{ fontSize: 10.5, fontWeight: 500, color: "var(--fg-3)", background: "var(--bg-muted)", border: "1px solid var(--border)", borderRadius: 5, padding: "1px 6px", lineHeight: 1.5 }}>
+                {owner}
+              </span>
+            ))}
+          </div>
+        )}
         <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 10.5, color: s.dot, fontWeight: 600, flexShrink: 0 }}>
           <span style={{ width: 6, height: 6, borderRadius: "50%", background: s.dot, display: "inline-block" }} />
           {s.label} · {steps.length} tarefa{steps.length !== 1 ? "s" : ""}
@@ -360,9 +330,11 @@ function OdItemRow({ item, group }) {
       {item.isKit && item.kitComponents && <OdKitComponents components={item.kitComponents} />}
       <div className="od-item-steps">
         {groupedSteps
-          ? groupedSteps.map((sg, i) => (
-              <OdStageGroup key={i} label={sg.label} icon={sg.icon} status={sg.status} steps={sg.steps} />
-            ))
+          ? groupedSteps.flatMap((sg, si) =>
+              sg.steps.map((step, i) => (
+                <OdStepRow key={`${si}-${i}`} step={step} stageLabel={sg.label} stageIcon={sg.icon} />
+              ))
+            )
           : item.steps.map((step, i) => <OdStepRow key={i} step={step} />)
         }
       </div>
@@ -647,6 +619,204 @@ function fmtBRL(v) {
   return 'R$ ' + parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ',' + parts[1];
 }
 
+/* ── Build grouped steps for a single item (same logic as OdItemRow) ── */
+function buildItemGroupedSteps(item, group) {
+  const wfDef = group && AIWData.workflows && AIWData.workflows.find(w => w.id === group.workflow);
+  if (!wfDef || !item.steps || item.steps.length === 0) return null;
+  const built = wfDef.stages.map((wfStage, si) => {
+    const taskNames = new Set(wfStage.tasks.map(t => t.name));
+    const stageSteps = item.steps.filter(s => taskNames.has(s.label)).map(s => {
+      const wfTask = wfStage.tasks.find(t => t.name === s.label);
+      return wfTask ? { ...s, owner: wfTask.owner } : s;
+    });
+    const groupStage = group.stages && group.stages[si];
+    return { label: wfStage.name, icon: groupStage ? groupStage.icon : null, status: groupStage ? groupStage.status : "pending", steps: stageSteps };
+  }).filter(g => g.steps.length > 0);
+  return built.length > 0 ? built : null;
+}
+
+/* ── Package Card — Figma design ── */
+function PackageCard({ group, index, order, onOpenProduct }) {
+  const [open, setOpen] = useState(true);
+  const [expandedItems, setExpandedItems] = useState(new Set());
+  const [showNextSteps, setShowNextSteps] = useState(new Set());
+  function toggleNextSteps(itemIdx) {
+    setShowNextSteps(prev => {
+      const next = new Set(prev);
+      if (next.has(itemIdx)) next.delete(itemIdx);
+      else next.add(itemIdx);
+      return next;
+    });
+  }
+  function toggleItemWorkflow(itemIdx) {
+    setExpandedItems(prev => {
+      const next = new Set(prev);
+      if (next.has(itemIdx)) next.delete(itemIdx);
+      else next.add(itemIdx);
+      return next;
+    });
+  }
+
+  const currentStage = group.stages ? group.stages.find(s => s.status !== "done") : null;
+  const allDone = group.stages && group.stages.every(s => s.status === "done");
+
+  const isReturn    = group.type === "return";
+  const isCanceling = group.type === "canceling";
+  const isVirtual   = group.type === "virtual";
+
+  const packageLabel = isReturn ? "Devolução" : isCanceling ? "Cancelamento" : isVirtual ? "Virtual" : null;
+  const title = packageLabel ? `${packageLabel} #${index + 1}` : `Package #${index + 1}`;
+
+  // Stage badge color
+  const stageBg    = isCanceling ? "#FEF2F2" : isReturn ? "#FFF7ED" : allDone ? "#F0FDF4" : "#D1FAE5";
+  const stageColor = isCanceling ? "#DC2626"  : isReturn ? "#C2410C"  : allDone ? "#059669" : "#059669";
+
+  const stageLabel = allDone ? "Concluído" : currentStage ? currentStage.label : "—";
+
+  // Compute total for this group
+  const groupTotal = fmtBRL(
+    (group.items || []).reduce((sum, item) => sum + parseBRL(item.price) * (item.qty || 1), 0)
+  );
+
+  // Delivery date from order
+  const deliveryDate = order && order.eta ? order.eta : "—";
+  const soldBy = order && order.seller ? order.seller : "—";
+  const shippedBy = group.supplier || "—";
+
+  // Mock tracking number (derived from order id)
+  const trackingNumber = order ? "#9138140341334" : "—";
+  const invoiceNumber  = "#139201489143";
+
+  return (
+    <div className="pkg-card">
+      <div className="pkg-header">
+        <div className="pkg-title-group">
+          <span className="pkg-title">{title}</span>
+          <span className="pkg-stage-badge" style={{ background: stageBg, color: stageColor }}>
+            {stageLabel}
+          </span>
+        </div>
+        <div className="pkg-header-right">
+          <button className="pkg-collapse-btn" onClick={() => setOpen(o => !o)} aria-label={open ? "Recolher" : "Expandir"}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                 style={{ width: 16, height: 16, transition: "transform .2s", transform: open ? "rotate(0)" : "rotate(180deg)" }}>
+              <path d="M18 15l-6-6-6 6" />
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      {open && (
+        <>
+          <div className="pkg-meta">
+            <div className="pkg-meta-field">
+              <span className="pkg-meta-key">Delivery</span>
+              <span className="pkg-meta-val">{deliveryDate}</span>
+            </div>
+            <div className="pkg-meta-sep" />
+            <div className="pkg-meta-field">
+              <span className="pkg-meta-key">Sold by</span>
+              <span className="pkg-meta-val">{soldBy}</span>
+            </div>
+            <div className="pkg-meta-sep" />
+            <div className="pkg-meta-field">
+              <span className="pkg-meta-key">Delivery by</span>
+              <span className="pkg-meta-val">{shippedBy}</span>
+            </div>
+          </div>
+
+          <div className="pkg-products-table">
+            <div className="pkg-products-body">
+            <div className="pkg-thead">
+              <span>Products</span>
+              <span>Units</span>
+              <span>Taxes</span>
+              <span>Price</span>
+            </div>
+            {(group.items || []).map((item, i) => {
+              const itemTotal = parseBRL(item.price) * (item.qty || 1);
+              const isWfOpen = expandedItems.has(i);
+              const groupedSteps = isWfOpen ? buildItemGroupedSteps(item, group) : null;
+              // Current task: first non-done step of this item; fall back to stage label if no steps
+              const currentTask = item.steps && item.steps.length > 0
+                ? item.steps.find(s => s.status !== "done")
+                : null;
+              const currentTaskLabel = currentTask
+                ? currentTask.label
+                : (!allDone && currentStage ? currentStage.label : null);
+              return (
+                <div key={i} className="pkg-product-block">
+                  <div className={`pkg-product-row${onOpenProduct ? " pkg-product-row--clickable" : ""}`} onClick={() => onOpenProduct && onOpenProduct(i)}>
+                    <div className="pkg-product-info">
+                      <div className="pkg-product-thumb">{item.emoji || "📦"}</div>
+                      <div className="pkg-product-details">
+                        <span className="pkg-product-name">{item.name}</span>
+                        <span className="pkg-product-sub">{item.price}/Un.</span>
+                      </div>
+                    </div>
+                    <span className="pkg-cell-center">{item.qty || 1}</span>
+                    <span className="pkg-cell-center">{fmtBRL(item.tax != null ? item.tax : itemTotal * 0.12)}</span>
+                    <span className="pkg-cell-right">{fmtBRL(itemTotal)}</span>
+                    {onOpenProduct && <button className="pkg-product-caret" tabIndex={-1} aria-hidden="true">›</button>}
+                  </div>
+
+                  {isWfOpen && (() => {
+                    const isNextOpen = showNextSteps.has(i);
+                    const allSteps = groupedSteps
+                      ? groupedSteps.flatMap((sg) => sg.steps.map(step => ({ step, stageLabel: sg.label, stageIcon: sg.icon })))
+                      : (item.steps || []).map(step => ({ step }));
+                    const firstNonDoneIdx = allSteps.findIndex(({ step }) => step.status !== "done");
+                    const allDelivered = firstNonDoneIdx === -1;
+                    const allDoneSteps = firstNonDoneIdx >= 0 ? allSteps.slice(0, firstNonDoneIdx) : [];
+                    const currentSteps = firstNonDoneIdx >= 0 ? allSteps.slice(firstNonDoneIdx) : allSteps;
+                    return (
+                      <div className="pkg-wf-expand">
+                        {!allDelivered && currentSteps.length > 0 && (
+                          <div className="pkg-wf-prev-toggle-row">
+                            <button
+                              className="pkg-wf-prev-toggle-btn"
+                              onClick={() => toggleNextSteps(i)}
+                            >
+                              {isNextOpen ? "Ocultar próximas etapas" : "Carregar próximas etapas"}
+                            </button>
+                          </div>
+                        )}
+                        {(allDelivered || isNextOpen) && [...currentSteps].reverse().map(({ step, stageLabel, stageIcon }, ti) => (
+                          <OdStepRow key={`next-${ti}`} step={step} stageLabel={stageLabel} stageIcon={stageIcon} />
+                        ))}
+                        {[...allDoneSteps].reverse().map(({ step, stageLabel, stageIcon }, ti) => (
+                          <OdStepRow key={`done-${ti}`} step={step} stageLabel={stageLabel} stageIcon={stageIcon} />
+                        ))}
+                      </div>
+                    );
+                  })()}
+                </div>
+              );
+            })}
+            </div>
+          </div>
+
+          <div className="pkg-footer">
+            <div className="pkg-footer-actions">
+              <button className="pkg-footer-btn" title="Copiar tracking number">
+                <IconCopy size={14} />
+                {trackingNumber}
+              </button>
+              <button className="pkg-footer-btn" title="Abrir eNF">
+                <IconArrowUpRight size={14} />
+                {invoiceNumber}
+              </button>
+            </div>
+            <div className="pkg-footer-total">
+              Total <strong>{groupTotal}</strong>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 function Field({ label, value }) {
   return (
     <div className="od-field">
@@ -656,7 +826,191 @@ function Field({ label, value }) {
 
 }
 
-function OrderDetailView({ task, orderId, onBack, onOpenOrder }) {
+/* ── Product Detail View ── */
+function ProductDetailView({ allProducts, productIdx, order, onNavigate }) {
+  const { item, group, groupIdx } = allProducts[productIdx];
+  const [showNextSteps, setShowNextSteps] = React.useState(false);
+
+  const prev = productIdx > 0 ? productIdx - 1 : null;
+  const next = productIdx < allProducts.length - 1 ? productIdx + 1 : null;
+
+  const groupedSteps = buildItemGroupedSteps(item, group);
+  const allSteps = groupedSteps
+    ? groupedSteps.flatMap((sg) => sg.steps.map(step => ({ step, stageLabel: sg.label, stageIcon: sg.icon })))
+    : (item.steps || []).map(step => ({ step }));
+
+  const firstNonDoneIdx = allSteps.findIndex(({ step }) => step.status !== "done");
+  const allDoneSteps = firstNonDoneIdx >= 0 ? allSteps.slice(0, firstNonDoneIdx) : [];
+  const currentSteps = firstNonDoneIdx >= 0 ? allSteps.slice(firstNonDoneIdx) : allSteps;
+
+  const currentTask = item.steps && item.steps.find(s => s.status !== "done");
+  const taskLabel   = currentTask ? currentTask.label : "—";
+
+  const itemTotal = parseBRL(item.price) * (item.qty || 1);
+  const allDone   = (group.stages || []).every(s => s.status === "done");
+  const currentStage = (group.stages || []).find(s => s.status !== "done");
+  const stageBg    = allDone ? "#F0FDF4" : "#D1FAE5";
+  const stageColor = "#059669";
+  const stageLabel = allDone ? "Concluído" : currentStage ? currentStage.label : "—";
+
+  return (
+    <div className="od-view">
+      <div className="od-header">
+        <div className="od-topnav">
+          <div />
+          <div className="od-pager">
+            <span className="od-pager-count">{productIdx + 1} de {allProducts.length}</span>
+            <button className="od-pager-btn" disabled={prev === null} onClick={() => prev !== null && onNavigate(prev)}>
+              <Icon name="chevron-left" size={14} />
+            </button>
+            <button className="od-pager-btn" disabled={next === null} onClick={() => next !== null && onNavigate(next)}>
+              <Icon name="chevron-right" size={14} />
+            </button>
+          </div>
+        </div>
+        <h1 className="detail-title">{item.name}</h1>
+      </div>
+
+      {/* Metadata */}
+      <dl className="detail-fields od-meta">
+        <dt>Workflow Task</dt>
+        <dd>{taskLabel}</dd>
+        <dt>Package</dt>
+        <dd>Package #{groupIdx + 1}</dd>
+        <dt>Sold by</dt>
+        <dd>{order && order.seller ? order.seller : "—"}</dd>
+        <dt>Delivery by</dt>
+        <dd>{group.supplier || "—"}</dd>
+        <dt>Delivery</dt>
+        <dd>{order && order.eta ? order.eta : "—"}</dd>
+      </dl>
+
+      {/* Product section */}
+      <section className="detail-section flush">
+        <div className="detail-section-head"><h3>Product</h3></div>
+        <div className="prod-detail-cards">
+          {/* Infos card */}
+          <div className="prod-detail-card">
+            <div className="prod-detail-card-title">Infos</div>
+            <div className="prod-detail-card-rows">
+              <div className="prod-detail-card-row">
+                <span className="prod-detail-card-label">Product URL</span>
+                <a
+                  href={`https://www.cea.com.br/p/${item.sku}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="prod-detail-card-link"
+                >
+                  cea.com.br/p/{item.sku}
+                </a>
+              </div>
+              <div className="prod-detail-card-row">
+                <span className="prod-detail-card-label">SKU</span>
+                <span className="prod-detail-card-value">#{item.sku}</span>
+              </div>
+              <div className="prod-detail-card-row">
+                <span className="prod-detail-card-label">Units</span>
+                <span className="prod-detail-card-value">{item.qty || 1}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Taxes card */}
+          {(() => {
+            const taxTotal = item.tax != null ? item.tax : itemTotal * 0.12;
+            const icms  = taxTotal * 0.47;
+            const pis   = taxTotal * 0.24;
+            const cofins = taxTotal * 0.29;
+            return (
+              <div className="prod-detail-card">
+                <div className="prod-detail-card-title">Taxes</div>
+                <div className="prod-detail-card-rows">
+                  <div className="prod-detail-card-row prod-detail-card-row--total">
+                    <span className="prod-detail-card-value prod-detail-card-value--bold">{fmtBRL(taxTotal)}</span>
+                  </div>
+                  <div className="prod-detail-card-row">
+                    <span className="prod-detail-card-label">ICMS</span>
+                    <span className="prod-detail-card-value">{fmtBRL(icms)}</span>
+                  </div>
+                  <div className="prod-detail-card-row">
+                    <span className="prod-detail-card-label">PIS</span>
+                    <span className="prod-detail-card-value">{fmtBRL(pis)}</span>
+                  </div>
+                  <div className="prod-detail-card-row">
+                    <span className="prod-detail-card-label">COFINS</span>
+                    <span className="prod-detail-card-value">{fmtBRL(cofins)}</span>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* Price card */}
+          <div className="prod-detail-card">
+            <div className="prod-detail-card-title">Price</div>
+            <div className="prod-detail-card-rows">
+              <div className="prod-detail-card-row">
+                <span className="prod-detail-card-label">Acquired</span>
+                <span className="prod-detail-card-value">{item.price}</span>
+              </div>
+              <div className="prod-detail-card-row">
+                <span className="prod-detail-card-label">Full Price</span>
+                <span className="prod-detail-card-value">{fmtBRL(itemTotal)}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Promotions section */}
+      <section className="detail-section flush">
+        <div className="detail-section-head"><h3>Promotions Included</h3></div>
+        <div style={{ padding: 0, display: "flex", flexDirection: "column", gap: 12 }}>
+          <div className="prod-promo-row">
+            <div>
+              <div className="prod-promo-name">VTEX Day 15% OFF</div>
+              <div className="prod-promo-sub">Promoção aplicada automaticamente · Cumulativa</div>
+            </div>
+            <span className="prod-promo-val">−R$ 17,99</span>
+          </div>
+          <div className="prod-promo-row prod-promo-row--last">
+            <div>
+              <div className="prod-promo-name">Frete Grátis · Marketplace</div>
+              <div className="prod-promo-sub">Cupom marketplace · Não cumulativa</div>
+            </div>
+            <span className="prod-promo-val">−R$ 19,90</span>
+          </div>
+        </div>
+      </section>
+
+      {/* Workflow section */}
+      <section className="detail-section flush">
+        <div className="detail-section-head"><h3>Workflow</h3></div>
+        <div className="pkg-wf-expand">
+          {currentSteps.length > 0 && (
+            <div className="pkg-wf-prev-toggle-row">
+              <button className="pkg-wf-prev-toggle-btn" onClick={() => setShowNextSteps(v => !v)}>
+                {showNextSteps ? "Ocultar próximas etapas" : "Carregar próximas etapas"}
+              </button>
+            </div>
+          )}
+          {showNextSteps && [...currentSteps].reverse().map(({ step, stageLabel: sl, stageIcon: si }, ti) => (
+            <OdStepRow key={`next-${ti}`} step={step} stageLabel={sl} stageIcon={si} />
+          ))}
+          {[...allDoneSteps].reverse().map(({ step, stageLabel: sl, stageIcon: si }, ti) => (
+            <OdStepRow key={`done-${ti}`} step={step} stageLabel={sl} stageIcon={si} />
+          ))}
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function OrderDetailView({ task, orderId, onBack, onOpenOrder, standalone = false, productView: externalProductView, onProductViewChange }) {
+  const [internalProductView, setInternalProductView] = React.useState(null);
+  // When used from app.jsx (standalone), productView is lifted to the parent via props
+  const productView    = externalProductView !== undefined ? externalProductView : internalProductView;
+  const setProductView = onProductViewChange  !== undefined ? onProductViewChange  : setInternalProductView;
   const impacted = task.detail.impacted;
   const idx = impacted.findIndex((o) => o.id === orderId);
   const order = impacted[idx];
@@ -668,6 +1022,11 @@ function OrderDetailView({ task, orderId, onBack, onOpenOrder }) {
   const itemGroups = buildOrderItemGroups(fullOrder);
   const totalItems = itemGroups.reduce((s, g) => s + g.items.length, 0);
 
+  // Flat list of all products across groups, for ProductDetailView pagination
+  const allProducts = itemGroups.flatMap((group, groupIdx) =>
+    (group.items || []).map((item, itemIdx) => ({ item, group, groupIdx, itemIdx }))
+  );
+
   // Real payment breakdown — computed from item groups
   const SHIPPING_RATE = 19.90; // flat rate per delivery group
   const realBreakdown = { subtotal: 0, discounts: 0, taxes: 0, shipping: 0, total: 0 };
@@ -675,7 +1034,9 @@ function OrderDetailView({ task, orderId, onBack, onOpenOrder }) {
     fullOrder.itemGroups.forEach(function(group) {
       if (group.type === 'return') return; // return group = refund in progress, not original charge
       (group.items || []).forEach(function(item) {
-        realBreakdown.subtotal += parseBRL(item.price) * (item.qty || 1);
+        const sub = parseBRL(item.price) * (item.qty || 1);
+        realBreakdown.subtotal += sub;
+        realBreakdown.taxes   += item.tax != null ? item.tax : sub * 0.12;
       });
       if (group.fulfillmentType === 'delivery') {
         realBreakdown.shipping += SHIPPING_RATE; // only home delivery charges shipping
@@ -687,9 +1048,27 @@ function OrderDetailView({ task, orderId, onBack, onOpenOrder }) {
   const prev = idx > 0 ? impacted[idx - 1] : null;
   const next = idx < impacted.length - 1 ? impacted[idx + 1] : null;
 
+  // Show product detail subview when a product row is clicked
+  if (productView !== null) {
+    const productIdx = allProducts.findIndex(p => p.groupIdx === productView.groupIdx && p.itemIdx === productView.itemIdx);
+    const safeIdx = productIdx >= 0 ? productIdx : 0;
+    return (
+      <ProductDetailView
+        allProducts={allProducts}
+        productIdx={safeIdx}
+        order={fullOrder}
+        onNavigate={(newIdx) => {
+          const p = allProducts[newIdx];
+          if (p) setProductView({ groupIdx: p.groupIdx, itemIdx: p.itemIdx });
+        }}
+      />
+    );
+  }
+
   return (
     <div className="od-view">
       <div className="od-header">
+        {!standalone && (
         <div className="od-topnav">
           <div /> {/* spacer; back lives in canvas header */}
           <div className="od-pager">
@@ -712,36 +1091,60 @@ function OrderDetailView({ task, orderId, onBack, onOpenOrder }) {
             </button>
           </div>
         </div>
-
+        )}
         <h1 className="detail-title">Pedido {orderId}</h1>
       </div>
 
       {/* Order metadata */}
-      <dl className="detail-fields od-meta">
-        <dt>Sold by</dt>
-        <dd>{order.seller}</dd>
+      {(() => {
+        const STATUS_MAP = {
+          processing:  { label: "Active",    variant: "active"   },
+          invoiced:    { label: "Invoiced",  variant: "invoiced" },
+          canceled:    { label: "Canceled",  variant: "canceled" },
+          complete:    { label: "Complete",  variant: "complete" },
+        };
+        const statusInfo = (fullOrder && STATUS_MAP[fullOrder.status]) || { label: fullOrder?.statusLabel || "—", variant: "default" };
 
-        <dt>Order Placed at</dt>
-        <dd>Jan 25, 2026 at 1:35 PM</dd>
+        // Workflow Status: stage of the least-advanced package (earliest non-done stage index wins)
+        let wfStatusLabel = "—";
+        if (fullOrder && fullOrder.itemGroups) {
+          let minIdx = Infinity;
+          for (const g of fullOrder.itemGroups) {
+            const stages = g.stages || [];
+            const firstNonDone = stages.findIndex(s => s.status !== "done");
+            if (firstNonDone !== -1 && firstNonDone < minIdx) {
+              minIdx = firstNonDone;
+              wfStatusLabel = stages[firstNonDone].label;
+            }
+          }
+        }
 
-        <dt>Last Update</dt>
-        <dd>2 minutes ago</dd>
-      </dl>
+        return (
+          <dl className="detail-fields od-meta">
+            <dt>Status</dt>
+            <dd>
+              <span className="od-status-pill">
+                <span className="status-dot" />
+                {statusInfo.label}
+              </span>
+            </dd>
 
-      {/* Itens do Pedido — Tarefas por Item */}
-      <section className="detail-section flush">
-        <div className="detail-section-head" style={{ alignItems: "center" }}>
-          <h3>
-            Itens do Pedido — Tarefas por Item
-            <span className="od-items-badge">{totalItems} iten{totalItems !== 1 ? "s" : ""}</span>
-          </h3>
-        </div>
-        <div className="od-rails">
-          {itemGroups.map((group) => <OdRail key={group.id} group={group} />)}
-        </div>
-      </section>
+            <dt>Workflow Status</dt>
+            <dd>
+              <span className="od-wf-pill">{wfStatusLabel}</span>
+            </dd>
 
+            <dt>Sold by</dt>
+            <dd>{order.seller}</dd>
 
+            <dt>Order Placed at</dt>
+            <dd>Jan 25, 2026 at 1:35 PM</dd>
+
+            <dt>Last Update</dt>
+            <dd>2 minutes ago</dd>
+          </dl>
+        );
+      })()}
 
       {/* Customer */}
       <section className="detail-section flush">
@@ -754,21 +1157,11 @@ function OrderDetailView({ task, orderId, onBack, onOpenOrder }) {
         </div>
       </section>
 
-      {/* Shipping */}
-      <section className="detail-section flush">
-        <div className="detail-section-head"><h3>Shipping</h3></div>
-        <div className="od-fields">
-          <Field label="Remetente" value={d.customer.name} />
-          <Field label="Endereço de entrega" value={d.customer.address} />
-          <Field label="Carrier" value={d.carrier} />
-        </div>
-      </section>
-
       {/* Payment */}
       <section className="detail-section flush">
         <div className="detail-section-head"><h3>Pagamento</h3></div>
         <div className="od-fields">
-          <Field label="Endereço de cobrança" value={d.customer.address} />
+          <Field label="Endereço de cobrança" value={d.customer.billingAddress} />
           <Field label="Total cobrado"        value={fmtBRL(realBreakdown.total)} />
           <Field label="Data"                 value={"14 de outubro de 2024"} />
           <Field label="Cartão"               value={d.card} />
@@ -800,6 +1193,27 @@ function OrderDetailView({ task, orderId, onBack, onOpenOrder }) {
         <div className="od-bd-total">
           <span>Total</span>
           <span>{fmtBRL(realBreakdown.total)}</span>
+        </div>
+      </section>
+
+      {/* Packages — Figma-style product view */}
+      {itemGroups.length > 0 && (
+        <section className="detail-section flush">
+          <div className="pkg-list">
+            {itemGroups.map((group, i) => (
+              <PackageCard key={group.id} group={group} index={i} order={fullOrder} onOpenProduct={(itemIdx) => setProductView({ groupIdx: i, itemIdx })} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Shipping */}
+      <section className="detail-section flush">
+        <div className="detail-section-head"><h3>Shipping</h3></div>
+        <div className="od-fields">
+          <Field label="Remetente" value={d.customer.name} />
+          <Field label="Endereço de entrega" value={d.customer.address} />
+          <Field label="Carrier" value={d.carrier} />
         </div>
       </section>
 
