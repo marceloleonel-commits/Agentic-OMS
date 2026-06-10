@@ -1,4 +1,4 @@
-/* global React, Icon, IconSparkleFill, IconHandFill, IconPencil, IconCursorFill, IconDragDots, IconDotsSixVertical, IconPlayCircleFill, IconCaretLeftSmall, IconCaretDown, IconCaretUp, IconTrash, IconCheck, AIWData, ChatPanel, ResizableSplit */
+/* global React, Icon, IconSparkleFill, IconHandFill, IconPencil, IconCursorFill, IconDragDots, IconDotsSixVertical, IconPlayCircleFill, IconCaretLeftSmall, IconCaretDown, IconCaretUp, IconTrash, IconCheck, IconCube, IconCurrencyCircleDollar, IconNewspaper, IconTruck, AIWData, ChatPanel, ResizableSplit */
 const { useState, useRef, useEffect, useCallback } = React;
 
 /* ---------- Filter Dropdown (rules section) ---------- */
@@ -355,6 +355,8 @@ const ChatSendContext = React.createContext(null);
 const ChatAddingTaskContext = React.createContext(false);
 // fn(stageName) — triggers the chat-driven add-task flow pre-seeded with a stage
 const ChatStartAddTaskContext = React.createContext(null);
+// fn() — triggers the chat-driven add-stage flow
+const ChatStartAddStageContext = React.createContext(null);
 
 /* ---------- Proactive agent-message contexts ---------- */
 // fn(msgs, delay?) — push agent bubble(s) directly from canvas components
@@ -380,10 +382,15 @@ function SectionTitle({ children, as: Tag = "h2" }) {
   );
 }
 
-function SectionBlock({ title, children }) {
+function SectionBlock({ title, actions, children }) {
   return (
     <div className="detail-section-block">
-      {title && <SectionTitle>{title}</SectionTitle>}
+      {title && (
+        <div className="detail-sector-title">
+          <h2>{title}</h2>
+          {actions && <div className="detail-sector-title-actions">{actions}</div>}
+        </div>
+      )}
       {children}
     </div>
   );
@@ -465,7 +472,7 @@ function CiteBtn({ text }) {
 
 /* ---------- Task config (deeper flow) ---------- */
 
-function TaskConfigView({ workflow, taskId, taskActionsRef, onDirtyChange, onExecTypeChange }) {
+function TaskConfigView({ workflow, taskId, taskActionsRef, onDirtyChange, onExecTypeChange, onStageChange }) {
   // Lookup task before hooks — but early return comes AFTER all hooks to respect Rules of Hooks
   let foundStage = null, foundTask = null;
   for (const s of workflow.stages) {
@@ -476,6 +483,7 @@ function TaskConfigView({ workflow, taskId, taskActionsRef, onDirtyChange, onExe
   const [name, setName]     = useState(foundTask?.name ?? "");
   const [owner, setOwner]   = useState(foundTask?.owner ?? "");
   const [category, setCategory] = useState("");
+  const [selectedStageId, setSelectedStageId] = useState(foundStage?.id ?? "");
   // Visibilidade: "user" (shopper-facing) | "internal"
   const [visibility, setVisibility] = useState("internal");
   const [agentOrch, setAgentOrch] = useState(false);
@@ -518,6 +526,28 @@ function TaskConfigView({ workflow, taskId, taskActionsRef, onDirtyChange, onExe
     <>
       {/* Quick info rows (inline) */}
       <div className="field-rows">
+
+        <div className="field-row">
+          <span className="field-label">Etapa</span>
+          <select
+            className="stage-prop-input"
+            value={selectedStageId}
+            onChange={e => {
+              const newStageId = e.target.value;
+              setSelectedStageId(newStageId);
+              mark();
+              onStageChange?.(newStageId);
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            {workflow.stages.map((s, si) => (
+              <option key={s.id ?? si} value={s.id ?? si}>{s.name}</option>
+            ))}
+          </select>
+          <Actions>
+            <CiteBtn text={`[Etapa: ${workflow.stages.find(s => s.id === selectedStageId)?.name ?? "—"}]`} />
+          </Actions>
+        </div>
 
         <div className="field-row">
           <span className="field-label">Status</span>
@@ -665,7 +695,7 @@ function StageConfigView({ workflow, stageId, onDirtyChange }) {
 
 /* ---------- Inline task row with collapse ---------- */
 
-function StageTaskRow({ task, workflow, idx, dragging, dragOver, onDragStart, onDragOver, onDrop, onDragEnd, onChanged, onRemove, isOpen, onToggle, isNew }) {
+function StageTaskRow({ task, workflow, idx, dragging, dragOver, onDragStart, onDragOver, onDrop, onDragEnd, onChanged, onRemove, isOpen, onToggle, isNew, onStageChange }) {
   const [dirtyCount, setDirtyCount] = useState(0);
   const [confirmRemove, setConfirmRemove] = useState(false);
   const [execType, setExecType] = useState(task.type); // "manual" | "auto" — synced with TaskConfigView agentOrch
@@ -688,6 +718,7 @@ function StageTaskRow({ task, workflow, idx, dragging, dragOver, onDragStart, on
         <span className="stage-task-grip" aria-hidden="true">
           <IconDotsSixVertical size={20} />
         </span>
+        <span className="stage-task-num" aria-hidden="true">{idx + 1}</span>
         <span className="stage-task-name">{task.name}</span>
         {dirtyCount > 0 && (
           <span className="stage-task-dirty-badge" title={`${dirtyCount} alteração${dirtyCount !== 1 ? "ões" : ""} não salva${dirtyCount !== 1 ? "s" : ""}`}>
@@ -734,6 +765,7 @@ function StageTaskRow({ task, workflow, idx, dragging, dragOver, onDragStart, on
             taskId={task.id}
             onDirtyChange={() => setDirtyCount(c => c + 1)}
             onExecTypeChange={isAuto => setExecType(isAuto ? "auto" : "manual")}
+            onStageChange={onStageChange}
           />
         </div>
       )}
@@ -1725,9 +1757,462 @@ function WorkflowDetailView2Passos({ workflow, onOpenTask, onOpenStage, onOpenSe
   );
 }
 
+// ── Flat view: stage colors ───────────────────────────────────────────────────
+const STAGE_COLORS = ["#2962FF", "#7C5CFF", "#F71963", "#22C55E", "#F59E0B", "#06B6D4", "#EF4444", "#8B5CF6"];
+
+function getStageIcon(stage) {
+  if (!stage) return null;
+  if (stage.category === "PAYMENT")  return IconCurrencyCircleDollar;
+  if (stage.category === "DELIVERY") return IconTruck;
+  if (stage.category === "FULFILLMENT") {
+    return stage.gate === "deliverable_ready" ? IconNewspaper : IconCube;
+  }
+  return null;
+}
+
+function getStageColor(stage) {
+  if (!stage) return "var(--sl-color-neutral-2)";
+  if (stage.category === "PAYMENT")  return "var(--sl-color-blue-2)";
+  if (stage.category === "DELIVERY") return "var(--sl-color-teal-2)";
+  if (stage.category === "FULFILLMENT") {
+    return stage.gate === "deliverable_ready"
+      ? "var(--sl-color-purple-2)"
+      : "var(--sl-color-pink-2)";
+  }
+  return "var(--sl-color-neutral-2)";
+}
+
+function getStageIconColor(stage) {
+  if (!stage) return "var(--sl-color-neutral-8)";
+  if (stage.category === "PAYMENT")  return "var(--sl-color-blue-8)";
+  if (stage.category === "DELIVERY") return "var(--sl-color-teal-8)";
+  if (stage.category === "FULFILLMENT") {
+    return stage.gate === "deliverable_ready"
+      ? "var(--sl-color-purple-8)"
+      : "var(--sl-color-pink-8)";
+  }
+  return "var(--sl-color-neutral-8)";
+}
+
+// ── Stage header-only card (used in flat view — no task list inside) ──────────
+function StageHeaderCard({ stage, si, stageColor, onChanged, stageDragging, stageDragOver, onStageDragStart, onStageDragOver, onStageDrop, onStageDragEnd }) {
+  const chatAddingTask  = React.useContext(ChatAddingTaskContext);
+  const chatStartAddTask = React.useContext(ChatStartAddTaskContext);
+  const [isConfigOpen, setIsConfigOpen] = useState(false);
+  const [stageName,    setStageName]    = useState(stage.name ?? "");
+  const [responsible,  setResponsible]  = useState("");
+  const [stageCategory, setStageCategory] = useState("");
+  const [agentEnabled, setAgentEnabled] = useState(false);
+  const [checkpoints]  = useState([{ id: "cp1", label: "Validação inicial", failAction: "Escalar para operador" }]);
+  const [connectors, setConnectors] = useState(() => {
+    const seen = new Set();
+    return stage.tasks
+      .map(t => t.owner).filter(Boolean)
+      .filter(o => { const ok = !seen.has(o); seen.add(o); return ok; })
+      .map((o, i) => ({ id: `conn-${i}`, label: o, enabled: true }));
+  });
+  const [mcpEnabled,    setMcpEnabled]    = useState(false);
+  const [mcpServer,     setMcpServer]     = useState("");
+  const [apiEnabled,    setApiEnabled]    = useState(false);
+  const [apiUrl,        setApiUrl]        = useState("");
+  const [scriptEnabled, setScriptEnabled] = useState(false);
+  const [scriptBody,    setScriptBody]    = useState("");
+
+  return (
+    <div
+      className={`stage-flat-card${stageDragging ? " is-dragging" : ""}${stageDragOver ? " drag-over" : ""}${isConfigOpen ? " stage-flat-card--open" : ""}`}
+      draggable={!isConfigOpen}
+      onDragStart={!isConfigOpen ? onStageDragStart : undefined}
+      onDragOver={onStageDragOver}
+      onDrop={onStageDrop}
+      onDragEnd={onStageDragEnd}
+    >
+      <button
+        className="stage-flat-card-head"
+        onClick={() => setIsConfigOpen(o => !o)}
+        title={isConfigOpen ? "Recolher configurações" : "Editar etapa"}
+      >
+        {(() => { const StageIcon = getStageIcon(stage); return (
+          <div className="stage-flat-card-indicator" style={{ background: getStageColor(stage), color: getStageIconColor(stage) }}>
+            {StageIcon && <StageIcon size={20} />}
+          </div>
+        ); })()}
+        <span className="stage-flat-card-name">{stageName}</span>
+        <span className={`stage-flat-card-chevron${isConfigOpen ? " open" : ""}`}>
+          <IconCaretDown size={14} />
+        </span>
+      </button>
+
+      {isConfigOpen && (
+        <div className="stage-task-config">
+
+          {/* ── Identificação ── */}
+          <section className="wf-settings-card">
+            <div className="wf-settings-title-row">
+              <h3 className="wf-settings-title">Identificação</h3>
+              <Actions card><CiteBtn text={`[Etapa: ${stageName}]`} /></Actions>
+            </div>
+            <div className="field-rows">
+              <div className="field-row">
+                <span className="field-label">Nome da etapa</span>
+                <input
+                  className="stage-prop-input"
+                  value={stageName}
+                  onChange={e => { setStageName(e.target.value); onChanged?.(); }}
+                  onClick={e => e.stopPropagation()}
+                />
+                <Actions><CiteBtn text={`[Nome: ${stageName}]`} /></Actions>
+              </div>
+              <div className="field-row">
+                <span className="field-label">Categoria</span>
+                <input
+                  className="stage-prop-input"
+                  value={stageCategory}
+                  placeholder="Ex: Pagamento, Fulfillment"
+                  onChange={e => { setStageCategory(e.target.value); onChanged?.(); }}
+                  onClick={e => e.stopPropagation()}
+                />
+                <Actions><CiteBtn text={`[Categoria: ${stageCategory || "—"}]`} /></Actions>
+              </div>
+              <div className="field-row">
+                <span className="field-label">Agente AI</span>
+                <button className={`aiw-toggle ${agentEnabled ? "on" : ""}`}
+                  onClick={() => { setAgentEnabled(v => !v); onChanged?.(); }}>
+                  <span className="aiw-toggle-knob" />
+                </button>
+                <Actions><CiteBtn text={`[Agente AI: ${agentEnabled ? "ativo" : "inativo"}]`} /></Actions>
+              </div>
+            </div>
+          </section>
+
+          {/* ── Checkpoints ── */}
+          <section className="wf-settings-card">
+            <div className="wf-settings-title-row">
+              <h3 className="wf-settings-title">Checkpoints</h3>
+              <Actions card><CiteBtn text={`[Checkpoints: ${checkpoints.map(cp => cp.label).join(", ")}]`} /></Actions>
+            </div>
+            <div className="field-rows">
+              {checkpoints.map(cp =>
+                <div key={cp.id} className="field-row">
+                  <span className="field-label">{cp.label}</span>
+                  <span className="field-value-pill disabled">{cp.failAction}</span>
+                  <Actions><CiteBtn text={`[Checkpoint: ${cp.label}]`} /></Actions>
+                </div>
+              )}
+            </div>
+          </section>
+
+          <section className="wf-settings-card">
+            <div className="wf-settings-title-row">
+              <h3 className="wf-settings-title">Conectores</h3>
+              <Actions card><CiteBtn text={`[Conectores: ${connectors.filter(c => c.enabled).map(c => c.label).join(", ") || "nenhum"}]`} /></Actions>
+            </div>
+            <div className="field-rows">
+              {connectors.length === 0 && <span className="stage-connectors-empty">Nenhum conector configurado</span>}
+              {connectors.map(conn => (
+                <div key={conn.id} className="field-row">
+                  <span className="field-label">{conn.label}</span>
+                  <button className={`aiw-toggle ${conn.enabled ? "on" : ""}`}
+                    onClick={() => { setConnectors(prev => prev.map(c => c.id === conn.id ? { ...c, enabled: !c.enabled } : c)); onChanged?.(); }}>
+                    <span className="aiw-toggle-knob" />
+                  </button>
+                  <Actions><CiteBtn text={`[Conector ${conn.label}: ${conn.enabled ? "ativo" : "inativo"}]`} /></Actions>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section className="wf-settings-card">
+            <h3 className="wf-settings-title">Integrações</h3>
+            <div className="field-rows">
+              <div className="field-row">
+                <span className="field-label">Servidor MCP</span>
+                <button className={`aiw-toggle ${mcpEnabled ? "on" : ""}`} onClick={() => { setMcpEnabled(v => !v); onChanged?.(); }}>
+                  <span className="aiw-toggle-knob" />
+                </button>
+                <Actions><CiteBtn text={`[Servidor MCP: ${mcpEnabled ? "ativado" : "desativado"}]`} /></Actions>
+              </div>
+              {mcpEnabled && <InlineField label="Endereço MCP" value={mcpServer} onChange={v => { setMcpServer(v); onChanged?.(); }} placeholder="Nome do servidor MCP" />}
+              <div className="field-row">
+                <span className="field-label">API Externa</span>
+                <button className={`aiw-toggle ${apiEnabled ? "on" : ""}`} onClick={() => { setApiEnabled(v => !v); onChanged?.(); }}>
+                  <span className="aiw-toggle-knob" />
+                </button>
+                <Actions><CiteBtn text={`[API Externa: ${apiEnabled ? "ativada" : "desativada"}]`} /></Actions>
+              </div>
+              {apiEnabled && <InlineField label="URL da API" value={apiUrl} onChange={v => { setApiUrl(v); onChanged?.(); }} placeholder="https://..." />}
+              <div className="field-row">
+                <span className="field-label">Script customizado</span>
+                <button className={`aiw-toggle ${scriptEnabled ? "on" : ""}`} onClick={() => { setScriptEnabled(v => !v); onChanged?.(); }}>
+                  <span className="aiw-toggle-knob" />
+                </button>
+                <Actions><CiteBtn text={`[Script customizado: ${scriptEnabled ? "ativado" : "desativado"}]`} /></Actions>
+              </div>
+              {scriptEnabled && (
+                <div className="field-row field-row--textarea">
+                  <span className="field-label">Script</span>
+                  <textarea className="stage-prop-input" value={scriptBody} rows={4}
+                    onChange={e => { setScriptBody(e.target.value); onChanged?.(); }}
+                    placeholder={"// Lógica customizada em JavaScript\nreturn { status: 'completed' };"}
+                    style={{ fontFamily: "monospace", fontSize: 12, resize: "vertical" }} />
+                  <Actions><CiteBtn text={`[Script: ${scriptBody ? "definido" : "vazio"}]`} /></Actions>
+                </div>
+              )}
+            </div>
+          </section>
+        </div>
+      )}
+
+    </div>
+  );
+}
+
+// ── Flat detail view: stages as cards on top, all tasks in one list below ─────
+function WorkflowDetailViewFlat({ workflow, onOpenTask, onOpenStage, onOpenSettings, detailActionsRef, onDirtyChange }) {
+  const notifyTaskRemoved  = React.useContext(ChatTaskRemovedContext);
+  const chatAddingTask     = React.useContext(ChatAddingTaskContext);
+  const chatStartAddTask   = React.useContext(ChatStartAddTaskContext);
+  const chatStartAddStage  = React.useContext(ChatStartAddStageContext);
+
+  const [stages, setStages] = useState(() => workflow.stages);
+
+  // Flat task list: each entry knows its source stage index
+  const [flatTasks, setFlatTasks] = useState(() =>
+    workflow.stages.flatMap((stage, si) =>
+      stage.tasks.map(task => ({ task, stageIdx: si }))
+    )
+  );
+
+  const markDirty = () => onDirtyChange?.(true);
+  const clearDirty = () => onDirtyChange?.(false);
+
+  // ── Stage drag-and-drop ────────────────────────────────────────────────────
+  const [stageDraggingIdx, setStageDraggingIdx] = useState(null);
+  const [stageDragOverIdx, setStageDragOverIdx] = useState(null);
+
+  const handleStageDragStart = (e, idx) => {
+    setStageDraggingIdx(idx);
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", String(idx));
+  };
+  const handleStageDragOver = (e, idx) => { e.preventDefault(); if (idx !== stageDraggingIdx) setStageDragOverIdx(idx); };
+  const handleStageDrop = (e, toIdx) => {
+    e.preventDefault(); e.stopPropagation();
+    if (stageDraggingIdx === null || stageDraggingIdx === toIdx) { setStageDraggingIdx(null); setStageDragOverIdx(null); return; }
+    const next = [...stages];
+    const [moved] = next.splice(stageDraggingIdx, 1);
+    next.splice(toIdx, 0, moved);
+    // Remap stageIdx in flatTasks to match reordered stages array
+    const idxMap = {};
+    stages.forEach((s, i) => { idxMap[i] = next.indexOf(s); });
+    setFlatTasks(prev => prev.map(ft => ({ ...ft, stageIdx: idxMap[ft.stageIdx] ?? ft.stageIdx })));
+    setStages(next);
+    setStageDraggingIdx(null); setStageDragOverIdx(null);
+    markDirty();
+  };
+  const handleStageDragEnd = () => { setStageDraggingIdx(null); setStageDragOverIdx(null); };
+
+  // ── Task drag-and-drop (global, cross-stage) ───────────────────────────────
+  const [taskDragging, setTaskDragging] = useState(null);
+  const [taskDragOver, setTaskDragOver] = useState(null);
+
+  const handleTaskDragStart = (e, idx) => { e.stopPropagation(); setTaskDragging(idx); e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", String(idx)); };
+  const handleTaskDragOver  = (e, idx) => { e.preventDefault(); e.stopPropagation(); if (idx !== taskDragging) setTaskDragOver(idx); };
+  const handleTaskDrop = (e, toIdx) => {
+    e.preventDefault(); e.stopPropagation();
+    if (taskDragging === null || taskDragging === toIdx) { setTaskDragging(null); setTaskDragOver(null); return; }
+    const next = [...flatTasks];
+    const [moved] = next.splice(taskDragging, 1);
+    next.splice(toIdx, 0, moved);
+    setFlatTasks(next);
+    setTaskDragging(null); setTaskDragOver(null);
+    markDirty();
+  };
+  const handleTaskDragEnd = () => { setTaskDragging(null); setTaskDragOver(null); };
+
+  // ── Task open/close + new-task animation ──────────────────────────────────
+  const [openTaskId, setOpenTaskId] = useState(null);
+  const [newlyAddedId, setNewlyAddedId] = useState(null);
+  const flatViewRef = useRef(null);
+
+  // Sync tasks injected by chat "Aplicar" (detailActionsRef.addTask mutates parent stages)
+  const prevStagesRef = useRef(stages);
+  useEffect(() => {
+    const prev = prevStagesRef.current;
+    prevStagesRef.current = stages;
+    const prevIds = new Set(prev.flatMap(s => s.tasks.map(t => t.id)));
+    stages.forEach((stage, si) => {
+      stage.tasks.forEach(task => {
+        if (prevIds.has(task.id)) return;
+        setFlatTasks(ft => ft.some(x => x.task.id === task.id) ? ft : [...ft, { task, stageIdx: si }]);
+        setOpenTaskId(task.id);
+        setNewlyAddedId(task.id);
+        setTimeout(() => setNewlyAddedId(null), 1400);
+        setTimeout(() => {
+          const el = flatViewRef.current?.querySelector(`[data-task-id="${task.id}"]`);
+          if (el) el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }, 80);
+      });
+    });
+  }, [stages]);
+
+  // ── detailActionsRef API (used by chat engine) ─────────────────────────────
+  const stagesRef = useRef(stages);
+  useEffect(() => { stagesRef.current = stages; }, [stages]);
+
+  useEffect(() => {
+    if (!detailActionsRef) return;
+    detailActionsRef.current = {
+      addStage: (stageName) => {
+        setStages(prev => [...prev, { name: stageName, tasks: [] }]);
+        markDirty();
+      },
+      addTask: (stageName, taskName, taskType = "auto", owner = "", visibility = "internal") => {
+        const si = stagesRef.current.findIndex(s => s.name.toLowerCase() === stageName.toLowerCase());
+        const targetIdx = si >= 0 ? si : 0;
+        const newTask = { id: "t" + Date.now(), name: taskName, type: taskType, owner, visibility };
+        setStages(prev => prev.map((s, i) => i === targetIdx ? { ...s, tasks: [...s.tasks, newTask] } : s));
+        markDirty();
+      },
+      save: clearDirty,
+      getStageCount: () => stagesRef.current.length,
+      getStageNames:  () => stagesRef.current.map(s => s.name),
+    };
+    return () => { detailActionsRef.current = null; };
+  }, []);
+
+  const moveStage = (idx, dir) => {
+    const target = idx + dir;
+    if (target < 0 || target >= stages.length) return;
+    const idxMap = {};
+    stages.forEach((_, i) => {
+      if (i === idx) idxMap[i] = target;
+      else if (i === target) idxMap[i] = idx;
+      else idxMap[i] = i;
+    });
+    const next = [...stages];
+    [next[idx], next[target]] = [next[target], next[idx]];
+    setFlatTasks(prev => prev.map(ft => ({ ...ft, stageIdx: idxMap[ft.stageIdx] ?? ft.stageIdx })));
+    setStages(next);
+    markDirty();
+  };
+
+  return (
+    <>
+      <SectionBlock>
+        <div className="wf-detail-head">
+          <h1 className="detail-title">{workflow.name}</h1>
+        </div>
+        {(workflow.version || workflow.wfStatus) && <WfMetaSection workflow={workflow} onOpenSettings={onOpenSettings} />}
+      </SectionBlock>
+
+      <WfSettingsInline workflow={workflow} onDirtyChange={onDirtyChange} />
+
+      {/* ── Stages ── */}
+      <SectionBlock
+        title="Etapas"
+        actions={
+          <button
+            data-sl-button
+            data-variant="secondary"
+            onClick={() => chatStartAddStage?.()}
+            title="Adicionar etapa"
+            aria-label="Adicionar etapa"
+          >
+            <Icon name="plus" size={16} />
+          </button>
+        }
+      >
+        <div className="wf-flat-stages">
+          {stages.map((stage, si) => (
+            <React.Fragment key={stage.id ?? si}>
+              <StageHeaderCard
+                stage={stage}
+                si={si}
+                stageColor={STAGE_COLORS[si % STAGE_COLORS.length]}
+                onChanged={markDirty}
+                stageDragging={stageDraggingIdx === si}
+                stageDragOver={stageDragOverIdx === si}
+                onStageDragStart={e => handleStageDragStart(e, si)}
+                onStageDragOver={e => handleStageDragOver(e, si)}
+                onStageDrop={e => handleStageDrop(e, si)}
+                onStageDragEnd={handleStageDragEnd}
+              />
+            </React.Fragment>
+          ))}
+        </div>
+      </SectionBlock>
+
+      {/* ── Tasks ── */}
+      <SectionBlock
+        title="Tarefas"
+        actions={
+          <button
+            data-sl-button
+            data-variant="secondary"
+            disabled={chatAddingTask}
+            onClick={() => chatStartAddTask?.(stages[0]?.name)}
+            title="Adicionar tarefa"
+            aria-label="Adicionar tarefa"
+          >
+            <Icon name="plus" size={16} />
+          </button>
+        }
+      >
+        <div className="wf-flat-tasks" ref={flatViewRef}>
+          {flatTasks.map(({ task, stageIdx }, idx) => {
+            const stage = stages[stageIdx] || stages[0];
+            const color = STAGE_COLORS[stageIdx % STAGE_COLORS.length];
+            return (
+              <div key={task.id} className="wf-flat-task-wrap">
+                <div className="wf-flat-task-body">
+                  <StageTaskRow
+                    task={task}
+                    workflow={workflow}
+                    idx={idx}
+                    isNew={newlyAddedId === task.id}
+                    dragging={taskDragging}
+                    dragOver={taskDragOver}
+                    onDragStart={e => handleTaskDragStart(e, idx)}
+                    onDragOver={e => handleTaskDragOver(e, idx)}
+                    onDrop={e => handleTaskDrop(e, idx)}
+                    onDragEnd={handleTaskDragEnd}
+                    onChanged={markDirty}
+                    onRemove={() => {
+                      const removed = { task, stageIdx };
+                      setFlatTasks(prev => prev.filter((_, i) => i !== idx));
+                      markDirty();
+                      notifyTaskRemoved?.(task.name, stage?.name || "", () =>
+                        setFlatTasks(prev => {
+                          const next = [...prev];
+                          next.splice(idx, 0, removed);
+                          return next;
+                        })
+                      );
+                    }}
+                    isOpen={openTaskId === task.id}
+                    onToggle={() => setOpenTaskId(prev => prev === task.id ? null : task.id)}
+                    onStageChange={newStageId => {
+                      const newSi = stages.findIndex(s => s.id === newStageId);
+                      if (newSi === -1) return;
+                      setFlatTasks(prev => prev.map((ft, i) => i === idx ? { ...ft, stageIdx: newSi } : ft));
+                      markDirty();
+                    }}
+                  />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </SectionBlock>
+    </>
+  );
+}
+
 // ── Dispatcher ────────────────────────────────────────────────────────────────
 function WorkflowDetailView({ wfDetailView = "2-passos", ...props }) {
   if (wfDetailView === "1-passo") return <WorkflowDetailView1Passo {...props} />;
+  if (wfDetailView === "flat")    return <WorkflowDetailViewFlat {...props} />;
   return <WorkflowDetailView2Passos {...props} />;
 }
 
@@ -3314,11 +3799,23 @@ function WorkflowBoardView({ onBack, wfLayout = "expanded", wfGroup = "flat", wf
     setTimeout(() => chatComposerRef.current?.focus(), 100);
   }, []);
 
+  const chatStartAddStageFn = React.useCallback(() => {
+    if (chatAddingTaskRef.current) return;
+    setChatMsgs(m => [...m, { from: "user", text: "Adicionar etapa" }]);
+    agentSay({
+      from: "agent",
+      text: 'Qual é o nome da nova etapa? Por exemplo: **"Validação de Fraude"** ou **"Expedição"**.',
+      quickReplies: ["Cancelar"],
+    });
+    setTimeout(() => chatComposerRef.current?.focus(), 100);
+  }, []);
+
   return (
     <ChatSendContext.Provider value={sendFn}>
     <ChatCiteContext.Provider value={citeFn}>
     <ChatAddingTaskContext.Provider value={chatAddingTask}>
     <ChatStartAddTaskContext.Provider value={chatStartAddTaskFn}>
+    <ChatStartAddStageContext.Provider value={chatStartAddStageFn}>
     <AgentSayContext.Provider value={agentSay}>
     <ChatTaskRemovedContext.Provider value={notifyTaskRemovedFn}>
       <ResizableSplit screenLabel="03 Gerenciador de Experiências" initialWidth={400}>
@@ -3351,6 +3848,7 @@ function WorkflowBoardView({ onBack, wfLayout = "expanded", wfGroup = "flat", wf
       </ResizableSplit>
     </ChatTaskRemovedContext.Provider>
     </AgentSayContext.Provider>
+    </ChatStartAddStageContext.Provider>
     </ChatStartAddTaskContext.Provider>
     </ChatAddingTaskContext.Provider>
     </ChatCiteContext.Provider>

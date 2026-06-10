@@ -2,22 +2,62 @@
 const { useState, useRef, useEffect, useCallback } = React;
 
 function StatusSegmented({ value, onChange }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
   const opts = [
-  { id: "todo", label: "A fazer" },
-  { id: "in_progress", label: "Em progresso" },
-  { id: "done", label: "Concluída" }];
+    { id: "todo",        label: "A fazer",       dot: "#D1D5DB" },
+    { id: "in_progress", label: "Em progresso",  dot: "var(--primary)" },
+    { id: "done",        label: "Concluída",      dot: "#169B61" },
+  ];
+
+  const current = opts.find(o => o.id === value) || opts[0];
+
+  useEffect(() => {
+    function handleClick(e) {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    }
+    if (open) document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [open]);
 
   return (
-    <div className="status-seg">
-      {opts.map((o) =>
-      <button key={o.id}
-      className={`status-seg-btn ${value === o.id ? "active" : ""}`}
-      onClick={() => onChange && onChange(o.id)}>
-          {o.label}
-        </button>
+    <div className="status-dropdown" ref={ref}>
+      <button
+        className={`status-dropdown-btn${open ? " open" : ""}`}
+        onClick={() => setOpen(o => !o)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+      >
+        <span className="status-dropdown-dot" style={{ background: current.dot }} />
+        <span className="status-dropdown-label">{current.label}</span>
+        <svg className={`status-dropdown-chevron${open ? " open" : ""}`} viewBox="0 0 16 16" fill="none" width="12" height="12">
+          <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      </button>
+      {open && (
+        <div className="status-dropdown-panel" role="listbox">
+          {opts.map(o => (
+            <button
+              key={o.id}
+              className={`status-dropdown-item${value === o.id ? " selected" : ""}`}
+              role="option"
+              aria-selected={value === o.id}
+              onClick={() => { onChange && onChange(o.id); setOpen(false); }}
+            >
+              <span className="status-dropdown-dot" style={{ background: o.dot }} />
+              <span>{o.label}</span>
+              {value === o.id && (
+                <svg style={{ marginLeft: "auto", flexShrink: 0, color: "var(--primary)" }} viewBox="0 0 16 16" fill="none" width="12" height="12">
+                  <path d="M3 8l3.5 3.5L13 5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              )}
+            </button>
+          ))}
+        </div>
       )}
-    </div>);
-
+    </div>
+  );
 }
 
 function SubTaskRow({ t, runnable }) {
@@ -146,7 +186,7 @@ const CONNECTOR_STATUS_MAP = {
 
 function OdStepRow({ step, stageLabel, stageIcon }) {
   const colorMap = {
-    done:    "#169B61",
+    done:    "var(--fg)",
     active:  "var(--primary)",
     pending: "var(--fg-3)",
     error:   "#EF4444",
@@ -156,7 +196,7 @@ function OdStepRow({ step, stageLabel, stageIcon }) {
 
   const StatusIcon = () => {
     const s = step.status;
-    if (s === "done")   return <IconCheckCircleFill size={20} style={{ color: "#169B61",        flexShrink: 0, marginTop: 1 }} />;
+    if (s === "done")   return <IconCheckCircleFill size={20} style={{ color: "var(--sl-color-green-6)", flexShrink: 0, marginTop: 1 }} />;
     if (s === "active") return <IconPlayCircleFill  size={20} style={{ color: "var(--primary)", flexShrink: 0, marginTop: 1 }} />;
     if (s === "error")  return <IconXCircleFill     size={20} style={{ color: "#EF4444",        flexShrink: 0, marginTop: 1 }} />;
     return                     <IconClock           size={20} style={{ color: "var(--fg-4)",    flexShrink: 0, marginTop: 1 }} />;
@@ -181,7 +221,7 @@ function OdStepRow({ step, stageLabel, stageIcon }) {
                 )}
               </div>
               {step.owner && (
-                <div style={{ fontSize: 12, color: "var(--fg)", marginTop: 4 }}>
+                <div style={{ fontSize: 13, color: "var(--fg)", marginTop: 4 }}>
                   Conector: {step.owner}
                 </div>
               )}
@@ -671,7 +711,7 @@ function PackageCard({ group, index, order, onOpenProduct }) {
   const stageBg    = isCanceling ? "#FEF2F2" : isReturn ? "#FFF7ED" : allDone ? "#F0FDF4" : "#D1FAE5";
   const stageColor = isCanceling ? "#DC2626"  : isReturn ? "#C2410C"  : allDone ? "#059669" : "#059669";
 
-  const stageLabel = allDone ? "Concluído" : currentStage ? currentStage.label : "—";
+  const stageLabel = allDone ? "Entregue" : currentStage ? currentStage.label : "—";
 
   // Compute total for this group
   const groupTotal = fmtBRL(
@@ -851,7 +891,7 @@ function ProductDetailView({ allProducts, productIdx, order, onNavigate }) {
   const currentStage = (group.stages || []).find(s => s.status !== "done");
   const stageBg    = allDone ? "#F0FDF4" : "#D1FAE5";
   const stageColor = "#059669";
-  const stageLabel = allDone ? "Concluído" : currentStage ? currentStage.label : "—";
+  const stageLabel = allDone ? "Entregue" : currentStage ? currentStage.label : "—";
 
   return (
     <div className="od-view">
@@ -987,14 +1027,14 @@ function ProductDetailView({ allProducts, productIdx, order, onNavigate }) {
       <section className="detail-section flush">
         <div className="detail-section-head"><h3>Workflow</h3></div>
         <div className="pkg-wf-expand">
-          {currentSteps.length > 0 && (
+          {currentSteps.length > 0 && firstNonDoneIdx >= 0 && (
             <div className="pkg-wf-prev-toggle-row">
               <button className="pkg-wf-prev-toggle-btn" onClick={() => setShowNextSteps(v => !v)}>
                 {showNextSteps ? "Ocultar próximas etapas" : "Carregar próximas etapas"}
               </button>
             </div>
           )}
-          {showNextSteps && [...currentSteps].reverse().map(({ step, stageLabel: sl, stageIcon: si }, ti) => (
+          {(showNextSteps || firstNonDoneIdx < 0) && [...currentSteps].reverse().map(({ step, stageLabel: sl, stageIcon: si }, ti) => (
             <OdStepRow key={`next-${ti}`} step={step} stageLabel={sl} stageIcon={si} />
           ))}
           {[...allDoneSteps].reverse().map(({ step, stageLabel: sl, stageIcon: si }, ti) => (
@@ -1146,55 +1186,48 @@ function OrderDetailView({ task, orderId, onBack, onOpenOrder, standalone = fals
         );
       })()}
 
-      {/* Customer */}
-      <section className="detail-section flush">
-        <div className="detail-section-head"><h3>Customer</h3></div>
-        <div className="od-fields">
-          <Field label="Customer" value={d.customer.name} />
-          <Field label="Tax ID" value={d.customer.taxId} />
-          <Field label="Phone" value={d.customer.phone} />
-          <Field label="Email" value={d.customer.email} />
-        </div>
-      </section>
-
-      {/* Payment */}
-      <section className="detail-section flush">
-        <div className="detail-section-head"><h3>Pagamento</h3></div>
-        <div className="od-fields">
-          <Field label="Endereço de cobrança" value={d.customer.billingAddress} />
-          <Field label="Total cobrado"        value={fmtBRL(realBreakdown.total)} />
-          <Field label="Data"                 value={"14 de outubro de 2024"} />
-          <Field label="Cartão"               value={d.card} />
-        </div>
-
-        <div style={{ marginTop: 20 }} />
-        <div className="od-breakdown">
-          <div className="od-bd-row">
-            <span>Itens</span>
-            <span>{fmtBRL(realBreakdown.subtotal)}</span>
+      {/* Customer + Valores — side by side */}
+      <div className="od-two-col">
+        <section className="detail-section flush">
+          <div className="detail-section-head detail-section-head--no-border"><h3>Customer</h3></div>
+          <div className="od-fields">
+            <Field label="Customer" value={d.customer.name} />
+            <Field label="Tax ID" value={d.customer.taxId} />
+            <Field label="Phone" value={d.customer.phone} />
+            <Field label="Email" value={d.customer.email} />
           </div>
-          {realBreakdown.discounts > 0 && (
+        </section>
+
+        <section className="detail-section flush">
+          <div className="detail-section-head detail-section-head--no-border"><h3>Valores</h3></div>
+          <div className="od-breakdown">
             <div className="od-bd-row">
-              <span>Descontos</span>
-              <span style={{ color: "#169B61" }}>- {fmtBRL(realBreakdown.discounts)}</span>
+              <span>Itens</span>
+              <span>{fmtBRL(realBreakdown.subtotal)}</span>
             </div>
-          )}
-          {realBreakdown.taxes > 0 && (
+            {realBreakdown.discounts > 0 && (
+              <div className="od-bd-row">
+                <span>Descontos</span>
+                <span style={{ color: "#169B61" }}>- {fmtBRL(realBreakdown.discounts)}</span>
+              </div>
+            )}
+            {realBreakdown.taxes > 0 && (
+              <div className="od-bd-row">
+                <span>Taxas</span>
+                <span>{fmtBRL(realBreakdown.taxes)}</span>
+              </div>
+            )}
             <div className="od-bd-row">
-              <span>Taxas</span>
-              <span>{fmtBRL(realBreakdown.taxes)}</span>
+              <span>Frete</span>
+              <span>{realBreakdown.shipping > 0 ? fmtBRL(realBreakdown.shipping) : <span style={{ color: "#169B61" }}>Grátis</span>}</span>
             </div>
-          )}
-          <div className="od-bd-row">
-            <span>Frete</span>
-            <span>{realBreakdown.shipping > 0 ? fmtBRL(realBreakdown.shipping) : <span style={{ color: "#169B61" }}>Grátis</span>}</span>
           </div>
-        </div>
-        <div className="od-bd-total">
-          <span>Total</span>
-          <span>{fmtBRL(realBreakdown.total)}</span>
-        </div>
-      </section>
+          <div className="od-bd-total">
+            <span>Total</span>
+            <span>{fmtBRL(realBreakdown.total)}</span>
+          </div>
+        </section>
+      </div>
 
       {/* Packages — Figma-style product view */}
       {itemGroups.length > 0 && (
@@ -1206,6 +1239,18 @@ function OrderDetailView({ task, orderId, onBack, onOpenOrder, standalone = fals
           </div>
         </section>
       )}
+
+      {/* Payment */}
+      <section className="detail-section flush">
+        <div className="detail-section-head detail-section-head--no-border"><h3>Pagamento</h3></div>
+        <div className="od-fields">
+          <Field label="Endereço de cobrança" value={d.customer.billingAddress} />
+          <Field label="Total cobrado"        value={fmtBRL(realBreakdown.total)} />
+          <Field label="Data"                 value={"14 de outubro de 2024"} />
+          <Field label="Cartão"               value={d.card} />
+        </div>
+
+      </section>
 
       {/* Shipping */}
       <section className="detail-section flush">
