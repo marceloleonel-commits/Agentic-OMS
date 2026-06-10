@@ -965,6 +965,20 @@
   cursor: not-allowed;
 }
 
+/* ── IconButton — square icon-only button (all variants) ────────────────── */
+[data-sl-button][data-icon-button] {
+  min-width: unset;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  flex-shrink: 0;
+}
+[data-sl-button][data-icon-button][data-size="large"] {
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+}
+
 [data-sl-button][data-variant="tertiary"] {
   background: transparent;
   color: var(--fg-2);
@@ -1379,10 +1393,10 @@
 }
 .orders-thead, .orders-row {
   display: grid;
-  grid-template-columns: 1.6fr 1.1fr 1.2fr 0.9fr 0.5fr 0.9fr 1.3fr;
+  grid-template-columns: 180px 160px 1.2fr 140px 110px 50px 1.3fr;
   gap: 14px;
   align-items: center;
-  padding: 12px 4px;
+  padding: 16px 4px;
 }
 .orders-thead {
   font-size: 11.5px; color: var(--fg-3);
@@ -1393,11 +1407,14 @@
   border-bottom: 1px solid var(--border);
   font-size: 13px;
 }
-.orders-id { font-family: ui-monospace, "SF Mono", monospace; font-size: 12px; font-weight: 600; }
+.orders-id { font-family: 'Inter', system-ui, sans-serif; font-size: 13px; font-weight: 500; }
+.orders-date,
+.orders-origin { font: 500 0.75rem/1rem 'Inter', sans-serif; white-space: nowrap; }
 
 .orders-id-wrap {
   position: relative;
   display: inline-block;
+  width: 160px;
 }
 
 .orders-usecase-popover {
@@ -1730,7 +1747,7 @@
 .wf-list-card--expanded:hover { background: #fff; }
 .wf-list-card-head {
   display: flex; align-items: center; gap: 14px;
-  padding: 32px 0;
+  padding: 32px 0 16px;
   box-sizing: content-box;
   background: #fff;
   overflow: hidden;
@@ -2494,15 +2511,15 @@ body.resizing-x .split-resizer::before { background: var(--primary); }
   display: inline-flex; align-items: center; gap: 6px;
   padding: 4px 12px;
   border-radius: 999px;
-  background: #EAF0FF;
-  color: var(--fg);
+  background: var(--sl-color-green-1);
   font-size: 13px;
+  white-space: nowrap;
+  width: fit-content;
+  color: var(--sl-color-green-8);
+  font-weight: 500;
 }
 .od-status-pill .status-dot {
-  width: 8px; height: 8px;
-  border-radius: 50%;
-  background: #2962FF;
-  flex-shrink: 0;
+  display: none;
 }
 .od-wf-pill {
   display: inline-flex; align-items: center;
@@ -3093,14 +3110,24 @@ sl-tag[data-color="blue"] {
   gap: 12px;
   padding: 16px 16px 16px 16px;
   width: 100%;
-  background: none;
+  background: #fff;
   border: none;
+  border-radius: 12px;
+  overflow: hidden;
   cursor: pointer;
   text-align: left;
   transition: background .1s;
 }
-.stage-flat-card-head:hover { background: var(--bg-soft); }
-.stage-flat-card--open .stage-flat-card-head { background: var(--bg-soft); }
+.stage-flat-card-head:hover { background: #fff; }
+.stage-flat-card--open .stage-flat-card-head { background: #fff; }
+.stage-flat-card-head:hover .stage-task-chevron {
+  box-shadow: 0px 2px 8px 0px rgba(0, 0, 0, 0.2);
+  color: var(--fg);
+}
+.stage-flat-card-head:hover .stage-task-action-btn {
+  opacity: 1;
+  pointer-events: auto;
+}
 .stage-flat-card-indicator {
   width: 32px;
   height: 32px;
@@ -3138,7 +3165,7 @@ sl-tag[data-color="blue"] {
 }
 .stage-flat-card-chevron.open { transform: rotate(180deg); }
 .stage-flat-card .stage-task-config {
-  border-top: 1px solid var(--border);
+  border-top: none;
 }
 
 /* Flat task list */
@@ -5959,6 +5986,7 @@ button.stage-add-task-btn[data-sl-button][data-variant="tertiary"][data-has-labe
   align-items: baseline;
   gap: 6px;
   flex: 1;
+  width: 250px;
 }
 .pkg-meta-key {
   font-size: 11.5px;
@@ -5969,6 +5997,10 @@ button.stage-add-task-btn[data-sl-button][data-variant="tertiary"][data-has-labe
   font-size: 12.5px;
   font-weight: 600;
   color: var(--fg);
+  width: 130px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .pkg-meta-sep {
   width: 1px;

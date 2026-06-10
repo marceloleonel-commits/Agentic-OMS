@@ -723,9 +723,16 @@ function PackageCard({ group, index, order, onOpenProduct }) {
   const soldBy = order && order.seller ? order.seller : "—";
   const shippedBy = group.supplier || "—";
 
-  // Mock tracking number (derived from order id)
-  const trackingNumber = order ? "#9138140341334" : "—";
-  const invoiceNumber  = "#139201489143";
+  // Experience name: first segment of group.label (before " · ")
+  const experienceName = group.label ? group.label.split(" · ")[0] : "Experiência";
+
+  // Has invoice: Faturamento stage must be done
+  const hasFaturamento = (group.stages || []).some(s => s.label && s.label.includes("Faturamento") && s.status === "done");
+
+  // Tracking: only for physical non-virtual groups
+  const hasTracking = group.fulfillmentType !== "virtual" && order != null;
+  const trackingNumber = hasTracking ? "#9138140341334" : null;
+  const invoiceNumber  = hasFaturamento ? "#139201489143" : null;
 
   return (
     <div className="pkg-card">
@@ -760,7 +767,7 @@ function PackageCard({ group, index, order, onOpenProduct }) {
             </div>
             <div className="pkg-meta-sep" />
             <div className="pkg-meta-field">
-              <span className="pkg-meta-key">Delivery by</span>
+              <span className="pkg-meta-key">{experienceName} by:</span>
               <span className="pkg-meta-val">{shippedBy}</span>
             </div>
           </div>
@@ -811,7 +818,7 @@ function PackageCard({ group, index, order, onOpenProduct }) {
                     const currentSteps = firstNonDoneIdx >= 0 ? allSteps.slice(firstNonDoneIdx) : allSteps;
                     return (
                       <div className="pkg-wf-expand">
-                        {!allDelivered && currentSteps.length > 0 && (
+                        {!allDelivered && currentSteps.length > 1 && (
                           <div className="pkg-wf-prev-toggle-row">
                             <button
                               className="pkg-wf-prev-toggle-btn"
@@ -821,9 +828,15 @@ function PackageCard({ group, index, order, onOpenProduct }) {
                             </button>
                           </div>
                         )}
-                        {(allDelivered || isNextOpen) && [...currentSteps].reverse().map(({ step, stageLabel, stageIcon }, ti) => (
+                        {allDelivered && [...currentSteps].reverse().map(({ step, stageLabel, stageIcon }, ti) => (
                           <OdStepRow key={`next-${ti}`} step={step} stageLabel={stageLabel} stageIcon={stageIcon} />
                         ))}
+                        {!allDelivered && isNextOpen && [...currentSteps.slice(1)].reverse().map(({ step, stageLabel, stageIcon }, ti) => (
+                          <OdStepRow key={`next-${ti}`} step={step} stageLabel={stageLabel} stageIcon={stageIcon} />
+                        ))}
+                        {!allDelivered && currentSteps.length > 0 && (
+                          <OdStepRow key="active" step={currentSteps[0].step} stageLabel={currentSteps[0].stageLabel} stageIcon={currentSteps[0].stageIcon} />
+                        )}
                         {[...allDoneSteps].reverse().map(({ step, stageLabel, stageIcon }, ti) => (
                           <OdStepRow key={`done-${ti}`} step={step} stageLabel={stageLabel} stageIcon={stageIcon} />
                         ))}
@@ -838,14 +851,18 @@ function PackageCard({ group, index, order, onOpenProduct }) {
 
           <div className="pkg-footer">
             <div className="pkg-footer-actions">
-              <button className="pkg-footer-btn" title="Copiar tracking number">
-                <IconCopy size={14} />
-                {trackingNumber}
-              </button>
-              <button className="pkg-footer-btn" title="Abrir eNF">
-                <IconArrowUpRight size={14} />
-                {invoiceNumber}
-              </button>
+              {trackingNumber && (
+                <button className="pkg-footer-btn" title="Código de Rastreio">
+                  <IconCopy size={14} />
+                  {trackingNumber}
+                </button>
+              )}
+              {invoiceNumber && (
+                <button className="pkg-footer-btn" title="Abrir eNF">
+                  <IconArrowUpRight size={14} />
+                  {invoiceNumber}
+                </button>
+              )}
             </div>
             <div className="pkg-footer-total">
               Total <strong>{groupTotal}</strong>
@@ -1027,16 +1044,22 @@ function ProductDetailView({ allProducts, productIdx, order, onNavigate }) {
       <section className="detail-section flush">
         <div className="detail-section-head"><h3>Workflow</h3></div>
         <div className="pkg-wf-expand">
-          {currentSteps.length > 0 && firstNonDoneIdx >= 0 && (
+          {currentSteps.length > 1 && firstNonDoneIdx >= 0 && (
             <div className="pkg-wf-prev-toggle-row">
               <button className="pkg-wf-prev-toggle-btn" onClick={() => setShowNextSteps(v => !v)}>
                 {showNextSteps ? "Ocultar próximas etapas" : "Carregar próximas etapas"}
               </button>
             </div>
           )}
-          {(showNextSteps || firstNonDoneIdx < 0) && [...currentSteps].reverse().map(({ step, stageLabel: sl, stageIcon: si }, ti) => (
+          {firstNonDoneIdx < 0 && [...currentSteps].reverse().map(({ step, stageLabel: sl, stageIcon: si }, ti) => (
             <OdStepRow key={`next-${ti}`} step={step} stageLabel={sl} stageIcon={si} />
           ))}
+          {firstNonDoneIdx >= 0 && showNextSteps && [...currentSteps.slice(1)].reverse().map(({ step, stageLabel: sl, stageIcon: si }, ti) => (
+            <OdStepRow key={`next-${ti}`} step={step} stageLabel={sl} stageIcon={si} />
+          ))}
+          {firstNonDoneIdx >= 0 && currentSteps.length > 0 && (
+            <OdStepRow key="active" step={currentSteps[0].step} stageLabel={currentSteps[0].stageLabel} stageIcon={currentSteps[0].stageIcon} />
+          )}
           {[...allDoneSteps].reverse().map(({ step, stageLabel: sl, stageIcon: si }, ti) => (
             <OdStepRow key={`done-${ti}`} step={step} stageLabel={sl} stageIcon={si} />
           ))}
@@ -1138,40 +1161,23 @@ function OrderDetailView({ task, orderId, onBack, onOpenOrder, standalone = fals
       {/* Order metadata */}
       {(() => {
         const STATUS_MAP = {
-          processing:  { label: "Active",    variant: "active"   },
-          invoiced:    { label: "Invoiced",  variant: "invoiced" },
-          canceled:    { label: "Canceled",  variant: "canceled" },
-          complete:    { label: "Complete",  variant: "complete" },
+          processing: { label: "Em andamento",    dot: "#08A822", bg: "#E9FCE3" },
+          invoiced:   { label: "Em andamento",    dot: "#08A822", bg: "#E9FCE3" },
+          return:     { label: "Ação Necessária", dot: "#C2410C", bg: "#FFF7ED" },
+          error:      { label: "Com erro",        dot: "#DC2626", bg: "#FEF2F2" },
+          complete:   { label: "Resolvido",       dot: "#059669", bg: "#F0FDF4" },
+          canceled:   { label: "Cancelado",       dot: "#6B7280", bg: "#F3F4F6" },
         };
-        const statusInfo = (fullOrder && STATUS_MAP[fullOrder.status]) || { label: fullOrder?.statusLabel || "—", variant: "default" };
-
-        // Workflow Status: stage of the least-advanced package (earliest non-done stage index wins)
-        let wfStatusLabel = "—";
-        if (fullOrder && fullOrder.itemGroups) {
-          let minIdx = Infinity;
-          for (const g of fullOrder.itemGroups) {
-            const stages = g.stages || [];
-            const firstNonDone = stages.findIndex(s => s.status !== "done");
-            if (firstNonDone !== -1 && firstNonDone < minIdx) {
-              minIdx = firstNonDone;
-              wfStatusLabel = stages[firstNonDone].label;
-            }
-          }
-        }
+        const statusInfo = (fullOrder && STATUS_MAP[fullOrder.status]) || { label: "Em andamento", dot: "#08A822", bg: "#E9FCE3" };
 
         return (
           <dl className="detail-fields od-meta">
             <dt>Status</dt>
             <dd>
-              <span className="od-status-pill">
-                <span className="status-dot" />
+              <span className="od-status-pill" style={{ background: statusInfo.bg }}>
+                <span className="status-dot" style={{ background: statusInfo.dot }} />
                 {statusInfo.label}
               </span>
-            </dd>
-
-            <dt>Workflow Status</dt>
-            <dd>
-              <span className="od-wf-pill">{wfStatusLabel}</span>
             </dd>
 
             <dt>Sold by</dt>
@@ -1233,9 +1239,21 @@ function OrderDetailView({ task, orderId, onBack, onOpenOrder, standalone = fals
       {itemGroups.length > 0 && (
         <section className="detail-section flush">
           <div className="pkg-list">
-            {itemGroups.map((group, i) => (
-              <PackageCard key={group.id} group={group} index={i} order={fullOrder} onOpenProduct={(itemIdx) => setProductView({ groupIdx: i, itemIdx })} />
-            ))}
+            {[...itemGroups]
+              .sort((a, b) => {
+                const key = g => {
+                  const isDone = (g.stages || []).every(s => s.status === "done");
+                  const isReturn = g.type === "return";
+                  if (!isDone && !isReturn) return 0; // active non-return
+                  if (!isDone && isReturn)  return 1; // active return
+                  if (isDone  && isReturn)  return 2; // done return
+                  return 3;                           // done non-return (delivered)
+                };
+                return key(a) - key(b);
+              })
+              .map((group, i) => (
+                <PackageCard key={group.id} group={group} index={i} order={fullOrder} onOpenProduct={(itemIdx) => setProductView({ groupIdx: itemGroups.indexOf(group), itemIdx })} />
+              ))}
           </div>
         </section>
       )}
@@ -1424,16 +1442,10 @@ function TaskView({ taskId, onBack, onOpenOrder }) {
   if (!task) return null;
   const d = task.detail;
 
-  const [chatWidth, setChatWidth] = useState(460);
-  const dragRef = useRef(false);
-  const rootRef = useRef(null);
-
-  // Chat engine state
   const [chatMsgs, setChatMsgs] = useState(d.chat || []);
   const [isTyping, setIsTyping] = useState(false);
   const engineRef = useRef(null);
 
-  // Initialise / re-initialise engine when taskId changes
   useEffect(() => {
     setChatMsgs(d.chat || []);
     setIsTyping(false);
@@ -1443,34 +1455,12 @@ function TaskView({ taskId, onBack, onOpenOrder }) {
       task: task,
       onNavigate: (route) => { if (onOpenOrder) onOpenOrder(route.orderId); },
       onAddFollowUp: (newItem) => {
-        // Add to task's followUp array in-memory (prototype only)
         if (task.detail.followUp) task.detail.followUp.push(newItem);
       },
       onAgentSay: (msgs) => setChatMsgs((m) => [...m, ...msgs]),
       onTyping: setIsTyping,
     });
   }, [taskId]);
-
-  // Drag-to-resize
-  useEffect(() => {
-    const onMove = (e) => {
-      if (!dragRef.current || !rootRef.current) return;
-      const rect = rootRef.current.getBoundingClientRect();
-      const next = Math.max(320, Math.min(900, e.clientX - rect.left));
-      setChatWidth(next);
-    };
-    const onUp = () => {
-      if (!dragRef.current) return;
-      dragRef.current = false;
-      document.body.classList.remove("resizing-x");
-    };
-    document.addEventListener("mousemove", onMove);
-    document.addEventListener("mouseup", onUp);
-    return () => {
-      document.removeEventListener("mousemove", onMove);
-      document.removeEventListener("mouseup", onUp);
-    };
-  }, []);
 
   const chips = task.chips || [];
 
@@ -1482,12 +1472,7 @@ function TaskView({ taskId, onBack, onOpenOrder }) {
   const intro = `Reportada por ${d.reportedBy.agent} · ${d.reportedBy.at}`;
 
   return (
-    <div
-      ref={rootRef}
-      className="main split-main resizable-split"
-      style={{ gridTemplateColumns: `${chatWidth}px 6px 1fr` }}
-      data-screen-label={`02 Task ${taskId}`}>
-
+    <ResizableSplit screenLabel={`02 Task ${taskId}`} initialWidth={400}>
       <ChatPanel
         title={d.title}
         intro={intro}
@@ -1497,21 +1482,9 @@ function TaskView({ taskId, onBack, onOpenOrder }) {
         isTyping={isTyping}
         placeholder={`Pergunte sobre a iniciativa ${task.id}…`}
         onBack={onBack} />
-      
-      <div
-        className="split-resizer"
-        onMouseDown={(e) => {
-          e.preventDefault();
-          dragRef.current = true;
-          document.body.classList.add("resizing-x");
-        }}
-        title="Arraste para redimensionar">
-        
-        <span className="split-resizer-grip" />
-      </div>
       <TaskCanvas task={task} onBack={onBack} />
-    </div>);
-
+    </ResizableSplit>
+  );
 }
 
 window.OrderDetailView = OrderDetailView;

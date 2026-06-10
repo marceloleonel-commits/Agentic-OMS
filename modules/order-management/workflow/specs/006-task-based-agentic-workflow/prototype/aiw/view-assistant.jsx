@@ -152,8 +152,8 @@ function AllOrdersTable({ onOpenOrder }) {
 
       <div className="orders-table">
         <div className="orders-thead">
+          <span>Status</span>
           <span>ID do pedido</span>
-          <span>Tarefa atual</span>
           <span>Cliente</span>
           <span>Data de criação</span>
           <span>Origem</span>
@@ -161,17 +161,30 @@ function AllOrdersTable({ onOpenOrder }) {
           <span>Total</span>
         </div>
         {orders.map((o, i) => {
-          const currentStage = getCurrentStage(o);
+          const ORDER_STATUS_MAP = {
+            processing: { label: "Em andamento",    dot: "#2962FF", bg: "#EAF0FF" },
+            invoiced:   { label: "Em andamento",    dot: "#2962FF", bg: "#EAF0FF" },
+            return:     { label: "Ação Necessária", dot: "#C2410C", bg: "#FFF7ED" },
+            error:      { label: "Com erro",        dot: "#DC2626", bg: "#FEF2F2" },
+            complete:   { label: "Resolvido",       dot: "#059669", bg: "#F0FDF4" },
+            canceled:   { label: "Cancelado",       dot: "#6B7280", bg: "#F3F4F6" },
+          };
+          const statusInfo = ORDER_STATUS_MAP[o.status] || { label: "Em andamento", dot: "#2962FF", bg: "#EAF0FF" };
           const hasPopover = o.seller || (o.note && o.note.useCase);
           return (
             <div key={i} className="orders-row" style={{ cursor: "pointer" }}
                  onClick={() => onOpenOrder && onOpenOrder(o.id)}>
+              <span>
+                <span className="od-status-pill" style={{ background: statusInfo.bg }}>
+                  <span className="status-dot" style={{ background: statusInfo.dot }} />
+                  {statusInfo.label}
+                </span>
+              </span>
               <span className="orders-id-wrap"
                     onMouseEnter={() => hasPopover && setHoveredId(o.id)}
                     onMouseLeave={() => setHoveredId(null)}>
                 <span className="orders-id">
-                  {o.id}<br/>
-                  <span className="muted" style={{ fontSize: 11 }}>({o.short})</span>
+                  {o.id}
                 </span>
                 {hoveredId === o.id && hasPopover && (
                   <div className="orders-usecase-popover" onClick={e => e.stopPropagation()}>
@@ -182,19 +195,9 @@ function AllOrdersTable({ onOpenOrder }) {
                   </div>
                 )}
               </span>
-              <span>
-                {currentStage ? (
-                  <span className="orders-current-stage">
-                    {currentStage.icon && <span className="orders-stage-icon">{currentStage.icon}</span>}
-                    <span className="orders-stage-label">{currentStage.label}</span>
-                  </span>
-                ) : (
-                  <span className="orders-stage-done">Concluído</span>
-                )}
-              </span>
               <span>{o.customer}</span>
-              <span className="muted">{o.date}</span>
-              <span>{o.origin}</span>
+              <span className="muted orders-date">{o.date}</span>
+              <span className="orders-origin">{o.origin}</span>
               <span>{o.qty}</span>
               <span>{o.total}</span>
             </div>
