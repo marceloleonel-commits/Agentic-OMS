@@ -111,7 +111,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans
 .recents-header:hover { background: var(--sl-bg-muted); }
 .recents-title { font-size: 11px; font-weight: 600; color: var(--sl-fg-muted); text-transform: uppercase; letter-spacing: .06em; display: flex; align-items: center; gap: 6px; }
 .recents-badge { background: #EBEDF0; color: var(--sl-fg-muted); border-radius: var(--sl-radius-sm); font-size: 11px; font-weight: 600; padding: 1px 7px; min-width: 20px; text-align: center; }
-.recents-chevron { color: #A1AAB7; font-size: 11px; transition: transform .2s; }
+.recents-chevron { color: var(--sl-fg-muted); font-size: 11px; transition: transform .2s; }
 .recents-chevron.open { transform: rotate(180deg); }
 .recents-body { display: none; padding: 0 14px 12px; }
 .recents-body.open { display: block; }
@@ -124,7 +124,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans
 .recent-item-time { font-size: 11px; color: var(--sl-fg-disabled); white-space: nowrap; flex-shrink: 0; }
 .recent-item-restore { font-size: 12px; color: var(--sl-accent); cursor: pointer; border: none; background: none; padding: 0; font-family: inherit; font-weight: 500; }
 .recent-item-restore:hover { text-decoration: underline; color: var(--sl-accent-hover); }
-.recents-empty { font-size: 13px; color: var(--sl-fg-disabled); padding: 8px 0; }
+.recents-empty { font-size: 13px; color: var(--sl-fg-muted); padding: 8px 0; }
 .page-header { display: flex; align-items: flex-start; justify-content: flex-start; gap: 20px; flex-wrap: wrap; margin-bottom: 12px; }
 .page-header-title { flex: 0 1 auto; }
 .page-title { font-size: 20px; font-weight: 600; line-height: 1.25; letter-spacing: -0.01em; color: var(--sl-fg); }
@@ -222,7 +222,7 @@ select.input.select-ph { color: var(--sl-fg-soft); }
 .btn-primary { height: 32px; padding: 0 16px; background: var(--sl-accent); color: #fff; border: 1px solid transparent; border-radius: var(--sl-radius-sm); font-size: 14px; font-weight: 500; cursor: pointer; font-family: inherit; transition: background 0.15s; }
 .btn-primary:hover { background: var(--sl-accent-hover); }
 .btn-primary:focus-visible { outline: 2px solid var(--sl-accent); outline-offset: 2px; }
-.btn-primary:disabled { background: #A1AAB7; border-color: #A1AAB7; cursor: not-allowed; opacity: 0.85; }
+.btn-primary:disabled { background: #A1AAB7; border-color: var(--sl-fg-muted); cursor: not-allowed; opacity: 0.85; }
 .btn-primary:disabled:hover { background: #A1AAB7; }
 .btn-secondary { height: 32px; padding: 0 16px; background: var(--sl-bg-surface); color: var(--sl-fg); border: 1px solid var(--sl-border-strong); border-radius: var(--sl-radius-sm); font-size: 14px; font-weight: 500; cursor: pointer; font-family: inherit; transition: background 0.15s, border-color 0.15s; }
 .btn-secondary:hover { background: var(--sl-bg-muted); }
@@ -246,7 +246,7 @@ select.input.select-ph { color: var(--sl-fg-soft); }
 
 /* ── Section divider ── */
 .section-divider { display: flex; align-items: center; gap: 10px; margin: 16px 0 10px; }
-.section-divider-label { font-size: 11px; font-weight: 600; color: #A1AAB7; text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; }
+.section-divider-label { font-size: 11px; font-weight: 600; color: var(--sl-fg-muted); text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; }
 .section-divider-line { flex: 1; height: 1px; background: #E7E9EE; }
 
 /* ── Results header ── */
@@ -255,7 +255,7 @@ select.input.select-ph { color: var(--sl-fg-soft); }
 
 /* ── SLA table — Shoreline: Table ── */
 .sla-table { width: 100%; border-collapse: collapse; font-size: 14px; }
-.sla-table th { background: var(--sl-bg-muted); font-size: 11px; font-weight: 600; color: var(--sl-fg-soft); text-transform: uppercase; letter-spacing: 0.06em; padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--sl-border); }
+.sla-table th { background: var(--sl-bg-muted); font-size: 11px; font-weight: 600; color: var(--sl-fg-muted); text-transform: uppercase; letter-spacing: 0.06em; padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--sl-border); }
 .sla-table th:last-child { width: 130px; }
 .sla-row td { padding: 12px; border-bottom: 1px solid var(--sl-border); vertical-align: middle; color: var(--sl-fg); }
 .sla-row:hover td { background: var(--sl-bg-muted); }
@@ -273,7 +273,7 @@ select.input.select-ph { color: var(--sl-fg-soft); }
 .excluded-header-left { display: flex; align-items: center; gap: 8px; }
 .excluded-title { font-size: 11px; font-weight: 600; color: var(--sl-fg-muted); text-transform: uppercase; letter-spacing: 0.06em; }
 .excluded-count { background: #EBEDF0; color: var(--sl-fg-muted); border-radius: var(--sl-radius-sm); font-size: 11px; font-weight: 600; padding: 1px 7px; min-width: 20px; text-align: center; }
-.excluded-chevron { color: #A1AAB7; font-size: 11px; transition: transform .2s; }
+.excluded-chevron { color: var(--sl-fg-muted); font-size: 11px; transition: transform .2s; }
 .excluded-chevron.open { transform: rotate(180deg); }
 .excluded-body { display: none; padding: 0 14px 12px; }
 .excluded-body.open { display: block; }
@@ -324,7 +324,7 @@ select.input.select-ph { color: var(--sl-fg-soft); }
   flex-shrink: 0;
 }
 .feedback-callout-header .feedback-callout-sep {
-  color: #A1AAB7;
+  color: var(--sl-fg-muted);
   font-size: 12px;
   flex-shrink: 0;
 }
@@ -370,7 +370,7 @@ select.input.select-ph { color: var(--sl-fg-soft); }
 .feedback-callout-results { margin-top: 20px; margin-bottom: 0; }
 .sla-price { font-weight: 600; }
 .sla-deadline { font-size: 13px; }
-.sla-deadline-sub { font-size: 11px; color: #A1AAB7; margin-top: 2px; }
+.sla-deadline-sub { font-size: 11px; color: var(--sl-fg-muted); margin-top: 2px; }
 .sla-qty { font-size: 13px; color: var(--sl-fg-muted); }
 .btn-details { background: none; border: none; color: var(--sl-accent); font-size: 14px; font-weight: 500; font-family: inherit; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; padding: 0; }
 .btn-details:hover { color: var(--sl-accent-hover); text-decoration: underline; }
@@ -381,13 +381,13 @@ select.input.select-ph { color: var(--sl-fg-soft); }
 .sla-details-row td { padding: 0; border-bottom: 1px solid #E7E9EE; }
 .details-panel { padding: 16px; background: var(--sl-bg-muted); display: grid; grid-template-columns: 1fr 1fr; gap: 16px; border-top: 1px solid var(--sl-border); }
 .detail-block { }
-.detail-block-title { font-size: 10.5px; font-weight: 600; color: #A1AAB7; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+.detail-block-title { font-size: 10.5px; font-weight: 600; color: var(--sl-fg-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
 .route-chain { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 12.5px; }
 .route-node { background: var(--sl-bg-surface); border: 1px solid var(--sl-border); border-radius: var(--sl-radius-sm); padding: 4px 10px; color: var(--sl-fg); font-size: 12px; }
 .route-node.policy { background: #E8F0FE; border-color: var(--sl-accent); color: var(--sl-fg); font-weight: 500; }
-.route-arrow { color: #A1AAB7; font-size: 11px; }
+.route-arrow { color: var(--sl-fg-muted); font-size: 11px; }
 .route-sla-note { margin-top: 8px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 12px; color: #5B6E84; }
-.route-sla-label { font-size: 10.5px; font-weight: 600; color: #A1AAB7; text-transform: uppercase; letter-spacing: 0.04em; }
+.route-sla-label { font-size: 10.5px; font-weight: 600; color: var(--sl-fg-muted); text-transform: uppercase; letter-spacing: 0.04em; }
 .route-sla-name { font-weight: 500; color: #142032; }
 .calc-row { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; padding: 3px 0; border-bottom: 1px solid #E7E9EE; }
 .calc-row-total { border-bottom: none; margin-top: 4px; padding-top: 8px; border-top: 1px solid #E7E9EE; font-weight: 600; color: #142032; }
@@ -395,20 +395,20 @@ select.input.select-ph { color: var(--sl-fg-soft); }
 .calc-val { color: #142032; font-weight: 500; }
 .detail-meta-row { display: flex; gap: 16px; margin-top: 4px; flex-wrap: wrap; }
 .detail-meta-item { font-size: 12px; }
-.detail-meta-label { color: #A1AAB7; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600; }
+.detail-meta-label { color: var(--sl-fg-muted); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.04em; font-weight: 600; }
 .detail-meta-val { color: #142032; margin-top: 2px; font-family: 'SF Mono','Fira Mono',monospace; font-size: 11.5px; }
 
 /* ── Excluded row ── */
 .sla-excluded-row td { padding: 9px 12px; border-bottom: 1px solid #F8F7FC; }
 .sla-excluded-row:last-child td { border-bottom: none; }
-.excluded-carrier { display: flex; align-items: center; gap: 8px; color: #A1AAB7; }
+.excluded-carrier { display: flex; align-items: center; gap: 8px; color: var(--sl-fg-muted); }
 .excluded-name { font-weight: 500; font-size: 13px; }
-.excluded-reason { font-size: 12px; color: #A1AAB7; }
+.excluded-reason { font-size: 12px; color: var(--sl-fg-muted); }
 .excluded-x { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; border-radius: 50%; background: #E7E9EE; flex-shrink: 0; }
 
 /* ── Pickup table — Shoreline: Table ── */
 .pickup-table { width: 100%; border-collapse: collapse; }
-.pickup-table th { text-align: left; font-size: 11px; font-weight: 600; color: var(--sl-fg-soft); text-transform: uppercase; letter-spacing: .06em; padding: 10px 12px; border-bottom: 1px solid var(--sl-border); background: var(--sl-bg-muted); }
+.pickup-table th { text-align: left; font-size: 11px; font-weight: 600; color: var(--sl-fg-muted); text-transform: uppercase; letter-spacing: .06em; padding: 10px 12px; border-bottom: 1px solid var(--sl-border); background: var(--sl-bg-muted); }
 .pickup-table th:not(:first-child) { text-align: right; }
 .pickup-table td { padding: 12px; border-bottom: 1px solid var(--sl-border); vertical-align: top; }
 .pickup-table tr:last-child td { border-bottom: none; }
@@ -418,7 +418,7 @@ select.input.select-ph { color: var(--sl-fg-soft); }
 .pickup-price { font-size: 14px; font-weight: 600; color: var(--sl-fg); text-align: right; }
 .pickup-date { font-size: 12px; color: var(--sl-fg-muted); text-align: right; margin-top: 2px; }
 .pickup-label { font-size: 12px; color: var(--sl-accent); font-weight: 500; text-align: right; }
-.pickup-empty { font-size: 13px; color: var(--sl-fg-disabled); padding: 8px 0; line-height: 1.5; }
+.pickup-empty { font-size: 13px; color: var(--sl-fg-muted); padding: 8px 0; line-height: 1.5; }
 
 /* ── Icon helpers ── */
 .icon { display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
@@ -426,6 +426,36 @@ select.input.select-ph { color: var(--sl-fg-soft); }
 .search-hit { background: #E8F0FE; color: var(--sl-fg); border-radius: 2px; padding: 0 1px; }
 
 .hidden { display: none !important; }
+
+/* ── A11y helpers ── */
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.results-title:focus-visible { outline: 2px solid var(--sl-accent); outline-offset: 3px; border-radius: 2px; }
+[role="button"].recents-header:focus-visible,
+[role="button"].excluded-header:focus-visible { outline: 2px solid var(--sl-accent); outline-offset: -2px; }
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
+}
+
+/* ── Responsive: tables scroll horizontally instead of breaking on narrow widths ── */
+#delivery-table-wrap, #pickup-list, .excluded-body { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+@media (max-width: 768px) {
+  .content { padding: 20px 14px 36px; }
+  .card { padding: 18px 16px; }
+  .page-header { gap: 14px; }
+  .details-panel { grid-template-columns: 1fr; }
+  .sla-table, .pickup-table, .excluded-table { min-width: 560px; }
+}
+
+@media (max-width: 480px) {
+  .form-row { gap: 10px; }
+  .form-row .form-group { flex-basis: 100%; }
+  .item-row { flex-wrap: wrap; }
+  .item-row .fg-sku { flex: 1 1 100%; }
+  .item-row .fg-qty, .item-row .fg-price { flex: 1 1 auto; }
+  .feedback-callout-header .feedback-callout-body { flex-wrap: wrap; white-space: normal; }
+  .feedback-callout-header .feedback-callout-text { white-space: normal; }
+}
 </style>
 </head>
 <body>
@@ -486,13 +516,13 @@ select.input.select-ph { color: var(--sl-fg-soft); }
 
     <!-- Recent simulations -->
     <div class="recents-bar" id="recents-bar">
-      <div class="recents-header" onclick="toggleRecents()">
+      <div class="recents-header" id="recents-header" role="button" tabindex="0" aria-expanded="false" aria-controls="recents-body" onclick="toggleRecents()" onkeydown="handleToggleKey(event, toggleRecents)">
         <div class="recents-title">
           <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="5.5" stroke="#5B6E84" stroke-width="1.2"/><path d="M6.5 4v3l2 1.5" stroke="#5B6E84" stroke-width="1.2" stroke-linecap="round"/></svg>
           <span data-i18n="recents-title">Últimas simulações</span>
           <span class="recents-badge" id="recents-badge">0</span>
         </div>
-        <span class="recents-chevron" id="recents-chevron">▾</span>
+        <span class="recents-chevron" id="recents-chevron" aria-hidden="true">▾</span>
       </div>
       <div class="recents-body" id="recents-body">
         <div class="recents-list" id="recents-list"></div>
@@ -533,7 +563,7 @@ select.input.select-ph { color: var(--sl-fg-soft); }
             <div id="seller-input-state">
               <div class="combo-input-wrap">
                 <input class="combo-input" id="seller-search" oninput="onSellerSearch()" onfocus="onSellerFocus()" data-i18n-ph="seller-ph">
-                <button class="combo-clear" id="seller-search-clear" onclick="clearSellerSearch()">✕</button>
+                <button class="combo-clear" id="seller-search-clear" onclick="clearSellerSearch()" data-i18n-aria="aria-clear-search" aria-label="Limpar busca">✕</button>
               </div>
               <div class="combo-dropdown hidden" id="seller-dd"></div>
             </div>
@@ -542,7 +572,7 @@ select.input.select-ph { color: var(--sl-fg-soft); }
                 <div class="combo-sel-name" id="seller-sel-name"></div>
                 <div class="combo-sel-id" id="seller-sel-id"></div>
               </div>
-              <button class="combo-sel-clear" onclick="clearSellerSelection()">✕</button>
+              <button class="combo-sel-clear" onclick="clearSellerSelection()" data-i18n-aria="aria-remove-seller" aria-label="Remover seller">✕</button>
             </div>
           </div>
         </div>
@@ -551,8 +581,8 @@ select.input.select-ph { color: var(--sl-fg-soft); }
       <div class="divider"></div>
       <div class="card-section-title" data-i18n="section-items">Itens</div>
 
-      <div class="error-box" id="err-box">
-        <svg class="error-icon" width="16" height="16" viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="7" stroke="#F71963" stroke-width="1.5"/><path d="M8 5v4" stroke="#F71963" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="11.5" r=".75" fill="#F71963"/></svg>
+      <div class="error-box" id="err-box" role="alert" aria-live="assertive">
+        <svg class="error-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><circle cx="8" cy="8" r="7" stroke="#F71963" stroke-width="1.5"/><path d="M8 5v4" stroke="#F71963" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="11.5" r=".75" fill="#F71963"/></svg>
         <span id="err-msg"></span>
       </div>
 
@@ -582,10 +612,12 @@ select.input.select-ph { color: var(--sl-fg-soft); }
       </div>
     </div>
 
+    <div id="sr-status" class="sr-only" aria-live="polite" role="status"></div>
+
     <!-- Results -->
-    <div class="card hidden" id="results-card">
+    <div class="card hidden" id="results-card" role="region" aria-labelledby="results-title">
       <div class="results-header-row">
-        <span class="results-title" data-i18n="res-title">Opções disponíveis</span>
+        <h2 class="results-title" id="results-title" tabindex="-1" data-i18n="res-title">Opções disponíveis</h2>
       </div>
 
       <div id="individual-results-wrap" class="hidden"></div>
@@ -614,12 +646,12 @@ select.input.select-ph { color: var(--sl-fg-soft); }
 
       <!-- Excluded carriers (P1) -->
       <div class="excluded-section hidden" id="excluded-section">
-        <div class="excluded-header" onclick="toggleExcluded()">
+        <div class="excluded-header" id="excluded-header" role="button" tabindex="0" aria-expanded="false" aria-controls="excluded-body" onclick="toggleExcluded()" onkeydown="handleToggleKey(event, toggleExcluded)">
           <div class="excluded-header-left">
             <span class="excluded-title" data-i18n="lbl-excluded-section">Transportadoras indisponíveis</span>
             <span class="excluded-count" id="excluded-count">0</span>
           </div>
-          <span class="excluded-chevron" id="excluded-chevron">▾</span>
+          <span class="excluded-chevron" id="excluded-chevron" aria-hidden="true">▾</span>
         </div>
         <div class="excluded-body" id="excluded-body">
           <table class="excluded-table">
@@ -662,7 +694,7 @@ const ICON = {
   pin: `<svg width="12" height="14" viewBox="0 0 12 14" fill="none"><path d="M6 0a5 5 0 00-5 5c0 3.5 5 9 5 9s5-5.5 5-9a5 5 0 00-5-5zm0 7a2 2 0 110-4 2 2 0 010 4z" fill="#5B6E84"/></svg>`,
   clock: `<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="5.5" stroke="#5B6E84" stroke-width="1.2"/><path d="M6.5 4v3l2 1.5" stroke="#5B6E84" stroke-width="1.2" stroke-linecap="round"/></svg>`,
   globe: `<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><circle cx="6.5" cy="6.5" r="5.5" stroke="#5B6E84" stroke-width="1.2"/><path d="M6.5 1C5 3 4.5 5 4.5 6.5s.5 3.5 2 5.5M6.5 1c1.5 2 2 4 2 5.5s-.5 3.5-2 5.5M1 6.5h11" stroke="#5B6E84" stroke-width="1.2"/></svg>`,
-  chevron: `<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+  chevron: `<svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
   store: `<svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M1 5.5L2.5 2h8L12 5.5" stroke="#5B6E84" stroke-width="1.2" stroke-linecap="round"/><path d="M1 5.5h11v6a.5.5 0 01-.5.5h-10A.5.5 0 011 11.5V5.5z" stroke="#5B6E84" stroke-width="1.2"/><rect x="4.5" y="8" width="4" height="4" rx=".5" stroke="#5B6E84" stroke-width="1.2"/></svg>`
 };
 
@@ -720,6 +752,11 @@ const I18N_PT = {
   'feedback-desc':'Conte o que achou. Leva poucos minutos e ajude o time a identificar melhorias.',
   'feedback-link':'Formulário de feedback',
   'vertical-hint':'Aqui você pode mudar o tipo de loja que você está simulando.',
+  'sr-results-loaded':'Resultados da simulação carregados.',
+  'aria-clear-search':'Limpar busca',
+  'aria-remove-seller':'Remover seller selecionado',
+  'aria-remove-sku':'Remover produto selecionado',
+  'aria-remove-item':'Remover item',
   'tag-pickup-only':'Só retirada',
   'pickup-only-notice':'Estes produtos estão disponíveis apenas para retirada em loja PharmaTech. Não há opções de entrega em domicílio.',
   'pickup-only-notice-item': name => `${name} está disponível apenas para retirada em loja. Não há opções de entrega em domicílio para este item.`,
@@ -781,6 +818,11 @@ const I18N_EN = {
   'feedback-title':'Your feedback matters',
   'feedback-desc':'Share your feedback. It only takes a few minutes and helps the team identify improvements.',
   'feedback-link':'Feedback form',
+  'sr-results-loaded':'Simulation results loaded.',
+  'aria-clear-search':'Clear search',
+  'aria-remove-seller':'Remove selected seller',
+  'aria-remove-sku':'Remove selected product',
+  'aria-remove-item':'Remove item',
   'pickup-empty-region':'No pickup locations available in this region.',
   'pickup-empty-zip':'Enter the full ZIP code to see pickup locations in your region.',
   'tag-pickup-only':'Pickup only',
@@ -829,6 +871,11 @@ const I18N_ES = {
   'feedback-title':'Tu opinión importa',
   'feedback-desc':'Cuéntanos tu experiencia. Solo toma unos minutos y ayuda al equipo a identificar mejoras.',
   'feedback-link':'Formulario de feedback',
+  'sr-results-loaded':'Resultados de la simulación cargados.',
+  'aria-clear-search':'Limpiar búsqueda',
+  'aria-remove-seller':'Quitar seller seleccionado',
+  'aria-remove-sku':'Quitar producto seleccionado',
+  'aria-remove-item':'Quitar artículo',
   'pickup-empty-region':'No hay puntos de retiro disponibles para esta región.',
   'pickup-empty-zip':'Ingresa el CP completo para ver puntos de retiro en tu región.',
   'tag-pickup-only':'Solo retiro',
@@ -904,7 +951,7 @@ const ES_EXCLUDED = [
   { name:'Paquetexpress', type:'Estándar', typeClass:'', reason:'CP fuera del rango de entrega del transportista' },
   { name:'Redpack',       type:'Estándar', typeClass:'', reason:'Transportista inactivo en la política de envío' },
   { name:'Tres Guerras',  type:'Estándar', typeClass:'', reason:'Transportista no conectado a ningún muelle' },
-  { name:'Castores',      type:'Estándar', typeClass:'', reason:'Muelle sin stock vinculado — sin ruta logística' }
+  { name:'Castores',      type:'Estándar', typeClass:'', reason:'Muelle sin stock vinculado, sin ruta logística' }
 ];
 const BR_SLAS = [
   {
@@ -1035,7 +1082,7 @@ const BR_EXCLUDED = [
   { name:'Total Express',  type:'Padrão', typeClass:'', reason:'CEP fora da faixa de entrega da transportadora' },
   { name:'Jadlog Package', type:'Padrão', typeClass:'', reason:'Transportadora inativa na política de envio' },
   { name:'Braspress',      type:'Padrão', typeClass:'', reason:'Transportadora não conectada a nenhuma doca' },
-  { name:'TNT Mercúrio',   type:'Padrão', typeClass:'', reason:'Doca sem estoque vinculado — sem rota logística' }
+  { name:'TNT Mercúrio',   type:'Padrão', typeClass:'', reason:'Doca sem estoque vinculado, sem rota logística' }
 ];
 const BR_FASHION_EXCLUDED = [
   { name:'Jadlog Package',  type:'Padrão', typeClass:'', reason:'Peso do pedido acima do limite da transportadora' },
@@ -1337,6 +1384,10 @@ function applyI18n() {
     const k = el.getAttribute('data-i18n-ph');
     if (typeof i[k] === 'string') el.placeholder = i[k];
   });
+  document.querySelectorAll('[data-i18n-aria]').forEach(el => {
+    const k = el.getAttribute('data-i18n-aria');
+    if (typeof i[k] === 'string') el.setAttribute('aria-label', i[k]);
+  });
   const d = getData();
   document.getElementById('page-subtitle').textContent = d.accountLabel;
   document.getElementById('seller-search').placeholder = i['seller-ph'];
@@ -1489,7 +1540,7 @@ function addRow() {
         <div class="sku-dd hidden" id="sku-dd-${id}"></div>
         <div class="sku-chip hidden" id="sku-chip-${id}">
           <div class="sku-chip-content"><div class="sku-chip-name" id="chip-name-${id}"></div><div class="sku-chip-meta" id="chip-meta-${id}"></div></div>
-          <button class="sku-chip-clear" onclick="clearSku(${id})">✕</button>
+          <button class="sku-chip-clear" onclick="clearSku(${id})" aria-label="${i['aria-remove-sku']}">✕</button>
         </div>
       </div>
     </div>
@@ -1501,7 +1552,7 @@ function addRow() {
       ${id===1?`<label>${i['lbl-price']}<span class="opt">${i['lbl-opt']}</span></label>`:''}
       <input class="input" type="text" placeholder="0,00">
     </div>
-    ${id>1?`<button class="btn-remove" onclick="removeRow(${id})">✕</button>`:'<div class="row-action-spacer"></div>'}
+    ${id>1?`<button class="btn-remove" onclick="removeRow(${id})" aria-label="${i['aria-remove-item']}">✕</button>`:'<div class="row-action-spacer"></div>'}
   `;
   container.appendChild(row);
   updateSimulateButton();
@@ -1851,8 +1902,18 @@ function simulate() {
   buildResults(d, i);
   document.getElementById('results-card').classList.remove('hidden');
   updateResultsFeedbackCallout();
+  announceResults(i);
   setTimeout(() => document.getElementById('results-card').scrollIntoView({behavior:'smooth',block:'start'}), 60);
   saveCurrentSimulation();
+}
+
+// Announces fresh results to assistive tech and moves focus to the results heading.
+function announceResults(i) {
+  i = i || getI18n();
+  const status = document.getElementById('sr-status');
+  if (status) status.textContent = i['sr-results-loaded'] || '';
+  const title = document.getElementById('results-title');
+  if (title) requestAnimationFrame(() => title.focus());
 }
 
 // ── Build results ─────────────────────────────────────────────────────────────
@@ -2026,7 +2087,7 @@ function appendSlaRows(tbody, slas, i, hasKit, keyPrefix) {
       </td>
       <td><span class="sla-qty">${sla.qty}</span></td>
       <td>
-        <button class="btn-details" id="btn-${detailKey}" onclick="toggleDetails('${detailKey}')">
+        <button class="btn-details" id="btn-${detailKey}" aria-expanded="false" aria-controls="detail-${detailKey}" onclick="toggleDetails('${detailKey}')">
           ${i['btn-show-details']} ${ICON.chevron}
         </button>
       </td>`;
@@ -2223,12 +2284,17 @@ function toggleDetails(detailKey) {
   const isOpen = !row.classList.contains('hidden');
   row.classList.toggle('hidden', isOpen);
   btn.classList.toggle('open', !isOpen);
+  btn.setAttribute('aria-expanded', String(!isOpen));
   btn.innerHTML = `${isOpen ? i['btn-show-details'] : i['btn-hide-details']} ${ICON.chevron}`;
 }
 
 function toggleExcluded() {
-  document.getElementById('excluded-body').classList.toggle('open');
-  document.getElementById('excluded-chevron').classList.toggle('open');
+  const body = document.getElementById('excluded-body');
+  const isOpen = body.classList.contains('open');
+  body.classList.toggle('open', !isOpen);
+  document.getElementById('excluded-chevron').classList.toggle('open', !isOpen);
+  const header = document.getElementById('excluded-header');
+  if (header) header.setAttribute('aria-expanded', String(!isOpen));
 }
 
 function toggleExcludedBlock(blockId) {
@@ -2378,9 +2444,19 @@ function renderRecents() {
 function toggleRecents() {
   const body = document.getElementById('recents-body');
   const chevron = document.getElementById('recents-chevron');
+  const header = document.getElementById('recents-header');
   const isOpen = body.classList.contains('open');
   body.classList.toggle('open', !isOpen);
   chevron.classList.toggle('open', !isOpen);
+  if (header) header.setAttribute('aria-expanded', String(!isOpen));
+}
+
+// Activates role="button" elements with Enter / Space, matching native button behavior.
+function handleToggleKey(e, fn) {
+  if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
+    e.preventDefault();
+    fn();
+  }
 }
 
 function normalizeText(s) {
