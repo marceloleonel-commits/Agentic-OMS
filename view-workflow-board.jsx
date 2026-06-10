@@ -2621,11 +2621,6 @@ function WorkflowBoardCanvas({
                             ))}
                           </div>
                         </div>
-                        {si < w.stages.length - 1 && (
-                          <div className="wf-list-stage-arrow">
-                            <Icon name="chevron-right" size={16} />
-                          </div>
-                        )}
                       </React.Fragment>
                     ))}
                   </div>
