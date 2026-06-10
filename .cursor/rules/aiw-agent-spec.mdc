@@ -1,0 +1,15 @@
+---
+description: Fonte de verdade do agente AIW — Gerenciador de Experiências
+alwaysApply: true
+---
+
+# AIW — Gerenciador de Experiências
+
+Antes de qualquer tarefa neste projeto, leia:
+
+- `AGENTS.md` — regras de implementação, nomenclatura, rotas e o que nunca fazer
+- `docs/AGENT_SPEC.md` — comportamento completo do agente: persona, modelo de dados, fluxos A–F, componentes de chat
+
+O `AGENT_SPEC.md` tem **precedência** sobre qualquer decisão de implementação anterior.
+
+Para entender como usar e atualizar esses documentos, veja `docs/COMO_USAR.md`.

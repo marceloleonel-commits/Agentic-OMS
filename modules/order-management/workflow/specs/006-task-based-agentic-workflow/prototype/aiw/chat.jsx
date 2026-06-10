@@ -1,26 +1,52 @@
 /* global React, Icon */
-const { useState, useRef, useEffect } = React;
+const { useState, useRef, useEffect, useCallback } = React;
 
-function MessageComposer({ placeholder = "Message VTEX My Assistant...", onSend, agent = "VTEX My Assistant", composerRef }) {
+const MessageComposer = React.forwardRef(function MessageComposer({ placeholder = "Message VTEX My Assistant...", onSend, agent = "VTEX My Assistant" }, ref) {
   const [v, setV] = useState("");
+  const [citations, setCitations] = useState([]);
   const textareaRef = useRef(null);
-  React.useImperativeHandle(composerRef, () => ({
+
+  React.useImperativeHandle(ref, () => ({
     append: (text) => {
-      setV(prev => {
-        const sep = prev.trim() ? " " : "";
-        return prev + sep + text;
-      });
+      setV(prev => prev + (prev.trim() ? " " : "") + text);
+      setTimeout(() => textareaRef.current?.focus(), 0);
+    },
+    cite: (text) => {
+      setCitations(prev => prev.includes(text) ? prev : [...prev, text]);
       setTimeout(() => textareaRef.current?.focus(), 0);
     },
   }));
+
+  const removeCitation = (text) => setCitations(prev => prev.filter(c => c !== text));
+
   const submit = () => {
-    if (!v.trim()) return;
-    onSend && onSend(v.trim());
+    if (!v.trim() && !citations.length) return;
+    const prefix = citations.join(" ");
+    const full = [prefix, v.trim()].filter(Boolean).join(" ");
+    onSend && onSend(full);
     setV("");
+    setCitations([]);
   };
+
   return (
     <div className="composer">
       <div className="composer-inner">
+        {citations.length > 0 && (
+          <div className="composer-citations">
+            {citations.map((c, i) => (
+              <span key={i} className="composer-citation">
+                <span className="composer-citation-text">{c.replace(/^\[|\]$/g, "")}</span>
+                <button
+                  className="composer-citation-close"
+                  title="Remover citação"
+                  onClick={() => removeCitation(c)}
+                >
+                  <Icon name="x" size={10} />
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
         <textarea
           ref={textareaRef}
           rows={1}
@@ -32,20 +58,46 @@ function MessageComposer({ placeholder = "Message VTEX My Assistant...", onSend,
         <div className="composer-row">
           <button className="composer-icon" title="Attach"><Icon name="plus" size={16} /></button>
           <button className="agent-chip">
-            <span className="agent-mark">
-              <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round"><path d="M3 6h18l-3 6 3 6H6L3 12l3-6z" /></svg>
-            </span>
+            <span className="agent-mark" />
             <span>{agent}</span>
             <Icon name="chevron-down" size={12} />
           </button>
           <div style={{ flex: 1 }} />
-          <button className={`send-btn ${v.trim() ? "active" : ""}`} onClick={submit} title="Send">
+          <button className={`send-btn ${(v.trim() || citations.length) ? "active" : ""}`} onClick={submit} title="Send">
             <Icon name="arrow-up" size={14} />
           </button>
         </div>
       </div>
     </div>
   );
+});
+
+/*
+  Inline markdown renderer — supports **bold**, *italic*, `code`, and \n line breaks.
+  Returns an array of React nodes (safe — no dangerouslySetInnerHTML).
+*/
+function renderMd(text) {
+  if (!text) return null;
+  // Split on **bold**, *italic*, `code`, keeping delimiters
+  const parts = text.split(/(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`)/g);
+  const nodes = [];
+  parts.forEach((part, i) => {
+    if (part.startsWith("**") && part.endsWith("**")) {
+      nodes.push(<strong key={i}>{part.slice(2, -2)}</strong>);
+    } else if (part.startsWith("*") && part.endsWith("*")) {
+      nodes.push(<em key={i}>{part.slice(1, -1)}</em>);
+    } else if (part.startsWith("`") && part.endsWith("`")) {
+      nodes.push(<code key={i}>{part.slice(1, -1)}</code>);
+    } else {
+      // Render \n as <br>
+      const lines = part.split("\n");
+      lines.forEach((line, j) => {
+        if (j > 0) nodes.push(<br key={`${i}-br-${j}`} />);
+        if (line) nodes.push(line);
+      });
+    }
+  });
+  return nodes;
 }
 
 /* Reusable Chat panel.
@@ -59,6 +111,48 @@ function MessageComposer({ placeholder = "Message VTEX My Assistant...", onSend,
    - { from:"agent", type:"action", title, body, onApply }  proposed change card
    - { from:"agent", type:"wf-draft", draft, onConfirm }    new-workflow summary card
 */
+function ChipRowWithMore({ chips, onSelect }) {
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef(null);
+
+  useEffect(() => {
+    if (!open) return;
+    function handleClick(e) {
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [open]);
+
+  return (
+    <div className="composer-chips" ref={wrapRef}>
+      {open && (
+        <div className="chip-more-menu">
+          {chips.map((c, j) => (
+            <button
+              key={j}
+              className="chip-more-item"
+              style={{ animationDelay: `${(chips.length - 1 - j) * 55}ms` }}
+              onClick={() => { onSelect(c); setOpen(false); }}
+            >
+              {c.label}
+            </button>
+          ))}
+        </div>
+      )}
+      <div className="chip-row">
+        <button
+          className={`suggest-chip chip-help-trigger${open ? ' open' : ''}`}
+          onClick={() => setOpen(o => !o)}
+        >
+          <Icon name={open ? 'x' : 'sparkle'} size={14} />
+          {open ? 'Fechar' : 'Como posso te ajudar?'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function ChatPanel({
   title = "New chat",
   intro,
@@ -111,7 +205,6 @@ function ChatPanel({
   };
 
   const hasUser = messages.some((m) => m.from === "user");
-  const showChips = (alwaysShowChips || !hasUser) && chips.length > 0;
 
   function renderMessage(m, i) {
     if (m.from === "user") {
@@ -126,17 +219,45 @@ function ChatPanel({
 
     return (
       <div key={i} className="msg msg-assistant">
-        {m.text && <div className="msg-text">{m.text}</div>}
+        {m.text && <div className="msg-text">{renderMd(m.text)}</div>}
 
-        {m.type === "action" && (
+        {m.type === "action" && !m.fields && (
           <div className="chat-action-card">
             <div className="chat-action-card-body">
               <span className="chat-action-card-title">{m.title}</span>
-              {m.body && <span className="chat-action-card-desc" style={{ whiteSpace: "pre-line" }}>{m.body}</span>}
+              {m.body && <span className="chat-action-card-desc" style={{ whiteSpace: "pre-line" }}>{renderMd(m.body)}</span>}
             </div>
             <button className="btn btn-sm btn-primary chat-action-apply" onClick={m.onApply}>
               Aplicar
             </button>
+          </div>
+        )}
+
+        {m.type === "action" && m.fields && (
+          <div className="chat-action-card chat-action-card--structured">
+            <div className="chat-action-card-label">{m.title}</div>
+            {m.heading && <div className="chat-action-card-heading">{m.heading}</div>}
+            <div className="chat-action-card-fields">
+              {m.fields.map((f, fi) => (
+                <div key={fi} className="chat-action-card-field">
+                  <span className="chat-action-field-label">{f.label}:</span>
+                  {f.tag
+                    ? <span className="chat-action-field-tag">{f.value}</span>
+                    : <span className="chat-action-field-value">{f.value}</span>
+                  }
+                </div>
+              ))}
+            </div>
+            <div className="chat-action-card-btns">
+              <button className="btn btn-sm btn-primary chat-action-apply-full" onClick={m.onApply}>
+                {m.applyLabel || "Aplicar"}
+              </button>
+              {m.onDismiss && (
+                <button className="btn btn-sm btn-tertiary chat-action-dismiss" onClick={m.onDismiss}>
+                  Cancelar
+                </button>
+              )}
+            </div>
           </div>
         )}
 
@@ -170,13 +291,19 @@ function ChatPanel({
           <div className="chat-draft-card">
             <div className="chat-draft-header">
               <span>✨</span>
-              <span>Novo workflow</span>
+              <span>Nova experiência</span>
             </div>
             <div className="chat-draft-rows">
               <div className="chat-draft-row">
                 <span className="chat-draft-label">Nome</span>
                 <strong>{m.draft.name}</strong>
               </div>
+              {m.draft.origin && (
+                <div className="chat-draft-row">
+                  <span className="chat-draft-label">Origem</span>
+                  <strong>{m.draft.origin}</strong>
+                </div>
+              )}
               {m.draft.category && (
                 <div className="chat-draft-row">
                   <span className="chat-draft-label">Categoria</span>
@@ -185,7 +312,7 @@ function ChatPanel({
               )}
               <div className="chat-draft-row">
                 <span className="chat-draft-label">Acionamento</span>
-                <strong>{{ auto: "Automático", manual: "Manual", client: "Solicitação do cliente" }[m.draft.trigger] || m.draft.trigger}</strong>
+                <strong>{{ auto: "Automático — novos pedidos", manual: "Manual pelo operador", client: "Por solicitação do cliente" }[m.draft.trigger] || m.draft.trigger}</strong>
               </div>
               <div className="chat-draft-row">
                 <span className="chat-draft-label">Agente AI</span>
@@ -223,14 +350,19 @@ function ChatPanel({
                     </button>
                   );
                 }
+                const undoPrefix = "↩ ";
+                const isUndo = label.startsWith(undoPrefix);
+                const isConfirm = label.endsWith("→");
+                const displayLabel = isUndo ? label.slice(undoPrefix.length) : label;
                 return (
                   <button
                     key={j}
-                    className={`chat-quick-reply${isSelected ? " selected" : ""}${answered && !isSelected ? " dimmed" : ""}`}
+                    className={`chat-quick-reply${isSelected ? " selected" : ""}${answered && !isSelected ? " dimmed" : ""}${isConfirm ? " chat-quick-reply--confirm" : ""}`}
                     onClick={() => !answered && send(label, i, { fromReply: true })}
                     disabled={!!answered && !isSelected}
                   >
-                    {label}
+                    {isUndo && <Icon name="arrow-counter-clockwise" size={12} />}
+                    {displayLabel}
                   </button>
                 );
               })}
@@ -288,22 +420,13 @@ function ChatPanel({
           </div>
         )}
 
-        {showChips && (
-          <div>
-            <div className="chat-sub-q">O que gostaria de fazer?</div>
-            <div className="chip-row">
-              {chips.map((c, j) => (
-                <button key={j} className="suggest-chip" onClick={() => send(c.label, undefined, { fromChip: true })}>
-                  <Icon name={c.icon} size={12} /> {c.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
 
       <div className="chat-composer-wrap">
-        <MessageComposer placeholder={placeholder} agent={agent} onSend={send} composerRef={composerRef} />
+        {chips.length > 0 && (
+          <ChipRowWithMore chips={chips} onSelect={(c) => send(c.label, undefined, { fromChip: true })} />
+        )}
+        <MessageComposer placeholder={placeholder} agent={agent} onSend={send} ref={composerRef} />
       </div>
     </div>
   );

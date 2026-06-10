@@ -1,4 +1,4 @@
-/* global React, Icon, IconSparkleFill, IconHandFill, IconPencil, IconCursorFill, IconDragDots, IconPlayCircleFill, IconCaretLeftSmall, AIWData, ChatPanel, ResizableSplit */
+/* global React, Icon, IconSparkleFill, IconHandFill, IconPencil, IconCursorFill, IconDragDots, IconDotsSixVertical, IconPlayCircleFill, IconCaretLeftSmall, IconCaretDown, IconCaretUp, IconTrash, IconCheck, AIWData, ChatPanel, ResizableSplit */
 const { useState, useRef, useEffect, useCallback } = React;
 
 /* ---------- Filter Dropdown (rules section) ---------- */
@@ -346,8 +346,21 @@ function WorkflowSettingsView({ workflow, onBack, actionsRef, initialSection, on
   );
 }
 
-/* ---------- Chat cite context ---------- */
+/* ---------- Chat cite / send contexts ---------- */
 const ChatCiteContext = React.createContext(null);
+const ChatSendContext = React.createContext(null);
+
+/* ---------- Chat-driven task creation context ---------- */
+// true while the agent is mid-flow collecting a new task from the user
+const ChatAddingTaskContext = React.createContext(false);
+// fn(stageName) — triggers the chat-driven add-task flow pre-seeded with a stage
+const ChatStartAddTaskContext = React.createContext(null);
+
+/* ---------- Proactive agent-message contexts ---------- */
+// fn(msgs, delay?) — push agent bubble(s) directly from canvas components
+const AgentSayContext = React.createContext(null);
+// fn(taskName, stageName, undoFn) — notify chat that a task was removed
+const ChatTaskRemovedContext = React.createContext(null);
 function pulseCiteBtn(btn) {
   if (!btn) return;
   btn.classList.add("cited");
@@ -357,6 +370,24 @@ function pulseCiteBtn(btn) {
 /* ---------- Dirty-fields context (for counting unsaved changes) ---------- */
 
 const DirtyFieldsContext = React.createContext(null);
+
+/* ---------- SectionTitle + SectionBlock — shared layout primitives -------- */
+function SectionTitle({ children, as: Tag = "h2" }) {
+  return (
+    <div className="detail-sector-title">
+      <Tag>{children}</Tag>
+    </div>
+  );
+}
+
+function SectionBlock({ title, children }) {
+  return (
+    <div className="detail-section-block">
+      {title && <SectionTitle>{title}</SectionTitle>}
+      {children}
+    </div>
+  );
+}
 
 function DirtyFieldsProvider({ children, onCountChange }) {
   const mapRef = React.useRef({});
@@ -376,22 +407,13 @@ function DirtyFieldsProvider({ children, onCountChange }) {
 /* ---------- Inline click-to-edit field row ---------- */
 
 function InlineField({ label, value, onChange, disabled, placeholder, operator }) {
-  const [editing, setEditing] = React.useState(false);
-  const inputRef = React.useRef(null);
   const initialValueRef = React.useRef(value);
   const isDirty = !disabled && value !== initialValueRef.current;
   const registerDirty = React.useContext(DirtyFieldsContext);
-  const chatCite = React.useContext(ChatCiteContext);
   const fieldId = label + (placeholder || "");
   React.useEffect(() => {
     registerDirty?.(fieldId, isDirty);
   }, [isDirty]);
-
-  React.useEffect(() => {
-    if (editing && inputRef.current) inputRef.current.focus();
-  }, [editing]);
-
-  const commit = () => setEditing(false);
 
   return (
     <div className={`field-row${isDirty ? " field-row--dirty" : ""}`}>
@@ -403,42 +425,47 @@ function InlineField({ label, value, onChange, disabled, placeholder, operator }
         <span className="field-value-pill disabled">
           {value || <em className="field-empty">—</em>}
         </span>
-      ) : editing ? (
+      ) : (
         <input
-          ref={inputRef}
-          className="input field-value-input"
+          className={`stage-prop-input${isDirty ? " field-value-pill--dirty" : ""}`}
           value={value}
           placeholder={placeholder}
           onChange={(e) => onChange(e.target.value)}
-          onBlur={commit}
-          onKeyDown={(e) => { if (e.key === "Enter" || e.key === "Escape") commit(); }}
         />
-      ) : (
-        <button
-          className={`field-value-pill${!value ? " empty" : ""}${isDirty ? " field-value-pill--dirty" : ""}`}
-          onClick={() => setEditing(true)}
-        >
-          {value || <em className="field-empty">{placeholder || "—"}</em>}
-        </button>
       )}
-      <button
-        className="field-cite-btn"
-        title="Citar no chat"
-        onClick={e => {
-          e.stopPropagation();
-          chatCite?.(`[${label}: ${value || placeholder || "—"}]`);
-          pulseCiteBtn(e.currentTarget);
-        }}
-      >
-        <Icon name="chat-circle" size={16} />
-      </button>
+      <Actions>
+        <CiteBtn text={`[${label}: ${value || placeholder || "—"}]`} />
+      </Actions>
     </div>
+  );
+}
+
+/* ---------- Actions container & CiteBtn ---------- */
+
+function Actions({ card, children }) {
+  return (
+    <span className={`stage-task-chevron${card ? " wf-card-chevron" : ""}`}>
+      {children}
+    </span>
+  );
+}
+
+function CiteBtn({ text }) {
+  const chatCite = React.useContext(ChatCiteContext);
+  return (
+    <button
+      className="field-cite-btn stage-task-action-btn"
+      title="Citar no chat"
+      onClick={e => { e.stopPropagation(); chatCite?.(text); pulseCiteBtn(e.currentTarget); }}
+    >
+      <span className="material-symbols-outlined" style={{ fontSize: 16, lineHeight: 1 }}>format_quote</span>
+    </button>
   );
 }
 
 /* ---------- Task config (deeper flow) ---------- */
 
-function TaskConfigView({ workflow, taskId, taskActionsRef, onDirtyChange }) {
+function TaskConfigView({ workflow, taskId, taskActionsRef, onDirtyChange, onExecTypeChange }) {
   // Lookup task before hooks — but early return comes AFTER all hooks to respect Rules of Hooks
   let foundStage = null, foundTask = null;
   for (const s of workflow.stages) {
@@ -451,17 +478,6 @@ function TaskConfigView({ workflow, taskId, taskActionsRef, onDirtyChange }) {
   const [category, setCategory] = useState("");
   // Visibilidade: "user" (shopper-facing) | "internal"
   const [visibility, setVisibility] = useState("internal");
-  // Checkpoints
-  const [checkpoints, setCheckpoints] = useState([
-    { id: "cp1", label: "Validação inicial", failAction: "Escalar para operador" }
-  ]);
-  // Integrações
-  const [scriptEnabled, setScriptEnabled] = useState(false);
-  const [scriptBody, setScriptBody] = useState("");
-  const [apiEnabled, setApiEnabled] = useState(false);
-  const [apiUrl, setApiUrl] = useState("");
-  const [mcpEnabled, setMcpEnabled] = useState(false);
-  const [mcpServer, setMcpServer] = useState("");
   const [agentOrch, setAgentOrch] = useState(false);
   // Estado
   const [active, setActive] = useState(true);
@@ -471,28 +487,16 @@ function TaskConfigView({ workflow, taskId, taskActionsRef, onDirtyChange }) {
   // Register non-InlineField changes to DirtyFieldsContext so the badge counts them
   const registerDirty = React.useContext(DirtyFieldsContext);
   const initVisibility  = useRef("internal");
-  const initCheckpoints = useRef(JSON.stringify([{ id: "cp1", label: "Validação inicial", failAction: "Escalar para operador" }]));
   const initAgentOrch   = useRef(false);
-  const initMcpEnabled  = useRef(false);
-  const initMcpServer   = useRef("");
-  const initApiEnabled  = useRef(false);
-  const initApiUrl      = useRef("");
-  const initScript      = useRef(false);
-  const initScriptBody  = useRef("");
   const initActive      = useRef(true);
   useEffect(() => { registerDirty?.("visibility",   visibility  !== initVisibility.current);  }, [visibility]);
-  useEffect(() => { registerDirty?.("checkpoints",  JSON.stringify(checkpoints) !== initCheckpoints.current); }, [checkpoints]);
   useEffect(() => { registerDirty?.("agentOrch",    agentOrch   !== initAgentOrch.current);   }, [agentOrch]);
-  useEffect(() => { registerDirty?.("mcpEnabled",   mcpEnabled  !== initMcpEnabled.current);  }, [mcpEnabled]);
-  useEffect(() => { registerDirty?.("mcpServer",    mcpServer   !== initMcpServer.current);   }, [mcpServer]);
-  useEffect(() => { registerDirty?.("apiEnabled",   apiEnabled  !== initApiEnabled.current);  }, [apiEnabled]);
-  useEffect(() => { registerDirty?.("apiUrl",       apiUrl      !== initApiUrl.current);       }, [apiUrl]);
-  useEffect(() => { registerDirty?.("scriptEnabled",scriptEnabled !== initScript.current);    }, [scriptEnabled]);
-  useEffect(() => { registerDirty?.("scriptBody",   scriptBody  !== initScriptBody.current);  }, [scriptBody]);
+  useEffect(() => { onExecTypeChange?.(agentOrch); }, [agentOrch]);
   useEffect(() => { registerDirty?.("active",       active      !== initActive.current);      }, [active]);
 
   const agentOrchRef = useRef(agentOrch);
   useEffect(() => { agentOrchRef.current = agentOrch; }, [agentOrch]);
+
 
   useEffect(() => {
     if (taskActionsRef) {
@@ -505,8 +509,6 @@ function TaskConfigView({ workflow, taskId, taskActionsRef, onDirtyChange }) {
     return () => { if (taskActionsRef) taskActionsRef.current = null; };
   }, []);
 
-  const chatCite = React.useContext(ChatCiteContext);
-
   // Safe early return after all hooks
   if (!foundTask) return null;
 
@@ -514,141 +516,81 @@ function TaskConfigView({ workflow, taskId, taskActionsRef, onDirtyChange }) {
 
   return (
     <>
-      {/* Identificação */}
-      <section className="wf-settings-card">
-        <h3 className="wf-settings-title">Identificação</h3>
-        <div className="field-rows">
-          <InlineField label="Nome da tarefa" value={name} onChange={v => { setName(v); mark(); }} />
-          <InlineField label="Responsável" value={owner} onChange={v => { setOwner(v); mark(); }} placeholder="Ex: Gateway, WMS Operator" />
-          <InlineField label="Categoria" value={category} onChange={v => { setCategory(v); mark(); }} placeholder="Ex: Pagamento, Fulfillment, Reversa" />
-          <InlineField label="Etapa" value={stage.name} disabled />
-          <div className="field-row">
-            <span className="field-label">Visibilidade <span className="field-operator">é</span></span>
-            <div className="field-pills-select">
-              {[
-                { key: "internal", label: "internal", desc: "Tarefa operacional interna — não exposta ao shopper" },
-                { key: "user",     label: "user",     desc: "Shopper-facing — progresso pode ser comunicado ao cliente" },
-              ].map(opt => (
-                <button
-                  key={opt.key}
-                  className={`field-option-pill${visibility === opt.key ? " selected" : ""}`}
-                  title={opt.desc}
-                  onClick={() => { setVisibility(opt.key); mark(); }}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-            <button className="field-cite-btn" title="Citar no chat" onClick={e => { e.stopPropagation(); chatCite?.(`[Visibilidade: ${visibility}]`); pulseCiteBtn(e.currentTarget); }}>
-              <Icon name="chat-circle" size={16} />
+      {/* Quick info rows (inline) */}
+      <div className="field-rows">
+
+        <div className="field-row">
+          <span className="field-label">Status</span>
+          <div className="qi-toggle-group">
+            <button
+              className={`qi-toggle-btn${active ? " qi-toggle-btn--active" : ""}`}
+              onClick={e => { e.stopPropagation(); setActive(true); mark(); }}
+            >
+              <span className="qi-toggle-title">Ativo</span>
+              <span className="qi-toggle-desc">Considerada na execução do workflow</span>
+            </button>
+            <button
+              className={`qi-toggle-btn${!active ? " qi-toggle-btn--active" : ""}`}
+              onClick={e => { e.stopPropagation(); setActive(false); mark(); }}
+            >
+              <span className="qi-toggle-title">Inativo</span>
+              <span className="qi-toggle-desc">Ignorada na execução</span>
             </button>
           </div>
-        </div>
-      </section>
-
-      {/* Checkpoints */}
-      <section className="wf-settings-card">
-        <h3 className="wf-settings-title">Checkpoints</h3>
-        <p className="setting-help" style={{ marginBottom: 12 }}>Validações que devem ser concluídas para avançar esta tarefa.</p>
-        <div className="task-cond-list">
-          {checkpoints.map((cp, i) =>
-            <div key={cp.id} className="task-cond-row">
-              <input className="input" value={cp.label} placeholder="Descrição do checkpoint"
-                onChange={(e) => { setCheckpoints(cs => cs.map((x, j) => j === i ? { ...x, label: e.target.value } : x)); mark(); }} />
-              <input className="input" value={cp.failAction} placeholder="failAction"
-                onChange={(e) => { setCheckpoints(cs => cs.map((x, j) => j === i ? { ...x, failAction: e.target.value } : x)); mark(); }} />
-              <button className="icon-btn" onClick={() => { setCheckpoints(cs => cs.filter((_, j) => j !== i)); mark(); }}>
-                <Icon name="x" size={14} />
-              </button>
-              <button className="field-cite-btn" title="Citar no chat" onClick={e => { e.stopPropagation(); chatCite?.(`[Checkpoint: ${cp.label || "—"}]`); pulseCiteBtn(e.currentTarget); }}><Icon name="chat-circle" size={16} /></button>
-            </div>
-          )}
-        </div>
-        <button className="wf-new-step" style={{ marginTop: 12 }}
-          onClick={() => { setCheckpoints(cs => [...cs, { id: "cp" + (cs.length + 1), label: "", failAction: "" }]); mark(); }}>
-          <Icon name="plus" size={14} /> Adicionar checkpoint
-        </button>
-      </section>
-
-      {/* Integrações */}
-      <section className="wf-settings-card">
-        <h3 className="wf-settings-title">Integrações</h3>
-
-        <div className="setting-row first">
-          <div className="setting-row-body">
-            <span className="setting-row-title">Agente AI</span>
-            <span className="setting-row-desc">O agente executa e avança esta tarefa automaticamente</span>
-          </div>
-          <button className={`aiw-toggle ${agentOrch ? "on" : ""}`} onClick={() => { setAgentOrch(!agentOrch); mark(); }}>
-            <span className="aiw-toggle-knob" />
-          </button>
-          <button className="field-cite-btn" title="Citar no chat" onClick={e => { e.stopPropagation(); chatCite?.(`[Agente AI: ${agentOrch ? "ativado" : "desativado"}]`); pulseCiteBtn(e.currentTarget); }}><Icon name="chat-circle" size={16} /></button>
+          <Actions>
+            <CiteBtn text={`[Status: ${active ? "Ativo" : "Inativo"}]`} />
+          </Actions>
         </div>
 
-        <div className="setting-row">
-          <div className="setting-row-body">
-            <span className="setting-row-title">Servidor MCP</span>
-            <span className="setting-row-desc">Conectar a um servidor MCP do AI Workspace</span>
+        <div className="field-row">
+          <span className="field-label">Como executa</span>
+          <div className="qi-toggle-group">
+            <button
+              className={`qi-toggle-btn${!agentOrch ? " qi-toggle-btn--active" : ""}`}
+              onClick={e => { e.stopPropagation(); setAgentOrch(false); mark(); }}
+            >
+              <span className="qi-toggle-title">Manual</span>
+              <span className="qi-toggle-desc">Executado por operador humano</span>
+            </button>
+            <button
+              className={`qi-toggle-btn${agentOrch ? " qi-toggle-btn--active" : ""}`}
+              onClick={e => { e.stopPropagation(); setAgentOrch(true); mark(); }}
+            >
+              <span className="qi-toggle-title">Automático</span>
+              <span className="qi-toggle-desc">Executado agenticamente</span>
+            </button>
           </div>
-          <button className={`aiw-toggle ${mcpEnabled ? "on" : ""}`} onClick={() => { setMcpEnabled(v => !v); mark(); }}>
-            <span className="aiw-toggle-knob" />
-          </button>
-          <button className="field-cite-btn" title="Citar no chat" onClick={e => { e.stopPropagation(); chatCite?.(`[Servidor MCP: ${mcpEnabled ? (mcpServer || "ativado") : "desativado"}]`); pulseCiteBtn(e.currentTarget); }}><Icon name="chat-circle" size={16} /></button>
+          <Actions>
+            <CiteBtn text={`[Como executa: ${agentOrch ? "Automático" : "Manual"}]`} />
+          </Actions>
         </div>
-        {mcpEnabled && (
-          <div className="setting-field" style={{ marginTop: 10 }}>
-            <input className="input" value={mcpServer} onChange={(e) => { setMcpServer(e.target.value); mark(); }} placeholder="Nome do servidor MCP" />
-          </div>
-        )}
 
-        <div className="setting-row">
-          <div className="setting-row-body">
-            <span className="setting-row-title">API Externa</span>
-            <span className="setting-row-desc">Chamar endpoint externo com mapeamento automático de variáveis</span>
+        <div className="field-row">
+          <span className="field-label">Visibilidade</span>
+          <div className="qi-toggle-group">
+            <button
+              className={`qi-toggle-btn${visibility === "internal" ? " qi-toggle-btn--active" : ""}`}
+              onClick={e => { e.stopPropagation(); setVisibility("internal"); mark(); }}
+            >
+              <span className="qi-toggle-title">Interna</span>
+              <span className="qi-toggle-desc">Não aparece para o shopper</span>
+            </button>
+            <button
+              className={`qi-toggle-btn${visibility === "user" ? " qi-toggle-btn--active" : ""}`}
+              onClick={e => { e.stopPropagation(); setVisibility("user"); mark(); }}
+            >
+              <span className="qi-toggle-title">Externa</span>
+              <span className="qi-toggle-desc">Visível para o shopper</span>
+            </button>
           </div>
-          <button className={`aiw-toggle ${apiEnabled ? "on" : ""}`} onClick={() => { setApiEnabled(v => !v); mark(); }}>
-            <span className="aiw-toggle-knob" />
-          </button>
-          <button className="field-cite-btn" title="Citar no chat" onClick={e => { e.stopPropagation(); chatCite?.(`[API Externa: ${apiEnabled ? (apiUrl || "ativada") : "desativada"}]`); pulseCiteBtn(e.currentTarget); }}><Icon name="chat-circle" size={16} /></button>
+          <Actions>
+            <CiteBtn text={`[Visibilidade: ${visibility === "user" ? "Externa" : "Interna"}]`} />
+          </Actions>
         </div>
-        {apiEnabled && (
-          <div className="setting-field" style={{ marginTop: 10 }}>
-            <input className="input" value={apiUrl} onChange={(e) => { setApiUrl(e.target.value); mark(); }} placeholder="https://api.exemplo.com/endpoint" />
-          </div>
-        )}
 
-        <div className="setting-row">
-          <div className="setting-row-body">
-            <span className="setting-row-title">Script customizado</span>
-            <span className="setting-row-desc">Executar lógica customizada em JavaScript</span>
-          </div>
-          <button className={`aiw-toggle ${scriptEnabled ? "on" : ""}`} onClick={() => { setScriptEnabled(v => !v); mark(); }}>
-            <span className="aiw-toggle-knob" />
-          </button>
-          <button className="field-cite-btn" title="Citar no chat" onClick={e => { e.stopPropagation(); chatCite?.(`[Script customizado: ${scriptEnabled ? "ativado" : "desativado"}]`); pulseCiteBtn(e.currentTarget); }}><Icon name="chat-circle" size={16} /></button>
-        </div>
-        {scriptEnabled && (
-          <div className="setting-field" style={{ marginTop: 10 }}>
-            <textarea className="input" value={scriptBody} rows={4}
-              onChange={(e) => { setScriptBody(e.target.value); mark(); }}
-              placeholder="// Lógica customizada em JavaScript&#10;return { status: 'completed' };" style={{ fontFamily: "monospace", fontSize: 12 }} />
-          </div>
-        )}
-      </section>
+      </div>
 
-      {/* Estado */}
-      <section className="wf-settings-card">
-        <div className="setting-row first">
-          <div className="setting-row-body">
-            <span className="setting-row-title">Tarefa ativa</span>
-            <span className="setting-row-desc">Tarefas inativas são ignoradas na execução do workflow</span>
-          </div>
-          <button className={`aiw-toggle ${active ? "on" : ""}`} onClick={() => { setActive(v => !v); mark(); }}>
-            <span className="aiw-toggle-knob" />
-          </button>
-          <button className="field-cite-btn" title="Citar no chat" onClick={e => e.stopPropagation()}><Icon name="chat-circle" size={16} /></button>
-        </div>
-      </section>
+
     </>
   );
 }
@@ -720,105 +662,108 @@ function StageConfigView({ workflow, stageId, onDirtyChange }) {
   );
 }
 
-/* ---------- VTEX task type taxonomy (autocomplete source) ---------- */
-const VTEX_TASK_TYPES = [
-  // Pagamento
-  { name: "Autorizar transação",        natureza: "Pagamento",          owner: "Gateway",          type: "auto"   },
-  { name: "Captura definitiva",          natureza: "Pagamento",          owner: "Gateway",          type: "auto"   },
-  { name: "Pré-captura",                 natureza: "Pagamento",          owner: "Gateway",          type: "auto"   },
-  { name: "Conciliar extrato",           natureza: "Pagamento",          owner: "Finance Agent",    type: "auto"   },
-  { name: "Gerar QR Code PIX",           natureza: "Pagamento",          owner: "Gateway",          type: "auto"   },
-  { name: "Confirmar liquidação PIX",    natureza: "Pagamento",          owner: "Gateway",          type: "auto"   },
-  { name: "Emitir boleto",               natureza: "Pagamento",          owner: "Gateway",          type: "auto"   },
-  { name: "Verificar pagamento boleto",  natureza: "Pagamento",          owner: "Gateway",          type: "auto"   },
-  { name: "Registrar no ERP",            natureza: "Pagamento",          owner: "ERP",              type: "auto"   },
-  // Antifraude
-  { name: "Análise antifraude",          natureza: "Antifraude",         owner: "Antifraud Agent",  type: "auto"   },
-  { name: "Verificação manual de fraude",natureza: "Antifraude",         owner: "Operador",         type: "manual" },
-  // Fulfillment
-  { name: "Separação (picking)",         natureza: "Fulfillment",        owner: "WMS Operator",     type: "manual" },
-  { name: "Embalagem",                   natureza: "Fulfillment",        owner: "WMS Operator",     type: "manual" },
-  { name: "Despacho",                    natureza: "Fulfillment",        owner: "WMS Operator",     type: "manual" },
-  { name: "Emissão de nota fiscal",      natureza: "Fulfillment",        owner: "Fiscal Service",   type: "auto"   },
-  { name: "Reservar produto",            natureza: "Fulfillment",        owner: "WMS",              type: "manual" },
-  // Shipping
-  { name: "Coleta pela transportadora",  natureza: "Shipping",           owner: "Carrier",          type: "auto"   },
-  { name: "Transferência entre CDs",     natureza: "Shipping",           owner: "Carrier",          type: "auto"   },
-  { name: "Last Mile",                   natureza: "Shipping",           owner: "Carrier",          type: "auto"   },
-  { name: "Proof of Delivery",           natureza: "Shipping",           owner: "Carrier",          type: "auto"   },
-  // Logística Reversa
-  { name: "Validar elegibilidade",       natureza: "Logística Reversa",  owner: "Returns Agent",    type: "auto"   },
-  { name: "Gerar etiqueta reversa",      natureza: "Logística Reversa",  owner: "Carrier API",      type: "auto"   },
-  { name: "Conferir produto devolvido",  natureza: "Logística Reversa",  owner: "WMS",              type: "manual" },
-  { name: "Processar estorno",           natureza: "Logística Reversa",  owner: "Gateway",          type: "auto"   },
-  // Notificações
-  { name: "Notificar cliente por e-mail",natureza: "Notificação",        owner: "Notif. Agent",     type: "auto"   },
-  { name: "Notificar cliente por SMS",   natureza: "Notificação",        owner: "Notif. Agent",     type: "auto"   },
-  { name: "Enviar webhook ao seller",    natureza: "Notificação",        owner: "OMS Agent",        type: "auto"   },
-  // OMS
-  { name: "Roteamento de fulfillment",   natureza: "OMS",                owner: "OMS Agent",        type: "auto"   },
-  { name: "Atualizar status do pedido",  natureza: "OMS",                owner: "OMS Agent",        type: "auto"   },
-  { name: "Confirmar retirada",          natureza: "OMS",                owner: "Operador",         type: "manual" },
-  { name: "Aprovar pedido manualmente",  natureza: "OMS",                owner: "Operador",         type: "manual" },
-];
 
 /* ---------- Inline task row with collapse ---------- */
 
-function StageTaskRow({ task, workflow, idx, dragging, dragOver, onDragStart, onDragOver, onDrop, onDragEnd, onChanged, onRemove }) {
-  const [isOpen, setIsOpen] = useState(false);
+function StageTaskRow({ task, workflow, idx, dragging, dragOver, onDragStart, onDragOver, onDrop, onDragEnd, onChanged, onRemove, isOpen, onToggle, isNew }) {
   const [dirtyCount, setDirtyCount] = useState(0);
   const [confirmRemove, setConfirmRemove] = useState(false);
+  const [execType, setExecType] = useState(task.type); // "manual" | "auto" — synced with TaskConfigView agentOrch
 
   return (
     <>
-      <button
-        className={`stage-task${dragging === idx ? " is-dragging" : ""}${dragOver === idx ? " drag-over" : ""}${isOpen ? " stage-task--open" : ""}`}
-        draggable
-        onDragStart={onDragStart}
-        onDragOver={onDragOver}
-        onDrop={onDrop}
-        onDragEnd={onDragEnd}
-        onClick={() => setIsOpen(v => !v)}
+      <div
+        className={`stage-task${dragging === idx ? " is-dragging" : ""}${dragOver === idx ? " drag-over" : ""}${isOpen ? " stage-task--open" : ""}${isNew ? " stage-task--new" : ""}`}
+        data-task-id={task.id}
+        draggable={!isOpen}
+        onDragStart={!isOpen ? onDragStart : undefined}
+        onDragOver={!isOpen ? onDragOver : undefined}
+        onDrop={!isOpen ? onDrop : undefined}
+        onDragEnd={!isOpen ? onDragEnd : undefined}
+        onClick={onToggle}
+        role="button"
+        tabIndex={0}
+        onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onToggle(); } }}
       >
         <span className="stage-task-grip" aria-hidden="true">
-          <IconDragDots size={20} />
+          <IconDotsSixVertical size={20} />
         </span>
         <span className="stage-task-name">{task.name}</span>
-        {task.type === "manual" && (
-          <span className="stage-task-type-tag">manual</span>
-        )}
         {dirtyCount > 0 && (
           <span className="stage-task-dirty-badge" title={`${dirtyCount} alteração${dirtyCount !== 1 ? "ões" : ""} não salva${dirtyCount !== 1 ? "s" : ""}`}>
             {dirtyCount}
           </span>
         )}
-        <span className="stage-task-chevron">
-          <Icon name="chevron-down" size={12} style={{ transform: isOpen ? "rotate(180deg)" : undefined, transition: "transform .15s" }} />
-        </span>
-      </button>
-      {isOpen && (
-        <div className="stage-task-config">
-          <DirtyFieldsProvider onCountChange={setDirtyCount}>
-            <TaskConfigView workflow={workflow} taskId={task.id} onDirtyChange={onChanged} />
-          </DirtyFieldsProvider>
-          <div className="stage-task-config-footer">
-            {confirmRemove ? (
-              <>
-                <span className="stage-task-remove-confirm-text">Remover tarefa permanentemente?</span>
-                <button className="btn btn-sm btn-ghost" onClick={() => setConfirmRemove(false)}>Cancelar</button>
-                <button className="btn btn-sm btn-danger" onClick={() => onRemove?.()}>
-                  <Icon name="x" size={12} /> Remover
-                </button>
-              </>
-            ) : (
-              <button className="stage-task-remove-btn" onClick={() => setConfirmRemove(true)}>
-                <Icon name="x" size={12} /> Remover tarefa
-              </button>
-            )}
-          </div>
+        {isOpen ? (
+          <span className="stage-task-open-btns">
+            <button
+              data-sl-button
+              data-variant="tertiary"
+              data-tone="critical"
+              title="Remover tarefa"
+              onClick={e => { e.stopPropagation(); setConfirmRemove(true); }}
+            >
+              <IconTrash size={20} />
+            </button>
+            <button
+              data-sl-button
+              data-variant="secondary"
+              title="Fechar"
+              onClick={e => { e.stopPropagation(); onToggle(); }}
+            >
+              <IconCheck size={20} />
+            </button>
+          </span>
+        ) : (
+          <Actions>
+            <CiteBtn text={`[Tarefa: ${task.name}]`} />
+            <button
+              className="stage-task-action-btn stage-task-edit-btn"
+              title="Abrir tarefa"
+              onClick={e => { e.stopPropagation(); onToggle(); }}
+            >
+              <IconPencil size={14} />
+            </button>
+          </Actions>
+        )}
+      </div>
+      {isOpen && !confirmRemove && (
+        <div className="stage-task-config" onClick={e => e.stopPropagation()}>
+          <TaskConfigView
+            workflow={workflow}
+            taskId={task.id}
+            onDirtyChange={() => setDirtyCount(c => c + 1)}
+            onExecTypeChange={isAuto => setExecType(isAuto ? "auto" : "manual")}
+          />
+        </div>
+      )}
+      {isOpen && confirmRemove && (
+        <div className="stage-task-config-footer">
+          <span className="stage-task-remove-confirm-text">Remover tarefa permanentemente?</span>
+          <button className="btn btn-sm btn-ghost" onClick={() => setConfirmRemove(false)}>Cancelar</button>
+          <button className="btn btn-sm btn-danger" onClick={() => onRemove?.()}>
+            <Icon name="x" size={12} /> Remover
+          </button>
         </div>
       )}
     </>
+  );
+}
+
+/* ---------- "Adicionar tarefa" button ---------- */
+function AddTaskBtn({ disabled, onClick }) {
+  return (
+    <button
+      className="stage-add-task-btn"
+      data-sl-button
+      data-variant="tertiary"
+      data-has-label
+      onClick={onClick}
+      disabled={disabled}
+      title={disabled ? "Aguarde o agente concluir a criação da tarefa no chat" : undefined}
+    >
+      <Icon name="plus" size={12} /> Adicionar tarefa
+    </button>
   );
 }
 
@@ -828,33 +773,65 @@ function StageCard({ stage, workflow, startNum, onOpenTask, onOpenStage, canMove
   const [tasks, setTasks] = useState(() => stage.tasks);
   const [dragging, setDragging] = useState(null);
   const [dragOver, setDragOver] = useState(null);
-  const [addStep, setAddStep] = useState(null); // null | "library" | "config"
-  const [draftName, setDraftName] = useState("");
-  const [draftType, setDraftType] = useState("auto");
-  const [draftOwner, setDraftOwner] = useState("");
-  const [draftCategory, setDraftCategory] = useState("");
-  const [draftVisibility, setDraftVisibility] = useState("internal");
-  const [draftCheckpoints, setDraftCheckpoints] = useState([]);
-  const [draftAgentOrch, setDraftAgentOrch] = useState(false);
-  const [draftMcpEnabled, setDraftMcpEnabled] = useState(false);
-  const [draftMcpServer, setDraftMcpServer] = useState("");
-  const [draftApiEnabled, setDraftApiEnabled] = useState(false);
-  const [draftApiUrl, setDraftApiUrl] = useState("");
-  const [draftScriptEnabled, setDraftScriptEnabled] = useState(false);
-  const [draftScriptBody, setDraftScriptBody] = useState("");
-  const [draftActive, setDraftActive] = useState(true);
-  const [libSearch, setLibSearch] = useState("");
-  const libSearchRef = useRef(null);
-  const draftNameRef = useRef(null);
+  const chatAddingTask = React.useContext(ChatAddingTaskContext);
+  const chatStartAddTask = React.useContext(ChatStartAddTaskContext);
+  const notifyTaskRemoved = React.useContext(ChatTaskRemovedContext);
+
+  const stageCardRef = useRef(null);
+  const stageTasksRef = useRef(stage.tasks);
+
+  const [newlyAddedId, setNewlyAddedId] = useState(null);
+
+  // Sync tasks added via chat "Aplicar" (detailActionsRef.addTask updates parent stages,
+  // but StageCard owns its local tasks state). When the parent injects a new task,
+  // open its card inline, scroll the canvas to it, and trigger the entry animation.
+  useEffect(() => {
+    const prevIds = new Set(stageTasksRef.current.map(t => t.id));
+    const incoming = stage.tasks.filter(t => !prevIds.has(t.id));
+    stageTasksRef.current = stage.tasks;
+    if (incoming.length === 0) return;
+    setTasks(prev => {
+      const existingIds = new Set(prev.map(t => t.id));
+      const toAdd = incoming.filter(t => !existingIds.has(t.id));
+      return toAdd.length > 0 ? [...prev, ...toAdd] : prev;
+    });
+    const lastNew = incoming[incoming.length - 1];
+    setOpenTaskId(lastNew.id);
+    setNewlyAddedId(lastNew.id);
+    setTimeout(() => setNewlyAddedId(null), 1400);
+    setTimeout(() => {
+      const el = stageCardRef.current?.querySelector(`[data-task-id="${lastNew.id}"]`);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }, 80);
+  }, [stage.tasks]);
 
   // Inline stage config
   const [isConfigOpen, setIsConfigOpen] = useState(false);
+
+  // Only one task open at a time
+  const [openTaskId, setOpenTaskId] = useState(null);
+  const toggleTask = (taskId) => setOpenTaskId(prev => prev === taskId ? null : taskId);
   const [stageName, setStageName] = useState(stage.name ?? "");
   const [responsible, setResponsible] = useState("");
   const [stageCategory, setStageCategory] = useState("");
   const [mcpEnabled, setMcpEnabled] = useState(false);
   const [mcpServer, setMcpServer] = useState("");
   const [agentEnabled, setAgentEnabled] = useState(false);
+  const [checkpoints, setCheckpoints] = useState([
+    { id: "cp1", label: "Validação inicial", failAction: "Escalar para operador" }
+  ]);
+  const [connectors, setConnectors] = useState(() => {
+    const seen = new Set();
+    return stage.tasks
+      .map(t => t.owner)
+      .filter(Boolean)
+      .filter(owner => { const ok = !seen.has(owner); seen.add(owner); return ok; })
+      .map((owner, i) => ({ id: `conn-${i}`, label: owner, enabled: true }));
+  });
+  const [apiEnabled, setApiEnabled] = useState(false);
+  const [apiUrl, setApiUrl] = useState("");
+  const [scriptEnabled, setScriptEnabled] = useState(false);
+  const [scriptBody, setScriptBody] = useState("");
 
   const handleDragStart = (e, idx) => {
     e.stopPropagation();
@@ -885,138 +862,154 @@ function StageCard({ stage, workflow, startNum, onOpenTask, onOpenStage, canMove
 
   const handleDragEnd = () => { setDragging(null); setDragOver(null); };
 
-  const resetDraft = () => {
-    setDraftName(""); setDraftType("auto"); setDraftOwner(""); setDraftCategory("");
-    setDraftVisibility("internal"); setDraftCheckpoints([]);
-    setDraftAgentOrch(false); setDraftMcpEnabled(false); setDraftMcpServer("");
-    setDraftApiEnabled(false); setDraftApiUrl(""); setDraftScriptEnabled(false); setDraftScriptBody("");
-    setDraftActive(true); setLibSearch("");
-  };
-
-  const openAddTask = () => {
-    resetDraft();
-    setAddStep("library");
-    setTimeout(() => libSearchRef.current?.focus(), 50);
-  };
-
-  const selectLibTask = (t) => {
-    setDraftName(t.name); setDraftType(t.type); setDraftOwner(t.owner); setDraftCategory(t.natureza);
-    setAddStep("config");
-    setTimeout(() => draftNameRef.current?.focus(), 50);
-  };
-
-  const selectCustomTask = () => {
-    setDraftName(libSearch); setDraftType("auto"); setDraftOwner(""); setDraftCategory("");
-    setAddStep("config");
-    setTimeout(() => draftNameRef.current?.focus(), 50);
-  };
-
-  const confirmAddTask = () => {
-    if (!draftName.trim()) return;
-    setTasks(prev => [...prev, {
-      id: "t_" + Date.now(), name: draftName.trim(), type: draftType, owner: draftOwner,
-      category: draftCategory, visibility: draftVisibility, checkpoints: draftCheckpoints,
-      agentOrch: draftAgentOrch, mcpEnabled: draftMcpEnabled, mcpServer: draftMcpServer,
-      apiEnabled: draftApiEnabled, apiUrl: draftApiUrl,
-      scriptEnabled: draftScriptEnabled, scriptBody: draftScriptBody, active: draftActive,
-    }]);
-    setAddStep(null);
-    onChanged?.();
-  };
-
-  const cancelAddTask = () => { setAddStep(null); resetDraft(); };
 
   return (
     <div
-      className={`stage-card${isConfigOpen ? " stage-card--config-open" : ""}${stageDragging ? " stage-card--dragging" : ""}${stageDragOver ? " stage-card--drag-over" : ""}`}
-      draggable={!isConfigOpen}
-      onDragStart={onStageDragStart}
-      onDragOver={(e) => { e.preventDefault(); onStageDragOver?.(e); }}
-      onDrop={onStageDrop}
-      onDragEnd={onStageDragEnd}
+      ref={stageCardRef}
+      className={`stage-card${isConfigOpen ? " stage-card--config-open" : ""}`}
     >
 
-      {isConfigOpen ? (
-        <div className="stage-config-inline">
-          <div className="stage-config-inline-header">
-            <span className="stage-config-inline-label">Propriedades da etapa</span>
-            <button className="stage-config-close-btn" onClick={() => setIsConfigOpen(false)} title="Fechar configurações">
-              <Icon name="chevron-down" size={14} style={{ transform: "rotate(180deg)" }} />
+      <div className="stage-card-head stage-card-head--clickable">
+        <span className="stage-card-title">{stageName}</span>
+        {isConfigOpen ? (
+          <span className="stage-task-open-btns">
+            <button
+              data-sl-button
+              data-variant="secondary"
+              title="Fechar"
+              onClick={() => setIsConfigOpen(false)}
+            >
+              <IconCheck size={20} />
             </button>
-          </div>
-
-          <div className="stage-prop-row stage-prop-row--first">
-            <span className="stage-prop-label">Nome da etapa</span>
-            <input
-              className="stage-prop-input"
-              value={stageName}
-              onChange={(e) => { setStageName(e.target.value); onChanged?.(); }}
-            />
-            <button className="stage-prop-cite-btn" title="Citar no chat"><Icon name="chat-circle" size={16} /></button>
-          </div>
-          <div className="stage-prop-row">
-            <span className="stage-prop-label">Responsável</span>
-            <input
-              className="stage-prop-input"
-              value={responsible}
-              onChange={(e) => { setResponsible(e.target.value); onChanged?.(); }}
-              placeholder="Ex: WMS, Gateway, Operador"
-            />
-            <button className="stage-prop-cite-btn" title="Citar no chat"><Icon name="chat-circle" size={16} /></button>
-          </div>
-          <div className="stage-prop-row">
-            <span className="stage-prop-label">Categoria</span>
-            <input
-              className="stage-prop-input"
-              value={stageCategory}
-              onChange={(e) => { setStageCategory(e.target.value); onChanged?.(); }}
-              placeholder="Ex: Pagamento, Fulfillment"
-            />
-            <button className="stage-prop-cite-btn" title="Citar no chat"><Icon name="chat-circle" size={16} /></button>
-          </div>
-          <div className="stage-prop-row stage-prop-row--toggle">
-            <span className="stage-prop-label">Agente AI</span>
-            <button className={`aiw-toggle ${agentEnabled ? "on" : ""}`} onClick={() => { setAgentEnabled(v => !v); onChanged?.(); }}>
-              <span className="aiw-toggle-knob" />
-            </button>
-            <button className="stage-prop-cite-btn" title="Citar no chat"><Icon name="chat-circle" size={16} /></button>
-          </div>
-          <div className="stage-prop-row stage-prop-row--toggle">
-            <span className="stage-prop-label">Servidor MCP</span>
-            <button className={`aiw-toggle ${mcpEnabled ? "on" : ""}`} onClick={() => { setMcpEnabled(v => !v); onChanged?.(); }}>
-              <span className="aiw-toggle-knob" />
-            </button>
-            <button className="stage-prop-cite-btn" title="Citar no chat"><Icon name="chat-circle" size={16} /></button>
-          </div>
-          {mcpEnabled && (
-            <div className="stage-prop-row">
-              <span className="stage-prop-label">Endereço MCP</span>
-              <input
-                className="stage-prop-input"
-                value={mcpServer}
-                onChange={(e) => { setMcpServer(e.target.value); onChanged?.(); }}
-                placeholder="Nome do servidor"
-              />
-              <button className="stage-prop-cite-btn" title="Citar no chat"><Icon name="chat-circle" size={16} /></button>
+          </span>
+        ) : (
+          <>
+            <Actions>
+              <CiteBtn text={`[Etapa: ${stageName}]`} />
+              <button
+                className="stage-task-action-btn stage-task-edit-btn"
+                title="Editar etapa"
+                onClick={e => { e.stopPropagation(); setIsConfigOpen(true); }}
+              >
+                <IconPencil size={14} />
+              </button>
+            </Actions>
+            <div className="stage-card-reorder" style={{ display: "none" }}>
+              <button className="stage-reorder-btn" title="Subir etapa" onClick={onMoveUp} disabled={!canMoveUp}>
+                <Icon name="chevron-down" size={16} style={{ transform: "rotate(180deg)" }} />
+              </button>
+              <button className="stage-reorder-btn" title="Descer etapa" onClick={onMoveDown} disabled={!canMoveDown}>
+                <Icon name="chevron-down" size={16} />
+              </button>
             </div>
-          )}
-        </div>
-      ) : (
-        <div className="stage-card-head stage-card-head--clickable" onClick={() => setIsConfigOpen(true)}>
-          <span className="stage-card-title">{stageName}</span>
-          <button data-sl-button data-variant="tertiary" data-size="large"
-            onClick={(e) => { e.stopPropagation(); setIsConfigOpen(true); }}
-            title="Editar etapa">
-            <IconPencil size={16} />
-          </button>
-          <div className="stage-card-reorder" style={{ display: "none" }}>
-            <button className="stage-reorder-btn" title="Subir etapa" onClick={onMoveUp} disabled={!canMoveUp}>
-              <Icon name="chevron-down" size={16} style={{ transform: "rotate(180deg)" }} />
-            </button>
-            <button className="stage-reorder-btn" title="Descer etapa" onClick={onMoveDown} disabled={!canMoveDown}>
-              <Icon name="chevron-down" size={16} />
-            </button>
-          </div>
+          </>
+        )}
+      </div>
+
+      {isConfigOpen && (
+        <div className="stage-task-config">
+          <section className="wf-settings-card">
+            <div className="wf-settings-title-row">
+              <h3 className="wf-settings-title">Checkpoints</h3>
+              <Actions card>
+                <CiteBtn text={`[Checkpoints: ${checkpoints.map(cp => cp.label || "—").join(", ")}]`} />
+              </Actions>
+            </div>
+            <div className="field-rows">
+              {checkpoints.map((cp) =>
+                <div key={cp.id} className="field-row">
+                  <span className="field-label">{cp.label || <em style={{ color: "var(--fg-3)" }}>Sem descrição</em>}</span>
+                  <span className="field-value-pill disabled">{cp.failAction || <span style={{ color: "var(--fg-3)" }}>—</span>}</span>
+                  <Actions>
+                    <CiteBtn text={`[Checkpoint: ${cp.label || "—"}]`} />
+                  </Actions>
+                </div>
+              )}
+            </div>
+          </section>
+
+          <section className="wf-settings-card">
+            <div className="wf-settings-title-row">
+              <h3 className="wf-settings-title">Conectores</h3>
+              <Actions card>
+                <CiteBtn text={`[Conectores: ${connectors.filter(c => c.enabled).map(c => c.label).join(", ") || "nenhum"}]`} />
+              </Actions>
+            </div>
+            <div className="field-rows">
+              {connectors.length === 0 && (
+                <span className="stage-connectors-empty">Nenhum conector configurado</span>
+              )}
+              {connectors.map(conn => (
+                <div key={conn.id} className="field-row">
+                  <span className="field-label">{conn.label}</span>
+                  <button
+                    className={`aiw-toggle ${conn.enabled ? "on" : ""}`}
+                    onClick={() => { setConnectors(prev => prev.map(c => c.id === conn.id ? { ...c, enabled: !c.enabled } : c)); onChanged?.(); }}
+                  >
+                    <span className="aiw-toggle-knob" />
+                  </button>
+                  <Actions>
+                    <CiteBtn text={`[Conector ${conn.label}: ${conn.enabled ? "ativo" : "inativo"}]`} />
+                  </Actions>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section className="wf-settings-card">
+            <h3 className="wf-settings-title">Integrações</h3>
+            <div className="field-rows">
+              <div className="field-row">
+                <span className="field-label">Servidor MCP</span>
+                <button className={`aiw-toggle ${mcpEnabled ? "on" : ""}`} onClick={() => { setMcpEnabled(v => !v); onChanged?.(); }}>
+                  <span className="aiw-toggle-knob" />
+                </button>
+                <Actions>
+                  <CiteBtn text={`[Servidor MCP: ${mcpEnabled ? (mcpServer || "ativado") : "desativado"}]`} />
+                </Actions>
+              </div>
+              {mcpEnabled && (
+                <InlineField label="Endereço MCP" value={mcpServer} onChange={v => { setMcpServer(v); onChanged?.(); }} placeholder="Nome do servidor MCP" />
+              )}
+              <div className="field-row">
+                <span className="field-label">API Externa</span>
+                <button className={`aiw-toggle ${apiEnabled ? "on" : ""}`} onClick={() => { setApiEnabled(v => !v); onChanged?.(); }}>
+                  <span className="aiw-toggle-knob" />
+                </button>
+                <Actions>
+                  <CiteBtn text={`[API Externa: ${apiEnabled ? (apiUrl || "ativada") : "desativada"}]`} />
+                </Actions>
+              </div>
+              {apiEnabled && (
+                <InlineField label="URL da API" value={apiUrl} onChange={v => { setApiUrl(v); onChanged?.(); }} placeholder="https://..." />
+              )}
+              <div className="field-row">
+                <span className="field-label">Script customizado</span>
+                <button className={`aiw-toggle ${scriptEnabled ? "on" : ""}`} onClick={() => { setScriptEnabled(v => !v); onChanged?.(); }}>
+                  <span className="aiw-toggle-knob" />
+                </button>
+                <Actions>
+                  <CiteBtn text={`[Script customizado: ${scriptEnabled ? "ativado" : "desativado"}]`} />
+                </Actions>
+              </div>
+              {scriptEnabled && (
+                <div className="field-row field-row--textarea">
+                  <span className="field-label">Script</span>
+                  <textarea
+                    className="stage-prop-input"
+                    value={scriptBody}
+                    rows={4}
+                    onChange={(e) => { setScriptBody(e.target.value); onChanged?.(); }}
+                    placeholder={"// Lógica customizada em JavaScript\nreturn { status: 'completed' };"}
+                    style={{ fontFamily: "monospace", fontSize: 12, resize: "vertical" }}
+                  />
+                  <Actions>
+                    <CiteBtn text={`[Script: ${scriptBody ? "definido" : "vazio"}]`} />
+                  </Actions>
+                </div>
+              )}
+            </div>
+          </section>
         </div>
       )}
 
@@ -1027,6 +1020,7 @@ function StageCard({ stage, workflow, startNum, onOpenTask, onOpenStage, canMove
           stage={stage}
           workflow={workflow}
           idx={idx}
+          isNew={newlyAddedId === task.id}
           dragging={dragging}
           dragOver={dragOver}
           onDragStart={(e) => handleDragStart(e, idx)}
@@ -1034,204 +1028,28 @@ function StageCard({ stage, workflow, startNum, onOpenTask, onOpenStage, canMove
           onDrop={(e) => handleDrop(e, idx)}
           onDragEnd={handleDragEnd}
           onChanged={onChanged}
-          onRemove={() => { setTasks(prev => prev.filter(t => t.id !== task.id)); onChanged?.(); }}
+          onRemove={() => {
+            const removedTask = task;
+            const removedIdx  = tasks.indexOf(task);
+            setTasks(prev => prev.filter(t => t.id !== removedTask.id));
+            onChanged?.();
+            notifyTaskRemoved?.(
+              removedTask.name,
+              stage.name,
+              () => setTasks(prev => {
+                const next = [...prev];
+                next.splice(removedIdx, 0, removedTask);
+                return next;
+              })
+            );
+          }}
+          isOpen={openTaskId === task.id}
+          onToggle={() => toggleTask(task.id)}
         />
       )}
 
-      {addStep === "library" && (() => {
-        const filtered = VTEX_TASK_TYPES.filter(t =>
-          !libSearch || t.name.toLowerCase().includes(libSearch.toLowerCase()) || t.natureza.toLowerCase().includes(libSearch.toLowerCase())
-        );
-        const grouped = filtered.reduce((acc, t) => {
-          (acc[t.natureza] = acc[t.natureza] || []).push(t);
-          return acc;
-        }, {});
-        return (
-          <div className="task-lib-panel">
-            <div className="task-lib-search-row">
-              <input
-                ref={libSearchRef}
-                className="input task-lib-search"
-                placeholder="Buscar tarefa ou digitar nome..."
-                value={libSearch}
-                onChange={e => setLibSearch(e.target.value)}
-                onKeyDown={e => { if (e.key === "Escape") cancelAddTask(); if (e.key === "Enter" && libSearch.trim()) selectCustomTask(); }}
-              />
-              <button className="btn btn-sm btn-ghost" onClick={cancelAddTask}>Cancelar</button>
-            </div>
-            <div className="task-lib-list">
-              {Object.entries(grouped).map(([cat, items]) => (
-                <div key={cat} className="task-lib-group">
-                  <span className="task-lib-group-label">{cat}</span>
-                  {items.map(t => (
-                    <button key={t.name} className="task-lib-item" onClick={() => selectLibTask(t)}>
-                      <span className="task-lib-item-name">{t.name}</span>
-                      <span className={`task-lib-item-owner`}>{t.owner}</span>
-                      <span className={`task-lib-item-tag task-lib-item-tag--${t.type}`}>{t.type === "auto" ? "Auto" : "Manual"}</span>
-                    </button>
-                  ))}
-                </div>
-              ))}
-              {filtered.length === 0 && (
-                <p className="task-lib-empty">Nenhuma tarefa encontrada</p>
-              )}
-              <button className="task-lib-custom" onClick={selectCustomTask}>
-                <Icon name="plus" size={12} />
-                {libSearch.trim() ? `Criar "${libSearch.trim()}"` : "Criar tarefa personalizada"}
-              </button>
-            </div>
-          </div>
-        );
-      })()}
 
-      {addStep === "config" && (
-        <div className="task-create-form">
-          <div className="task-create-form-title">Nova tarefa</div>
-
-          {/* Identificação */}
-          <div className="task-create-section">
-            <span className="task-create-section-label">Identificação</span>
-            <div className="stage-prop-row stage-prop-row--first">
-              <span className="stage-prop-label">Nome</span>
-              <input ref={draftNameRef} className="stage-prop-input" value={draftName}
-                onChange={e => setDraftName(e.target.value)}
-                onKeyDown={e => { if (e.key === "Escape") cancelAddTask(); }}
-                placeholder="Nome da tarefa..." />
-            </div>
-            <div className="stage-prop-row">
-              <span className="stage-prop-label">Tipo</span>
-              <select className="stage-prop-input" value={draftType} onChange={e => setDraftType(e.target.value)}>
-                <option value="auto">Automática</option>
-                <option value="manual">Manual</option>
-              </select>
-            </div>
-            <div className="stage-prop-row">
-              <span className="stage-prop-label">Responsável</span>
-              <input className="stage-prop-input" value={draftOwner} onChange={e => setDraftOwner(e.target.value)} placeholder="Ex: Gateway, WMS, Operador" />
-            </div>
-            <div className="stage-prop-row">
-              <span className="stage-prop-label">Categoria</span>
-              <input className="stage-prop-input" value={draftCategory} onChange={e => setDraftCategory(e.target.value)} placeholder="Ex: Pagamento, Fulfillment" />
-            </div>
-          </div>
-
-          {/* Visibilidade */}
-          <div className="task-create-section">
-            <span className="task-create-section-label">Visibilidade</span>
-            <div className="stage-prop-row stage-prop-row--first">
-              <span className="stage-prop-label">Visível para</span>
-              <div className="field-pills-select">
-                {[
-                  { key: "internal", label: "internal", desc: "Tarefa operacional interna — não exposta ao shopper" },
-                  { key: "user",     label: "user",     desc: "Shopper-facing — progresso pode ser comunicado ao cliente" },
-                ].map(opt => (
-                  <button key={opt.key} className={`field-option-pill${draftVisibility === opt.key ? " selected" : ""}`}
-                    title={opt.desc} onClick={() => setDraftVisibility(opt.key)}>
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Checkpoints */}
-          <div className="task-create-section">
-            <span className="task-create-section-label">Checkpoints</span>
-            <div className="task-cond-list" style={{ padding: "6px 12px 0" }}>
-              {draftCheckpoints.map((cp, i) => (
-                <div key={cp.id} className="task-cond-row">
-                  <input className="input" value={cp.label} placeholder="Descrição do checkpoint"
-                    onChange={e => setDraftCheckpoints(cs => cs.map((x, j) => j === i ? { ...x, label: e.target.value } : x))} />
-                  <input className="input" value={cp.failAction} placeholder="Ação em falha"
-                    onChange={e => setDraftCheckpoints(cs => cs.map((x, j) => j === i ? { ...x, failAction: e.target.value } : x))} />
-                  <button className="icon-btn" onClick={() => setDraftCheckpoints(cs => cs.filter((_, j) => j !== i))}>
-                    <Icon name="x" size={14} />
-                  </button>
-                </div>
-              ))}
-            </div>
-            <button className="wf-new-step" style={{ margin: "6px 12px 8px" }}
-              onClick={() => setDraftCheckpoints(cs => [...cs, { id: "cp" + Date.now(), label: "", failAction: "" }])}>
-              <Icon name="plus" size={14} /> Adicionar checkpoint
-            </button>
-          </div>
-
-          {/* Integrações */}
-          <div className="task-create-section">
-            <span className="task-create-section-label">Integrações</span>
-            <div className="stage-prop-row stage-prop-row--first stage-prop-row--toggle">
-              <span className="stage-prop-label">Agente AI</span>
-              <button className={`aiw-toggle ${draftAgentOrch ? "on" : ""}`} onClick={() => setDraftAgentOrch(v => !v)}>
-                <span className="aiw-toggle-knob" />
-              </button>
-            </div>
-            <div className="stage-prop-row stage-prop-row--toggle">
-              <span className="stage-prop-label">Servidor MCP</span>
-              <button className={`aiw-toggle ${draftMcpEnabled ? "on" : ""}`} onClick={() => setDraftMcpEnabled(v => !v)}>
-                <span className="aiw-toggle-knob" />
-              </button>
-            </div>
-            {draftMcpEnabled && (
-              <div className="stage-prop-row">
-                <span className="stage-prop-label"></span>
-                <input className="stage-prop-input" value={draftMcpServer} onChange={e => setDraftMcpServer(e.target.value)} placeholder="Nome do servidor MCP" />
-              </div>
-            )}
-            <div className="stage-prop-row stage-prop-row--toggle">
-              <span className="stage-prop-label">API Externa</span>
-              <button className={`aiw-toggle ${draftApiEnabled ? "on" : ""}`} onClick={() => setDraftApiEnabled(v => !v)}>
-                <span className="aiw-toggle-knob" />
-              </button>
-            </div>
-            {draftApiEnabled && (
-              <div className="stage-prop-row">
-                <span className="stage-prop-label"></span>
-                <input className="stage-prop-input" value={draftApiUrl} onChange={e => setDraftApiUrl(e.target.value)} placeholder="https://api.exemplo.com/endpoint" />
-              </div>
-            )}
-            <div className="stage-prop-row stage-prop-row--toggle">
-              <span className="stage-prop-label">Script custom</span>
-              <button className={`aiw-toggle ${draftScriptEnabled ? "on" : ""}`} onClick={() => setDraftScriptEnabled(v => !v)}>
-                <span className="aiw-toggle-knob" />
-              </button>
-            </div>
-            {draftScriptEnabled && (
-              <div className="stage-prop-row">
-                <span className="stage-prop-label"></span>
-                <textarea className="stage-prop-input" value={draftScriptBody} rows={3}
-                  onChange={e => setDraftScriptBody(e.target.value)}
-                  placeholder={"// JavaScript\nreturn { status: 'completed' };"}
-                  style={{ fontFamily: "monospace", fontSize: 11.5, resize: "vertical" }} />
-              </div>
-            )}
-          </div>
-
-          {/* Estado */}
-          <div className="task-create-section">
-            <span className="task-create-section-label">Estado</span>
-            <div className="stage-prop-row stage-prop-row--first stage-prop-row--toggle">
-              <span className="stage-prop-label">Tarefa ativa</span>
-              <button className={`aiw-toggle ${draftActive ? "on" : ""}`} onClick={() => setDraftActive(v => !v)}>
-                <span className="aiw-toggle-knob" />
-              </button>
-            </div>
-          </div>
-
-          <div className="stage-add-task-actions">
-            <button className="btn btn-sm btn-ghost" onClick={() => setAddStep("library")}>← Voltar</button>
-            <button className="btn btn-sm btn-ghost" onClick={cancelAddTask}>Cancelar</button>
-            <button className="btn btn-sm btn-primary" onClick={confirmAddTask} disabled={!draftName.trim()}>
-              <Icon name="plus" size={12} /> Adicionar
-            </button>
-          </div>
-        </div>
-      )}
-
-      {addStep === null && (
-        <button className="stage-add-task-btn" onClick={openAddTask}>
-          <Icon name="plus" size={12} /> Adicionar tarefa
-        </button>
-      )}
+      <AddTaskBtn disabled={chatAddingTask} onClick={() => chatStartAddTask?.(stage.name)} />
     </div>
   );
 }
@@ -1248,10 +1066,10 @@ function fmtWfDate(iso) {
 }
 
 const WF_STATUS_META = {
-  draft:           { label: "Rascunho",                          color: "gray"    },
-  published:       { label: "Publicado",                         color: "green"   },
-  published_dirty: { label: "Publicado · alterações pendentes",  color: "amber"   },
-  archived:        { label: "Arquivado",                         color: "neutral" },
+  draft:                   { label: "Rascunho",                          color: "gray"    },
+  published:               { label: "Publicado",                         color: "green"   },
+  published_with_changes:  { label: "Publicado · alterações pendentes",  color: "amber"   },
+  archived:                { label: "Arquivado",                         color: "neutral" },
 };
 
 /* ── Inline actor span — mirrors span.reporter from view-task.jsx ──────── */
@@ -1273,36 +1091,26 @@ function WfActorSpan({ who, date }) {
 function WfMetaSection({ workflow, onOpenSettings }) {
   const sm  = WF_STATUS_META[workflow.wfStatus] || WF_STATUS_META.draft;
   const log = workflow.versionLog || [];
-  const runningVersion = (workflow.wfStatus === "published_dirty" && log.length > 0) ? log[0].version : null;
+  const runningVersion = (workflow.wfStatus === "published_with_changes" && log.length > 0) ? log[0].version : null;
   const [histOpen, setHistOpen] = useState(false);
-  const histBtnRef = useRef(null);
-  const histPopRef = useRef(null);
 
   const ENTITY_LABEL = { task: "Tarefa", dependency: "Dependência", trigger: "Gatilho", supplier: "Fornecedor", contingency: "Contingência", "general config": "Config. geral" };
   const CHANGE_LABEL = { added: "adicionado", removed: "removido", renamed: "renomeado", edited: "editado", changed: "alterado", connected: "conectado", disconnected: "desconectado", replaced: "substituído" };
   const CHANGE_SIGN  = { added: "+", removed: "−", replaced: "⇄", renamed: "~", edited: "~", changed: "~", connected: "+", disconnected: "−" };
 
-  useEffect(() => {
-    if (!histOpen) return;
-    const handler = (e) => {
-      if (histPopRef.current && !histPopRef.current.contains(e.target) &&
-          histBtnRef.current && !histBtnRef.current.contains(e.target)) {
-        setHistOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [histOpen]);
+  return (
+    <dl className="detail-fields" style={{ marginBottom: 24 }}>
+      <dt>Status</dt>
+      <dd>
+        <span className={`wf-list-status ${workflow.status === "active" ? "active" : "archived"}`}>
+          {workflow.status === "active" ? "Ativo" : "Inativo"}
+        </span>
+      </dd>
 
-      {/* Informações gerais */}
-      <section className="wf-settings-inline-section">
-        <span className="wf-settings-inline-section-title">Informações gerais</span>
-        <div className="field-rows">
-          <InlineField label="Nome" value={name} onChange={v => { setName(v); mark(); }} />
-          <InlineField label="Descrição" value={desc} onChange={v => { setDesc(v); mark(); }} placeholder="Sem descrição" />
-        </div>
-      </section>
-
+      {workflow.desc && <>
+        <dt>Descrição</dt>
+        <dd style={{ color: "var(--fg-2)" }}>{workflow.desc}</dd>
+      </>}
 
       <dt>Versão</dt>
       <dd>
@@ -1313,55 +1121,56 @@ function WfMetaSection({ workflow, onOpenSettings }) {
           <span className="wf-meta-running">v{runningVersion} em produção</span>
         )}
         {log.length > 0 && (
-          <span style={{ position: "relative", display: "inline-flex", alignItems: "center" }}>
-            <button
-              ref={histBtnRef}
-              className={`icon-btn wf-ver-hist-btn${histOpen ? " wf-ver-hist-btn--active" : ""}`}
-              onClick={() => setHistOpen(v => !v)}
-              title="Histórico de versões"
-            >
-              <Icon name="clock" size={13} />
-              <span className="wf-meta-hist-count">{log.length}</span>
-            </button>
-            {histOpen && (
-              <div ref={histPopRef} className="wf-ver-hist-popup">
-                <div className="wf-ver-hist-popup-head">
-                  <span className="wf-ver-hist-popup-title">Histórico de versões</span>
-                  <button className="icon-btn" onClick={() => setHistOpen(false)} title="Fechar">
-                    <Icon name="x" size={14} />
-                  </button>
-                </div>
-                <div className="wf-meta-hist-list">
-                  {log.map((entry) => (
-                    <div key={entry.version} className="wf-meta-hist-entry">
-                      <div className="wf-meta-hist-head">
-                        <span className="wf-meta-hist-ver">v{entry.version}</span>
-                        <span className="wf-meta-hist-when">{fmtWfDate(entry.publishedAt)}</span>
-                        <span className="wf-meta-hist-who">{entry.publishedBy}</span>
-                      </div>
-                      <p className="wf-meta-hist-desc">"{entry.description}"</p>
-                      <ul className="wf-meta-hist-deltas">
-                        {entry.deltas.map((d, i) => (
-                          <li key={i} className={`wf-meta-delta wf-meta-delta--${d.change}`}>
-                            <span className="wf-meta-delta-sign">{CHANGE_SIGN[d.change] || "·"}</span>
-                            <span className="wf-meta-delta-entity">{ENTITY_LABEL[d.entity] || d.entity}</span>
-                            <span className="wf-meta-delta-change">{CHANGE_LABEL[d.change] || d.change}</span>
-                            <span className="wf-meta-delta-detail">{d.detail}</span>
-                          </li>
-                        ))}
-                      </ul>
-                      <div className="wf-meta-hist-footer">
-                        <span>{entry.appliedTo === "all_orders" ? "Aplicado a todos os pedidos" : "Somente pedidos novos"}</span>
-                        <span>{entry.activeOrdersAtPublish.toLocaleString("pt-BR")} pedidos ativos na publicação</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </span>
+          <button
+            className={`icon-btn wf-ver-hist-btn${histOpen ? " wf-ver-hist-btn--active" : ""}`}
+            onClick={() => setHistOpen(o => !o)}
+            title="Histórico de versões"
+          >
+            <span className="wf-meta-hist-count">{log.length}</span>
+          </button>
         )}
       </dd>
+
+      {histOpen && log.length > 0 && <>
+        <dt style={{ paddingTop: 4 }}>
+          <span className="wf-ver-hist-popup-title">Histórico</span>
+        </dt>
+        <dd>
+          <div className="wf-ver-hist-inline">
+            {log.slice(0, 3).map((entry) => (
+              <div key={entry.version} className="wf-meta-hist-entry">
+                <div className="wf-meta-hist-head">
+                  <span className="wf-meta-hist-ver">v{entry.version}</span>
+                  <span className="wf-meta-hist-when">{fmtWfDate(entry.publishedAt)}</span>
+                  <span className="wf-meta-hist-who">{entry.publishedBy}</span>
+                </div>
+                <p className="wf-meta-hist-desc">"{entry.description}"</p>
+                <ul className="wf-meta-hist-deltas">
+                  {entry.deltas.map((d, i) => (
+                    <li key={i} className={`wf-meta-delta wf-meta-delta--${d.change}`}>
+                      <span className="wf-meta-delta-sign">{CHANGE_SIGN[d.change] || "·"}</span>
+                      <span className="wf-meta-delta-entity">{ENTITY_LABEL[d.entity] || d.entity}</span>
+                      <span className="wf-meta-delta-change">{CHANGE_LABEL[d.change] || d.change}</span>
+                      <span className="wf-meta-delta-detail">{d.detail}</span>
+                    </li>
+                  ))}
+                </ul>
+                <div className="wf-meta-hist-footer">
+                  <span>{entry.appliedTo === "all_orders" ? "Aplicado a todos os pedidos" : "Somente pedidos novos"}</span>
+                  <span>{entry.activeOrdersAtPublish.toLocaleString("pt-BR")} pedidos ativos na publicação</span>
+                </div>
+              </div>
+            ))}
+            {log.length > 3 && (
+              <button className="wf-ver-hist-see-all" data-sl-button data-variant="tertiary" data-has-label style={{ marginTop: 8 }} onClick={() => onOpenSettings("history")}>
+                Ver todo o histórico
+                <IconCaretRightSmall size={12} />
+              </button>
+            )}
+          </div>
+        </dd>
+      </>}
+
       {workflow.publishedAt && <>
         <dt>Publicado em</dt>
         <dd className="wf-meta-actor"><WfActorSpan who={workflow.publishedBy} date={fmtWfDate(workflow.publishedAt)} /></dd>
@@ -1372,38 +1181,24 @@ function WfMetaSection({ workflow, onOpenSettings }) {
 
 /* ── Inline workflow settings (replaces separate settings route) ─────────── */
 function WfSettingsInline({ workflow, onDirtyChange }) {
-  const [isEditing, setIsEditing] = useState(false);
-
-  const [name,    setName]    = useState(workflow.name ?? "");
-  const [desc,    setDesc]    = useState(workflow.desc ?? "");
-  const [iconIdx, setIconIdx] = useState(0);
   const [trigger, setTrigger] = useState("order-start");
-  const [triggerWfId,   setTriggerWfId]   = useState("");
-  const [triggerTaskId, setTriggerTaskId] = useState("");
   const [aiOrch,  setAiOrch]  = useState(workflow.agentEnabled ?? true);
-  const [deps,    setDeps]    = useState([]);
-  const [depOpen,  setDepOpen]  = useState(false);
-  const [depSelWf, setDepSelWf] = useState(null);
-  const depBtnRef  = useRef(null);
-  const depDropRef = useRef(null);
-  const depPos = useRef(null);
-
-  const chatCite = React.useContext(ChatCiteContext);
-
-  useEffect(() => {
-    const handler = (e) => {
-      if (depDropRef.current && !depDropRef.current.contains(e.target) &&
-          depBtnRef.current  && !depBtnRef.current.contains(e.target)) {
-        setDepOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
+  const [deps, setDeps]       = useState([]);
 
   const mark = () => onDirtyChange?.(true);
+  const [trigDropOpen, setTrigDropOpen] = useState(false);
+  const trigBtnRef  = useRef(null);
+  const trigDropRef = useRef(null);
+  const trigPos     = useRef(null);
 
-  const ICONS = ["📦", "↩", "💳", "📋", "🛒", "🔄", "⚡", "🏪"];
+  const [depsDropOpen, setDepsDropOpen] = useState(false);
+  const depsBtnRef  = useRef(null);
+  const depsDropRef = useRef(null);
+  const depsPos     = useRef(null);
+
+  const chatSend = React.useContext(ChatSendContext);
+
+  const allWorkflows = (AIWData && AIWData.workflows) ? AIWData.workflows.filter(w => w.id !== workflow.id) : [];
 
   const TRIGGER_OPTS = [
     { key: "order-start",     label: "Início do pedido" },
@@ -1411,200 +1206,192 @@ function WfSettingsInline({ workflow, onDirtyChange }) {
     { key: "task-completion", label: "Conclusão de tarefa" },
   ];
 
-  const allWorkflows = (AIWData && AIWData.workflows)
-    ? AIWData.workflows.filter(w => w.id !== workflow.id)
-    : [];
-  const triggerWfObj   = allWorkflows.find(w => w.id === triggerWfId);
-  const triggerWfTasks = triggerWfObj ? triggerWfObj.stages.flatMap(s => s.tasks) : [];
+  useEffect(() => {
+    if (!trigDropOpen) return;
+    const handler = (e) => {
+      if (trigDropRef.current && !trigDropRef.current.contains(e.target) &&
+          trigBtnRef.current  && !trigBtnRef.current.contains(e.target)) {
+        setTrigDropOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [trigDropOpen]);
 
-  const addDep = () => {
-    if (!depSelWf) return;
-    const wf = allWorkflows.find(w => w.id === depSelWf);
-    if (!wf || deps.find(d => d.wfId === depSelWf)) return;
-    setDeps(d => [...d, { wfId: depSelWf, wfName: wf.name, wfIcon: wf.icon }]);
-    setDepOpen(false); setDepSelWf(null); mark();
-  };
+  useEffect(() => {
+    if (!depsDropOpen) return;
+    const handler = (e) => {
+      if (depsDropRef.current && !depsDropRef.current.contains(e.target) &&
+          depsBtnRef.current  && !depsBtnRef.current.contains(e.target)) {
+        setDepsDropOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [depsDropOpen]);
 
   const currentTrigger = TRIGGER_OPTS.find(o => o.key === trigger);
 
-  // ── Read mode ──────────────────────────────────────────────────────────────
-  if (!isEditing) {
-    return (
-      <div className="wf-settings-inline">
-        <div className="wf-settings-inline-head">
-          <button
-            className="wf-settings-inline-edit-btn"
-            data-sl-button data-variant="tertiary" data-size="small"
-            onClick={() => setIsEditing(true)}
-          >
-            <IconPencil size={13} /> Editar
-          </button>
-        </div>
-
-        <dl className="wf-settings-dl wf-settings-inline-dl">
-          {desc && (
-            <div className="wf-settings-dl-row">
-              <dt>Descrição</dt>
-              <dd><span className="wf-settings-inline-desc">{desc}</span></dd>
-            </div>
-          )}
-          <div className="wf-settings-dl-row">
-            <dt>Gatilho</dt>
-            <dd><span className="field-value-tag">{currentTrigger?.label}</span></dd>
-          </div>
-          <div className="wf-settings-dl-row">
-            <dt>Orquestração</dt>
-            <dd>
-              <span className={`wf-list-status ${aiOrch ? "wf-list-status--purple" : "wf-list-status--neutral"}`} style={{ height: 22, fontSize: 11.5 }}>
-                {aiOrch ? <><IconSparkleFill size={11} /> Agêntica</> : <><IconHandFill size={11} /> Manual</>}
-              </span>
-            </dd>
-          </div>
-          {deps.length > 0 && (
-            <div className="wf-settings-dl-row">
-              <dt>Requer</dt>
-              <dd style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                {deps.map((d, i) => <span key={i} className="wf-settings-dep-chip">{d.wfIcon} {d.wfName}</span>)}
-              </dd>
-            </div>
-          )}
-        </dl>
-      </div>
-    );
-  }
-
-  // ── Edit mode ──────────────────────────────────────────────────────────────
   return (
-    <div className="wf-settings-inline wf-settings-inline--editing">
-      <div className="wf-settings-inline-head">
-        <span className="wf-settings-inline-icon">{ICONS[iconIdx]}</span>
-        <span className="wf-settings-inline-name editing-label">Configurações do workflow</span>
-        <button
-          className="wf-settings-inline-close-btn"
-          onClick={() => setIsEditing(false)}
-          title="Fechar"
-        >
-          <Icon name="chevron-down" size={14} style={{ transform: "rotate(180deg)" }} />
-        </button>
-      </div>
+    <div className="wf-settings-inline detail-section-block">
+      <SectionTitle as="h1">Estratégia</SectionTitle>
 
-      {/* Informações gerais */}
-      <section className="wf-settings-inline-section">
-        <span className="wf-settings-inline-section-title">Informações gerais</span>
-        <div className="field-rows">
-          <InlineField label="Nome" value={name} onChange={v => { setName(v); mark(); }} />
-          <InlineField label="Descrição" value={desc} onChange={v => { setDesc(v); mark(); }} placeholder="Sem descrição" />
-        </div>
-      </section>
+      <div className="wf-settings-inline-prose">
+        <div className="wf-settings-inline-cards">
 
-      {/* Gatilho */}
-      <section className="wf-settings-inline-section">
-        <span className="wf-settings-inline-section-title">Gatilho &amp; Orquestração</span>
-        <div className="field-rows">
-          <div className="field-row">
-            <span className="field-label">Gatilho</span>
-            <div className="field-pills-select">
-              {TRIGGER_OPTS.map(opt => (
-                <button
-                  key={opt.key}
-                  className={`field-option-pill${trigger === opt.key ? " selected" : ""}`}
-                  onClick={() => { setTrigger(opt.key); setTriggerWfId(""); setTriggerTaskId(""); mark(); }}
-                >
-                  {opt.label}
+          {/* Gatilho card */}
+          <div className="wf-settings-inline-card">
+            <span className="wf-settings-inline-card-label">Gatilho</span>
+            <span className="wf-settings-inline-token">{currentTrigger?.label ?? "—"}</span>
+            <span className="wf-settings-inline-card-sub">
+              Orquestração{" "}
+              <span className={`wf-settings-inline-token ${aiOrch ? "wf-settings-inline-token--purple" : ""}`}>
+                {aiOrch ? "agêntica" : "manual"}
+              </span>
+            </span>
+            <Actions card>
+              <CiteBtn text={`[Gatilho: ${currentTrigger?.label ?? "—"}, Orquestração: ${aiOrch ? "agêntica" : "manual"}]`} />
+              <button
+                ref={trigBtnRef}
+                className="stage-task-action-btn"
+                title="Alterar gatilho"
+                onClick={e => {
+                  e.stopPropagation();
+                  if (!trigDropOpen && trigBtnRef.current) {
+                    const r = trigBtnRef.current.getBoundingClientRect();
+                    trigPos.current = { top: r.bottom + 6, left: r.right, width: 240 };
+                  }
+                  setTrigDropOpen(o => !o);
+                }}
+              >
+                <IconPencil size={14} />
+              </button>
+            </Actions>
+          </div>
+          {trigDropOpen && trigPos.current && ReactDOM.createPortal(
+            <div
+              ref={trigDropRef}
+              className="trigger-dropdown"
+              style={{ position: "fixed", top: trigPos.current.top, left: trigPos.current.left - trigPos.current.width, width: trigPos.current.width, zIndex: 9999 }}
+            >
+              <div className="trigger-dropdown-section">
+                <div className="trigger-dropdown-label">Gatilho</div>
+                <div className="trigger-opt-list">
+                  {TRIGGER_OPTS.map(opt => (
+                    <button
+                      key={opt.key}
+                      className={`trigger-opt-item${trigger === opt.key ? " selected" : ""}`}
+                      style={{ flexDirection: "row", alignItems: "center", gap: "8px", padding: "8px 10px" }}
+                      onClick={() => { setTrigger(opt.key); mark(); }}
+                    >
+                      {opt.label}
+                      {trigger === opt.key && <IconCheck size={14} style={{ marginLeft: "auto", flexShrink: 0 }} />}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="trigger-orch-row">
+                <button className={`trigger-orch-btn${aiOrch ? " selected" : ""}`} onClick={() => { setAiOrch(true); mark(); }}>
+                  <IconSparkleFill size={11} /> Agêntica
                 </button>
-              ))}
-            </div>
-            <button className="field-cite-btn" title="Citar no chat" onClick={e => { e.stopPropagation(); chatCite?.(`[Gatilho: ${currentTrigger?.label}]`); pulseCiteBtn(e.currentTarget); }}>
-              <Icon name="chat-circle" size={16} />
-            </button>
-          </div>
-          {(trigger === "wf-completion" || trigger === "task-completion") && (
-            <div className="field-row">
-              <span className="field-label">Workflow origem</span>
-              <select className="field-value-pill" value={triggerWfId} onChange={e => { setTriggerWfId(e.target.value); setTriggerTaskId(""); mark(); }}>
-                <option value="">Selecionar...</option>
-                {allWorkflows.map(w => <option key={w.id} value={w.id}>{w.icon} {w.name}</option>)}
-              </select>
-            </div>
+                <button className={`trigger-orch-btn${!aiOrch ? " selected" : ""}`} onClick={() => { setAiOrch(false); mark(); }}>
+                  <IconHandFill size={11} /> Manual
+                </button>
+              </div>
+            </div>,
+            document.body
           )}
-          {trigger === "task-completion" && triggerWfId && (
-            <div className="field-row">
-              <span className="field-label">Tarefa origem</span>
-              <select className="field-value-pill" value={triggerTaskId} onChange={e => { setTriggerTaskId(e.target.value); mark(); }}>
-                <option value="">Selecionar...</option>
-                {triggerWfTasks.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-              </select>
-            </div>
-          )}
-          <div className="field-row">
-            <span className="field-label">Orquestração</span>
-            <div className="field-pills-select">
-              <button className={`field-option-pill${aiOrch ? " selected" : ""}`} onClick={() => { setAiOrch(true); mark(); }}>
-                <IconSparkleFill size={11} /> Agêntica
-              </button>
-              <button className={`field-option-pill${!aiOrch ? " selected" : ""}`} onClick={() => { setAiOrch(false); mark(); }}>
-                <IconHandFill size={11} /> Manual
-              </button>
-            </div>
-            <button className="field-cite-btn" title="Citar no chat" onClick={e => { e.stopPropagation(); chatCite?.(`[Orquestração: ${aiOrch ? "Agêntica" : "Manual"}]`); pulseCiteBtn(e.currentTarget); }}>
-              <Icon name="chat-circle" size={16} />
-            </button>
-          </div>
-        </div>
-      </section>
 
-      {/* Dependências */}
-      <section className="wf-settings-inline-section">
-        <span className="wf-settings-inline-section-title">Dependências</span>
-        {deps.length > 0 && (
-          <div className="field-row" style={{ alignItems: "flex-start", paddingTop: 6 }}>
-            <span className="field-label">Requer</span>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-              {deps.map((dep, i) => (
-                <span key={i} className="wf-settings-dep-chip wf-settings-dep-chip--removable">
-                  {dep.wfIcon} {dep.wfName}
-                  <button className="dep-chip-remove" onClick={() => { setDeps(d => d.filter((_, j) => j !== i)); mark(); }}>
-                    <Icon name="x" size={10} />
-                  </button>
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
-        <div className="field-row">
-          <span className="field-label" />
-          <button ref={depBtnRef} className="wf-new-step" style={{ marginTop: 2 }} onClick={() => {
-            if (!depOpen && depBtnRef.current) {
-              const r = depBtnRef.current.getBoundingClientRect();
-              depPos.current = { top: r.bottom + 6, left: r.left, width: Math.max(r.width, 260) };
-            }
-            setDepOpen(o => !o);
-          }}>
-            <Icon name="plus" size={13} /> Adicionar dependência
-          </button>
-        </div>
-        {depOpen && depPos.current && ReactDOM.createPortal(
-          <div className="dep-dropdown" ref={depDropRef} style={{ position: "fixed", top: depPos.current.top, left: depPos.current.left, width: depPos.current.width, zIndex: 9999 }}>
-            <div className="dep-dropdown-section">
-              <div className="dep-dropdown-label">Selecionar workflow precedente</div>
-              <div className="dep-wf-list">
-                {allWorkflows.map(w => (
-                  <button key={w.id}
-                    className={`dep-wf-item${depSelWf === w.id ? " selected" : ""}`}
-                    onClick={() => setDepSelWf(w.id)}>
-                    {w.icon} {w.name}
-                  </button>
+          {/* Dependências card */}
+          <div className="wf-settings-inline-card">
+            <span className="wf-settings-inline-card-label">Dependências</span>
+            {deps.length > 0 ? (
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                {deps.map((d, i) => (
+                  <span key={i} className="wf-settings-dep-chip wf-settings-dep-chip--removable">
+                    <span>{d.wfIcon} {d.wfName}</span>
+                    <button
+                      className="dep-chip-remove"
+                      title="Remover"
+                      onClick={e => { e.stopPropagation(); setDeps(prev => prev.filter((_, idx) => idx !== i)); mark(); }}
+                    >×</button>
+                  </span>
                 ))}
               </div>
-            </div>
-            <div className="dep-dropdown-footer">
-              <button className="btn btn-sm btn-ghost" onClick={() => setDepOpen(false)}>Cancelar</button>
-              <button className="btn btn-sm btn-primary" onClick={addDep} disabled={!depSelWf}>Adicionar</button>
-            </div>
-          </div>,
-          document.body
-        )}
-      </section>
+            ) : (
+              <span style={{ color: "var(--fg-3)", fontSize: 14 }}>Nenhuma</span>
+            )}
+            <Actions card>
+              <CiteBtn text={deps.length > 0 ? `[Dependências: ${deps.map(d => d.wfName).join(", ")}]` : `[Dependências: nenhuma]`} />
+              <button
+                ref={depsBtnRef}
+                className="stage-task-action-btn"
+                title="Editar dependências"
+                onClick={e => {
+                  e.stopPropagation();
+                  if (!depsDropOpen && depsBtnRef.current) {
+                    const r = depsBtnRef.current.getBoundingClientRect();
+                    depsPos.current = { top: r.bottom + 6, left: r.right, width: 260 };
+                  }
+                  setDepsDropOpen(o => !o);
+                }}
+              >
+                <IconPencil size={14} />
+              </button>
+            </Actions>
+          </div>
+          {depsDropOpen && depsPos.current && ReactDOM.createPortal(
+            <div
+              ref={depsDropRef}
+              className="trigger-dropdown"
+              style={{ position: "fixed", top: depsPos.current.top, left: depsPos.current.left - depsPos.current.width, width: depsPos.current.width, zIndex: 9999 }}
+            >
+              {deps.length > 0 && (
+                <div className="trigger-dropdown-section">
+                  <div className="trigger-dropdown-label">Dependências ativas</div>
+                  <div className="trigger-opt-list">
+                    {deps.map((d, i) => (
+                      <div key={i} className="trigger-opt-item" style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+                        <span>{d.wfIcon} {d.wfName}</span>
+                        <button
+                          className="dep-row-remove"
+                          title="Remover"
+                          onClick={() => { setDeps(prev => prev.filter((_, idx) => idx !== i)); mark(); }}
+                        >×</button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <div className="trigger-dropdown-section" style={deps.length > 0 ? { borderTop: "1px solid var(--border)", paddingTop: 10 } : {}}>
+                <div className="trigger-dropdown-label">Adicionar dependência</div>
+                <div className="trigger-opt-list">
+                  {allWorkflows.filter(w => !deps.find(d => d.wfId === w.id)).length === 0 ? (
+                    <span style={{ fontSize: 12, color: "var(--fg-3)", padding: "4px 2px" }}>Todos os workflows já adicionados</span>
+                  ) : (
+                    allWorkflows.filter(w => !deps.find(d => d.wfId === w.id)).map(w => (
+                      <button
+                        key={w.id}
+                        className="trigger-opt-item"
+                        style={{ flexDirection: "row", alignItems: "center" }}
+                        onClick={() => {
+                          setDeps(prev => [...prev, { wfId: w.id, wfName: w.name, wfIcon: w.icon }]);
+                          mark();
+                        }}
+                      >
+                        <span style={{ fontSize: 15 }}>{w.icon}</span> {w.name}
+                      </button>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>,
+            document.body
+          )}
+
+        </div>
+
+      </div>
     </div>
   );
 }
@@ -1721,6 +1508,14 @@ function WorkflowDetailView1Passo({ workflow, onOpenTask, onOpenStage, onOpenSet
           setStages(prev => [...prev, { name: stageName, tasks: [] }]);
           markDirty();
         },
+        addTask: (stageName, taskName, taskType = "auto", owner = "", visibility = "internal") => {
+          setStages(prev => prev.map(s =>
+            s.name.toLowerCase() === stageName.toLowerCase()
+              ? { ...s, tasks: [...s.tasks, { id: "t" + Date.now(), name: taskName, type: taskType, owner, visibility }] }
+              : s
+          ));
+          markDirty();
+        },
         save: handleSave,
         getStageCount: () => stagesRef.current.length,
         getStageNames: () => stagesRef.current.map(s => s.name),
@@ -1739,11 +1534,8 @@ function WorkflowDetailView1Passo({ workflow, onOpenTask, onOpenStage, onOpenSet
 
       <WfSettingsInline workflow={workflow} onDirtyChange={onDirtyChange} />
 
-      <div className="detail-sector-title detail-sector-title--spaced">
-        <h2>Etapas</h2>
-      </div>
-
-      <div className="stages-section">
+      <SectionBlock title="Etapas">
+        <div className="stages-section">
         <div className="wf-detail-stages-1step">
           {stages.reduce((acc, stage, si) => {
             const startNum = acc.n;
@@ -1780,7 +1572,8 @@ function WorkflowDetailView1Passo({ workflow, onOpenTask, onOpenStage, onOpenSet
             return acc;
           }, { n: 1, els: [] }).els}
         </div>
-      </div>
+        </div>
+      </SectionBlock>
     </>
   );
 }
@@ -1864,6 +1657,14 @@ function WorkflowDetailView2Passos({ workflow, onOpenTask, onOpenStage, onOpenSe
           setStages(prev => [...prev, { name: stageName, tasks: [] }]);
           markDirty();
         },
+        addTask: (stageName, taskName, taskType = "auto", owner = "", visibility = "internal") => {
+          setStages(prev => prev.map(s =>
+            s.name.toLowerCase() === stageName.toLowerCase()
+              ? { ...s, tasks: [...s.tasks, { id: "t" + Date.now(), name: taskName, type: taskType, owner, visibility }] }
+              : s
+          ));
+          markDirty();
+        },
         save: handleSave,
         getStageCount: () => stagesRef.current.length,
         getStageNames: () => stagesRef.current.map(s => s.name),
@@ -1884,13 +1685,8 @@ function WorkflowDetailView2Passos({ workflow, onOpenTask, onOpenStage, onOpenSe
 
       <WfSettingsInline workflow={workflow} onDirtyChange={onDirtyChange} />
 
-      <WfSettingsInline workflow={workflow} onDirtyChange={onDirtyChange} />
-
-      <div className="detail-sector-title detail-sector-title--spaced">
-        <h2>Etapas</h2>
-      </div>
-
-      <div className="stages-section">
+      <SectionBlock title="Etapas">
+        <div className="stages-section">
         <div className="stage-stack">
           {stages.reduce((acc, stage, si) => {
             const startNum = acc.n;
@@ -1916,41 +1712,15 @@ function WorkflowDetailView2Passos({ workflow, onOpenTask, onOpenStage, onOpenSe
                   onStageDragEnd={handleStageDragEnd}
                 />
                 {si < stages.length - 1 && (
-                  <>
-                    <div className="stage-linker can-insert">
-                      {insertingAt !== si && (
-                        <button className="stage-insert-btn" onClick={() => openInsert(si)}>
-                          <Icon name="plus" size={12} /> Nova etapa
-                        </button>
-                      )}
-                    </div>
-                    {insertingAt === si && (
-                      <div className="stage-insert-form">
-                        <span className="stage-insert-form-label">Nome da nova etapa</span>
-                        <input
-                          ref={newStageRef}
-                          className="input"
-                          value={newStageName}
-                          onChange={e => setNewStageName(e.target.value)}
-                          onKeyDown={e => { if (e.key === "Enter") confirmInsert(); if (e.key === "Escape") cancelInsert(); }}
-                          placeholder="Ex: Validação, Aprovação..."
-                        />
-                        <div className="stage-insert-form-actions">
-                          <button className="btn btn-sm btn-ghost" onClick={cancelInsert}>Cancelar</button>
-                          <button className="btn btn-sm btn-primary" onClick={confirmInsert} disabled={!newStageName.trim()}>
-                            <Icon name="plus" size={12} /> Adicionar
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </>
+                  <div className="stage-linker" />
                 )}
               </React.Fragment>
             );
             return acc;
           }, { n: 1, els: [] }).els}
         </div>
-      </div>
+        </div>
+      </SectionBlock>
     </>
   );
 }
@@ -1961,71 +1731,7 @@ function WorkflowDetailView({ wfDetailView = "2-passos", ...props }) {
   return <WorkflowDetailView2Passos {...props} />;
 }
 
-/* ---------- Library of pre-set workflows (not yet active) ---------- */
-const LIBRARY_WFS = [
-  { id: "boleto", name: "Boleto Bancário", icon: "📋", category: "pagamento",
-    desc: "Geração, envio e confirmação de pagamento via boleto bancário",
-    stages: [
-      { name: "Emissão",       linkedToNext: true,  tasks: [{ id: "bl-1", name: "Gerar boleto", type: "auto", owner: "Gateway" }, { id: "bl-2", name: "Enviar por e-mail", type: "auto", owner: "Notif. Agent" }] },
-      { name: "Monitoramento", linkedToNext: true,  tasks: [{ id: "bl-3", name: "Aguardar pagamento", type: "auto", owner: "Gateway" }] },
-      { name: "Confirmação",   tasks: [{ id: "bl-4", name: "Confirmar e liberar pedido", type: "auto", owner: "OMS" }] }
-    ]},
-  { id: "entrega-agendada", name: "Entrega Agendada", icon: "🗓️", category: "fulfillment",
-    desc: "Pedidos com janela de entrega agendada pelo cliente",
-    stages: [
-      { name: "Agendamento", linkedToNext: true, tasks: [{ id: "ea-1", name: "Confirmar janela com cliente", type: "auto", owner: "Notif. Agent" }] },
-      { name: "Preparação",  linkedToNext: true, tasks: [{ id: "ea-2", name: "Separar produto no dia", type: "manual", owner: "WMS Operator" }] },
-      { name: "Entrega",     tasks: [{ id: "ea-3", name: "Cumprir janela agendada", type: "manual", owner: "Carrier" }] }
-    ]},
-  { id: "recusa-pgto", name: "Recusa de Pagamento", icon: "🚫", category: "pagamento",
-    desc: "Retentativa e resolução de pagamentos recusados pela operadora",
-    stages: [
-      { name: "Detecção",    linkedToNext: true,  tasks: [{ id: "rp-1", name: "Detectar recusa", type: "auto", owner: "Gateway" }, { id: "rp-2", name: "Notificar cliente", type: "auto", owner: "Notif. Agent" }] },
-      { name: "Retentativa", linkedToNext: false, tasks: [{ id: "rp-3", name: "Retentar cobrança", type: "auto", owner: "Gateway" }] },
-      { name: "Resolução",   tasks: [{ id: "rp-4", name: "Cancelar ou confirmar pedido", type: "auto", owner: "OMS Agent" }] }
-    ]},
-  { id: "giftcard", name: "Gift Card", icon: "🎁", category: "servicos",
-    desc: "Emissão e validação de gift cards na compra e no resgate",
-    stages: [
-      { name: "Emissão",   linkedToNext: true, tasks: [{ id: "gc-1", name: "Gerar código", type: "auto", owner: "Platform" }, { id: "gc-2", name: "Enviar ao presenteado", type: "auto", owner: "Notif. Agent" }] },
-      { name: "Validação", tasks: [{ id: "gc-3", name: "Validar resgate", type: "auto", owner: "Platform" }] }
-    ]},
-  { id: "assinatura", name: "Assinatura", icon: "🔁", category: "servicos",
-    desc: "Gestão de cobranças recorrentes e renovações automáticas de assinatura",
-    stages: [
-      { name: "Cobrança",    linkedToNext: true, tasks: [{ id: "as-1", name: "Cobrar recorrência", type: "auto", owner: "Gateway" }] },
-      { name: "Fulfillment", linkedToNext: true, tasks: [{ id: "as-2", name: "Gerar pedido automático", type: "auto", owner: "OMS" }] },
-      { name: "Entrega",     tasks: [{ id: "as-3", name: "Despachar pedido", type: "auto", owner: "Carrier" }] }
-    ]},
-  { id: "b2b-faturamento", name: "Faturamento B2B", icon: "📊", category: "pagamento",
-    desc: "Faturamento com prazo e análise de crédito para clientes B2B",
-    stages: [
-      { name: "Crédito",     linkedToNext: true, tasks: [{ id: "b2-1", name: "Verificar limite de crédito", type: "auto", owner: "Finance Agent" }] },
-      { name: "Faturamento", linkedToNext: true, tasks: [{ id: "b2-2", name: "Emitir nota fiscal", type: "auto", owner: "Fiscal Service" }, { id: "b2-3", name: "Enviar ao cliente", type: "auto", owner: "Notif. Agent" }] },
-      { name: "Cobrança",    tasks: [{ id: "b2-4", name: "Monitorar vencimento", type: "auto", owner: "Finance Agent" }] }
-    ]},
-];
-
 /* ---------- New Workflow Wizard ---------- */
-
-const STAGE_SUGGESTIONS = [
-  "Recebimento", "Validação", "Triagem", "Processamento", "Análise",
-  "Aprovação", "Emissão", "Envio", "Confirmação", "Monitoramento",
-  "Separação", "Embalagem", "Despacho", "Entrega", "Notificação",
-  "Revisão", "Devolução", "Reembolso", "Cancelamento", "Cobrança",
-  "Suporte", "Auditoria", "Integração", "Sincronização", "Análise de fraude",
-];
-
-const TASK_SUGGESTIONS = [
-  "Verificar dados do pedido", "Notificar cliente por e-mail",
-  "Notificar cliente por SMS", "Atualizar status no sistema",
-  "Aprovar manualmente", "Gerar documento", "Consultar API externa",
-  "Registrar no log", "Validar pagamento", "Confirmar estoque",
-  "Imprimir etiqueta", "Acionar transportadora", "Verificar fraude",
-  "Emitir nota fiscal", "Processar reembolso", "Arquivar pedido",
-  "Escalar para operador", "Enviar webhook", "Cobrar recorrência",
-  "Criar pedido automático",
-];
 
 function stagesFromPreFill(preFill) {
   if (preFill?.stages && preFill.stages.length > 0) {
@@ -2053,7 +1759,7 @@ function NewWorkflowWizard({ existingWorkflows, categories, onClose, preFill }) 
   const [stages, setStages]           = useState(() => stagesFromPreFill(preFill));
 
   const existingIds = new Set(existingWorkflows.map(w => w.id));
-  const libraryWfs  = LIBRARY_WFS.filter(w => !existingIds.has(w.id));
+  const libraryWfs  = AIWData.libraryWfs.filter(w => !existingIds.has(w.id));
   const catLabel    = (id) => categories.find(c => c.id === id)?.label || id;
 
   function prefillFrom(wf, isCopy) {
@@ -2234,10 +1940,10 @@ function NewWorkflowWizard({ existingWorkflows, categories, onClose, preFill }) 
 
           {/* Suggestion catalogs (native browser datalist) */}
           <datalist id="wiz-stage-names">
-            {STAGE_SUGGESTIONS.map(s => <option key={s} value={s} />)}
+            {AIWData.stageSuggestions.map(s => <option key={s} value={s} />)}
           </datalist>
           <datalist id="wiz-task-names">
-            {TASK_SUGGESTIONS.map(s => <option key={s} value={s} />)}
+            {AIWData.taskSuggestions.map(s => <option key={s} value={s} />)}
           </datalist>
 
           <div className="wizard-stages">
@@ -2299,6 +2005,7 @@ function WorkflowBoardCanvas({
   wfLayout = "expanded", wfGroup = "flat",
   wfDetailView = "2-passos",
 }) {
+  const agentSay     = React.useContext(AgentSayContext);
   const isList       = mode.kind === "list";
   const isDetail     = mode.kind === "detail";
   const isTask       = mode.kind === "task";
@@ -2316,20 +2023,20 @@ function WorkflowBoardCanvas({
   if (isList && showWizard) {
     headerLeft = (
       <button className="od-back-link" data-sl-button data-variant="tertiary" data-has-label onClick={back}>
-        <IconCaretLeftSmall size={14} /> Voltar para Workflow Builder
+        <IconCaretLeftSmall size={14} /> Voltar para Gerenciador de Experiências
       </button>
     );
   } else if (isList) {
     headerLeft = (
       <>
         <span className="id-chip">WFB</span>
-        <span className="canvas-name">Workflow Builder</span>
+        <span className="canvas-name">Gerenciador de Experiências</span>
       </>
     );
   } else if (isDetail) {
     headerLeft = (
       <button className="od-back-link" data-sl-button data-variant="tertiary" data-has-label onClick={back}>
-        <IconCaretLeftSmall size={14} /> Voltar para Workflow Builder
+        <IconCaretLeftSmall size={14} /> Voltar para Gerenciador de Experiências
       </button>
     );
   } else {
@@ -2360,8 +2067,14 @@ function WorkflowBoardCanvas({
             <button data-sl-button data-variant="primary" data-size="small" data-has-label onClick={() => {
               detailActionsRef.current?.save?.();
               setDetailHasChanges(false);
+              const wfName = workflow?.name ?? "workflow";
+              agentSay?.({
+                from: "agent",
+                text: `✅ **${wfName}** publicado com sucesso! As alterações já estão ativas para novos pedidos.`,
+                quickReplies: ["Ver histórico de versões", "+ Adicionar tarefa", "O que posso fazer?"],
+              });
             }}>
-              <Icon name="check" size={12} /> Publicar
+              Publicar
             </button>
           }
         </div>
@@ -2386,11 +2099,6 @@ function WorkflowBoardCanvas({
                         onClick={() => setMode({ kind: "detail", workflowId: w.id })}>
                   <div className="wf-list-card-head">
                     <span className="wf-list-body">
-                      <button className={`wf-list-agent-btn${w.agentEnabled ? " agent-on" : " agent-off"}`}
-                              onClick={e => e.stopPropagation()}
-                              title={w.agentEnabled ? "Agente AI ativo" : "Manual"}>
-                        {w.agentEnabled ? <IconSparkleFill size={16} /> : <IconHandFill size={16} />}
-                      </button>
                       <span className="wf-list-body-text">
                         <span className="wf-list-name">{w.name}</span>
                         <span className="wf-list-meta">
@@ -2454,11 +2162,6 @@ function WorkflowBoardCanvas({
                     </span>
                     <span className="wf-list-head-right">
                       <span className="wf-list-orders">{w.orders} pedidos ativos</span>
-                      <button className={`wf-list-agent-btn${w.agentEnabled ? " agent-on" : " agent-off"}`}
-                              onClick={e => e.stopPropagation()}
-                              title={w.agentEnabled ? "Agente AI ativo" : "Manual"}>
-                        {w.agentEnabled ? <IconSparkleFill size={16} /> : <IconHandFill size={16} />}
-                      </button>
                       <span className={`wf-list-status ${w.archived ? "archived" : "active"}`}>
                         {w.archived ? "Arquivado" : "Ativo"}
                       </span>
@@ -2560,56 +2263,60 @@ function WorkflowBoardCanvas({
 
 /* ---------- Chat context definitions ---------- */
 
+/*
+  chatFor — contexto inicial de cada modo.
+  Regra de design: chips = atalhos persistentes da chip-row (sempre visíveis).
+                   messages = apenas texto descritivo; quickReplies SOMENTE em
+                   respostas do agente durante uma conversa, nunca nas mensagens
+                   iniciais (evita duplicação com a chip-row).
+*/
 function chatFor(mode) {
   if (mode.kind === "list") {
     return {
-      title: "Workflow Builder",
-      placeholder: "Criar workflow, auditar, otimizar...",
+      title: "Gerenciador de Experiências",
+      placeholder: "Criar workflow, editar, publicar...",
       chips: [
-        { icon: "plus",    label: "Criar novo workflow"     },
-        { icon: "search",  label: "Auditar workflow padrão" },
-        { icon: "sparkle", label: "Sugerir otimizações"     },
-        { icon: "graph",   label: "Resumir cobertura"       }
+        { icon: "plus",    label: "Nova experiência"             },
+        { icon: "edit",    label: "Editar experiência existente" },
+        { icon: "layers",  label: "Editar experiências em massa" },
       ],
       messages: [
-        { from: "agent", text: "Olá! Sou o Agente de Workflow. Posso ajudar você a criar, editar ou auditar os workflows de **Workflow Builder**." },
-        { from: "agent", text: "Há 5 workflows ativos cobrindo 4.826 pedidos. Quer criar um novo ou ajustar algum existente?" }
+        { from: "agent", text: "Olá! Sou o **Order Management Assistant**.\n\nPosso ajudar a criar, editar e publicar experiências no Gerenciador de Experiências." },
+        { from: "agent", text: `Há ${AIWData.workflows.length} experiências configuradas. Use os atalhos abaixo ou escreva o que precisa.` },
       ]
     };
   }
   const wf = AIWData.workflows.find((w) => w.id === mode.workflowId);
   if (mode.kind === "detail") {
     const totalTasks = wf.stages.reduce((s, st) => s + st.tasks.length, 0);
+    const statusLabel = wf.status === "published" ? "Publicado" : wf.status === "archived" ? "Arquivado" : "Rascunho";
     return {
       title: wf.name,
-      placeholder: `Adicionar etapa, otimizar ${wf.name}...`,
+      placeholder: `Editar ${wf.name}...`,
       chips: [
-        { icon: "plus",    label: "Adicionar etapa"              },
-        { icon: "search",  label: "Identificar gargalos"         },
-        { icon: "sparkle", label: "Sugerir automação de tarefas" },
-        { icon: "graph",   label: "Métricas de desempenho"       }
+        { icon: "plus",    label: "Adicionar tarefa"  },
+        { icon: "sparkle", label: "Publicar workflow" },
       ],
       messages: [
-        { from: "agent", text: `Você está em **${wf.name}** — ${wf.stages.length} etapas, ${totalTasks} tarefas, ${wf.orders} pedidos ativos.` },
-        { from: "agent", text: "Posso adicionar etapas, reorganizar o fluxo ou identificar gargalos. O que você quer fazer?" }
+        { from: "agent", text: `**${wf.name}** — ${wf.stages.length} etapas · ${totalTasks} tarefas · ${wf.orders} pedidos ativos · ${statusLabel}.` },
+        { from: "agent", text: "Use os atalhos abaixo ou descreva o que quer fazer." },
       ]
     };
   }
   if (mode.kind === "task") {
-    let task;
-    wf.stages.forEach((s) => { const t = s.tasks.find((x) => x.id === mode.taskId); if (t) task = t; });
+    let task; let taskStage;
+    wf.stages.forEach((s) => { const t = s.tasks.find((x) => x.id === mode.taskId); if (t) { task = t; taskStage = s; } });
     return {
       title: task?.name || "Tarefa",
       placeholder: `Configurar ${task?.name}...`,
       chips: [
-        { icon: "sparkle", label: "Ativar Agente AI nesta tarefa"  },
-        { icon: "edit",    label: "Adicionar checkpoint"           },
-        { icon: "search",  label: "Conectar API externa"           },
-        { icon: "graph",   label: "Alterar visibilidade"           }
+        { icon: "edit",    label: "Alterar execução"    },
+        { icon: "edit",    label: "Alterar visibilidade" },
+        { icon: "edit",    label: "Alterar responsável"  },
+        { icon: "x",       label: "Remover tarefa"       },
       ],
       messages: [
-        { from: "agent", text: `Editando tarefa **"${task?.name}"**. Posso configurar visibilidade, checkpoints, integrações ou Agente AI.` },
-        { from: "agent", text: 'Diga algo como "tornar visível ao cliente", "adicionar checkpoint de validação" ou "ativar agente AI".' }
+        { from: "agent", text: `Editando **"${task?.name}"** em **${taskStage?.name || wf.name}**.\n\nUse os atalhos abaixo para alterar campos ou remover a tarefa.` },
       ]
     };
   }
@@ -2619,28 +2326,33 @@ function chatFor(mode) {
       title: stage?.name || "Etapa",
       placeholder: `Configurar ${stage?.name}...`,
       chips: [
-        { icon: "sparkle", label: "Conectar Agente AI"       },
-        { icon: "edit",    label: "Alterar responsável"      },
-        { icon: "search",  label: "Conectar servidor MCP"    },
+        { icon: "edit",    label: "Renomear etapa"            },
+        { icon: "edit",    label: "Editar gate de conclusão"  },
+        { icon: "plus",    label: "+ Adicionar tarefa"        },
+        { icon: "x",       label: "Remover etapa"             },
       ],
       messages: [
-        { from: "agent", text: `Configurando etapa **"${stage?.name}"**. Posso ajustar responsável, categoria ou conectar integrações.` },
+        { from: "agent", text: `Configurando a etapa **"${stage?.name}"** em **${wf.name}**.\n\nUse os atalhos abaixo ou descreva o que quer alterar.` },
       ]
     };
   }
   if (mode.kind === "settings") {
+    const sectionChipsMap = {
+      geral:         ["Renomear", "Mudar trigger", "Mudar categoria"],
+      "ai-agent":    ["Ativar agente", "Desativar agente", "Configurar comportamento"],
+      dependencies:  ["Adicionar dependência", "Remover dependência"],
+      history:       ["Ver versão anterior", "Restaurar versão"],
+    };
+    const sectionLabels = {
+      geral: "configurações gerais", "ai-agent": "Agente AI", dependencies: "Dependências", history: "Histórico de versões",
+    };
+    const sectionLabel = sectionLabels[mode.section] || "configurações";
     return {
       title: `${wf.name} · Configurações`,
       placeholder: `Alterar configurações de ${wf.name}...`,
-      chips: [
-        { icon: "edit",    label: "Renomear workflow"         },
-        { icon: "sparkle", label: "Alterar gatilho"           },
-        { icon: "search",  label: "Verificar dependências"    },
-        { icon: "graph",   label: "Análise de impacto"        }
-      ],
+      chips: (sectionChipsMap[mode.section] || sectionChipsMap.geral).map(label => ({ icon: "edit", label })),
       messages: [
-        { from: "agent", text: `Configurações de **${wf.name}**. Posso alterar nome, gatilho de ativação, dependências e Agente AI.` },
-        { from: "agent", text: 'Diga algo como "renomear para Pagamento Rápido", "ativar após Fulfillment" ou "desativar agente AI".' }
+        { from: "agent", text: `Você está nas **${sectionLabel}** de **${wf.name}**.\n\nUse os atalhos abaixo ou descreva a alteração.` },
       ]
     };
   }
@@ -2657,6 +2369,14 @@ function WorkflowBoardView({ onBack, wfLayout = "expanded", wfGroup = "flat", wf
   const [isTyping, setIsTyping] = useState(false);
   const chatComposerRef = useRef(null);
 
+  // True while the agent is collecting a new task through chat
+  const [chatAddingTask, setChatAddingTask] = useState(false);
+  const chatAddingTaskRef = useRef(false);
+  const setChatAddingTaskSync = useCallback((v) => {
+    chatAddingTaskRef.current = v;
+    setChatAddingTask(v);
+  }, []);
+
   // New-workflow conversational draft
   const [wfDraftState, setWfDraftState] = useState(null);
   const wfDraftRef = useRef(null);
@@ -2670,6 +2390,21 @@ function WorkflowBoardView({ onBack, wfLayout = "expanded", wfGroup = "flat", wf
   const settingsActionsRef = useRef(null);
   const detailActionsRef   = useRef(null);
   const taskActionsRef     = useRef(null);
+
+  // Conversational task-creation draft (detail mode)
+  const taskDraftRef = useRef(null);
+
+  // Fluxo A2 — "Editar experiência existente" draft
+  const editExistingDraftRef = useRef(null);
+
+  // Fluxo G — "Editar experiências em massa" draft
+  const bulkDraftRef = useRef(null);
+
+  // Pending undo for task removal
+  const pendingUndoRef = useRef(null);
+
+  // Override messages for the next navigation (e.g. post-create success message)
+  const pendingChatMsgsRef = useRef(null);
 
   // Keeps wfDraftRef in sync so callbacks never see stale state
   const setWfDraft = useCallback((v) => {
@@ -2686,9 +2421,16 @@ function WorkflowBoardView({ onBack, wfLayout = "expanded", wfGroup = "flat", wf
   // Re-initialise chat when navigating between views
   useEffect(() => {
     const ctx = chatFor(mode);
-    setChatMsgs(ctx.messages || []);
+    const pending = pendingChatMsgsRef.current;
+    pendingChatMsgsRef.current = null;
+    setChatMsgs(pending || ctx.messages || []);
     setIsTyping(false);
-    if (mode.kind !== "list") setWfDraft(null);
+    setChatAddingTaskSync(false);
+    if (mode.kind !== "list") {
+      setWfDraft(null);
+      editExistingDraftRef.current = null;
+      bulkDraftRef.current = null;
+    }
   }, [mode.kind, mode.workflowId, mode.taskId]);
 
   // ── Agent reply helper ──────────────────────────────────────────────────────
@@ -2703,21 +2445,61 @@ function WorkflowBoardView({ onBack, wfLayout = "expanded", wfGroup = "flat", wf
     }, delay + Math.random() * 200);
   }
 
+  // ── Task-removed notification (called by canvas, no user message) ───────────
+  const notifyTaskRemovedFn = useCallback((taskName, stageName, undoFn) => {
+    pendingUndoRef.current = undoFn;
+    agentSay({
+      from: "agent",
+      text: `🗑️ Tarefa **${taskName}** removida da etapa **${stageName}**.`,
+      quickReplies: ["↩ Desfazer"],
+    }, 300);
+  }, []);
+
   // ── Main message handler ───────────────────────────────────────────────────
   function handleSend(text) {
     setChatMsgs(m => [...m, { from: "user", text }]);
     const lower = text.toLowerCase();
 
+    // ── Undo task removal ──
+    if (lower.includes("desfazer") && pendingUndoRef.current) {
+      const undo = pendingUndoRef.current;
+      pendingUndoRef.current = null;
+      undo();
+      agentSay({ from: "agent", text: "↩ Tarefa restaurada com sucesso." });
+      return;
+    }
+    if (lower === "ok" && pendingUndoRef.current) {
+      pendingUndoRef.current = null;
+    }
+
     if (mode.kind === "list") {
       if (wfDraftRef.current) {
         handleDraftStep(text, lower);
-      } else if (/criar|novo workflow|new workflow|começar workflow/.test(lower)) {
+      } else if (bulkDraftRef.current) {
+        handleBulkEditStep(text, lower);
+      } else if (editExistingDraftRef.current) {
+        handleEditExistingStep(text, lower);
+      } else if (/nova experiência|criar|novo workflow|new workflow|começar workflow|\+ novo/.test(lower)) {
         startWfDraft();
+      } else if (/editar experiência existente|editar workflow existente|editar experiência/.test(lower)) {
+        startEditExisting();
+      } else if (/em massa|editar experiências em massa/.test(lower)) {
+        startBulkEdit();
       } else if (/listar|mostrar|quais/.test(lower)) {
         const names = AIWData.workflows.map(w => `${w.icon} ${w.name}`).join(", ");
-        agentSay({ from: "agent", text: `Workflows ativos: ${names}. Clique em qualquer um no canvas para ver detalhes.` });
+        agentSay({ from: "agent", text: `Experiências configuradas: ${names}. Clique em qualquer uma no canvas para ver detalhes.` });
+      } else if (/o que posso fazer|o que você faz|posso fazer|ajuda/.test(lower)) {
+        agentSay({
+          from: "agent",
+          text: "Posso te ajudar a:\n• Criar experiências do zero ou copiando uma existente\n• Adicionar, editar ou remover etapas e tarefas\n• Configurar execução, visibilidade e responsável de cada tarefa\n• Publicar, atualizar ou arquivar experiências\n• Editar múltiplas experiências em massa",
+          quickReplies: ["Nova experiência", "Editar experiência existente"],
+        });
       } else {
-        agentSay({ from: "agent", text: "Posso ajudar a criar ou gerenciar workflows. Diga \"criar workflow\" para começar uma conversa guiada, ou clique em \"Novo workflow\" no canvas." });
+        agentSay({
+          from: "agent",
+          text: "Não entendi. O que você quer fazer?",
+          quickReplies: ["Nova experiência", "Editar experiência existente", "Editar experiências em massa", "O que posso fazer?"],
+        });
       }
     } else if (mode.kind === "settings") {
       handleSettingsMessage(text, lower);
@@ -2728,23 +2510,14 @@ function WorkflowBoardView({ onBack, wfLayout = "expanded", wfGroup = "flat", wf
     }
   }
 
-  // ── New workflow conversational flow ───────────────────────────────────────
+  // ── Fluxo A — Nova experiência ─────────────────────────────────────────────
 
   function startWfDraft() {
-    const draft = {
-      step: "origin",
-      origin: null, name: "", category: "fulfillment",
-      trigger: "auto", aiOrch: true, sourceOptions: null,
-    };
+    const draft = { step: "name", name: "", base: "blank", products: null, parsedStages: null, sourceStages: null, sourceName: null };
     setWfDraft(draft);
     agentSay({
       from: "agent",
-      text: "Vamos criar um novo workflow! Por onde você quer começar?",
-      quickReplies: [
-        { label: "Do zero",         icon: "✨", desc: "Workflow em branco para configurar livremente" },
-        { label: "Copiar existente",icon: "📋", desc: "Partir de um dos seus workflows atuais" },
-        { label: "Da biblioteca",   icon: "📚", desc: "Workflows pré-configurados prontos para usar" },
-      ],
+      text: "Qual é o nome da nova experiência?",
     });
   }
 
@@ -2752,139 +2525,322 @@ function WorkflowBoardView({ onBack, wfLayout = "expanded", wfGroup = "flat", wf
     const draft = wfDraftRef.current;
     if (!draft) return;
 
-    if (draft.step === "origin") {
-      let origin = "blank";
-      let nextStep = "name";
+    // Global escape for Fluxo A
+    if (/^(cancelar|sair|parar|desistir)/.test(lower)) {
+      setWfDraft(null);
+      agentSay({ from: "agent", text: "Tudo bem. Quando quiser criar uma nova experiência, é só falar.", quickReplies: ["Nova experiência"] });
+      return;
+    }
 
-      if (/existente|copiar|cópia|copy/.test(lower)) {
-        origin = "existing"; nextStep = "pick-source";
-      } else if (/biblioteca|library|template/.test(lower)) {
-        origin = "library"; nextStep = "pick-source";
-      }
+    if (draft.step === "name") {
+      const name = originalText.trim();
+      setWfDraft(d => ({ ...d, step: "base", name }));
+      agentSay({
+        from: "agent",
+        text: `**"${name}"** — ótimo nome! Quer criar do zero ou usar uma experiência existente como base?`,
+        quickReplies: ["Do zero", "Copiar existente"],
+      });
 
-      if (nextStep === "pick-source") {
-        const sources = origin === "existing"
-          ? AIWData.workflows.map(w => ({ id: w.id, name: w.name, icon: w.icon }))
-          : LIBRARY_WFS
-              .filter(w => !AIWData.workflows.find(x => x.id === w.id))
-              .map(w => ({ id: w.id, name: w.name, icon: w.icon }));
-
-        if (sources.length === 0) {
-          setWfDraft(d => ({ ...d, step: "name", origin: "blank" }));
-          agentSay([
-            { from: "agent", text: "Não há workflows disponíveis nessa opção. Vamos começar do zero." },
-            { from: "agent", text: "Como você quer chamar esse workflow?" },
-          ]);
-        } else {
-          setWfDraft(d => ({ ...d, step: "pick-source", origin, sourceOptions: sources }));
-          agentSay({
-            from: "agent",
-            text: origin === "existing" ? "Qual workflow você quer copiar?" : "Qual template da biblioteca você quer usar?",
-            quickReplies: sources.map(s => `${s.icon} ${s.name}`),
-          });
-        }
+    } else if (draft.step === "base") {
+      const isCopy = /copiar|existente|base|cópia/.test(lower);
+      if (isCopy) {
+        const sources = AIWData.workflows.map(w => w.name);
+        setWfDraft(d => ({ ...d, step: "pick-source" }));
+        agentSay({
+          from: "agent",
+          text: "Qual experiência você quer usar como base?",
+          quickReplies: sources,
+        });
       } else {
-        setWfDraft(d => ({ ...d, step: "name", origin }));
-        agentSay({ from: "agent", text: "Ótimo! Como você quer chamar esse workflow?" });
+        setWfDraft(d => ({ ...d, step: "products", base: "blank" }));
+        agentSay({
+          from: "agent",
+          text: "Quais produtos ou categorias este workflow atende?",
+          quickReplies: ["Todos os produtos", "Por categoria", "Digitar"],
+        });
       }
 
     } else if (draft.step === "pick-source") {
-      const sources = draft.sourceOptions || [];
-      const found = sources.find(s =>
-        lower.includes(s.name.toLowerCase()) || lower.includes(s.id)
-      );
-
+      const found = AIWData.workflows.find(w => lower.includes(w.name.toLowerCase()));
       if (found) {
-        const sourceWf = draft.origin === "existing"
-          ? AIWData.workflows.find(w => w.id === found.id)
-          : LIBRARY_WFS.find(w => w.id === found.id);
-        const prefillName = draft.origin === "existing" ? found.name + " (cópia)" : found.name;
-        setWfDraft(d => ({
-          ...d,
-          step: "name",
-          name: prefillName,
-          category: sourceWf?.category || "fulfillment",
-          sourceStages: sourceWf?.stages || [],
-        }));
+        setWfDraft(d => ({ ...d, step: "products", base: "copy", sourceName: found.name, sourceStages: found.stages }));
         agentSay({
           from: "agent",
-          text: `Usando "${found.name}" como base — etapas e tarefas serão copiadas. Qual será o nome do novo workflow?`,
-          quickReplies: [prefillName],
+          text: `**"${found.name}"** selecionada como base — etapas e tarefas serão copiadas.\n\nQuais produtos ou categorias este workflow atende?`,
+          quickReplies: ["Todos os produtos", "Por categoria", "Digitar"],
         });
       } else {
         agentSay({
           from: "agent",
-          text: "Não encontrei essa opção. Qual destes você quer usar?",
-          quickReplies: sources.map(s => `${s.icon} ${s.name}`),
+          text: "Não encontrei essa experiência. Qual delas você quer usar como base?",
+          quickReplies: AIWData.workflows.map(w => w.name),
         });
       }
 
-    } else if (draft.step === "name") {
-      const newName = originalText.trim();
-      setWfDraft(d => ({ ...d, step: "category", name: newName }));
+    } else if (draft.step === "products") {
+      if (/^por categoria$/.test(lower)) {
+        setWfDraft(d => ({ ...d, step: "products-detail" }));
+        agentSay({ from: "agent", text: "Quais categorias? Pode listar separadas por vírgula." });
+        return;
+      }
+      if (/^digitar$/.test(lower)) {
+        setWfDraft(d => ({ ...d, step: "products-detail" }));
+        agentSay({ from: "agent", text: "Descreva os produtos ou categorias que este workflow atende." });
+        return;
+      }
+      const products = /todos/.test(lower) ? "Todos os produtos" : originalText.trim();
+      setWfDraft(d => ({ ...d, step: "stages-input", products }));
       agentSay({
         from: "agent",
-        text: `"${newName}" — ótimo nome! Qual é a natureza desse workflow?`,
-        quickReplies: AIWData.wfCategories.map(c => c.label),
+        text: "Descreva as etapas e as tarefas de cada uma.\nPode escrever como lista, por exemplo:\n· Pagamento: Autorização, Captura\n· Fulfillment: Picking, Packing\n· Entrega: Expedição, Last Mile",
       });
 
-    } else if (draft.step === "category") {
-      const cats = AIWData.wfCategories;
-      const found = cats.find(c =>
-        lower.includes(c.label.toLowerCase()) || lower.includes(c.id)
-      );
-      const category = found ? found.id : "fulfillment";
-      setWfDraft(d => ({ ...d, step: "trigger", category }));
+    } else if (draft.step === "products-detail") {
+      const products = originalText.trim();
+      setWfDraft(d => ({ ...d, step: "stages-input", products }));
       agentSay({
         from: "agent",
-        text: `Natureza **${found?.label || "Fulfillment Físico"}** selecionada. Como este workflow deve ser acionado?`,
-        quickReplies: ["Automático — para novos pedidos", "Manual pelo operador", "Solicitação do cliente"],
+        text: "Descreva as etapas e as tarefas de cada uma.\nPode escrever como lista, por exemplo:\n· Pagamento: Autorização, Captura\n· Fulfillment: Picking, Packing\n· Entrega: Expedição, Last Mile",
       });
 
-    } else if (draft.step === "trigger") {
-      let trigger = "auto";
-      if (/manual/.test(lower)) trigger = "manual";
-      else if (/cliente|solicitação/.test(lower)) trigger = "client";
-      setWfDraft(d => ({ ...d, step: "ai", trigger }));
+    } else if (draft.step === "stages-input") {
+      const lines = originalText.split(/\n/).map(l => l.replace(/^[·•\-]\s*/, "").trim()).filter(Boolean);
+      const parsed = [];
+      lines.forEach(line => {
+        const match = line.match(/^(.+?):\s*(.+)$/);
+        if (match) {
+          const stageName = match[1].trim();
+          const tasks = match[2].split(/,|;/).map(t => t.trim()).filter(Boolean);
+          parsed.push({ name: stageName, tasks });
+        }
+      });
+
+      if (parsed.length === 0) {
+        agentSay({ from: "agent", text: "Não consegui identificar a estrutura. Tente no formato:\n`Etapa: Tarefa1, Tarefa2`\n\nCada etapa em uma linha separada." });
+        return;
+      }
+
+      setWfDraft(d => ({ ...d, step: "stages-confirm", parsedStages: parsed }));
+
+      const totalTasks = parsed.reduce((s, st) => s + st.tasks.length, 0);
+      const previewLines = parsed.map(st =>
+        `**${st.name}**\n${st.tasks.map(t => `  · ${t}`).join("\n")}`
+      ).join("\n");
+
       agentSay({
         from: "agent",
-        text: "O Agente AI deve monitorar e avançar etapas automaticamente?",
-        quickReplies: ["Sim, ativar Agente AI", "Não, manter manual"],
+        text: `Entendi a seguinte estrutura — ${parsed.length} etapa${parsed.length > 1 ? "s" : ""}, ${totalTasks} tarefa${totalTasks > 1 ? "s" : ""}:\n\n${previewLines}`,
+        quickReplies: ["Confirmar estrutura", "Corrigir"],
       });
 
-    } else if (draft.step === "ai") {
-      const aiOrch = !/não|nao|manual|desativar/.test(lower);
-      const finalDraft = { ...draft, aiOrch };
-      setWfDraft(finalDraft);
+    } else if (draft.step === "stages-confirm") {
+      if (/corrigir|alterar|mudar|não|nao|errado/.test(lower)) {
+        setWfDraft(d => ({ ...d, step: "stages-input" }));
+        agentSay({ from: "agent", text: "Tudo bem! Descreva a estrutura novamente." });
+        return;
+      }
+      const currentDraft = { ...draft };
+      const totalTasks = currentDraft.parsedStages.reduce((s, st) => s + st.tasks.length, 0);
+      const baseLabel = currentDraft.base === "copy" ? `Cópia de "${currentDraft.sourceName}"` : "Do zero";
+      setWfDraft(d => ({ ...d, step: "done" }));
 
-      const catLabel = AIWData.wfCategories.find(c => c.id === finalDraft.category)?.label || finalDraft.category;
-
-      agentSay([
-        { from: "agent", text: "Tudo pronto! Aqui está o resumo do novo workflow:" },
-        {
-          from: "agent",
-          type: "wf-draft",
-          draft: {
-            name: finalDraft.name,
-            category: catLabel,
-            trigger: finalDraft.trigger,
-            aiOrch: finalDraft.aiOrch,
-          },
-          onConfirm: () => {
-            setWizardPreFill({
-              name: finalDraft.name,
-              desc: "",
-              category: finalDraft.category,
-              trigger: finalDraft.trigger,
-              aiOrch: finalDraft.aiOrch,
-              iconIdx: 0,
-              stages: finalDraft.sourceStages || null,
-            });
-            setShowWizard(true);
-            setWfDraft(null);
-          },
+      agentSay({
+        from: "agent",
+        type: "action",
+        title: "Nova experiência",
+        heading: currentDraft.name,
+        fields: [
+          { label: "Base",     value: baseLabel },
+          { label: "Produtos", value: currentDraft.products || "Todos os produtos" },
+          { label: "Etapas",   value: String(currentDraft.parsedStages.length), tag: true },
+          { label: "Tarefas",  value: String(totalTasks), tag: true },
+        ],
+        applyLabel: "Criar experiência",
+        onApply: () => {
+          const stages = currentDraft.base === "copy" && currentDraft.sourceStages
+            ? JSON.parse(JSON.stringify(currentDraft.sourceStages))
+            : currentDraft.parsedStages.map((st, si) => ({
+                id: "s-new-" + Date.now() + "-" + si,
+                name: st.name,
+                tasks: st.tasks.map((t, ti) => ({
+                  id: "t-new-" + Date.now() + "-" + si + "-" + ti,
+                  name: t,
+                  type: "manual",
+                  visibility: "internal",
+                  status: "active",
+                  owner: null,
+                })),
+              }));
+          const newWf = {
+            id: "wf-" + Date.now(),
+            name: currentDraft.name,
+            status: "draft",
+            stages,
+            orders: 0,
+            category: "fulfillment",
+            icon: "📦",
+          };
+          AIWData.workflows.push(newWf);
+          setWfDraft(null);
+          pendingChatMsgsRef.current = [{
+            from: "agent",
+            text: `✓ Experiência **"${currentDraft.name}"** criada com ${stages.length} etapa${stages.length > 1 ? "s" : ""}. Revise os detalhes no canvas.`,
+            quickReplies: ["+ Adicionar tarefa", "Publicar"],
+          }];
+          setMode({ kind: "detail", workflowId: newWf.id });
         },
-      ]);
+        onDismiss: () => {
+          setWfDraft(null);
+          agentSay({ from: "agent", text: "Criação cancelada.", quickReplies: ["Nova experiência"] });
+        },
+      });
+    }
+  }
+
+  // ── Fluxo A2 — Editar experiência existente ────────────────────────────────
+
+  function startEditExisting() {
+    editExistingDraftRef.current = { step: "pick" };
+    agentSay({
+      from: "agent",
+      text: "Qual experiência você quer editar?",
+      quickReplies: AIWData.workflows.map(w => w.name),
+    });
+  }
+
+  function handleEditExistingStep(text, lower) {
+    const draft = editExistingDraftRef.current;
+    if (!draft) return;
+
+    if (/^(cancelar|sair|parar|desistir)/.test(lower)) {
+      editExistingDraftRef.current = null;
+      agentSay({ from: "agent", text: "Tudo bem.", quickReplies: ["Nova experiência", "Editar experiência existente"] });
+      return;
+    }
+
+    if (draft.step === "pick") {
+      const found = AIWData.workflows.find(w => lower.includes(w.name.toLowerCase()));
+      if (found) {
+        editExistingDraftRef.current = null;
+        const totalTasks = found.stages.reduce((s, st) => s + st.tasks.length, 0);
+        const statusLabel = found.status === "published" ? "Publicado" : found.status === "archived" ? "Arquivado" : "Rascunho";
+        pendingChatMsgsRef.current = [{
+          from: "agent",
+          text: `**${found.name}** — ${found.stages.length} etapa${found.stages.length > 1 ? "s" : ""} · ${totalTasks} tarefa${totalTasks > 1 ? "s" : ""} · ${statusLabel}.\n\nO que você quer alterar?`,
+          quickReplies: ["+ Adicionar tarefa", "Publicar", "Configurações", "Arquivar"],
+        }];
+        setMode({ kind: "detail", workflowId: found.id });
+      } else {
+        agentSay({
+          from: "agent",
+          text: "Não encontrei essa experiência. Qual delas você quer editar?",
+          quickReplies: AIWData.workflows.map(w => w.name),
+        });
+      }
+    }
+  }
+
+  // ── Fluxo G — Editar experiências em massa ─────────────────────────────────
+
+  function startBulkEdit() {
+    const activeWfs = AIWData.workflows.filter(w => w.status !== "archived");
+    bulkDraftRef.current = { step: "select", selectedNames: [], remainingNames: activeWfs.map(w => w.name) };
+    agentSay({
+      from: "agent",
+      text: "Quais experiências você quer editar? Selecione uma a uma e confirme ao final.",
+      quickReplies: [...activeWfs.map(w => w.name), "Pronto →"],
+    });
+  }
+
+  function handleBulkEditStep(text, lower) {
+    const draft = bulkDraftRef.current;
+    if (!draft) return;
+
+    if (/^(cancelar|sair|parar|desistir)/.test(lower)) {
+      bulkDraftRef.current = null;
+      agentSay({ from: "agent", text: "Tudo bem.", quickReplies: ["Editar experiências em massa"] });
+      return;
+    }
+
+    if (draft.step === "select") {
+      if (/^pronto/.test(lower)) {
+        if (draft.selectedNames.length === 0) {
+          agentSay({ from: "agent", text: "Selecione ao menos uma experiência primeiro.", quickReplies: [...draft.remainingNames, "Pronto →"] });
+          return;
+        }
+        bulkDraftRef.current = { ...draft, step: "action" };
+        const listText = draft.selectedNames.join(", ");
+        agentSay({
+          from: "agent",
+          text: `**${draft.selectedNames.length}** experiência${draft.selectedNames.length > 1 ? "s" : ""} selecionada${draft.selectedNames.length > 1 ? "s" : ""}: ${listText}.\n\nO que você quer fazer com elas?`,
+          quickReplies: ["Publicar todas", "Arquivar todas", "Ativar Agente AI", "Desativar Agente AI"],
+        });
+        return;
+      }
+
+      const found = AIWData.workflows.find(w => lower.includes(w.name.toLowerCase()));
+      if (found && !draft.selectedNames.includes(found.name)) {
+        const newSelected = [...draft.selectedNames, found.name];
+        const newRemaining = draft.remainingNames.filter(n => n !== found.name);
+        bulkDraftRef.current = { ...draft, selectedNames: newSelected, remainingNames: newRemaining };
+        const selText = newSelected.join(", ");
+        agentSay({
+          from: "agent",
+          text: `**"${found.name}"** adicionada. ${newSelected.length} selecionada${newSelected.length > 1 ? "s" : ""}: ${selText}.\n\nAdicione mais ou confirme.`,
+          quickReplies: newRemaining.length > 0 ? [...newRemaining, "Pronto →"] : ["Pronto →"],
+        });
+      } else if (found && draft.selectedNames.includes(found.name)) {
+        agentSay({ from: "agent", text: `**"${found.name}"** já está na seleção.`, quickReplies: [...draft.remainingNames, "Pronto →"] });
+      } else {
+        agentSay({ from: "agent", text: "Não encontrei essa experiência.", quickReplies: [...draft.remainingNames, "Pronto →"] });
+      }
+
+    } else if (draft.step === "action") {
+      let action = null;
+      if (/publicar/.test(lower)) action = { label: "Publicar", newStatus: "published" };
+      else if (/arquivar/.test(lower)) action = { label: "Arquivar", newStatus: "archived" };
+      else if (/ativar.*agente|agente.*ativar/.test(lower)) action = { label: "Ativar Agente AI", newStatus: null, aiOrch: true };
+      else if (/desativar.*agente|agente.*desativar/.test(lower)) action = { label: "Desativar Agente AI", newStatus: null, aiOrch: false };
+
+      if (!action) {
+        agentSay({ from: "agent", text: "Não entendi a ação. O que quer fazer com as experiências selecionadas?", quickReplies: ["Publicar todas", "Arquivar todas", "Ativar Agente AI", "Desativar Agente AI"] });
+        return;
+      }
+
+      const currentDraft = { ...draft, action };
+      bulkDraftRef.current = { ...draft, step: "confirm", action };
+
+      agentSay({
+        from: "agent",
+        type: "action",
+        title: "Edição em massa",
+        fields: [
+          { label: "Ação",         value: action.label },
+          { label: "Experiências", value: currentDraft.selectedNames.join(", ") },
+          { label: "Total",        value: String(currentDraft.selectedNames.length), tag: true },
+        ],
+        applyLabel: "Confirmar",
+        onApply: () => {
+          if (action.newStatus) {
+            AIWData.workflows.forEach(w => {
+              if (currentDraft.selectedNames.includes(w.name)) w.status = action.newStatus;
+            });
+          }
+          bulkDraftRef.current = null;
+          const count = currentDraft.selectedNames.length;
+          setChatMsgs(m => [
+            ...m,
+            { from: "agent", text: `✓ **${action.label}** aplicado em **${count}** experiência${count > 1 ? "s" : ""}.`, quickReplies: ["Editar experiências em massa", "Pronto"] },
+          ]);
+        },
+        onDismiss: () => {
+          bulkDraftRef.current = null;
+          agentSay({ from: "agent", text: "Operação cancelada.", quickReplies: ["Editar experiências em massa"] });
+        },
+      });
+
+    } else if (draft.step === "confirm") {
+      agentSay({ from: "agent", text: "Use os botões do card para confirmar ou cancelar a operação." });
     }
   }
 
@@ -2992,15 +2948,170 @@ function WorkflowBoardView({ onBack, wfLayout = "expanded", wfGroup = "flat", wf
       return;
     }
 
+    // ── "O que posso fazer?" no settings ────────────────────────────────────
+    if (/o que posso fazer|ajuda/.test(lower)) {
+      const sectionChipsMap = {
+        geral: ["Renomear", "Mudar trigger", "Mudar categoria"],
+        "ai-agent": ["Ativar agente", "Desativar agente"],
+        dependencies: ["Adicionar dependência", "Remover dependência"],
+        history: ["Ver versão anterior"],
+      };
+      agentSay({
+        from: "agent",
+        text: "Nas configurações posso alterar nome, trigger, categoria, ativar/desativar o Agente AI e gerenciar dependências.",
+        quickReplies: sectionChipsMap[mode.section] || ["Renomear", "Mudar trigger"],
+      });
+      return;
+    }
+
+    // Fallback settings
     agentSay({
       from: "agent",
-      text: "Posso alterar o **nome**, **acionamento** (manual, automático, solicitação), **descrição** ou o **Agente AI** deste workflow. O que você gostaria de mudar?",
+      text: "Não entendi. O que você quer alterar?",
+      quickReplies: ["Renomear", "Mudar trigger", "Ativar agente", "O que posso fazer?"],
     });
   }
 
   // ── Detail mode message handler ────────────────────────────────────────────
 
   function handleDetailMessage(text, lower) {
+    // ── Continue an in-progress task-creation draft ─────────────────────────
+    if (taskDraftRef.current) {
+      const draft = taskDraftRef.current;
+
+      // Universal escape — works at any step of the flow
+      if (/^(cancelar|sair|parar|desistir)(\s.*)?$/.test(lower.trim())) {
+        taskDraftRef.current = null;
+        setChatAddingTaskSync(false);
+        agentSay({ from: "agent", text: "Tudo bem, fluxo cancelado. O que mais posso fazer?" });
+        return;
+      }
+
+      if (draft.step === "stage") {
+        const stageNames = detailActionsRef.current?.getStageNames() || [];
+        const match = stageNames.find(n => lower.includes(n.toLowerCase()));
+        if (match) {
+          // Spec Fluxo B passo 1: confirma contexto e pede o nome
+          taskDraftRef.current = { ...draft, step: "name", stageName: match };
+          agentSay({
+            from: "agent",
+            text: `Adicionando tarefa na etapa **${match}**. Qual é o nome da tarefa?`,
+          });
+        } else {
+          agentSay({
+            from: "agent",
+            text: `Não encontrei essa etapa. Etapas disponíveis: ${stageNames.map(n => `**${n}**`).join(", ")}. Qual você quer?`,
+            quickReplies: [...stageNames, "Cancelar"],
+          });
+        }
+        return;
+      }
+
+
+      if (draft.step === "name") {
+        const taskName = text.trim();
+        taskDraftRef.current = { ...draft, step: "type", taskName };
+        // Spec Fluxo B passo 2: inclui explicação de cada modo
+        agentSay({
+          from: "agent",
+          text: `**"${taskName}"** ✓\n\nComo esta tarefa executa?\n\n**Automática** — o sistema dispara e conclui sem intervenção humana.\n**Manual** — um operador precisa executar e marcar como concluída.`,
+          quickReplies: ["Automática", "Manual", "Cancelar"],
+        });
+        return;
+      }
+
+      if (draft.step === "type") {
+        const taskType = /manual/.test(lower) ? "manual" : "auto";
+        taskDraftRef.current = { ...draft, step: "visibility", taskType };
+        agentSay({
+          from: "agent",
+          text: "Qual é a visibilidade desta tarefa?",
+          quickReplies: [
+            "Interna — só operadores",
+            "Shopper-facing — visível ao cliente",
+            "Cancelar",
+          ],
+        });
+        return;
+      }
+
+      if (draft.step === "visibility") {
+        const visibility = /shopper|cliente|facing|user/.test(lower) ? "user" : "internal";
+        const { stageName, taskName, taskType } = draft;
+        taskDraftRef.current = { ...draft, step: "confirm", visibility };
+        const typeLabel = taskType === "manual" ? "Manual" : "Automática";
+        const visLabel = visibility === "user" ? "Shopper-facing" : "Interna";
+        // Spec Fluxo B passo 4: action card estruturado (heading + fields)
+        agentSay({
+          from: "agent",
+          type: "action",
+          title: "Adicionar tarefa",
+          heading: taskName,
+          fields: [
+            { label: "Etapa",        value: stageName },
+            { label: "Execução",     value: typeLabel, tag: true },
+            { label: "Visibilidade", value: visLabel },
+          ],
+          applyLabel: "Adicionar tarefa",
+          onApply: () => {
+            detailActionsRef.current?.addTask(stageName, taskName, taskType, "", visibility);
+            taskDraftRef.current = null;
+            setChatAddingTaskSync(false);
+            // Spec Fluxo B passo 5: chips pós-confirmação
+            setChatMsgs(m => [...m, {
+              from: "agent",
+              text: `✓ Tarefa **"${taskName}"** adicionada à etapa **${stageName}**. Quer adicionar outra tarefa?`,
+              quickReplies: ["+ Outra tarefa", "Pronto"],
+            }]);
+          },
+          onDismiss: () => {
+            taskDraftRef.current = null;
+            setChatAddingTaskSync(false);
+            setChatMsgs(m => [...m, { from: "agent", text: "Tudo bem, tarefa cancelada." }]);
+          },
+        });
+        return;
+      }
+
+      // If draft is in confirm step and user cancels
+      if (/cancel|não|nao/.test(lower)) {
+        taskDraftRef.current = null;
+        setChatAddingTaskSync(false);
+        agentSay({ from: "agent", text: "Tudo bem, tarefa cancelada." });
+        return;
+      }
+
+      // Post-confirm quick action chips (Spec Fluxo B step 7)
+      if (/outra tarefa|\+ outra/.test(lower)) {
+        const stageNames = detailActionsRef.current?.getStageNames() || [];
+        taskDraftRef.current = { step: "stage" };
+        setChatAddingTaskSync(true);
+        agentSay({
+          from: "agent",
+          text: "Em qual etapa você quer adicionar a próxima tarefa?",
+          quickReplies: stageNames,
+        });
+        return;
+      }
+      if (/configurar dependências|dependências/.test(lower)) {
+        agentSay({
+          from: "agent",
+          text: "Dependências entre workflows são configuradas em **Configurações → Dependências**.",
+          quickReplies: ["Ver configurações", "Pronto"],
+        });
+        return;
+      }
+      if (/^pronto$|^ok$|^feito$/.test(lower.trim())) {
+        agentSay({
+          from: "agent",
+          text: "Perfeito! O que mais você quer fazer?",
+          quickReplies: ["+ Adicionar tarefa", "Publicar workflow"],
+        });
+        return;
+      }
+    }
+
+    // ── Stage creation ───────────────────────────────────────────────────────
     const stageMatch = text.match(/(?:adicionar?|nova?|criar?|inserir?)\s+(?:uma?\s+)?etapa\s+(?:chamad[ao]\s+|de\s+|:?\s*)?["']?([A-Za-zÀ-ú0-9][^"'.,!?\n]{1,50})["']?/i);
     if (stageMatch) {
       const stageName = stageMatch[1].trim();
@@ -3009,7 +3120,24 @@ function WorkflowBoardView({ onBack, wfLayout = "expanded", wfGroup = "flat", wf
       return;
     }
 
-    if (/etapa|stage|adicionar/.test(lower)) {
+    // ── Task creation entry point ────────────────────────────────────────────
+    if (/adicionar?\s+(?:uma?\s+)?tarefa|nova\s+tarefa|criar?\s+(?:uma?\s+)?tarefa/.test(lower)) {
+      const stageNames = detailActionsRef.current?.getStageNames() || [];
+      if (stageNames.length === 0) {
+        agentSay({ from: "agent", text: "Não há etapas neste workflow ainda. Adicione uma etapa primeiro." });
+        return;
+      }
+      taskDraftRef.current = { step: "stage" };
+      setChatAddingTaskSync(true);
+      agentSay({
+        from: "agent",
+        text: `Em qual etapa você quer adicionar a tarefa? ${stageNames.map(n => `**${n}**`).join(", ")}`,
+        quickReplies: stageNames,
+      });
+      return;
+    }
+
+    if (/etapa|stage/.test(lower) && !/tarefa/.test(lower)) {
       agentSay({
         from: "agent",
         text: 'Qual é o nome da nova etapa? Por exemplo: "adicionar etapa Validação de Fraude"',
@@ -3017,9 +3145,74 @@ function WorkflowBoardView({ onBack, wfLayout = "expanded", wfGroup = "flat", wf
       return;
     }
 
+    // ── Fluxo F.1 — Publicar workflow ───────────────────────────────────────
+    if (/publicar|ativar (?:este|o) workflow|publicar agora/.test(lower)) {
+      const wfData = AIWData.workflows.find(w => w.id === mode?.workflowId);
+      const stageCount = wfData?.stages?.length || detailActionsRef.current?.getStageNames?.()?.length || 0;
+      if (stageCount === 0) {
+        agentSay({
+          from: "agent",
+          text: "Este workflow não tem etapas configuradas. Adicione pelo menos uma etapa antes de publicar.",
+          quickReplies: ["+ Adicionar etapa", "Cancelar"],
+        });
+        return;
+      }
+      agentSay({
+        from: "agent",
+        type: "action",
+        title: "Publicar workflow",
+        body: `**${wfData?.name || "este workflow"}** ficará ativo imediatamente para novos pedidos.`,
+        onApply: () => {
+          setChatMsgs(m => [...m, {
+            from: "agent",
+            text: `✓ Workflow **"${wfData?.name}"** publicado. Novos pedidos já seguirão este fluxo.`,
+            quickReplies: ["Ver configurações", "Criar outro workflow"],
+          }]);
+        },
+        onDismiss: () => {
+          setChatMsgs(m => [...m, { from: "agent", text: "Publicação cancelada." }]);
+        },
+      });
+      return;
+    }
+
+    // ── Fluxo F.3 — Arquivar workflow ───────────────────────────────────────
+    if (/arquivar|desativar (?:este|o) workflow/.test(lower)) {
+      const wfData = AIWData.workflows.find(w => w.id === mode?.workflowId);
+      agentSay({
+        from: "agent",
+        type: "action",
+        title: "⚠ Arquivar workflow",
+        body: `**${wfData?.name || "este workflow"}** será desativado. Pedidos em andamento não são afetados.`,
+        onApply: () => {
+          setChatMsgs(m => [...m, {
+            from: "agent",
+            text: `✓ Workflow **"${wfData?.name}"** arquivado. Para reativar, publique-o novamente.`,
+            quickReplies: ["Publicar novamente", "Criar novo workflow"],
+          }]);
+        },
+        onDismiss: () => {
+          setChatMsgs(m => [...m, { from: "agent", text: "Arquivamento cancelado." }]);
+        },
+      });
+      return;
+    }
+
+    // ── "O que posso fazer?" ─────────────────────────────────────────────────
+    if (/o que posso fazer|o que você faz|posso fazer|ajuda/.test(lower)) {
+      agentSay({
+        from: "agent",
+        text: "Posso te ajudar a:\n• Adicionar, editar ou remover etapas e tarefas\n• Configurar execução, visibilidade e responsável de cada tarefa\n• Publicar ou arquivar este workflow",
+        quickReplies: ["+ Adicionar tarefa", "Publicar workflow"],
+      });
+      return;
+    }
+
+    // ── Fallback (Spec seção 7) ──────────────────────────────────────────────
     agentSay({
       from: "agent",
-      text: "Posso adicionar etapas a este workflow. Diga o nome, por exemplo: \"adicionar etapa Revisão Manual\".",
+      text: "Não entendi. O que você quer fazer?",
+      quickReplies: ["+ Adicionar tarefa", "Publicar workflow", "O que posso fazer?"],
     });
   }
 
@@ -3100,12 +3293,35 @@ function WorkflowBoardView({ onBack, wfLayout = "expanded", wfGroup = "flat", wf
   const ctx = chatFor(mode);
 
   const citeFn = React.useCallback((text) => {
-    chatComposerRef.current?.append(text);
+    chatComposerRef.current?.cite(text);
+  }, []);
+
+  const sendFn = React.useCallback((text) => {
+    handleSend(text);
+  }, []);
+
+  const chatStartAddTaskFn = React.useCallback((stageName) => {
+    if (chatAddingTaskRef.current) return;
+    setChatMsgs(m => [...m, { from: "user", text: `Adicionar tarefa na etapa ${stageName}` }]);
+    // Spec Fluxo B passo 1: confirma contexto e pede o nome
+    taskDraftRef.current = { step: "name", stageName };
+    setChatAddingTaskSync(true);
+    agentSay({
+      from: "agent",
+      text: `Adicionando tarefa na etapa **${stageName}**. Qual é o nome da tarefa?`,
+      quickReplies: ["Cancelar"],
+    });
+    setTimeout(() => chatComposerRef.current?.focus(), 100);
   }, []);
 
   return (
+    <ChatSendContext.Provider value={sendFn}>
     <ChatCiteContext.Provider value={citeFn}>
-      <ResizableSplit screenLabel="03 Workflow Builder" initialWidth={343}>
+    <ChatAddingTaskContext.Provider value={chatAddingTask}>
+    <ChatStartAddTaskContext.Provider value={chatStartAddTaskFn}>
+    <AgentSayContext.Provider value={agentSay}>
+    <ChatTaskRemovedContext.Provider value={notifyTaskRemovedFn}>
+      <ResizableSplit screenLabel="03 Gerenciador de Experiências" initialWidth={400}>
         <ChatPanel
           title={ctx.title}
           chips={ctx.chips}
@@ -3133,7 +3349,12 @@ function WorkflowBoardView({ onBack, wfLayout = "expanded", wfGroup = "flat", wf
           wfDetailView={wfDetailView}
         />
       </ResizableSplit>
+    </ChatTaskRemovedContext.Provider>
+    </AgentSayContext.Provider>
+    </ChatStartAddTaskContext.Provider>
+    </ChatAddingTaskContext.Provider>
     </ChatCiteContext.Provider>
+    </ChatSendContext.Provider>
   );
 }
 
