@@ -8,7 +8,7 @@ const TWEAKS_DEFAULTS = /*EDITMODE-BEGIN*/{
   "sidebarCollapsed": true,
   "wfLayout": "expanded",
   "wfGroup": "flat",
-  "wfDetailView": "2-passos"
+  "wfDetailView": "flat"
 }/*EDITMODE-END*/;
 
 /* ── Hash-based routing ─────────────────────────────────────────────────── */
@@ -283,7 +283,7 @@ function App() {
       orderEngineRef.current && orderEngineRef.current.send(text, opts);
     };
     view = (
-      <ResizableSplit screenLabel="Order Detail">
+      <ResizableSplit screenLabel="Order Detail" initialWidth={400}>
         <ChatPanel
           title={currentOrder ? `Pedido ${currentOrder.short}` : "Detalhe do Pedido"}
           chips={orderDynamicChips}
@@ -431,6 +431,7 @@ function App() {
             options={[
               { value: "2-passos", label: "2 passos" },
               { value: "1-passo",  label: "1 passo"  },
+              { value: "flat",     label: "Flat"      },
             ]}
             onChange={(v) => setTweak("wfDetailView", v)} />
         </>}
