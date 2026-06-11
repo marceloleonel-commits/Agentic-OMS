@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Reverse Logistics — Prototype (Front-end + Back-end)</title>
+<style>
+  :root{
+    --ebel:#F71963; --bubble:#FFC4DD; --yogurt:#FFE0EF; --soft:#FFF3F6;
+    --black:#142032; --gray:#5B6E84; --cool:#A1AAB7; --winter:#E7E9EE;
+    --ice:#F8F7FC; --white:#FFFFFF; --green:#0a7a3b; --greenbg:#def7e6;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--ice);color:var(--black);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif;}
+  .wrap{padding:32px 28px 56px;max-width:1500px;margin:0 auto;}
+  h1{font-size:24px;margin:0 0 4px;}
+  .lead{color:var(--gray);font-size:14px;margin:0 0 8px;max-width:900px;line-height:1.5;}
+  .note{background:var(--soft);border-left:3px solid var(--ebel);padding:10px 14px;border-radius:6px;
+    font-size:12.5px;color:var(--gray);margin:14px 0 28px;max-width:900px;}
+  .section-h{display:flex;align-items:center;gap:12px;margin:38px 0 6px;}
+  .section-h .tag{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;
+    padding:4px 10px;border-radius:20px;}
+  .tag-fe{background:var(--winter);color:var(--black);}
+  .tag-be{background:var(--yogurt);color:var(--ebel);}
+  .section-h h2{font-size:18px;margin:0;}
+  .section-sub{color:var(--gray);font-size:13px;margin:0 0 18px;}
+
+  /* phones */
+  .rail{display:flex;gap:18px;overflow-x:auto;padding:10px 4px 22px;}
+  .phone{flex:0 0 248px;width:248px;background:var(--white);border-radius:22px;
+    border:1px solid var(--winter);box-shadow:0 6px 18px rgba(20,32,50,.07);overflow:hidden;display:flex;flex-direction:column;}
+  .phone.rl{border:2px solid var(--ebel);box-shadow:0 8px 22px rgba(247,25,99,.14);}
+  .statusbar{display:flex;justify-content:space-between;align-items:center;padding:7px 14px;font-size:10px;color:var(--gray);}
+  .brandbar{background:var(--ebel);color:#fff;padding:9px 14px;font-weight:800;font-size:13px;letter-spacing:.04em;display:flex;justify-content:space-between;align-items:center;}
+  .brandbar .cart{font-weight:400;opacity:.85;font-size:11px;}
+  .screen{padding:14px;flex:1;}
+  .screen h3{font-size:14px;font-weight:700;margin:0 0 4px;color:var(--black);}
+  .screen p.muted{color:var(--gray);font-size:11px;margin:0 0 12px;line-height:1.4;}
+  .owner{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--cool);margin-top:auto;padding:8px 14px;border-top:1px dashed var(--winter);}
+  .card{border:1px solid var(--winter);border-radius:10px;padding:9px 11px;margin-bottom:8px;font-size:11px;}
+  .card.sel{border-color:var(--ebel);background:var(--soft);}
+  .card .t{font-weight:700;display:flex;justify-content:space-between;}
+  .card .d{color:var(--gray);font-size:10px;margin-top:3px;line-height:1.35;}
+  .free{color:var(--green);font-weight:700;font-size:10px;}
+  .item{display:flex;gap:8px;align-items:center;margin-bottom:9px;}
+  .thumb{width:34px;height:34px;border-radius:7px;background:linear-gradient(135deg,var(--bubble),var(--yogurt));flex:0 0 34px;}
+  .item .nm{font-size:10.5px;font-weight:600;line-height:1.2;}
+  .item .pr{font-size:10px;color:var(--gray);}
+  .btn{display:block;text-align:center;background:var(--ebel);color:#fff;font-weight:700;font-size:12px;
+    padding:9px;border-radius:8px;margin-top:10px;}
+  .btn.ghost{background:#fff;color:var(--ebel);border:1.5px solid var(--ebel);}
+  .sizes{display:flex;gap:5px;margin:6px 0;}
+  .sz{width:26px;height:26px;border:1px solid var(--cool);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--gray);}
+  .sz.on{border-color:var(--ebel);background:var(--ebel);color:#fff;font-weight:700;}
+  .loc{display:flex;gap:8px;align-items:flex-start;border:1px solid var(--winter);border-radius:9px;padding:8px;margin-bottom:7px;font-size:10.5px;}
+  .pin{width:22px;height:22px;border-radius:50%;background:var(--yogurt);color:var(--ebel);display:flex;align-items:center;justify-content:center;font-size:11px;flex:0 0 22px;}
+  .timeline{font-size:10.5px;}
+  .tl{display:flex;gap:8px;margin-bottom:10px;}
+  .tl .dot{width:12px;height:12px;border-radius:50%;background:var(--ebel);flex:0 0 12px;margin-top:2px;position:relative;}
+  .tl .dot.off{background:var(--winter);}
+  .tl .dot::after{content:"";position:absolute;left:5px;top:12px;width:2px;height:22px;background:var(--winter);}
+  .tl:last-child .dot::after{display:none;}
+  .tl .lbl{font-weight:600;}
+  .tl .sub{color:var(--gray);font-size:9.5px;}
+  .success{text-align:center;padding-top:14px;}
+  .success .ic{width:46px;height:46px;border-radius:50%;background:var(--greenbg);color:var(--green);display:flex;align-items:center;justify-content:center;font-size:24px;margin:0 auto 10px;}
+
+  /* backend */
+  .be{background:var(--white);border:1px solid var(--winter);border-radius:14px;padding:22px;margin-top:8px;}
+  .legend{display:flex;gap:20px;flex-wrap:wrap;margin:0 0 18px;font-size:12px;color:var(--gray);}
+  .legend span{display:inline-flex;align-items:center;gap:6px;}
+  .sw{width:14px;height:14px;border-radius:4px;display:inline-block;}
+  .opgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:16px;}
+  .op{border:1px solid var(--winter);border-radius:12px;overflow:hidden;}
+  .op .head{padding:10px 14px;font-weight:700;font-size:13px;display:flex;align-items:center;gap:8px;}
+  .op.consult .head{background:var(--yogurt);color:var(--black);}
+  .op.inform .head{background:var(--winter);color:var(--black);}
+  .op .head .req{font-size:10px;font-weight:700;color:var(--ebel);background:#fff;border-radius:5px;padding:2px 7px;}
+  .op .body{padding:12px 14px;}
+  .dir{font-size:11px;font-weight:700;margin:6px 0 4px;display:flex;align-items:center;gap:6px;}
+  .dir .ar{color:var(--ebel);}
+  .pay{background:var(--ice);border:1px solid var(--winter);border-radius:8px;padding:8px 10px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10.5px;color:var(--black);line-height:1.5;white-space:pre-wrap;margin:0 0 8px;}
+  .flowmap{display:flex;align-items:center;justify-content:center;gap:0;margin:6px 0 24px;flex-wrap:wrap;}
+  .node{border-radius:10px;padding:12px 16px;font-weight:700;font-size:13px;text-align:center;}
+  .node.vtex{background:var(--bubble);border:1.5px solid var(--ebel);}
+  .node.prov{background:#fff;border:1.5px solid var(--gray);}
+  .conn{display:flex;flex-direction:column;align-items:center;min-width:200px;padding:0 8px;}
+  .conn .line{font-size:11px;color:var(--gray);}
+  .conn .l1{color:var(--ebel);font-weight:700;}
+  .arrowr{font-size:18px;color:var(--ebel);}
+  .arrowl{font-size:18px;color:var(--gray);}
+  .maps{font-size:11px;color:var(--gray);margin-top:4px;}
+  .maps b{color:var(--ebel);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Reverse Logistics — Prototype</h1>
+
+  <!-- ===================== FRONT-END ===================== -->
+  <div class="section-h">
+    <span class="tag tag-fe">Front-end</span>
+    <h2>Jornada do shopper</h2>
+  </div>
+  <p class="section-sub">Telas neutras (OMS/front-end) → telas em rosa acionam o provider via Fulfillment.</p>
+  <div class="note">Este front-end é apenas uma <b>demonstração do fluxo</b>. Na prática, a interface é construída e renderizada pela <b>Dafiti (headless)</b> — a VTEX expõe os dados e a integração com o provider; a loja consome via API e desenha as telas. "Fashion Store" é uma loja fictícia só para ilustrar a jornada.</div>
+
+  <div class="rail">
+
+    <!-- 1 eligible orders -->
+    <div class="phone">
+      <div class="statusbar"><span>15:00</span><span>●●●</span></div>
+      <div class="brandbar">Fashion Store <span class="cart">Trocas e devoluções</span></div>
+      <div class="screen">
+        <h3>Pedidos elegíveis</h3>
+        <p class="muted">Pedidos dentro do prazo para troca ou devolução.</p>
+        <div class="card sel"><div class="t">Pedido nº 4562447283 <span class="free">SELECIONADO</span></div><div class="d">1 item · R$ 99,90 · entregue 02/07</div></div>
+        <div class="card"><div class="t">Pedido nº 4562448261</div><div class="d">3 itens · R$ 599,90 · entregue 25/03</div></div>
+        <a class="btn">Solicitar devolução</a>
+      </div>
+      <div class="owner">App</div>
+    </div>
+
+    <!-- 2 items + reason -->
+    <div class="phone">
+      <div class="statusbar"><span>15:00</span><span>●●●</span></div>
+      <div class="brandbar">Fashion Store <span class="cart">Devolução</span></div>
+      <div class="screen">
+        <h3>Itens & motivo</h3>
+        <p class="muted">Grupo 1 • Devolução para Fashion Store</p>
+        <div class="item"><div class="thumb"></div><div><div class="nm">Blusa Cropped Algodão</div><div class="pr">R$ 99,90 · M · Bege</div></div></div>
+        <div class="card"><div class="t">Ficou pequeno/grande</div></div>
+        <div class="card sel"><div class="t">Não gostei da cor</div></div>
+        <div class="card"><div class="t">Veio com defeito</div></div>
+        <a class="btn">Avançar</a>
+      </div>
+      <div class="owner">App</div>
+    </div>
+
+    <!-- 3 compensation -->
+    <div class="phone">
+      <div class="statusbar"><span>15:00</span><span>●●●</span></div>
+      <div class="brandbar">Fashion Store <span class="cart">Reembolso</span></div>
+      <div class="screen">
+        <h3>Forma de reembolso</h3>
+        <p class="muted">Escolha como prefere ser compensado.</p>
+        <div class="card"><div class="t">Receber vale-compra</div><div class="d">Disponível por 180 dias.</div></div>
+        <div class="card sel"><div class="t">Receber reembolso</div><div class="d">Crédito após análise do produto devolvido.</div></div>
+        <a class="btn">Avançar</a>
+      </div>
+      <div class="owner">App</div>
+    </div>
+
+    <!-- 4 return method  RL -->
+    <div class="phone rl">
+      <div class="statusbar"><span>15:00</span><span>●●●</span></div>
+      <div class="brandbar">Fashion Store <span class="cart">Como devolver?</span></div>
+      <div class="screen">
+        <h3>Escolha como devolver</h3>
+        <p class="muted">Métodos resolvidos pelo provider para este contexto.</p>
+        <div class="card"><div class="t">Coleta em casa <span class="free">GRÁTIS</span></div><div class="d">Retiramos no seu endereço em até X dias.</div></div>
+        <div class="card"><div class="t">Correios <span class="free">GRÁTIS</span></div><div class="d">Leve ao Correios mais próximo em até X dias.</div></div>
+        <div class="card sel"><div class="t">Devolve fácil <span class="free">GRÁTIS</span></div><div class="d">Leve ao ponto de coleta mais próximo.</div></div>
+        <a class="btn">Avançar</a>
+      </div>
+      <div class="owner">App</div>
+    </div>
+
+    <!-- 5 drop-off locations RL -->
+    <div class="phone rl">
+      <div class="statusbar"><span>15:00</span><span>●●●</span></div>
+      <div class="brandbar">Fashion Store <span class="cart">Pontos de coleta</span></div>
+      <div class="screen">
+        <h3>Pontos de coleta</h3>
+        <p class="muted">Só quando o método exige local físico (drop-off).</p>
+        <div class="loc"><div class="pin">📍</div><div><b>Ponto Devolve fácil — Centro</b><div class="d" style="color:var(--gray)">Rua Augusta, 1200 · 0,8 km</div></div></div>
+        <div class="loc"><div class="pin">📍</div><div><b>Correios — Av. Paulista</b><div class="d" style="color:var(--gray)">Av. Paulista, 900 · 1,4 km</div></div></div>
+        <div class="loc"><div class="pin">📍</div><div><b>Ponto Devolve fácil — Shopping</b><div class="d" style="color:var(--gray)">Shopping Pátio · 2,1 km</div></div></div>
+        <a class="btn">Avançar</a>
+      </div>
+      <div class="owner">App</div>
+    </div>
+
+    <!-- 6 review RL -->
+    <div class="phone rl">
+      <div class="statusbar"><span>15:00</span><span>●●●</span></div>
+      <div class="brandbar">Fashion Store <span class="cart">Revisar</span></div>
+      <div class="screen">
+        <h3>Revise a solicitação</h3>
+        <div class="item"><div class="thumb"></div><div><div class="nm">Blusa Cropped Algodão</div><div class="pr">Receber reembolso</div></div></div>
+        <div class="card sel"><div class="t">Devolução · Devolve fácil</div>
+          <div class="d">Leve o pacote ao ponto de coleta em até X dias.<br>Ponto: Devolve fácil — Rua Augusta, 1200 — SP</div></div>
+        <p class="muted">Dados de <b>returnLogistics</b> exibidos pelo front-end.</p>
+        <a class="btn">Confirmar solicitação</a>
+      </div>
+      <div class="owner">App</div>
+    </div>
+
+    <!-- 7 confirmation RL -->
+    <div class="phone rl">
+      <div class="statusbar"><span>15:00</span><span>●●●</span></div>
+      <div class="brandbar">Fashion Store <span class="cart">Confirmado</span></div>
+      <div class="screen">
+        <h3>Registrada</h3>
+        <div class="success">
+          <div class="ic">✓</div>
+          <h3>Tudo certo!</h3>
+          <p class="muted">Sua devolução foi registrada. Enviamos os detalhes por e-mail.</p>
+        </div>
+        <a class="btn">Acompanhar solicitação</a>
+        <a class="btn ghost">Devolver outros itens</a>
+      </div>
+      <div class="owner">App</div>
+    </div>
+
+    <!-- 8 tracking RL -->
+    <div class="phone rl">
+      <div class="statusbar"><span>15:00</span><span>●●●</span></div>
+      <div class="brandbar">Fashion Store <span class="cart">Acompanhar</span></div>
+      <div class="screen">
+        <h3>Tracking</h3>
+        <div class="timeline">
+          <div class="tl"><div class="dot"></div><div><div class="lbl">Postagem disponível</div><div class="sub">10/06 · Devolve fácil</div></div></div>
+          <div class="tl"><div class="dot"></div><div><div class="lbl">Pacote postado no ponto</div><div class="sub">12/06 · Rua Augusta, 1200</div></div></div>
+          <div class="tl"><div class="dot off"></div><div><div class="lbl">Em trânsito</div><div class="sub">aguardando</div></div></div>
+          <div class="tl"><div class="dot off"></div><div><div class="lbl">Recebido no destino</div><div class="sub">—</div></div></div>
+        </div>
+      </div>
+      <div class="owner">App</div>
+    </div>
+
+  </div>
+
+  <!-- ===================== BACK-END ===================== -->
+  <div class="section-h">
+    <span class="tag tag-be">Back-end</span>
+    <h2>Integração com o provider (protocolo)</h2>
+  </div>
+  <p class="section-sub">Contrato padrão que qualquer provider implementa. Duas direções: a VTEX <b>consulta</b> o provider (síncrono) e o provider <b>informa</b> a VTEX (assíncrono).</p>
+
+  <div class="be">
+    <div class="flowmap">
+      <div class="node vtex">VTEX<br><span style="font-weight:400;font-size:11px">Fulfillment · reverse logistics</span></div>
+      <div class="conn">
+        <div class="line l1">consulta →</div>
+        <div class="arrowr">⟶</div>
+        <div class="arrowl">⟵</div>
+        <div class="line">← informa (status)</div>
+      </div>
+      <div class="node prov">Reverse Logistics Provider<br><span style="font-weight:400;font-size:11px">Intelipost (1º) · contrato padrão</span></div>
+    </div>
+
+    <div class="legend">
+      <span><span class="sw" style="background:var(--yogurt)"></span> VTEX → Provider (consulta · síncrono)</span>
+      <span><span class="sw" style="background:var(--winter)"></span> Provider → VTEX (informa · assíncrono)</span>
+    </div>
+
+    <div class="opgrid">
+
+      <!-- op1 -->
+      <div class="op consult">
+        <div class="head">List return methods <span class="req">REQ-01</span></div>
+        <div class="body">
+          <div class="maps">Acionado na tela <b>4 · Escolha como devolver</b></div>
+          <div class="dir"><span class="ar">→</span> Vai (request context)</div>
+          <div class="pay">order/group identifier, returned items,
+seller/return destination,
+shopper address, return reason</div>
+          <div class="dir"><span class="ar">←</span> Volta (each returned method)</div>
+          <div class="pay">[ method name, method type (pickup / drop-off),
+  cost, payer, estimated SLA,
+  shopper instructions ]</div>
+        </div>
+      </div>
+
+      <!-- op2 -->
+      <div class="op consult">
+        <div class="head">List drop-off locations <span class="req">REQ-02</span></div>
+        <div class="body">
+          <div class="maps">Acionado na tela <b>5 · Pontos de coleta</b> (só drop-off)</div>
+          <div class="dir"><span class="ar">→</span> Vai (request context)</div>
+          <div class="pay">selected method, shopper ZIP/address,
+seller/return destination, returned items</div>
+          <div class="dir"><span class="ar">←</span> Volta (each returned location)</div>
+          <div class="pay">[ location name, address,
+  provider reference, shopper instructions ]</div>
+        </div>
+      </div>
+
+      <!-- op3 -->
+      <div class="op consult">
+        <div class="head">Create return execution <span class="req">REQ-03</span></div>
+        <div class="body">
+          <div class="maps">Acionado na tela <b>7 · Confirmar solicitação</b></div>
+          <div class="dir"><span class="ar">→</span> Vai (request context)</div>
+          <div class="pay">confirmed return, selected method,
+selected location/pickup address</div>
+          <div class="dir"><span class="ar">←</span> Volta (persistido em returnLogistics)</div>
+          <div class="pay">selected return method, method type (pickup / drop-off),
+selected drop-off location or pickup address,
+return code, tracking code,
+carrier / provider information, provider reference,
+shopper instructions, latest logistics status,
+logistics status history,
+timestamps (creation + status updates)</div>
+        </div>
+      </div>
+
+      <!-- op4 -->
+      <div class="op inform">
+        <div class="head">Status updates <span class="req">REQ-04</span></div>
+        <div class="body">
+          <div class="maps">Alimenta a tela <b>8 · Tracking</b> · propaga p/ OMS/eventos</div>
+          <div class="dir"><span class="ar" style="color:var(--gray)">←</span> Provider → VTEX (push)</div>
+          <div class="pay">returnId, provider reference,
+account scope, status, timestamp,
+actor/source</div>
+          <div class="dir">status aceitos</div>
+          <div class="pay">pickup_scheduled · posted · collected
+in_transit · delivered · failed
+expired · cancelled</div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="maps" style="margin-top:18px;border-top:1px dashed var(--winter);padding-top:14px;">
+      <b>A definir no protocolo:</b> schemas request/response por operação · autenticação e account-scope do provider · versionamento e breaking-change · se o <b>Provider → VTEX</b> é webhook, polling ou ambos.
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
