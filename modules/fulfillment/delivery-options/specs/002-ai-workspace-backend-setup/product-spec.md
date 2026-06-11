@@ -18,7 +18,7 @@ The [Create AI Workspace Agent template](https://darkkitchen.vtex.com/create/tem
 Decided — **Backend (Strands) only** for the main agent repo (`fulfillment-config-agent`), and **MCP Instructions** for the shared platform service (`fulfillment-mcp-server`). The template is run twice. Strands natively supports the Orchestrator + Sub-agent pattern chosen in [ADR-001](./ADR-001-fulfillment-agent.html). UI scaffolding is deferred to a future frontend spec.
 
 **Is this spec blocking spec 001?**
-For Q2C2, spec 001 (Same Day DO automation) is deterministic and does not require the AI Workspace to run. This spec sets up the infrastructure that will host spec 001's output and future agent tasks when they are ready for deployment. Running in parallel is the right approach.
+Yes. Spec 001 (Same Day DO automation) must be implemented as agent tasks inside this infrastructure — not as a standalone script or microservice. Spec 002 is a **prerequisite** for deploying spec 001. The two specs run in parallel during Q2C2, but spec 001 cannot ship until the agent backend and MCP server are provisioned.
 
 **What is the relationship between this spec and the frontend?**
 This spec covers backend infrastructure only. The frontend will live in Admin v4, with components and patterns already defined — but it is out of scope for this cycle. The agent type chosen here should be compatible with the Admin v4 frontend when that spec is built.

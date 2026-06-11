@@ -45,7 +45,7 @@ Using the Dark Kitchen template to:
 
 ## Out of scope
 
-- Agent task implementation (spec 001 — Same Day DO automation covers this)
+- Agent task business logic (spec 001, spec 003, and others implement agent tasks; this spec provisions the host)
 - Agentic UI / Admin Shell frontend (separate future spec)
 - Storefront integration
 - LLM prompt engineering or model selection for agent tasks
