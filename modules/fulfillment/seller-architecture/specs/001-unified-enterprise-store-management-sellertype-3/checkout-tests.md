@@ -1,9 +1,15 @@
 # Checkout Simulation Tests — Seller Type 3
 **Account:** logisticstest  
-**Date:** June 1, 2026  
+**Date:** June 1, 2026 · re-run June 12, 2026  
 **Owner:** Carol Tourinho  
 
 > ⚠️ **Beta environment** — all tests were executed on `vtexcommercebeta`. Results and API behaviors may differ from `vtexcommercestable`.
+
+> 🔁 **Re-run on June 12, 2026 (additive — original June 1 results preserved).** The full suite was re-executed and **both runs are kept on purpose** for the record. Each CT below keeps its original June 1 data and gets a separate **"Run 06/12"** block. What's new on 06/12:
+> - **New battery CT-09 → CT-12** added — repeats the basic flows (CT-01..CT-04) **without subscription**, varying warehouse/seller (introduces a 3rd seller type 3, `savassistore` → warehouse `seller-bh`), including a 3-way seller split (CT-11).
+> - **CT-08** executed for the first time (was pending on 06/01).
+> - Subscription-related observations (frequency `1 week`, RNS subscription creation) are noted per-case below. ⚠️ These were seen only on `vtexcommercebeta`, which can be inconsistent and may not reflect the latest version — to be confirmed in an updated/stable environment with the Subscriptions team before treating as definitive.
+> - All 19 orders created on 06/12 are in `ready-for-handling`.
 
 ---
 
@@ -18,11 +24,13 @@ Validate the full checkout flow with seller type 3 — from delivery simulation 
 | Item | Value |
 |---|---|
 | Main account (marketplace) | logisticstest |
-| Seller Type 3 | `botafogostore` and `farialimastore` |
+| Seller Type 3 | `botafogostore` and `farialimastore` · `savassistore` added on 06/12 for CT-09..CT-12 |
 | Environment | `vtexcommercebeta` (not stable) |
 | Base URL — marketplace | `https://logisticstest.vtexcommercebeta.com.br` |
 | Base URL — botafogostore | `https://botafogostore.vtexcommercebeta.com.br` |
 | Base URL — farialimastore | `https://farialimastore.vtexcommercebeta.com.br` |
+| Base URL — savassistore _(06/12)_ | `https://savassistore.vtexcommercebeta.com.br` |
+| Seller → warehouse map | `botafogostore` → `faranidc` / `seller-rj` · `farialimastore` → `warehouse-sp` / `seller-sp` · `savassistore` → `seller-bh` _(06/12)_ |
 | Admin | https://logisticstest.myvtex.com/admin |
 | Delivery Options (beta) | https://fftest--lojinhatourinho.myvtex.com/admin/delivery-options |
 | Payment method (place order) | Promissória — ID `17` |
@@ -156,6 +164,8 @@ curl -s -X POST \
 
 > **Note:** `carolina.rodrigues@vtex.com` failed with `CHK0087 Login required to use a new address` — real VTEX accounts require session cookie authentication to add a new address on `/pub/` endpoints. Test used `carol.test@logisticstest.com` as a workaround.
 
+**Run 06/12 (re-run):** ✅ same result. New order [`1639040500105-01`](https://logisticstest.myvtex.com/admin/orders/1639040500105-01) · txn `93F81F9CBCA847AF8A19AE2685FD9D56` · email `ct01.test@logisticstest.com` · R$204.00 · seller `Botafogo store` · OMS `ready-for-handling`.
+
 ---
 
 ### CT-02 — 2 items from farialimastore (distinct SKUs)
@@ -192,6 +202,8 @@ curl -s -X POST \
 | Authorization | `POST vtexpayments.../api/pvt/transactions/{txnId}/authorization-request` → `Approved` |
 | OMS status | `window-to-cancel` → `ready-for-handling` |
 | Status | ✅ Place order OK — complete order |
+
+**Run 06/12 (re-run):** ✅ same result. New order [`1639040500107-01`](https://logisticstest.myvtex.com/admin/orders/1639040500107-01) · txn `492784BA36C04A54AC1F7081948F0A36` · R$204.00 · seller `Faria Lima store` · OMS `ready-for-handling`.
 
 ---
 
@@ -232,6 +244,8 @@ curl -s -X POST \
 | OMS status | `window-to-cancel` → `ready-for-handling` |
 | Status | ✅ Place order OK — complete order |
 
+**Run 06/12 (re-run):** ✅ same result, split OK. orderGroup `1639040500109` · txn `428849377BDA49E7A3B8769A7223AA4A` · [`1639040500109-01`](https://logisticstest.myvtex.com/admin/orders/1639040500109-01) botafogo R$104.00 + [`1639040500109-02`](https://logisticstest.myvtex.com/admin/orders/1639040500109-02) farialima R$204.00 · both OMS `ready-for-handling`.
+
 ---
 
 ### CT-04 — Cart with multiple units per seller
@@ -270,6 +284,8 @@ curl -s -X POST \
 | Authorization | `POST vtexpayments.../api/pvt/transactions/{txnId}/authorization-request` → `Approved` |
 | OMS status | `window-to-cancel` → `ready-for-handling` |
 | Status | ✅ Place order OK — complete order |
+
+**Run 06/12 (re-run):** ✅ same result, multi-qty split OK. orderGroup `1639040500113` · txn `DD95DA6302BE43F290487728EE0AE012` · [`1639040500113-01`](https://logisticstest.myvtex.com/admin/orders/1639040500113-01) botafogo R$504.00 (SKU 79 ×5) + [`1639040500113-02`](https://logisticstest.myvtex.com/admin/orders/1639040500113-02) farialima R$704.00 (SKU 82 ×6 + SKU 78 ×1) · both OMS `ready-for-handling`.
 
 ---
 
@@ -312,6 +328,8 @@ curl -s -X POST \
 | OMS status | `window-to-cancel` → `ready-for-handling` |
 | Status | ✅ Place order OK — complete order |
 
+**Run 06/12 (re-run):** ✅ same result, same-SKU split OK. orderGroup `1639040500117` · txn `7ACCB8CFBC19460D8E26FF6D93036B9D` · [`1639040500117-01`](https://logisticstest.myvtex.com/admin/orders/1639040500117-01) botafogo R$104.00 + [`1639040500117-02`](https://logisticstest.myvtex.com/admin/orders/1639040500117-02) farialima R$104.00 · both OMS `ready-for-handling`.
+
 ---
 
 ### CT-06 — Free shipping promotion applied only to botafogostore item
@@ -328,9 +346,11 @@ curl -s -X POST \
 | Expected result | Free shipping applied only to botafogostore item; farialimastore shipping with original value |
 | Actual result | botafogostore shipping came as R$0.00 (**cache** — same quantities as runs before the freight table update) · `ratesAndBenefitsData: null` — promotion active and correctly configured was not recognized by checkout |
 
-| Status | ⏸️ **On hold** — under investigation with Camila Bressiani |
+| Status | ⏸️ **Not tested** — promotion scenario could not be validated due to beta limitations |
 
-**Interpretation:** The zero shipping was a cache artifact from prior simulations, not evidence that botafogostore has no shipping cost (confirmed on re-runs with different quantities: R$4.00). The promotion scenario had an inconsistency — promotion `ffc40e28-ced6-4aa8-bdeb-bfb080741f7e` was active and correctly configured (`idSeller: botafogostore`, `percentualShippingDiscountValue: 100`), but `ratesAndBenefitsData` came back null. Under investigation with Camila Bressiani.
+**Interpretation:** The zero shipping was a cache artifact from prior simulations, not evidence that botafogostore has no shipping cost (confirmed on re-runs with different quantities: R$4.00). The promotion scenario could not be properly validated on beta, so the free-shipping promotion remains untested.
+
+**Run 06/12 (re-run):** ⏸️ Promotion still not tested — this is a beta limitation. On `vtexcommercestable` the simulation returns `200` with **no items** and two `ORD027` messages (`Item ... não encontrado ou indisponível`) for SKU `79` and `82` (the seller type 3 items don't resolve on stable), and on `vtexcommercebeta` the promotions behavior is unreliable. So the free-shipping promotion scenario remains unvalidated for now.
 
 **Curl:**
 ```bash
@@ -426,6 +446,8 @@ curl -s -X POST \
 >
 > **Note:** place order used frequency `1 day`. Frequency `1 week` (listed in the plan catalog) fails at checkout with `CHK0141`.
 
+**Run 06/12 (re-run):** Order side OK. With `1 day`: new order [`1639040500121-01`](https://logisticstest.myvtex.com/admin/orders/1639040500121-01) · txn `DE3075D9AA8D4F15BB0AB4DDC9E25B86` · R$22.90 · OMS `ready-for-handling`. On this run, the line item kept the attachment but `subscriptionData` came back `null` and `GET /api/rns/pub/subscriptions` returned `[]`; with `1 week` the simulation returned `500 ORD015.5`. These are subscription-side observations on `vtexcommercebeta` only — to be re-checked in an updated environment, since beta may be behind or inconsistent.
+
 ---
 
 ### CT-08 — Mixed cart: subscription item (botafogostore) + regular item (farialimastore)
@@ -517,6 +539,173 @@ curl -s -X POST \
 
 > Expected behavior: subscription logic applies only to the line item that carries the `vtex.subscription.dailysubs` attachment. The regular item from `farialimastore` follows the standard one-time purchase flow.
 
+**Run 06/12 (first execution — was pending on 06/01):** ✅ Checkout + split OK · ⚠️ subscription not created. Used frequency `1 day` (`1 week` fails simulation with `500 ORD015.5`). orderGroup `1639040500123` · txn `4E4C2C135F2F4649BA8199EAECD7D77A` · total R$126.90:
+> - [`1639040500123-01`](https://logisticstest.myvtex.com/admin/orders/1639040500123-01) · botafogostore · subscription SKU 109 · R$22.90 · OMS `ready-for-handling`
+> - [`1639040500123-02`](https://logisticstest.myvtex.com/admin/orders/1639040500123-02) · farialimastore · regular SKU 79 · R$104.00 · OMS `ready-for-handling`
+>
+> Order correctly **split by seller**; SKU 79 carries no subscription attachment (correct). On this run `GET /api/rns/pub/subscriptions?customerEmail=ct08.test@logisticstest.com` returned `[]` (expected 1 with SKU 109) — same subscription-side observation as CT-07, to be confirmed in an updated environment.
+
+---
+
+## Warehouse & seller coverage battery (CT-09 → CT-12)
+
+> Added on **06/12/2026**. These cases repeat the basic flows (CT-01..CT-04) but exercise a **third seller type 3** (`savassistore` → warehouse `seller-bh`) and additional seller/warehouse combinations. **No subscription items.** All executed on `vtexcommercebeta`. Each seller maps to distinct warehouses, so cross-seller carts also validate that fulfillment is sourced from the correct warehouse per seller:
+> `botafogostore` → `seller-rj` · `farialimastore` → `seller-sp` · `savassistore` → `seller-bh`.
+
+---
+
+### CT-09 — 2 items from savassistore (mirror of CT-01, new seller/warehouse)
+
+| Field | Value |
+|---|---|
+| SKUs tested | `79` (Suporte de Parede para Escalada da Clara) + `78` (Microfone de Rapper da Mari) |
+| Seller | `savassistore` |
+| Warehouse | `seller-bh` |
+| Quantity | 1 unit each |
+| Destination zip code | `01310100` |
+| Expected result | Single-seller checkout fulfilled from `seller-bh`; single order |
+| Actual result | Both `available` from `seller-bh` · first SLA `lenta` · items R$200.00 + shipping R$7.00 · single order, no split |
+
+| Status | ✅ Simulation + Place order OK |
+
+**Simulation curl:**
+```bash
+curl -s -X POST \
+  "https://logisticstest.vtexcommercebeta.com.br/api/checkout/pub/orderForms/simulation" \
+  -H "Content-Type: application/json" \
+  -d '{"items":[{"id":"79","quantity":1,"seller":"savassistore"},{"id":"78","quantity":1,"seller":"savassistore"}],"postalCode":"01310100","country":"BRA"}'
+```
+
+**Place Order:**
+
+| Field | Value |
+|---|---|
+| orderGroup | `1639040500127` |
+| orderId | [`1639040500127-01`](https://logisticstest.myvtex.com/admin/orders/1639040500127-01) · savassistore · R$207.00 |
+| transactionId | `FFF2B877B9624C54AFFA9A2084AE9F45` |
+| Email | `ct09.test@logisticstest.com` |
+| Payment | Promissória ID `17` · total R$207.00 |
+| OMS status | `ready-for-handling` · seller `Savassi store` · both items from `seller-bh` |
+| Status | ✅ Place order OK — complete order |
+
+---
+
+### CT-10 — Same SKU from two sellers/warehouses (botafogostore + savassistore)
+
+> Mirror of CT-05 idea, pairing `botafogostore` (`seller-rj`) with the new `savassistore` (`seller-bh`) to confirm the same SKU is sourced from two distinct warehouses and split correctly.
+
+| Field | Value |
+|---|---|
+| SKU tested | `79` — available in both sellers |
+| Sellers | `botafogostore` (`seller-rj`, qty 1) + `savassistore` (`seller-bh`, qty 1) |
+| Quantity | 1 unit per seller |
+| Destination zip code | `01310100` |
+| Expected result | Treated as 2 independent items, one per seller/warehouse; order split in 2 |
+| Actual result | Both `available` · botafogo from `seller-rj` (SLA `Normal`, shipping R$4.00) · savassi from `seller-bh` (SLA `lenta`, shipping R$7.00) · no merge · split into 2 sub-orders |
+
+| Status | ✅ Simulation + Place order OK |
+
+**Simulation curl:**
+```bash
+curl -s -X POST \
+  "https://logisticstest.vtexcommercebeta.com.br/api/checkout/pub/orderForms/simulation" \
+  -H "Content-Type: application/json" \
+  -d '{"items":[{"id":"79","quantity":1,"seller":"botafogostore"},{"id":"79","quantity":1,"seller":"savassistore"}],"postalCode":"01310100","country":"BRA"}'
+```
+
+**Place Order:**
+
+| Field | Value |
+|---|---|
+| orderGroup | `1639050500129` |
+| orderId `-01` | [`1639050500129-01`](https://logisticstest.myvtex.com/admin/orders/1639050500129-01) · botafogostore (`seller-rj`) · R$104.00 |
+| orderId `-02` | [`1639050500129-02`](https://logisticstest.myvtex.com/admin/orders/1639050500129-02) · savassistore (`seller-bh`) · R$107.00 |
+| transactionId | `2B751C69295B4503ABFD0F904813FCB9` |
+| Email | `ct10.test@logisticstest.com` |
+| Payment | Promissória ID `17` · total R$211.00 |
+| Split | ✅ Same SKU 79 split into 2 sub-orders — one per seller/warehouse |
+| OMS status | both `ready-for-handling` (settled after a brief `payment-pending`) |
+| Status | ✅ Place order OK — complete order |
+
+---
+
+### CT-11 — Cart across three sellers/warehouses (mirror of CT-03, extended)
+
+> Extends CT-03 to a **three-way split**: one item from each seller type 3, each sourced from a different warehouse.
+
+| Field | Value |
+|---|---|
+| SKUs tested | `79` (botafogostore) + `82` (farialimastore) + `78` (savassistore) |
+| Sellers / warehouses | `botafogostore`/`seller-rj` + `farialimastore`/`seller-sp` + `savassistore`/`seller-bh` |
+| Quantity | 1 unit per SKU |
+| Destination zip code | `01310100` |
+| Expected result | SLAs from all three sellers; order split into 3 sub-orders by seller |
+| Actual result | All `available` from their respective warehouses · botafogo `seller-rj` (shipping R$4.00) · farialima `seller-sp` (shipping R$4.00) · savassi `seller-bh` (shipping R$7.00) · split into 3 sub-orders |
+
+| Status | ✅ Simulation + Place order OK |
+
+**Simulation curl:**
+```bash
+curl -s -X POST \
+  "https://logisticstest.vtexcommercebeta.com.br/api/checkout/pub/orderForms/simulation" \
+  -H "Content-Type: application/json" \
+  -d '{"items":[{"id":"79","quantity":1,"seller":"botafogostore"},{"id":"82","quantity":1,"seller":"farialimastore"},{"id":"78","quantity":1,"seller":"savassistore"}],"postalCode":"01310100","country":"BRA"}'
+```
+
+**Place Order:**
+
+| Field | Value |
+|---|---|
+| orderGroup | `1639050500133` |
+| orderId `-01` | [`1639050500133-01`](https://logisticstest.myvtex.com/admin/orders/1639050500133-01) · botafogostore (`seller-rj`) · R$104.00 · SKU 79 |
+| orderId `-02` | [`1639050500133-02`](https://logisticstest.myvtex.com/admin/orders/1639050500133-02) · farialimastore (`seller-sp`) · R$104.00 · SKU 82 |
+| orderId `-03` | [`1639050500133-03`](https://logisticstest.myvtex.com/admin/orders/1639050500133-03) · savassistore (`seller-bh`) · R$107.00 · SKU 78 |
+| transactionId | `1E15C03E680A4366B45CEEEE8903CD3C` |
+| Email | `ct11.test@logisticstest.com` |
+| Payment | Promissória ID `17` · total R$315.00 |
+| Split | ✅ Order correctly split into **3** sub-orders — one per seller/warehouse |
+| OMS status | all three `ready-for-handling` |
+| Status | ✅ Place order OK — complete order |
+
+---
+
+### CT-12 — Multiple units across savassistore + farialimastore (mirror of CT-04)
+
+> Mirror of CT-04 (multiple units per seller) but with `savassistore` as the multi-item/multi-warehouse seller.
+
+| Field | Value |
+|---|---|
+| SKUs tested | SKU `79` (savassistore, qty 3) + SKU `78` (savassistore, qty 2) + SKU `82` (farialimastore, qty 4) |
+| Sellers / warehouses | `savassistore`/`seller-bh` + `farialimastore`/`seller-sp` |
+| Quantity | SKU 79: 3 · SKU 78: 2 · SKU 82: 4 |
+| Destination zip code | `01310100` |
+| Expected result | Different quantities handled per SKU; split by seller, savassistore items grouped into one sub-order |
+| Actual result | All `available` · savassi sub-order = SKU 79 ×3 + SKU 78 ×2 (R$500 + R$7 shipping = R$507) from `seller-bh` · farialima sub-order = SKU 82 ×4 (R$400 + R$4 = R$404) from `seller-sp` · split into 2 sub-orders |
+
+| Status | ✅ Simulation + Place order OK |
+
+**Simulation curl:**
+```bash
+curl -s -X POST \
+  "https://logisticstest.vtexcommercebeta.com.br/api/checkout/pub/orderForms/simulation" \
+  -H "Content-Type: application/json" \
+  -d '{"items":[{"id":"79","quantity":3,"seller":"savassistore"},{"id":"82","quantity":4,"seller":"farialimastore"},{"id":"78","quantity":2,"seller":"savassistore"}],"postalCode":"01310100","country":"BRA"}'
+```
+
+**Place Order:**
+
+| Field | Value |
+|---|---|
+| orderGroup | `1639050500139` |
+| orderId `-01` | [`1639050500139-01`](https://logisticstest.myvtex.com/admin/orders/1639050500139-01) · savassistore (`seller-bh`) · R$507.00 · SKU 79 ×3 + SKU 78 ×2 |
+| orderId `-02` | [`1639050500139-02`](https://logisticstest.myvtex.com/admin/orders/1639050500139-02) · farialimastore (`seller-sp`) · R$404.00 · SKU 82 ×4 |
+| transactionId | `806024E3AEAF40B4B08C8E977541930B` |
+| Email | `ct12.test@logisticstest.com` |
+| Payment | Promissória ID `17` · total R$911.00 |
+| Split | ✅ Order correctly split into 2 sub-orders by seller; multi-unit quantities preserved |
+| OMS status | both `ready-for-handling` |
+| Status | ✅ Place order OK — complete order |
+
 ---
 
 ## Place Order — Full flow APIs
@@ -545,6 +734,11 @@ curl -s -X POST \
 |---|---|---|---|---|
 | 1 | Subscription frequency `1 week` fails checkout (`CHK0141`) even though it is configured in plan `vtex.subscription.dailysubs` catalog frequencies (`1 day, 1 week`). `1 day` works. | CT-07 | Medium | Open |
 | 2 | After approved place order with subscription attachment, OMS order is complete but RNS returns **0** subscriptions for the customer email. OMS line item has attachment but `subscriptionData: null`. | CT-07 | High | Open — needs Subscriptions team validation |
+
+**Update 06/12 (re-run) — `vtexcommercebeta` only, to be confirmed:**
+> ⚠️ The notes below are observations from a single re-run on beta, which may be behind the latest version or inconsistent. They are **not** confirmed defects — to validate with the Subscriptions team in an updated/stable environment before acting.
+- **Bug #1** — on this run, `1 week` returned `500 ORD015.5` at the simulation stage (vs. `CHK0141` at checkout previously). `1 day` worked end to end (simulation + place order).
+- **Bug #2** — on CT-07 and CT-08, the order completed in OMS (`ready-for-handling`) but RNS returned `[]` and the line item showed `subscriptionData: null` (checked via AppKey/AppToken).
 
 ---
 
