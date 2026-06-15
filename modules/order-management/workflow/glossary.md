@@ -9,7 +9,7 @@ This glossary defines the core terminology used across the Agentic Workflow prod
 ## Actors
 
 ### Buyer
-Who purchases the Projection and receives the delivery.
+Who purchases the offer and receives the delivery.
 
 ### Merchant
 The business owner on VTEX. Defines Promises, operational rules, and chooses which Suppliers and Providers will execute the work.
@@ -24,20 +24,20 @@ Who provides a product (physical, virtual, or service). The Supplier executes ta
 A third-party service provider who supplies a service consumed by the merchant's operation. Also executes tasks in the workflow. Not a seller — provides the service. Examples: payment gateway (Adyen, Cielo), carrier (Jadlog, Correios), invoice issuer (Bling, Enotas).
 
 ### Executor
-A Supplier or Provider responsible for performing a task within an Applied Workflow.
+A Supplier, Provider or merchant that is responsible for performing a task within an Applied Workflow.
 
 ---
 
 ## Core Workflow Entities
 
 ### Product
-A physical, virtual, or service item registered by the merchant to be used in a Projection. It is the catalog unit.
+A physical, virtual, or service item registered by the merchant to be used in an offer. It is the catalog unit.
 
-### Projection (Offer)
+### Offer (Projection)
 How the merchant makes their products available to the buyer in a store in order to fulfill a Promise — includes the product, price, delivery timeframe, and payment conditions.
 
 ### Promise
-The agreement between the buyer and the merchant for the delivery of a Projection. To fulfill it, the tasks defined in the Applied Workflow are executed. A single order can have multiple simultaneous Promises (e.g., home delivery warehouse A, home delivery warehouse B, in-store pickup Y).
+The agreement between the buyer and the merchant for the delivery of an offer. To fulfill it, the tasks defined in the Applied Workflow are executed. A single order can have multiple simultaneous Promises (e.g., home delivery warehouse A, home delivery warehouse B, in-store pickup Y).
 
 ### Workflow
 The execution script for an order — it orchestrates all tasks (who does what, in what order) so that each Promise is fulfilled, from payment to delivery, per item. A Workflow exists in two forms:
