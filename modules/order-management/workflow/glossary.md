@@ -80,30 +80,19 @@ A named validation point within a task. Each checkpoint has a label describing w
 
 ---
 
-## Workflow Triggers _(WIP)_
+## Triggers _(WIP)_
 
-A trigger defines the condition that activates a Promise and starts the Workflow. There are three trigger types:
+A trigger defines the condition that activates a Promise and starts the Workflow, or starts a task. There are three trigger types:
 
 | Trigger | Description |
 |---|---|
 | **Order Start** | Workflow starts automatically when an order is created (`order-created`) |
 | **Workflow Completion** | Workflow starts after another Promise completes |
-| **Specific Task Completion** | Workflow starts after a named task in a specific Promise completes (`task-complete`) |
+| **Specific Task Completion** | Workflow or task starts after a named task in a specific Promise completes (`task-complete`) |
 
-### Dependency
+### Dependency_(WIP)_
 A prerequisite workflow or task that must complete before another can begin. Example: the Returns & Exchanges Promise depends on the Proof of Delivery task completing in the Home Delivery Promise.
 
----
-
-## Workflow Categories
-
-| Category | Color | Description |
-|---|---|---|
-| **Payment** | Blue | Payment capture, authorization, reconciliation |
-| **Physical Fulfillment** | Teal | Physical product preparation and shipment |
-| **Reverse Logistics** | Orange | Returns, exchanges, reverse logistics |
-| **Services** | Purple | Value-added services and post-purchase |
-| **Custom Manufacturing** | Cyan | Manufacturing before delivery (e.g., lens fabrication) |
 
 ---
 
@@ -138,12 +127,12 @@ The time limit from order creation to delivery, defined per fulfillment type, ge
 - **Yellow / At Risk** — Approaching deadline
 - **Red / Expired** — Deadline exceeded; escalation required
 
-### Critical Path
+### Critical Path_(WIP)_
 The longest sequence of dependent tasks determining the total timeline for a Promise. Used by the Orchestration Agent to identify SLA risk early.
 
 ---
 
-## Order Modification
+## Order Modification_(WIP)_
 
 Order modifications allow changes to active orders before invoicing. Supported operations:
 
@@ -163,7 +152,7 @@ Modifications trigger automatic recalculation of inventory reservation, freight,
 
 ---
 
-## Returns & Exchanges
+## Returns & Exchanges_(WIP)_
 
 ### Return Workflow Stages
 1. **Request** — Shopper initiates the return request
@@ -171,18 +160,18 @@ Modifications trigger automatic recalculation of inventory reservation, freight,
 3. **Inspection** — Distribution center condition assessment
 4. **Resolution** — Refund processing or exchange dispatch
 
-### Return Methods
+### Return Methods_(WIP)_
 - **Home Pickup** — Carrier collects from customer address
 - **Carrier Drop-off / Locker** — Customer drops off at a carrier point
 - **In-Store Return** — Customer returns at a physical store
 
-### Return Compensation
+### Return Compensation_(WIP)_
 - **Financial Refund** — Returned to the original payment method
 - **Gift Card / Store Credit** — Alternative compensation
 
 ---
 
-## Fulfillment Scenarios
+## Fulfillment Scenarios_(WIP)_
 
 ### BOPIS (Buy Online, Pickup In Store)
 Order is fulfilled by store-level stock and picked up in person at the store. Key stages: Payment → Stock Reservation (store-level) → Picking (store team) → Ready for Pickup notification → Customer Check-in → Handover at POS.
@@ -204,7 +193,7 @@ A pre-payment gate requiring approval before payment capture. Configurable autho
 
 ---
 
-## Integration & Extensibility
+## Integration & Extensibility_(WIP)_
 
 ### MCP (Model Context Protocol) Server
 The integration mechanism by which third-party apps connect to the workflow engine to inject events, read status, or trigger actions. Supported native MCP servers include: VTEX Catalog, VTEX Logistics, VTEX Payments, NFe Emitter, VTEX CRM.
@@ -214,7 +203,7 @@ An idempotency key for order modification requests. Safe to retry without risk o
 
 ---
 
-## Version Control
+## Version Control_(WIP)_
 
 ### Workflow Version
 A published snapshot of a Workflow Template's configuration. Versions are sequential (1.0, 1.1, 2.0, etc.) and can be applied to `new_orders_only` or `all_orders`.
@@ -223,7 +212,7 @@ Version history records: author, timestamp, description, count of active orders 
 
 ---
 
-## Audit & Observability
+## Audit & Observability_(WIP)_
 
 Each workflow action is recorded in an audit trail with:
 - **Actor** — User or agent name and type (human / AI)
