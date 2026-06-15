@@ -2,37 +2,56 @@
 
 This glossary defines the core terminology used across the Agentic Workflow product — its configuration model, runtime behavior, AI orchestration, and integrations. Terms are organized thematically.
 
-> **Note on terminology:** Terms here reflect the agreed vocabulary from the [DOM Terminology Alignment sheet](https://docs.google.com/spreadsheets/d/1XeGa7ESsFMJsrIucAxHURMDjB9OzSneXKkb2XNZDUSM).
+> **Note on terminology:** Terms here reflect the agreed vocabulary from the [OMS Workflow Terminology Alignment sheet](https://docs.google.com/spreadsheets/d/1XeGa7ESsFMJsrIucAxHURMDjB9OzSneXKkb2XNZDUSM).
+
+---
+
+## Actors
+
+### Buyer
+Who purchases the Projection and receives the delivery.
+
+### Merchant
+The business owner on VTEX. Defines Promises, operational rules, and chooses which Suppliers and Providers will execute the work.
+
+### Seller
+The entity that appears as the seller to the customer. In a marketplace, can differ from the Supplier who fulfills the order (e.g., Samsung = Seller; Carrefour = Supplier).
+
+### Supplier
+Who provides a product (physical, virtual, or service). The Supplier executes tasks within a Promise: warehouse, PSP, external seller, etc. Not necessarily who appears as the seller to the customer.
+
+### Provider
+A third-party service provider who supplies a service consumed by the merchant's operation. Also executes tasks in the workflow. Not a seller — provides the service. Examples: payment gateway (Adyen, Cielo), carrier (Jadlog, Correios), invoice issuer (Bling, Enotas).
+
+### Executor
+A Supplier or Provider responsible for performing a task within an Applied Workflow.
 
 ---
 
 ## Core Workflow Entities
 
-### Projection
+### Product
+A physical, virtual, or service item registered by the merchant to be used in a Projection. It is the catalog unit.
 
-The combination of product content, price, and delivery promise that the merchant makes available to the buyer.
+### Projection (Offer)
+How the merchant makes their products available to the buyer in a store in order to fulfill a Promise — includes the product, price, delivery timeframe, and payment conditions.
 
 ### Promise
-
-The agreement between the buyer and the merchant for the delivery of a Projection. To fulfill a Promise, the tasks defined in an Applied Workflow are executed. A single order can have multiple concurrent Promises — for example, one for home delivery and one for a personalized item that requires manufacturing.
+The agreement between the buyer and the merchant for the delivery of a Projection. To fulfill it, the tasks defined in the Applied Workflow are executed. A single order can have multiple simultaneous Promises (e.g., home delivery warehouse A, home delivery warehouse B, in-store pickup Y).
 
 ### Workflow
+The execution script for an order — it orchestrates all tasks (who does what, in what order) so that each Promise is fulfilled, from payment to delivery, per item. A Workflow exists in two forms:
 
-The execution script for an order — it organizes all tasks (who does what, in what order) so that each Promise is fulfilled, from payment to delivery, recorded on a single timeline. A Workflow exists in two forms:
-
-- **Workflow Template** — The reusable configuration defined by the merchant. Acts as the blueprint from which Applied Workflows are created.
-- **Applied Workflow** — The live instance of a Workflow Template attached to a specific Promise in a running order. Once applied, it records the actual execution history of all tasks.
-
-Merchants can use VTEX-provided workflow templates or build their own. Custom tasks within a workflow must be associated with a VTEX-defined Task Type.
+- **Workflow Template** — The reusable, configured blueprint created by the merchant. Applied Workflows are created from it.
+- **Applied Workflow** — The live instance of a Workflow Template, linked to a specific Promise in a running order. Records the actual execution history of all tasks. Each Applied Workflow corresponds to one fulfillment unit within an order, produced by the system when it applies grouping criteria to the order's items. Two items form distinct Applied Workflows if they differ in at least one active criterion: delivery mode, warehouse, SLA, or supplier. An order can have 1 or N Applied Workflows.
 
 ### Task Type
-
-A finite, VTEX-defined classification that describes the nature of a task. Task Types determine how a task is grouped, sequenced, and gated within a workflow. Merchants can create custom tasks inside their workflows, but each task must be associated with one of the predefined Task Types — they cannot define their own types.
+A semantic, VTEX-defined classification that describes the nature of a task. Merchants can create custom tasks but cannot create new Task Types.
 
 **Examples:** Payment, Item Preparation, Invoicing, Delivery.
 
 ### Task
-The atomic unit of work within an Applied Workflow. Each task represents a single operational action — either executed automatically by a system or manually by a human operator. Tasks are the primary surface for AI agent orchestration, escalation, and third-party integration.
+The smallest unit of execution within an Applied Workflow. Each task represents an operational action — executed automatically by a system or manually by an operator. Tasks are the primary surface for AI agent orchestration, escalation, and third-party integrations.
 
 Every task must be associated with a VTEX-defined Task Type. Merchants can create custom tasks but cannot create new Task Types.
 
@@ -45,14 +64,8 @@ Every task must be associated with a VTEX-defined Task Type. Merchants can creat
 
 **Examples:** Payment Authorization, Stock Reservation, Picking, Packing, Invoice Emission, Shipment Dispatch, Ready for Pickup, Customer Check-in, Handover at POS.
 
-### Checkpoint _(WIP)_
-A named validation point within a task. Each checkpoint has a label describing what must be verified and a `failAction` specifying the recommended recovery step if it fails (e.g., "Escalate to supervisor"). Checkpoints are displayed as progress indicators (e.g., "2/3 checkpoints completed").
-
----
-
-## Task Status Lifecycle
-
-Tasks follow a four-status model:
+### Task Status
+The representation of the current state of a task within the workflow. Gives visibility and allows creating dependencies between tasks and workflows.
 
 | Status | Description |
 |---|---|
@@ -62,13 +75,14 @@ Tasks follow a four-status model:
 | **Cancelled** | Task intentionally stopped; a cancellation reason is required |
 | **Ignored** | Task skipped as non-applicable for this order |
 
-Extended internal statuses used by the orchestration engine include: `Without Allocation`, `Allocated`, `Waiting Authorization`, `Dependency Authorized`, `Service Executing`, `Expired`, `Retry Execution`, among others.
+### Checkpoint _(WIP)_
+A named validation point within a task. Each checkpoint has a label describing what must be verified and a `failAction` specifying the recommended recovery step if it fails (e.g., "Escalate to supervisor"). Displayed as a progress indicator (e.g., "2/3 checkpoints completed").
 
 ---
 
 ## Workflow Triggers _(WIP)_
 
-A trigger defines the condition that activates a Promise. There are three trigger types:
+A trigger defines the condition that activates a Promise and starts the Workflow. There are three trigger types:
 
 | Trigger | Description |
 |---|---|
@@ -104,13 +118,13 @@ Selects the fulfillment mode and provider for each order based on inventory avai
 Monitors workflow gates and task statuses; automatically advances order state when integrated systems report task completion. Can be configured to act autonomously within a defined confidence threshold.
 
 ### Escalation Agent
-Detects tasks that exceed SLA windows or become blocked. Creates operator tasks, sends alerts (Slack, email, webhook), and suggests recovery actions. Requires operator approval for high-risk actions (e.g., order cancellation, seller reallocation).
+Detects tasks that exceed SLA windows or become blocked. Creates operator tasks, sends alerts (Slack, email, webhook), and suggests recovery actions.
 
 ### Confidence Threshold
-A configurable 0–100% slider that defines the boundary between autonomous agent action and escalation to a human operator. Actions below the threshold are escalated; actions above it can be executed autonomously. High-risk actions (cancellation, seller reallocation) require ≥ 95% confidence plus explicit operator approval.
+A configurable 0–100% parameter that defines the boundary between autonomous agent action and escalation to a human operator. Actions below the threshold are escalated; actions above it can be executed autonomously. High-risk actions (cancellation, seller reallocation) require ≥ 95% confidence plus explicit operator approval.
 
 ### Entry Point
-A configurable extension hook within a workflow where third-party apps or external AI agents inject status events, trigger actions, or add custom steps. Examples: a Pick & Pack app injecting "picked" and "packed" statuses; a WMS confirming Picking completion; a returns app triggering label generation.
+A configurable extension hook within a workflow where third-party apps or external agents inject status events, trigger actions, or add custom steps. Examples: a Pick & Pack app injecting "picked" and "packed" statuses; a WMS confirming Picking completion.
 
 ---
 
@@ -171,10 +185,10 @@ Modifications trigger automatic recalculation of inventory reservation, freight,
 ## Fulfillment Scenarios
 
 ### BOPIS (Buy Online, Pickup In Store)
-Order is fulfilled by store-level stock and picked up in person at the store. Key stages: Payment → Stock Reservation (store-level) → Picking (store team) → Ready for Pickup notification → Customer Check-in → Handover at POS. Default SLA window: ~4 hours from notification to pickup deadline.
+Order is fulfilled by store-level stock and picked up in person at the store. Key stages: Payment → Stock Reservation (store-level) → Picking (store team) → Ready for Pickup notification → Customer Check-in → Handover at POS.
 
 ### Ship-From-Store
-Similar to BOPIS, but the item ships from the store rather than being picked up in person.
+Similar to BOPIS, but the item ships from the store rather than being picked up in person. The origin is the physical store, but the delivery mode is home delivery.
 
 ### Kit Order
 An order grouping a physical product with a related service (e.g., vinyl flooring + installation). Each item type follows its own Promise pipeline with its own executor and timeline; both pipelines converge before packaging/shipment.
@@ -194,19 +208,6 @@ A pre-payment gate requiring approval before payment capture. Configurable autho
 
 ### MCP (Model Context Protocol) Server
 The integration mechanism by which third-party apps connect to the workflow engine to inject events, read status, or trigger actions. Supported native MCP servers include: VTEX Catalog, VTEX Logistics, VTEX Payments, NFe Emitter, VTEX CRM.
-
-### Executor
-Anyone who performs a task as part of an Applied Workflow. An Executor can be one of two types:
-
-- **Supplier** — A seller or merchant responsible for fulfillment tasks (e.g., picking, packing, shipping, in-store handover).
-- **Provider** — A third-party service provider integrated into the workflow (e.g., a payment gateway, shipping carrier, NFe issuer, WMS). Providers supply a service consumed by the workflow, and are not sellers.
-
-**Executor suggestions by task context:**
-- Payment tasks → Payment Providers (e.g., Adyen, Cielo, Stripe)
-- Separation/packing tasks → Suppliers (e.g., warehouses, distribution centers)
-- Invoice tasks → Providers (e.g., Bling, Enotas)
-- Delivery tasks → Providers (e.g., Jadlog, Correios, Total Express)
-- In-store tasks → Suppliers (e.g., franchise stores, physical retail)
 
 ### operationId
 An idempotency key for order modification requests. Safe to retry without risk of duplicate execution.
@@ -238,17 +239,24 @@ Each workflow action is recorded in an audit trail with:
 
 | Portuguese | English |
 |---|---|
+| Comprador | Buyer |
+| Lojista | Merchant |
+| Vendedor | Seller |
+| Fornecedor | Supplier |
+| Provedor | Provider |
+| Executor | Executor |
+| Produto | Product |
+| Oferta | Projection (Offer) |
 | Promessa | Promise |
 | Workflow | Workflow |
 | Template de Workflow | Workflow Template |
 | Workflow Aplicado | Applied Workflow |
 | Tipo de Tarefa | Task Type |
 | Tarefa | Task |
-| Executor | Executor |
-| Supplier | Supplier |
-| Provider | Provider |
+| Status da Tarefa | Task Status |
 | Checkpoint | Checkpoint |
 | Gatilho | Trigger |
+| Dependência | Dependency |
 | Separação | Picking / Item separation |
 | Etiquetagem | Labeling |
 | Expedição | Shipment / Dispatch |
