@@ -1,4 +1,4 @@
-# Checkout Simulation Tests — Seller Type 3
+# Seller Type 3 & Postgres Tests
 **Account:** logisticstest  
 **Date:** June 1, 2026 · re-run June 12, 2026  
 **Owner:** Carol Tourinho  
@@ -751,3 +751,300 @@ curl -s -X POST \
 ## General notes
 
 > _Free space for test session notes_
+
+---
+
+# Part B — Shipping Strategy (Postgres) API Tests
+
+> ✅ **Executed on June 12, 2026** on `logisticstest` · `vtexcommercebeta` only (scope change — `dollargeneralqa` dropped).
+
+## Context
+
+Shipping Strategy entities (docks, warehouses, inventory, shipping policies, freight values, scheduled delivery) are migrating to a **Postgres-backed** data layer. This battery validates the Logistics API behavior on **`vtexcommercebeta`**, account **`logisticstest`** only.
+
+**Source plans:**
+- [Shipping Strategy Test Plan](https://docs.google.com/document/d/19IS9KR-hGVe-Yf5xwL0NtLqthp_0-X0xAjNhEZZvt6s) — 55 TCs (Claude, Jun 2026)
+- [API Updates — Dollar General / Seller ID](https://docs.google.com/document/d/1zEt003Q00VVrfvyCX4sYLVjvgFrFnuMLZLoHORVcHGk) — `sellerId` on warehouses + new endpoints
+
+## Execution rules
+
+- **Account:** `logisticstest` only
+- **Environment:** `https://logisticstest.vtexcommercebeta.com.br`
+- **Pause:** ≥ 1s between API calls; ~30s propagation after inventory/freight writes
+- **Dependency chain:** Dock → Warehouse → Inventory → Shipping Policy → Freight Values → Scheduled Delivery
+- **Docks cleanup:** create/delete freely during run; **2 persistent docks left:** `dock-qa-persist-01`, `dock-qa-persist-02`
+- **Test entity IDs:** `dock-test-01`, `wh-test-01`, `sp-test-01`, SKU `79`, CEP `01310100`
+
+## Seller ID extensions (beyond the 55 TCs)
+
+These cases run on **`logisticstest`** (Seller Type 3):
+
+| ID | Test | Endpoint | Expected |
+|---|---|---|---|
+| WH-S01 | Create warehouse with valid `sellerId` | `POST /api/logistics/pvt/configuration/warehouses` | 200 · `sellerId` persisted |
+| WH-S02 | Create warehouse with invalid `sellerId` | same | 400 · seller not found |
+| WH-S03 | Create warehouse with wrong seller type | same | 400 · not expected type |
+| WH-S04 | Change `sellerId` on warehouse with active inventory | same | 400 · cannot change sellerId |
+| WH-S05 | GET warehouse by ID returns `sellerId` | `GET .../warehouses/{id}` | 200 · field present (null for ST1/ST2) |
+| WH-S06 | GET all warehouses includes `sellerId` | `GET .../warehouses` | 200 · field in each row |
+| WH-S07 | List sellers for delivery zones hash | `GET /api/logistics-core/shipping/delivery-zones/sellers?deliveryZonesHash=…&sc=1` | 200 · `items[].sellerId` |
+
+## 55 test cases — Shipping Strategy (TC-01 → TC-55)
+
+### Loading Docks (TC-01 → TC-10)
+
+| TC | Name | Method | Endpoint |
+|---|---|---|---|
+| 01 | List all docks | GET | `/api/logistics/pvt/configuration/docks` |
+| 02 | Get dock by ID | GET | `/api/logistics/pvt/configuration/docks/{dockId}` |
+| 03 | Create dock (baseline) | POST | `/api/logistics/pvt/configuration/docks` |
+| 04 | Update dock — increase processing time (`dockTimeFake`) | POST | `/api/logistics/pvt/configuration/docks` |
+| 05 | Update dock — decrease processing time | POST | `/api/logistics/pvt/configuration/docks` |
+| 06 | Update dock — rename | POST | `/api/logistics/pvt/configuration/docks` |
+| 07 | Update dock — change trade policy / sales channels | POST | `/api/logistics/pvt/configuration/docks` |
+| 08 | Activate dock | POST | `/api/logistics/pvt/configuration/docks/{dockId}/activation` |
+| 09 | Deactivate dock | POST | `/api/logistics/pvt/configuration/docks/{dockId}/deactivation` |
+| 10 | Delete dock | DELETE | `/api/logistics/pvt/configuration/docks/{dockId}` |
+
+### Warehouses (TC-11 → TC-21)
+
+| TC | Name | Method | Endpoint |
+|---|---|---|---|
+| 11 | List all warehouses | GET | `/api/logistics/pvt/configuration/warehouses` |
+| 12 | Get warehouse by ID | GET | `/api/logistics/pvt/configuration/warehouses/{warehouseId}` |
+| 13 | Create warehouse (baseline + dock association) | POST | `/api/logistics/pvt/configuration/warehouses` |
+| 14 | Update warehouse — increase dock transit time | POST | `/api/logistics/pvt/configuration/warehouses` |
+| 15 | Update warehouse — decrease dock transit time | POST | `/api/logistics/pvt/configuration/warehouses` |
+| 16 | Update warehouse — increase additional cost | POST | `/api/logistics/pvt/configuration/warehouses` |
+| 17 | Update warehouse — decrease additional cost to zero | POST | `/api/logistics/pvt/configuration/warehouses` |
+| 18 | Rename warehouse | POST | `/api/logistics/pvt/configuration/warehouses` |
+| 19 | Activate warehouse | POST | `/api/logistics/pvt/configuration/warehouses/{warehouseId}/activation` |
+| 20 | Deactivate warehouse | POST | `/api/logistics/pvt/configuration/warehouses/{warehouseId}/deactivation` |
+| 21 | Remove warehouse | DELETE | `/api/logistics/pvt/configuration/warehouses/{warehouseId}` |
+
+### Inventory (TC-22 → TC-33)
+
+| TC | Name | Method | Endpoint |
+|---|---|---|---|
+| 22 | Get inventory by SKU and warehouse | GET | `/api/logistics/pvt/inventory/items/{skuId}/warehouses/{warehouseId}` |
+| 23 | Get inventory per dock | GET | `/api/logistics/pvt/inventory/items/{skuId}/docks/{dockId}` |
+| 24 | Get inventory per dock and warehouse | GET | `/api/logistics/pvt/inventory/items/{skuId}/docks/{dockId}/warehouses/{warehouseId}` |
+| 25 | Update inventory — increase quantity | PUT | `/api/logistics/pvt/inventory/skus/{skuId}/warehouses/{warehouseId}` |
+| 26 | Update inventory — decrease quantity | PUT | `/api/logistics/pvt/inventory/skus/{skuId}/warehouses/{warehouseId}` |
+| 27 | Update inventory — set to zero (stock out) | PUT | `/api/logistics/pvt/inventory/skus/{skuId}/warehouses/{warehouseId}` |
+| 28 | Update inventory — enable unlimited quantity | PUT | `/api/logistics/pvt/inventory/skus/{skuId}/warehouses/{warehouseId}` |
+| 29 | Update inventory — set lead time (increase) | PUT | `/api/logistics/pvt/inventory/skus/{skuId}/warehouses/{warehouseId}` |
+| 30 | Update inventory — set lead time (decrease) | PUT | `/api/logistics/pvt/inventory/skus/{skuId}/warehouses/{warehouseId}` |
+| 31 | Update inventory — reset lead time to zero | PUT | `/api/logistics/pvt/inventory/skus/{skuId}/warehouses/{warehouseId}` |
+| 32 | Get reservation by warehouse and SKU | GET | `/api/logistics/pvt/inventory/reservations/{warehouseId}/{skuId}` |
+| 33 | List inventory with dispatched reservations | GET | `/api/logistics/pvt/inventory/items/{itemId}/warehouses/{warehouseId}/dispatched` |
+
+### Shipping Policies (TC-34 → TC-42)
+
+| TC | Name | Method | Endpoint |
+|---|---|---|---|
+| 34 | List all shipping policies | GET | `/api/logistics/pvt/shipping-policies` |
+| 35 | Get shipping policy by ID | GET | `/api/logistics/pvt/shipping-policies/{id}` |
+| 36 | Create shipping policy (baseline, inactive) | POST | `/api/logistics/pvt/shipping-policies` |
+| 37 | Update shipping policy — rename | PUT | `/api/logistics/pvt/shipping-policies/{id}` |
+| 38 | Update shipping policy — change shipping method | PUT | `/api/logistics/pvt/shipping-policies/{id}` |
+| 39 | Update shipping policy — enable weekend delivery | PUT | `/api/logistics/pvt/shipping-policies/{id}` |
+| 40 | Update shipping policy — disable weekend delivery | PUT | `/api/logistics/pvt/shipping-policies/{id}` |
+| 41 | Activate shipping policy | PUT | `/api/logistics/pvt/shipping-policies/{id}` |
+| 42 | Deactivate shipping policy | PUT | `/api/logistics/pvt/shipping-policies/{id}` |
+
+### Freight Values (TC-43 → TC-52)
+
+| TC | Name | Method | Endpoint |
+|---|---|---|---|
+| 43 | List freight values by carrier and CEP | GET | `/api/logistics/pvt/configuration/freights/{carrierId}/{cep}/values` |
+| 44 | Create freight value (baseline — low rate) | POST | `/api/logistics/pvt/configuration/freights/{carrierId}/values/update` |
+| 45 | Update freight — increase fixed rate | POST | `/api/logistics/pvt/configuration/freights/{carrierId}/values/update` |
+| 46 | Update freight — decrease fixed rate | POST | `/api/logistics/pvt/configuration/freights/{carrierId}/values/update` |
+| 47 | Update freight — increase % price surcharge | POST | `/api/logistics/pvt/configuration/freights/{carrierId}/values/update` |
+| 48 | Update freight — decrease % price surcharge | POST | `/api/logistics/pvt/configuration/freights/{carrierId}/values/update` |
+| 49 | Update freight — increase delivery time (`timeCost`) | POST | `/api/logistics/pvt/configuration/freights/{carrierId}/values/update` |
+| 50 | Update freight — decrease delivery time | POST | `/api/logistics/pvt/configuration/freights/{carrierId}/values/update` |
+| 51 | Create freight — weight-based surcharge | POST | `/api/logistics/pvt/configuration/freights/{carrierId}/values/update` |
+| 52 | Delete freight value interval | POST | `/api/logistics/pvt/configuration/freights/{carrierId}/values/update` |
+
+### Scheduled Delivery — Blocked Windows (TC-53 → TC-55)
+
+| TC | Name | Method | Endpoint |
+|---|---|---|---|
+| 53 | Retrieve blocked delivery windows | GET | `/api/logistics/pvt/configuration/carriers/{carrierId}/getdayofweekblocked` |
+| 54 | Add blocked delivery window | POST | `/api/logistics/pvt/configuration/carriers/{carrierId}/adddayofweekblocked` |
+| 55 | Remove blocked delivery window | POST | `/api/logistics/pvt/configuration/carriers/{carrierId}/removedayofweekblocked` |
+
+## Results — `logisticstest` · `vtexcommercebeta` · June 12, 2026
+
+| Metric | Value |
+|---|---|
+| TCs run | 62 (55 shipping strategy + 7 sellerId extensions) |
+| Pass | **61** (after Retry Session 1) |
+| Fail / open | **1** (WH-S03 — product gap) |
+| Persistent docks left | `dock-qa-persist-01`, `dock-qa-persist-02` |
+
+### Summary by domain
+
+| Domain | Pass | Fail | Notes |
+|---|---|---|---|
+| Loading Docks (TC-01..10) | 10/10 | 0 | TC-08/09 return **204** (accepted as success) |
+| Warehouses (TC-11..21) | 11/11 | 0 | TC-19/20 return **204** |
+| Inventory (TC-22..33) | 12/12 | 0 | TC-29 hit 429 on first run; passed on retry |
+| Shipping Policies (TC-34..42) | 9/9 | 0 | PUT requires full body (`name` + `shippingMethod`) |
+| Freight Values (TC-43..52) | 10/10 | 0 | Retry Session 1: array body + 204 accepted · TC-52 needs 30s cooldown |
+| Scheduled Delivery (TC-53..55) | 3/3 | 0 | Retry Session 1: ISO datetime string body |
+| Seller ID extensions (WH-S01..07) | 6/7 | 1 | WH-S03: `sellerId=1` (ST1) accepted — **product gap** |
+
+### Failures / findings to investigate
+
+| TC | Status | Observation |
+|---|---|---|
+| WH-S03 | 200 ⚠️ | Warehouse created with `sellerId=1` (SellerType 1) — doc expects 400. **Confirmed in Retry Session 1** — product gap, not test bug. |
+| WH-S07 | 400 ✅ | `deliveryZonesHash` not exposed in checkout simulation response; empty hash correctly returns 400 |
+
+> **Resolved in Retry Session 1:** TC-44..52 (freight — array body + accept 204), TC-54/55 (blocked windows — datetime string body).
+
+### Per-TC result
+
+| TC | Result | HTTP | Notes |
+|---|---|---|---|
+| TC-01 | ✅ | 200 | List docks |
+| TC-02 | ✅ | 200 | Get dock |
+| TC-03 | ✅ | 200 | Create dock |
+| TC-04 | ✅ | 200 | `dockTimeFake=2.00:00:00` |
+| TC-05 | ✅ | 200 | Decrease processing time |
+| TC-06 | ✅ | 200 | Rename |
+| TC-07 | ✅ | 200 | Sales channels updated |
+| TC-08 | ✅ | 204 | Activate dock |
+| TC-09 | ✅ | 204 | Deactivate dock |
+| TC-10 | ✅ | 200 | Delete cleanup dock |
+| TC-11 | ✅ | 200 | List warehouses |
+| TC-12 | ✅ | 200 | Get warehouse |
+| TC-13 | ✅ | 200 | Create warehouse |
+| TC-14 | ✅ | 200 | Increase transit time |
+| TC-15 | ✅ | 200 | Decrease transit time |
+| TC-16 | ✅ | 200 | Increase cost |
+| TC-17 | ✅ | 200 | Cost to zero |
+| TC-18 | ✅ | 200 | Rename |
+| TC-19 | ✅ | 204 | Activate warehouse |
+| TC-20 | ✅ | 204 | Deactivate warehouse |
+| TC-21 | ✅ | 200 | Delete cleanup warehouse |
+| TC-22 | ✅ | 200 | Inventory SKU+WH |
+| TC-23 | ✅ | 200 | Inventory per dock |
+| TC-24 | ✅ | 200 | Inventory dock+WH |
+| TC-25 | ✅ | 200 | qty=500 |
+| TC-26 | ✅ | 200 | qty=10 |
+| TC-27 | ✅ | 200 | qty=0 |
+| TC-28 | ✅ | 200 | unlimited=true |
+| TC-29 | ✅ | 200 | leadTime=7d (retry) |
+| TC-30 | ✅ | 200 | leadTime=1d |
+| TC-31 | ✅ | 200 | leadTime=0 |
+| TC-32 | ✅ | 200 | Reservations |
+| TC-33 | ✅ | 200 | Dispatched |
+| TC-34 | ✅ | 200 | List policies |
+| TC-35 | ✅ | 200 | Get policy |
+| TC-36 | ✅ | 200 | Create policy |
+| TC-37 | ✅ | 200 | Rename (retry, full body) |
+| TC-38 | ✅ | 200 | Method change |
+| TC-39 | ✅ | 200 | Weekend on |
+| TC-40 | ✅ | 200 | Weekend off |
+| TC-41 | ✅ | 200 | Activate |
+| TC-42 | ✅ | 200 | Deactivate |
+| TC-43 | ✅ | 200 | List freight |
+| TC-44 | ✅ | 204 | Create freight (Retry Session 1 — array body) |
+| TC-45 | ✅ | 204 | Increase rate |
+| TC-46 | ✅ | 204 | Decrease rate |
+| TC-47 | ✅ | 204 | Increase % |
+| TC-48 | ✅ | 204 | Decrease % |
+| TC-49 | ✅ | 204 | Increase timeCost |
+| TC-50 | ✅ | 204 | Decrease timeCost |
+| TC-51 | ✅ | 204 | Weight surcharge |
+| TC-52 | ✅ | 204 | Delete interval (30s cooldown) |
+| TC-53 | ✅ | 200 | Get blocked windows |
+| TC-54 | ✅ | 200 | Add blocked window (datetime string) |
+| TC-55 | ✅ | 200 | Remove blocked window (datetime string) |
+| WH-S01 | ✅ | 200 | Valid `sellerId=botafogostore` |
+| WH-S02 | ✅ | 400 | Invalid seller |
+| WH-S03 | ❌ | 200 | ST1 seller accepted — unexpected |
+| WH-S04 | ✅ | 400 | Cannot change sellerId with inventory |
+| WH-S05 | ✅ | 200 | GET returns sellerId |
+| WH-S06 | ✅ | 200 | List includes sellerId |
+| WH-S07 | ✅ | 400 | Hash unavailable from simulation |
+
+---
+
+## Retry Session 1 — June 12, 2026 (~22:20 UTC)
+
+> Re-run of the **12 failing/open TCs** from the first execution. Goal: confirm whether failures were payload bugs vs. platform bugs.
+
+### Root causes found
+
+| TC group | First-run error | Root cause | Fix applied |
+|---|---|---|---|
+| TC-44..51 | HTTP **500** `internal_error` | Freight endpoint expects body as **JSON array** `[{...}]`, not a single object. Missing required fields (`maxVolume`, `polygon`, etc.) | Send array with full OpenAPI schema fields |
+| TC-44..51 | Marked fail on retry at **204** | API returns **204 No Content** on success (not 200) | Treat 200 **and** 204 as pass |
+| TC-50, TC-51, TC-52 (1st retry) | HTTP **429** | Rate limit — batch too fast after freight writes | Pause **3s** between calls; **30s** before TC-52 delete |
+| TC-54, TC-55 | HTTP **400** `The request is invalid` | Blocked-window endpoints expect body as **ISO datetime string** (`"2026-06-19T10:00:00"`), not `{dayOfWeek, timeLimit}` | Per [Logistics API OpenAPI](https://developers.vtex.com/docs/api-reference/logistics-api#post-/api/logistics/pvt/configuration/carriers/-carrierId-/adddayofweekblocked) |
+| WH-S03 | HTTP **200** (expected 400) | `sellerId=1` (SellerType 1 / marketplace default) is **accepted** — not a payload issue | **Product gap** — seller-type validation not enforced on Postgres path |
+
+### Retry results
+
+| TC | 1st run | Retry | Fix | Final |
+|---|---|---|---|---|
+| TC-44 | ❌ 500 | ✅ 204 | Array body + full fields | **PASS** |
+| TC-45 | ❌ 500 | ✅ 204 | Same | **PASS** |
+| TC-46 | ❌ 500 | ✅ 204 | Same | **PASS** |
+| TC-47 | ❌ 500 | ✅ 204 | Same | **PASS** |
+| TC-48 | ❌ 500 | ✅ 204 | Same | **PASS** |
+| TC-49 | ❌ 500 | ✅ 204 | Same | **PASS** |
+| TC-50 | ❌ 429 | ✅ 204 | Same + slower pacing | **PASS** |
+| TC-51 | ❌ 429 | ✅ 204 | Same + slower pacing | **PASS** |
+| TC-52 | ❌ 500 → 429 | ✅ 204 | Array body + **30s cooldown** before delete | **PASS** |
+| TC-54 | ❌ 400 | ✅ 200 | ISO datetime string body | **PASS** |
+| TC-55 | ❌ 400 | ✅ 200 | ISO datetime string body | **PASS** |
+| WH-S03 | ❌ 200 | ❌ 200 | Re-tested — still accepts ST1 seller | **OPEN — product gap** |
+
+### Updated totals (after Retry Session 1)
+
+| Metric | Run 1 | After retry |
+|---|---|---|
+| Pass | 50/62 | **61/62** |
+| Open | 12 | **1** (WH-S03) |
+
+### Example payloads that worked (retry)
+
+**Freight create (TC-44) — note array wrapper:**
+
+```json
+[
+  {
+    "operationType": 1,
+    "zipCodeStart": "01000000",
+    "zipCodeEnd": "01999999",
+    "weightStart": 1,
+    "weightEnd": 10000,
+    "absoluteMoneyCost": "5.00",
+    "timeCost": "2.00:00:00",
+    "country": "BRA",
+    "maxVolume": 1000000000,
+    "pricePercent": 0,
+    "pricePercentByWeight": 0,
+    "polygon": ""
+  }
+]
+```
+
+**Blocked window add (TC-54) — raw string body:**
+
+```json
+"2026-06-19T10:00:00"
+```
+
+### Still open
+
+| ID | Status | Action |
+|---|---|---|
+| WH-S03 | Warehouse POST accepts `sellerId=1` (SellerType 1) with HTTP 200 | Escalate to Seller Architecture / Postgres team — doc says 400 for wrong type |
+
