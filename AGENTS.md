@@ -112,3 +112,64 @@ Se encontrar divergência entre o AGENT_SPEC e a implementação existente:
 - Não aplique estilos visuais distintos entre `.suggest-chip` e `.chat-quick-reply` — a distinção entre eles é comportamental, não visual.
 - Não use CSS para definir a largura inicial do painel de chat — use o prop `initialWidth` do `ResizableSplit`.
 - Não implemente "Aplicar" em action card de criação de tarefa sem o scroll + abertura do card correspondente no canvas.
+
+## Vercel publication policy (`.vercelignore`)
+
+This repository is linked to a Vercel project (`vertical-distributed-order-management-dom`) with **Password
+Protection enabled**. What gets published is controlled by an allowlist in
+[`.vercelignore`](.vercelignore).
+
+The core rule:
+
+> The first non-comment line of [`.vercelignore`](.vercelignore) is `/*`.
+> **Never remove it.** To publish content, **add** a `!path` block that opts
+> the file or folder back in. To unpublish, remove the matching block.
+
+### Allowed
+
+- Add a new `!path` block to publish a folder or file.
+- Remove an existing `!path` block to take that path off the air.
+
+> **Ordering matters.** `.gitignore`-style matching is order-sensitive (the
+> last pattern that matches a path wins). Inside a chained re-include block
+> (`!parent` then `parent/*` then `!parent/child` ...), the order of the
+> `!path` and `path/*` lines is significant; do not reorder them. New blocks
+> should be appended to the end of the file under a clear comment header.
+> Validate locally with `git check-ignore --no-index -v <path>` (after
+> temporarily swapping `.vercelignore` into `.gitignore`).
+
+### Forbidden
+
+- Removing or commenting out the `/*` line.
+- Replacing `/*` with narrower patterns (e.g. `/docs`, `*.md`). The wildcard
+  is intentionally broad so publication is opt-in.
+- Adding patterns that re-include the whole repo (e.g. `!*`, `!/`, `!**/*`).
+- Moving `.vercelignore` out of the repo root.
+
+### Nested paths require chained re-includes
+
+Template for a prototype at `modules/X/Y/prototype/`:
+
+```
+!modules
+modules/*
+!modules/X
+modules/X/*
+!modules/X/Y
+modules/X/Y/*
+!modules/X/Y/prototype
+!modules/X/Y/prototype/**
+```
+
+If intermediate directories are already unblocked earlier in the file (a
+sibling prototype under the same parent), reuse them; do not duplicate.
+
+### Why this safety net exists
+
+Without `/*`, Vercel serves any path that exists in the repo: source code,
+agent prompts (`.claude/`, `.cursor/`), configuration (`.vtex/`, `.mcp.json`),
+internal documentation. Wildcard + allowlist makes the published surface
+explicit and auditable through diffs.
+
+Companion docs: [`.cursor/rules/vercelignore.mdc`](.cursor/rules/vercelignore.mdc),
+[`.claude/vercelignore.md`](.claude/vercelignore.md).

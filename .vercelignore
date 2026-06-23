@@ -1,0 +1,138 @@
+# --- POLICY ------------------------------------------------------------------
+# This file controls what Vercel publishes. The first line `/*` ignores
+# EVERYTHING at the repo root; each `!path` below opts a file or folder back
+# in. See AGENTS.md, CLAUDE.md and .cursor/rules/vercelignore.mdc for the
+# full rules. Never remove the `/*` line. Never replace it with narrower
+# patterns. Never add patterns that re-include the whole repo (e.g. `!*`).
+# Ordering inside a chained re-include block matters; do not reorder lines.
+# -----------------------------------------------------------------------------
+
+/*
+
+# Re-include the chain down to each published prototype. `.vercelignore`
+# uses gitignore syntax, which requires re-including each intermediate
+# directory before a nested `!path` can take effect.
+
+# modules/ tree (20 prototype(s))
+# - modules/delivery-promise/banners-and-discovery-pages/prototype/
+!modules
+modules/*
+!modules/delivery-promise
+modules/delivery-promise/*
+!modules/delivery-promise/banners-and-discovery-pages
+modules/delivery-promise/banners-and-discovery-pages/*
+!modules/delivery-promise/banners-and-discovery-pages/prototype
+!modules/delivery-promise/banners-and-discovery-pages/prototype/**
+# - modules/delivery-promise/compatibility/prototype/
+!modules/delivery-promise/compatibility
+modules/delivery-promise/compatibility/*
+!modules/delivery-promise/compatibility/prototype
+!modules/delivery-promise/compatibility/prototype/**
+# - modules/delivery-promise/location-based-navigation/prototype/
+!modules/delivery-promise/location-based-navigation
+modules/delivery-promise/location-based-navigation/*
+!modules/delivery-promise/location-based-navigation/prototype
+!modules/delivery-promise/location-based-navigation/prototype/**
+# - modules/delivery-promise/search-filters/prototype/
+!modules/delivery-promise/search-filters
+modules/delivery-promise/search-filters/*
+!modules/delivery-promise/search-filters/prototype
+!modules/delivery-promise/search-filters/prototype/**
+# - modules/delivery-promise/self-service-activation/prototype/
+!modules/delivery-promise/self-service-activation
+modules/delivery-promise/self-service-activation/*
+!modules/delivery-promise/self-service-activation/prototype
+!modules/delivery-promise/self-service-activation/prototype/**
+# - modules/delivery-promise/sort-search-results/prototype/
+!modules/delivery-promise/sort-search-results
+modules/delivery-promise/sort-search-results/*
+!modules/delivery-promise/sort-search-results/prototype
+!modules/delivery-promise/sort-search-results/prototype/**
+# - modules/delivery-promise/tags-and-badges/prototype/
+!modules/delivery-promise/tags-and-badges
+modules/delivery-promise/tags-and-badges/*
+!modules/delivery-promise/tags-and-badges/prototype
+!modules/delivery-promise/tags-and-badges/prototype/**
+# - modules/fulfillment/delivery-options/prototype/
+!modules/fulfillment
+modules/fulfillment/*
+!modules/fulfillment/delivery-options
+modules/fulfillment/delivery-options/*
+!modules/fulfillment/delivery-options/prototype
+!modules/fulfillment/delivery-options/prototype/**
+# - modules/fulfillment/delivery-pricing/prototype/
+!modules/fulfillment/delivery-pricing
+modules/fulfillment/delivery-pricing/*
+!modules/fulfillment/delivery-pricing/prototype
+!modules/fulfillment/delivery-pricing/prototype/**
+# - modules/fulfillment/inventory-management/prototype/
+!modules/fulfillment/inventory-management
+modules/fulfillment/inventory-management/*
+!modules/fulfillment/inventory-management/prototype
+!modules/fulfillment/inventory-management/prototype/**
+# - modules/fulfillment/known-issues/prototype/
+!modules/fulfillment/known-issues
+modules/fulfillment/known-issues/*
+!modules/fulfillment/known-issues/prototype
+!modules/fulfillment/known-issues/prototype/**
+# - modules/fulfillment/operational-capacity/prototype/
+!modules/fulfillment/operational-capacity
+modules/fulfillment/operational-capacity/*
+!modules/fulfillment/operational-capacity/prototype
+!modules/fulfillment/operational-capacity/prototype/**
+# - modules/fulfillment/reverse-logistics/prototype/
+!modules/fulfillment/reverse-logistics
+modules/fulfillment/reverse-logistics/*
+!modules/fulfillment/reverse-logistics/prototype
+!modules/fulfillment/reverse-logistics/prototype/**
+# - modules/fulfillment/shipping-strategy/prototype/
+!modules/fulfillment/shipping-strategy
+modules/fulfillment/shipping-strategy/*
+!modules/fulfillment/shipping-strategy/prototype
+!modules/fulfillment/shipping-strategy/prototype/**
+# - modules/order-allocation/asynchronous-order-allocation/prototype/
+!modules/order-allocation
+modules/order-allocation/*
+!modules/order-allocation/asynchronous-order-allocation
+modules/order-allocation/asynchronous-order-allocation/*
+!modules/order-allocation/asynchronous-order-allocation/prototype
+!modules/order-allocation/asynchronous-order-allocation/prototype/**
+# - modules/order-allocation/cost-minimization-solver/prototype/
+!modules/order-allocation/cost-minimization-solver
+modules/order-allocation/cost-minimization-solver/*
+!modules/order-allocation/cost-minimization-solver/prototype
+!modules/order-allocation/cost-minimization-solver/prototype/**
+# - modules/order-allocation/order-allocation-agent/prototype/
+!modules/order-allocation/order-allocation-agent
+modules/order-allocation/order-allocation-agent/*
+!modules/order-allocation/order-allocation-agent/prototype
+!modules/order-allocation/order-allocation-agent/prototype/**
+# - modules/order-management/order-lifecycle-management/specs/agentic-oms-automated-stuck-order-detection-and-resolution/prototype/
+!modules/order-management
+modules/order-management/*
+!modules/order-management/order-lifecycle-management
+modules/order-management/order-lifecycle-management/*
+!modules/order-management/order-lifecycle-management/specs
+modules/order-management/order-lifecycle-management/specs/*
+!modules/order-management/order-lifecycle-management/specs/agentic-oms-automated-stuck-order-detection-and-resolution
+modules/order-management/order-lifecycle-management/specs/agentic-oms-automated-stuck-order-detection-and-resolution/*
+!modules/order-management/order-lifecycle-management/specs/agentic-oms-automated-stuck-order-detection-and-resolution/prototype
+!modules/order-management/order-lifecycle-management/specs/agentic-oms-automated-stuck-order-detection-and-resolution/prototype/**
+# - modules/order-management/subscription/specs/003-membership-price-and-promo/prototype/
+!modules/order-management/subscription
+modules/order-management/subscription/*
+!modules/order-management/subscription/specs
+modules/order-management/subscription/specs/*
+!modules/order-management/subscription/specs/003-membership-price-and-promo
+modules/order-management/subscription/specs/003-membership-price-and-promo/*
+!modules/order-management/subscription/specs/003-membership-price-and-promo/prototype
+!modules/order-management/subscription/specs/003-membership-price-and-promo/prototype/**
+# - modules/order-management/workflow/specs/006-task-based-agentic-workflow/prototype/
+!modules/order-management/workflow
+modules/order-management/workflow/*
+!modules/order-management/workflow/specs
+modules/order-management/workflow/specs/*
+!modules/order-management/workflow/specs/006-task-based-agentic-workflow
+modules/order-management/workflow/specs/006-task-based-agentic-workflow/*
+!modules/order-management/workflow/specs/006-task-based-agentic-workflow/prototype
+!modules/order-management/workflow/specs/006-task-based-agentic-workflow/prototype/**

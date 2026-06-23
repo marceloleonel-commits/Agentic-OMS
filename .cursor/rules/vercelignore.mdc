@@ -1,0 +1,55 @@
+---
+description: Vercel publication policy. The .vercelignore wildcard must stay; only add/remove explicit `!path` allowlist blocks.
+globs:
+  - .vercelignore
+alwaysApply: true
+---
+
+# Rule: `.vercelignore` (wildcard + allowlist)
+
+This repository is linked to a Vercel project with **Password Protection**.
+Published paths are controlled by an allowlist in [.vercelignore](mdc:.vercelignore):
+the first non-comment line is `/*` (ignores everything), and each `!path`
+block opts a file or folder back in.
+
+## Absolute rules
+
+- **Never remove the `/*` line** in `.vercelignore`. Without it, the whole
+  repo (including `.claude/`, `.cursor/`, `.vtex/`, source code, internal
+  docs) would be served by Vercel by direct path.
+- **Never replace `/*` with narrower patterns** (e.g. `/docs`, `*.md`). The
+  wildcard is intentionally broad.
+- **Never add patterns that re-include the whole repo** (e.g. `!*`, `!/`,
+  `!**/*`).
+
+## What you can do
+
+- Add a `!path` block to publish a folder or file. Ask the user which
+  subproject this is for before adding.
+- Remove an existing `!path` block to take that path off the air.
+
+**Ordering is significant.** `.gitignore` matching is order-sensitive (the
+last pattern that matches wins). Inside a chained re-include block, do not
+reorder the `!path` and `path/*` lines. Append new blocks at the end of the
+file under a clear comment header.
+
+## Nested paths require chained re-includes
+
+Template for `modules/X/Y/prototype/`:
+
+```
+!modules
+modules/*
+!modules/X
+modules/X/*
+!modules/X/Y
+modules/X/Y/*
+!modules/X/Y/prototype
+!modules/X/Y/prototype/**
+```
+
+Reuse intermediate directories that are already unblocked earlier; do not
+duplicate. Always add a comment header naming the prototype being published.
+
+More context in [AGENTS.md](mdc:AGENTS.md), [CLAUDE.md](mdc:CLAUDE.md) and
+[.claude/vercelignore.md](mdc:.claude/vercelignore.md).
