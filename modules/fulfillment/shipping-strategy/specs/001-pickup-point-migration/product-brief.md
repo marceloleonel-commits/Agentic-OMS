@@ -17,7 +17,7 @@
 
 **Title:** Pickup Point Radius — Infrastructure Migration to Unlock Scale
 
-**Description:** With this release, shoppers will see all eligible pickup points regardless of distance — not just those within the current ~50km platform limit. Merchants will no longer need to open a support request to VTEX to increase the pickup point radius for their account. This is enabled by migrating the Pickup Point data layer off MasterData, eliminating the architectural root cause of the radius constraint and unblocking orders that today are silently lost because the nearest pickup option is just beyond our technical limit.
+**Description:** With this release, shoppers will see all eligible pickup points regardless of distance — not just those within the current ~50km platform limit. Merchants will no longer need to open a support request to VTEX to increase the pickup point radius for their account. The merchant-facing limit shifts from distance to a configurable number of nearest points: the km radius field is removed (it is non-functional today — the ~50km platform ceiling silently overrides it), and the count of nearest pickup points shown — today a hard limit of 10 — becomes merchant-configurable up to a new ceiling (TBD). This is enabled by migrating the Pickup Point data layer off MasterData, eliminating the architectural root cause of the radius constraint and unblocking orders that today are silently lost because the nearest pickup option is just beyond our technical limit.
 
 ---
 
@@ -52,14 +52,15 @@ VTEX is actively investing in B2B commerce — including the development of Buye
 
 - Migrate Pickup Point entity off MasterData to a new data layer (engineering study required; storage decision owned by engineering based on performance, cost, and operational complexity analysis).
 - Remove the ~50km `maxDistance` limit, allowing the API to return up to 300 pickup points regardless of distance.
-- Remove the radius configuration step from the Admin frontend — merchants should no longer be required to define a radius when setting up a pickup point shipping policy.
+- Remove the km radius field from the Admin frontend — merchants should no longer define a maximum distance when setting up a pickup point shipping policy (the field is non-functional today, overridden by the ~50km platform ceiling).
+- Make the existing "number of nearest pickup points" Admin config effective and flexible — replace the current hard limit of 10 with a merchant-configurable ceiling (TBD), applied under the 300-result technical API cap.
 - Preserve all existing pickup point data and backward compatibility for existing shipping policies and storefronts.
 - Execute a progressive and careful rollout. The migration plan — including phasing, rollback strategy, and validation criteria at each stage — is to be defined by engineering as part of the technical study (US-01).
 
 ## Not in Scope
 
-- Merchant-configurable radius > 50km (self-service radius management) — future capability, separate spec.
-- Pickup point creation or management flows in the Admin beyond the radius configuration removal.
+- Defining the exact new ceiling for the configurable count and its configuration surface — open questions (TBD), not resolved here.
+- Pickup point creation or management flows in the Admin beyond the km field removal and the count config.
 - Resolution of the 10k PUP API response cap — known constraint, separate follow-up.
 - International coverage — Brazil only at launch.
 

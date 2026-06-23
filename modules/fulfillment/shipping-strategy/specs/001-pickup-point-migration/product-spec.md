@@ -20,19 +20,20 @@
 
 **Title:** Pickup Point Migration
 
-**Description:** With this release, shoppers will see all eligible pickup points regardless of distance, up to the existing API cap of 300 results. Merchants will no longer need to open a support request to VTEX to increase the pickup point radius. This is enabled by migrating the Pickup Point data layer off MasterData, eliminating the architectural root cause of the radius constraint. The radius configuration step is removed from the Admin setup flow, unblocking orders that today are silently lost because the nearest pickup option is just beyond our technical limit.
+**Description:** With this release, shoppers will see all eligible pickup points regardless of distance, up to the existing API cap of 300 results. Merchants will no longer need to open a support request to VTEX to increase the pickup point radius. This is enabled by migrating the Pickup Point data layer off MasterData, eliminating the architectural root cause of the radius constraint. The merchant-facing limit shifts from distance to a configurable number of nearest pickup points: the km radius field is removed (the platform silently caps it at 50km today regardless of the configured value), and the count of nearest points shown — today a hard limit of 10 — becomes merchant-configurable up to a new ceiling (TBD). This unblocks orders that today are silently lost because the nearest pickup option is just beyond our technical limit.
 
 ---
 
 ## Clarifications
 
 - **The primary deliverable is an infrastructure migration.** Pickup Point data currently lives in MasterData. The migration to a scalable data layer — to be selected by engineering after a technical study — is the prerequisite for everything else in this spec.
-- **This spec addresses two coupled problems:** (1) the hard 50km radius limit that hides valid pickup points from shoppers in checkout, and (2) the merchant-facing radius configuration step that should be eliminated from the pickup point setup journey.
+- **This spec addresses two coupled problems:** (1) the hard 50km radius limit that hides valid pickup points from shoppers in checkout, and (2) the merchant-facing radius configuration that should be replaced by a configurable limit on the *number* of nearest pickup points.
 - **The 50km limit is a MasterData constraint, not a product decision.** Removing it requires migrating off MasterData first. The migration is mandatory and cost-driven (~US$7,600/month recurring).
-- **Current behavior:** the platform returns up to 300 pickup points ordered by proximity, filtered to a ~50km radius. ZIP-to-coordinate conversion, proximity ordering, and the `distance` field in the response already exist. Pickup points beyond ~50km are silently excluded with no error or explanation.
-- **Target behavior:** same 300 pickup points, same proximity ordering, same API contract — with no distance ceiling on `maxDistance`. One new field (`distanceKm`) is added to each pickup point entry.
+- **The merchant config already exists in the Admin — but it does not work as displayed.** In `/admin/logistics#/config`, the merchant can set *"show only the first X pickup points within at most Y km of the delivery address."* Today neither field is honored as shown: the ~50km platform ceiling silently overrides the km field (the UI banner states "max distance considered is 50 km" even when the field shows 100), and the number of points (X) is a hard limit of 10. The work is mostly **making this existing config effective**, not building new UI.
+- **Current behavior:** the platform returns up to 300 pickup points ordered by proximity, filtered to a ~50km radius, and surfaces a hard limit of 10 nearest points in the experience. ZIP-to-coordinate conversion, proximity ordering, and the `distance` field in the response already exist. Pickup points beyond ~50km — or beyond the 10 nearest — are silently excluded with no error or explanation.
+- **Target behavior:** same 300 pickup points (technical API cap), same proximity ordering, same API contract — with **no distance ceiling** on `maxDistance`. The km radius field is removed from the Admin; the number of nearest points shown becomes **merchant-configurable**, replacing the current hard limit of 10 with a flexible ceiling (TBD). One new field (`distanceKm`) is added to each pickup point entry. The 300 cap is the platform safeguard; the merchant-defined count is the shopper-facing limit, and km is never a filter.
 - **A second coupled constraint** exists: the Shipping API returns up to 10k pickup points per call, including inactive ones. Accounts with >10k PUPs risk incomplete Delivery Promise indexation. This is out of scope for this spec; to be addressed in a follow-up.
-- Admin pickup point creation and management are out of scope except for the removal of the radius configuration step.
+- Admin pickup point creation and management are out of scope except for the removal of the km radius field and making the "number of nearest points" config effective and flexible.
 
 ---
 
@@ -64,8 +65,9 @@ Today, any merchant who needs a radius above 50km must open a request and wait f
 ## Vision: What We Want
 
 1. **Migrate Pickup Point data off MasterData** — engineering owns the database selection; the migration is the prerequisite for everything else in this spec.
-2. **Remove the radius configuration from the Admin frontend** — merchants should not be required to define a radius when setting up a pickup point shipping policy.
-3. **Surface the nearest eligible pickup points** to the shopper's ZIP code at checkout, regardless of distance — proximity-ordered, not radius-filtered — respecting the existing 300 pickup point API response limit.
+2. **Remove the km radius configuration from the Admin frontend** — merchants should not define a maximum distance; the km field is removed.
+3. **Replace the radius with a configurable number of nearest points** — make the existing "first X pickup points" config effective and flexible, raising the current hard limit of 10 to a new ceiling (TBD).
+4. **Surface the nearest eligible pickup points** to the shopper's ZIP code at checkout, regardless of distance — proximity-ordered, not radius-filtered — respecting the existing 300 pickup point API response limit.
 
 The shopper experience becomes: *"I enter my ZIP and see the closest pickup options, however far they are."* Not: *"I enter my ZIP and only see options within an arbitrary 50km ceiling."*
 
@@ -102,16 +104,16 @@ The shopper experience becomes: *"I enter my ZIP and see the closest pickup opti
 
 ---
 
-### US-03 — Merchant No Longer Configures Radius *(lower priority — ship after US-02)*
+### US-03 — Merchant Configures the Number of Nearest Points, Not a Radius *(lower priority — ship after US-02)*
 
-**As** a Logistics Manager setting up a new pickup point,
-**I want** to skip the radius definition step entirely,
-**So that** I don't have to reason about which ZIP codes the pickup point should serve — the system handles proximity automatically.
+**As** a Logistics Manager setting up pickup points,
+**I want** to configure how many of the nearest pickup points are shown — without defining a km radius,
+**So that** I control the shopper-facing list by relevance (closest N) instead of an arbitrary distance, and the system handles proximity automatically.
 
 **Acceptance criteria:**
-- The radius configuration field is removed from the pickup point shipping policy setup flow in the Admin.
+- The km radius field is removed from the pickup point configuration in the Admin (`/admin/logistics#/config`).
+- The "number of nearest pickup points" field becomes effective and flexible: the current hard limit of 10 is replaced by a configurable ceiling (TBD).
 - Existing configurations continue to work without any merchant action.
-- The pickup point setup journey is reduced from 7 steps to 6 or fewer.
 
 ---
 
@@ -120,8 +122,13 @@ The shopper experience becomes: *"I enter my ZIP and see the closest pickup opti
 ### FR-001 — Remove the ~50km maxDistance Ceiling
 Post-migration, the `maxDistance` parameter passed to `_searchsellers` must not be capped at ~50km. The platform returns up to 300 pickup points regardless of distance, ordered by ascending proximity from the shopper's ZIP centroid.
 
-### FR-002 — Remove Radius Configuration from Admin *(lower priority — ship after FR-001)*
-The radius definition step must be removed from the pickup point shipping policy setup flow. Merchants should not be required to define a maximum distance when creating or editing a pickup policy.
+### FR-002 — Remove the km Radius Field from Admin *(lower priority — ship after FR-001)*
+The km radius (maximum distance) field must be removed from the pickup point configuration in the Admin (`/admin/logistics#/config`). Merchants should not define a maximum distance when creating or editing a pickup policy. The field is non-functional today (the ~50km platform ceiling overrides any value entered).
+
+### FR-002b — Make the "Number of Nearest Points" Configurable *(ships with FR-002)*
+The existing Admin field *"show only the first X pickup points"* must become effective and flexible. The current hard limit of **10** is replaced by a **merchant-configurable** value up to a new ceiling **(TBD)**. The configured count is the shopper-facing limit, applied on top of (and never exceeding) the 300-result technical API cap. No pickup point is excluded by distance — only by count.
+
+> **Open questions (FR-002b):** the value of the new ceiling (TBD) and where the merchant configures the count (pickup shipping policy / Delivery Promise / checkout config — TBD).
 
 ### FR-003 — Preserve Existing Merchant Configurations
 All existing shipping policies and pickup point configurations must continue to work without any merchant action post-migration.
@@ -246,7 +253,7 @@ No breaking changes to the existing delivery options API contract. New fields ar
 
 ## Out of Scope
 
-- **Merchant-configurable radius > 50km** — future capability, separate spec.
+- **Defining the exact new ceiling for the configurable count** — the flexible limit replaces the hard 10, but its final value (TBD) and configuration surface are open questions, not resolved in this spec.
 - **Coverage by polygon or region** — future capability; not in this spec.
 - **10k PUP API cap** — to be addressed in a follow-up spec.
 - **International ZIP codes** — BR only at launch.
