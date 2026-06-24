@@ -18,19 +18,75 @@
 
 ## Problem
 
-Merchants who want to offer Same Day delivery have no automated way to identify which of their existing shipping policies and SLAs can support it. Today, creating a Same Day Delivery Option requires a Logistics Operations Manager to manually inspect carrier configurations, estimate coverage, define time targets, and create the DO by hand — a process that is error-prone, time-consuming, and inaccessible to merchants without deep logistics knowledge.
+Merchants already configure delivery SLAs across sellers, shipping policies, and regions in VTEX — the data exists in the platform. What is missing is an **optimized Delivery Options layer** that packages those SLAs into options shoppers can use as **PLP filters** on the product listing page and search, including **same-day** and **next-day dynamic estimates**.
 
-The result: merchants either skip Same Day altogether or configure it incorrectly, leading to checkout promises that cannot be fulfilled.
+Today, turning SLAs into that structure requires an Operations Manager to manually regroup policies, define time targets, and enable **Use option as a filter on the store product listing page** — slow, error-prone work that most merchants never complete.
 
-**Job to be done:** Discover which routes in my operation already support Same Day and convert that into activatable Delivery Options without a manual logistics audit.
+The result: logistics is configured, but **not exposed in navigation**. Shoppers cannot filter by delivery speed before checkout, and merchants leave conversion on the table.
+
+---
+
+## Initiative A — Optimize SLAs for navigation filters
+
+**[Diagnostic] SLAs configured, Delivery Options not optimized for storefront filtering**  
+**Spec:** 001 · **Priority:** Must-have · Q2C2
+
+### Job to be done
+
+As an **Operations Manager**, I want the agent to optimize how my existing SLAs — already configured across sellers and shipping policies in VTEX — are grouped into Delivery Options for **PLP filters** and **same-day / next-day dynamic estimates**, so shoppers can filter products by delivery speed during navigation and search and I can **improve conversion** without manually regrouping every shipping policy.
+
+### Diagnostic
+
+> "Your account has **{N} SLAs** configured across sellers and shipping policies, but only **{M} Delivery Options** are set up as **PLP filters**. Shoppers cannot yet self-segment by delivery speed on listing and search — including **same-day** and **next-day** dynamic estimates powered by Delivery Promise."
+
+**What the agent checks**
+- SLA data is present in VTEX (sellers, policies, carriers, regions) but not packaged into a small set of strategic DOs
+- **PLP filter** flag and **time targets** are missing or misaligned — so Intelligent Search filters and dynamic estimates do not reflect the merchant's real speed tiers
+- Merchant cannot explain which policies belong in which bucket (e.g., "up to 2h" vs standard) or whether a bucket qualifies for same-day given cutoff + warehouse + dock + delivery time
+
+### Action plan
+
+**Goal:** Group existing SLAs into up to 3 Delivery Options configured for **storefront navigation filters**.
+
+**Suggested action:** Run SLA normalization (Clara's rules) → present 1–3 DO suggestions with adaptive labels, time targets, eligible policies, and rationale — **PLP filter recommended on** where applicable.
+
+**Proposed structure (per suggested DO)**
+
+| Field | Logic |
+| --- | --- |
+| Name | Adaptive label from SLA bucket (e.g., "up to 2h", "up to 4h") — editable |
+| Time target | Derived from SLA bucket + store hours + cutoff (warehouse + dock + delivery time) |
+| Type | Delivery and/or pickup (merchant may prioritize 2 delivery + 1 pickup) |
+| PLP filter | **Use option as a filter on the store product listing page** — recommended on create |
+| Status on create | Inactive — merchant activates when ready |
+| Rationale | Policies, routes, carriers, cutoff breakdown |
+
+**Option 1 — Confirm DO for navigation filtering**  
+- **Condition:** Merchant accepts label, time target, and PLP filter recommendation.  
+- **Execution:** Agent creates DO via MCP tool after confirmation.  
+- **Expected impact:** Shoppers filter PLP/search by that speed tier; eligible for **dynamic-estimate** same-day / next-day when DP is active.
+
+**Option 2 — Edit time bucket before confirm**  
+- **Condition:** Merchant changes time target or label.  
+- **Execution:** Agent recalculates which policies/routes move in or out of the bucket → merchant confirms → create.  
+- **Expected impact:** Filter reflects a conscious trade-off, not a blind default.
+
+**Option 3 — Export SLA analysis only**  
+- **Condition:** Merchant wants visibility before creating any DO.  
+- **Execution:** Agent delivers normalized SLA report / suggestion view; no write.  
+- **Expected impact:** Merchant aligns ops and ecommerce on speed tiers before activating filters.
+
+**Platform context:** Each DO can enable **Use option as a filter on the store product listing page** ([Delivery Options Beta](https://help.vtex.com/en/docs/tutorials/delivery-options-beta)). **Dynamic estimates** (`same-day`, `next-day`) resolve at search time from logistics + browsing time ([Delivery Promise for headless](https://developers.vtex.com/docs/guides/delivery-promise-for-headless-stores)). Q2C2 starts with **intraday / Same Day-eligible buckets**; the same pattern extends to Standard and Next Day over time.
+
+> **PRD note:** Full agent PRD (vision, end-to-end flow, additional initiatives) can live in a separate doc — this section follows the Promotions Agent PRD initiative format.
 
 ---
 
 ## Business rationale
 
-We believe that properly configuring Same Day Delivery Options directly increases checkout conversion — shoppers who see a precise, credible Same Day option are more likely to complete the purchase. This is the core business bet behind prioritizing DO setup automation.
+Merchants already invest in logistics configuration in VTEX. The gap is **how that configuration is packaged for discovery**: well-grouped DOs with PLP filters let shoppers self-segment by delivery speed during navigation and search — a lever for **conversion** before checkout.
 
-On the infrastructure side, this investment is well-positioned: Delivery Options are already indexed by Delivery Promise (DP), so merchants who activate DOs automatically improve the quality and precision of the delivery options displayed at checkout — without additional integration work.
+Delivery Options are indexed by **Delivery Promise**, so activating DOs with PLP filter enabled improves Intelligent Search filtering without custom storefront integration.
 
 ---
 
@@ -46,9 +102,9 @@ This is the shortest path to delivering an automated configuration experience �
 
 **This scope belongs to the Delivery Options Agent — not a parallel track.** Same Day DO automation lives inside the agent architecture defined in [spec 002](../002-ai-workspace-backend-setup/product-brief.md) and [ADR-001](../002-ai-workspace-backend-setup/ADR-001-fulfillment-agent.html): `fulfillment-config-agent` (Orchestrator + `delivery-options` sub-agent) and `fulfillment-mcp-server` (MCP tools for Logistics APIs). It may ship alongside other agent tasks in Q2C2 (e.g., spec 003) — sequencing is an engineering decision, not a product constraint.
 
-**Deterministic does not mean non-agentic.** The agent can invoke fully deterministic tools — rule-based SLA normalization, Same Day grouping, DO creation — and present structured output to the merchant. It can also walk the merchant through the same flow conversationally. Both are valid agent behaviors. What matters is **scope ownership**: this workflow is executed by the agent, not by a standalone script, cron job, or microservice built outside it.
+**Deterministic does not mean non-agentic.** The agent can invoke fully deterministic tools — rule-based SLA normalization, Same Day suggestion, DO creation — and present structured output to the merchant. It can also walk the merchant through the same flow conversationally. Both are valid agent behaviors. What matters is **scope ownership**: this workflow is executed by the agent, not by a standalone script, cron job, or microservice built outside it.
 
-**Implementation constraint (non-negotiable):**
+**Product constraint (non-negotiable):**
 
 - SLA normalization, Same Day analysis, suggestion generation, and DO creation ship as **agent tasks / MCP tools** callable by the orchestrator
 - Logistics reads and writes go through **MCP tools** in `fulfillment-mcp-server`
@@ -73,13 +129,13 @@ See the [Design doc — Agentic experience for Delivery Options](https://docs.go
 
 ## Target persona
 
-**Logistics Operations Manager** at a Tier 1 merchant with at least one carrier operating intraday or express routes — who wants to offer Same Day at checkout but does not have bandwidth to configure it manually.
+**Operations Manager** at a Tier 1 merchant with SLAs already configured across sellers and shipping policies — who wants to **optimize Delivery Options for PLP filters** (and same-day / next-day dynamic estimates) to improve navigation and conversion, without manually regrouping policies.
 
 ---
 
 ## Scope (this release)
 
-The core job of this release is to **automate and simplify the extraction and normalization of SLA data** — from the main account and all sellers — and turn it into the visibility needed to generate Same Day Delivery Option suggestions. Today, this data exists in the platform but is scattered, un-normalized, and not actionable without manual work.
+The core job of this release is to **read, normalize, and optimize SLA data already in VTEX** — from the main account and all sellers — and turn it into Delivery Option suggestions configured for **PLP navigation filters**. The merchant's logistics is configured; the agent packages it for storefront discovery.
 
 Concretely — delivered as **agent tasks** in the `delivery-options` sub-agent:
 
@@ -89,9 +145,9 @@ Concretely — delivered as **agent tasks** in the `delivery-options` sub-agent:
 - **Agent task:** generate 1–3 suggested DOs per merchant depending on SLA distribution
 - **Agent task output:** transparent rationale with the underlying carrier, route, and cutoff data — so the merchant understands how VTEX arrived at each suggestion
 - **Agent task + UI:** present suggestions for merchant review; merchant can confirm or discard each individually
-- **MCP tool:** on confirmation, create the Delivery Option(s) in the system (inactive by default)
+- **MCP tool:** on confirmation, create the Delivery Option(s) with **PLP filter enabled** where applicable (inactive by default until merchant activates)
 
-**Agent-owned scope.** The Same Day grouping uses deterministic rules (Clara's normalization logic) — and that is a valid agent pattern. The agent invokes these rules as tools and surfaces structured suggestions for merchant review, or guides the merchant through the same flow conversationally. The automation runs at a defined frequency to keep the SLA map per merchant updated and notify merchants when their configuration changes in a way that affects existing DOs.
+**Agent-owned scope.** The Same Day suggestion uses deterministic rules (Clara's normalization logic) — and that is a valid agent pattern. The agent invokes these rules as tools and surfaces structured suggestions for merchant review, or guides the merchant through the same flow conversationally. The automation runs at a defined frequency to keep the SLA map per merchant updated and notify merchants when their configuration changes in a way that affects existing DOs.
 
 **Prerequisite:** [spec 002](../002-ai-workspace-backend-setup/product-brief.md) (AI Workspace backend) must be provisioned before this task can deploy.
 
@@ -111,7 +167,7 @@ Concretely — delivered as **agent tasks** in the `delivery-options` sub-agent:
 
 ## Why now
 
-There is a clear and immediate opportunity: several merchants in our base already have Same Day delivery capability configured in their logistics, and have Delivery Promise active — but have not yet set up Delivery Options. This means their Same Day routes exist but are invisible at checkout.
+There is a clear and immediate opportunity: several merchants already have intraday SLAs configured across sellers and policies, and have Delivery Promise active — but have not optimized **Delivery Options as PLP filters**. Their speed tiers exist in logistics but are **invisible in navigation** — missing conversion from same-day / next-day dynamic estimates.
 
 Known accounts in this situation, identified from Clara's SLA analysis (May 2026):
 
@@ -125,7 +181,7 @@ Known accounts in this situation, identified from Clara's SLA analysis (May 2026
 | Auchan | 1–2h majority, closes 21h — 2–3 DOs |
 | HMartus | 0h delivery — 1 DO |
 | PagueMenos / SjDigital | 1–6h granular — up to 3 DOs |
-| DrogariasPacheco / Drogaria Catarinense | 1–6h highly granular — complex grouping |
+| DrogariasPacheco / Drogaria Catarinense | 1–6h highly granular — complex suggestion |
 
 This scope is being executed by Derek/mission team in Q2C2, leveraging work already in progress by Clara. It is **owned by the Delivery Options Agent** — deterministic tools and conversational guidance are both in-bounds; a standalone implementation outside the agent is not.
 
