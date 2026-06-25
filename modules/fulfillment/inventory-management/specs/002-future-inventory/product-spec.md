@@ -14,7 +14,28 @@
 
 ## Context
 
-The VTEX inventory model has no time dimension. Stock is either present or absent. There is no native way to say "100 units arrive on May 14" and have that information feed the delivery promise shown to shoppers. This spec documents the use cases and requirements that a Future Inventory solution must satisfy.
+Merchants routinely know that stock is on its way — a supplier confirmed a replenishment batch, a new product launches next month, a backorder is scheduled. VTEX gives them no good way to act on that knowledge. Inventory is modeled as a single present quantity, with no notion of *when* more will arrive, so a merchant who knows 100 units land on May 14 has to either hide the product (losing demand at the moment of highest intent) or open stock and risk overselling.
+
+Future Inventory adds a time dimension to inventory: the ability to register that a quantity of a SKU will be available at a warehouse on a future date, sell against it now, and have that date anchor the delivery promise shown to the shopper — across the seller, franchise/white-label, and Delivery Promise architectures merchants actually run.
+
+VTEX already ships a mechanism meant to cover this — Supply Lot — but it fails in exactly those architectures (detailed below). This spec documents the use cases and requirements a viable Future Inventory solution must satisfy.
+
+---
+
+## Supply Lot Today — Why It Is Not Recommended
+
+Supply Lot is the existing platform feature for future inventory. It has existed since 2020, exposed only via API (no Admin UI, no help-center documentation beyond the Logistics API reference) and with no improvements since 2021. It guarantees future-inventory *availability*, but fails precisely in its applicability across the architectures enterprise customers are adopting. Its structural limitations make it unviable to evolve:
+
+1. **No native integration with Delivery Promise.** Delivery Promise is a pipeline separate from the logistics monolith where Supply Lot is implemented. There is no contract/event that propagates the scheduled date outward, so the item appears as **unavailable** to the shopper in Delivery Promise architectures.
+2. **Seller selection between white-label sellers ignores the future arrival date.** When the platform picks among white-label sellers, the SLA it compares is each seller's *transit-time* SLA — the time to ship and deliver once stock is on hand. It does not account for the wait until the future stock's arrival date. In practice, a seller whose units only arrive on May 14 looks just as fast as a seller with the item in hand today, so future stock does not influence seller selection the way it should.
+3. **No "future inventory" mark in the order payload.** A supply-lot item is indistinguishable from a normal item with a long SLA — the order carries no flag or identifier saying it was placed against future stock. The only signal is a longer delivery date, forcing operations to infer the origin from the date. This hinders invoicing, fulfillment, customer service, and any report or integration that needs to isolate future-inventory orders.
+4. **A cart with immediate + future stock is not split.** Both consolidate into a single shipment with the latest date. Even a unit available now is not offered as a fast delivery — the checkout unifies immediate and future into one shipment and applies the lot's arrival date to all units. The shopper waits for the worst date in the cart, even for items already in stock.
+5. **Fulfillment simulation does not consider the Supply Lot SLA.** When simulating a SKU with only future stock (no immediate), the SLA is not updated to reflect the lot date.
+6. **Undefined timezone and business-days behavior for the supply date.** The feature's integration into the new `logistics-shipping` module was done as a retroactive patch (PRs from April and June 2024).
+
+**Recommendation:** build a native Future Inventory solution that is integrated with Delivery Promise, works in multi-seller and white-label seller selection, and ships with an Admin UI from day one — the integration points Supply Lot lacks. Lead Time is a useful reference for the bar to clear: it is a native inventory feature that was born already adapting to these platform surfaces. Give customers a path to migrate off Supply Lot; any decision about formally deprecating it depends on auditing its current production usage first.
+
+> Gating dependency: no audit has been run on Supply Lot production usage. This is required before any deprecation communication (see Open Questions).
 
 ---
 
@@ -26,7 +47,9 @@ The VTEX inventory model has no time dimension. Stock is either present or absen
 
 Context: Item has no immediate stock — it's at zero. A merchant sells iPhone 17, currently out of stock at every warehouse and seller. The supplier confirmed delivery of 100 units on May 14. The merchant wants to start capturing orders now, with the real arrival date informing the delivery promise.
 
-Expected outcome: The SLA for the specific warehouse and seller with future inventory is calculated and used in the seller selection heuristic. If another seller also had future inventory, both SLAs would be calculated and the heuristic would use them to determine which seller is selected.
+Why current VTEX Lead Time does not solve this: Lead Time adds fixed preparation days to the item's SLA (e.g., "+3 days for assembly"), but (a) lead-time days count from the order date, not from a fixed replenishment date — so the promise "slides" as time passes instead of anchoring on May 14; and (b) there is no concept of quantity tied to the date, so there is no way to say "I can only sell 100 units until the batch arrives." The result is that either the item stays unavailable (and the merchant loses the capture window) or the merchant opens stock and risks overselling.
+
+Expected outcome: The platform respects the same seller selection heuristic it uses today — with one addition: when calculating the SLA, the future inventory arrival date is taken into account. The SLA includes the number of days between today and the future arrival date (plus the usual transit time), so the promise anchors on May 14 instead of looking immediately available. That SLA is then used in the seller selection heuristic exactly as any other SLA. If another seller also had future inventory, both SLAs would be calculated the same way and the heuristic would use them to determine which seller is selected.
 
 ---
 
@@ -34,7 +57,13 @@ Expected outcome: The SLA for the specific warehouse and seller with future inve
 
 Context: Shopper needs to buy 2 iPhone 17s. The merchant has 1 unit available for immediate shipment. The supplier confirmed 100 units arriving on May 14.
 
-Expected outcome: The shopper can buy both — one for immediate shipment and one with a later date. This results in 2 shipments and 2 separate freight calculations.
+Current platform behavior (Supply Lot): the cart does not split — both units consolidate into a single shipment with the latest date, even though one unit is available now (see Supply Lot limitation #4). Without future inventory, the platform already returns 2 distinct SLAs (one per item) for the same warehouse when SLAs differ (e.g., due to lead time), and this is visible at checkout.
+
+Expected outcome: The shopper can buy both — one for immediate shipment and one with a later date. We expect the **same result the platform already produces today when a single warehouse has items with different lead times**: the package is split and 2 SLAs are returned, one per item, each with its own freight. So this results in 2 shipments and 2 separate freight calculations — future inventory simply makes one of those SLAs anchor on the lot's arrival date.
+
+Illustration — current behavior with two different SLAs in the same warehouse (split into 2 packages, "Prazos variados"):
+
+![Checkout splitting one cart into two packages with different delivery terms](./images/case2-current-behavior-split-package.png)
 
 ---
 
@@ -42,7 +71,7 @@ Expected outcome: The shopper can buy both — one for immediate shipment and on
 
 Context: Shopper needs to buy 2 iPhone 17s. The merchant has 0 units immediately available but two future lots: 1 unit arriving May 14 and 100 units arriving May 21.
 
-Expected outcome: The shopper can buy both units from different lots, with different SLAs. This results in 2 shipments and 2 separate freight charges.
+Expected outcome: The shopper can buy both units, each allocated to a different lot and therefore with a different SLA. As in Case 2, we expect the **same behavior the platform already produces today when one warehouse returns different SLAs**: the package is split and 2 SLAs are returned, one per unit, each with its own freight. The only difference is that here both SLAs anchor on future lot dates (May 14 and May 21) rather than one being immediate. This results in 2 shipments and 2 separate freight charges.
 
 ---
 
@@ -50,7 +79,16 @@ Expected outcome: The shopper can buy both units from different lots, with diffe
 
 Context: A merchant is launching iPhone 18 — a brand-new product with no stock registered in any warehouse. The supplier confirmed first units arriving June 1. The merchant wants to capture orders before physical arrival.
 
-Expected outcome: The item appears as "Pre-order" on PDP, cart, and checkout, with SLA calculated from June 1 + carrier transit time. Unlike Case 1, there is no prior stock — availability is entirely created by the registered future lot. When stock is recorded on the expected date, pre-order orders are automatically released for fulfillment.
+Current platform behavior: today the merchant sets a "pre-sale date" (Data de pré-venda) in the Catalog, at the **SKU level** — not at the warehouse level. Because the field lives on the SKU, the rule applies to every warehouse of every seller, and therefore to all shipping policies and docks indiscriminately. There is no way to scope the pre-sale date to a specific warehouse/seller or tie it to a quantity.
+
+Expected outcome: The item becomes sellable with its SLA calculated from June 1 + carrier transit time. Availability is created entirely by the registered future lot (no prior stock), scoped to the specific warehouse/seller. When stock is recorded on the expected date, pre-order orders are automatically released for fulfillment.
+
+Interaction when both exist (SKU-level pre-sale date + warehouse-level future lots): the **SKU-level pre-sale/launch date takes precedence as an umbrella rule** — it is a floor that the item cannot be promised or sold before. The effective availability date for a lot is therefore `max(SKU pre-sale date, lot arrival date)`.
+
+- Example: launch date Sept 1; one lot arriving Aug 20 and another Sept 1. Even though the Aug 20 lot physically arrives earlier, the item is not promised before Sept 1 — both lots resolve to a Sept 1 availability date.
+- If a lot arrives *after* the launch date (e.g., lot Sept 10 with launch Sept 1), the lot date governs (Sept 10), since the stock is not physically available until then.
+
+Rationale: the pre-sale date is a deliberate SKU-wide business decision (a launch); an earlier warehouse-level arrival should not override it. (Behavior to validate with Catalog, since the pre-sale date lives on the SKU in Catalog.)
 
 ---
 
@@ -58,7 +96,7 @@ Expected outcome: The item appears as "Pre-order" on PDP, cart, and checkout, wi
 
 Context: A merchant sells iPhone 17. Immediate stock is depleted, and the only registered future lot — 100 units arriving May 14 — has all units reserved by prior orders. A new shopper tries to add the product to the cart.
 
-Expected outcome: The item appears as unavailable on PDP, cart, and checkout, even though the lot date has not arrived yet. The platform does not allow new orders since all units — both on-hand and registered future — are committed. The merchant can register a new future lot to reopen availability.
+Expected outcome: The item is unavailable for new orders, even though the lot date has not arrived yet, since all units — both on-hand and registered future — are committed. The merchant can register a new future lot to reopen availability.
 
 ---
 
@@ -66,9 +104,9 @@ Expected outcome: The item appears as unavailable on PDP, cart, and checkout, ev
 
 Context: Shopper adds an iPhone 17 and an iPhone case from the same seller. The case has immediate availability. The iPhone 17 only has future inventory, with a lot arriving May 14. The seller operates with a single warehouse.
 
-Expected outcome: WIP — Depends on an open business decision: ship items separately as each becomes available (2 freight charges), or consolidate the order and wait for the longer-lead item (1 freight charge). Each approach has different implications for shopper experience, shipping cost, and merchant operations.
+Current platform behavior: the cart is split into two deliveries and the two distinct SLAs are shown at checkout.
 
-> **Open decision — feedback round (Jun 2026):** The interviews (solution engineers, solution architects, and commerce engineers from the Growth team) concluded that the **merchant configures the default** — always split or always consolidate — since separate shipping does not make sense for every merchant. Desired evolution: the rule could also **vary by product category**, and the **shopper could be allowed to choose at checkout**, which connects to **multi-checkout**. **Pending:** v1 scope — a merchant-level default only, or also per-category granularity and shopper choice. See Open Question 4.
+Expected outcome: The order is split into 2 packages — the immediately available item ships now and the future-inventory item ships when its lot arrives — with 2 distinct SLAs and 2 freight charges. This matches the platform's current behavior for differing SLAs in the same warehouse.
 
 ---
 
@@ -84,9 +122,7 @@ Expected outcome: The shopper can add at most 3 units to the cart. Attempting to
 
 Context: A SKU is available through 2 sellers: Seller A has immediate stock, Seller B has a future lot arriving May 14. Both have the same SLA.
 
-Expected outcome: The seller selection heuristic continues to apply its normal criteria. When SLA is tied, no preference is given to immediate stock over future stock — the next tiebreaker criterion applies. Note: with more flexible allocation logic, a merchant might prefer to prioritize immediate stock even at the cost of a worse SLA — this is an open question to explore with the Order Allocation PM.
-
-> **Insight to hand off — feedback round (Jun 2026):** Not a decision for this spec. Interviewees argued that immediate-vs-future inventory is **not the most critical variable** for seller selection and should be **one of several merchant-defined variables in the future allocation engine**, rather than a hardcoded heuristic rule. **Next step:** hand this off to the Order Allocation team. See Open Question 5.
+Expected outcome: The platform respects the same allocation criteria it uses today. The key point is that Seller B's SLA must be calculated recognizing the time between now and the future stock's arrival date (days until arrival + transit time), so future stock competes on a correct SLA instead of looking immediately available. With both SLAs computed correctly, the normal allocation criteria pick the winner; if the SLA ties, the usual tiebreaker applies, with no built-in preference for immediate over future stock. (Open with the Order Allocation PM: whether a more flexible rule should let a merchant prioritize immediate stock even at a worse SLA.)
 
 ---
 
@@ -104,8 +140,6 @@ Context: A merchant has 3 lots registered for iPhone 17 in the same warehouse: 5
 
 Expected outcome: The reservation is allocated to the lot with the nearest date that still has available units (FIFO by arrival date). The SLA shown at checkout reflects that lot's date.
 
-> **Decided — feedback round (Jun 2026):** Allocation is **always FIFO by arrival date** — the nearest upcoming lot date is consumed first. The alternative of selecting by delivery deadline (best-SLA) was discussed and dropped.
-
 ---
 
 ### Merchant's POV
@@ -114,11 +148,9 @@ Expected outcome: The reservation is allocated to the lot with the nearest date 
 
 Context: A merchant registered a lot of 100 iPhone 17 units arriving July 14. 90 units are already reserved by active orders. Before July 14, the supplier confirms only 80 units will be shipped. The merchant updates the lot quantity to 80.
 
-Expected outcome: WIP
+Current platform behavior (reservation mechanism is unchanged): the inventory endpoint updates the *total* quantity, never the available quantity. Available is always derived: `available = total − reserved`. So with total 100 and 90 reserved, available is 10; updating future stock to 80 makes available `80 − 90 = -10`. Reservations are not affected — they were created when the orders came in and are independent of the inventory total. Internally the balance goes negative, the platform blocks new sales, and the existing orders proceed normally to fulfillment. Future inventory introduces no new reservation logic here; it reuses this exact mechanism.
 
-What happens to inventory: If the lot drops to 80 and there are 90 reservations, available stock goes to -10. The platform must represent this correctly and block new sales from the moment the balance is negative. Concretely (per the interviews), the reservation set is now over-committed: of the 90 reserved units, 80 can be honored by the lot and **10 remain "owed"** — they have a valid reservation but no physical unit backing them once the lot arrives. This over-committed state must be explicit, not hidden behind the aggregate negative balance.
-
-What happens to the 10 excess orders: This is a merchant decision, outside the scope of inventory. The platform should not automatically cancel or migrate orders — those actions have financial and customer impact. The merchant must handle them.
+What happens to the excess orders: This is a merchant decision, outside the scope of inventory. The platform should not automatically cancel or migrate orders — those actions have financial and customer impact. The merchant must handle them.
 
 ---
 
@@ -126,9 +158,7 @@ What happens to the 10 excess orders: This is a merchant decision, outside the s
 
 Context: A merchant registered a lot of 100 iPhone 17 units arriving July 14. 90 units are already reserved by active orders, all with SLA calculated from that date. The supplier confirms the lot will now arrive July 21.
 
-Expected outcome: Updating the lot follows the same behavior as a standard inventory update today and introduces **no new platform-driven communication** — there is no notification to the merchant or the shopper. Communicating any delivery-date change to the shopper remains the merchant's responsibility, exactly as it already is for any delivery-date change on the platform.
-
-> **Decided — feedback round (Jun 2026):** No platform-driven communication for lot date or quantity changes (neither merchant nor shopper). The behavior is exactly the same as inventory management today.
+Expected outcome: Consistent with current platform behavior, the merchant remains responsible for communicating a delivery-date change to the shopper. To make that easier, the platform should expose the lot's arrival-date change as a **trigger the merchant can wire to a custom email template in Message Center**, if they choose. The exact mechanism (which event fires on a date change and how it maps to a Message Center trigger) is still to be defined; the goal is to let the date change drive an optional, merchant-configured notification instead of a fully manual process. Still open: whether SLA recalculation on existing orders is automatic or manual.
 
 ---
 
@@ -136,7 +166,7 @@ Expected outcome: Updating the lot follows the same behavior as a standard inven
 
 Context: The scheduled arrival date for a lot of 100 units of SKU A at Warehouse A has arrived. The merchant previously registered this lot with arrival date May 22. Before midnight, Warehouse A had 0 available units for SKU A.
 
-Expected outcome: At the turn of May 22 (00:00), the 100 units are automatically converted to available stock at Warehouse A, with no manual action required from the merchant. This inventory update triggers the same downstream flow as a manual update: item reindexing and broadcaster notification. The event must carry an origin identifier indicating it was triggered by a future inventory lot, ensuring traceability in logs for both the merchant and the internal team.
+Expected outcome: At the turn of May 22 (00:00 in the **account's configured timezone**), the 100 units are automatically converted to available stock at Warehouse A, with no manual action required from the merchant. The account timezone is what defines the moment of the turn — not UTC or any warehouse-local time — so the transition lands on the date the merchant registered. This inventory update triggers the same downstream flow as a manual update: item reindexing and broadcaster notification. The event must carry an origin identifier indicating it was triggered by a future inventory lot, ensuring traceability in logs for both the merchant and the internal team.
 
 ---
 
@@ -152,67 +182,81 @@ Expected outcome: The order follows the platform's existing payment capture conf
 
 Context: A merchant wants to know the full inventory position for a SKU — both on-hand and future — via API or Admin export.
 
-Expected outcome: Inventory export endpoints (List inventory by SKU, List inventory per warehouse, List inventory per dock, List inventory per dock and warehouse) return the configured future inventory alongside on-hand stock.
-
-> **Dependency:** This relies on the inventory export surface being extended to include future lots. The export endpoints (and the Admin/sheet export) must be updated to return future inventory and its arrival date — a dependency to track with the inventory APIs. See Dependencies.
+Expected outcome: Inventory export endpoints (List inventory by SKU, List inventory per warehouse, List inventory per dock, List inventory per dock and warehouse) return the configured future inventory alongside on-hand stock, with a way to **clearly distinguish the two** — on-hand vs. future — and, for future inventory, surface the lot's arrival date (and lot identifier where applicable). The consumer must not have to infer which quantity is future from the date alone.
 
 ---
 
-**[Case 16] Lot arrives with fewer units than registered (damaged or lost in transit)**
+**[Case 16] Batch Updates incorporate future inventory**
 
-> Added from the feedback round (Jun 2026) — raised in the interviews. Not previously mapped.
+Context: Merchants use the Batch Update solution to update stock in VTEX. Today it is not adapted for future inventory.
 
-Context: A merchant registered a lot of 100 units of iPhone 17 arriving May 14, with 90 units already reserved by active orders. On arrival, only 95 units are usable — the rest were damaged or lost in transit. The received quantity differs from the registered quantity.
-
-Expected outcome: WIP — The actual received quantity may be lower than the registered quantity. The platform must reconcile the received quantity against active reservations. When the received quantity is below the reserved quantity, the result is the same over-committed state described in Case 11 (some reservations are "owed" with no physical unit backing them), and may require a **reallocation** flow — sourcing the affected reservations from another lot or warehouse. **Pending:** whether reallocation is automatic (platform re-sources from the next available lot/warehouse) or a merchant action, and how the discrepancy at receipt is captured. See Open Question 7.
+Expected outcome: Batch Update accepts optional columns in the CSV/spreadsheet to represent future inventory — at minimum, the lot arrival date. Behavior per row: with a date filled in → the row is treated as a future inventory lot (quantity + arrival date); without a date → current behavior unchanged (normal on-hand update). Backward compatible.
 
 ---
 
-**[Case 17] Batch inventory update must support future lots**
+**[Case 17] Configuring how future inventory is released for sale**
 
-> Added from the feedback round (Jun 2026) — raised in the interviews. Dependency, not previously mapped.
+Context: When working with future inventory, merchants have two distinct needs for when that stock can be consumed:
+- **Config 1 — future stock as fallback:** future stock is only consumed when immediate stock runs out. While immediate stock is available, the order is limited to it.
+- **Config 2 — combined consumption:** future stock is consumed together with immediate stock, summing both availabilities in the same purchase.
 
-Context: Merchants can use the Batch Update solution to update inventory in VTEX. Today this solution is not adapted for future inventory.
+Expected outcome: With 2 units of immediate stock + 3 units of future stock and a shopper wanting to buy 3 — in Config 1 the purchase is not possible (the limit is the 2 immediate units); in Config 2 the purchase is possible (immediate + future cover the 3 units).
 
-Expected outcome: The batch update accepts **optional columns** in the CSV/sheet to represent future inventory — at minimum the lot's arrival date. Behavior per row:
-- **Arrival date filled** → the row is treated as a future inventory lot (quantity + arrival date).
-- **No date** → current behavior unchanged: a normal on-hand update.
+---
 
-The change is backward compatible (the new columns are optional, so existing sheets and integrations keep working). This is a dependency for managing future inventory at scale and must be tracked with the inventory APIs. See Dependencies.
+**[Case 18] Identifying orders placed with future inventory**
+
+Context: A merchant sells iPhone 17 with both immediate stock and a future lot arriving July 14. Throughout the day, orders of both types come in — some ship immediately, others only when the lot arrives. Operationally, the merchant needs to quickly distinguish which orders depend on future inventory, to plan invoicing, shopper communication, and shipping.
+
+Expected outcome: The order payload must carry an explicit mark that it was placed with future inventory — a tag/flag (ideally at item level, indicating the lot and expected arrival date), consumable by integrations, OMS, and reports. This payload mark is the core requirement; surfacing it in the OMS UI (e.g., a filter or an expected-arrival-date column) can follow from it. Today there is no such mark: a future-inventory item is indistinguishable from a normal item with a long SLA (see Supply Lot limitation #3).
+
+---
+
+## Prioritization & Releases
+
+**Principle:** V1 is the smallest slice that proves the core promise — *sell stock that hasn't physically arrived, with a correct delivery promise, in the architectures enterprise customers run*. Everything that composes carts, adds operational visibility, or adds configurability comes after the core is trustworthy.
+
+### V1 — first release
+
+**Goal:** a merchant registers a future lot (units of a SKU arriving at a specific warehouse and seller on a future date), and the platform sells it immediately with an SLA anchored to that arrival date. That SLA flows correctly into Delivery Promise and into seller selection at checkout, and the lot converts to on-hand automatically on the arrival date.
+
+1. **Lot registration & editing (Admin + API)** — register a future lot: a number of units of a specific SKU arriving at a specific warehouse and seller on a future date; and edit existing lots — both quantity and arrival date. (Case 4 registration mechanics — without the Catalog pre-sale precedence.)
+
+2. **Future-inventory reference in the order** — the order payload carries an explicit mark that future inventory was the source, so future-inventory orders can be isolated without inferring it from the delivery date. (Case 18)
+
+3. **Future stock availability mode** — fallback (future stock consumed only after immediate runs out) vs. combined (future sums with immediate in the same purchase). (Case 17)
+
+4. **Future SLA considered in seller selection** — the future-anchored SLA is used by seller selection in multi-seller and white-label architectures, just like lead time. (Case 8)
+
+> Selling with future-only stock (Case 1) and the automatic turn of a lot into on-hand on its arrival date in the account timezone (Case 13) are the core mechanics described in the V1 Goal above — they are foundational to the four items and not listed as separate work items.
+
+### V2 — second release
+
+1. **Future Inventory UI in "Inventory Management"** — the future-inventory management surface in the Admin Inventory Management area.
+
+2. **Future inventory in Inventory Export spreadsheet** — exports distinguish on-hand vs. future, surfacing the lot arrival date. (Case 15)
+
+3. **Pre-sale date precedence** — `max(SKU pre-sale date, lot arrival date)`; depends on Catalog. (Case 4)
+
+4. **Multiple lots, FIFO by date** — multiple lots per SKU × warehouse, consumed nearest-date first. (Case 10)
+
+5. **Mixed cart split** — immediate + future in one cart split into separate packages/SLAs. (Cases 2, 3, 6)
+
+### Later
+
+1. **Batch Inventory Update support** — future lots via spreadsheet/batch import. (Case 16)
+
+2. **Date-change notification** — arrival-date change as a Message Center custom-template trigger. (Case 12)
+
+> **Not prioritized (implicit / inherited):** reservation behavior — cancellation returns units to the lot (Case 9), per-lot quantity limit (Case 7), sold-out → unavailable (Case 5), quantity reduction with active reservations (Case 11) — reuses the platform's existing reservation mechanism unchanged, so it is an implicit requirement across releases rather than a prioritized item. Pre-order payment (Case 14) inherits the platform default with no logistics-specific config, so it is not a prioritized work item.
 
 ---
 
 ## Open Questions
 
-1. **Supply Lot deprecation:** Is any merchant actively using Supply Lot in production today? No audit has been run. This is a gating dependency for any deprecation communication.
+1. **Behavior when a lot date passes without confirmation:** What happens if midnight passes and the merchant has not confirmed or updated the lot? Does the lot expire automatically? Does the platform alert the merchant? Do existing reservations remain active? This is the concrete manifestation of the "expired" state in the planned lifecycle.
 
-2. **Lot arrival confirmation — automatic vs. manual:** Case 13 assumes automatic transition at midnight on the scheduled date. An alternative is requiring explicit merchant confirmation of receipt before the stock becomes available. The trade-off is automation (eliminates manual steps) vs. accuracy (prevents stock from going live if the shipment is delayed without the merchant updating the system). This connects to Cases 11 and 12 (quantity reduction and date change).
-
-3. **Behavior when a lot date passes without confirmation:** What happens if midnight passes and the merchant has not confirmed or updated the lot? Does the lot expire automatically? Does the platform alert the merchant? Do existing reservations remain active? This is the concrete manifestation of the "expired" state in the planned lifecycle.
-
-4. **Mixed-SLA shopper experience:** When a cart contains immediate and future stock for the same SKU (Cases 2 and 3), how is the split shipment presented to the shopper at checkout? Does the shopper see separate line items with distinct SLAs, or a consolidated view?
-
-5. **Allocation engine — future vs. immediate stock (Case 8):** Should the future-vs-immediate preference be one of several merchant-defined variables in the future allocation engine, rather than a hardcoded heuristic rule? This is an insight to hand off to the Order Allocation team, not a decision for this spec.
-
-6. **Lifecycle ownership for ERP-driven B2B accounts:** For merchants whose ERP already controls inventory stages (e.g., AramisB2B), is platform **visibility** of the future lot enough, or should the platform actively own the lifecycle? The feedback round leaned toward a passive/visibility approach for these accounts. This is a scope-boundary decision that affects how much of the lifecycle (scheduled → in transit → received → expired) the platform must own natively.
-
-7. **Lot arrival discrepancy & reallocation (Case 16):** When the received quantity is lower than registered (damaged/lost in transit), how is the discrepancy captured at receipt, and is the resulting reallocation of over-committed reservations automatic (re-source from another lot/warehouse) or a merchant action?
-
----
-
-## Decisions Made (feedback round, Jun 2026)
-
-- **Lot allocation criterion (Case 10):** Allocation is always **FIFO by arrival date** — the nearest upcoming lot date is consumed first. Selecting by delivery deadline (best-SLA) was discussed and dropped.
-- **Communication on lot changes (Case 12):** The platform introduces **no new communication** to the merchant or the shopper when a lot's date or quantity changes. Behavior matches inventory management today; communicating delivery-date changes to the shopper stays with the merchant.
-
----
-
-## Dependencies
-
-These are existing inventory capabilities that must be extended for Future Inventory to work end-to-end. They are dependencies to track and align with the inventory APIs.
-
-- **Inventory export (Case 15):** The export surface — `List inventory by SKU`, `List inventory per warehouse`, `List inventory per dock`, `List inventory per dock and warehouse`, plus the Admin/sheet export — must return future inventory and its arrival date alongside on-hand stock.
-- **Batch inventory update (Case 17):** The batch update interface (API and sheet) must accept an **arrival date** per entry so future lots can be registered and updated in bulk. Without a date, an entry remains a normal on-hand update.
+2. **Supply Lot deprecation:** Is any merchant actively using Supply Lot in production today? No audit has been run. This is a gating dependency for any deprecation communication.
 
 ---
 
@@ -230,18 +274,16 @@ These are existing inventory capabilities that must be extended for Future Inven
 
 ### Affected Clients / Prospects
 
-Only **Fast Shop** and **Samsung** are current clients; the remaining accounts are prospects. The prospects are relevant because they raised this requirement in their **RFPs** — VTEX is being actively evaluated on it, so the gap has a direct impact on deal qualification.
-
-| Account | Type | Need | Workaround today |
-|---|---|---|---|
-| Fast Shop | Client | Anchored delivery promise for scheduled replenishments | Manual daily lead time adjustment |
-| Samsung | Client | Pre-order for high-ticket electronics | Manual daily lead time adjustment |
-| Container Store | Prospect | Backorder release when stock arrives | Manual WMS-to-VTEX release |
-| World Wide Golf | Prospect | Backorder release when stock arrives | Manual WMS-to-VTEX release |
-| ODP | Prospect | Future stock visibility | No workaround — SKUs go unavailable |
-| NFI Parts | Prospect | B2B restocking with scheduled availability | `[PM INPUT NEEDED]` |
-| Kirklands | Prospect | Pre-order with quantity cap and shopper notification | Not possible today |
-| Chick-fil-A | Prospect | Item status labels (pre-order / backorder) | Not possible today |
+| Account | Need | Workaround today |
+|---|---|---|
+| Fast Shop | Anchored delivery promise for scheduled replenishments | Manual daily lead time adjustment |
+| Samsung | Pre-order for high-ticket electronics | Manual daily lead time adjustment |
+| Container Store | Backorder release when stock arrives | Manual WMS-to-VTEX release |
+| World Wide Golf | Backorder release when stock arrives | Manual WMS-to-VTEX release |
+| ODP | Future stock visibility | No workaround — SKUs go unavailable |
+| NFI Parts | B2B restocking with scheduled availability | `[PM INPUT NEEDED]` |
+| Kirklands | Pre-order with quantity cap and shopper notification | Not possible today |
+| Chick-fil-A | Item status labels (pre-order / backorder) | Not possible today |
 
 ### Source Documents
 
@@ -255,6 +297,9 @@ Only **Fast Shop** and **Samsung** are current clients; the remaining accounts a
 | Date | Author | Change |
 |---|---|---|
 | May 2026 | Carolina Tourinho | Initial draft — use cases from BRD discovery |
-| Jun 2026 | Carolina Tourinho | Feedback round insights (Miro discovery board): added callouts to Cases 6, 8, 10, 11, 12; added Case 16 (lot arrival discrepancy / reallocation); expanded Open Questions. Inputs from interviews with solution engineers, solution architects, and commerce engineers from the Growth team. |
-| Jun 2026 | Carolina Tourinho | Resolved decisions from feedback round: Case 10 lot allocation is always FIFO by arrival date; Case 12 introduces no platform-driven communication on lot changes (same as inventory management today). Case 8 reframed as an insight for the Order Allocation team. Open Questions renumbered. |
-| Jun 2026 | Carolina Tourinho | Flagged Case 15 (inventory export) as a dependency; added Case 17 (batch inventory update must accept an arrival date for future lots); added a Dependencies section consolidating both. |
+| Jun 2026 | Carolina Tourinho | Synced with BRD update: added "Supply Lot — Why It Is Not Recommended" section, Lead Time vs. Supply Lot comparison, deprecation recommendation; enriched Case 1; added current-behavior note to Case 2; added Cases 16 (batch updates), 17 (fallback vs. combined consumption), 18 (identifying future-inventory orders). |
+| Jun 2026 | Carolina Tourinho | Review pass: rewrote Context around adding a time dimension to inventory; reframed Supply Lot limitation #2 (white-label seller selection compares transit-time SLA, ignoring the arrival date) without internal jargon; reframed limitation #3 and Case 18 to emphasize the order-payload mark; rewrote Recommendation to stop framing it as "evolve Lead Time" (Lead Time is only a reference); removed the Lead Time vs. Supply Lot section. |
+| Jun 2026 | Carolina Tourinho | Synced cases with the latest BRD (updated Jun 23): Case 1 outcome (same heuristic + SLA counts days from today to the arrival date); Cases 2 & 3 outcome (same package-split / 2-SLA behavior the platform already produces for differing SLAs in one warehouse) with illustrative checkout screenshot; Case 6 current behavior (cart split into 2 deliveries with 2 SLAs); Case 11 current behavior (reservation mechanism unchanged — available = total − reserved, negative blocks new sales, existing orders intact). |
+| Jun 2026 | Carolina Tourinho | Case 4: documented current platform behavior (SKU-level "Data de pré-venda" in Catalog, not warehouse-scoped) and added the precedence rule when both a SKU pre-sale date and warehouse future lots exist — the pre-sale/launch date is an umbrella floor; effective availability = max(pre-sale date, lot arrival date). |
+| Jun 2026 | Carolina Tourinho | Added "Prioritization & First Delivery (MVP)" section mapping cases to MVP / Fast Follow / Later, defining the first-delivery scope and cross-team dependencies. |
+| Jun 2026 | Carolina Tourinho | Reorganized prioritization into V1 / V2 / Later. V1: lot registration & editing, future-inventory reference in the order (Case 18), future stock availability mode (Case 17), future SLA in seller selection (Case 8) — selling future-only (Case 1) and auto turn on-hand (Case 13) folded into the V1 Goal. V2: Future Inventory UI, inventory export (Case 15), pre-sale precedence (Case 4), multiple lots FIFO (Case 10), mixed cart split (Cases 2,3,6). Later: Batch Update (Case 16), date-change notification (Case 12). Reservation behavior and pre-order payment (Case 14) dropped from the prioritized list as implicit/inherited. |

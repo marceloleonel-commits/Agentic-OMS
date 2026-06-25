@@ -28,8 +28,10 @@
 
   /* phones */
   .rail{display:flex;gap:18px;overflow-x:auto;padding:10px 4px 22px;}
-  .phone{flex:0 0 248px;width:248px;background:var(--white);border-radius:22px;
+  .phone{position:relative;flex:0 0 248px;width:248px;background:var(--white);border-radius:22px;
     border:1px solid var(--winter);box-shadow:0 6px 18px rgba(20,32,50,.07);overflow:hidden;display:flex;flex-direction:column;}
+  .snum{min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:#fff;color:var(--ebel);
+    font-size:11px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;}
   .phone.rl{border:2px solid var(--ebel);box-shadow:0 8px 22px rgba(247,25,99,.14);}
   .statusbar{display:flex;justify-content:space-between;align-items:center;padding:7px 14px;font-size:10px;color:var(--gray);}
   .brandbar{background:var(--ebel);color:#fff;padding:9px 14px;font-weight:800;font-size:13px;letter-spacing:.04em;display:flex;justify-content:space-between;align-items:center;}
@@ -123,7 +125,7 @@
 
     <!-- 1 eligible orders -->
     <div class="phone">
-      <div class="statusbar"><span>15:00</span><span>●●●</span></div>
+      <div class="statusbar"><span class="snum">Tela 1</span><span>●●●</span></div>
       <div class="brandbar">Fashion Store <span class="cart">Trocas e devoluções</span></div>
       <div class="screen">
         <h3>Pedidos elegíveis</h3>
@@ -137,7 +139,7 @@
 
     <!-- 2 choose type: exchange or return -->
     <div class="phone">
-      <div class="statusbar"><span>15:00</span><span>●●●</span></div>
+      <div class="statusbar"><span class="snum">Tela 2</span><span>●●●</span></div>
       <div class="brandbar">Fashion Store <span class="cart">Trocar ou devolver?</span></div>
       <div class="screen">
         <h3>Troca ou devolução?</h3>
@@ -151,7 +153,7 @@
 
     <!-- 3 items + reason -->
     <div class="phone">
-      <div class="statusbar"><span>15:00</span><span>●●●</span></div>
+      <div class="statusbar"><span class="snum">Tela 3</span><span>●●●</span></div>
       <div class="brandbar">Fashion Store <span class="cart">Devolução</span></div>
       <div class="screen">
         <h3>Itens & motivo</h3>
@@ -167,7 +169,7 @@
 
     <!-- 4 compensation -->
     <div class="phone">
-      <div class="statusbar"><span>15:00</span><span>●●●</span></div>
+      <div class="statusbar"><span class="snum">Tela 4</span><span>●●●</span></div>
       <div class="brandbar">Fashion Store <span class="cart">Reembolso</span></div>
       <div class="screen">
         <h3>Forma de reembolso</h3>
@@ -181,7 +183,7 @@
 
     <!-- 5 return method  RL -->
     <div class="phone rl">
-      <div class="statusbar"><span>15:00</span><span>●●●</span></div>
+      <div class="statusbar"><span class="snum">Tela 5</span><span>●●●</span></div>
       <div class="brandbar">Fashion Store <span class="cart">Como devolver?</span></div>
       <div class="screen">
         <h3>Escolha como devolver</h3>
@@ -196,7 +198,7 @@
 
     <!-- 6 drop-off locations RL -->
     <div class="phone rl">
-      <div class="statusbar"><span>15:00</span><span>●●●</span></div>
+      <div class="statusbar"><span class="snum">Tela 6</span><span>●●●</span></div>
       <div class="brandbar">Fashion Store <span class="cart">Pontos de coleta</span></div>
       <div class="screen">
         <h3>Pontos de coleta</h3>
@@ -211,7 +213,7 @@
 
     <!-- 7 review RL -->
     <div class="phone rl">
-      <div class="statusbar"><span>15:00</span><span>●●●</span></div>
+      <div class="statusbar"><span class="snum">Tela 7</span><span>●●●</span></div>
       <div class="brandbar">Fashion Store <span class="cart">Revisar</span></div>
       <div class="screen">
         <h3>Revise a solicitação</h3>
@@ -226,7 +228,7 @@
 
     <!-- 8 confirmation RL -->
     <div class="phone rl">
-      <div class="statusbar"><span>15:00</span><span>●●●</span></div>
+      <div class="statusbar"><span class="snum">Tela 8</span><span>●●●</span></div>
       <div class="brandbar">Fashion Store <span class="cart">Confirmado</span></div>
       <div class="screen">
         <h3>Registrada</h3>
@@ -243,7 +245,7 @@
 
     <!-- 9 tracking RL -->
     <div class="phone rl">
-      <div class="statusbar"><span>15:00</span><span>●●●</span></div>
+      <div class="statusbar"><span class="snum">Tela 9</span><span>●●●</span></div>
       <div class="brandbar">Fashion Store <span class="cart">Acompanhar</span></div>
       <div class="screen">
         <h3>Tracking</h3>
@@ -271,7 +273,7 @@
 
     <!-- T1 eligible orders -->
     <div class="phone">
-      <div class="statusbar"><span>15:00</span><span>●●●</span></div>
+      <div class="statusbar"><span class="snum">Tela T1</span><span>●●●</span></div>
       <div class="brandbar">Fashion Store <span class="cart">Trocas e devoluções</span></div>
       <div class="screen">
         <h3>Pedidos elegíveis</h3>
@@ -285,7 +287,7 @@
 
     <!-- T2 choose type: TROCA -->
     <div class="phone">
-      <div class="statusbar"><span>15:00</span><span>●●●</span></div>
+      <div class="statusbar"><span class="snum">Tela T2</span><span>●●●</span></div>
       <div class="brandbar">Fashion Store <span class="cart">Trocar ou devolver?</span></div>
       <div class="screen">
         <h3>Troca ou devolução?</h3>
@@ -299,7 +301,7 @@
 
     <!-- T3 items + reason -->
     <div class="phone">
-      <div class="statusbar"><span>15:00</span><span>●●●</span></div>
+      <div class="statusbar"><span class="snum">Tela T3</span><span>●●●</span></div>
       <div class="brandbar">Fashion Store <span class="cart">Troca</span></div>
       <div class="screen">
         <h3>Itens & motivo</h3>
@@ -315,7 +317,7 @@
 
     <!-- T4 choose new variant -->
     <div class="phone">
-      <div class="statusbar"><span>15:00</span><span>●●●</span></div>
+      <div class="statusbar"><span class="snum">Tela T4</span><span>●●●</span></div>
       <div class="brandbar">Fashion Store <span class="cart">Nova variante</span></div>
       <div class="screen">
         <h3>Escolha o novo item</h3>
@@ -334,7 +336,7 @@
 
     <!-- T5 return method RL -->
     <div class="phone rl">
-      <div class="statusbar"><span>15:00</span><span>●●●</span></div>
+      <div class="statusbar"><span class="snum">Tela T5</span><span>●●●</span></div>
       <div class="brandbar">Fashion Store <span class="cart">Como devolver a M?</span></div>
       <div class="screen">
         <h3>Escolha como devolver</h3>
@@ -348,7 +350,7 @@
 
     <!-- T6 review RL -->
     <div class="phone rl">
-      <div class="statusbar"><span>15:00</span><span>●●●</span></div>
+      <div class="statusbar"><span class="snum">Tela T6</span><span>●●●</span></div>
       <div class="brandbar">Fashion Store <span class="cart">Revisar</span></div>
       <div class="screen">
         <h3>Revise a troca</h3>
@@ -363,7 +365,7 @@
 
     <!-- T7 confirmation RL -->
     <div class="phone rl">
-      <div class="statusbar"><span>15:00</span><span>●●●</span></div>
+      <div class="statusbar"><span class="snum">Tela T7</span><span>●●●</span></div>
       <div class="brandbar">Fashion Store <span class="cart">Confirmado</span></div>
       <div class="screen">
         <h3>Registrada</h3>
@@ -380,7 +382,7 @@
 
     <!-- T8 tracking RL -->
     <div class="phone rl">
-      <div class="statusbar"><span>15:00</span><span>●●●</span></div>
+      <div class="statusbar"><span class="snum">Tela T8</span><span>●●●</span></div>
       <div class="brandbar">Fashion Store <span class="cart">Acompanhar</span></div>
       <div class="screen">
         <h3>Tracking</h3>
@@ -401,40 +403,43 @@
     <span class="tag tag-be">Back-end</span>
     <h2>Integração com o provider (protocolo)</h2>
   </div>
-  <p class="section-sub">Contrato padrão que qualquer provider implementa. Duas direções: a VTEX <b>consulta</b> o provider (síncrono) e o provider <b>informa</b> a VTEX (assíncrono).</p>
+  <p class="section-sub">Contrato padrão que qualquer provider implementa. São <b>dois padrões de interação</b>: <b>consultas síncronas</b> — a VTEX faz a chamada e recebe a resposta na mesma requisição (REQ-01 a 03) — e <b>notificação assíncrona</b> — o provider dá push de status para a VTEX (REQ-04).</p>
 
   <div class="be">
     <div class="flowmap">
       <div class="node vtex">VTEX<br><span style="font-weight:400;font-size:11px">Fulfillment · reverse logistics</span></div>
       <div class="conn">
-        <div class="line l1">consulta →</div>
+        <div class="line l1">síncrono · request →</div>
         <div class="arrowr">⟶</div>
         <div class="arrowl">⟵</div>
-        <div class="line">← informa (status)</div>
+        <div class="line l1">← response (mesma chamada)</div>
+        <div class="line" style="margin:10px 0 2px;color:var(--cool);">— — — — — — —</div>
+        <div class="arrowl">⟵</div>
+        <div class="line">← assíncrono · push de status</div>
       </div>
-      <div class="node prov">Reverse Logistics Provider<br><span style="font-weight:400;font-size:11px">Intelipost (1º) · contrato padrão</span></div>
+      <div class="node prov">Reverse Logistics Provider<br><span style="font-weight:400;font-size:11px">ex.: Intelipost — qualquer provider que implemente o contrato</span></div>
     </div>
 
     <div class="legend">
-      <span><span class="sw" style="background:var(--yogurt)"></span> VTEX → Provider (consulta · síncrono)</span>
-      <span><span class="sw" style="background:var(--winter)"></span> Provider → VTEX (informa · assíncrono)</span>
+      <span><span class="sw" style="background:var(--yogurt)"></span> Consulta <b>síncrona</b> — VTEX → Provider (request) e Provider → VTEX (response) na mesma chamada</span>
+      <span><span class="sw" style="background:var(--winter)"></span> Notificação <b>assíncrona</b> — Provider → VTEX (push de status)</span>
     </div>
 
     <div class="opgrid">
 
       <!-- op1 -->
       <div class="op consult">
-        <div class="head">Show available return methods <span class="req">REQ-01</span></div>
+        <div class="head">ShowAvailableReturnMethods <span class="oms">síncrono</span> <span class="req">REQ-01</span></div>
         <div class="body">
           <div class="maps">Acionado na tela <b>5 · Escolha como devolver</b></div>
-          <div class="dir"><span class="ar">→</span> Vai (request context)</div>
+          <div class="dir"><span class="ar">→</span> VTEX → Provider · request</div>
           <div class="pay">OrderID, order status,
 storePreferencesData.countryCode,
 shopper address, document, document type,
 customerClass,
 returned items (SKU ID, EAN, Ref ID),
 return reason</div>
-          <div class="dir"><span class="ar">←</span> Volta (each returned method)</div>
+          <div class="dir"><span class="ar">←</span> Provider → VTEX · response (each returned method)</div>
           <div class="pay">[ method name, method type (pickup / drop-off),
   cost (if null assume 0), payer,
   shopper instructions, customData ]</div>
@@ -443,15 +448,15 @@ return reason</div>
 
       <!-- op2 -->
       <div class="op consult">
-        <div class="head">Show available drop-off locations <span class="req">REQ-02</span></div>
+        <div class="head">ShowAvailableDropoffLocations <span class="oms">síncrono</span> <span class="req">REQ-02</span></div>
         <div class="body">
           <div class="maps">Acionado na tela <b>6 · Pontos de coleta</b> (só drop-off)</div>
-          <div class="dir"><span class="ar">→</span> Vai (request context)</div>
+          <div class="dir"><span class="ar">→</span> VTEX → Provider · request</div>
           <div class="pay">OrderID,
 returned items (SKU ID, EAN, Ref ID),
 shopper address, documentID,
 return reason, return option selected</div>
-          <div class="dir"><span class="ar">←</span> Volta (each location · sorted by proximity)</div>
+          <div class="dir"><span class="ar">←</span> Provider → VTEX · response (each location · sorted by proximity)</div>
           <div class="pay">[ location name, address, return code,
   shopper instructions, customData ]</div>
         </div>
@@ -459,13 +464,13 @@ return reason, return option selected</div>
 
       <!-- op3 -->
       <div class="op consult">
-        <div class="head">Receive and store return information <span class="req">REQ-03</span></div>
+        <div class="head">CreateReturnExecution <span class="oms">síncrono</span> <span class="req">REQ-03</span></div>
         <div class="body">
-          <div class="maps">Acionado na tela <b>8 · Confirmar solicitação</b></div>
-          <div class="dir"><span class="ar">→</span> Vai (request context)</div>
+          <div class="maps">Acionado na tela <b>7 · Revisar</b> (botão "Confirmar solicitação") · resultado leva à tela 8</div>
+          <div class="dir"><span class="ar">→</span> VTEX → Provider · request</div>
           <div class="pay">confirmed return, selected method,
 selected location/pickup address</div>
-          <div class="dir"><span class="ar">←</span> Volta (persistido em returnLogistics)</div>
+          <div class="dir"><span class="ar">←</span> Provider → VTEX · response (persistido em returnLogistics)</div>
           <div class="pay">selected return method, method type (pickup / drop-off),
 selected drop-off location or pickup address,
 return code, tracking code,
@@ -478,10 +483,10 @@ timestamps (creation + status updates)</div>
 
       <!-- op4 -->
       <div class="op inform">
-        <div class="head">Receive reverse logistics status updates <span class="oms">OMS</span> <span class="req">REQ-04</span></div>
+        <div class="head">ReceiveStatusUpdates <span class="oms">assíncrono</span> <span class="oms">OMS</span> <span class="req">REQ-04</span></div>
         <div class="body">
           <div class="maps">Alimenta a tela <b>9 · Tracking</b> · propaga p/ OMS/eventos</div>
-          <div class="dir"><span class="ar" style="color:var(--gray)">←</span> Provider → VTEX (push)</div>
+          <div class="dir"><span class="ar" style="color:var(--gray)">←</span> Provider → VTEX · push (assíncrono)</div>
           <div class="pay">returnId, provider reference,
 status, timestamp</div>
           <div class="dir">status aceitos</div>
