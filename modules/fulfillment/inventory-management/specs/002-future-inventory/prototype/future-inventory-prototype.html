@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Future Inventory — Electronics Store (Prototype)</title>
+<style>
+  :root{
+    /* VTEX admin / Shoreline tokens */
+    --blue:#2953E8; --blue-d:#0C389F; --link:#134CD8; --blue-bg:#EDF0FE;
+    --ink:#27282B; --muted:#727885; --faint:#9BA0A6;
+    --line:#E1E3E6; --line-d:#D4D8DB; --bg:#F5F6F7; --surface:#FFFFFF; --hover:#F8F9FA;
+    --green:#119B5E; --greenbg:#E5F5EE; --amber:#8A6D00; --amberbg:#FFF3CD;
+    --brand:#F71963; /* logo only */
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif;font-size:14px;line-height:1.5;}
+
+  /* top bar (admin) */
+  .topbar{background:var(--surface);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:16px;padding:0 18px;height:56px;position:sticky;top:0;z-index:20;}
+  .burger{display:flex;flex-direction:column;gap:3px;cursor:pointer;padding:6px;border-radius:6px;}
+  .burger span{width:16px;height:2px;background:var(--ink);border-radius:2px;}
+  .acct{font-weight:600;color:var(--ink);font-size:14px;}
+  .topbar .spacer{flex:1;}
+  .topsearch{flex:0 1 460px;display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line-d);border-radius:8px;padding:7px 12px;color:var(--faint);font-size:13px;}
+  .topsearch svg{flex:none;}
+  .topnav{display:flex;align-items:center;gap:18px;color:var(--ink);font-size:13.5px;}
+  .topnav a{color:var(--ink);text-decoration:none;display:flex;align-items:center;gap:6px;}
+  .topnav a:hover{color:var(--link);}
+  .topnav .ico{width:18px;height:18px;border-radius:50%;border:1.5px solid var(--muted);color:var(--muted);font-size:11px;display:inline-flex;align-items:center;justify-content:center;font-weight:700;}
+  .avatar{width:30px;height:30px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;font-size:12px;}
+
+  .crumb{padding:18px 32px 0;color:var(--muted);font-size:12.5px;}
+  .crumb b{color:var(--ink);font-weight:600;}
+
+  .wrap{max-width:1200px;margin:0 auto;padding:14px 32px 70px;}
+  h1{font-size:24px;font-weight:700;margin:6px 0 2px;letter-spacing:-.2px;}
+  .lead{color:var(--muted);margin:0 0 18px;max-width:780px;}
+
+  /* tabs */
+  .tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin:10px 0 22px;}
+  .tab{padding:10px 16px;font-weight:600;font-size:13.5px;color:var(--muted);cursor:pointer;border:none;background:none;border-bottom:2px solid transparent;margin-bottom:-1px;}
+  .tab:hover{color:var(--ink);}
+  .tab.active{color:var(--blue);border-bottom-color:var(--blue);}
+  .panel{display:none;}
+  .panel.active{display:block;}
+
+  .grid2{display:grid;grid-template-columns:1.1fr .9fr;gap:20px;align-items:start;}
+  @media(max-width:880px){.grid2{grid-template-columns:1fr;}}
+
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:22px;box-shadow:0 1px 2px rgba(20,32,50,.04);}
+  .card h2{font-size:16px;font-weight:600;margin:0 0 4px;}
+  .card .sub{color:var(--muted);font-size:12.5px;margin:0 0 16px;}
+
+  label{display:block;font-weight:600;font-size:12.5px;margin:14px 0 5px;color:var(--ink);}
+  .hint{font-weight:400;color:var(--faint);font-size:11px;}
+  input,select{width:100%;padding:9px 11px;border:1px solid var(--line-d);border-radius:6px;font-size:13.5px;color:var(--ink);background:var(--surface);}
+  input:focus,select:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-bg);}
+  select:disabled{background:var(--hover);color:var(--muted);}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+
+  .combo{position:relative;}
+  .combo-list{display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--surface);border:1px solid var(--line-d);border-radius:6px;box-shadow:0 6px 18px rgba(20,32,50,.12);z-index:30;max-height:240px;overflow:auto;}
+  .combo-list.open{display:block;}
+  .combo-item{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 12px;cursor:pointer;border-bottom:1px solid var(--line);}
+  .combo-item:last-child{border-bottom:none;}
+  .combo-item:hover{background:var(--blue-bg);}
+  .combo-item .ci-name{font-size:13px;color:var(--ink);font-weight:500;}
+  .combo-item .ci-ids{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px;color:var(--muted);white-space:nowrap;}
+
+  .modes{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px;}
+  .mode{border:1px solid var(--line-d);border-radius:8px;padding:10px 12px;cursor:pointer;font-size:12px;color:var(--muted);}
+  .mode.sel{border-color:var(--blue);background:var(--blue-bg);color:var(--ink);box-shadow:0 0 0 1px var(--blue);}
+  .mode b{display:block;font-size:12.5px;margin-bottom:2px;color:var(--ink);}
+
+  .btn{margin-top:18px;background:var(--blue);color:#fff;border:none;border-radius:6px;padding:10px 18px;font-weight:600;font-size:13.5px;cursor:pointer;}
+  .btn:hover{background:var(--blue-d);}
+  .btn.ghost{background:#fff;color:var(--blue);border:1px solid var(--line-d);}
+  .btn:disabled{background:var(--line-d);color:var(--surface);cursor:not-allowed;}
+
+  /* success modal */
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(20,32,50,.45);z-index:60;align-items:center;justify-content:center;padding:20px;}
+  .modal-overlay.open{display:flex;}
+  .modal{background:var(--surface);border-radius:12px;max-width:420px;width:100%;padding:28px;text-align:center;box-shadow:0 20px 60px rgba(20,32,50,.3);}
+  .modal-ico{width:52px;height:52px;border-radius:50%;background:var(--greenbg);color:var(--green);font-size:26px;font-weight:800;display:flex;align-items:center;justify-content:center;margin:0 auto 14px;}
+  .modal h3{font-size:18px;font-weight:600;margin:0 0 8px;}
+  .modal p{color:var(--muted);font-size:13.5px;margin:0 0 20px;}
+  .modal .btn{margin-top:0;width:100%;}
+
+  .summary .line{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--line);font-size:13px;}
+  .summary .line:last-child{border-bottom:none;}
+  .summary .k{color:var(--muted);}
+  .summary .v{font-weight:600;text-align:right;}
+  .sim .reqline{display:flex;align-items:center;gap:8px;margin:4px 0 12px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;}
+  .sim .verb{background:var(--green);color:#fff;font-weight:700;font-size:10.5px;padding:3px 8px;border-radius:5px;letter-spacing:.03em;}
+  .sim .path{color:var(--ink);}
+  .codelabel{font-size:11px;font-weight:600;color:var(--muted);margin:12px 0 5px;text-transform:uppercase;letter-spacing:.04em;}
+  .code{background:#1B2638;color:#E7ECF3;border-radius:8px;padding:13px 14px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px;line-height:1.55;overflow:auto;margin:0;white-space:pre;max-height:280px;}
+  .code .k{color:#7FB0FF;}
+  .code .s{color:#9DE0A6;}
+  .code .n{color:#F7A14b;}
+  .sla-box{background:var(--blue-bg);border:1px solid var(--blue);border-radius:8px;padding:14px;margin-top:14px;text-align:center;}
+  .sla-box .big{font-size:26px;font-weight:800;color:var(--blue);}
+  .sla-box .cap{font-size:11.5px;color:var(--muted);}
+
+  /* admin table */
+  .tablecard{background:var(--surface);border:1px solid var(--line);border-radius:8px;box-shadow:0 1px 2px rgba(20,32,50,.04);overflow:hidden;margin-top:10px;}
+  .tabletools{display:flex;align-items:center;gap:10px;padding:16px;border-bottom:1px solid var(--line);flex-wrap:wrap;}
+  .searchbox{flex:1 1 240px;display:flex;align-items:center;gap:8px;border:1px solid var(--line-d);border-radius:6px;padding:8px 11px;color:var(--faint);font-size:13px;min-width:200px;}
+  .searchbox input{border:none;padding:0;font-size:13px;}
+  .searchbox input:focus{box-shadow:none;}
+  .fpill{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line-d);border-radius:6px;padding:8px 12px;font-size:13px;color:var(--ink);background:var(--surface);cursor:pointer;white-space:nowrap;}
+  .fpill b{font-weight:600;}
+  .fpill .car{color:var(--muted);font-size:10px;}
+  table{border-collapse:collapse;width:100%;font-size:13px;}
+  th,td{border-bottom:1px solid var(--line);padding:13px 14px;text-align:left;vertical-align:middle;}
+  th{color:var(--muted);font-size:12px;font-weight:600;}
+  th .car{font-size:9px;color:var(--faint);margin-left:3px;}
+  td.mono,th.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;}
+  td.num{color:var(--link);font-weight:600;}
+  tbody tr:hover{background:var(--hover);}
+  .tablefoot{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;font-size:13px;color:var(--muted);}
+  .tablefoot .rows{display:flex;align-items:center;gap:8px;}
+  .tablefoot select{width:auto;padding:6px 26px 6px 10px;}
+  .pager{display:flex;align-items:center;gap:14px;}
+  .pager .nav{display:flex;gap:6px;}
+  .pager .nav span{width:28px;height:28px;border:1px solid var(--line-d);border-radius:6px;display:flex;align-items:center;justify-content:center;color:var(--ink);cursor:pointer;}
+
+  /* toggle switch */
+  .sw{width:34px;height:18px;border-radius:20px;background:var(--line-d);position:relative;display:inline-block;}
+  .sw::after{content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#fff;transition:.15s;}
+  .sw.on{background:var(--blue);}
+  .sw.on::after{left:18px;}
+
+  .pill{display:inline-block;font-size:11px;font-weight:600;padding:3px 9px;border-radius:6px;}
+  .pill.future{background:var(--blue-bg);color:var(--blue);}
+  .pill.onhand{background:var(--greenbg);color:var(--green);}
+  .pill.scheduled{background:var(--amberbg);color:var(--amber);}
+  .pill.fallback{background:var(--line);color:var(--ink);}
+  .pill.combined{background:var(--blue-bg);color:var(--blue);}
+
+  .section-title{margin:34px 0 6px;font-size:18px;font-weight:600;}
+  .muted{color:var(--muted);}
+
+  /* cases */
+  .cases{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:18px;margin-top:10px;}
+  .case{background:var(--surface);border:1px solid var(--line);border-radius:8px;overflow:hidden;box-shadow:0 1px 2px rgba(20,32,50,.04);}
+  .case .ch{padding:12px 16px;border-bottom:1px solid var(--line);}
+  .case .ch .tag{font-size:10px;font-weight:700;color:var(--blue);background:var(--blue-bg);border-radius:5px;padding:2px 7px;margin-right:6px;}
+  .case .ch h3{font-size:14px;font-weight:600;margin:6px 0 0;}
+  .case .cb{padding:14px 16px;font-size:12.5px;color:var(--muted);}
+  .case .cb p{margin:0 0 10px;}
+
+  /* mini checkout illustration */
+  .mini{background:var(--hover);border:1px solid var(--line);border-radius:8px;padding:10px;margin-top:6px;}
+  .pkg{display:flex;justify-content:space-between;align-items:center;padding:7px 8px;border-radius:6px;background:#fff;border:1px solid var(--line);margin-bottom:6px;font-size:11.5px;}
+  .pkg:last-child{margin-bottom:0;}
+  .pkg .nm{font-weight:600;color:var(--ink);}
+  .pkg .sla{font-weight:700;}
+  .pkg .sla.now{color:var(--green);}
+  .pkg .sla.fut{color:var(--blue);}
+  .seller{display:flex;justify-content:space-between;padding:6px 8px;border-radius:6px;font-size:11.5px;margin-bottom:5px;border:1px solid var(--line);background:#fff;}
+  .seller.win{border-color:var(--blue);background:var(--blue-bg);font-weight:600;}
+  .barwrap{display:flex;align-items:center;gap:8px;margin:4px 0;font-size:11px;}
+  .bar{height:10px;border-radius:5px;background:var(--blue-bg);}
+  .bar.now{background:var(--green);}
+  .timeline{display:flex;align-items:center;gap:6px;font-size:10.5px;color:var(--muted);margin-top:6px;}
+  .dot{width:10px;height:10px;border-radius:50%;background:var(--blue);}
+  .dot.off{background:var(--line);}
+  .arrow{flex:1;height:2px;background:var(--line);}
+  code{background:var(--line);padding:1px 5px;border-radius:4px;font-size:11px;}
+  .note{background:var(--blue-bg);border-left:3px solid var(--blue);padding:10px 14px;border-radius:6px;font-size:12px;color:var(--muted);margin:14px 0;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="burger" aria-label="menu"><span></span><span></span><span></span></span>
+  <svg class="brand" width="24" height="24" viewBox="0 0 24 24" fill="#F71963" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="VTEX">
+    <path d="M22.2027 1.7925H4.2812c-1.3897 0-2.2795 1.4698-1.6293 2.6917l1.7927 3.3773H1.1947a1.2 1.2 0 0 0-.5873.1537 1.1924 1.1924 0 0 0-.4356.421 1.1847 1.1847 0 0 0-.0342 1.1683l5.766 10.858c.1017.191.2537.3507.4399.4622a1.1996 1.1996 0 0 0 1.2326 0 1.1913 1.1913 0 0 0 .4398-.4623l1.566-2.933 1.9647 3.7006c.6914 1.3016 2.5645 1.304 3.2584.0038L23.7878 4.416c.635-1.1895-.2314-2.6235-1.5851-2.6235ZM14.1524 8.978l-3.8733 7.2533a.7932.7932 0 0 1-.2927.3074.7986.7986 0 0 1-.82 0 .7933.7933 0 0 1-.2927-.3074L5.0378 9.0086a.7883.7883 0 0 1 .0208-.7776.7933.7933 0 0 1 .2891-.281.7985.7985 0 0 1 .3906-.1033h7.7307a.7769.7769 0 0 1 .381.0998.7717.7717 0 0 1 .2823.2736.7672.7672 0 0 1 .02.758z"/>
+  </svg>
+  <span class="acct">electronicsstore</span>
+  <span class="spacer"></span>
+  <span class="topsearch">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg>
+    Buscar VTEX
+  </span>
+  <span class="spacer"></span>
+  <nav class="topnav">
+    <a href="#"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l1.8 4.5L18.5 9l-3.5 3 1 5-4-2.6L8 17l1-5L5.5 9l4.7-1.5L12 3z"/></svg>Copilot</a>
+    <a href="#">Visite a loja <span style="font-size:11px">↗</span></a>
+    <a href="#"><span class="ico">?</span>Ajuda</a>
+    <span class="avatar">C</span>
+  </nav>
+</div>
+
+<div class="crumb">Estoque &nbsp;›&nbsp; Gerenciamento de inventário &nbsp;›&nbsp; <b>Estoque futuro</b></div>
+
+<div class="wrap">
+  <h1>Estoque futuro</h1>
+  <p class="lead">Cadastre uma chegada futura de estoque para um SKU em um warehouse/seller e venda agora, com a promessa de entrega ancorada na data de chegada. <span class="muted">Protótipo · Electronics Store (loja fictícia: celulares, micro-ondas, itens de indústria).</span></p>
+
+  <div class="tabs">
+    <button class="tab active" onclick="tab('reg',this)">Cadastrar estoque futuro</button>
+    <button class="tab" onclick="tab('cases',this)">Casos ilustrados</button>
+  </div>
+
+  <!-- ===================== TAB 1: REGISTRO ===================== -->
+  <div id="reg" class="panel active">
+    <div class="grid2">
+
+      <!-- form -->
+      <div class="card">
+        <h2>Novo lote de estoque futuro</h2>
+        <p class="sub">O item já está vendável (tem oferta). Aqui você adiciona um lote que chega numa data futura.</p>
+
+        <label>Franquia / conta <span class="hint">gerencie franquias pela conta principal (Case 19)</span></label>
+        <select id="account" onchange="onAccountChange()"></select>
+
+        <label>Produto / SKU <span class="hint">busca por nome, SKU ID ou ID de produto</span></label>
+        <div class="combo">
+          <input id="skuSearch" type="text" autocomplete="off" placeholder="Buscar por nome, SKU ID ou ID de produto"
+                 oninput="onSkuSearch()" onfocus="onSkuSearch()" />
+          <div id="skuResults" class="combo-list"></div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label>Warehouse / CD</label>
+            <select id="wh" onchange="recalc()"></select>
+          </div>
+          <div>
+            <label>Seller ID <span class="hint">definido pela franquia</span></label>
+            <select id="seller" onchange="recalc()" disabled></select>
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label>Data de chegada</label>
+            <input type="date" id="date" onchange="recalc()" />
+          </div>
+          <div>
+            <label>Quantidade</label>
+            <input type="number" id="qty" min="1" value="100" onchange="recalc()" />
+          </div>
+        </div>
+
+        <label>Modo de disponibilidade do lote <span class="hint">opcional, por lote · default: Simultâneo</span></label>
+        <div class="modes">
+          <div class="mode" id="mode-fallback" onclick="setMode('fallback')">
+            <b>Sequencial</b>
+            Estoque futuro só é consumido quando o imediato acaba.
+          </div>
+          <div class="mode sel" id="mode-combined" onclick="setMode('combined')">
+            <b>Simultâneo</b>
+            Estoque futuro soma ao imediato na disponibilidade do SKU, podendo ser vendido na mesma compra.
+          </div>
+        </div>
+
+        <button class="btn" id="submitBtn" onclick="addLot()" disabled>Cadastrar estoque futuro</button>
+        <p class="hint" id="submitHint" style="margin-top:8px;">Selecione SKU, data e quantidade para habilitar.</p>
+      </div>
+
+      <!-- checkout simulation -->
+      <div class="card sim">
+        <h2>Simulação de checkout</h2>
+        <p class="sub">No formato da API de simulação. Não chama a API real: monta o payload e a resposta para o SKU e o lote futuro selecionados, mostrando o SLA resultante.</p>
+
+        <div class="reqline"><span class="verb">POST</span><span class="path">/api/checkout/pub/orderForms/simulation</span></div>
+        <div class="codelabel">Request body</div>
+        <pre class="code" id="sim-req">selecione um SKU…</pre>
+
+        <div class="codelabel">Response <span class="muted">(trecho — logisticsInfo.slas)</span></div>
+        <pre class="code" id="sim-res">—</pre>
+
+        <div class="sla-box">
+          <div class="cap">SLA deste SKU (shippingEstimate)</div>
+          <div class="big" id="s-sla">—</div>
+          <div class="cap" id="s-slacap">ancorado na chegada do lote + transit time</div>
+        </div>
+        <div class="note" id="s-note">Selecione um SKU para rodar a simulação.</div>
+      </div>
+    </div>
+
+    <h3 class="section-title" id="lotsHeading">Lotes futuros cadastrados</h3>
+    <p class="muted" style="margin-top:0;font-size:12.5px;">Na data de chegada, o lote vira estoque on-hand automaticamente (no fuso da conta).</p>
+    <div class="tablecard">
+      <div class="tabletools">
+        <span class="searchbox">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg>
+          <input placeholder="Buscar por produto, SKU ou ID" />
+        </span>
+        <span class="fpill">Status: <b>Todos</b><span class="car">▾</span></span>
+        <span class="fpill">Modo: <b>Todos</b><span class="car">▾</span></span>
+        <span class="fpill">Warehouse: <b>Todos</b><span class="car">▾</span></span>
+      </div>
+      <table>
+        <thead>
+          <tr><th class="mono">SKU ID <span class="car">⌄</span></th><th class="mono">Warehouse</th><th class="mono">Seller</th><th>Chegada</th><th>Qtd</th><th>Modo</th><th>SLA estimado</th><th>Status</th></tr>
+        </thead>
+        <tbody id="lots"></tbody>
+      </table>
+      <div class="tablefoot">
+        <span class="rows">Mostrar linhas
+          <select><option>10</option><option>25</option><option>50</option></select>
+        </span>
+        <span class="pager">
+          <span id="pgcount">1 - 2 de 2</span>
+          <span class="nav"><span>‹</span><span>›</span></span>
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== TAB 2: CASOS ===================== -->
+  <div id="cases" class="panel">
+    <div class="cases">
+
+      <div class="case">
+        <div class="ch"><span class="tag">Case 1</span><span class="pill future">venda futura</span><h3>Venda só com estoque futuro</h3></div>
+        <div class="cb">
+          <p>iPhone 17 zerado. Chegam 100 unidades em 14/05. O item fica vendável com SLA ancorado na chegada.</p>
+          <div class="mini">
+            <div class="pkg"><span class="nm">iPhone 17</span><span class="sla fut">chega 14/05 · +2d entrega</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="case">
+        <div class="ch"><span class="tag">Cases 2 · 6</span><span class="pill onhand">imediato</span> <span class="pill future">futuro</span><h3>Carrinho misto dividido</h3></div>
+        <div class="cb">
+          <p>1 unidade disponível agora + 1 de lote futuro. O carrinho divide em 2 pacotes, com 2 SLAs e 2 fretes.</p>
+          <div class="mini">
+            <div class="pkg"><span class="nm">Pacote 1 · iPhone 17</span><span class="sla now">entrega em 2 dias</span></div>
+            <div class="pkg"><span class="nm">Pacote 2 · iPhone 17</span><span class="sla fut">chega 14/05 + 2d</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="case">
+        <div class="ch"><span class="tag">Case 8</span><h3>Seller selection multi-seller</h3></div>
+        <div class="cb">
+          <p>Seller A tem estoque agora; Seller B só lote futuro. O SLA do B considera os dias até a chegada, então compete de forma justa.</p>
+          <div class="mini">
+            <div class="seller win"><span>Seller A · on-hand</span><span>SLA 2d ✓</span></div>
+            <div class="seller"><span>Seller B · futuro</span><span>SLA 9d</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="case">
+        <div class="ch"><span class="tag">Case 10</span><h3>Múltiplos lotes · FIFO por data</h3></div>
+        <div class="cb">
+          <p>Micro-ondas com 3 lotes no mesmo warehouse. A reserva pega o lote de data mais próxima com saldo.</p>
+          <div class="mini">
+            <div class="pkg"><span class="nm">Lote 14/05 · 50un</span><span class="sla fut">1º a consumir</span></div>
+            <div class="pkg"><span class="nm">Lote 28/05 · 100un</span><span class="sla">depois</span></div>
+            <div class="pkg"><span class="nm">Lote 11/06 · 80un</span><span class="sla">depois</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="case">
+        <div class="ch"><span class="tag">Case 10</span><span class="pill future">2 lotes</span><h3>Mesmo SKU, 2 datas → 2 pacotes</h3></div>
+        <div class="cb">
+          <p>Mesmo SKU, mesmo seller e mesmo warehouse, com 2 lotes em datas diferentes. O shopper compra 80un: FIFO consome 50un do lote 14/05 e 30un do lote 28/05. A compra divide em <b>2 pacotes</b>, com 2 SLAs e 2 fretes.</p>
+          <div class="mini">
+            <div class="pkg"><span class="nm">Pacote 1 · 50un (lote 14/05)</span><span class="sla fut">chega 14/05 + 2d</span></div>
+            <div class="pkg"><span class="nm">Pacote 2 · 30un (lote 28/05)</span><span class="sla fut">chega 28/05 + 2d</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="case">
+        <div class="ch"><span class="tag">Case 4</span><h3>Pré-venda de lançamento</h3></div>
+        <div class="cb">
+          <p>Furadeira industrial nova, sem estoque. Lote futuro cria a disponibilidade; a data de pré-venda do SKU é um piso: <code>max(pré-venda, chegada do lote)</code>.</p>
+          <div class="barwrap"><span>Lançamento</span><div class="bar" style="width:120px"></div><span>01/09</span></div>
+        </div>
+      </div>
+
+      <div class="case">
+        <div class="ch"><span class="tag">Case 13</span><span class="pill onhand">automático</span><h3>Virada automática para on-hand</h3></div>
+        <div class="cb">
+          <p>Na virada da data (fuso da conta), o lote vira estoque disponível sem ação manual e dispara reindexação.</p>
+          <div class="timeline"><span class="dot"></span><span>13/05 futuro</span><div class="arrow"></div><span class="dot off"></span><span>14/05 00:00 → on-hand</span></div>
+        </div>
+      </div>
+
+      <div class="case">
+        <div class="ch"><span class="tag">Case 17</span><span class="pill fallback">sequencial</span> <span class="pill combined">simultâneo</span><h3>Modo de disponibilidade (por SKU)</h3></div>
+        <div class="cb">
+          <p>2 imediatas + 3 futuras, shopper quer 3. <b>Sequencial:</b> bloqueia (limite 2). <b>Simultâneo:</b> permite (2+1).</p>
+        </div>
+      </div>
+
+      <div class="case">
+        <div class="ch"><span class="tag">Case 18</span><h3>Marca de estoque futuro no pedido</h3></div>
+        <div class="cb">
+          <p>O payload do pedido carrega uma marca (idealmente por item) indicando origem em estoque futuro, com lote e data de chegada.</p>
+          <div class="mini"><span class="mono" style="font-size:11px;">order.item.futureInventory: <span class="pill future">true</span> · lot 14/05</span></div>
+        </div>
+      </div>
+
+      <div class="case">
+        <div class="ch"><span class="tag">Case 19</span><h3>Franquias pela conta principal</h3></div>
+        <div class="cb">
+          <p>Em arquitetura de franquias, a conta principal cadastra e gerencia o estoque futuro dos warehouses das franquias, sem entrar em cada conta.</p>
+          <div class="mini">
+            <div class="pkg"><span class="nm">Conta principal</span><span class="sla fut">gerencia →</span></div>
+            <div class="pkg"><span class="nm">Franquia SP · wh-501</span><span class="sla">lote 14/05</span></div>
+            <div class="pkg"><span class="nm">Franquia RJ · wh-502</span><span class="sla">lote 20/05</span></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<div id="successModal" class="modal-overlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-ico">✓</div>
+    <h3>Estoque futuro cadastrado</h3>
+    <p>O lote foi registrado com sucesso e já aparece na tabela <b>Lotes futuros cadastrados</b>, logo abaixo do formulário.</p>
+    <button class="btn" onclick="closeModal()">Ver na tabela</button>
+  </div>
+</div>
+
+<script>
+  const TRANSIT = 2; // dias de transit time da shipping policy (exemplo)
+  const products = [
+    {sku:"1001", pid:"PRD-9001", name:"iPhone 17 128GB", onhand:0},
+    {sku:"2042", pid:"PRD-9042", name:"Micro-ondas Brastemp 32L", onhand:5},
+    {sku:"3090", pid:"PRD-9090", name:"Smart TV 55\" 4K", onhand:12},
+    {sku:"4501", pid:"PRD-9451", name:"Furadeira Industrial Bosch GSB", onhand:0},
+    {sku:"5120", pid:"PRD-9512", name:"Notebook Dell Inspiron i7", onhand:3},
+    {sku:"6033", pid:"PRD-9603", name:"Compressor de Ar Industrial 50L", onhand:0},
+  ];
+  // Conta principal gerencia seus próprios CDs e os das franquias (Case 19).
+  // Cada franquia tem 1 loja/CD e 1 seller.
+  const accounts = [
+    {id:"principal", label:"Conta principal · Electronics Store", seller:"electronicsstore", whs:["wh-100 · CD São Paulo","wh-205 · CD Recife"]},
+    {id:"pinheiros", label:"Franquia · Loja Pinheiros (SP)", seller:"electronicspinheiros", whs:["wh-501 · Loja Pinheiros"]},
+    {id:"moema",     label:"Franquia · Loja Moema (SP)",     seller:"electronicsmoema",     whs:["wh-502 · Loja Moema"]},
+    {id:"tijuca",    label:"Franquia · Loja Tijuca (RJ)",    seller:"electronicstijuca",    whs:["wh-503 · Loja Tijuca"]},
+    {id:"joaopessoa",label:"Franquia · Loja João Pessoa (PB)", seller:"electronicsjoaopessoa", whs:["wh-504 · Loja João Pessoa"]},
+    {id:"curitiba",  label:"Franquia · Loja Curitiba (PR)",  seller:"electronicscuritiba",  whs:["wh-505 · Loja Curitiba"]},
+    {id:"natal",     label:"Franquia · Loja Natal (RN)",     seller:"electronicsnatal",     whs:["wh-506 · Loja Natal"]},
+    {id:"salvador",  label:"Franquia · Loja Salvador (BA)",  seller:"electronicssalvador",  whs:["wh-507 · Loja Salvador"]},
+  ];
+  let mode = "combined"; // default: Simultâneo (campo opcional)
+
+  // SKU search (autocomplete por nome, SKU ID ou ID de produto)
+  let selectedSku="";
+  const skuInput=document.getElementById('skuSearch');
+  const skuResults=document.getElementById('skuResults');
+
+  function onSkuSearch(){
+    const q=skuInput.value.trim().toLowerCase();
+    const list=products.filter(p=>
+      p.name.toLowerCase().includes(q) ||
+      p.sku.toLowerCase().includes(q) ||
+      p.pid.toLowerCase().includes(q)
+    );
+    skuResults.innerHTML="";
+    if(!list.length){skuResults.classList.remove('open');return;}
+    list.forEach(p=>{
+      const it=document.createElement('div');
+      it.className="combo-item";
+      it.innerHTML=`<span class="ci-name">${p.name}</span><span class="ci-ids">${p.sku} · ${p.pid}</span>`;
+      it.onmousedown=()=>pickSku(p.sku);
+      skuResults.appendChild(it);
+    });
+    skuResults.classList.add('open');
+  }
+  function pickSku(sku){
+    const p=products.find(x=>x.sku===sku);
+    if(!p) return;
+    selectedSku=sku;
+    skuInput.value=`${p.name} (${p.sku})`;
+    skuResults.classList.remove('open');
+    recalc();
+  }
+  document.addEventListener('click',e=>{
+    if(!e.target.closest('.combo')) skuResults.classList.remove('open');
+  });
+
+  const accSel=document.getElementById('account');
+  accounts.forEach(a=>{const o=document.createElement('option');o.value=a.id;o.textContent=a.label;accSel.appendChild(o);});
+  const whSel=document.getElementById('wh');
+  const sellerSel=document.getElementById('seller');
+
+  function onAccountChange(){
+    const acc=accounts.find(a=>a.id===accSel.value)||accounts[0];
+    whSel.innerHTML="";
+    acc.whs.forEach(w=>{const o=document.createElement('option');o.value=w;o.textContent=w;whSel.appendChild(o);});
+    sellerSel.innerHTML="";
+    const so=document.createElement('option');so.value=acc.seller;so.textContent=acc.seller;sellerSel.appendChild(so);
+    recalc();
+  }
+  onAccountChange();
+
+  // default date = +14 dias
+  const d=new Date();d.setDate(d.getDate()+14);
+  document.getElementById('date').value=d.toISOString().slice(0,10);
+  pickSku("1001");
+
+  function tab(id,el){
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    el.classList.add('active');
+  }
+  function setMode(m){
+    mode=m;
+    document.getElementById('mode-fallback').classList.toggle('sel',m==='fallback');
+    document.getElementById('mode-combined').classList.toggle('sel',m==='combined');
+    recalc();
+  }
+  function daysUntil(dateStr){
+    if(!dateStr) return null;
+    const today=new Date();today.setHours(0,0,0,0);
+    const t=new Date(dateStr+"T00:00:00");
+    return Math.round((t-today)/86400000);
+  }
+  function fmt(dateStr){if(!dateStr)return"—";const[y,m,dd]=dateStr.split('-');return `${dd}/${m}/${y}`;}
+
+  function isoPlus(days){const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()+days);return d.toISOString().replace(/\.\d{3}Z$/,'Z');}
+  function hl(json){
+    return json
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+      .replace(/"([^"\\]+)":/g,'<span class="k">"$1"</span>:')
+      .replace(/: "([^"\\]*)"/g,': <span class="s">"$1"</span>')
+      .replace(/: (-?\d+\.?\d*)/g,': <span class="n">$1</span>');
+  }
+
+  function recalc(){
+    const p=products.find(x=>x.sku===selectedSku);
+    const dateStr=document.getElementById('date').value;
+    const days=daysUntil(dateStr);
+    const qty=parseInt(document.getElementById('qty').value)||0;
+    const seller=(sellerSel.value||'1').split(' ')[0];
+    const reqEl=document.getElementById('sim-req');
+    const resEl=document.getElementById('sim-res');
+    const slaEl=document.getElementById('s-sla');
+    const noteEl=document.getElementById('s-note');
+
+    if(!p||days==null){
+      reqEl.textContent="selecione um SKU…"; resEl.textContent="—";
+      slaEl.textContent="—"; noteEl.textContent="Selecione um SKU para rodar a simulação.";
+      return;
+    }
+
+    const skuId=p.sku.replace(/\D/g,'');
+    const onhand=p.onhand;
+    const immEst=TRANSIT;            // dias úteis de transit (on-hand)
+    const futEst=days+TRANSIT;       // dias até a chegada + transit (estoque futuro)
+
+    // request body no formato da API de simulação
+    const req={items:[{id:skuId,quantity:qty||1,seller:seller}],country:"BRA",postalCode:"01310-100"};
+    reqEl.innerHTML=hl(JSON.stringify(req,null,2));
+
+    // monta os pacotes conforme on-hand x modo
+    const pkgs=[];
+    if(onhand>0 && mode==='fallback'){
+      const imm=Math.min(onhand,qty||1);
+      pkgs.push({src:"on-hand",units:imm,est:immEst});
+      const rem=(qty||1)-imm;
+      if(rem>0) pkgs.push({src:"future",units:rem,est:futEst});
+    } else if(onhand>0 && mode==='combined'){
+      pkgs.push({src:"on-hand",units:onhand,est:immEst});
+      pkgs.push({src:"future",units:qty||1,est:futEst});
+    } else {
+      pkgs.push({src:"future",units:qty||1,est:futEst});
+    }
+
+    const resp={
+      items:[{id:skuId,quantity:qty||1,seller:seller,availability:"available"}],
+      logisticsInfo:pkgs.map((pk,i)=>({
+        itemIndex:0,
+        stockBalance:pk.src==='future'?(qty||1):onhand,
+        slas:[{
+          id:pk.src==='future'?"Normal-FutureStock":"Normal",
+          name:pk.src==='future'?"Entrega (estoque futuro)":"Entrega normal",
+          deliveryChannel:"delivery",
+          shippingEstimate:pk.est+"bd",
+          shippingEstimateDate:isoPlus(pk.est),
+          price:1990
+        }]
+      })),
+      messages:[]
+    };
+    resEl.innerHTML=hl(JSON.stringify(resp,null,2));
+
+    // headline = SLA habilitado pelo lote futuro
+    slaEl.textContent=`${futEst} bd`;
+    let note;
+    if(onhand>0 && mode==='fallback'){
+      note=`O SKU continua vendendo pelas ${onhand} un on-hand (shippingEstimate ${immEst}bd). O lote futuro de ${qty||1} un para ${fmt(dateStr)} assume quando o on-hand zerar, com ${futEst}bd (${days}d até a chegada + ${TRANSIT}bd de transit time).`;
+    } else if(onhand>0 && mode==='combined'){
+      note=`Modo simultâneo: a compra divide em 2 pacotes: ${onhand} un on-hand em ${immEst}bd e ${qty||1} un do lote futuro em ${futEst}bd, ancorado em ${fmt(dateStr)}.`;
+    } else {
+      note=`Sem on-hand: a venda é 100% pelo lote futuro. shippingEstimate = ${days}d até a chegada + ${TRANSIT}bd de transit = ${futEst}bd, ancorado em ${fmt(dateStr)}.`;
+    }
+    noteEl.textContent=note;
+    validate();
+  }
+
+  function validate(){
+    const ok = !!selectedSku
+      && !!document.getElementById('date').value
+      && (parseInt(document.getElementById('qty').value)||0)>0;
+    document.getElementById('submitBtn').disabled=!ok;
+    document.getElementById('submitHint').style.display = ok ? 'none' : 'block';
+  }
+  function openModal(){document.getElementById('successModal').classList.add('open');}
+  function closeModal(){
+    document.getElementById('successModal').classList.remove('open');
+    document.getElementById('lotsHeading').scrollIntoView({behavior:'smooth',block:'start'});
+  }
+
+  function addLot(){
+    const p=products.find(x=>x.sku===selectedSku);
+    const dateStr=document.getElementById('date').value;
+    const qty=document.getElementById('qty').value;
+    if(!p||!dateStr||!qty){return;}
+    const days=daysUntil(dateStr);
+    const sla=days+TRANSIT;
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td class="mono">${p.sku}</td>
+      <td class="mono">${whSel.value.split(' · ')[0]}</td>
+      <td class="mono">${sellerSel.value.split(' ')[0]}</td>
+      <td>${fmt(dateStr)}</td>
+      <td>${qty} un</td>
+      <td><span class="pill ${mode}">${mode==='fallback'?'Sequencial':'Simultâneo'}</span></td>
+      <td>${sla} dias</td>
+      <td><span class="pill scheduled">Agendado</span></td>`;
+    document.getElementById('lots').prepend(tr);
+    openModal();
+  }
+
+  // seed two example lots
+  (function seed(){
+    const seedData=[
+      {sku:"1001",wh:"wh-100",seller:"electronicsstore",date:"+14",qty:100,mode:"fallback"},
+      {sku:"4501",wh:"wh-205",seller:"electronicsstore",date:"+30",qty:60,mode:"combined"},
+    ];
+    seedData.forEach(s=>{
+      const d=new Date();d.setDate(d.getDate()+parseInt(s.date));
+      const ds=d.toISOString().slice(0,10);
+      const days=daysUntil(ds);const sla=days+TRANSIT;
+      const tr=document.createElement('tr');
+      tr.innerHTML=`<td class="mono">${s.sku}</td><td class="mono">${s.wh}</td><td class="mono">${s.seller}</td><td>${fmt(ds)}</td><td>${s.qty} un</td><td><span class="pill ${s.mode}">${s.mode==='fallback'?'Sequencial':'Simultâneo'}</span></td><td>${sla} dias</td><td><span class="pill scheduled">Agendado</span></td>`;
+      document.getElementById('lots').appendChild(tr);
+    });
+  })();
+
+  recalc();
+</script>
+</body>
+</html>

@@ -34,7 +34,8 @@ Supply Lot, API-only since 2020 with no Admin UI and no updates since 2021, fail
 2. The platform must differentiate between available stock and predicted stock without requiring recurring manual intervention from the merchant.
 3. The solution must work in Delivery Promise, multi-seller, and franchise account architectures — the exact architectures where Supply Lot fails today.
 4. Orders placed against future inventory must carry an explicit mark in the order payload (ideally at item level), consumable by integrations, OMS, and reports — so future-inventory orders can be isolated without inferring it from the delivery date.
-5. Merchants must be able to configure how future stock is consumed: as a fallback only when immediate stock runs out, or combined with immediate stock in the same purchase.
+5. Merchants must be able to configure, **per lot**, how each future lot is released for sale: Simultaneous (joins sellable availability now, summed with on-hand) or Sequential (held as a fallback reserve, consumed only after on-hand and all Simultaneous lots are exhausted). The field is optional and defaults to Simultaneous. The same SKU can mix both, and mode takes precedence over arrival date when ordering consumption.
+6. In franchise architectures, merchants must be able to register and manage future inventory for franchise warehouses from the main account, without operating each franchise account separately.
 
 ## Recommendation
 
@@ -58,7 +59,7 @@ Build a native Future Inventory solution that is integrated with Delivery Promis
 **V1 — first release.** A merchant registers a future lot and the platform sells it immediately with an SLA anchored to the arrival date, flowing into Delivery Promise and seller selection, with the lot converting to on-hand automatically on the arrival date.
 - Lot registration & editing (Admin + API)
 - Future-inventory reference in the order payload
-- Future stock availability mode (fallback vs. combined)
+- Future stock availability mode, per lot (Sequential vs. Simultaneous)
 - Future SLA considered in seller selection
 
 **V2 — second release.**
@@ -67,6 +68,7 @@ Build a native Future Inventory solution that is integrated with Delivery Promis
 - Pre-sale date precedence (`max(pre-sale date, lot arrival date)`; depends on Catalog)
 - Multiple lots, FIFO by date
 - Mixed cart split (immediate + future)
+- Franchise future inventory managed from the main account
 
 **Later.**
 - Batch Inventory Update support
@@ -84,3 +86,4 @@ Build a native Future Inventory solution that is integrated with Delivery Promis
 | Jun 2026 | Carolina Tourinho | Synced with BRD update: added order-level origin identifier and fallback/combined consumption requirements; added a recommendation to give customers a path to migrate off Supply Lot (Lead Time framed as a reference, not as the feature being evolved). |
 | Jun 2026 | Carolina Tourinho | Aligned brief with spec review: reframed Supply Lot failure (white-label seller selection compares transit-time SLA, ignoring the arrival date) without jargon; emphasized the order-payload mark for future-inventory origin. |
 | Jun 2026 | Carolina Tourinho | Added "Release Scope" section (V1 / V2 / Later), aligned with the spec's prioritization: future-inventory reference in the order and future stock availability mode promoted to V1; mixed cart split in V2; reservation behavior and pre-order payment treated as implicit/inherited. |
+| Jun 2026 | Carolina Tourinho | Requirement 5 reframed: availability mode is set **per lot** (not per SKU); the same SKU can mix Sequential and Simultaneous lots, with a layered consumption model and mode taking precedence over arrival date. |
