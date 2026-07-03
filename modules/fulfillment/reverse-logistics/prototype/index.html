@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Reverse Logistics — Prototype (Front-end + Back-end)</title>
+<title>Reverse Logistics — Interactive Prototype</title>
 <style>
   :root{
     --ebel:#F71963; --bubble:#FFC4DD; --yogurt:#FFE0EF; --soft:#FFF3F6;
@@ -13,59 +13,67 @@
   *{box-sizing:border-box;}
   body{margin:0;background:var(--ice);color:var(--black);
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif;}
-  .wrap{padding:32px 28px 56px;max-width:1500px;margin:0 auto;}
-  h1{font-size:24px;margin:0 0 4px;}
-  .lead{color:var(--gray);font-size:14px;margin:0 0 8px;max-width:900px;line-height:1.5;}
-  .note{background:var(--soft);border-left:3px solid var(--ebel);padding:10px 14px;border-radius:6px;
-    font-size:12.5px;color:var(--gray);margin:14px 0 28px;max-width:900px;}
-  .section-h{display:flex;align-items:center;gap:12px;margin:38px 0 6px;}
-  .section-h .tag{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;
-    padding:4px 10px;border-radius:20px;}
-  .tag-fe{background:var(--winter);color:var(--black);}
-  .tag-be{background:var(--yogurt);color:var(--ebel);}
-  .section-h h2{font-size:18px;margin:0;}
-  .section-sub{color:var(--gray);font-size:13px;margin:0 0 18px;}
+  .deck{max-width:1100px;margin:0 auto;padding:24px 20px 48px;}
+  .deck-header{background:var(--white);border:1px solid var(--winter);border-radius:14px;padding:18px 22px;margin-bottom:20px;}
+  .slide-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--ebel);margin:0 0 6px;}
+  .slide-title{font-size:20px;font-weight:700;margin:0 0 6px;}
+  .slide-desc{font-size:13px;color:var(--gray);margin:0;line-height:1.45;max-width:720px;}
+  .deck-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;gap:12px;flex-wrap:wrap;}
+  .deck-dots{display:flex;gap:8px;align-items:center;}
+  .dot{width:10px;height:10px;border-radius:50%;background:var(--winter);border:none;cursor:pointer;padding:0;}
+  .dot.on{background:var(--ebel);transform:scale(1.15);}
+  .nav-btn{background:var(--white);border:1.5px solid var(--winter);color:var(--black);font-weight:600;font-size:13px;padding:8px 16px;border-radius:8px;cursor:pointer;}
+  .nav-btn:hover{border-color:var(--ebel);color:var(--ebel);}
+  .nav-btn:disabled{opacity:.35;cursor:not-allowed;}
+  .slide-panel{display:none;}
+  .slide-panel.active{display:block;}
+  .hint{text-align:center;font-size:12px;color:var(--gray);margin:0 0 14px;}
+  .hint b{color:var(--ebel);}
 
-  /* phones */
-  .rail{display:flex;gap:18px;overflow-x:auto;padding:10px 4px 22px;}
-  .phone{position:relative;flex:0 0 248px;width:248px;background:var(--white);border-radius:22px;
-    border:1px solid var(--winter);box-shadow:0 6px 18px rgba(20,32,50,.07);overflow:hidden;display:flex;flex-direction:column;}
+  /* phone */
+  .phone-wrap{display:flex;flex-direction:column;align-items:center;}
+  .step-bar{display:flex;gap:4px;margin-bottom:12px;flex-wrap:wrap;justify-content:center;max-width:320px;}
+  .step-pill{font-size:10px;padding:3px 8px;border-radius:12px;background:var(--winter);color:var(--gray);font-weight:600;cursor:pointer;border:none;}
+  .step-pill:hover{filter:brightness(.96);}
+  .step-pill.done{background:var(--bubble);color:var(--black);}
+  .step-pill.cur{background:var(--ebel);color:#fff;}
+  .phone{width:280px;background:var(--white);border-radius:24px;border:1px solid var(--winter);
+    box-shadow:0 8px 28px rgba(20,32,50,.1);overflow:hidden;display:flex;flex-direction:column;min-height:480px;}
+  .phone.rl{border:2px solid var(--ebel);box-shadow:0 10px 32px rgba(247,25,99,.12);}
+  .statusbar{display:flex;justify-content:space-between;align-items:center;padding:8px 14px;font-size:10px;color:var(--gray);}
   .snum{min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:#fff;color:var(--ebel);
-    font-size:11px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;}
-  .phone.rl{border:2px solid var(--ebel);box-shadow:0 8px 22px rgba(247,25,99,.14);}
-  .statusbar{display:flex;justify-content:space-between;align-items:center;padding:7px 14px;font-size:10px;color:var(--gray);}
-  .brandbar{background:var(--ebel);color:#fff;padding:9px 14px;font-weight:800;font-size:13px;letter-spacing:.04em;display:flex;justify-content:space-between;align-items:center;}
-  .brandbar .cart{font-weight:400;opacity:.85;font-size:11px;}
-  .screen{padding:14px;flex:1;}
-  .screen h3{font-size:14px;font-weight:700;margin:0 0 4px;color:var(--black);}
+    font-size:10px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;}
+  .brandbar{background:var(--ebel);color:#fff;padding:10px 14px;font-weight:800;font-size:13px;
+    letter-spacing:.03em;display:flex;justify-content:space-between;align-items:center;}
+  .brandbar .cart{font-weight:400;opacity:.9;font-size:11px;}
+  .screen{padding:14px;flex:1;display:flex;flex-direction:column;}
+  .screen h3{font-size:15px;font-weight:700;margin:0 0 4px;}
   .screen p.muted{color:var(--gray);font-size:11px;margin:0 0 12px;line-height:1.4;}
-  .owner{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--cool);margin-top:auto;padding:8px 14px;border-top:1px dashed var(--winter);}
-  .card{border:1px solid var(--winter);border-radius:10px;padding:9px 11px;margin-bottom:8px;font-size:11px;}
+  .owner{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--cool);
+    padding:8px 14px;border-top:1px dashed var(--winter);margin-top:auto;}
+  .card{border:1px solid var(--winter);border-radius:10px;padding:9px 11px;margin-bottom:8px;font-size:11px;cursor:pointer;transition:.15s;}
+  .card:hover{border-color:var(--bubble);}
   .card.sel{border-color:var(--ebel);background:var(--soft);}
-  .card .t{font-weight:700;display:flex;justify-content:space-between;}
+  .card .t{font-weight:700;display:flex;justify-content:space-between;gap:6px;}
   .card .d{color:var(--gray);font-size:10px;margin-top:3px;line-height:1.35;}
-  .free{color:var(--green);font-weight:700;font-size:10px;}
+  .free{color:var(--green);font-weight:700;font-size:10px;white-space:nowrap;}
   .item{display:flex;gap:8px;align-items:center;margin-bottom:9px;}
   .thumb{width:34px;height:34px;border-radius:7px;background:linear-gradient(135deg,var(--bubble),var(--yogurt));flex:0 0 34px;}
   .item .nm{font-size:10.5px;font-weight:600;line-height:1.2;}
   .item .pr{font-size:10px;color:var(--gray);}
   .btn{display:block;text-align:center;background:var(--ebel);color:#fff;font-weight:700;font-size:12px;
-    padding:9px;border-radius:8px;margin-top:10px;}
-  .btn.ghost{background:#fff;color:var(--ebel);border:1.5px solid var(--ebel);}
-  .sizes{display:flex;gap:5px;margin:6px 0;}
-  .sz{width:26px;height:26px;border:1px solid var(--cool);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--gray);}
-  .sz.on{border-color:var(--ebel);background:var(--ebel);color:#fff;font-weight:700;}
-  .sz.oos{border-style:dashed;border-color:var(--winter);color:var(--cool);text-decoration:line-through;background:var(--ice);}
-  .sz.bought{border-color:var(--cool);color:var(--gray);background:var(--winter);}
-  .sztag{font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;display:block;margin-top:3px;}
+    padding:10px;border-radius:8px;margin-top:auto;cursor:pointer;border:none;width:100%;}
+  .btn:hover{filter:brightness(1.05);}
+  .btn.ghost{background:#fff;color:var(--ebel);border:1.5px solid var(--ebel);margin-top:8px;}
   .vrow{display:flex;gap:8px;margin:8px 0 4px;flex-wrap:wrap;}
-  .vopt{flex:1;min-width:54px;border:1px solid var(--cool);border-radius:8px;padding:8px 4px;text-align:center;font-size:11px;color:var(--gray);}
+  .vopt{flex:1;min-width:54px;border:1px solid var(--cool);border-radius:8px;padding:8px 4px;text-align:center;font-size:11px;color:var(--gray);cursor:pointer;}
   .vopt.on{border-color:var(--ebel);background:var(--soft);color:var(--black);font-weight:700;}
-  .vopt.oos{border-style:dashed;border-color:var(--winter);color:var(--cool);background:var(--ice);}
+  .vopt.oos{border-style:dashed;border-color:var(--winter);color:var(--cool);background:var(--ice);cursor:not-allowed;}
+  .vopt.bought{border-color:var(--cool);color:var(--gray);background:var(--winter);cursor:not-allowed;}
   .vopt .vsz{font-size:14px;font-weight:700;}
-  .vopt.oos .vsz{text-decoration:line-through;}
-  .vopt .vst{font-size:8.5px;text-transform:uppercase;letter-spacing:.03em;margin-top:3px;display:block;}
-  .loc{display:flex;gap:8px;align-items:flex-start;border:1px solid var(--winter);border-radius:9px;padding:8px;margin-bottom:7px;font-size:10.5px;}
+  .vopt .vst{font-size:8px;text-transform:uppercase;letter-spacing:.03em;margin-top:3px;display:block;}
+  .loc{display:flex;gap:8px;align-items:flex-start;border:1px solid var(--winter);border-radius:9px;padding:8px;margin-bottom:7px;font-size:10.5px;cursor:pointer;}
+  .loc:hover,.loc.sel{border-color:var(--ebel);background:var(--soft);}
   .pin{width:22px;height:22px;border-radius:50%;background:var(--yogurt);color:var(--ebel);display:flex;align-items:center;justify-content:center;font-size:11px;flex:0 0 22px;}
   .timeline{font-size:10.5px;}
   .tl{display:flex;gap:8px;margin-bottom:10px;}
@@ -77,472 +85,418 @@
   .tl .sub{color:var(--gray);font-size:9.5px;}
   .success{text-align:center;padding-top:14px;}
   .success .ic{width:46px;height:46px;border-radius:50%;background:var(--greenbg);color:var(--green);display:flex;align-items:center;justify-content:center;font-size:24px;margin:0 auto 10px;}
+  .fe-note{background:var(--soft);border-left:3px solid var(--ebel);padding:10px 14px;border-radius:6px;
+    font-size:12px;color:var(--gray);margin-top:20px;line-height:1.45;max-width:560px;margin-left:auto;margin-right:auto;}
 
-  /* backend */
-  .be{background:var(--white);border:1px solid var(--winter);border-radius:14px;padding:22px;margin-top:8px;}
-  .legend{display:flex;gap:20px;flex-wrap:wrap;margin:0 0 18px;font-size:12px;color:var(--gray);}
-  .legend span{display:inline-flex;align-items:center;gap:6px;}
-  .sw{width:14px;height:14px;border-radius:4px;display:inline-block;}
-  .opgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:16px;}
-  .op{border:1px solid var(--winter);border-radius:12px;overflow:hidden;}
-  .op .head{padding:10px 14px;font-weight:700;font-size:13px;display:flex;align-items:center;gap:8px;}
-  .op.consult .head{background:var(--yogurt);color:var(--black);}
-  .op.inform .head{background:var(--winter);color:var(--black);}
-  .op .head .req{font-size:10px;font-weight:700;color:var(--ebel);background:#fff;border-radius:5px;padding:2px 7px;}
-  .op .head .oms{font-size:9px;font-weight:700;color:var(--gray);background:var(--winter);border-radius:5px;padding:2px 6px;letter-spacing:.04em;}
-  .op.internal{border:1.5px dashed var(--gray);}
-  .op.internal .head{background:var(--soft);color:var(--black);}
-  .op .body{padding:12px 14px;}
-  .dir{font-size:11px;font-weight:700;margin:6px 0 4px;display:flex;align-items:center;gap:6px;}
-  .dir .ar{color:var(--ebel);}
-  .pay{background:var(--ice);border:1px solid var(--winter);border-radius:8px;padding:8px 10px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10.5px;color:var(--black);line-height:1.5;white-space:pre-wrap;margin:0 0 8px;}
-  .flowmap{display:flex;align-items:center;justify-content:center;gap:0;margin:6px 0 24px;flex-wrap:wrap;}
-  .node{border-radius:10px;padding:12px 16px;font-weight:700;font-size:13px;text-align:center;}
-  .node.vtex{background:var(--bubble);border:1.5px solid var(--ebel);}
-  .node.prov{background:#fff;border:1.5px solid var(--gray);}
-  .conn{display:flex;flex-direction:column;align-items:center;min-width:200px;padding:0 8px;}
-  .conn .line{font-size:11px;color:var(--gray);}
-  .conn .l1{color:var(--ebel);font-weight:700;}
-  .arrowr{font-size:18px;color:var(--ebel);}
-  .arrowl{font-size:18px;color:var(--gray);}
-  .maps{font-size:11px;color:var(--gray);margin-top:4px;}
-  .maps b{color:var(--ebel);}
+  /* backend slides */
+  .be-panel{background:var(--white);border:1px solid var(--winter);border-radius:14px;padding:22px;}
+  .be-step-bar{display:flex;gap:6px;margin-bottom:20px;flex-wrap:wrap;}
+  .be-step{font-size:11px;font-weight:700;padding:6px 12px;border-radius:8px;background:var(--winter);color:var(--gray);cursor:pointer;border:none;}
+  .be-step.on{background:var(--yogurt);color:var(--ebel);}
+  .be-step.done{background:var(--bubble);color:var(--black);}
+  .flow-visual{display:flex;align-items:stretch;justify-content:center;gap:0;margin:16px 0 24px;flex-wrap:wrap;}
+  .box{border-radius:12px;padding:16px 20px;font-weight:700;font-size:14px;text-align:center;min-width:140px;}
+  .box.vtex{background:var(--bubble);border:2px solid var(--ebel);}
+  .box.prov{background:var(--white);border:2px solid var(--gray);}
+  .box.cat{background:var(--yogurt);border:2px solid var(--ebel);}
+  .box small{display:block;font-weight:400;font-size:11px;color:var(--gray);margin-top:4px;}
+  .lanes{display:flex;flex-direction:column;justify-content:center;gap:12px;min-width:220px;padding:0 12px;}
+  .lane{border-radius:10px;padding:12px 14px;position:relative;}
+  .lane.sync-out{background:linear-gradient(90deg,var(--yogurt),var(--bubble));border:1.5px solid var(--ebel);}
+  .lane.sync-in{background:linear-gradient(270deg,var(--soft),var(--bubble));border:1.5px dashed var(--ebel);}
+  .lane.async{background:var(--winter);border:1.5px dashed var(--gray);}
+  .lane-label{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;}
+  .lane.sync-out .lane-label{color:var(--ebel);}
+  .lane.sync-in .lane-label{color:var(--ebel);}
+  .lane.async .lane-label{color:var(--gray);}
+  .lane-tag{font-size:9px;font-weight:700;background:#fff;border-radius:4px;padding:2px 6px;display:inline-block;margin-bottom:6px;}
+  .payload{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10px;line-height:1.55;
+    background:rgba(255,255,255,.7);border-radius:6px;padding:8px 10px;white-space:pre-wrap;color:var(--black);}
+  .be-op-title{font-size:17px;font-weight:700;margin:0 0 4px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .badge{font-size:10px;font-weight:700;padding:3px 8px;border-radius:5px;}
+  .badge.sync{background:var(--yogurt);color:var(--ebel);}
+  .badge.async{background:var(--winter);color:var(--gray);}
+  .badge.req{background:var(--ebel);color:#fff;}
+  .badge.oms{background:var(--winter);color:var(--gray);}
+  .be-sub{font-size:13px;color:var(--gray);margin:0 0 16px;line-height:1.45;}
+  .legend-row{display:flex;gap:16px;flex-wrap:wrap;font-size:11px;color:var(--gray);margin-top:16px;padding-top:14px;border-top:1px dashed var(--winter);}
+  .legend-row span{display:inline-flex;align-items:center;gap:6px;}
+  .sw{width:12px;height:12px;border-radius:3px;display:inline-block;}
+  .be-actions{display:flex;gap:10px;margin-top:18px;justify-content:center;}
+  .screen-step{display:none;}
+  .screen-step.active{display:flex;flex-direction:column;flex:1;}
+  .be-op-step{display:none;}
+  .be-op-step.active{display:block;}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <h1>Reverse Logistics — Prototype</h1>
+<div class="deck">
 
-  <!-- ===================== FRONT-END ===================== -->
-  <div class="section-h">
-    <span class="tag tag-fe">Front-end</span>
-    <h2>Jornada do shopper — Devolução</h2>
-  </div>
-  <p class="section-sub">Telas neutras (OMS/front-end) → telas em rosa acionam o provider via Fulfillment.</p>
-  <div class="note">Este front-end é apenas uma <b>demonstração do fluxo</b>. Na prática, a interface é construída e renderizada pela <b>Dafiti (headless)</b> — a VTEX expõe os dados e a integração com o provider; a loja consome via API e desenha as telas. "Fashion Store" é uma loja fictícia só para ilustrar a jornada.</div>
-
-  <div class="rail">
-
-    <!-- 1 eligible orders -->
-    <div class="phone">
-      <div class="statusbar"><span class="snum">Tela 1</span><span>●●●</span></div>
-      <div class="brandbar">Fashion Store <span class="cart">Trocas e devoluções</span></div>
-      <div class="screen">
-        <h3>Pedidos elegíveis</h3>
-        <p class="muted">Pedidos dentro do prazo para troca ou devolução.</p>
-        <div class="card sel"><div class="t">Pedido nº 4562447283 <span class="free">SELECIONADO</span></div><div class="d">1 item · R$ 99,90 · entregue 02/07</div></div>
-        <div class="card"><div class="t">Pedido nº 4562448261</div><div class="d">3 itens · R$ 599,90 · entregue 25/03</div></div>
-        <a class="btn">Solicitar devolução</a>
-      </div>
-      <div class="owner">App</div>
-    </div>
-
-    <!-- 2 choose type: exchange or return -->
-    <div class="phone">
-      <div class="statusbar"><span class="snum">Tela 2</span><span>●●●</span></div>
-      <div class="brandbar">Fashion Store <span class="cart">Trocar ou devolver?</span></div>
-      <div class="screen">
-        <h3>Troca ou devolução?</h3>
-        <p class="muted">Antes de informar o motivo, escolha o que deseja fazer com o item.</p>
-        <div class="card sel"><div class="t">Devolução</div><div class="d">Receba reembolso ou vale-compra pelo item devolvido.</div></div>
-        <div class="card"><div class="t">Troca</div><div class="d">Troque por outro tamanho, cor ou item.</div></div>
-        <a class="btn">Avançar</a>
-      </div>
-      <div class="owner">App</div>
-    </div>
-
-    <!-- 3 items + reason -->
-    <div class="phone">
-      <div class="statusbar"><span class="snum">Tela 3</span><span>●●●</span></div>
-      <div class="brandbar">Fashion Store <span class="cart">Devolução</span></div>
-      <div class="screen">
-        <h3>Itens & motivo</h3>
-        <p class="muted">Grupo 1 • Devolução para Fashion Store</p>
-        <div class="item"><div class="thumb"></div><div><div class="nm">Blusa Cropped Algodão</div><div class="pr">R$ 99,90 · M · Bege</div></div></div>
-        <div class="card"><div class="t">Ficou pequeno/grande</div></div>
-        <div class="card sel"><div class="t">Não gostei da cor</div></div>
-        <div class="card"><div class="t">Veio com defeito</div></div>
-        <a class="btn">Avançar</a>
-      </div>
-      <div class="owner">App</div>
-    </div>
-
-    <!-- 4 compensation -->
-    <div class="phone">
-      <div class="statusbar"><span class="snum">Tela 4</span><span>●●●</span></div>
-      <div class="brandbar">Fashion Store <span class="cart">Reembolso</span></div>
-      <div class="screen">
-        <h3>Forma de reembolso</h3>
-        <p class="muted">Escolha como prefere ser compensado.</p>
-        <div class="card"><div class="t">Receber vale-compra</div><div class="d">Disponível por 180 dias.</div></div>
-        <div class="card sel"><div class="t">Receber reembolso</div><div class="d">Crédito após análise do produto devolvido.</div></div>
-        <a class="btn">Avançar</a>
-      </div>
-      <div class="owner">App</div>
-    </div>
-
-    <!-- 5 return method  RL -->
-    <div class="phone rl">
-      <div class="statusbar"><span class="snum">Tela 5</span><span>●●●</span></div>
-      <div class="brandbar">Fashion Store <span class="cart">Como devolver?</span></div>
-      <div class="screen">
-        <h3>Escolha como devolver</h3>
-        <p class="muted">Métodos resolvidos pelo provider para este contexto.</p>
-        <div class="card"><div class="t">Coleta em casa <span class="free">GRÁTIS</span></div><div class="d">Retiramos no seu endereço em até X dias.</div></div>
-        <div class="card"><div class="t">Correios <span class="free">GRÁTIS</span></div><div class="d">Leve ao Correios mais próximo em até X dias.</div></div>
-        <div class="card sel"><div class="t">Devolve fácil <span class="free">GRÁTIS</span></div><div class="d">Leve ao ponto de coleta mais próximo.</div></div>
-        <a class="btn">Avançar</a>
-      </div>
-      <div class="owner">App</div>
-    </div>
-
-    <!-- 6 drop-off locations RL -->
-    <div class="phone rl">
-      <div class="statusbar"><span class="snum">Tela 6</span><span>●●●</span></div>
-      <div class="brandbar">Fashion Store <span class="cart">Pontos de coleta</span></div>
-      <div class="screen">
-        <h3>Pontos de coleta</h3>
-        <p class="muted">Só quando o método exige local físico (drop-off). Ordenados por proximidade do shopper.</p>
-        <div class="loc"><div class="pin">📍</div><div><b>Ponto Devolve fácil — Centro</b><div class="d" style="color:var(--gray)">Rua Augusta, 1200 · 0,8 km</div></div></div>
-        <div class="loc"><div class="pin">📍</div><div><b>Correios — Av. Paulista</b><div class="d" style="color:var(--gray)">Av. Paulista, 900 · 1,4 km</div></div></div>
-        <div class="loc"><div class="pin">📍</div><div><b>Ponto Devolve fácil — Shopping</b><div class="d" style="color:var(--gray)">Shopping Pátio · 2,1 km</div></div></div>
-        <a class="btn">Avançar</a>
-      </div>
-      <div class="owner">App</div>
-    </div>
-
-    <!-- 7 review RL -->
-    <div class="phone rl">
-      <div class="statusbar"><span class="snum">Tela 7</span><span>●●●</span></div>
-      <div class="brandbar">Fashion Store <span class="cart">Revisar</span></div>
-      <div class="screen">
-        <h3>Revise a solicitação</h3>
-        <div class="item"><div class="thumb"></div><div><div class="nm">Blusa Cropped Algodão</div><div class="pr">Receber reembolso</div></div></div>
-        <div class="card sel"><div class="t">Devolução · Devolve fácil</div>
-          <div class="d">Leve o pacote ao ponto de coleta em até X dias.<br>Ponto: Devolve fácil — Rua Augusta, 1200 — SP</div></div>
-        <p class="muted">Dados de <b>returnLogistics</b> exibidos pelo front-end.</p>
-        <a class="btn">Confirmar solicitação</a>
-      </div>
-      <div class="owner">App</div>
-    </div>
-
-    <!-- 8 confirmation RL -->
-    <div class="phone rl">
-      <div class="statusbar"><span class="snum">Tela 8</span><span>●●●</span></div>
-      <div class="brandbar">Fashion Store <span class="cart">Confirmado</span></div>
-      <div class="screen">
-        <h3>Registrada</h3>
-        <div class="success">
-          <div class="ic">✓</div>
-          <h3>Tudo certo!</h3>
-          <p class="muted">Sua devolução foi registrada. Enviamos os detalhes por e-mail.</p>
-        </div>
-        <a class="btn">Acompanhar solicitação</a>
-        <a class="btn ghost">Devolver outros itens</a>
-      </div>
-      <div class="owner">App</div>
-    </div>
-
-    <!-- 9 tracking RL -->
-    <div class="phone rl">
-      <div class="statusbar"><span class="snum">Tela 9</span><span>●●●</span></div>
-      <div class="brandbar">Fashion Store <span class="cart">Acompanhar</span></div>
-      <div class="screen">
-        <h3>Tracking</h3>
-        <div class="timeline">
-          <div class="tl"><div class="dot"></div><div><div class="lbl">Postagem disponível</div><div class="sub">10/06 · Devolve fácil</div></div></div>
-          <div class="tl"><div class="dot"></div><div><div class="lbl">Pacote postado no ponto</div><div class="sub">12/06 · Rua Augusta, 1200</div></div></div>
-          <div class="tl"><div class="dot off"></div><div><div class="lbl">Em trânsito</div><div class="sub">aguardando</div></div></div>
-          <div class="tl"><div class="dot off"></div><div><div class="lbl">Recebido no destino</div><div class="sub">—</div></div></div>
-        </div>
-      </div>
-      <div class="owner">App</div>
-    </div>
-
+  <div class="deck-header">
+    <p class="slide-label" id="slideLabel">Slide 1 · Front-end</p>
+    <h1 class="slide-title" id="slideTitle">Jornada do shopper — Devolução</h1>
+    <p class="slide-desc" id="slideDesc">Clique nos elementos destacados do celular para avançar na jornada. Telas em rosa acionam o provider via Fulfillment.</p>
   </div>
 
-  <!-- ===================== FRONT-END · TROCA ===================== -->
-  <div class="section-h">
-    <span class="tag tag-fe">Front-end</span>
-    <h2>Jornada do shopper — Troca</h2>
-  </div>
-  <p class="section-sub">Mesma entrada da devolução, mas ao escolher <b>Troca</b> o shopper seleciona a nova variante do mesmo produto e, em seguida, reentra no fluxo de devolução para retornar o item original.</p>
-  <div class="note">A seleção da variante de troca e a checagem de estoque (<b>REQ-05</b>) são <b>internas</b> — provavelmente OMS (a definir quem implementa), <b>fora do protocolo de provider externo</b>. Os SKUs ofertados são variantes do mesmo produto comprado, <b>ao mesmo preço do item devolvido</b>; uma variante fica disponível quando há <b>estoque > 0 em qualquer warehouse/seller (disponibilidade agregada/global</b>, ex.: via GET Inventory by SKU).</div>
-
-  <div class="rail">
-
-    <!-- T1 eligible orders -->
-    <div class="phone">
-      <div class="statusbar"><span class="snum">Tela T1</span><span>●●●</span></div>
-      <div class="brandbar">Fashion Store <span class="cart">Trocas e devoluções</span></div>
-      <div class="screen">
-        <h3>Pedidos elegíveis</h3>
-        <p class="muted">Pedidos dentro do prazo para troca ou devolução.</p>
-        <div class="card sel"><div class="t">Pedido nº 4562447283 <span class="free">SELECIONADO</span></div><div class="d">1 item · R$ 99,90 · entregue 02/07</div></div>
-        <div class="card"><div class="t">Pedido nº 4562448261</div><div class="d">3 itens · R$ 599,90 · entregue 25/03</div></div>
-        <a class="btn">Solicitar</a>
-      </div>
-      <div class="owner">App</div>
-    </div>
-
-    <!-- T2 choose type: TROCA -->
-    <div class="phone">
-      <div class="statusbar"><span class="snum">Tela T2</span><span>●●●</span></div>
-      <div class="brandbar">Fashion Store <span class="cart">Trocar ou devolver?</span></div>
-      <div class="screen">
-        <h3>Troca ou devolução?</h3>
-        <p class="muted">Antes de informar o motivo, escolha o que deseja fazer com o item.</p>
-        <div class="card"><div class="t">Devolução</div><div class="d">Receba reembolso ou vale-compra pelo item devolvido.</div></div>
-        <div class="card sel"><div class="t">Troca <span class="free">SELECIONADO</span></div><div class="d">Troque por outro tamanho, cor ou item.</div></div>
-        <a class="btn">Avançar</a>
-      </div>
-      <div class="owner">App</div>
-    </div>
-
-    <!-- T3 items + reason -->
-    <div class="phone">
-      <div class="statusbar"><span class="snum">Tela T3</span><span>●●●</span></div>
-      <div class="brandbar">Fashion Store <span class="cart">Troca</span></div>
-      <div class="screen">
-        <h3>Itens & motivo</h3>
-        <p class="muted">Grupo 1 • Troca do item comprado</p>
-        <div class="item"><div class="thumb"></div><div><div class="nm">Blusa Cropped Algodão</div><div class="pr">R$ 99,90 · M · Bege</div></div></div>
-        <div class="card sel"><div class="t">Ficou pequeno/grande</div></div>
-        <div class="card"><div class="t">Não gostei da cor</div></div>
-        <div class="card"><div class="t">Veio com defeito</div></div>
-        <a class="btn">Avançar</a>
-      </div>
-      <div class="owner">App</div>
-    </div>
-
-    <!-- T4 choose new variant -->
-    <div class="phone">
-      <div class="statusbar"><span class="snum">Tela T4</span><span>●●●</span></div>
-      <div class="brandbar">Fashion Store <span class="cart">Nova variante</span></div>
-      <div class="screen">
-        <h3>Escolha o novo item</h3>
-        <p class="muted">Variantes do mesmo produto, ao mesmo preço do item devolvido. Disponível se houver estoque em qualquer warehouse/seller (visão agregada global).</p>
-        <div class="vrow">
-          <div class="vopt oos"><span class="vsz">P</span><span class="vst">Esgotado</span></div>
-          <div class="vopt bought"><span class="vsz">M</span><span class="vst">Comprado</span></div>
-          <div class="vopt on"><span class="vsz">G</span><span class="vst">Disponível</span></div>
-          <div class="vopt"><span class="vsz">GG</span><span class="vst">Disponível</span></div>
-        </div>
-        <div class="card sel"><div class="t">Trocar M → G</div><div class="d">Você devolve a M e recebe a G.</div></div>
-        <a class="btn">Avançar</a>
-      </div>
-      <div class="owner">App · OMS</div>
-    </div>
-
-    <!-- T5 return method RL -->
-    <div class="phone rl">
-      <div class="statusbar"><span class="snum">Tela T5</span><span>●●●</span></div>
-      <div class="brandbar">Fashion Store <span class="cart">Como devolver a M?</span></div>
-      <div class="screen">
-        <h3>Escolha como devolver</h3>
-        <p class="muted">Para concluir a troca, devolva o item original (M). Métodos resolvidos pelo provider.</p>
-        <div class="card"><div class="t">Coleta em casa <span class="free">GRÁTIS</span></div><div class="d">Retiramos no seu endereço em até X dias.</div></div>
-        <div class="card sel"><div class="t">Devolve fácil <span class="free">GRÁTIS</span></div><div class="d">Leve ao ponto de coleta mais próximo.</div></div>
-        <a class="btn">Avançar</a>
-      </div>
-      <div class="owner">App</div>
-    </div>
-
-    <!-- T6 review RL -->
-    <div class="phone rl">
-      <div class="statusbar"><span class="snum">Tela T6</span><span>●●●</span></div>
-      <div class="brandbar">Fashion Store <span class="cart">Revisar</span></div>
-      <div class="screen">
-        <h3>Revise a troca</h3>
-        <div class="item"><div class="thumb"></div><div><div class="nm">Blusa Cropped Algodão</div><div class="pr">Troca M → G</div></div></div>
-        <div class="card"><div class="t">Devolver · Tam. M</div><div class="d">Leve a peça ao ponto Devolve fácil em até X dias.</div></div>
-        <div class="card sel"><div class="t">Receber · Tam. G</div><div class="d">Enviado após confirmação da devolução (ou conforme política da loja).</div></div>
-        <p class="muted">Devolução via <b>returnLogistics</b>; envio da nova variante é o forward da troca.</p>
-        <a class="btn">Confirmar troca</a>
-      </div>
-      <div class="owner">App</div>
-    </div>
-
-    <!-- T7 confirmation RL -->
-    <div class="phone rl">
-      <div class="statusbar"><span class="snum">Tela T7</span><span>●●●</span></div>
-      <div class="brandbar">Fashion Store <span class="cart">Confirmado</span></div>
-      <div class="screen">
-        <h3>Registrada</h3>
-        <div class="success">
-          <div class="ic">✓</div>
-          <h3>Troca registrada!</h3>
-          <p class="muted">Devolva a M e a G será enviada. Detalhes por e-mail.</p>
-        </div>
-        <a class="btn">Acompanhar troca</a>
-        <a class="btn ghost">Trocar outros itens</a>
-      </div>
-      <div class="owner">App</div>
-    </div>
-
-    <!-- T8 tracking RL -->
-    <div class="phone rl">
-      <div class="statusbar"><span class="snum">Tela T8</span><span>●●●</span></div>
-      <div class="brandbar">Fashion Store <span class="cart">Acompanhar</span></div>
-      <div class="screen">
-        <h3>Tracking</h3>
-        <div class="timeline">
-          <div class="tl"><div class="dot"></div><div><div class="lbl">Postagem disponível (M)</div><div class="sub">10/06 · Devolve fácil</div></div></div>
-          <div class="tl"><div class="dot off"></div><div><div class="lbl">M recebida no destino</div><div class="sub">aguardando</div></div></div>
-          <div class="tl"><div class="dot off"></div><div><div class="lbl">G enviada</div><div class="sub">após confirmação da devolução</div></div></div>
-          <div class="tl"><div class="dot off"></div><div><div class="lbl">G entregue</div><div class="sub">—</div></div></div>
-        </div>
-      </div>
-      <div class="owner">App</div>
-    </div>
-
+  <div class="deck-nav">
+    <button class="nav-btn" id="prevDeck" type="button">← Anterior</button>
+    <div class="deck-dots" id="deckDots"></div>
+    <button class="nav-btn" id="nextDeck" type="button">Próximo →</button>
   </div>
 
-  <!-- ===================== BACK-END ===================== -->
-  <div class="section-h">
-    <span class="tag tag-be">Back-end</span>
-    <h2>Integração com o provider (protocolo)</h2>
+  <!-- SLIDE 1: RETURN FE -->
+  <div class="slide-panel active" data-deck="0">
+    <p class="hint">Clique no <b>pedido</b>, depois em <b>Devolução</b>, motivo, reembolso, método, ponto e confirme — ou use <b>Avançar</b>.</p>
+    <div class="phone-wrap">
+      <div class="step-bar" id="returnSteps"></div>
+      <div class="phone" id="returnPhone">
+        <div class="statusbar"><span class="snum" id="returnNum">1</span><span>●●●</span></div>
+        <div class="brandbar"><span id="returnBrand">Fashion Store</span> <span class="cart" id="returnCart">Trocas e devoluções</span></div>
+        <div class="screen" id="returnScreen"></div>
+        <div class="owner" id="returnOwner">App</div>
+      </div>
+    </div>
+    <div class="fe-note">Demonstração do fluxo. Na prática a UI é <b>headless (Dafiti)</b> — VTEX expõe dados e integração; a loja renderiza via API.</div>
   </div>
-  <p class="section-sub">Contrato padrão que qualquer provider implementa. São <b>dois padrões de interação</b>: <b>consultas síncronas</b> — a VTEX faz a chamada e recebe a resposta na mesma requisição (REQ-01 a 03) — e <b>notificação assíncrona</b> — o provider dá push de status para a VTEX (REQ-04).</p>
 
-  <div class="be">
-    <div class="flowmap">
-      <div class="node vtex">VTEX<br><span style="font-weight:400;font-size:11px">Fulfillment · reverse logistics</span></div>
-      <div class="conn">
-        <div class="line l1">síncrono · request →</div>
-        <div class="arrowr">⟶</div>
-        <div class="arrowl">⟵</div>
-        <div class="line l1">← response (mesma chamada)</div>
-        <div class="line" style="margin:10px 0 2px;color:var(--cool);">— — — — — — —</div>
-        <div class="arrowl">⟵</div>
-        <div class="line">← assíncrono · push de status</div>
+  <!-- SLIDE 2: EXCHANGE FE -->
+  <div class="slide-panel" data-deck="1">
+    <p class="hint">Escolha <b>Troca</b>, variante <b>G</b> e avance até tracking. Variante/estoque (T4) é <b>OMS interno</b>, fora do provider.</p>
+    <div class="phone-wrap">
+      <div class="step-bar" id="exchangeSteps"></div>
+      <div class="phone" id="exchangePhone">
+        <div class="statusbar"><span class="snum" id="exchangeNum">T1</span><span>●●●</span></div>
+        <div class="brandbar"><span>Fashion Store</span> <span class="cart" id="exchangeCart">Trocas e devoluções</span></div>
+        <div class="screen" id="exchangeScreen"></div>
+        <div class="owner" id="exchangeOwner">App</div>
       </div>
-      <div class="node prov">Reverse Logistics Provider<br><span style="font-weight:400;font-size:11px">ex.: Intelipost — qualquer provider que implemente o contrato</span></div>
-    </div>
-
-    <div class="legend">
-      <span><span class="sw" style="background:var(--yogurt)"></span> Consulta <b>síncrona</b> — VTEX → Provider (request) e Provider → VTEX (response) na mesma chamada</span>
-      <span><span class="sw" style="background:var(--winter)"></span> Notificação <b>assíncrona</b> — Provider → VTEX (push de status)</span>
-    </div>
-
-    <div class="opgrid">
-
-      <!-- op1 -->
-      <div class="op consult">
-        <div class="head">ShowAvailableReturnMethods <span class="oms">síncrono</span> <span class="req">REQ-01</span></div>
-        <div class="body">
-          <div class="maps">Acionado na tela <b>5 · Escolha como devolver</b></div>
-          <div class="dir"><span class="ar">→</span> VTEX → Provider · request</div>
-          <div class="pay">OrderID, order status,
-storePreferencesData.countryCode,
-shopper address, document, document type,
-customerClass,
-returned items (SKU ID, EAN, Ref ID),
-return reason</div>
-          <div class="dir"><span class="ar">←</span> Provider → VTEX · response (each returned method)</div>
-          <div class="pay">[ method name, method type (pickup / drop-off),
-  cost (if null assume 0), payer,
-  shopper instructions, customData ]</div>
-        </div>
-      </div>
-
-      <!-- op2 -->
-      <div class="op consult">
-        <div class="head">ShowAvailableDropoffLocations <span class="oms">síncrono</span> <span class="req">REQ-02</span></div>
-        <div class="body">
-          <div class="maps">Acionado na tela <b>6 · Pontos de coleta</b> (só drop-off)</div>
-          <div class="dir"><span class="ar">→</span> VTEX → Provider · request</div>
-          <div class="pay">OrderID,
-returned items (SKU ID, EAN, Ref ID),
-shopper address, documentID,
-return reason, return option selected</div>
-          <div class="dir"><span class="ar">←</span> Provider → VTEX · response (each location · sorted by proximity)</div>
-          <div class="pay">[ location name, address, return code,
-  shopper instructions, customData ]</div>
-        </div>
-      </div>
-
-      <!-- op3 -->
-      <div class="op consult">
-        <div class="head">CreateReturnExecution <span class="oms">síncrono</span> <span class="req">REQ-03</span></div>
-        <div class="body">
-          <div class="maps">Acionado na tela <b>7 · Revisar</b> (botão "Confirmar solicitação") · resultado leva à tela 8</div>
-          <div class="dir"><span class="ar">→</span> VTEX → Provider · request</div>
-          <div class="pay">confirmed return, selected method,
-selected location/pickup address</div>
-          <div class="dir"><span class="ar">←</span> Provider → VTEX · response (persistido em returnLogistics)</div>
-          <div class="pay">selected return method, method type (pickup / drop-off),
-selected drop-off location or pickup address,
-return code, tracking code,
-carrier / provider information, provider reference,
-shopper instructions, latest logistics status,
-logistics status history,
-timestamps (creation + status updates)</div>
-        </div>
-      </div>
-
-      <!-- op4 -->
-      <div class="op inform">
-        <div class="head">ReceiveStatusUpdates <span class="oms">assíncrono</span> <span class="oms">OMS</span> <span class="req">REQ-04</span></div>
-        <div class="body">
-          <div class="maps">Alimenta a tela <b>9 · Tracking</b> · propaga p/ OMS/eventos</div>
-          <div class="dir"><span class="ar" style="color:var(--gray)">←</span> Provider → VTEX · push (assíncrono)</div>
-          <div class="pay">returnId, provider reference,
-status, timestamp</div>
-          <div class="dir">status aceitos</div>
-          <div class="pay">pickup_scheduled · posted · collected
-in_transit · delivered · failed
-expired · cancelled</div>
-        </div>
-      </div>
-
-    </div>
-
-    <div class="maps" style="margin-top:18px;border-top:1px dashed var(--winter);padding-top:14px;">
-      <b>A definir no protocolo:</b> schemas request/response por operação · autenticação e account-scope do provider · versionamento e breaking-change · se o <b>Provider → VTEX</b> é webhook, polling ou ambos.
     </div>
   </div>
 
-  <!-- ===================== BACK-END · INTERNO (TROCA) ===================== -->
-  <div class="section-h">
-    <span class="tag tag-be">Back-end</span>
-    <h2>Resolução de troca (interna · fora do protocolo de provider)</h2>
+  <!-- SLIDE 3: BACKEND PROVIDER -->
+  <div class="slide-panel" data-deck="2">
+    <div class="be-panel">
+      <div class="be-step-bar" id="beProviderSteps"></div>
+      <div id="beProviderContent"></div>
+      <div class="legend-row">
+        <span><span class="sw" style="background:var(--bubble)"></span> Síncrono — request e response na <b>mesma chamada</b></span>
+        <span><span class="sw" style="background:var(--winter)"></span> Assíncrono — push separado (outra chamada)</span>
+      </div>
+      <div class="be-actions">
+        <button class="nav-btn" type="button" id="beProvPrev">← Operação anterior</button>
+        <button class="nav-btn" type="button" id="beProvNext">Próxima operação →</button>
+      </div>
+    </div>
   </div>
-  <p class="section-sub">A oferta de variantes de troca e a checagem de estoque <b>não</b> passam pelo provider externo. É uma resolução <b>interna</b> da plataforma (provavelmente OMS, a definir), consultando o inventário da VTEX.</p>
 
-  <div class="be">
-    <div class="flowmap">
-      <div class="node vtex">VTEX OMS<br><span style="font-weight:400;font-size:11px">consulta interna</span></div>
-      <div class="conn">
-        <div class="line l1">consulta interna →</div>
-        <div class="arrowr">⟶</div>
-        <div class="arrowl">⟵</div>
-        <div class="line">← variantes + estoque</div>
-      </div>
-      <div class="node vtex">VTEX Logistics<br><span style="font-weight:400;font-size:11px">Catalog (variantes) + Inventory (estoque)</span></div>
-    </div>
-
-    <div class="opgrid">
-      <div class="op internal">
-        <div class="head">Show possible exchange items <span class="oms">OMS</span> <span class="req">REQ-05</span></div>
-        <div class="body">
-          <div class="maps">Acionado na tela <b>T4 · Escolha o novo item</b> (jornada de Troca) · <b>não</b> usa o protocolo de provider</div>
-          <div class="dir"><span class="ar">1 →</span> Catalog · identificar variantes</div>
-          <div class="pay">GET /api/catalog_system/pub/products/variations/{productId}
-→ SKU variants of the same product (same price as the returned item)</div>
-          <div class="dir"><span class="ar">2 →</span> Inventory · checar estoque por variante</div>
-          <div class="pay">para cada SKU variante, request de estoque
-(a resposta já retorna o estoque de cada variante)
-→ variante elegível quando stock > 0</div>
+  <!-- SLIDE 4: BACKEND INTERNAL -->
+  <div class="slide-panel" data-deck="3">
+    <div class="be-panel">
+      <div class="be-op-title">Show possible exchange items <span class="badge req">REQ-05</span> <span class="badge oms">OMS · interno</span></div>
+      <p class="be-sub">Troca de variante — <b>não</b> usa protocolo de provider. Consultas internas Catalog + Inventory.</p>
+      <div class="flow-visual">
+        <div class="box vtex">VTEX OMS<small>exchange resolution</small></div>
+        <div class="lanes">
+          <div class="lane sync-out">
+            <div class="lane-label">→ Consulta 1 · mesma request/response</div>
+            <span class="lane-tag">Catalog</span>
+            <div class="payload">GET /products/variations/{productId}
+→ SKU variants (same price)</div>
+          </div>
+          <div class="lane sync-out">
+            <div class="lane-label">→ Consulta 2 · mesma request/response</div>
+            <span class="lane-tag">Inventory</span>
+            <div class="payload">GET inventory by SKU (each variant)
+→ eligible if stock &gt; 0 (aggregated)</div>
+          </div>
         </div>
+        <div class="box cat">Catalog + Inventory<small>internal APIs</small></div>
       </div>
-    </div>
-
-    <div class="maps" style="margin-top:18px;border-top:1px dashed var(--winter);padding-top:14px;">
-      <b>A avaliar:</b> quem implementa (suspeita: OMS) · qual rota de Inventory por variante · se o envio da nova variante gera novo pedido (escopo OMS).
+      <p class="be-sub" style="margin-top:0;font-size:12px;">Acionado na tela <b>T4 · Escolha o novo item</b>. Envio da nova variante = forward da troca (escopo OMS).</p>
     </div>
   </div>
 
 </div>
+
+<script>
+const DECK = [
+  { label:'Slide 1 · Front-end', title:'Jornada do shopper — Devolução',
+    desc:'Telas neutras (OMS/front-end) → telas em rosa acionam o provider via Fulfillment.' },
+  { label:'Slide 2 · Front-end', title:'Jornada do shopper — Troca',
+    desc:'Mesma dinâmica interativa. T4 é resolução interna OMS; devolução do item original usa o provider.' },
+  { label:'Slide 3 · Back-end', title:'Integração com provider (protocolo)',
+    desc:'Visual do que enviamos e recebemos. Síncrono = mesma chamada; assíncrono = push separado.' },
+  { label:'Slide 4 · Back-end', title:'Resolução de troca (interna)',
+    desc:'Variantes e estoque — fora do protocolo de provider externo.' }
+];
+
+let deckIdx = 0;
+
+/* ---------- RETURN JOURNEY ---------- */
+const RETURN = [
+  { n:1, cart:'Trocas e devoluções', rl:false, owner:'App',
+    html:`<h3>Pedidos elegíveis</h3><p class="muted">Pedidos dentro do prazo para troca ou devolução.</p>
+      <div class="card sel clickable" data-adv="1"><div class="t">Pedido nº 4562447283 <span class="free">SELECIONADO</span></div><div class="d">2 itens · R$ 179,80 · entregue 02/07</div></div>
+      <div class="card clickable" data-adv="1"><div class="t">Pedido nº 4562448261</div><div class="d">3 itens · R$ 599,90 · entregue 25/03</div></div>
+      <button class="btn" data-adv="1">Trocar ou devolver</button>` },
+  { n:2, cart:'Trocar ou devolver?', rl:false, owner:'App',
+    html:`<h3>Troca ou devolução?</h3><p class="muted">Escolha o que deseja fazer com o item.</p>
+      <div class="card sel clickable" data-adv="1"><div class="t">Devolução</div><div class="d">Reembolso ou vale-compra.</div></div>
+      <div class="card clickable" data-adv="0"><div class="t">Troca</div><div class="d">Outro tamanho, cor ou item.</div></div>
+      <button class="btn" data-adv="1">Avançar</button>` },
+  { n:'sel', cart:'Selecionar item', rl:false, owner:'App',
+    html:`<h3>Qual item devolver?</h3><p class="muted">Pedido nº 4562447283 · selecione o item que deseja devolver.</p>
+      <div class="card sel clickable" data-adv="1"><div class="t">Blusa Cropped Algodão <span class="free">SELECIONADO</span></div><div class="d">R$ 99,90 · M · Bege</div></div>
+      <div class="card clickable" data-adv="1"><div class="t">Calça Jeans Slim</div><div class="d">R$ 79,90 · 40 · Azul</div></div>
+      <button class="btn" data-adv="1">Avançar</button>` },
+  { n:3, cart:'Devolução', rl:false, owner:'App',
+    html:`<h3>Motivo da devolução</h3><p class="muted">Item selecionado · devolução para Fashion Store</p>
+      <div class="item"><div class="thumb"></div><div><div class="nm">Blusa Cropped Algodão</div><div class="pr">R$ 99,90 · M · Bege</div></div></div>
+      <div class="card clickable" data-adv="1"><div class="t">Ficou pequeno/grande</div></div>
+      <div class="card sel clickable" data-adv="1"><div class="t">Não gostei da cor</div></div>
+      <div class="card clickable" data-adv="1"><div class="t">Veio com defeito</div></div>
+      <button class="btn" data-adv="1">Avançar</button>` },
+  { n:4, cart:'Reembolso', rl:false, owner:'App',
+    html:`<h3>Forma de reembolso</h3><p class="muted">Escolha como prefere ser compensado.</p>
+      <div class="card clickable" data-adv="1"><div class="t">Receber vale-compra</div><div class="d">Disponível por 180 dias.</div></div>
+      <div class="card sel clickable" data-adv="1"><div class="t">Receber reembolso</div><div class="d">Crédito após análise.</div></div>
+      <button class="btn" data-adv="1">Avançar</button>` },
+  { n:5, cart:'Como devolver?', rl:true, owner:'App · REQ-01',
+    html:`<h3>Escolha como devolver</h3><p class="muted">Métodos resolvidos pelo provider (síncrono).</p>
+      <div class="card clickable" data-adv="1"><div class="t">Coleta em casa <span class="free">GRÁTIS</span></div><div class="d">Retiramos no endereço.</div></div>
+      <div class="card clickable" data-adv="1"><div class="t">Correios <span class="free">GRÁTIS</span></div><div class="d">Leve ao Correios.</div></div>
+      <div class="card sel clickable" data-adv="1"><div class="t">Devolve fácil <span class="free">GRÁTIS</span></div><div class="d">Ponto de coleta.</div></div>
+      <button class="btn" data-adv="1">Avançar</button>` },
+  { n:6, cart:'Pontos de coleta', rl:true, owner:'App · REQ-02',
+    html:`<h3>Pontos de coleta</h3><p class="muted">Só para drop-off · ordenados por proximidade.</p>
+      <div class="loc sel clickable" data-adv="1"><div class="pin">📍</div><div><b>Devolve fácil — Centro</b><div class="d" style="color:var(--gray)">Rua Augusta, 1200 · 0,8 km</div></div></div>
+      <div class="loc clickable" data-adv="1"><div class="pin">📍</div><div><b>Correios — Paulista</b><div class="d" style="color:var(--gray)">Av. Paulista, 900 · 1,4 km</div></div></div>
+      <button class="btn" data-adv="1">Avançar</button>` },
+  { n:7, cart:'Revisar', rl:true, owner:'App · REQ-03',
+    html:`<h3>Revise a solicitação</h3>
+      <div class="item"><div class="thumb"></div><div><div class="nm">Blusa Cropped</div><div class="pr">Receber reembolso</div></div></div>
+      <div class="card sel"><div class="t">Devolução · Devolve fácil</div><div class="d">Ponto: Augusta, 1200 — SP</div></div>
+      <p class="muted"><b>returnLogistics</b> persistido após confirmar.</p>
+      <button class="btn" data-adv="1">Confirmar solicitação</button>` },
+  { n:8, cart:'Confirmado', rl:true, owner:'App',
+    html:`<div class="success"><div class="ic">✓</div><h3>Tudo certo!</h3><p class="muted">Devolução registrada. Detalhes por e-mail.</p></div>
+      <button class="btn" data-adv="1">Acompanhar solicitação</button>` },
+  { n:9, cart:'Acompanhar', rl:true, owner:'App · REQ-04',
+    html:`<h3>Tracking</h3><div class="timeline">
+      <div class="tl"><div class="dot"></div><div><div class="lbl">Postagem disponível</div><div class="sub">10/06 · Devolve fácil</div></div></div>
+      <div class="tl"><div class="dot"></div><div><div class="lbl">Pacote postado</div><div class="sub">12/06 · Augusta</div></div></div>
+      <div class="tl"><div class="dot off"></div><div><div class="lbl">Em trânsito</div><div class="sub">aguardando</div></div></div>
+      <div class="tl"><div class="dot off"></div><div><div class="lbl">Recebido</div><div class="sub">—</div></div></div></div>
+      <p class="muted">Status via push assíncrono do provider.</p>` }
+];
+let returnIdx = 0;
+
+/* ---------- EXCHANGE JOURNEY ---------- */
+const EXCHANGE = [
+  { n:'T1', cart:'Trocas e devoluções', rl:false, owner:'App',
+    html:`<h3>Pedidos elegíveis</h3><p class="muted">Pedidos dentro do prazo.</p>
+      <div class="card sel clickable" data-adv="1"><div class="t">Pedido nº 4562447283</div><div class="d">1 item · R$ 99,90</div></div>
+      <button class="btn" data-adv="1">Solicitar</button>` },
+  { n:'T2', cart:'Trocar ou devolver?', rl:false, owner:'App',
+    html:`<h3>Troca ou devolução?</h3>
+      <div class="card clickable" data-adv="0"><div class="t">Devolução</div></div>
+      <div class="card sel clickable" data-adv="1"><div class="t">Troca <span class="free">SELECIONADO</span></div><div class="d">Outro tamanho ou cor.</div></div>
+      <button class="btn" data-adv="1">Avançar</button>` },
+  { n:'T3', cart:'Troca', rl:false, owner:'App',
+    html:`<h3>Itens & motivo</h3><p class="muted">Grupo 1 · Troca</p>
+      <div class="item"><div class="thumb"></div><div><div class="nm">Blusa Cropped</div><div class="pr">M · Bege</div></div></div>
+      <div class="card sel clickable" data-adv="1"><div class="t">Ficou pequeno/grande</div></div>
+      <div class="card clickable" data-adv="1"><div class="t">Não gostei da cor</div></div>
+      <div class="card clickable" data-adv="1"><div class="t">Quero outro modelo</div></div>
+      <div class="card clickable" data-adv="1"><div class="t">Veio com defeito</div></div>
+      <button class="btn" data-adv="1">Avançar</button>` },
+  { n:'T4', cart:'Nova variante', rl:false, owner:'App · OMS · REQ-05',
+    html:`<h3>Escolha o novo item</h3><p class="muted">Mesmo produto, mesmo preço. Estoque agregado global.</p>
+      <div class="vrow">
+        <div class="vopt oos"><span class="vsz">P</span><span class="vst">Esgotado</span></div>
+        <div class="vopt bought"><span class="vsz">M</span><span class="vst">Comprado</span></div>
+        <div class="vopt on clickable" data-adv="1"><span class="vsz">G</span><span class="vst">Disponível</span></div>
+        <div class="vopt clickable" data-adv="1"><span class="vsz">GG</span><span class="vst">Disponível</span></div>
+      </div>
+      <div class="card sel"><div class="t">Trocar M → G</div></div>
+      <button class="btn" data-adv="1">Avançar</button>` },
+  { n:'T5', cart:'Como devolver a M?', rl:true, owner:'App · REQ-01',
+    html:`<h3>Devolver item original (M)</h3><p class="muted">Métodos resolvidos pelo provider para este contexto.</p>
+      <div class="card clickable" data-adv="1"><div class="t">Coleta em casa <span class="free">GRÁTIS</span></div><div class="d">Retiramos no seu endereço em até X dias.</div></div>
+      <div class="card clickable" data-adv="1"><div class="t">Correios <span class="free">GRÁTIS</span></div><div class="d">Leve ao Correios mais próximo em até X dias.</div></div>
+      <div class="card sel clickable" data-adv="1"><div class="t">Devolve fácil <span class="free">GRÁTIS</span></div><div class="d">Leve ao ponto de coleta mais próximo.</div></div>
+      <button class="btn" data-adv="1">Avançar</button>` },
+  { n:'T6', cart:'Revisar', rl:true, owner:'App · REQ-03',
+    html:`<h3>Revise a troca</h3>
+      <div class="card"><div class="t">Devolver · M</div><div class="d">Devolve fácil</div></div>
+      <div class="card sel"><div class="t">Receber · G</div><div class="d">Após confirmação da devolução.</div></div>
+      <button class="btn" data-adv="1">Confirmar troca</button>` },
+  { n:'T7', cart:'Confirmado', rl:true, owner:'App',
+    html:`<div class="success"><div class="ic">✓</div><h3>Troca registrada!</h3><p class="muted">Devolva a M; G será enviada.</p></div>
+      <button class="btn" data-adv="1">Acompanhar troca</button>` },
+  { n:'T8', cart:'Acompanhar', rl:true, owner:'App · REQ-04',
+    html:`<h3>Tracking</h3><div class="timeline">
+      <div class="tl"><div class="dot"></div><div><div class="lbl">Postagem (M)</div><div class="sub">10/06</div></div></div>
+      <div class="tl"><div class="dot off"></div><div><div class="lbl">M recebida</div><div class="sub">aguardando</div></div></div>
+      <div class="tl"><div class="dot off"></div><div><div class="lbl">G enviada</div><div class="sub">após devolução</div></div></div></div>` }
+];
+let exchangeIdx = 0;
+
+/* ---------- BACKEND PROVIDER OPS ---------- */
+const BE_OPS = [
+  { id:'REQ-01', name:'ShowAvailableReturnMethods', sync:true, screen:'Tela 5 · Como devolver',
+    req:`OrderID, order status, countryCode,
+shopper address, document, customerClass,
+returned items (SKU, EAN, Ref ID), return reason`,
+    res:`[ method name, type (pickup/drop-off),
+  cost, payer, shopper instructions ]` },
+  { id:'REQ-02', name:'ShowAvailableDropoffLocations', sync:true, screen:'Tela 6 · Pontos de coleta',
+    req:`OrderID, returned items,
+shopper address, documentID,
+return reason, return option selected`,
+    res:`[ location name, address, return code,
+  shopper instructions ] (by proximity)` },
+  { id:'REQ-03', name:'CreateReturnExecution', sync:true, screen:'Tela 7 · Confirmar',
+    req:`confirmed return, selected method,
+selected location / pickup address`,
+    res:`return method, return code, tracking code,
+carrier info, provider reference,
+shopper instructions, status + history
+→ persisted in returnLogistics` },
+  { id:'REQ-04', name:'ReceiveStatusUpdates', sync:false, screen:'Tela 9 · Tracking',
+    req:null,
+    res:`Provider → VTEX push (separate call):
+returnId, provider reference, status, timestamp
+
+Statuses: pickup_scheduled, posted,
+collected, in_transit, delivered,
+failed, expired, cancelled` }
+];
+let beIdx = 0;
+
+function renderReturn() {
+  const s = RETURN[returnIdx];
+  document.getElementById('returnNum').textContent = 'T' + (returnIdx + 1);
+  document.getElementById('returnCart').textContent = s.cart;
+  document.getElementById('returnOwner').textContent = s.owner;
+  document.getElementById('returnPhone').classList.toggle('rl', s.rl);
+  document.getElementById('returnScreen').innerHTML = s.html;
+  bindAdvances('returnScreen', () => {
+    if (returnIdx < RETURN.length - 1) { returnIdx++; renderReturn(); }
+  });
+  const bar = document.getElementById('returnSteps');
+  bar.innerHTML = RETURN.map((_, i) =>
+    `<button type="button" class="step-pill ${i < returnIdx ? 'done' : ''} ${i === returnIdx ? 'cur' : ''}">T${i + 1}</button>`
+  ).join('');
+  bar.querySelectorAll('.step-pill').forEach((p, i) => p.addEventListener('click', () => { returnIdx = i; renderReturn(); }));
+}
+
+function renderExchange() {
+  const s = EXCHANGE[exchangeIdx];
+  document.getElementById('exchangeNum').textContent = s.n;
+  document.getElementById('exchangeCart').textContent = s.cart;
+  document.getElementById('exchangeOwner').textContent = s.owner;
+  document.getElementById('exchangePhone').classList.toggle('rl', s.rl);
+  document.getElementById('exchangeScreen').innerHTML = s.html;
+  bindAdvances('exchangeScreen', () => {
+    if (exchangeIdx < EXCHANGE.length - 1) { exchangeIdx++; renderExchange(); }
+  });
+  const ebar = document.getElementById('exchangeSteps');
+  ebar.innerHTML = EXCHANGE.map((x, i) =>
+    `<button type="button" class="step-pill ${i < exchangeIdx ? 'done' : ''} ${i === exchangeIdx ? 'cur' : ''}">${x.n}</button>`
+  ).join('');
+  ebar.querySelectorAll('.step-pill').forEach((p, i) => p.addEventListener('click', () => { exchangeIdx = i; renderExchange(); }));
+}
+
+function bindAdvances(containerId, onAdv) {
+  document.getElementById(containerId).querySelectorAll('[data-adv]').forEach(el => {
+    el.addEventListener('click', e => {
+      if (el.dataset.adv === '0') return;
+      e.stopPropagation();
+      onAdv();
+    });
+  });
+}
+
+function renderBeProvider() {
+  const op = BE_OPS[beIdx];
+  const bar = document.getElementById('beProviderSteps');
+  bar.innerHTML = BE_OPS.map((o, i) =>
+    `<button type="button" class="be-step ${i === beIdx ? 'on' : ''} ${i < beIdx ? 'done' : ''}">${o.id}</button>`
+  ).join('');
+  bar.querySelectorAll('.be-step').forEach((btn, i) => btn.addEventListener('click', () => { beIdx = i; renderBeProvider(); }));
+
+  let lanes = '';
+  if (op.sync) {
+    lanes = `
+      <div class="lane sync-out">
+        <div class="lane-label">→ VTEX envia (request)</div>
+        <span class="lane-tag">mesma chamada HTTP</span>
+        <div class="payload">${op.req}</div>
+      </div>
+      <div class="lane sync-in">
+        <div class="lane-label">← VTEX recebe (response)</div>
+        <span class="lane-tag">na mesma chamada · síncrono</span>
+        <div class="payload">${op.res}</div>
+      </div>`;
+  } else {
+    lanes = `
+      <div class="lane async">
+        <div class="lane-label">← Provider envia (push)</div>
+        <span class="lane-tag">chamada separada · assíncrono</span>
+        <div class="payload">${op.res}</div>
+      </div>
+      <div class="lane async" style="opacity:.7">
+        <div class="lane-label">VTEX não inicia esta chamada</div>
+        <span class="lane-tag">webhook / polling (TBD)</span>
+        <div class="payload">Valida returnId + provider ref
+→ propaga p/ OMS + eventos</div>
+      </div>`;
+  }
+
+  document.getElementById('beProviderContent').innerHTML = `
+    <div class="be-op-title">${op.name}
+      <span class="badge ${op.sync ? 'sync' : 'async'}">${op.sync ? 'síncrono' : 'assíncrono'}</span>
+      <span class="badge req">${op.id}</span>
+    </div>
+    <p class="be-sub">Acionado em: <b>${op.screen}</b></p>
+    <div class="flow-visual">
+      <div class="box vtex">VTEX Fulfillment<small>reverse logistics</small></div>
+      <div class="lanes">${lanes}</div>
+      <div class="box prov">Provider<small>ex.: Intelipost</small></div>
+    </div>`;
+}
+
+function renderDeckHeader() {
+  const d = DECK[deckIdx];
+  document.getElementById('slideLabel').textContent = d.label;
+  document.getElementById('slideTitle').textContent = d.title;
+  document.getElementById('slideDesc').textContent = d.desc;
+  document.querySelectorAll('.slide-panel').forEach((p, i) => p.classList.toggle('active', i === deckIdx));
+  document.getElementById('prevDeck').disabled = deckIdx === 0;
+  document.getElementById('nextDeck').disabled = deckIdx === DECK.length - 1;
+  document.getElementById('deckDots').innerHTML = DECK.map((_, i) =>
+    `<button type="button" class="dot ${i === deckIdx ? 'on' : ''}" data-i="${i}" aria-label="Slide ${i+1}"></button>`
+  ).join('');
+  document.getElementById('deckDots').querySelectorAll('.dot').forEach(dot => {
+    dot.addEventListener('click', () => { deckIdx = +dot.dataset.i; renderDeckHeader(); });
+  });
+}
+
+document.getElementById('prevDeck').addEventListener('click', () => { if (deckIdx > 0) { deckIdx--; renderDeckHeader(); } });
+document.getElementById('nextDeck').addEventListener('click', () => { if (deckIdx < DECK.length - 1) { deckIdx++; renderDeckHeader(); } });
+document.getElementById('beProvPrev').addEventListener('click', () => { if (beIdx > 0) { beIdx--; renderBeProvider(); } });
+document.getElementById('beProvNext').addEventListener('click', () => { if (beIdx < BE_OPS.length - 1) { beIdx++; renderBeProvider(); } });
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight') document.getElementById('nextDeck').click();
+  if (e.key === 'ArrowLeft') document.getElementById('prevDeck').click();
+});
+
+renderDeckHeader();
+renderReturn();
+renderExchange();
+renderBeProvider();
+</script>
 </body>
 </html>
