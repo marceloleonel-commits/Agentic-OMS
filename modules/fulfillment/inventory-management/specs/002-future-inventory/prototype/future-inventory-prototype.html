@@ -46,12 +46,15 @@
   .panel{display:none;}
   .panel.active{display:block;}
 
-  .grid2{display:grid;grid-template-columns:1.1fr .9fr;gap:20px;align-items:start;}
+  .grid2{display:grid;grid-template-columns:1.04fr .96fr;gap:20px;align-items:start;}
   @media(max-width:880px){.grid2{grid-template-columns:1fr;}}
 
-  .card{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:22px;box-shadow:0 1px 2px rgba(20,32,50,.04);}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:22px;box-shadow:0 1px 2px rgba(20,32,50,.04);}
   .card h2{font-size:16px;font-weight:600;margin:0 0 4px;}
   .card .sub{color:var(--muted);font-size:12.5px;margin:0 0 16px;}
+  .cardhead{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;margin-bottom:18px;}
+  .cardhead .sub{margin-bottom:0;}
+  .tinytag{display:inline-flex;align-items:center;border-radius:999px;background:var(--blue-bg);color:var(--blue);padding:4px 9px;font-size:11px;font-weight:700;white-space:nowrap;}
 
   label{display:block;font-weight:600;font-size:12.5px;margin:14px 0 5px;color:var(--ink);}
   .hint{font-weight:400;color:var(--faint);font-size:11px;}
@@ -73,6 +76,7 @@
   .mode{border:1px solid var(--line-d);border-radius:8px;padding:10px 12px;cursor:pointer;font-size:12px;color:var(--muted);}
   .mode.sel{border-color:var(--blue);background:var(--blue-bg);color:var(--ink);box-shadow:0 0 0 1px var(--blue);}
   .mode b{display:block;font-size:12.5px;margin-bottom:2px;color:var(--ink);}
+  .mode:hover{border-color:var(--blue);}
 
   .btn{margin-top:18px;background:var(--blue);color:#fff;border:none;border-radius:6px;padding:10px 18px;font-weight:600;font-size:13.5px;cursor:pointer;}
   .btn:hover{background:var(--blue-d);}
@@ -103,6 +107,50 @@
   .sla-box{background:var(--blue-bg);border:1px solid var(--blue);border-radius:8px;padding:14px;margin-top:14px;text-align:center;}
   .sla-box .big{font-size:26px;font-weight:800;color:var(--blue);}
   .sla-box .cap{font-size:11.5px;color:var(--muted);}
+  .guide{padding:0;overflow:hidden;}
+  .guide-hero{padding:22px;background:linear-gradient(180deg,var(--blue-bg),#fff);border-bottom:1px solid var(--line);}
+  .guide-hero h2{font-size:17px;}
+  .guide-body{padding:18px 22px 22px;}
+  .slide-nav{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px;}
+  .slide-tab{border:1px solid var(--line-d);border-radius:8px;background:#fff;color:var(--muted);padding:9px 8px;font-size:11.5px;font-weight:700;cursor:pointer;text-align:left;}
+  .slide-tab.active{border-color:var(--blue);background:var(--blue-bg);color:var(--blue);box-shadow:0 0 0 1px var(--blue);}
+  .guide-slide{border:1px solid var(--line);border-radius:12px;background:#fff;padding:16px;min-height:206px;}
+  .guide-step{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--blue);margin-bottom:8px;}
+  .guide-slide h3{font-size:17px;margin:0 0 8px;letter-spacing:-.1px;}
+  .guide-slide p{font-size:13px;color:var(--muted);margin:0;}
+  .layer-stack{display:grid;gap:8px;margin-top:14px;}
+  .layer{display:block;border:1px solid var(--line);border-radius:9px;padding:12px 14px;background:var(--hover);}
+  .layer.active{border-color:var(--blue);background:var(--blue-bg);}
+  .layer b{font-size:12.5px;line-height:1.25;}
+  .layer span{display:block;color:var(--muted);font-size:11px;line-height:1.35;}
+  .layer.active span{color:var(--muted);}
+  .payload-fields{display:grid;gap:10px;margin-top:14px;}
+  .payload-field{display:grid;grid-template-columns:160px 1fr;gap:12px;align-items:start;border:1px solid var(--line);border-radius:10px;background:var(--hover);padding:12px;}
+  .payload-field.primary{border-color:var(--blue);background:var(--blue-bg);}
+  .payload-key{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;font-weight:700;color:var(--blue);background:#fff;border:1px solid rgba(41,83,232,.22);border-radius:7px;padding:7px 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .payload-value b{display:block;font-size:12.5px;margin-bottom:3px;color:var(--ink);}
+  .payload-value span{display:block;font-size:11px;line-height:1.35;color:var(--muted);}
+  .visual-compare{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;}
+  .visual-card{border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--hover);}
+  .visual-card.active{border-color:var(--blue);background:var(--blue-bg);}
+  .visual-card b{display:block;font-size:12px;margin-bottom:5px;}
+  .visual-card span{display:block;font-size:11px;color:var(--muted);}
+  .mini-preview{margin-top:14px;border:1px solid var(--line);border-radius:12px;background:#fff;padding:14px;}
+  .mini-preview h3{font-size:13px;margin:0 0 8px;}
+  .preview-row{display:flex;justify-content:space-between;align-items:center;gap:12px;border-top:1px solid var(--line);padding-top:10px;margin-top:10px;}
+  .preview-row .big{font-size:22px;font-weight:800;color:var(--blue);}
+  .preview-row .cap{font-size:11px;color:var(--muted);}
+  .checkout-preview{margin-top:14px;border:1px solid var(--line);border-radius:12px;background:#fff;padding:14px;}
+  .checkout-preview h3{font-size:13px;margin:0 0 4px;}
+  .checkout-preview .sub{font-size:11.5px;margin:0 0 12px;color:var(--muted);}
+  .json-tabs{display:flex;gap:6px;margin-bottom:8px;}
+  .json-pill{border-radius:999px;background:var(--blue-bg);color:var(--blue);font-size:10px;font-weight:800;padding:3px 8px;text-transform:uppercase;letter-spacing:.04em;}
+  .json-preview{background:#1B2638;color:#E7ECF3;border-radius:10px;padding:12px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;line-height:1.55;overflow:auto;max-height:250px;white-space:pre;}
+  .json-preview .muted-code{color:#91A0B8;}
+  .slide-actions{display:flex;justify-content:space-between;gap:8px;margin-top:14px;}
+  .slide-actions button{border:1px solid var(--line-d);background:#fff;color:var(--ink);border-radius:7px;padding:8px 10px;font-size:12px;font-weight:600;cursor:pointer;}
+  .slide-actions button.primary{background:var(--blue);border-color:var(--blue);color:#fff;}
+  .hidden-technical{display:none;}
 
   /* admin table */
   .tablecard{background:var(--surface);border:1px solid var(--line);border-radius:8px;box-shadow:0 1px 2px rgba(20,32,50,.04);overflow:hidden;margin-top:10px;}
@@ -151,15 +199,40 @@
   .case .ch h3{font-size:14px;font-weight:600;margin:6px 0 0;}
   .case .cb{padding:14px 16px;font-size:12.5px;color:var(--muted);}
   .case .cb p{margin:0 0 10px;}
+  .case-question{font-size:12px;color:var(--ink);font-weight:600;margin-bottom:10px;}
+  .case-result{margin-top:10px;border-radius:8px;background:var(--blue-bg);color:var(--ink);padding:9px 10px;font-size:12px;}
+  .case-result b{color:var(--blue);}
 
   /* mini checkout illustration */
   .mini{background:var(--hover);border:1px solid var(--line);border-radius:8px;padding:10px;margin-top:6px;}
+  .mini-title{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:7px;}
   .pkg{display:flex;justify-content:space-between;align-items:center;padding:7px 8px;border-radius:6px;background:#fff;border:1px solid var(--line);margin-bottom:6px;font-size:11.5px;}
   .pkg:last-child{margin-bottom:0;}
   .pkg .nm{font-weight:600;color:var(--ink);}
   .pkg .sla{font-weight:700;}
   .pkg .sla.now{color:var(--green);}
   .pkg .sla.fut{color:var(--blue);}
+  .metric-row{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;margin-bottom:8px;}
+  .metric{background:#fff;border:1px solid var(--line);border-radius:8px;padding:8px;text-align:center;}
+  .metric b{display:block;color:var(--ink);font-size:15px;}
+  .metric span{display:block;color:var(--muted);font-size:10.5px;}
+  .metric-arrow{color:var(--blue);font-weight:800;}
+  .stockline{display:flex;align-items:center;gap:8px;margin:7px 0;font-size:11.5px;}
+  .stocklabel{width:72px;color:var(--ink);font-weight:600;}
+  .stockbar{height:10px;border-radius:999px;background:var(--line);flex:1;overflow:hidden;}
+  .stockbar span{display:block;height:100%;border-radius:999px;}
+  .stockbar .now{background:var(--green);}
+  .stockbar .future{background:var(--blue);}
+  .stockbar .blocked{background:var(--line-d);}
+  .stockvalue{width:70px;text-align:right;font-weight:700;color:var(--ink);}
+  .date-flow{display:grid;grid-template-columns:1fr auto 1fr auto 1fr;align-items:center;gap:7px;font-size:11px;}
+  .date-node{background:#fff;border:1px solid var(--line);border-radius:8px;padding:7px;text-align:center;}
+  .date-node b{display:block;color:var(--ink);font-size:11.5px;}
+  .date-node span{display:block;color:var(--muted);font-size:10px;}
+  .date-arrow{color:var(--blue);font-weight:800;}
+  .payload-mini{display:grid;gap:6px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;}
+  .payload-mini div{background:#fff;border:1px solid var(--line);border-radius:7px;padding:7px 8px;color:var(--ink);}
+  .payload-mini b{color:var(--blue);}
   .seller{display:flex;justify-content:space-between;padding:6px 8px;border-radius:6px;font-size:11.5px;margin-bottom:5px;border:1px solid var(--line);background:#fff;}
   .seller.win{border-color:var(--blue);background:var(--blue-bg);font-weight:600;}
   .barwrap{display:flex;align-items:center;gap:8px;margin:4px 0;font-size:11px;}
@@ -212,34 +285,32 @@
 
       <!-- form -->
       <div class="card">
-        <h2>Novo lote de estoque futuro</h2>
-        <p class="sub">O item já está vendável (tem oferta). Aqui você adiciona um lote que chega numa data futura.</p>
+        <div class="cardhead">
+          <div>
+            <h2>Novo lote de estoque futuro</h2>
+            <p class="sub">Cadastre uma chegada futura para um SKU em uma franquia e defina como esse lote entra na disponibilidade vendável.</p>
+          </div>
+          <span class="tinytag">Admin UI</span>
+        </div>
 
-        <label>Franquia / conta <span class="hint">gerencie franquias pela conta principal (Case 19)</span></label>
+        <label>Account / Seller ID <span class="hint">conta ou seller que recebe o lote</span></label>
         <select id="account" onchange="onAccountChange()"></select>
+        <select id="seller" onchange="recalc()" disabled style="display:none;"></select>
 
-        <label>Produto / SKU <span class="hint">busca por nome, SKU ID ou ID de produto</span></label>
+        <label>Produto <span class="hint">busca por nome, SKU ID ou ID de produto</span></label>
         <div class="combo">
           <input id="skuSearch" type="text" autocomplete="off" placeholder="Buscar por nome, SKU ID ou ID de produto"
                  oninput="onSkuSearch()" onfocus="onSkuSearch()" />
           <div id="skuResults" class="combo-list"></div>
         </div>
 
-        <div class="row">
-          <div>
-            <label>Warehouse / CD</label>
-            <select id="wh" onchange="recalc()"></select>
-          </div>
-          <div>
-            <label>Seller ID <span class="hint">definido pela franquia</span></label>
-            <select id="seller" onchange="recalc()" disabled></select>
-          </div>
-        </div>
+        <label>Warehouse / CD</label>
+        <select id="wh" onchange="recalc()"></select>
 
         <div class="row">
           <div>
             <label>Data de chegada</label>
-            <input type="date" id="date" onchange="recalc()" />
+            <input type="text" id="date" placeholder="dd/mm/aaaa" inputmode="numeric" onchange="recalc()" />
           </div>
           <div>
             <label>Quantidade</label>
@@ -263,24 +334,58 @@
         <p class="hint" id="submitHint" style="margin-top:8px;">Selecione SKU, data e quantidade para habilitar.</p>
       </div>
 
-      <!-- checkout simulation -->
-      <div class="card sim">
-        <h2>Simulação de checkout</h2>
-        <p class="sub">No formato da API de simulação. Não chama a API real: monta o payload e a resposta para o SKU e o lote futuro selecionados, mostrando o SLA resultante.</p>
-
-        <div class="reqline"><span class="verb">POST</span><span class="path">/api/checkout/pub/orderForms/simulation</span></div>
-        <div class="codelabel">Request body</div>
-        <pre class="code" id="sim-req">selecione um SKU…</pre>
-
-        <div class="codelabel">Response <span class="muted">(trecho — logisticsInfo.slas)</span></div>
-        <pre class="code" id="sim-res">—</pre>
-
-        <div class="sla-box">
-          <div class="cap">SLA deste SKU (shippingEstimate)</div>
-          <div class="big" id="s-sla">—</div>
-          <div class="cap" id="s-slacap">ancorado na chegada do lote + transit time</div>
+      <!-- guided explanation -->
+      <div class="card guide sim">
+        <div class="guide-hero">
+          <span class="tinytag">Como funciona</span>
+          <h2>Disponibilidade por camadas</h2>
+          <p class="sub">O modo é definido no cadastro do lote. Ele muda quando o estoque futuro entra na disponibilidade vendável e como o SLA aparece para o shopper.</p>
         </div>
-        <div class="note" id="s-note">Selecione um SKU para rodar a simulação.</div>
+        <div class="guide-body">
+          <div class="slide-nav">
+            <button class="slide-tab active" id="guide-tab-0" onclick="setGuideSlide(0)">1. Visão geral</button>
+            <button class="slide-tab" id="guide-tab-1" onclick="setGuideSlide(1)">2. Simultâneo</button>
+            <button class="slide-tab" id="guide-tab-2" onclick="setGuideSlide(2)">3. Sequencial</button>
+            <button class="slide-tab" id="guide-tab-3" onclick="setGuideSlide(3)">4. Pedido</button>
+          </div>
+
+          <div class="guide-slide">
+            <div class="guide-step" id="guide-step">Slide 1 de 4</div>
+            <h3 id="guide-title">O estoque futuro adiciona uma dimensão de tempo ao inventário</h3>
+            <p id="guide-body">A loja informa que um SKU chegará em uma data futura, com quantidade e warehouse. A promessa de entrega passa a considerar chegada do lote + transit time.</p>
+            <div id="guide-visual" class="layer-stack"></div>
+          </div>
+
+          <div class="checkout-preview">
+            <h3>Simulação de checkout</h3>
+            <p class="sub" id="s-note">Preview do request/response que esse lote geraria na simulação do carrinho.</p>
+            <div class="json-tabs">
+              <span class="json-pill">POST /api/checkout/pub/orderForms/simulation</span>
+            </div>
+            <pre class="json-preview" id="checkout-json">{
+  "items": [
+    {
+      "id": "selecione um SKU",
+      "quantity": 0,
+      "seller": "electronicsstore"
+    }
+  ],
+  "logisticsInfo": []
+}</pre>
+            <span id="s-sla" style="display:none;">—</span>
+            <span id="s-slacap" style="display:none;">chegada do lote + transit time</span>
+          </div>
+
+          <div class="slide-actions">
+            <button onclick="prevGuideSlide()">← Voltar</button>
+            <button class="primary" onclick="nextGuideSlide()">Próximo →</button>
+          </div>
+
+          <div class="hidden-technical">
+            <pre id="sim-req">selecione um SKU…</pre>
+            <pre id="sim-res">—</pre>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -319,100 +424,151 @@
     <div class="cases">
 
       <div class="case">
-        <div class="ch"><span class="tag">Case 1</span><span class="pill future">venda futura</span><h3>Venda só com estoque futuro</h3></div>
+        <div class="ch"><span class="tag">Caso 01</span><span class="pill future">venda futura</span><h3>Venda quando não existe estoque físico</h3></div>
         <div class="cb">
-          <p>iPhone 17 zerado. Chegam 100 unidades em 14/05. O item fica vendável com SLA ancorado na chegada.</p>
+          <div class="case-question">O merchant tem 0 unidades hoje, mas sabe que 100 chegam em 14/05.</div>
           <div class="mini">
-            <div class="pkg"><span class="nm">iPhone 17</span><span class="sla fut">chega 14/05 · +2d entrega</span></div>
+            <div class="mini-title">Disponibilidade do SKU</div>
+            <div class="stockline"><span class="stocklabel">Hoje</span><div class="stockbar"><span class="blocked" style="width:4%"></span></div><span class="stockvalue">0 un.</span></div>
+            <div class="stockline"><span class="stocklabel">14/05</span><div class="stockbar"><span class="future" style="width:80%"></span></div><span class="stockvalue">100 un.</span></div>
+            <div class="date-flow">
+              <div class="date-node"><b>Pedido hoje</b><span>captura demanda</span></div><span class="date-arrow">→</span>
+              <div class="date-node"><b>Chega 14/05</b><span>lote futuro</span></div><span class="date-arrow">→</span>
+              <div class="date-node"><b>Entrega +2d</b><span>prazo final</span></div>
+            </div>
           </div>
+          <div class="case-result"><b>Resultado:</b> o SKU fica vendável, mas a promessa deixa claro que depende da chegada do lote.</div>
         </div>
       </div>
 
       <div class="case">
-        <div class="ch"><span class="tag">Cases 2 · 6</span><span class="pill onhand">imediato</span> <span class="pill future">futuro</span><h3>Carrinho misto dividido</h3></div>
+        <div class="ch"><span class="tag">Caso 02</span><span class="pill onhand">imediato</span> <span class="pill future">futuro</span><h3>Carrinho misto dividido</h3></div>
         <div class="cb">
-          <p>1 unidade disponível agora + 1 de lote futuro. O carrinho divide em 2 pacotes, com 2 SLAs e 2 fretes.</p>
+          <div class="case-question">O shopper compra 2 unidades: 1 existe hoje e 1 só chega no lote futuro.</div>
           <div class="mini">
-            <div class="pkg"><span class="nm">Pacote 1 · iPhone 17</span><span class="sla now">entrega em 2 dias</span></div>
-            <div class="pkg"><span class="nm">Pacote 2 · iPhone 17</span><span class="sla fut">chega 14/05 + 2d</span></div>
+            <div class="mini-title">Checkout mostra dois pacotes</div>
+            <div class="pkg"><span class="nm">Pacote 1 · 1 un. on-hand</span><span class="sla now">entrega em 2 dias</span></div>
+            <div class="pkg"><span class="nm">Pacote 2 · 1 un. futura</span><span class="sla fut">14/05 + 2 dias</span></div>
           </div>
+          <div class="case-result"><b>Resultado:</b> o shopper não precisa esperar pelo lote futuro para receber o item que já existe.</div>
         </div>
       </div>
 
       <div class="case">
-        <div class="ch"><span class="tag">Case 8</span><h3>Seller selection multi-seller</h3></div>
+        <div class="ch"><span class="tag">Caso 03</span><h3>Seller selection multi-seller</h3></div>
         <div class="cb">
-          <p>Seller A tem estoque agora; Seller B só lote futuro. O SLA do B considera os dias até a chegada, então compete de forma justa.</p>
+          <div class="case-question">Dois sellers vendem o mesmo SKU, mas um tem estoque agora e o outro só tem estoque futuro.</div>
           <div class="mini">
-            <div class="seller win"><span>Seller A · on-hand</span><span>SLA 2d ✓</span></div>
-            <div class="seller"><span>Seller B · futuro</span><span>SLA 9d</span></div>
+            <div class="mini-title">Comparação correta de SLA</div>
+            <div class="seller win"><span>Seller A · estoque físico</span><span>SLA 2d ✓</span></div>
+            <div class="seller"><span>Seller B · lote chega em 7d</span><span>SLA 9d</span></div>
           </div>
+          <div class="case-result"><b>Resultado:</b> o seller com lote futuro não parece falsamente tão rápido quanto um seller com estoque físico.</div>
         </div>
       </div>
 
       <div class="case">
-        <div class="ch"><span class="tag">Case 10</span><h3>Múltiplos lotes · FIFO por data</h3></div>
+        <div class="ch"><span class="tag">Caso 04</span><h3>Múltiplos lotes · FIFO por data</h3></div>
         <div class="cb">
-          <p>Micro-ondas com 3 lotes no mesmo warehouse. A reserva pega o lote de data mais próxima com saldo.</p>
+          <div class="case-question">O mesmo SKU tem 3 chegadas futuras no mesmo warehouse.</div>
           <div class="mini">
-            <div class="pkg"><span class="nm">Lote 14/05 · 50un</span><span class="sla fut">1º a consumir</span></div>
-            <div class="pkg"><span class="nm">Lote 28/05 · 100un</span><span class="sla">depois</span></div>
-            <div class="pkg"><span class="nm">Lote 11/06 · 80un</span><span class="sla">depois</span></div>
+            <div class="mini-title">Ordem de consumo</div>
+            <div class="pkg"><span class="nm">1º · Lote 14/05 · 50 un.</span><span class="sla fut">mais próximo</span></div>
+            <div class="pkg"><span class="nm">2º · Lote 28/05 · 100 un.</span><span class="sla">próximo</span></div>
+            <div class="pkg"><span class="nm">3º · Lote 11/06 · 80 un.</span><span class="sla">último</span></div>
           </div>
+          <div class="case-result"><b>Resultado:</b> dentro da mesma camada, a reserva usa primeiro o lote com chegada mais próxima.</div>
         </div>
       </div>
 
       <div class="case">
-        <div class="ch"><span class="tag">Case 10</span><span class="pill future">2 lotes</span><h3>Mesmo SKU, 2 datas → 2 pacotes</h3></div>
+        <div class="ch"><span class="tag">Caso 05</span><span class="pill future">2 lotes</span><h3>Mesmo SKU, 2 datas → 2 pacotes</h3></div>
         <div class="cb">
-          <p>Mesmo SKU, mesmo seller e mesmo warehouse, com 2 lotes em datas diferentes. O shopper compra 80un: FIFO consome 50un do lote 14/05 e 30un do lote 28/05. A compra divide em <b>2 pacotes</b>, com 2 SLAs e 2 fretes.</p>
+          <div class="case-question">O shopper compra 80 unidades, mas o saldo vem de dois lotes com datas diferentes.</div>
           <div class="mini">
-            <div class="pkg"><span class="nm">Pacote 1 · 50un (lote 14/05)</span><span class="sla fut">chega 14/05 + 2d</span></div>
-            <div class="pkg"><span class="nm">Pacote 2 · 30un (lote 28/05)</span><span class="sla fut">chega 28/05 + 2d</span></div>
+            <div class="metric-row">
+              <div class="metric"><b>50 un.</b><span>lote 14/05</span></div><span class="metric-arrow">+</span>
+              <div class="metric"><b>30 un.</b><span>lote 28/05</span></div>
+            </div>
+            <div class="pkg"><span class="nm">Pacote 1 · 50 un.</span><span class="sla fut">14/05 + 2d</span></div>
+            <div class="pkg"><span class="nm">Pacote 2 · 30 un.</span><span class="sla fut">28/05 + 2d</span></div>
           </div>
+          <div class="case-result"><b>Resultado:</b> a promessa acompanha a origem de cada parte da compra.</div>
         </div>
       </div>
 
       <div class="case">
-        <div class="ch"><span class="tag">Case 4</span><h3>Pré-venda de lançamento</h3></div>
+        <div class="ch"><span class="tag">Caso 06</span><h3>Pré-venda de lançamento</h3></div>
         <div class="cb">
-          <p>Furadeira industrial nova, sem estoque. Lote futuro cria a disponibilidade; a data de pré-venda do SKU é um piso: <code>max(pré-venda, chegada do lote)</code>.</p>
-          <div class="barwrap"><span>Lançamento</span><div class="bar" style="width:120px"></div><span>01/09</span></div>
-        </div>
-      </div>
-
-      <div class="case">
-        <div class="ch"><span class="tag">Case 13</span><span class="pill onhand">automático</span><h3>Virada automática para on-hand</h3></div>
-        <div class="cb">
-          <p>Na virada da data (fuso da conta), o lote vira estoque disponível sem ação manual e dispara reindexação.</p>
-          <div class="timeline"><span class="dot"></span><span>13/05 futuro</span><div class="arrow"></div><span class="dot off"></span><span>14/05 00:00 → on-hand</span></div>
-        </div>
-      </div>
-
-      <div class="case">
-        <div class="ch"><span class="tag">Case 17</span><span class="pill fallback">sequencial</span> <span class="pill combined">simultâneo</span><h3>Modo de disponibilidade (por SKU)</h3></div>
-        <div class="cb">
-          <p>2 imediatas + 3 futuras, shopper quer 3. <b>Sequencial:</b> bloqueia (limite 2). <b>Simultâneo:</b> permite (2+1).</p>
-        </div>
-      </div>
-
-      <div class="case">
-        <div class="ch"><span class="tag">Case 18</span><h3>Marca de estoque futuro no pedido</h3></div>
-        <div class="cb">
-          <p>O payload do pedido carrega uma marca (idealmente por item) indicando origem em estoque futuro, com lote e data de chegada.</p>
-          <div class="mini"><span class="mono" style="font-size:11px;">order.item.futureInventory: <span class="pill future">true</span> · lot 14/05</span></div>
-        </div>
-      </div>
-
-      <div class="case">
-        <div class="ch"><span class="tag">Case 19</span><h3>Franquias pela conta principal</h3></div>
-        <div class="cb">
-          <p>Em arquitetura de franquias, a conta principal cadastra e gerencia o estoque futuro dos warehouses das franquias, sem entrar em cada conta.</p>
+          <div class="case-question">O SKU tem data de lançamento no Catalog e também tem lote futuro em um warehouse.</div>
           <div class="mini">
-            <div class="pkg"><span class="nm">Conta principal</span><span class="sla fut">gerencia →</span></div>
-            <div class="pkg"><span class="nm">Franquia SP · wh-501</span><span class="sla">lote 14/05</span></div>
-            <div class="pkg"><span class="nm">Franquia RJ · wh-502</span><span class="sla">lote 20/05</span></div>
+            <div class="mini-title">Data efetiva de promessa</div>
+            <div class="date-flow">
+              <div class="date-node"><b>Lote</b><span>20/08</span></div><span class="date-arrow">vs</span>
+              <div class="date-node"><b>Pré-venda</b><span>01/09</span></div><span class="date-arrow">→</span>
+              <div class="date-node"><b>Vale</b><span>01/09</span></div>
+            </div>
           </div>
+          <div class="case-result"><b>Resultado:</b> a promessa usa a maior data entre lançamento do SKU e chegada do lote.</div>
+        </div>
+      </div>
+
+      <div class="case">
+        <div class="ch"><span class="tag">Caso 07</span><span class="pill onhand">automático</span><h3>Virada automática para on-hand</h3></div>
+        <div class="cb">
+          <div class="case-question">Quando chega a data do lote, a loja não deveria precisar fazer uma atualização manual.</div>
+          <div class="mini">
+            <div class="mini-title">Lifecycle do lote</div>
+            <div class="date-flow">
+              <div class="date-node"><b>13/05</b><span>futuro</span></div><span class="date-arrow">→</span>
+              <div class="date-node"><b>14/05 00:00</b><span>timezone da conta</span></div><span class="date-arrow">→</span>
+              <div class="date-node"><b>On-hand</b><span>reindexa SKU</span></div>
+            </div>
+          </div>
+          <div class="case-result"><b>Resultado:</b> o lote vira estoque disponível automaticamente na data cadastrada.</div>
+        </div>
+      </div>
+
+      <div class="case">
+        <div class="ch"><span class="tag">Caso 08</span><span class="pill fallback">sequencial</span> <span class="pill combined">simultâneo</span><h3>Modo de disponibilidade por lote</h3></div>
+        <div class="cb">
+          <div class="case-question">O SKU tem 2 unidades físicas e um lote futuro de 3 unidades. O shopper quer comprar 3.</div>
+          <div class="mini">
+            <div class="mini-title">O modo muda o que fica vendável agora</div>
+            <div class="pkg"><span class="nm">Sequencial</span><span class="sla">vende só 2 un. hoje</span></div>
+            <div class="pkg"><span class="nm">Simultâneo</span><span class="sla fut">vende 3 un. hoje</span></div>
+          </div>
+          <div class="case-result"><b>Resultado:</b> o modo é uma decisão de liberação do lote, não uma configuração global do SKU.</div>
+        </div>
+      </div>
+
+      <div class="case">
+        <div class="ch"><span class="tag">Caso 09</span><h3>Marca de estoque futuro no pedido</h3></div>
+        <div class="cb">
+          <div class="case-question">Operação, OMS e atendimento precisam saber se um item veio de estoque futuro.</div>
+          <div class="mini">
+            <div class="mini-title">Sinal no pedido</div>
+            <div class="payload-mini">
+              <div><b>futureInventory</b>: true</div>
+              <div><b>lotId</b>: lot-2026-05-14</div>
+              <div><b>arrivalDate</b>: 14/05/2026</div>
+            </div>
+          </div>
+          <div class="case-result"><b>Resultado:</b> ninguém precisa inferir origem do pedido olhando só uma data de entrega longa.</div>
+        </div>
+      </div>
+
+      <div class="case">
+        <div class="ch"><span class="tag">Caso 10</span><h3>Franquias pela conta principal</h3></div>
+        <div class="cb">
+          <div class="case-question">A operação central quer cadastrar lotes futuros para warehouses de franquias.</div>
+          <div class="mini">
+            <div class="mini-title">Gestão centralizada</div>
+            <div class="pkg"><span class="nm">Conta principal</span><span class="sla fut">cadastra lotes</span></div>
+            <div class="pkg"><span class="nm">Seller Pinheiros · wh-501</span><span class="sla">100 un. · 14/05</span></div>
+            <div class="pkg"><span class="nm">Seller Tijuca · wh-503</span><span class="sla">60 un. · 20/05</span></div>
+          </div>
+          <div class="case-result"><b>Resultado:</b> o merchant não precisa operar conta por conta para preparar reposições futuras.</div>
         </div>
       </div>
 
@@ -453,6 +609,41 @@
     {id:"salvador",  label:"Franquia · Loja Salvador (BA)",  seller:"electronicssalvador",  whs:["wh-507 · Loja Salvador"]},
   ];
   let mode = "combined"; // default: Simultâneo (campo opcional)
+  let guideSlide = 0;
+  const guideSlides = [
+    {
+      title: "O estoque futuro adiciona uma dimensão de tempo ao inventário",
+      body: "A loja informa que um SKU chegará em uma data futura, com quantidade e warehouse. A promessa de entrega passa a considerar chegada do lote + transit time.",
+      visual: `<div class="layer active"><b>On-hand</b><span>Estoque físico disponível agora.</span></div>
+        <div class="layer active"><b>Lotes simultâneos</b><span>Entram na disponibilidade vendável imediatamente.</span></div>
+        <div class="layer"><b>Lotes sequenciais</b><span>Ficam como reserva para quando as camadas anteriores acabarem.</span></div>`
+    },
+    {
+      title: "Simultâneo soma o lote futuro ao estoque vendável agora",
+      body: "Use quando o merchant quer capturar demanda imediatamente. O shopper pode comprar on-hand + futuro na mesma compra, e cada unidade futura carrega SLA ancorado na data do lote.",
+      visual: `<div class="visual-compare">
+          <div class="visual-card active"><b>Disponível agora</b><span>2 on-hand + 3 futuras = 5 unidades vendáveis.</span></div>
+          <div class="visual-card active"><b>SLA do futuro</b><span>Chegada do lote + transit time da shipping policy.</span></div>
+        </div>`
+    },
+    {
+      title: "Sequencial segura o lote como uma camada de fallback",
+      body: "Use quando o merchant quer proteger uma reposição futura. O lote não aumenta a disponibilidade atual; ele só abre para venda depois que o on-hand e os lotes simultâneos forem consumidos.",
+      visual: `<div class="visual-compare">
+          <div class="visual-card"><b>Disponível agora</b><span>Somente o on-hand e os lotes simultâneos contam.</span></div>
+          <div class="visual-card active"><b>Reserva futura</b><span>O lote sequencial entra depois, mesmo se chegar antes de outro lote simultâneo.</span></div>
+        </div>`
+    },
+    {
+      title: "O pedido precisa carregar a marca de origem do estoque futuro",
+      body: "Quando uma unidade vem de estoque futuro, o pedido deve indicar essa origem. Isso permite separar operação, atendimento, OMS e relatórios sem inferir pela data de entrega.",
+      visual: `<div class="payload-fields">
+          <div class="payload-field primary"><div class="payload-key">futureInventory</div><div class="payload-value"><b>true</b><span>Marca explícita de que o item foi vendido a partir de estoque futuro.</span></div></div>
+          <div class="payload-field"><div class="payload-key">lotId</div><div class="payload-value"><b>Identificador do lote</b><span>Permite rastrear qual chegada futura originou a reserva.</span></div></div>
+          <div class="payload-field"><div class="payload-key">arrivalDate</div><div class="payload-value"><b>Data prometida pelo lote</b><span>Data usada como base para calcular a promessa de entrega.</span></div></div>
+        </div>`
+    }
+  ];
 
   // SKU search (autocomplete por nome, SKU ID ou ID de produto)
   let selectedSku="";
@@ -506,8 +697,8 @@
 
   // default date = +14 dias
   const d=new Date();d.setDate(d.getDate()+14);
-  document.getElementById('date').value=d.toISOString().slice(0,10);
-  pickSku("1001");
+  document.getElementById('date').value=formatBRDate(d);
+  recalc();
 
   function tab(id,el){
     document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
@@ -519,15 +710,47 @@
     mode=m;
     document.getElementById('mode-fallback').classList.toggle('sel',m==='fallback');
     document.getElementById('mode-combined').classList.toggle('sel',m==='combined');
+    setGuideSlide(m==='fallback' ? 2 : 1);
     recalc();
   }
+  function setGuideSlide(idx){
+    guideSlide=Math.max(0,Math.min(guideSlides.length-1,idx));
+    document.querySelectorAll('.slide-tab').forEach((t,i)=>t.classList.toggle('active',i===guideSlide));
+    const slide=guideSlides[guideSlide];
+    document.getElementById('guide-step').textContent=`Slide ${guideSlide+1} de ${guideSlides.length}`;
+    document.getElementById('guide-title').textContent=slide.title;
+    document.getElementById('guide-body').textContent=slide.body;
+    document.getElementById('guide-visual').innerHTML=slide.visual;
+  }
+  function nextGuideSlide(){setGuideSlide(guideSlide+1);}
+  function prevGuideSlide(){setGuideSlide(guideSlide-1);}
   function daysUntil(dateStr){
     if(!dateStr) return null;
     const today=new Date();today.setHours(0,0,0,0);
-    const t=new Date(dateStr+"T00:00:00");
+    const iso=toISODate(dateStr);
+    if(!iso) return null;
+    const t=new Date(iso+"T00:00:00");
     return Math.round((t-today)/86400000);
   }
-  function fmt(dateStr){if(!dateStr)return"—";const[y,m,dd]=dateStr.split('-');return `${dd}/${m}/${y}`;}
+  function toISODate(dateStr){
+    if(!dateStr) return "";
+    if(/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
+    const match=dateStr.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if(!match) return "";
+    const [,dd,m,y]=match;
+    return `${y}-${m}-${dd}`;
+  }
+  function formatBRDate(date){
+    return date.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'});
+  }
+  function fmt(dateStr){
+    if(!dateStr)return"—";
+    if(/^\d{2}\/\d{2}\/\d{4}$/.test(dateStr)) return dateStr;
+    const iso=toISODate(dateStr);
+    if(!iso) return dateStr;
+    const[y,m,dd]=iso.split('-');
+    return `${dd}/${m}/${y}`;
+  }
 
   function isoPlus(days){const d=new Date();d.setHours(0,0,0,0);d.setDate(d.getDate()+days);return d.toISOString().replace(/\.\d{3}Z$/,'Z');}
   function hl(json){
@@ -548,10 +771,16 @@
     const resEl=document.getElementById('sim-res');
     const slaEl=document.getElementById('s-sla');
     const noteEl=document.getElementById('s-note');
+    const checkoutJson=document.getElementById('checkout-json');
 
     if(!p||days==null){
       reqEl.textContent="selecione um SKU…"; resEl.textContent="—";
-      slaEl.textContent="—"; noteEl.textContent="Selecione um SKU para rodar a simulação.";
+      slaEl.textContent="—"; noteEl.textContent="Preview do request/response que esse lote geraria na simulação do carrinho.";
+      checkoutJson.textContent=JSON.stringify({
+        items:[{id:"selecione um SKU",quantity:0,seller:seller}],
+        logisticsInfo:[]
+      },null,2);
+      document.getElementById('s-slacap').textContent="chegada do lote + transit time";
       return;
     }
 
@@ -598,15 +827,36 @@
 
     // headline = SLA habilitado pelo lote futuro
     slaEl.textContent=`${futEst} bd`;
+    document.getElementById('s-slacap').textContent=`${days}d até a chegada + ${TRANSIT}bd de transit`;
     let note;
     if(onhand>0 && mode==='fallback'){
-      note=`O SKU continua vendendo pelas ${onhand} un on-hand (shippingEstimate ${immEst}bd). O lote futuro de ${qty||1} un para ${fmt(dateStr)} assume quando o on-hand zerar, com ${futEst}bd (${days}d até a chegada + ${TRANSIT}bd de transit time).`;
+      note=`Sequencial: o lote de ${qty||1} un em ${fmt(dateStr)} entra depois do on-hand.`;
     } else if(onhand>0 && mode==='combined'){
-      note=`Modo simultâneo: a compra divide em 2 pacotes: ${onhand} un on-hand em ${immEst}bd e ${qty||1} un do lote futuro em ${futEst}bd, ancorado em ${fmt(dateStr)}.`;
+      note=`Simultâneo: on-hand e futuro podem aparecer na mesma compra.`;
     } else {
-      note=`Sem on-hand: a venda é 100% pelo lote futuro. shippingEstimate = ${days}d até a chegada + ${TRANSIT}bd de transit = ${futEst}bd, ancorado em ${fmt(dateStr)}.`;
+      note=`Sem on-hand: a venda é ancorada no lote de ${fmt(dateStr)}.`;
     }
     noteEl.textContent=note;
+    checkoutJson.textContent=JSON.stringify({
+      request:{
+        items:[{id:skuId,quantity:qty||1,seller:seller}],
+        country:"BRA",
+        postalCode:"01310-100"
+      },
+      response:{
+        items:[{id:skuId,quantity:qty||1,seller:seller,availability:"available"}],
+        logisticsInfo:[{
+          itemIndex:0,
+          slas:[{
+            id:"Normal-FutureStock",
+            name:"Entrega (estoque futuro)",
+            shippingEstimate:`${futEst}bd`,
+            arrivalDate:fmt(dateStr),
+            futureInventory:true
+          }]
+        }]
+      }
+    },null,2);
     validate();
   }
 
@@ -659,6 +909,7 @@
     });
   })();
 
+  setGuideSlide(0);
   recalc();
 </script>
 </body>
