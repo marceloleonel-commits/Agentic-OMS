@@ -28,9 +28,11 @@ Each gap is owned by a different team. This document is intended to serve as a r
 
 **Problem:** Today, creating and managing sellerType=3 sellers requires direct API calls. There is no admin UI. For any merchant without a dedicated technical integration team, this is a hard adoption blocker.
 
+**Related spec:** [004 — Warehouse: ID do seller + rename inStore→Sales App](../004-warehouse-seller-binding/product-brief.md) covers the Admin UI work for linking a warehouse to a seller through Shipping Strategy. Seller creation and lifecycle management remain owned by Seller Register.
+
 **What is needed:**
 - Create, edit, and deactivate sellerType=3 sellers from the VTEX admin
-- Link and unlink warehouses to sellers
+- Link and unlink warehouses to sellers (warehouse configuration covered by spec 004)
 - View seller list with status, linked warehouses, and key configurations
 - Accessible to any merchant without requiring API integration
 

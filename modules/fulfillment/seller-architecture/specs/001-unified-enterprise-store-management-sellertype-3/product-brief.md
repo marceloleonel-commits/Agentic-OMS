@@ -95,7 +95,7 @@ This release delivers the full sellerType=3 capability **via API**. No admin UI 
 
 ## Out of scope
 
-- Admin UI for creating and managing sellerType=3 sellers (see spec 002)
+- Admin UI for creating and managing sellerType=3 sellers (see cross-team gaps). Admin UI for Warehouse → Seller binding is tracked in [spec 004](../004-warehouse-seller-binding/product-brief.md).
 - Store selection experience on the storefront (frontend responsibility)
 - Billing per store / per seller
 - Changing seller type after creation
