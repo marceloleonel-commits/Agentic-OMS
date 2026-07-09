@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Inventory Export — Estratégia de envio (Prototype)</title>
+<style>
+  :root{
+    /* VTEX admin / Shoreline tokens */
+    --blue:#2953E8; --blue-d:#0C389F; --link:#134CD8; --blue-bg:#EDF0FE;
+    --ink:#27282B; --muted:#727885; --faint:#9BA0A6;
+    --line:#E1E3E6; --line-d:#D4D8DB; --bg:#F5F6F7; --surface:#FFFFFF; --hover:#F8F9FA;
+    --green:#119B5E; --greenbg:#E5F5EE; --amber:#8A6D00; --amberbg:#FFF3CD;
+    --brand:#F71963; /* logo only */
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif;font-size:14px;line-height:1.5;}
+
+  /* top bar (admin) */
+  .topbar{background:var(--surface);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:16px;padding:0 18px;height:56px;position:sticky;top:0;z-index:20;}
+  .burger{display:flex;flex-direction:column;gap:3px;cursor:pointer;padding:6px;border-radius:6px;}
+  .burger span{width:16px;height:2px;background:var(--ink);border-radius:2px;}
+  .acct{font-weight:600;color:var(--ink);font-size:14px;}
+  .topbar .spacer{flex:1;}
+  .topsearch{flex:0 1 460px;display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--line-d);border-radius:8px;padding:7px 12px;color:var(--faint);font-size:13px;}
+  .topnav{display:flex;align-items:center;gap:18px;color:var(--ink);font-size:13.5px;}
+  .topnav a{color:var(--ink);text-decoration:none;display:flex;align-items:center;gap:6px;}
+  .topnav a:hover{color:var(--link);}
+  .topnav .ico{width:18px;height:18px;border-radius:50%;border:1.5px solid var(--muted);color:var(--muted);font-size:11px;display:inline-flex;align-items:center;justify-content:center;font-weight:700;}
+  .avatar{width:30px;height:30px;border-radius:50%;background:var(--blue);display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;font-size:12px;}
+
+  .crumb{max-width:1160px;margin:0 auto;padding:18px 24px 0;color:var(--muted);font-size:12.5px;}
+  .crumb b{color:var(--ink);font-weight:600;}
+
+  .wrap{max-width:1160px;margin:12px auto 60px;padding:24px 28px 28px;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 1px 3px rgba(20,32,50,.05);}
+  .pagehead{display:flex;align-items:center;justify-content:space-between;gap:16px;margin:0;}
+  h1{font-size:20px;font-weight:600;margin:0;letter-spacing:-.2px;}
+  .kebab{width:36px;height:36px;border:none;border-radius:8px;background:var(--blue-bg);display:flex;align-items:center;justify-content:center;color:var(--blue);cursor:pointer;font-size:18px;}
+  .kebab:hover{background:#E1E7FD;}
+
+  /* tabs */
+  .tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin:18px 0 0;}
+  .tab{padding:10px 16px;font-weight:600;font-size:13.5px;color:var(--muted);cursor:pointer;border:none;background:none;border-bottom:2px solid transparent;margin-bottom:-1px;}
+  .tab:hover{color:var(--ink);}
+  .tab.active{color:var(--blue);border-bottom-color:var(--blue);}
+
+  .tablecard{background:var(--surface);margin-top:4px;}
+  .tabletools{display:flex;align-items:center;gap:10px;padding:16px 0;flex-wrap:wrap;}
+  .searchbox{flex:0 0 auto;display:flex;align-items:center;gap:8px;border:1px solid var(--line-d);border-radius:8px;padding:10px 12px;color:var(--faint);font-size:13px;width:250px;}
+  .searchbox input{border:none;padding:0;font-size:13px;background:none;width:100%;color:var(--ink);}
+  .searchbox input:focus{outline:none;}
+  .toolspacer{flex:1;}
+
+  .btn{display:inline-flex;align-items:center;gap:8px;border-radius:8px;padding:9px 14px;font-weight:600;font-size:13px;cursor:pointer;border:1px solid var(--line-d);background:var(--surface);color:var(--ink);}
+  .btn:hover{background:var(--hover);}
+  .btn svg{flex:none;color:var(--muted);}
+  .btn.primary{background:var(--blue);color:#fff;border-color:var(--blue);}
+  .btn.primary svg{color:#fff;}
+  .btn.primary:hover{background:var(--blue-d);}
+  .btn.subtle{background:var(--blue-bg);color:var(--blue);border-color:transparent;font-weight:600;}
+  .btn.subtle svg{color:var(--blue);}
+  .btn.subtle:hover{background:#E1E7FD;}
+  .btn.ghost{color:var(--blue);border-color:transparent;}
+  .btn.ghost svg{color:var(--blue);}
+  .btn:disabled{opacity:.45;cursor:not-allowed;}
+  .pagimeta{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:13px;margin-left:6px;}
+  .pagimeta .nav{display:flex;gap:2px;}
+  .pagimeta .nav span{width:26px;height:26px;display:flex;align-items:center;justify-content:center;border-radius:6px;cursor:pointer;color:var(--muted);font-size:16px;}
+  .pagimeta .nav span:hover{background:var(--hover);color:var(--ink);}
+
+  table{border-collapse:collapse;width:100%;font-size:14px;}
+  thead th{border-bottom:1px solid var(--line);padding:10px 16px 12px;text-align:left;color:var(--muted);font-size:13px;font-weight:400;}
+  tbody td{border-bottom:1px solid var(--line);padding:16px;text-align:left;vertical-align:middle;color:var(--ink);}
+  tbody tr:hover{background:var(--hover);}
+  .whname{font-weight:400;color:var(--ink);}
+  .status-pill{display:inline-flex;align-items:center;font-size:12.5px;font-weight:400;padding:3px 12px;border-radius:999px;background:var(--greenbg);color:#3B7A5C;}
+  .rowkebab{color:var(--muted);cursor:pointer;font-weight:700;letter-spacing:1px;text-align:right;}
+
+  /* drawer */
+  .overlay{position:fixed;inset:0;background:rgba(20,32,50,.42);z-index:60;opacity:0;pointer-events:none;transition:opacity .2s;}
+  .overlay.open{opacity:1;pointer-events:auto;}
+  .drawer{position:fixed;top:0;right:0;bottom:0;width:440px;max-width:92vw;background:var(--surface);z-index:61;box-shadow:-8px 0 40px rgba(20,32,50,.18);
+    transform:translateX(100%);transition:transform .26s cubic-bezier(.4,0,.2,1);display:flex;flex-direction:column;}
+  .drawer.open{transform:translateX(0);}
+  .drawer-head{display:flex;align-items:center;justify-content:space-between;padding:22px 24px 14px;}
+  .drawer-head h2{font-size:19px;font-weight:700;margin:0;}
+  .drawer-close{border:none;background:none;font-size:20px;color:var(--muted);cursor:pointer;line-height:1;padding:4px;border-radius:6px;}
+  .drawer-close:hover{background:var(--hover);color:var(--ink);}
+  .drawer-sub{padding:0 24px 8px;color:var(--muted);font-size:13px;}
+  .drawer-body{flex:1;overflow:auto;padding:6px 12px 12px;}
+  .drawer-foot{display:flex;justify-content:flex-end;gap:10px;padding:16px 24px;border-top:1px solid var(--line);}
+
+  .section{border-bottom:1px solid var(--line);}
+  .section-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 12px;cursor:pointer;user-select:none;}
+  .section-head:hover{background:var(--hover);}
+  .section-head .left{display:flex;align-items:center;gap:8px;font-weight:600;font-size:14px;color:var(--ink);}
+  .caret{transition:transform .18s;color:var(--muted);display:inline-flex;}
+  .section.collapsed .caret{transform:rotate(-90deg);}
+  .section-body{padding:2px 12px 12px 40px;display:block;}
+  .section.collapsed .section-body{display:none;}
+  /* scrollable warehouse list — shows ~5 rows, scrolls when more */
+  #wh-list{max-height:210px;overflow-y:auto;padding-right:8px;}
+  #wh-list::-webkit-scrollbar{width:8px;}
+  #wh-list::-webkit-scrollbar-thumb{background:var(--line-d);border-radius:8px;}
+  #wh-list::-webkit-scrollbar-thumb:hover{background:var(--faint);}
+  #wh-list::-webkit-scrollbar-track{background:transparent;}
+
+  .opt{display:flex;align-items:center;gap:12px;padding:9px 8px;border-radius:8px;cursor:pointer;}
+  .opt:hover{background:var(--hover);}
+  .opt .txt{display:flex;flex-direction:column;gap:1px;}
+  .opt .txt .lbl{font-size:13.5px;color:var(--ink);}
+  .opt .txt .code{font-size:11px;color:var(--faint);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;}
+  .opt .meta{margin-left:auto;font-size:12px;color:var(--muted);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;}
+  .opt.disabled{cursor:not-allowed;}
+  .opt.disabled .lbl{color:var(--muted);}
+
+  /* checkbox */
+  .cbx{width:20px;height:20px;border:1.5px solid var(--line-d);border-radius:5px;background:#fff;flex:none;display:flex;align-items:center;justify-content:center;transition:.12s;}
+  .cbx svg{opacity:0;}
+  .checked .cbx{background:var(--blue);border-color:var(--blue);}
+  .checked .cbx svg{opacity:1;}
+  .disabled .cbx{background:#EDEFF2;border-color:var(--line-d);}
+  .disabled.checked .cbx{background:#9FB4F5;border-color:#9FB4F5;}
+  .section-master{flex:0 0 auto;gap:8px;padding-right:0;}
+  .master-lbl{font-size:13px;color:var(--muted);}
+  .indeterminate .cbx{background:var(--blue);border-color:var(--blue);}
+  .indeterminate .cbx svg{opacity:0;}
+  .indeterminate .cbx::after{content:"";width:10px;height:2px;background:#fff;border-radius:2px;}
+
+  /* exports floating panel */
+  .exports{position:fixed;right:24px;bottom:24px;width:340px;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 16px 48px rgba(20,32,50,.22);z-index:70;overflow:hidden;
+    transform:translateY(20px);opacity:0;pointer-events:none;transition:.24s;}
+  .exports.open{transform:translateY(0);opacity:1;pointer-events:auto;}
+  .exports-head{display:flex;align-items:center;gap:8px;padding:12px 14px;background:var(--hover);border-bottom:1px solid var(--line);font-weight:700;font-size:14px;}
+  .exports-head .count{color:var(--muted);font-weight:600;}
+  .exports-head .hspacer{flex:1;}
+  .exports-head .hicon{color:var(--muted);cursor:pointer;padding:2px;border-radius:6px;font-size:15px;line-height:1;}
+  .exports-head .hicon:hover{background:#eceef1;color:var(--ink);}
+  .export-row{display:flex;align-items:center;gap:12px;padding:14px;}
+  .export-row .st{width:22px;height:22px;flex:none;display:flex;align-items:center;justify-content:center;}
+  .spinner{width:18px;height:18px;border:2px solid var(--blue-bg);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .check{width:22px;height:22px;border-radius:50%;background:var(--green);display:flex;align-items:center;justify-content:center;color:#fff;}
+  .export-row .info{display:flex;flex-direction:column;gap:1px;min-width:0;}
+  .export-row .info .t{font-weight:600;font-size:13.5px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .export-row .info .d{font-size:11.5px;color:var(--muted);}
+  .export-row .right{margin-left:auto;display:flex;align-items:center;gap:10px;}
+  .badge{background:var(--blue);color:#fff;font-size:12px;font-weight:700;border-radius:999px;padding:2px 10px;}
+  .dl{color:var(--blue);cursor:pointer;padding:4px;border-radius:6px;display:none;}
+  .dl:hover{background:var(--blue-bg);}
+  .dl.show{display:inline-flex;}
+
+  /* toast */
+  .toast{position:fixed;right:24px;bottom:24px;width:340px;background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--green);border-radius:10px;box-shadow:0 12px 36px rgba(20,32,50,.18);z-index:65;padding:14px 16px;display:flex;gap:10px;align-items:flex-start;
+    transform:translateY(20px);opacity:0;pointer-events:none;transition:.24s;}
+  .toast.open{transform:translateY(0);opacity:1;}
+  .toast .ic{color:var(--green);flex:none;margin-top:1px;}
+  .toast .msg{font-size:12.5px;color:var(--ink);line-height:1.45;}
+  .toast .x{margin-left:auto;color:var(--muted);cursor:pointer;font-size:15px;line-height:1;}
+
+  .note{background:var(--blue-bg);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--muted);margin:8px 12px 4px;}
+  .note b{color:var(--ink);}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="burger" aria-label="menu"><span></span><span></span><span></span></span>
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="#F71963" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="VTEX">
+    <path d="M22.2027 1.7925H4.2812c-1.3897 0-2.2795 1.4698-1.6293 2.6917l1.7927 3.3773H1.1947a1.2 1.2 0 0 0-.5873.1537 1.1924 1.1924 0 0 0-.4356.421 1.1847 1.1847 0 0 0-.0342 1.1683l5.766 10.858c.1017.191.2537.3507.4399.4622a1.1996 1.1996 0 0 0 1.2326 0 1.1913 1.1913 0 0 0 .4398-.4623l1.566-2.933 1.9647 3.7006c.6914 1.3016 2.5645 1.304 3.2584.0038L23.7878 4.416c.635-1.1895-.2314-2.6235-1.5851-2.6235ZM14.1524 8.978l-3.8733 7.2533a.7932.7932 0 0 1-.2927.3074.7986.7986 0 0 1-.82 0 .7933.7933 0 0 1-.2927-.3074L5.0378 9.0086a.7883.7883 0 0 1 .0208-.7776.7933.7933 0 0 1 .2891-.281.7985.7985 0 0 1 .3906-.1033h7.7307a.7769.7769 0 0 1 .381.0998.7717.7717 0 0 1 .2823.2736.7672.7672 0 0 1 .02.758z"/>
+  </svg>
+  <span class="acct">electronicsstore</span>
+  <span class="spacer"></span>
+  <span class="topsearch">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg>
+    Buscar VTEX
+  </span>
+  <span class="spacer"></span>
+  <nav class="topnav">
+    <a href="#"><span class="ico">?</span>Ajuda</a>
+    <span class="avatar">C</span>
+  </nav>
+</div>
+
+<div class="crumb">Estoque &nbsp;›&nbsp; <b>Estratégia de envio</b></div>
+
+<div class="wrap">
+  <div class="pagehead">
+    <h1>Estratégia de envio</h1>
+    <div class="kebab">⋮</div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab">Políticas de envio</button>
+    <button class="tab">Docas</button>
+    <button class="tab active">Estoques</button>
+  </div>
+
+  <div class="tablecard">
+    <div class="tabletools">
+      <span class="searchbox">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg>
+        <input placeholder="Pesquisar" />
+      </span>
+      <span class="toolspacer"></span>
+      <button class="btn subtle" id="exportBtn" onclick="openDrawer()">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>
+        Exportar
+      </button>
+      <button class="btn subtle">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21V9"/><path d="M7 14l5-5 5 5"/><path d="M5 3h14"/></svg>
+        Importar
+      </button>
+      <button class="btn primary">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+        Criar estoque
+      </button>
+      <span class="pagimeta">3 de 3
+        <span class="nav"><span>‹</span><span>›</span></span>
+      </span>
+    </div>
+    <table>
+      <thead>
+        <tr><th style="width:42%">Estoque</th><th style="width:18%">ID</th><th style="width:14%">Docas</th><th style="width:18%">Status</th><th style="width:8%"></th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="whname">no-sell</td><td>14bc158</td><td>1</td><td><span class="status-pill">Ativo</span></td><td class="rowkebab">⋮</td></tr>
+        <tr><td class="whname">RJ-Brasil</td><td>9334</td><td>3</td><td><span class="status-pill">Ativo</span></td><td class="rowkebab">⋮</td></tr>
+        <tr><td class="whname">USA</td><td>1_1</td><td>3</td><td><span class="status-pill">Ativo</span></td><td class="rowkebab">⋮</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ===================== EXPORT DRAWER ===================== -->
+<div class="overlay" id="overlay" onclick="closeDrawer()"></div>
+<aside class="drawer" id="drawer" aria-label="Exportar estoque">
+  <div class="drawer-head">
+    <h2>Exportar</h2>
+    <button class="drawer-close" onclick="closeDrawer()">✕</button>
+  </div>
+  <div class="drawer-sub">Selecione o estoque e os campos que deseja exportar.</div>
+
+  <div class="drawer-body">
+
+    <!-- STEP 1: warehouses -->
+    <div class="section" id="sec-wh">
+      <div class="section-head" onclick="toggleSection('sec-wh')">
+        <span class="left"><span class="caret">▾</span> Estoques</span>
+        <label class="opt section-master" id="wh-master" onclick="event.stopPropagation();toggleMaster('wh')">
+          <span class="master-lbl">Todos</span>
+          <span class="cbx"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></span>
+        </label>
+      </div>
+      <div class="section-body" id="wh-list"></div>
+    </div>
+
+    <!-- STEP 2: fields -->
+    <div class="section" id="sec-fields">
+      <div class="section-head" onclick="toggleSection('sec-fields')">
+        <span class="left"><span class="caret">▾</span> Campos do inventário</span>
+        <label class="opt section-master" id="fld-master" onclick="event.stopPropagation();toggleMaster('fld')">
+          <span class="master-lbl">Todos</span>
+          <span class="cbx"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></span>
+        </label>
+      </div>
+      <div class="section-body" id="fld-list"></div>
+    </div>
+
+    <div class="note" id="drawer-note"><b>Nenhum estoque selecionado.</b> Selecione ao menos um estoque para habilitar a exportação.</div>
+  </div>
+
+  <div class="drawer-foot">
+    <button class="btn ghost" onclick="closeDrawer()">Cancelar</button>
+    <button class="btn primary" id="confirmExport" onclick="startExport()" disabled>Exportar</button>
+  </div>
+</aside>
+
+<!-- ===================== EXPORTS FLOATING PANEL ===================== -->
+<div class="exports" id="exportsPanel">
+  <div class="exports-head">
+    Exportações <span class="count" id="expCount">1</span>
+    <span class="hspacer"></span>
+    <span class="hicon" onclick="toggleExportsBody()">⌄</span>
+    <span class="hicon" onclick="closeExports()">✕</span>
+  </div>
+  <div id="exportsBody">
+    <div class="export-row">
+      <span class="st" id="expStatus"><span class="spinner"></span></span>
+      <span class="info">
+        <span class="t">Inventário — <span id="expWhNames">Estoques</span></span>
+        <span class="d" id="expDate">—</span>
+      </span>
+      <span class="right">
+        <span class="badge" id="expBadge" style="display:none">0</span>
+        <span class="dl" id="expDownload" title="Baixar arquivo" onclick="downloadCsv()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M5 21h14"/></svg>
+        </span>
+      </span>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== EMAIL TOAST ===================== -->
+<div class="toast" id="toast">
+  <span class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><path d="M8 12l3 3 5-6"/></svg></span>
+  <span class="msg">A exportação foi solicitada com sucesso. Em breve, o arquivo exportado também será enviado para o seu e-mail.</span>
+  <span class="x" onclick="document.getElementById('toast').classList.remove('open')">✕</span>
+</div>
+
+<script>
+  // ---- data ----
+  const warehouses = [
+    { id:"1_1",     name:"USA" },
+    { id:"9334",    name:"RJ-Brasil" },
+    { id:"14bc158", name:"no-sell" },
+    { id:"sp01",    name:"SP-Guarulhos" },
+    { id:"sp02",    name:"SP-Barueri" },
+    { id:"mg01",    name:"MG-Contagem" },
+    { id:"pr01",    name:"PR-Curitiba" },
+    { id:"ba01",    name:"BA-Salvador" },
+    { id:"pe01",    name:"PE-Recife" },
+    { id:"rs01",    name:"RS-Porto Alegre" },
+    { id:"df01",    name:"DF-Brasília" },
+    { id:"ce01",    name:"CE-Fortaleza" },
+  ];
+
+  // CSV fields (label PT, header = real CSV column). SkuId is mandatory.
+  const fields = [
+    { key:"SkuId",                 label:"ID do SKU" },
+    { key:"TotalQuantity",         label:"Quantidade total" },
+    { key:"ReservedQuantity",      label:"Quantidade reservada" },
+    { key:"AvailableQuantity",     label:"Quantidade disponível" },
+    { key:"WarehouseId",           label:"ID do estoque" },
+    { key:"WarehouseName",         label:"Nome do estoque" },
+    { key:"RefId",                 label:"Ref ID" },
+    { key:"IsActive",              label:"Ativo" },
+    { key:"UnlimitedQuantity",     label:"Quantidade ilimitada" },
+    { key:"LockIds",               label:"IDs de bloqueio" },
+    { key:"DispatchedReservations",label:"Reservas despachadas" },
+  ];
+
+  // sample inventory rows to make the download feel real
+  const sampleRows = [
+    { SkuId:"1",  TotalQuantity:3,   ReservedQuantity:0, AvailableQuantity:3,   RefId:"",        IsActive:"True", UnlimitedQuantity:"False", LockIds:"", DispatchedReservations:0 },
+    { SkuId:"10", TotalQuantity:0,   ReservedQuantity:0, AvailableQuantity:0,   RefId:"880032a", IsActive:"True", UnlimitedQuantity:"False", LockIds:"", DispatchedReservations:0 },
+    { SkuId:"11", TotalQuantity:0,   ReservedQuantity:0, AvailableQuantity:0,   RefId:"880043a", IsActive:"True", UnlimitedQuantity:"False", LockIds:"", DispatchedReservations:0 },
+    { SkuId:"12", TotalQuantity:33,  ReservedQuantity:0, AvailableQuantity:33,  RefId:"880013a", IsActive:"True", UnlimitedQuantity:"False", LockIds:"", DispatchedReservations:0 },
+    { SkuId:"2000",TotalQuantity:325,ReservedQuantity:0, AvailableQuantity:325, RefId:"",        IsActive:"True", UnlimitedQuantity:"False", LockIds:"", DispatchedReservations:0 },
+  ];
+
+  const state = {
+    wh: new Set(),                             // none selected by default — user picks
+    fld: new Set(fields.map(f=>f.key)),        // all fields selected by default
+  };
+
+  // ---- render options ----
+  function checkmark(){
+    return '<span class="cbx"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></span>';
+  }
+
+  function renderWh(){
+    const el = document.getElementById('wh-list');
+    el.innerHTML = warehouses.map(w=>{
+      const on = state.wh.has(w.id);
+      return `<label class="opt ${on?'checked':''}" onclick="toggleWh('${w.id}')">
+        ${checkmark()}
+        <span class="txt"><span class="lbl">${w.name}</span></span>
+        <span class="meta">${w.id}</span>
+      </label>`;
+    }).join('');
+    syncMaster('wh');
+  }
+
+  function renderFields(){
+    const el = document.getElementById('fld-list');
+    el.innerHTML = fields.map(f=>{
+      const on = f.mandatory || state.fld.has(f.key);
+      const dis = f.mandatory ? 'disabled' : '';
+      const handler = f.mandatory ? '' : `onclick="toggleFld('${f.key}')"`;
+      return `<label class="opt ${on?'checked':''} ${dis}" ${handler}>
+        ${checkmark()}
+        <span class="txt"><span class="lbl">${f.label}${f.mandatory?' · obrigatório':''}</span><span class="code">${f.key}</span></span>
+      </label>`;
+    }).join('');
+    syncMaster('fld');
+  }
+
+  function toggleWh(id){
+    if(state.wh.has(id)) state.wh.delete(id); else state.wh.add(id);
+    renderWh(); refreshFooter();
+  }
+  function toggleFld(key){
+    if(state.fld.has(key)) state.fld.delete(key); else state.fld.add(key);
+    renderFields();
+  }
+
+  function toggleMaster(kind){
+    if(kind==='wh'){
+      const all = state.wh.size===warehouses.length;
+      state.wh = new Set(all?[]:warehouses.map(w=>w.id));
+      renderWh(); refreshFooter();
+    } else {
+      const selectable = fields.filter(f=>!f.mandatory);
+      const all = selectable.every(f=>state.fld.has(f.key));
+      if(all){ selectable.forEach(f=>state.fld.delete(f.key)); }
+      else { selectable.forEach(f=>state.fld.add(f.key)); }
+      renderFields();
+    }
+  }
+
+  function syncMaster(kind){
+    const master = document.getElementById(kind==='wh'?'wh-master':'fld-master');
+    master.classList.remove('checked','indeterminate');
+    if(kind==='wh'){
+      if(state.wh.size===warehouses.length) master.classList.add('checked');
+      else if(state.wh.size>0) master.classList.add('indeterminate');
+    } else {
+      const selectable = fields.filter(f=>!f.mandatory);
+      const n = selectable.filter(f=>state.fld.has(f.key)).length;
+      if(n===selectable.length) master.classList.add('checked');
+      else if(n>0) master.classList.add('indeterminate');
+    }
+  }
+
+  function toggleSection(id){ document.getElementById(id).classList.toggle('collapsed'); }
+
+  function refreshFooter(){
+    const n = state.wh.size;
+    const note = document.getElementById('drawer-note');
+    const btn = document.getElementById('confirmExport');
+    if(n===0){
+      note.innerHTML = '<b>Nenhum estoque selecionado.</b> Selecione ao menos um estoque para habilitar a exportação.';
+      btn.disabled = true;
+    } else {
+      const names = warehouses.filter(w=>state.wh.has(w.id)).map(w=>w.name).join(', ');
+      note.innerHTML = `<b>${n} estoque${n>1?'s':''} selecionado${n>1?'s':''}:</b> ${names}. Um arquivo será gerado com os campos escolhidos.`;
+      btn.disabled = false;
+    }
+  }
+
+  // ---- drawer control ----
+  function openDrawer(){
+    renderWh(); renderFields(); refreshFooter();
+    document.getElementById('overlay').classList.add('open');
+    document.getElementById('drawer').classList.add('open');
+  }
+  function closeDrawer(){
+    document.getElementById('overlay').classList.remove('open');
+    document.getElementById('drawer').classList.remove('open');
+  }
+
+  // ---- export flow ----
+  function nowStr(){
+    const d = new Date();
+    const p = n => String(n).padStart(2,'0');
+    return `${p(d.getDate())}-${p(d.getMonth()+1)}-${d.getFullYear()} · ${p(d.getHours())}:${p(d.getMinutes())}`;
+  }
+
+  function startExport(){
+    const selWh = warehouses.filter(w=>state.wh.has(w.id));
+    closeDrawer();
+
+    // reset panel to loading
+    const panel = document.getElementById('exportsPanel');
+    document.getElementById('expWhNames').textContent = selWh.map(w=>w.name).join(', ');
+    document.getElementById('expDate').textContent = nowStr();
+    document.getElementById('expStatus').innerHTML = '<span class="spinner"></span>';
+    document.getElementById('expBadge').style.display = 'none';
+    document.getElementById('expDownload').classList.remove('show');
+    document.getElementById('toast').classList.remove('open');
+    panel.classList.add('open');
+
+    const rowCount = selWh.length * sampleRows.length;
+
+    setTimeout(()=>{
+      // done
+      document.getElementById('expStatus').innerHTML =
+        '<span class="check"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></span>';
+      const badge = document.getElementById('expBadge');
+      badge.textContent = rowCount; badge.style.display = 'inline-block';
+      document.getElementById('expDownload').classList.add('show');
+      document.getElementById('toast').classList.add('open');
+    }, 2200);
+  }
+
+  function toggleExportsBody(){
+    const b = document.getElementById('exportsBody');
+    b.style.display = b.style.display==='none' ? 'block' : 'none';
+  }
+  function closeExports(){ document.getElementById('exportsPanel').classList.remove('open'); }
+
+  // ---- CSV generation + download ----
+  function buildCsv(){
+    const cols = fields.filter(f=>f.mandatory || state.fld.has(f.key)).map(f=>f.key);
+    const selWh = warehouses.filter(w=>state.wh.has(w.id));
+    const lines = [cols.join(',')];
+    selWh.forEach(w=>{
+      sampleRows.forEach(r=>{
+        const row = { ...r, WarehouseId:w.id, WarehouseName:w.name };
+        lines.push(cols.map(c=>{
+          const v = row[c]!==undefined ? row[c] : '';
+          const s = String(v);
+          return /[",\n]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s;
+        }).join(','));
+      });
+    });
+    return lines.join('\n');
+  }
+
+  function downloadCsv(){
+    const csv = buildCsv();
+    const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'inventory-export.csv';
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
+  }
+</script>
+</body>
+</html>
