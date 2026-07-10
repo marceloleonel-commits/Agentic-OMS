@@ -4,8 +4,8 @@
 
 ## Clarifications
 
-- **External-provider release, not native.** VTEX does not model the full return options logic; it resolves dynamically via the provider (Intelipost for Dafiti).
-- **Ownership boundary.** OMS owns the Return entity, eligibility, reasons, compensation, approval, return invoicing, and events. Fulfillment owns return methods, drop-off locations, execution information, and status updates.
+- **External-provider release, not native.** VTEX does not model the full return options logic; it resolves dynamically via the provider (Intelipost for Dafiti Brazil). The same VTEX parent account can connect to more than one provider; Dafiti uses two separate accounts (Brazil and Colombia).
+- **Ownership boundary.** OMS owns the Return entity, eligibility, item selection, reasons, compensation, approval, return invoicing, and platform events. Fulfillment owns the reverse logistics provider integration: return methods, drop-off locations, return execution information, and reverse logistics status updates (received via endpoints and propagated to OMS/events).
 - **VTEX does not generate** labels, QR codes, posting codes, or tracking codes — these come from the provider/merchant operation.
 - **Standard contract.** The provider integration is a contract any provider implements, with two directions: `VTEX → Provider` (consult, synchronous) and `Provider → VTEX` (inform, asynchronous).
 - **No admin UI in this scope.** Reverse logistics is a **backend provider integration** — it is not expected to ship an admin visual interface. The visual experience (operator/SAC and shopper-facing) is owned by the **OMS workflow and front-end**, which run the return flow inside the order and surface `returnLogistics` data. Fulfillment exposes the data and integration; OMS/front-end render it.
@@ -13,7 +13,7 @@
 ## Functional requirements
 
 - **FR-001** — Fulfillment MUST resolve available return methods dynamically through the external provider at return initiation time.
-- **FR-002** — The method request MUST carry enough context for provider resolution: order/group, returned items, seller/return destination, shopper address, return reason.
+- **FR-002** — The method request MUST carry enough context for provider resolution: ordergroup, returned items, seller/return destination, shopper address, return reason.
 - **FR-003** — Fulfillment MUST support drop-off location lookup when the selected method requires a physical location, and MUST NOT require it for home pickup when the address is known.
 - **FR-004** — Fulfillment MUST receive and persist provider-generated execution information in `returnLogistics`.
 - **FR-005** — VTEX MUST NOT generate labels/QR/posting/tracking codes.
