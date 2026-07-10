@@ -1,4 +1,4 @@
-# Product Brief — Warehouse: ID do seller + rename inStore→Sales App
+# Product Brief — Warehouse: card "Sellers internos" (ID do seller)
 
 | Field | Value |
 | --- | --- |
@@ -8,23 +8,21 @@
 | **Status** | Draft |
 | **Repo da PR** | [`vtex/admin-logistics`](https://github.com/vtex/admin-logistics) — tela `/admin/shipping-strategy/warehouse` |
 
-**Refs:** [Product Vision sellerType=3](../../product-vision.md) (Key Capability #2) · [Doc API sellerId no warehouse](https://docs.google.com/document/d/1zEt003Q00VVrfvyCX4sYLVjvgFrFnuMLZLoHORVcHGk/edit?tab=t.0#heading=h.o0yjrge1knq) · [Doc VTEX Sales App](https://help.vtex.com/en/docs/tracks/what-is-vtex-sales-app)
+**Refs:** [Product Vision sellerType=3](../../product-vision.md) (Key Capability #2) · [Doc API sellerId no warehouse](https://docs.google.com/document/d/1zEt003Q00VVrfvyCX4sYLVjvgFrFnuMLZLoHORVcHGk/edit?tab=t.0#heading=h.o0yjrge1knq)
 
 ---
 
 ## O que muda
 
-Três alterações na experiência do Admin de Shipping Strategy:
+Duas alterações na experiência do Admin de Shipping Strategy:
 
-**1. Nova config "ID do seller"** — vínculo Warehouse → Seller. **O campo já existe na API**: `sellerId` é body parameter **opcional** no `POST /api/logistics/pvt/configuration/warehouses`. Falta só a UI (mudança 100% front).
+**1. Novo card "Sellers internos" (ID do seller)** — vínculo Warehouse → Seller. **O campo já existe na API**: `sellerId` é body parameter **opcional** no `POST /api/logistics/pvt/configuration/warehouses`. Falta só a UI (mudança 100% front).
 
-O campo é **renderizado condicionalmente**, numa **única versão de UI** com a condicional no front-end:
-- Conta **com sellerType=3 ativo**: o campo **aparece** como **dropdown com busca textual** para selecionar 1 seller pelo account name. A API já valida se o seller está ativo; se o usuário escolher um seller inativo, o save deve retornar o erro da API ("seller escolhido é inativo").
-- Conta **sem sellerType=3**: o campo **não aparece** na tela. Nessas contas o vínculo é sempre a conta principal e não pode ser alterado, então **esconder o campo** (em vez de mostrá-lo desabilitado) evita confundir o cliente com uma configuração que ele não pode mudar.
+O card é **renderizado condicionalmente**, numa **única versão de UI** com a condicional no front-end:
+- Conta **com sellerType=3 ativo**: o card **aparece** com um **dropdown com busca textual** para selecionar 1 seller pelo account name, exibido como "Nome da loja (accountName)". Apenas sellers **ativos** são listados. A API também valida seller inativo; se um inativo chegar ao save, o save retorna o erro da API ("seller escolhido é inativo").
+- Conta **sem sellerType=3**: o card **não aparece** na tela. Nessas contas o vínculo é sempre a conta principal e não pode ser alterado, então **esconder o card** (em vez de mostrá-lo desabilitado) evita confundir o cliente com uma configuração que ele não pode mudar.
 
-**2. Rename "inStore" → "Sales App"** — apenas o **rótulo visível** do card atual "Estoque inStore". Sem mudar chaves nem comportamento. Adicionar hyperlink "Saiba mais sobre o VTEX Sales App" apontando para a [documentação em inglês](https://help.vtex.com/en/docs/tracks/what-is-vtex-sales-app).
-
-**3. Remover `/beta` da URL do Admin** — a rota de Shipping Strategy deve deixar de usar `/admin/shipping-strategy/beta/...` e passar a usar `/admin/shipping-strategy/...`.
+**2. Remover `/beta` da URL do Admin** — a rota de Shipping Strategy deve deixar de usar `/admin/shipping-strategy/beta/...` e passar a usar `/admin/shipping-strategy/...`.
 - Exemplos atuais:
   - `/admin/shipping-strategy/beta/warehouses`
   - `/admin/shipping-strategy/beta/docks`
@@ -41,7 +39,6 @@ O campo é **renderizado condicionalmente**, numa **única versão de UI** com a
 - sellerType=3 ativo: o campo aparece e permite vincular warehouse a um seller pela tela; seller inativo é bloqueado no save pela validação já existente da API.
 - Contas sem sellerType=3: o campo **não é exibido** — nenhuma referência a seller no form.
 - Uma **única versão de UI** cobre os dois casos via condicional no front.
-- Card "inStore" passa a exibir "Sales App".
 - URL do Admin deixa de expor `/beta` nas rotas de Shipping Strategy.
 
 ## Em aberto
