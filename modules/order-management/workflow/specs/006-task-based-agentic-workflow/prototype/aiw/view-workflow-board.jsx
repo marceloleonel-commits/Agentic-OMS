@@ -1,4 +1,4 @@
-/* global React, Icon, IconSparkleFill, IconHandFill, IconPencil, IconCursorFill, IconDragDots, IconDotsSixVertical, IconPlayCircleFill, IconCaretLeftSmall, IconCaretDown, IconCaretUp, IconTrash, IconCheck, IconCube, IconCurrencyCircleDollar, IconNewspaper, IconTruck, AIWData, ChatPanel, ResizableSplit */
+/* global React, Icon, IconSparkleFill, IconHandFill, IconPencil, IconCursorFill, IconDragDots, IconDotsSixVertical, IconPlayCircleFill, IconCaretLeftSmall, IconCaretDown, IconCaretUp, IconTrash, IconCheck, IconCube, IconCurrencyCircleDollar, IconNewspaper, IconTruck, AIWData, ChatPanel, ResizableSplit, IconButton */
 const { useState, useRef, useEffect, useCallback } = React;
 
 /* ---------- Filter Dropdown (rules section) ---------- */
@@ -1795,10 +1795,11 @@ function getStageIconColor(stage) {
 }
 
 // ── Stage header-only card (used in flat view — no task list inside) ──────────
-function StageHeaderCard({ stage, si, stageColor, onChanged, stageDragging, stageDragOver, onStageDragStart, onStageDragOver, onStageDrop, onStageDragEnd }) {
+function StageHeaderCard({ stage, si, stageColor, onChanged, onRemove, stageDragging, stageDragOver, onStageDragStart, onStageDragOver, onStageDrop, onStageDragEnd }) {
   const chatAddingTask  = React.useContext(ChatAddingTaskContext);
   const chatStartAddTask = React.useContext(ChatStartAddTaskContext);
   const [isConfigOpen, setIsConfigOpen] = useState(false);
+  const [confirmRemove, setConfirmRemove] = useState(false);
   const [stageName,    setStageName]    = useState(stage.name ?? "");
   const [responsible,  setResponsible]  = useState("");
   const [stageCategory, setStageCategory] = useState("");
@@ -1827,10 +1828,13 @@ function StageHeaderCard({ stage, si, stageColor, onChanged, stageDragging, stag
       onDrop={onStageDrop}
       onDragEnd={onStageDragEnd}
     >
-      <button
+      <div
         className="stage-flat-card-head"
         onClick={() => setIsConfigOpen(o => !o)}
         title={isConfigOpen ? "Recolher configurações" : "Editar etapa"}
+        role="button"
+        tabIndex={0}
+        onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setIsConfigOpen(o => !o); } }}
       >
         {(() => { const StageIcon = getStageIcon(stage); return (
           <div className="stage-flat-card-indicator" style={{ background: getStageColor(stage), color: getStageIconColor(stage) }}>
@@ -1838,12 +1842,41 @@ function StageHeaderCard({ stage, si, stageColor, onChanged, stageDragging, stag
           </div>
         ); })()}
         <span className="stage-flat-card-name">{stageName}</span>
-        <span className={`stage-flat-card-chevron${isConfigOpen ? " open" : ""}`}>
-          <IconCaretDown size={14} />
-        </span>
-      </button>
+        {isConfigOpen ? (
+          <span className="stage-task-open-btns">
+            <button
+              data-sl-button
+              data-variant="tertiary"
+              data-tone="critical"
+              title="Remover etapa"
+              onClick={e => { e.stopPropagation(); setConfirmRemove(true); }}
+            >
+              <IconTrash size={20} />
+            </button>
+            <button
+              data-sl-button
+              data-variant="secondary"
+              title="Fechar"
+              onClick={e => { e.stopPropagation(); setIsConfigOpen(false); setConfirmRemove(false); }}
+            >
+              <IconCheck size={20} />
+            </button>
+          </span>
+        ) : (
+          <Actions>
+            <CiteBtn text={`[Etapa: ${stageName}]`} />
+            <button
+              className="stage-task-action-btn stage-task-edit-btn"
+              title="Editar etapa"
+              onClick={e => { e.stopPropagation(); setIsConfigOpen(true); }}
+            >
+              <IconPencil size={14} />
+            </button>
+          </Actions>
+        )}
+      </div>
 
-      {isConfigOpen && (
+      {isConfigOpen && !confirmRemove && (
         <div className="stage-task-config">
 
           {/* ── Identificação ── */}
@@ -1962,6 +1995,15 @@ function StageHeaderCard({ stage, si, stageColor, onChanged, stageDragging, stag
           </section>
         </div>
       )}
+      {isConfigOpen && confirmRemove && (
+        <div className="stage-task-config-footer">
+          <span className="stage-task-remove-confirm-text">Remover etapa permanentemente?</span>
+          <button className="btn btn-sm btn-ghost" onClick={() => setConfirmRemove(false)}>Cancelar</button>
+          <button className="btn btn-sm btn-danger" onClick={() => onRemove?.()}>
+            <Icon name="x" size={12} /> Remover
+          </button>
+        </div>
+      )}
 
     </div>
   );
@@ -1985,6 +2027,11 @@ function WorkflowDetailViewFlat({ workflow, onOpenTask, onOpenStage, onOpenSetti
 
   const markDirty = () => onDirtyChange?.(true);
   const clearDirty = () => onDirtyChange?.(false);
+
+  const removeStage = (si) => {
+    setStages(prev => prev.filter((_, i) => i !== si));
+    markDirty();
+  };
 
   // ── Stage drag-and-drop ────────────────────────────────────────────────────
   const [stageDraggingIdx, setStageDraggingIdx] = useState(null);
@@ -2112,15 +2159,12 @@ function WorkflowDetailViewFlat({ workflow, onOpenTask, onOpenStage, onOpenSetti
       <SectionBlock
         title="Etapas"
         actions={
-          <button
-            data-sl-button
-            data-variant="secondary"
+          <IconButton
+            icon={<Icon name="plus" size={16} />}
+            label="Adicionar etapa"
+            variant="secondary"
             onClick={() => chatStartAddStage?.()}
-            title="Adicionar etapa"
-            aria-label="Adicionar etapa"
-          >
-            <Icon name="plus" size={16} />
-          </button>
+          />
         }
       >
         <div className="wf-flat-stages">
@@ -2131,6 +2175,7 @@ function WorkflowDetailViewFlat({ workflow, onOpenTask, onOpenStage, onOpenSetti
                 si={si}
                 stageColor={STAGE_COLORS[si % STAGE_COLORS.length]}
                 onChanged={markDirty}
+                onRemove={() => removeStage(si)}
                 stageDragging={stageDraggingIdx === si}
                 stageDragOver={stageDragOverIdx === si}
                 onStageDragStart={e => handleStageDragStart(e, si)}
@@ -2147,16 +2192,13 @@ function WorkflowDetailViewFlat({ workflow, onOpenTask, onOpenStage, onOpenSetti
       <SectionBlock
         title="Tarefas"
         actions={
-          <button
-            data-sl-button
-            data-variant="secondary"
+          <IconButton
+            icon={<Icon name="plus" size={16} />}
+            label="Adicionar tarefa"
+            variant="secondary"
             disabled={chatAddingTask}
             onClick={() => chatStartAddTask?.(stages[0]?.name)}
-            title="Adicionar tarefa"
-            aria-label="Adicionar tarefa"
-          >
-            <Icon name="plus" size={16} />
-          </button>
+          />
         }
       >
         <div className="wf-flat-tasks" ref={flatViewRef}>
@@ -2504,38 +2546,20 @@ function WorkflowBoardCanvas({
     else if (isDetail) { setDetailHasChanges(false); setMode({ kind: "list" }); }
   };
 
-  let headerLeft;
-  if (isList && showWizard) {
-    headerLeft = (
-      <button className="od-back-link" data-sl-button data-variant="tertiary" data-has-label onClick={back}>
-        <IconCaretLeftSmall size={14} /> Voltar para Gerenciador de Experiências
-      </button>
-    );
-  } else if (isList) {
-    headerLeft = (
-      <>
-        <span className="id-chip">WFB</span>
-        <span className="canvas-name">Gerenciador de Experiências</span>
-      </>
-    );
-  } else if (isDetail) {
-    headerLeft = (
-      <button className="od-back-link" data-sl-button data-variant="tertiary" data-has-label onClick={back}>
-        <IconCaretLeftSmall size={14} /> Voltar para Gerenciador de Experiências
-      </button>
-    );
-  } else {
-    headerLeft = (
-      <button className="od-back-link" data-sl-button data-variant="tertiary" data-has-label onClick={back}>
-        <IconCaretLeftSmall size={14} /> Voltar para {workflow?.name}
-      </button>
-    );
-  }
+  const hasBack = showWizard || isDetail || isTask || isStage || isSettings;
+  const headerTitle = (isDetail || isTask || isStage || isSettings)
+    ? (workflow?.name || "Gerenciador de Experiências")
+    : "Gerenciador de Experiências";
 
   return (
     <div className="detail-panel">
-      <div className="detail-head no-border">
-        <div className="detail-head-left">{headerLeft}</div>
+      <div className="detail-head canvas-topbar" data-sl-canvas-tool-topbar="">
+        {hasBack && (
+          <button className="canvas-topbar-icon" onClick={back} aria-label="Voltar" title="Voltar">
+            <Icon name="chevron-left" size={18} />
+          </button>
+        )}
+        <span className="canvas-topbar-title">{headerTitle}</span>
         <div className="detail-head-right">
           {isList && !showWizard && (() => {
             const activeWfs = AIWData.workflows.filter(w => !w.archived);
@@ -2544,7 +2568,7 @@ function WorkflowBoardCanvas({
               <>
                 <span className="canvas-meta-count"><Icon name="list" size={14} /> {activeWfs.length}</span>
                 <span className="canvas-meta-count"><Icon name="cart" size={14} /> {totalOrders.toLocaleString("pt-BR")}</span>
-                <button className="icon-btn" title="Mais opções"><Icon name="more" size={16} /></button>
+                <button className="canvas-topbar-icon" title="Mais opções"><Icon name="more" size={18} /></button>
               </>
             );
           })()}

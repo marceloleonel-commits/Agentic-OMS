@@ -8,7 +8,8 @@ window.AIWData = (function () {
     leo:  "https://i.pravatar.cc/64?img=15",
     mar:  "https://i.pravatar.cc/64?img=49",
     you:  "https://i.pravatar.cc/64?img=68",
-    cami: "https://i.pravatar.cc/64?img=23"
+    cami: "https://i.pravatar.cc/64?img=23",
+    store: "org-avatar.png"
   };
 
   /* ── Conversations (sidebar history — previously in data.js) ── */
@@ -21,17 +22,35 @@ window.AIWData = (function () {
     { id: "c6", title: "How do I install a new agent?",      pinned: false, hasCanvas: false, preview: "Open the Agent Marketplace..." }
   ];
 
+  /* Overview indicators — v3 home shape (mainMetrics + subMetrics). */
   const kpis = {
-    primary: [
-      { label: "Pedidos Hoje",   value: "3", delta: "50%",  up: true  },
-      { label: "Pedidos Ontem",  value: "1", delta: "50%",  up: false },
-      { label: "Últimos 7 Dias", value: "5", delta: "25%",  up: true  },
-      { label: "Último Ano",     value: "5", delta: "100%", up: true  }
+    mainMetrics: [
+      {
+        label: "Pedidos",
+        value: "5",
+        trend: "25%",
+        trendDirection: "up",
+        chart: {
+          points: [2, 3, 1, 4, 3, 5, 4, 5],
+          comparisonPoints: [3, 2, 2, 3, 2, 3, 3, 4]
+        }
+      },
+      {
+        label: "Total Bruto",
+        value: "R$ 7.756,20",
+        trend: "100%",
+        trendDirection: "up",
+        chart: {
+          points: [1200, 1800, 1400, 3200, 2600, 5400, 4800, 7756],
+          comparisonPoints: [1500, 1300, 1600, 2100, 1900, 2400, 2200, 3800]
+        }
+      }
     ],
-    secondary: [
-      { label: "Pedidos",      value: "5"           },
-      { label: "Ticket Médio", value: "R$ 1.551,24" },
-      { label: "Total Bruto",  value: "R$ 7.756,20" }
+    subMetrics: [
+      { label: "Pedidos Hoje",   value: "3"           },
+      { label: "Pedidos Ontem",  value: "1"           },
+      { label: "Últimos 7 Dias", value: "5"           },
+      { label: "Ticket Médio",   value: "R$ 1.551,24" }
     ]
   };
 
@@ -45,13 +64,72 @@ window.AIWData = (function () {
 
   const tasks = [
 
+    /* ── Canvas A · Bloqueio operacional em massa (Seller não despachou no SLA) ── */
+    {
+      id: "TA-CANVAS-A",
+      priority: "high",
+      status: "attention",
+      title: "Seller não despachou no SLA — Fashion Hub (23 pedidos)",
+      tag: "Seller Center",
+      assigneeInitial: "G",
+      assigneeInitials: "GE",
+      assigneeName: "Gestor de Ecommerce",
+      source: { kind: "order", label: "Seller Center" },
+      canvasPattern: "A",
+      chips: [
+        { icon: "bell",   label: "Notificar seller e abrir exceção"       },
+        { icon: "search", label: "Ver os 23 pedidos afetados"             },
+        { icon: "check",  label: "Aprovar reatribuição dos 14 críticos"   },
+      ],
+      detail: {
+        title: "Seller Fashion Hub — falha de despacho",
+        reportedBy: { agent: "Tarefa gerada por agente", at: "14 jun 2026, 09:42" },
+        severity: "high",
+        assignees: ["Seller Agent", "Order Agent", "Logistics Agent"],
+        scope: "23 pedidos · Seller Fashion Hub · Canal: Site + App",
+        slaRisk: "14 pedidos entregariam hoje",
+        diagnosis: {
+          text: "Seller Fashion Hub não iniciou despacho para 23 pedidos com SLA de entrega em D+1. Último evento registrado: picking_started às 06:12. Nenhum evento de coleta detectado em 4h. Padrão semelhante em 2 ocorrências anteriores (04/06 e 28/05).",
+          confidence: { label: "Média", pct: 74 },
+          gap: "Confirmação do carrier ausente"
+        },
+        suggestedTasks: [
+          { name: "Notificar seller e abrir exceção",                 action: "Run",     primary: true, status: "triage"    },
+          { name: "Reatribuir para seller alternativo (14 críticos)", action: "Aprovar",                status: "attention" },
+          { name: "Notificar clientes com D+1 em risco",              action: "Revisar",                status: "attention" }
+        ],
+        affectedOrders: {
+          total: 23,
+          items: [
+            { id: "v-PRD-00812", sla: "D+1 hoje · sem coleta",       seller: "Fashion Hub", eta: "14/06/2026" },
+            { id: "v-PRD-00811", sla: "D+1 hoje · sem coleta",       seller: "Fashion Hub", eta: "14/06/2026" },
+            { id: "v-PRD-00798", sla: "D+2 amanhã · picking parado", seller: "Fashion Hub", eta: "15/06/2026" }
+          ]
+        },
+        activities: [
+          { time: "06:12", actor: "Order Agent",     agent: true, action: "registrou picking_started para 23 pedidos do Seller Fashion Hub" },
+          { time: "09:12", actor: "Logistics Agent", agent: true, action: "não detectou evento carrier_collected após 3h de picking", note: "SLA de entrega D+1 entrou em risco para o cluster." },
+          { time: "09:40", actor: "Order Agent",     agent: true, action: "agrupou os 23 pedidos por causa raiz — ausência de coleta do carrier" },
+          { time: "09:41", actor: "Allocation Agent",agent: true, action: "isolou os 14 pedidos com SLA hoje e preparou proposta de reatribuição", note: "Reatribuição excede a política automática — marcada como 'requer aprovação'." },
+          { time: "09:42", actor: "Order Management Assistant", agent: true, action: "gerou esta tarefa com 3 ações sugeridas" }
+        ],
+        chat: [
+          { from: "agent", text: "Identifiquei um cluster de 23 pedidos do Seller Fashion Hub sem evento de coleta há mais de 4h — 14 deles têm SLA de entrega hoje." },
+          { from: "agent", text: "Já preparei 3 ações sugeridas no canvas. A notificação ao seller é segura para execução direta; a reatribuição dos 14 críticos precisa da sua aprovação. Quer que eu comece pela notificação?" }
+        ]
+      }
+    },
+
     /* ── TA-1 · Interromper separação — cancelamento ObraMax ── */
     {
       id: "TA431435",
       priority: "high",
+      status: "attention",
       title: "Picking ativo com sinal de cancelamento — interromper separação físicamente",
       tag: "Cancelamento",
       assigneeInitial: "G",
+      assigneeInitials: "GV",
+      source: { kind: "order", label: "Cancelamento" },
       chips: [
         { icon: "check",  label: "Confirmar parada do Picking no WMS"    },
         { icon: "x",      label: "Iniciar estorno de estoque"             },
@@ -95,9 +173,12 @@ window.AIWData = (function () {
     {
       id: "TA431436",
       priority: "high",
+      status: "attention",
       title: "SLA em risco: Packing + NF-e virtual pendentes com ~4h restantes",
       tag: "Risco de SLA",
       assigneeInitial: "M",
+      assigneeInitials: "MA",
+      source: { kind: "order", label: "Risco de SLA" },
       chips: [
         { icon: "clock",   label: "Priorizar pedido na fila WMS"              },
         { icon: "sparkle", label: "Desbloquear NF-e produto virtual"           },
@@ -141,9 +222,12 @@ window.AIWData = (function () {
     {
       id: "TA431437",
       priority: "medium",
+      status: "active",
       title: "Cliente notificado há 2h+ e ainda não fez check-in para retirada BOPIS",
       tag: "BOPIS · Retirada na Loja",
       assigneeInitial: "A",
+      assigneeInitials: "AF",
+      source: { kind: "order", label: "BOPIS · Retirada na Loja" },
       chips: [
         { icon: "check",   label: "Confirmar prontidão da loja C&A Botafogo"   },
         { icon: "send",    label: "Reenviar notificação ao cliente agora"       },
@@ -186,7 +270,10 @@ window.AIWData = (function () {
       priority: "low",
       title: "Postagem reversa aguardada há +24h sem confirmação do cliente",
       tag: "Logística Reversa",
+      status: "active",
       assigneeInitial: "R",
+      assigneeInitials: "RC",
+      source: { kind: "order", label: "Logística Reversa" },
       chips: [
         { icon: "send",    label: "Reenviar etiqueta reversa ao cliente"        },
         { icon: "chat",    label: "Sugerir texto de follow-up para CS"          },
@@ -231,7 +318,10 @@ window.AIWData = (function () {
       priority: "high",
       title: "Receita médica não validada — lente especial bloqueada para fabricação",
       tag: "Compliance",
+      status: "attention",
       assigneeInitial: "A",
+      assigneeInitials: "AS",
+      source: { kind: "order", label: "Compliance" },
       chips: [
         { icon: "check",  label: "Verificar anexo enviado pelo cliente" },
         { icon: "check",  label: "Validar dados técnicos da prescrição" },
@@ -1095,13 +1185,105 @@ window.AIWData = (function () {
 
   ];
 
+  /* ── My Tasks — kanban mock (Minhas Tarefas) ── */
+  const myTasks = [
+    /* ── Em aberto (triage) ── */
+    { id: "TSK-101", title: "Validar regra de frete grátis para pedidos acima de R$ 299", status: "triage", source: { kind: "initiative", label: "IN6268" }, assigneeInitials: "JD", assigneeName: "John Davis" },
+    { id: "TSK-102", title: "Sincronizar sinônimos de busca para coleção Verão 2026", status: "triage", source: { kind: "initiative", label: "IN6270" }, assigneeInitials: "AC", assigneeName: "Ana Costa" },
+    { id: "TSK-103", title: "Revisar metas de conversão da campanha Q2", status: "triage", source: { kind: "campaign", label: "Campanha Q2" }, assigneeInitials: "BS", assigneeName: "Bruno Silva" },
+    { id: "TSK-104", title: "Auditar estoque mínimo de SKUs em promoção relâmpago", status: "triage", source: { kind: "order", label: "Pedido 1631808945" }, assigneeInitials: "ML", assigneeName: "Michael Lee" },
+    /* ── Trabalhando (active) ── */
+    { id: "TSK-201", title: "Implementar teste A/B na vitrine de eletrônicos", status: "active", source: { kind: "content", label: "Vitrine Eletrônicos" }, assigneeInitials: "SM", assigneeName: "Sofia Martins" },
+    { id: "TSK-202", title: "Ajustar recomendações da vitrine para usuários recorrentes", status: "active", source: { kind: "initiative", label: "IN6281" }, assigneeInitials: "PA", assigneeName: "Pedro Alves" },
+    { id: "TSK-203", title: "Configurar gatilho de reengajamento após abandono de carrinho", status: "active", source: { kind: "campaign", label: "Black Friday" }, assigneeInitials: "LM", assigneeName: "Lucas Moura" },
+    /* ── Aguardando ação (attention) ── */
+    { id: "TSK-301", title: "Aprovar descrição de produto gerada pelo agente de conteúdo", status: "attention", source: { kind: "content", label: "Conteúdo" }, assigneeInitials: "YO", assigneeName: "You" },
+    { id: "TSK-302", title: "Revisar proposta de precificação dinâmica — aguarda aprovação", status: "attention", source: { kind: "initiative", label: "IN6280" }, assigneeInitials: "YO", assigneeName: "You" },
+    { id: "TSK-303", title: "Confirmar criação de bundle de kits de presente — Natal 2026", status: "attention", source: { kind: "campaign", label: "Natal 2026" }, assigneeInitials: "YO", assigneeName: "You" },
+    /* ── Concluído (completed) ── */
+    { id: "TSK-401", title: "Publicar workflow de devolução express (< 48h)", status: "completed", source: { kind: "initiative", label: "IN6265" }, assigneeInitials: "RA", assigneeName: "Rita Almeida" },
+    { id: "TSK-402", title: "Migrar catálogo legado — categorias raiz aprovadas", status: "completed", source: { kind: "content", label: "Catálogo" }, assigneeInitials: "TN", assigneeName: "Tiago Nunes" },
+    { id: "TSK-403", title: "Ativar notificação de reposição de estoque via WhatsApp", status: "completed", source: { kind: "order", label: "Pedido 163908412" }, assigneeInitials: "CF", assigneeName: "Carla Fontes" },
+  ];
+
   const resources = [
     { id: "all-orders",    icon: "grid",    label: "Todos os pedidos",    sub: "4.256 pedidos · 13 filtros AI ativos" },
     { id: "workflow-board",icon: "board",   label: "Workflow Board",      sub: workflows.length + " workflows · Padrão e customizados" },
     { id: "orchestration", icon: "sparkle", label: "Agentes de Pedidos",  sub: "Ativo · 4.256 pedidos monitorados" }
   ];
 
-  return { AVATARS, conversations, kpis, workflowStages, tasks, resources, workflows, wfCategories, aiTeam, orders, libraryWfs, stageSuggestions, taskSuggestions };
+  /* ── My Initiatives (v3 parity) ── */
+  const initiatives = [
+    { id: "INI-201", title: "Reduzir cancelamentos por ruptura de estoque", status: "active",    source: { kind: "initiative", label: "Operação" },   owner: "Guilherme Vecchi", ownerInitials: "GV", tasksTotal: 8, tasksDone: 3, updated: "há 2h" },
+    { id: "INI-202", title: "Acelerar SLA de Packing em pedidos BOPIS",      status: "attention", source: { kind: "initiative", label: "Logística" },   owner: "Marina Alves",     ownerInitials: "MA", tasksTotal: 6, tasksDone: 1, updated: "há 40min" },
+    { id: "INI-203", title: "Automatizar coleta reversa de devoluções",      status: "active",    source: { kind: "initiative", label: "Pós-venda" },   owner: "Ana Costa",        ownerInitials: "AC", tasksTotal: 5, tasksDone: 4, updated: "ontem" },
+    { id: "INI-204", title: "Migração do catálogo legado para Shoreline",    status: "active",    source: { kind: "content",    label: "Catálogo" },    owner: "Tiago Nunes",      ownerInitials: "TN", tasksTotal: 12, tasksDone: 9, updated: "há 3 dias" },
+    { id: "INI-205", title: "Campanha de reposição via WhatsApp",            status: "completed", source: { kind: "campaign",    label: "Marketing" },   owner: "Carla Fontes",     ownerInitials: "CF", tasksTotal: 4, tasksDone: 4, updated: "há 1 semana" },
+  ];
+
+  /* ── Home (preview) — situation-room dashboard, ported from Canvas-Wireframes ──
+     Ambiente isolado: não é referenciado por nenhuma view existente, então não
+     influencia a home "orders" atual. Acessível em #/home-preview. ── */
+  const opsHome = {
+    kpis: [
+      { label: "Pedidos afetados agora", value: "47", delta: { direction: "down", text: "12 desde ontem" } },
+      { label: "Ocorrências abertas",    value: "8",  note: "3 com severidade alta" },
+      { label: "Decisões pendentes",     value: "15", note: "Tempo médio: 2h40" },
+      { label: "Tarefas autônomas hoje", value: "132", link: { label: "Ver log" } },
+    ],
+    occurrences: [
+      {
+        id: "OCC-1", title: "Devoluções fora da política", category: "Seller X · Devolução",
+        severity: "high", orders: 8, tasksDone: 2, tasksTotal: 3,
+        assignee: { initial: "AN", name: "Ana" },
+      },
+      {
+        id: "OCC-2", title: "Seller não despachou no SLA", category: "Marketplace · Logística",
+        severity: "medium", orders: 23, tasksDone: 1, tasksTotal: 2,
+        assignee: { initial: "PA", name: "Paulo" },
+        taskId: "TA-CANVAS-A",
+      },
+      {
+        id: "OCC-3", title: "Conflito entre políticas de reembolso", category: "Corner case · Pagamento",
+        severity: "high", orders: 1, tasksDone: 0, tasksTotal: 2,
+        assignee: { initial: "SU", name: "Supervisor" },
+      },
+    ],
+    decisions: [
+      { id: "DEC-1", title: "Aprovar reembolso — pedido #1234",              waiting: "1h20" },
+      { id: "DEC-2", title: "Exceção comercial — pedido #1198",              waiting: "3h05" },
+      { id: "DEC-3", title: "Confirmar cancelamento — pedido #1276",         waiting: "22min" },
+      { id: "DEC-4", title: "Aprovar troca de transportadora — pedido #1301", waiting: "40min" },
+      { id: "DEC-5", title: "Revisar limite de reembolso automático",        waiting: "5h10" },
+    ],
+    digest: {
+      tasksCount: 132, decisionsCount: 15, anomaliesCount: 3,
+      summary: "132 tarefas autônomas · 15 decisões humanas · 3 anomalias",
+    },
+  };
+
+  /* ── Home (preview) — variante "fila unificada": ocorrências e tarefas
+     misturadas na mesma lista, ordenadas por severidade. Dataset isolado —
+     não referencia nem altera `opsHome`. Acessível em #/home-queue. ── */
+  const opsHomeQueue = {
+    kpis: [
+      { label: "Pedidos afetados agora", value: "47",  delta: { direction: "down", text: "12 desde ontem" } },
+      { label: "Itens na fila agora",    value: "23",  note: "8 ocorrências · 15 tarefas" },
+      { label: "Tarefas autônomas hoje", value: "132", link: { label: "Ver log" } },
+    ],
+    items: [
+      { id: "Q-1", kind: "occurrence", severity: "high",   title: "Devoluções fora da política — Seller X", sub: "8 pedidos · 2 de 3 tarefas concluídas",  assignee: { initial: "AN", name: "Ana" } },
+      { id: "Q-2", kind: "occurrence", severity: "high",   title: "Conflito entre políticas de reembolso",   sub: "1 pedido · 0 de 2 tarefas concluídas",   assignee: { initial: "SU", name: "Supervisor" } },
+      { id: "Q-3", kind: "task",       severity: "high",   title: "Confirmar cancelamento — pedido #1301",   sub: "Aguardando há 22min" },
+      { id: "Q-4", kind: "occurrence", severity: "medium", title: "Seller não despachou no SLA",             sub: "23 pedidos · 1 de 2 tarefas concluídas", assignee: { initial: "PA", name: "Paulo" }, taskId: "TA-CANVAS-A" },
+      { id: "Q-5", kind: "task",       severity: "medium", title: "Aprovar reembolso — pedido #1234",        sub: "Aguardando há 1h20" },
+      { id: "Q-6", kind: "task",       severity: "medium", title: "Exceção comercial — pedido #1198",        sub: "Aguardando há 3h05" },
+      { id: "Q-7", kind: "task",       severity: "low",    title: "Aprovar troca de transportadora — pedido #1276", sub: "Aguardando há 40min" },
+      { id: "Q-8", kind: "task",       severity: "low",    title: "Revisar limite de reembolso automático",  sub: "Aguardando há 5h10" },
+    ],
+  };
+
+  return { AVATARS, conversations, kpis, workflowStages, tasks, myTasks, resources, workflows, wfCategories, aiTeam, orders, libraryWfs, stageSuggestions, taskSuggestions, initiatives, opsHome, opsHomeQueue };
 })();
 
 /* ── AppData alias — keeps sidebar.jsx and app.jsx working without changes ── */

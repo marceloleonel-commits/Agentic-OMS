@@ -60,30 +60,129 @@ function StatusSegmented({ value, onChange }) {
   );
 }
 
-function SubTaskRow({ t, runnable }) {
-  let icon;
-  if (t.state === "loading") icon = <span className="spinner" />;else
-  if (t.state === "attention") icon = <span className="task-pending" />;else
-  icon = <Icon name="check" size={13} />;
+/* Status leading icon — v3 InitiativeTaskStatusLeading (working dots / attention / check / ring) */
+function SubTaskStatusIcon({ status }) {
+  if (status === "active") return <DocWorkingDots size={20} />;
+  if (status === "attention") {
+    return (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
+        <circle cx="8" cy="8" r="8" fill="#B6DFFF" />
+        <circle cx="8" cy="8" r="4" fill="#1E4EE5" />
+      </svg>
+    );
+  }
+  if (status === "completed") {
+    return (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
+        <circle cx="8" cy="8" r="8" fill="#AFF79E" />
+        <path d="M5 8.2l2 2 4-4.2" stroke="#28BC37" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+      </svg>
+    );
+  }
   return (
-    <div className="canvas-task-row">
-      <div className="canvas-task-left">
-        {runnable ?
-        <button className="task-run-btn" title="Run task">
-            <Icon name="play" size={10} />
-          </button> :
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
+      <circle cx="8" cy="8" r="7" stroke="#1E4EE5" strokeWidth="1.6" fill="none" />
+    </svg>
+  );
+}
 
-        <span className="canvas-task-state">{icon}</span>
-        }
-        <span className="canvas-task-title">{t.title}</span>
-      </div>
-      <button className="assignee-pill">
-        <PersonAvatar initial={t.initial} agent={t.agent} />
-        <span>{t.assignee}</span>
+/* Assignee options (prototype) — agents + operational roles. */
+const ASSIGNEE_OPTIONS = [
+  { name: "Orchestration Agent", agent: true },
+  { name: "SLA Monitor Agent", agent: true },
+  { name: "Returns Agent", agent: true },
+  { name: "WMS Operator", initial: "G" },
+  { name: "Fiscal Service", initial: "M" },
+  { name: "Operador Loja", initial: "A" },
+];
+
+/* Assignee pill + v3 dropdown (Dropdown component parity). */
+function AssigneePill({ assignee, initial, agent }) {
+  const [open, setOpen] = useState(false);
+  const [current, setCurrent] = useState({ name: assignee, initial, agent: !!agent });
+  const wrapRef = useRef(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDocClick = (e) => { if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false); };
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, [open]);
+
+  const options = ASSIGNEE_OPTIONS.some((o) => o.name === current.name)
+    ? ASSIGNEE_OPTIONS
+    : [{ name: current.name, initial: current.initial, agent: current.agent }, ...ASSIGNEE_OPTIONS];
+
+  return (
+    <div className="assignee-pill-wrap" ref={wrapRef}>
+      <button
+        type="button"
+        className={`assignee-pill${open ? " open" : ""}`}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onClick={() => setOpen((o) => !o)}
+      >
+        <PersonAvatar initial={current.initial} agent={current.agent} />
+        <span className="assignee-pill-name">{current.name}</span>
         <Icon name="chevron-down" size={12} />
       </button>
-    </div>);
+      {open && (
+        <div className="assignee-menu" role="menu">
+          {options.map((o, i) => (
+            <button
+              key={i}
+              type="button"
+              className={`assignee-menu-item${o.name === current.name ? " selected" : ""}`}
+              role="menuitem"
+              onClick={() => { setCurrent(o); setOpen(false); }}
+            >
+              <PersonAvatar initial={o.initial} agent={o.agent} />
+              <span className="assignee-menu-name">{o.name}</span>
+              {o.name === current.name && <Icon name="check" size={14} />}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
+/* Task row — v3 initiative task pattern: status leading + execute button (triage). */
+function SubTaskRow({ t, runnable }) {
+  const status =
+    t.state === "loading"     ? "active" :
+    t.state === "attention"   ? "attention" :
+    t.state === "done"        ? "completed" :
+    "triage";
+
+  // Executar (botão da iniciativa): tarefas de follow-up acionáveis (não em execução / concluídas).
+  const showExecute = runnable && status !== "active" && status !== "completed";
+
+  return (
+    <div className="canvas-task-row">
+      <div className="canvas-task-left" data-sl-initiative-tasks-row-left="">
+        {showExecute ? (
+          <span data-sl-initiative-tasks-execute-ring-wrap="">
+            <button
+              type="button"
+              className="initiative-task-execute"
+              data-sl-initiative-tasks-execute=""
+              title="Executar task"
+              aria-label="Executar task"
+            >
+              <Icon name="send" size={14} />
+            </button>
+          </span>
+        ) : (
+          <span data-sl-initiative-tasks-status-slot="">
+            <SubTaskStatusIcon status={status} />
+          </span>
+        )}
+        <span className="canvas-task-title">{t.title}</span>
+      </div>
+      <AssigneePill assignee={t.assignee} initial={t.initial} agent={t.agent} />
+    </div>
+  );
 }
 
 /* ---------- Order detail sub-view ---------- */
@@ -718,8 +817,24 @@ function PackageCard({ group, index, order, onOpenProduct }) {
     (group.items || []).reduce((sum, item) => sum + parseBRL(item.price) * (item.qty || 1), 0)
   );
 
-  // Delivery date from order
-  const deliveryDate = order && order.eta ? order.eta : "—";
+  // Delivery date: prefer explicit eta, then derive from the last completed step
+  // of the delivery group (current group, or sibling delivery group for returns)
+  function deriveDeliveryDate() {
+    if (order && order.eta && order.eta !== "—") return order.eta;
+    const targetGroup = (isReturn && order && order.itemGroups)
+      ? order.itemGroups.find(g => g.fulfillmentType === "delivery")
+      : group;
+    if (targetGroup && targetGroup.items) {
+      for (const it of targetGroup.items) {
+        if (it.steps && it.steps.length > 0) {
+          const lastDone = [...it.steps].reverse().find(s => s.status === "done" && s.time);
+          if (lastDone) return lastDone.time.split(" ")[0];
+        }
+      }
+    }
+    return "—";
+  }
+  const deliveryDate = deriveDeliveryDate();
   const soldBy = order && order.seller ? order.seller : "—";
   const shippedBy = group.supplier || "—";
 
@@ -742,6 +857,7 @@ function PackageCard({ group, index, order, onOpenProduct }) {
           <span className="pkg-stage-badge" style={{ background: stageBg, color: stageColor }}>
             {stageLabel}
           </span>
+          <span className="pkg-wf-badge">{experienceName}</span>
         </div>
         <div className="pkg-header-right">
           <button className="pkg-collapse-btn" onClick={() => setOpen(o => !o)} aria-label={open ? "Recolher" : "Expandir"}>
@@ -767,7 +883,7 @@ function PackageCard({ group, index, order, onOpenProduct }) {
             </div>
             <div className="pkg-meta-sep" />
             <div className="pkg-meta-field">
-              <span className="pkg-meta-key">{experienceName} by:</span>
+              <span className="pkg-meta-key">Delivered by</span>
               <span className="pkg-meta-val">{shippedBy}</span>
             </div>
           </div>
@@ -1161,20 +1277,20 @@ function OrderDetailView({ task, orderId, onBack, onOpenOrder, standalone = fals
       {/* Order metadata */}
       {(() => {
         const STATUS_MAP = {
-          processing: { label: "Em andamento",    dot: "#08A822", bg: "#E9FCE3" },
-          invoiced:   { label: "Em andamento",    dot: "#08A822", bg: "#E9FCE3" },
-          return:     { label: "Ação Necessária", dot: "#C2410C", bg: "#FFF7ED" },
-          error:      { label: "Com erro",        dot: "#DC2626", bg: "#FEF2F2" },
-          complete:   { label: "Resolvido",       dot: "#059669", bg: "#F0FDF4" },
-          canceled:   { label: "Cancelado",       dot: "#6B7280", bg: "#F3F4F6" },
+          processing: { label: "Em andamento",    dot: "#6B7280", bg: "#F3F4F6", color: "#374151" },
+          invoiced:   { label: "Em andamento",    dot: "#6B7280", bg: "#F3F4F6", color: "#374151" },
+          return:     { label: "Ação Necessária", dot: "#6B7280", bg: "#F3F4F6", color: "#374151" },
+          error:      { label: "Com erro",        dot: "#6B7280", bg: "#F3F4F6", color: "#374151" },
+          complete:   { label: "Resolvido",       dot: "#6B7280", bg: "#F3F4F6", color: "#374151" },
+          canceled:   { label: "Cancelado",       dot: "#6B7280", bg: "#F3F4F6", color: "#374151" },
         };
-        const statusInfo = (fullOrder && STATUS_MAP[fullOrder.status]) || { label: "Em andamento", dot: "#08A822", bg: "#E9FCE3" };
+        const statusInfo = (fullOrder && STATUS_MAP[fullOrder.status]) || { label: "Em andamento", dot: "#6B7280", bg: "#F3F4F6", color: "#374151" };
 
         return (
           <dl className="detail-fields od-meta">
             <dt>Status</dt>
             <dd>
-              <span className="od-status-pill" style={{ background: statusInfo.bg }}>
+              <span className="od-status-pill" style={{ background: statusInfo.bg, color: statusInfo.color }}>
                 <span className="status-dot" style={{ background: statusInfo.dot }} />
                 {statusInfo.label}
               </span>
@@ -1287,154 +1403,500 @@ function OrderDetailView({ task, orderId, onBack, onOpenOrder, standalone = fals
 
 }
 
-function TaskCanvasMain({ task, status, setStatus, onOpenOrder }) {
-  const d = task.detail;
+/* ════════════════════════════════════════════════════════════
+   Task Document (v3 port: TaskDocument + accordion sections)
+   ════════════════════════════════════════════════════════════ */
+
+const DOC_LIST_MAX = 4;
+
+/* Working dots — v3 active status (snake) */
+const DOC_DOTS_AXIS = [6, 12, 18];
+const DOC_DOTS_GRID = DOC_DOTS_AXIS.flatMap((cy) => DOC_DOTS_AXIS.map((cx) => ({ cx, cy })));
+const DOC_DOTS_SNAKE = [0, 1, 2, 5, 4, 3, 6, 7, 8];
+
+function DocWorkingDots({ size = 20 }) {
+  const [head, setHead] = useState(0);
+  useEffect(() => {
+    const id = window.setInterval(
+      () => setHead((h) => (h + 1) % DOC_DOTS_SNAKE.length),
+      200
+    );
+    return () => window.clearInterval(id);
+  }, []);
+  const visible = new Set();
+  for (let o = 0; o < 4; o++) {
+    visible.add(DOC_DOTS_SNAKE[(head - o + DOC_DOTS_SNAKE.length * 8) % DOC_DOTS_SNAKE.length]);
+  }
   return (
-    <React.Fragment>
-      <h1 className="detail-title">{d.title}</h1>
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden data-sl-doc-working-dots="">
+      {DOC_DOTS_GRID.map((dt, i) => (
+        <circle key={i} cx={dt.cx} cy={dt.cy} r="1.5" data-on={visible.has(i) ? "" : undefined} />
+      ))}
+    </svg>
+  );
+}
 
-      <dl className="detail-fields">
-        <dt>Atribuído a</dt>
-        <dd>
-          <span className="lead-pill">
-            <PersonAvatar initial={d.attributedTo.initial} />
-            <span>{d.attributedTo.name}</span>
-            <Icon name="chevron-down" size={12} />
-          </span>
-        </dd>
+const TASK_STATUS_LABEL = {
+  triage: "Em aberto",
+  active: "Em execução",
+  attention: "Requer atenção",
+  completed: "Concluído",
+};
 
-        <dt>Status</dt>
-        <dd><StatusSegmented value={status} onChange={setStatus} /></dd>
+/* v3 status: working dots (active) · label (attention/completed) · executar (triage) */
+function TaskDocStatus({ status, onExecute }) {
+  if (status === "triage") {
+    return (
+      <button data-sl-doc-execute-task="" onClick={onExecute}>
+        Executar task
+      </button>
+    );
+  }
+  return (
+    <span data-sl-doc-status="" data-status={status}>
+      {status === "active" && <DocWorkingDots size={20} />}
+      {status === "attention" && (
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden>
+          <circle cx="8" cy="8" r="8" fill="#B6DFFF" />
+          <circle cx="8" cy="8" r="4" fill="#1E4EE5" />
+        </svg>
+      )}
+      {status === "completed" && <Icon name="check" size={14} />}
+      <span data-sl-doc-status-label="">{TASK_STATUS_LABEL[status] || status}</span>
+    </span>
+  );
+}
 
-        <dt>Severidade</dt>
-        <dd><SevPill level={d.severity} /></dd>
+/* Metadata row: label (10rem) + value */
+function DocMetaRow({ label, children }) {
+  return (
+    <div data-sl-doc-meta-row="">
+      <span data-sl-initiative-metadata-label="">{label}</span>
+      <div data-sl-initiative-metadata-value="">{children}</div>
+    </div>
+  );
+}
 
-        <dt>Reportado por</dt>
-        <dd>
-          <span className="reporter">
-            <span className="reporter-emoji" style={{ background: "linear-gradient(135deg,#9747FF,#FF3D6E)", color: "#fff" }}>
-              <Icon name="sparkle" size={11} />
-            </span>
-            <span><b>{d.reportedBy.agent}</b> em {d.reportedBy.at}</span>
-          </span>
-        </dd>
+/* Accordion section — v3 InitiativeDocumentAccordionSection (defaultOpen).
+   Optional `count` badge next to the title and a `loadingMs` skeleton phase
+   (shown the first time the section is opened, to simulate an agent query). */
+function DocAccordionSection({ title, defaultOpen = true, count, loadingMs = 0, skeleton, children }) {
+  const [open, setOpen] = useState(defaultOpen);
+  const [loaded, setLoaded] = useState(!loadingMs || defaultOpen);
+  const [loading, setLoading] = useState(false);
+  const timerRef = useRef(null);
 
-        <dt>Resumo</dt>
-        <dd style={{ alignItems: "flex-start" }}><span style={{ lineHeight: 1.55 }}>{d.summary}</span></dd>
-      </dl>
+  useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current); }, []);
 
-      <section className="detail-section flush">
-        <div className="detail-section-head"><h3>Diagnóstico</h3></div>
-        <p className="detail-section-body">{d.diagnosis}</p>
-      </section>
+  const toggle = () => {
+    const next = !open;
+    setOpen(next);
+    if (next && loadingMs && !loaded) {
+      setLoading(true);
+      timerRef.current = setTimeout(() => { setLoading(false); setLoaded(true); }, loadingMs);
+    }
+  };
 
-      <section className="detail-section flush">
-        <div className="detail-section-head"><h3>Tarefas</h3></div>
-        <div className="canvas-tasks-card">
-          <div className="canvas-tasks-head"><span>Tarefas de follow-up</span><span>Responsável</span></div>
-          {d.followUp.map((t, i) =>
-            <React.Fragment key={`fu-${i}`}>
-              {i > 0 && <div className="canvas-tasks-row-divider" />}
-              <SubTaskRow t={t} runnable />
-            </React.Fragment>
-          )}
-          <div className="canvas-tasks-group-divider" />
-          <div className="canvas-tasks-head"><span>Tarefas anteriores / resolvidas</span><span>Responsável</span></div>
-          {d.resolved.map((t, i) =>
-            <React.Fragment key={`rs-${i}`}>
-              {i > 0 && <div className="canvas-tasks-row-divider" />}
-              <SubTaskRow t={t} />
-            </React.Fragment>
-          )}
-        </div>
-      </section>
+  return (
+    <div data-sl-doc-accordion-section="" data-open={open ? "" : undefined}>
+      <button data-sl-doc-accordion-trigger="" onClick={toggle} aria-expanded={open}>
+        <span data-sl-doc-section-title="">
+          {title}
+          {typeof count === "number" && <span data-sl-doc-section-count="">{count}</span>}
+        </span>
+        <svg
+          data-sl-doc-accordion-chevron=""
+          viewBox="0 0 16 16"
+          width="16"
+          height="16"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          style={{ transform: open ? "rotate(0deg)" : "rotate(-90deg)" }}
+        >
+          <path d="M4 6l4 4 4-4" />
+        </svg>
+      </button>
+      {open && <div data-sl-doc-accordion-panel="">{loading ? (skeleton || null) : children}</div>}
+    </div>
+  );
+}
 
-      <section className="detail-section flush">
-        <div className="detail-section-head" style={{ justifyContent: "space-between" }}>
-          <h3>Pedidos impactados</h3>
-          <button className="icon-btn"><Icon name="arrow-up-right" size={14} /></button>
-        </div>
-        <div className="impacted-table">
-          <div className="impacted-thead">
-            <span>ID do pedido</span>
-            <span>SLA restante</span>
-            <span>Seller / Localização</span>
-            <span>Entrega estimada</span>
-          </div>
-          {d.impacted.map((o, i) =>
-            <button key={i} className="impacted-row" onClick={() => onOpenOrder(o.id)}>
-              <span className="impacted-id">{o.id}</span>
-              <span>{o.sla}</span>
-              <span>{o.seller}</span>
-              <span>{o.eta}</span>
-            </button>
-          )}
-        </div>
-      </section>
+function DocSeeAll({ count, onClick }) {
+  return (
+    <button data-sl-doc-see-all="" onClick={onClick}>
+      Ver todos ({count}) <Icon name="chevron-right" size={12} />
+    </button>
+  );
+}
 
-      <section className="detail-section flush">
-        <div className="detail-section-head"><h3>Atividades</h3></div>
-        <div className="activities">
-          {d.activities.map((a, i) =>
-            <div key={i} className="activity-row">
-              <span className="activity-time">{a.time}</span>
-              <div className="activity-body">
-                <div className="activity-head">
+/* Reusable list renderers (shared by capped section + full subview) */
+function ImpactedTable({ rows, onOpenOrder }) {
+  return (
+    <div className="impacted-table">
+      <div className="impacted-thead">
+        <span>ID do pedido</span>
+        <span>SLA restante</span>
+        <span>Seller / Localização</span>
+        <span>Entrega estimada</span>
+      </div>
+      {rows.map((o, i) => (
+        <button key={i} className="impacted-row" onClick={() => onOpenOrder(o.id)}>
+          <span className="impacted-id">{o.id}</span>
+          <span>{o.sla}</span>
+          <span>{o.seller}</span>
+          <span>{o.eta}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/* Activities — v3 activity-feed/timeline port (data-sl-activity-list).
+   Layout: [avatar] [text box]. Text (name · action · time) wraps inside its
+   own column and never flows under the avatar. */
+function ActivitiesList({ items }) {
+  return (
+    <div data-sl-timeline="" data-sl-activity-list="">
+      {items.map((a, i) => (
+        <div key={i} data-sl-timeline-item="">
+          <span data-sl-timeline-icon="" data-variant={a.agent ? "ai" : "default"} aria-hidden="true" />
+          <div data-sl-timeline-content="">
+            <span data-sl-timeline-action="">
+              {a.actor && (
+                <span data-sl-timeline-action-avatar="">
                   <PersonAvatar initial={a.initial} agent={a.agent} />
-                  <span>
-                    <strong>{a.actor}</strong> <span className="muted">{a.action}</span>
-                  </span>
-                </div>
-                {a.note && <div className="activity-note">{a.note}</div>}
-              </div>
-            </div>
-          )}
+                </span>
+              )}
+              <span data-sl-timeline-action-body="">
+                {a.actor && <span data-sl-timeline-action-name="">{a.actor}</span>}
+                {a.actor && " "}
+                <span data-sl-timeline-action-text="">{a.action}</span>
+                {" "}
+                <span data-sl-timeline-action-time="">em {a.time}</span>
+              </span>
+            </span>
+          </div>
+          {a.note && <div data-sl-timeline-note="">{a.note}</div>}
         </div>
-      </section>
+      ))}
+    </div>
+  );
+}
 
-      <div style={{ height: 40 }} />
-    </React.Fragment>
+/* Skeleton shown while the agent "queries" the activity log. */
+function ActivitiesSkeleton({ rows = 3 }) {
+  return (
+    <div data-sl-activities-skeleton="" aria-hidden="true">
+      <div className="act-skeleton-hint">
+        <span className="act-skeleton-spinner" />
+        Consultando atividades…
+      </div>
+      {Array.from({ length: rows }).map((_, i) => (
+        <div key={i} className="act-skeleton-row">
+          <span className="act-skeleton-avatar sk-shimmer" />
+          <span className="act-skeleton-lines">
+            <span className="act-skeleton-line sk-shimmer" style={{ width: "72%" }} />
+            <span className="act-skeleton-line sk-shimmer" style={{ width: "44%" }} />
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* Full-list subview (v3: "ver a lista em outro nível") */
+function TaskListSubview({ kind, task, onOpenOrder }) {
+  const d = task.detail;
+  if (kind === "impacted") {
+    const isCanvasA = task.canvasPattern === "A";
+    const rows = isCanvasA ? (d.affectedOrders?.items || []) : d.impacted;
+    return (
+      <div data-sl-task-document-content="">
+        <h1 data-sl-task-document-title="">Pedidos {isCanvasA ? "afetados" : "impactados"}</h1>
+        <ImpactedTable rows={rows} onOpenOrder={isCanvasA ? (() => {}) : onOpenOrder} />
+      </div>
+    );
+  }
+  return (
+    <div data-sl-task-document-content="">
+      <h1 data-sl-task-document-title="">Atividades</h1>
+      <ActivitiesList items={d.activities} />
+    </div>
+  );
+}
+
+function TaskCanvasMain({ task, onOpenOrder, onOpenList }) {
+  const d = task.detail;
+  const impactedVisible = d.impacted.slice(0, DOC_LIST_MAX);
+  const activitiesVisible = d.activities.slice(0, DOC_LIST_MAX);
+
+  return (
+    <div data-sl-task-document-content="">
+      {/* ── Heading block: title + summary + metadata ── */}
+      <div data-sl-task-document-heading-block="">
+        <div data-sl-task-document-title-block="">
+          <h1 data-sl-task-document-title="">{d.title}</h1>
+          {d.summary && <p data-sl-task-document-summary="">{d.summary}</p>}
+        </div>
+
+        <div data-sl-initiative-document-metadata="">
+          <DocMetaRow label="Atribuído a">
+            <span className="lead-pill">
+              <PersonAvatar initial={d.attributedTo.initial} />
+              <span>{d.attributedTo.name}</span>
+              <Icon name="chevron-down" size={12} />
+            </span>
+          </DocMetaRow>
+
+          <DocMetaRow label="Status">
+            <TaskDocStatus status={task.status} />
+          </DocMetaRow>
+
+          <DocMetaRow label="Severidade">
+            <SevPill level={d.severity} />
+          </DocMetaRow>
+
+          <DocMetaRow label="Reportado por">
+            <span className="reporter">
+              <span className="reporter-emoji reporter-emoji--img">
+                <img src="my-assistant.png" alt="" />
+              </span>
+              <span><b>{d.reportedBy.agent}</b> em {d.reportedBy.at}</span>
+            </span>
+          </DocMetaRow>
+        </div>
+      </div>
+
+      {/* ── Accordion sections ── */}
+      <div data-sl-initiative-document-accordion-stack="">
+        <DocAccordionSection title="Diagnóstico">
+          <p className="detail-section-body">{d.diagnosis}</p>
+        </DocAccordionSection>
+
+        <DocAccordionSection title="Tarefas">
+          <div className="canvas-tasks-card">
+            <div className="canvas-tasks-head"><span>Tarefas de follow-up</span><span>Responsável</span></div>
+            {d.followUp.map((t, i) =>
+              <React.Fragment key={`fu-${i}`}>
+                {i > 0 && <div className="canvas-tasks-row-divider" />}
+                <SubTaskRow t={t} runnable />
+              </React.Fragment>
+            )}
+            <div className="canvas-tasks-group-divider" />
+            <div className="canvas-tasks-head"><span>Tarefas anteriores / resolvidas</span><span>Responsável</span></div>
+            {d.resolved.map((t, i) =>
+              <React.Fragment key={`rs-${i}`}>
+                {i > 0 && <div className="canvas-tasks-row-divider" />}
+                <SubTaskRow t={t} />
+              </React.Fragment>
+            )}
+          </div>
+        </DocAccordionSection>
+
+        <DocAccordionSection title="Pedidos impactados">
+          <ImpactedTable rows={impactedVisible} onOpenOrder={onOpenOrder} />
+          {d.impacted.length > DOC_LIST_MAX && (
+            <DocSeeAll count={d.impacted.length} onClick={() => onOpenList("impacted")} />
+          )}
+        </DocAccordionSection>
+
+        <DocAccordionSection
+          title="Atividades"
+          count={d.activities.length}
+          defaultOpen={false}
+          loadingMs={1100}
+          skeleton={<ActivitiesSkeleton />}
+        >
+          <ActivitiesList items={activitiesVisible} />
+          {d.activities.length > DOC_LIST_MAX && (
+            <DocSeeAll count={d.activities.length} onClick={() => onOpenList("activities")} />
+          )}
+        </DocAccordionSection>
+      </div>
+
+      <div data-sl-canvas-doc-end-spacer="" style={{ height: 24 }} />
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════
+   Canvas Pattern A — Bloqueio operacional em massa
+   (wireframe: canvas_pattern_1_operational_block · hybrid style)
+   Blocos: metadados · diagnóstico · tarefas sugeridas · pedidos afetados
+   ══════════════════════════════════════════════════════════ */
+function CanvasAConfidence({ label, pct }) {
+  const tone = pct >= 80 ? "high" : "med";
+  return (
+    <span className="canvas-a-conf">
+      <span className={`canvas-a-conf-val canvas-a-conf-val--${tone}`}>{label} ({pct}%)</span>
+      <span className="canvas-a-conf-bar">
+        <span className={`canvas-a-conf-fill canvas-a-conf-fill--${tone}`} style={{ width: `${pct}%` }} />
+      </span>
+    </span>
+  );
+}
+
+/* Linha de tarefa sugerida: reaproveita o componente de tarefas
+   (canvas-task-row) — status slot + título — trocando o "Responsável"
+   (AssigneePill) pelo botão de ação Run / Aprovar / Revisar. */
+function SuggestedTaskRow({ t }) {
+  return (
+    <div className="canvas-task-row">
+      <div className="canvas-task-left" data-sl-initiative-tasks-row-left="">
+        <span data-sl-initiative-tasks-status-slot="">
+          <SubTaskStatusIcon status={t.status || "triage"} />
+        </span>
+        <span className="canvas-task-title">{t.name}</span>
+      </div>
+      <button type="button" className={`canvas-a-run-btn${t.primary ? " canvas-a-run-btn--primary" : ""}`}>
+        {t.action}{t.primary ? " ↗" : ""}
+      </button>
+    </div>
+  );
+}
+
+function CanvasPatternA({ task, onOpenOrder, onOpenList }) {
+  const d = task.detail;
+  const orders = d.affectedOrders || { total: 0, items: [] };
+  const shownOrders = orders.items.slice(0, DOC_LIST_MAX);
+  const ordersTotal = orders.total || orders.items.length;
+  const suggested = d.suggestedTasks || [];
+  const activities = d.activities || [];
+  const activitiesVisible = activities.slice(0, DOC_LIST_MAX);
+
+  return (
+    <div data-sl-task-document-content="">
+      {/* ── Heading + metadata ── */}
+      <div data-sl-task-document-heading-block="">
+        <div data-sl-task-document-title-block="">
+          <h1 data-sl-task-document-title="">{d.title}</h1>
+        </div>
+
+        <div data-sl-initiative-document-metadata="">
+          <DocMetaRow label="Severidade">
+            <SevPill level={d.severity} />
+          </DocMetaRow>
+          <DocMetaRow label="Status">
+            <TaskDocStatus status={task.status} />
+          </DocMetaRow>
+          <DocMetaRow label="Atribuídos">
+            <span>{(d.assignees || []).join(" · ")}</span>
+          </DocMetaRow>
+          <DocMetaRow label="Escopo">
+            <span>{d.scope}</span>
+          </DocMetaRow>
+          <DocMetaRow label="SLA em risco">
+            <span className="canvas-a-sla-risk">{d.slaRisk}</span>
+          </DocMetaRow>
+          <DocMetaRow label="Reportado por">
+            <span className="reporter">
+              <span className="reporter-emoji reporter-emoji--img">
+                <img src="my-assistant.png" alt="" />
+              </span>
+              <span><b>{d.reportedBy.agent}</b> em {d.reportedBy.at}</span>
+            </span>
+          </DocMetaRow>
+        </div>
+      </div>
+
+      {/* ── Accordion sections (reaproveitando componentes do canvas de tarefas) ── */}
+      <div data-sl-initiative-document-accordion-stack="">
+        {/* Diagnóstico: texto igual às outras tarefas + Confiança/Lacuna em cards com borda */}
+        <DocAccordionSection title="Diagnóstico">
+          <p className="detail-section-body">{d.diagnosis.text}</p>
+          <div className="canvas-a-diag-meta">
+            <div className="canvas-a-diag-meta-item">
+              <span className="canvas-a-diag-meta-label">Confiança</span>
+              <CanvasAConfidence label={d.diagnosis.confidence.label} pct={d.diagnosis.confidence.pct} />
+            </div>
+            <div className="canvas-a-diag-meta-item">
+              <span className="canvas-a-diag-meta-label">Lacuna</span>
+              <span className="canvas-a-diag-gap">{d.diagnosis.gap}</span>
+            </div>
+          </div>
+        </DocAccordionSection>
+
+        {/* Tarefas sugeridas: mesmo componente das tarefas de follow-up, com botões de ação */}
+        <DocAccordionSection title="Tarefas sugeridas" count={suggested.length}>
+          <div className="canvas-tasks-card canvas-a-suggested">
+            <div className="canvas-tasks-head"><span>Tarefa sugerida</span><span>Ação</span></div>
+            {suggested.map((t, i) => (
+              <React.Fragment key={i}>
+                {i > 0 && <div className="canvas-tasks-row-divider" />}
+                <SuggestedTaskRow t={t} />
+              </React.Fragment>
+            ))}
+          </div>
+        </DocAccordionSection>
+
+        {/* Pedidos afetados: a mesma ImpactedTable das outras tarefas */}
+        <DocAccordionSection title="Pedidos afetados" count={ordersTotal}>
+          <ImpactedTable rows={shownOrders} onOpenOrder={onOpenOrder || (() => {})} />
+          {ordersTotal > shownOrders.length && (
+            <DocSeeAll count={ordersTotal} onClick={() => onOpenList && onOpenList("impacted")} />
+          )}
+        </DocAccordionSection>
+
+        {/* Atividades: mesmo componente das outras tarefas (fechado + contador + skeleton) */}
+        <DocAccordionSection
+          title="Atividades"
+          count={activities.length}
+          defaultOpen={false}
+          loadingMs={1100}
+          skeleton={<ActivitiesSkeleton />}
+        >
+          <ActivitiesList items={activitiesVisible} />
+          {activities.length > DOC_LIST_MAX && (
+            <DocSeeAll count={activities.length} onClick={() => onOpenList && onOpenList("activities")} />
+          )}
+        </DocAccordionSection>
+      </div>
+
+      <div data-sl-canvas-doc-end-spacer="" style={{ height: 24 }} />
+    </div>
   );
 }
 
 function TaskCanvas({ task, onBack }) {
-  const [status, setStatus] = useState("in_progress");
   const [subView, setSubView] = useState(null);
   const d = task.detail;
 
-  const inOrder = subView?.type === "order";
+  const inSub = subView != null;
+  const openOrder = (id) => setSubView({ type: "order", id });
 
   return (
     <div className="detail-panel">
-      <div className="detail-head no-border">
-        <div className="detail-head-left">
-          {inOrder ? (
-            <button className="od-back-link" onClick={() => setSubView(null)}>
-              <Icon name="chevron-left" size={12} /> Voltar para {task.id}
-            </button>
-          ) : (
-            <>
-              <span className="id-chip">{task.id}</span>
-              <span className="canvas-name" style={{ maxWidth: 360, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{d.title}</span>
-            </>
-          )}
-        </div>
-        <div className="detail-head-right">
-          <span className="canvas-meta-count"><Icon name="chat" size={14} /> 7</span>
-          <span className="canvas-meta-count"><Icon name="plus" size={14} /> 3</span>
-          <button className="icon-btn"><Icon name="more" size={16} /></button>
-        </div>
+      <div className="detail-head canvas-topbar" data-sl-canvas-tool-topbar="">
+        {inSub ? (
+          <button className="canvas-topbar-icon" onClick={() => setSubView(null)} aria-label="Voltar" title="Voltar">
+            <Icon name="chevron-left" size={18} />
+          </button>
+        ) : (
+          <button className="canvas-topbar-icon" onClick={onBack} aria-label="Fechar" title="Fechar">
+            <Icon name="x" size={18} />
+          </button>
+        )}
+        <span className="canvas-topbar-title">{inSub ? `Voltar para ${task.id}` : d.title}</span>
+        <button className="canvas-topbar-icon" aria-label="Mais opções" title="Mais opções">
+          <Icon name="more" size={18} />
+        </button>
       </div>
       <div className="detail-scroll">
         <div className="detail-body">
-          {inOrder ?
-          <OrderDetailView task={task} orderId={subView.id} onBack={() => setSubView(null)} onOpenOrder={(id) => setSubView({ type: "order", id })} /> :
-          <TaskCanvasMain task={task} status={status} setStatus={setStatus} onOpenOrder={(id) => setSubView({ type: "order", id })} />
-          }
+          {subView?.type === "order" ? (
+            <OrderDetailView task={task} orderId={subView.id} onBack={() => setSubView(null)} onOpenOrder={openOrder} />
+          ) : subView?.type === "list" ? (
+            <TaskListSubview kind={subView.kind} task={task} onOpenOrder={openOrder} />
+          ) : task.canvasPattern === "A" ? (
+            <CanvasPatternA task={task} onOpenOrder={() => {}} onOpenList={(kind) => setSubView({ type: "list", kind })} />
+          ) : (
+            <TaskCanvasMain task={task} onOpenOrder={openOrder} onOpenList={(kind) => setSubView({ type: "list", kind })} />
+          )}
         </div>
       </div>
-    </div>);
-
+    </div>
+  );
 }
 
 function TaskView({ taskId, onBack, onOpenOrder }) {

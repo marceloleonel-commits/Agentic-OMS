@@ -1,0 +1,9 @@
+{
+  "name": "aiw-orders-prototype",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Static AIW prototype (Orders) — served as-is, password-gated via Vercel Routing Middleware.",
+  "dependencies": {
+    "@vercel/functions": "^3.7.5"
+  }
+}

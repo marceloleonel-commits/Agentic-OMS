@@ -9,6 +9,9 @@ dist/
 *.log
 *.bak
 
+# Vercel (local project link + build output)
+.vercel
+
 # JavaScript/TypeScript
 npm-debug.log*
 yarn-debug.log*

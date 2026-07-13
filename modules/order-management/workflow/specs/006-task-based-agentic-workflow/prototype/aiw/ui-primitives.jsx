@@ -47,6 +47,26 @@ function Slider({ value, onChange, min = 0, max = 100, suffix = "%" }) {
   );
 }
 
+/* ── IconButton (Shoreline-compatible icon-only button) ─────────────────── */
+function IconButton({ icon, label, variant = "tertiary", size = "large", onClick, className, disabled, ...rest }) {
+  return (
+    <button
+      data-sl-button="true"
+      data-icon-button="true"
+      data-variant={variant}
+      data-size={size}
+      aria-label={label}
+      title={label}
+      onClick={onClick}
+      disabled={disabled}
+      className={className}
+      {...rest}
+    >
+      {icon}
+    </button>
+  );
+}
+
 /* ── Dropdown (click-outside aware menu) ────────────────────────────────── */
 function Dropdown({ trigger, children, align = "right" }) {
   const [open, setOpen] = useState(false);
@@ -72,3 +92,4 @@ window.PersonAvatar = PersonAvatar;
 window.Toggle       = Toggle;
 window.Slider       = Slider;
 window.Dropdown     = Dropdown;
+window.IconButton   = IconButton;
