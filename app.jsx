@@ -1,15 +1,5 @@
-/* global React, ReactDOM, Sidebar, Icon, AppData, AIWData, AssistantView, TaskView, OrderDetailView, WorkflowBoardView, OrchestrationView, ChatPanel, ResizableSplit, ChatEngine, AITeamDrawer, TweaksPanel, useTweaks, TweakSection, TweakRadio, TweakColor, Dropdown */
-const { useState, useEffect, useRef, useCallback } = React;
-
-const TWEAKS_DEFAULTS = /*EDITMODE-BEGIN*/{
-  "density": "comfortable",
-  "accent": "#2962FF",
-  "sidebarTone": "navy",
-  "sidebarCollapsed": true,
-  "wfLayout": "expanded",
-  "wfGroup": "flat",
-  "wfDetailView": "flat"
-}/*EDITMODE-END*/;
+/* global React, ReactDOM, Sidebar, Icon, AppData, AIWData, AssistantView, TaskView, OrderDetailView, WorkflowBoardView, ChatPanel, ResizableSplit, ChatEngine, AITeamDrawer, Dropdown, MessageComposer, ChatsView, InitiativesView, HomePreviewView, HomeQueueView */
+const { useState, useEffect, useRef } = React;
 
 /* ── Hash-based routing ─────────────────────────────────────────────────── */
 function parseHash() {
@@ -18,7 +8,6 @@ function parseHash() {
   if (!top || top === 'orders') return { name: 'orders' };
   if (top === 'order-detail') return { name: 'order-detail', orderId: rest[0] };
   if (top === 'task') return { name: 'task', id: rest[0] };
-  if (top === 'orchestration') return { name: 'orchestration' };
   if (top === 'assistant') return { name: 'assistant' };
   if (top === 'workflow-board') {
     const wfId = rest[0];
@@ -46,16 +35,20 @@ function routeToHash(r) {
   return `#/${r.name}`;
 }
 
-
 function App() {
-  const [tweaks, setTweak] = useTweaks(TWEAKS_DEFAULTS);
-
-  // ── URL-driven routing ───────────────────────────────────────────────────
   const _init = parseHash();
   const [route, setRouteState] = useState(_init);
   const [wfMode, setWfMode] = useState(_init.wfMode || { kind: 'list' });
   const [wfBoardKey, setWfBoardKey] = useState(0);
-  const [productView, setProductView] = useState(null); // lifted from OrderDetailView for standalone order-detail
+  const [productView, setProductView] = useState(null);
+  const [collapsed, setCollapsed] = useState(true);
+  const [aiOpen, setAIOpen] = useState(false);
+  const [activeConvId, setActiveConvId] = useState(null);
+
+  const [orderChatMsgs, setOrderChatMsgs] = useState([]);
+  const [orderChatTyping, setOrderChatTyping] = useState(false);
+  const [orderDynamicChips, setOrderDynamicChips] = useState([]);
+  const orderEngineRef = useRef(null);
 
   const setRoute = (r) => {
     setRouteState(r);
@@ -73,9 +66,7 @@ function App() {
     window.history.pushState(null, '', modeToHash(m));
   };
 
-  // Browser back / forward
   useEffect(() => {
-    // Set initial URL if hash is missing
     if (!window.location.hash) {
       window.history.replaceState(null, '', routeToHash(_init));
     }
@@ -91,63 +82,22 @@ function App() {
     return () => window.removeEventListener('popstate', onPop);
   }, []);
 
-  const [activeConvId, setActiveConvId] = useState(null);
-  const [collapsed, setCollapsed] = useState(!!tweaks.sidebarCollapsed);
-  const [aiOpen, setAIOpen] = useState(false);
-
-  // Order-detail intelligent chat state
-  const [orderChatMsgs, setOrderChatMsgs] = useState([]);
-  const [orderChatTyping, setOrderChatTyping] = useState(false);
-  const [orderDynamicChips, setOrderDynamicChips] = useState([]);
-  const orderEngineRef = useRef(null);
-
-  useEffect(() => {
-    document.documentElement.style.setProperty("--primary", tweaks.accent);
-    document.documentElement.style.setProperty("--primary-hover", shade(tweaks.accent, -10));
-  }, [tweaks.accent]);
-
-  useEffect(() => {
-    const tones = {
-      navy:     ["#071127", "#162955", "#162955"],
-      ink:      ["#0A0A0B", "#161618", "#1C1C1F"],
-      graphite: ["#1A1A1F", "#26262C", "#2D2D33"]
-    };
-    const [bg, hover, active] = tones[tweaks.sidebarTone] || tones.navy;
-    document.documentElement.style.setProperty("--sidebar-bg", bg);
-    document.documentElement.style.setProperty("--sidebar-bg-hover", hover);
-    document.documentElement.style.setProperty("--sidebar-bg-active", active);
-  }, [tweaks.sidebarTone]);
-
-  useEffect(() => {
-    if (tweaks.density === "compact") {
-      document.documentElement.style.setProperty("--row-h", "40px");
-      document.body.style.fontSize = "13px";
-    } else {
-      document.documentElement.style.setProperty("--row-h", "48px");
-      document.body.style.fontSize = "14px";
-    }
-  }, [tweaks.density]);
-
-  // Re-initialise the order-detail chat engine whenever we navigate to a new order
+  /* Order-detail chat engine */
   useEffect(() => {
     if (route.name !== "order-detail") return;
     const orderId = route.orderId;
     const currentOrder = AIWData.orders.find(o => o.id === orderId);
-    const initialMsgs = currentOrder ? [
-      {
-        from: "agent",
-        text: `O Agente de Orquestração está acompanhando este pedido.\n\n${currentOrder.qty} item(ns) · ${currentOrder.total}${currentOrder.sla !== "—" ? ` · SLA ${currentOrder.sla}` : ""}`,
-      },
-      {
-        from: "agent",
-        text: "O que deseja fazer?",
-        quickReplies: [
-          "Alterar item do pedido",
-          "Cancelar o pedido",
-          "Verificar SLA restante",
-        ]
-      }
-    ] : [{ from: "agent", text: "Selecione um pedido para começar." }];
+    const isReturnOrder = currentOrder?.status === "return";
+    const initialMsgs = currentOrder ? (
+      isReturnOrder ? [
+        { from: "agent", text: `**Coleta Reversa pendente** — Samsung Galaxy S24 FE 128GB\n\nO cliente Ricardo Alves solicitou devolução por defeito de fabricação em 01/06/2026. O Returns Agent validou a elegibilidade, classificou como **devolução com estorno integral** e gerou a etiqueta reversa via Total Express.\n\nA etiqueta foi enviada por e-mail em 01/06 às 18:36. Já se passaram **+24h sem confirmação de postagem** do cliente.` },
+        { from: "agent", text: `As etapas de **Inspeção no CD** e **Estorno Financeiro** estão bloqueadas até a postagem ser confirmada. O prazo de devolução expira em **08/06/2026**.` },
+        { from: "agent", text: "Como deseja prosseguir?", quickReplies: ["Reenviar etiqueta reversa ao cliente", "Reagendar coleta em domicílio", "Cancelar devolução e fechar solicitação", "Escalar para Atendimento →"] }
+      ] : [
+        { from: "agent", text: `O Agente de Orquestração está acompanhando este pedido.\n\n${currentOrder.qty} item(ns) · ${currentOrder.total}${currentOrder.sla !== "—" ? ` · SLA ${currentOrder.sla}` : ""}` },
+        { from: "agent", text: "O que deseja fazer?", quickReplies: ["Alterar item do pedido", "Cancelar o pedido", "Verificar SLA restante"] }
+      ]
+    ) : [{ from: "agent", text: "Selecione um pedido para começar." }];
     setOrderChatMsgs(initialMsgs);
     setOrderChatTyping(false);
     setOrderDynamicChips([]);
@@ -162,7 +112,6 @@ function App() {
     });
   }, [route.name, route.orderId]);
 
-  // Reset product subview whenever we navigate to a different order
   useEffect(() => { setProductView(null); }, [route.orderId]);
 
   const goHome   = () => setRoute({ name: "orders" });
@@ -170,22 +119,19 @@ function App() {
   const openOrder = (id) => setRoute({ name: "order-detail", orderId: id });
   const gotoResource = (id) => {
     if (id === "workflow-board") setRoute({ name: "workflow-board" });
-    else if (id === "orchestration") setRoute({ name: "orchestration" });
     else if (id === "all-orders") setRoute({ name: "orders" });
+    else if (id === "tasks") setRoute({ name: "tasks" });
   };
-
   const pickAgent = (id) => {
     setAIOpen(false);
     if (id === "assistant") setRoute({ name: "orders" });
-    else if (id === "orchestration") setRoute({ name: "orchestration" });
   };
-
   const openConversation = (id) => {
     setActiveConvId(id);
-    setRoute({ name: "conversations", convId: id });
+    setRoute({ name: "chats", convId: id });
   };
 
-  /* ---------- header (only for non-split routes) ---------- */
+  /* ── Topbar actions ── */
   const renderTopbarActions = () => (
     <div className="topbar-right">
       <Dropdown
@@ -216,7 +162,7 @@ function App() {
             My AI Team <Icon name="chevron-down" size={12} />
           </button>
         }>
-        <button className="dd-item" onClick={() => { setAIOpen(true); }}>
+        <button className="dd-item" onClick={() => setAIOpen(true)}>
           <span className="dd-item-icon ai"><Icon name="grid" size={14} /></span>
           <span>
             <span className="dd-item-label">Ver todos os agentes</span>
@@ -227,25 +173,30 @@ function App() {
     </div>
   );
 
-  /* ---------- view selection ---------- */
+  /* ── Module-browser sticky header (same component as TasksView) ── */
+  const renderModuleHeader = (title) => (
+    <div data-sl-my-tasks-sticky-top="">
+      <div data-sl-module-browser-top-bar="">
+        <div data-sl-module-browser-top-bar-title="">
+          <h1 data-sl-browse-page-title="">{title}</h1>
+        </div>
+      </div>
+    </div>
+  );
+
+  /* ── View selection ── */
   let view;
   if (route.name === "orders") {
     view = <AssistantView onOpenTask={openTask} onGotoResource={gotoResource} onOpenOrder={openOrder} />;
   } else if (route.name === "assistant") {
     view = (
       <div className="main">
-        <header className="topbar">
-          <h1 className="crumb">My Assistant</h1>
-        </header>
+        {renderModuleHeader("My Assistant")}
         <div className="scroll">
           <div className="aiw-placeholder">
             <div className="aiw-placeholder-eyebrow">My Assistant</div>
             <h2 className="aiw-placeholder-title">Pergunte qualquer coisa.</h2>
-            <p className="aiw-placeholder-sub">
-              Este é o ponto de partida do seu assistente. Conteúdos específicos
-              de operação vivem nas suas verticais — comece em <b>Orders</b> para
-              ver KPIs, tarefas em aberto e workflows.
-            </p>
+            <p className="aiw-placeholder-sub">Este é o ponto de partida do seu assistente.</p>
           </div>
         </div>
         <div className="aiw-composer-bar">
@@ -253,30 +204,56 @@ function App() {
         </div>
       </div>
     );
+  } else if (route.name === "tasks") {
+    view = <TasksView />;
+  } else if (route.name === "chats") {
+    view = (
+      <ChatsView
+        conversations={AIWData.conversations}
+        activeConvId={activeConvId}
+        onOpenConversation={openConversation}
+        renderTopbarActions={renderTopbarActions}
+      />
+    );
+  } else if (route.name === "initiatives") {
+    view = <InitiativesView onOpenTask={openTask} renderTopbarActions={renderTopbarActions} />;
+  } else if (route.name === "home-preview") {
+    // Situation-room dashboard ported from Canvas-Wireframes. Isolated route —
+    // does not replace or affect the "orders" home (route.name === "orders").
+    view = <HomePreviewView onOpenTask={openTask} onGotoResource={gotoResource} />;
+  } else if (route.name === "home-queue") {
+    // Unified-queue variant (occurrences + tasks in one feed). Isolated route —
+    // does not replace or affect #/home-preview or #/orders.
+    view = <HomeQueueView onOpenTask={openTask} onGotoResource={gotoResource} />;
   } else if (route.name === "task") {
     view = <TaskView taskId={route.id} onBack={goHome} onOpenOrder={openOrder} />;
   } else if (route.name === "workflow-board") {
-    view = <WorkflowBoardView key={wfBoardKey} onBack={goHome} wfLayout={tweaks.wfLayout} wfGroup={tweaks.wfGroup} wfDetailView={tweaks.wfDetailView} initialMode={wfMode} onModeChange={handleWfModeChange} />;
-  } else if (route.name === "orchestration") {
-    view = <OrchestrationView onBack={goHome} onOpenOrder={openOrder} />;
+    view = <WorkflowBoardView
+      key={wfBoardKey}
+      onBack={goHome}
+      wfLayout="expanded"
+      wfGroup="flat"
+      wfDetailView="flat"
+      initialMode={wfMode}
+      onModeChange={handleWfModeChange}
+    />;
   } else if (route.name === "order-detail") {
     const currentOrder = AIWData.orders.find(o => o.id === route.orderId);
-    // Standalone order — single-item impacted so the pager nav doesn't appear
     const syntheticTask = {
       detail: {
-        impacted: currentOrder ? [{
-          id: currentOrder.id,
-          sla: currentOrder.sla || "—",
-          seller: currentOrder.seller || currentOrder.origin,
-          eta: currentOrder.eta || "—"
-        }] : []
+        impacted: currentOrder ? [{ id: currentOrder.id, sla: currentOrder.sla || "—", seller: currentOrder.seller || currentOrder.origin, eta: currentOrder.eta || "—" }] : []
       }
     };
-    const orderChips = [
+    const orderChips = currentOrder?.status === "return" ? [
+      { icon: "send",    label: "Reenviar etiqueta reversa"     },
+      { icon: "sparkle", label: "Reagendar coleta em domicílio" },
+      { icon: "x",       label: "Cancelar devolução"            },
+      { icon: "sparkle", label: "Escalar para Atendimento"      },
+    ] : [
       { icon: "edit",    label: "Alterar item do pedido"  },
       { icon: "x",       label: "Cancelar o pedido"       },
       { icon: "graph",   label: "Verificar SLA restante"  },
-      { icon: "sparkle", label: "Escalar para Supervisor" }
+      { icon: "sparkle", label: "Escalar para Supervisor" },
     ];
     const handleOrderChatSend = (text, opts) => {
       setOrderChatMsgs(m => [...m, { from: "user", text }]);
@@ -286,7 +263,7 @@ function App() {
       <ResizableSplit screenLabel="Order Detail" initialWidth={400}>
         <ChatPanel
           title={currentOrder ? `Pedido ${currentOrder.short}` : "Detalhe do Pedido"}
-          chips={orderDynamicChips}
+          chips={orderDynamicChips.length > 0 ? orderDynamicChips : orderChips}
           alwaysShowChips={true}
           messages={orderChatMsgs}
           onSend={handleOrderChatSend}
@@ -298,19 +275,13 @@ function App() {
           <div className="detail-head no-border">
             <div className="detail-head-left">
               {productView !== null ? (
-                <button
-                  className="od-back-link"
-                  onClick={() => setProductView(null)}
-                  style={{ display: "flex", alignItems: "center", gap: 4, background: "none", border: "none", cursor: "pointer", color: "var(--fg-2)", fontSize: 13 }}
-                >
+                <button className="od-back-link" onClick={() => setProductView(null)}
+                  style={{ display: "flex", alignItems: "center", gap: 4, background: "none", border: "none", cursor: "pointer", color: "var(--fg-2)", fontSize: 13 }}>
                   <Icon name="chevron-left" size={14} /> Pedido {route.orderId}
                 </button>
               ) : (
-                <button
-                  className="od-back-link"
-                  onClick={goHome}
-                  style={{ display: "flex", alignItems: "center", gap: 4, background: "none", border: "none", cursor: "pointer", color: "var(--fg-2)", fontSize: 13 }}
-                >
+                <button className="od-back-link" onClick={goHome}
+                  style={{ display: "flex", alignItems: "center", gap: 4, background: "none", border: "none", cursor: "pointer", color: "var(--fg-2)", fontSize: 13 }}>
                   <Icon name="chevron-left" size={14} /> Todos os Pedidos
                 </button>
               )}
@@ -333,30 +304,20 @@ function App() {
       </ResizableSplit>
     );
   } else {
-    // Other routes (initiatives, conversations) keep an empty placeholder for now
     view = (
       <div className="main">
-        <header className="topbar">
-          <h1 className="crumb">{route.name}</h1>
-          {renderTopbarActions()}
-        </header>
+        {renderModuleHeader(route.name)}
         <div className="scroll">
           <div style={{ padding: 60, textAlign: "center", color: "var(--fg-3)" }}>
-            View "{route.name}" not yet populated in this prototype.
+            View "{route.name}" — em construção.
           </div>
         </div>
       </div>
     );
   }
 
-  /* Inject topbar actions into assistant/wb/oa views' topbars via portal-like attach */
-  useEffect(() => {
-    const tbRight = document.querySelector(".main .topbar .topbar-right.aiw-placeholder");
-    // No-op — actions are rendered inline below as a floating bar.
-  });
-
   return (
-    <div className={`app ${collapsed ? "has-collapsed" : ""}`}>
+    <div className="app">
       <Sidebar
         route={route}
         setRoute={setRoute}
@@ -364,90 +325,22 @@ function App() {
         openConversation={openConversation}
         activeConvId={activeConvId}
         collapsed={collapsed}
-        setCollapsed={(v) => { setCollapsed(v); setTweak("sidebarCollapsed", v); }}
+        setCollapsed={setCollapsed}
         openInitiative={() => {}}
+        onOpenAITeam={() => setAIOpen(true)}
       />
       {view}
 
-      {/* Floating topbar actions (Settings + My AI team) — only on non-split routes */}
-      {!["task", "workflow-board", "orchestration", "assistant", "order-detail"].includes(route.name) &&
-        <div className="aiw-global-actions">
-          {renderTopbarActions()}
-        </div>
-      }
-
-      <button
-        onClick={() => window.postMessage({ type: '__activate_edit_mode' }, '*')}
-        title="Abrir Tweaks"
-        style={{
-          position: 'fixed', bottom: 16, left: 16, zIndex: 2147483645,
-          display: 'flex', alignItems: 'center', gap: 6,
-          padding: '6px 12px 6px 8px', borderRadius: 99,
-          background: 'rgba(30,30,35,.82)', color: '#fff',
-          border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 500,
-          backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
-          boxShadow: '0 2px 12px rgba(0,0,0,.25)',
-          letterSpacing: '.01em',
-        }}
-      >
-        <Icon name="settings" size={13} />
-        Tweaks
-      </button>
-
       <AITeamDrawer open={aiOpen} onClose={() => setAIOpen(false)} onPick={pickAgent} />
-      {aiOpen && <div className="modal-backdrop" style={{ background: "rgba(15,17,21,.35)", zIndex: 35 }} onClick={() => setAIOpen(false)} />}
-
-      <TweaksPanel title="Tweaks">
-        <TweakSection title="Ir para tela">
-          <div className="tweak-nav-grid">
-            <button className={`tweak-nav ${route.name === "orders" ? "active" : ""}`} onClick={() => setRoute({ name: "orders" })}>
-              <span className="tweak-nav-icon"><Icon name="grid" size={14} /></span>
-              <span>Home</span>
-            </button>
-            <button className={`tweak-nav ${route.name === "task" ? "active" : ""}`} onClick={() => setRoute({ name: "task", id: AIWData.tasks[0].id })}>
-              <span className="tweak-nav-icon"><Icon name="list" size={14} /></span>
-              <span>Tarefa Aberta</span>
-            </button>
-            <button className={`tweak-nav ${route.name === "workflow-board" ? "active" : ""}`} onClick={() => setRoute({ name: "workflow-board" })}>
-              <span className="tweak-nav-icon"><Icon name="board" size={14} /></span>
-              <span>Workflow Board</span>
-            </button>
-            <button className={`tweak-nav ${route.name === "orchestration" ? "active" : ""}`} onClick={() => setRoute({ name: "orchestration" })}>
-              <span className="tweak-nav-icon ai"><Icon name="sparkle" size={14} /></span>
-              <span>Agentes de Pedidos</span>
-            </button>
-          </div>
-        </TweakSection>
-
-        {route.name === "workflow-board" && <>
-          <TweakSection label="Controle de fluxos" />
-          <TweakRadio label="Layout" value={tweaks.wfLayout}
-            options={[
-              { value: "expanded", label: "Expandido" },
-            ]}
-            onChange={(v) => setTweak("wfLayout", v)} />
-          <TweakSection label="Detalhe do Workflow" />
-          <TweakRadio label="Visualização" value={tweaks.wfDetailView}
-            options={[
-              { value: "2-passos", label: "2 passos" },
-              { value: "1-passo",  label: "1 passo"  },
-              { value: "flat",     label: "Flat"      },
-            ]}
-            onChange={(v) => setTweak("wfDetailView", v)} />
-        </>}
-      </TweaksPanel>
+      {aiOpen && (
+        <div
+          className="modal-backdrop"
+          style={{ background: "rgba(15,17,21,.35)", zIndex: 35 }}
+          onClick={() => setAIOpen(false)}
+        />
+      )}
     </div>
   );
-}
-
-function shade(hex, percent) {
-  const n = parseInt(hex.replace("#", ""), 16);
-  let r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
-  const f = percent / 100;
-  r = Math.max(0, Math.min(255, Math.round(r + (255 - r) * f)));
-  g = Math.max(0, Math.min(255, Math.round(g + (255 - g) * f)));
-  b = Math.max(0, Math.min(255, Math.round(b + (255 - b) * f)));
-  return "#" + [r, g, b].map((x) => x.toString(16).padStart(2, "0")).join("");
 }
 
 ReactDOM.createRoot(document.getElementById("root")).render(<App />);

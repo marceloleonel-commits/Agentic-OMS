@@ -1,7 +1,62 @@
 /* global React, Icon */
 const { useState, useRef, useEffect, useCallback } = React;
 
-const MessageComposer = React.forwardRef(function MessageComposer({ placeholder = "Message VTEX My Assistant...", onSend, agent = "VTEX My Assistant" }, ref) {
+/**
+ * ComposerAddButton — the "+" button that opens the v3 "add files / add context" menu.
+ * Ghost icon button (v3 IconButton variant="ghost") + popover menu (v3 Dropdown).
+ */
+function ComposerAddButton() {
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onClick = (e) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, [open]);
+
+  return (
+    <div className="composer-add-wrap" ref={wrapRef}>
+      {open && (
+        <div className="composer-add-menu" role="menu">
+          <button className="composer-add-menu-item" role="menuitem" onClick={() => setOpen(false)}>
+            <Icon name="doc" size={16} />
+            <span>Add files</span>
+          </button>
+          <button className="composer-add-menu-item" role="menuitem" onClick={() => setOpen(false)}>
+            <Icon name="at" size={16} />
+            <span>Add context</span>
+          </button>
+        </div>
+      )}
+      <button
+        type="button"
+        className={`composer-add-btn${open ? " open" : ""}`}
+        title="Add"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onClick={() => setOpen((o) => !o)}
+      >
+        <Icon name="plus" size={18} />
+      </button>
+    </div>
+  );
+}
+
+/**
+ * MessageComposer
+ * layout="inline"  → pill único (+ | textarea | →)               [default]
+ * layout="stacked" → textarea em cima + toolbar abaixo (+ | agent | →)
+ */
+const MessageComposer = React.forwardRef(function MessageComposer({
+  placeholder = "Message VTEX My Assistant...",
+  onSend,
+  agent = "VTEX My Assistant",
+  layout = "inline",
+}, ref) {
   const [v, setV] = useState("");
   const [citations, setCitations] = useState([]);
   const textareaRef = useRef(null);
@@ -26,47 +81,86 @@ const MessageComposer = React.forwardRef(function MessageComposer({ placeholder 
     onSend && onSend(full);
     setV("");
     setCitations([]);
+    if (textareaRef.current) { textareaRef.current.style.height = "auto"; }
   };
 
+  const handleChange = (e) => {
+    setV(e.target.value);
+    const el = textareaRef.current;
+    if (el) { el.style.height = "auto"; el.style.height = Math.min(el.scrollHeight, layout === "stacked" ? 180 : 120) + "px"; }
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submit(); }
+  };
+
+  const isActive = v.trim().length > 0 || citations.length > 0;
+
+  /* ── Citações (shared between both layouts) ── */
+  const citationsEl = citations.length > 0 && (
+    <div className="composer-citations">
+      {citations.map((c, i) => (
+        <span key={i} className="composer-citation">
+          <span className="composer-citation-text">{c.replace(/^\[|\]$/g, "")}</span>
+          <button className="composer-citation-close" title="Remover citação" onClick={() => removeCitation(c)}>
+            <Icon name="x" size={10} />
+          </button>
+        </span>
+      ))}
+    </div>
+  );
+
+  if (layout === "stacked") {
+    return (
+      <div className="composer composer--stacked">
+        {citationsEl}
+        <div className="composer-stacked-shell">
+          <div className="composer-stacked-input">
+            <textarea
+              ref={textareaRef}
+              rows={2}
+              placeholder={placeholder}
+              value={v}
+              onChange={handleChange}
+              onKeyDown={handleKeyDown}
+            />
+          </div>
+          <div className="composer-stacked-toolbar">
+            <div className="composer-stacked-toolbar-left">
+              <ComposerAddButton />
+              <span className="composer-agent-pill">
+                <Icon name="sparkle" size={13} />
+                <span className="composer-agent-label">{agent}</span>
+              </span>
+            </div>
+            <div className="composer-stacked-toolbar-right">
+              <button className={`send-btn${isActive ? " active" : ""}`} onClick={submit} title="Enviar">
+                <Icon name="arrow-up" size={16} />
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  /* ── Inline layout (default) ── */
   return (
     <div className="composer">
-      <div className="composer-inner">
-        {citations.length > 0 && (
-          <div className="composer-citations">
-            {citations.map((c, i) => (
-              <span key={i} className="composer-citation">
-                <span className="composer-citation-text">{c.replace(/^\[|\]$/g, "")}</span>
-                <button
-                  className="composer-citation-close"
-                  title="Remover citação"
-                  onClick={() => removeCitation(c)}
-                >
-                  <Icon name="x" size={10} />
-                </button>
-              </span>
-            ))}
-          </div>
-        )}
+      {citationsEl}
+      <div className="composer-pill">
+        <ComposerAddButton />
         <textarea
           ref={textareaRef}
           rows={1}
           placeholder={placeholder}
           value={v}
-          onChange={(e) => setV(e.target.value)}
-          onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submit(); } }}
+          onChange={handleChange}
+          onKeyDown={handleKeyDown}
         />
-        <div className="composer-row">
-          <button className="composer-icon" title="Attach"><Icon name="plus" size={16} /></button>
-          <button className="agent-chip">
-            <span className="agent-mark" />
-            <span>{agent}</span>
-            <Icon name="chevron-down" size={12} />
-          </button>
-          <div style={{ flex: 1 }} />
-          <button className={`send-btn ${(v.trim() || citations.length) ? "active" : ""}`} onClick={submit} title="Send">
-            <Icon name="arrow-up" size={14} />
-          </button>
-        </div>
+        <button className={`send-btn${isActive ? " active" : ""}`} onClick={submit} title="Enviar">
+          <Icon name="arrow-up" size={16} />
+        </button>
       </div>
     </div>
   );
