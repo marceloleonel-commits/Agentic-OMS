@@ -1,4 +1,4 @@
-# Product Brief — Warehouse: card "Sellers internos" (ID do seller)
+# Product Brief — Warehouse: card "Sellers internos" (Seller ID)
 
 | Field | Value |
 | --- | --- |
@@ -6,44 +6,35 @@
 | **Module** | fulfillment / seller-architecture |
 | **PM** | [Carolina Tourinho](mailto:carolina.rodrigues@vtex.com) |
 | **Status** | Draft |
-| **Repo da PR** | [`vtex/admin-logistics`](https://github.com/vtex/admin-logistics) — tela `/admin/shipping-strategy/warehouse` |
+| **PR repo** | [`vtex/admin-logistics`](https://github.com/vtex/admin-logistics) — screen `/admin/shipping-strategy/warehouse` |
 
-**Refs:** [Product Vision sellerType=3](../../product-vision.md) (Key Capability #2) · [Doc API sellerId no warehouse](https://docs.google.com/document/d/1zEt003Q00VVrfvyCX4sYLVjvgFrFnuMLZLoHORVcHGk/edit?tab=t.0#heading=h.o0yjrge1knq)
+**Refs:** [Product Vision sellerType=3](../../product-vision.md) (Key Capability #2) · [API doc — sellerId on warehouse](https://docs.google.com/document/d/1zEt003Q00VVrfvyCX4sYLVjvgFrFnuMLZLoHORVcHGk/edit?tab=t.0#heading=h.o0yjrge1knq)
 
 ---
 
-## O que muda
+## What changes
 
-Duas alterações na experiência do Admin de Shipping Strategy:
+**New "Sellers internos" card (Seller ID)** in the Shipping Strategy Admin — Warehouse → Seller binding. **The field already exists in the API**: `sellerId` is an **optional** body parameter in `POST /api/logistics/pvt/configuration/warehouses` (see [API documentation](https://docs.google.com/document/d/1zEt003Q00VVrfvyCX4sYLVjvgFrFnuMLZLoHORVcHGk/edit?tab=t.0)). Only the UI is missing (100% front-end change).
 
-**1. Novo card "Sellers internos" (ID do seller)** — vínculo Warehouse → Seller. **O campo já existe na API**: `sellerId` é body parameter **opcional** no `POST /api/logistics/pvt/configuration/warehouses`. Falta só a UI (mudança 100% front).
+The card is **conditionally rendered**, in a **single UI version** with the conditional on the front-end:
+- Account **with an active `sellerType=3`**: the card **appears** with a **text-search dropdown** to select 1 seller by account name, displayed as "Nome da loja (accountName)". Only **active** sellers are listed. The API also validates inactive sellers; if an inactive one reaches save, the save returns the API error ("selected seller is inactive").
+- Account **without `sellerType=3`**: the card **does not appear** on the screen. In these accounts the binding is always the main account and cannot be changed, so **hiding the card** (instead of showing it disabled) avoids confusing the customer with a configuration they cannot change.
 
-O card é **renderizado condicionalmente**, numa **única versão de UI** com a condicional no front-end:
-- Conta **com sellerType=3 ativo**: o card **aparece** com um **dropdown com busca textual** para selecionar 1 seller pelo account name, exibido como "Nome da loja (accountName)". Apenas sellers **ativos** são listados. A API também valida seller inativo; se um inativo chegar ao save, o save retorna o erro da API ("seller escolhido é inativo").
-- Conta **sem sellerType=3**: o card **não aparece** na tela. Nessas contas o vínculo é sempre a conta principal e não pode ser alterado, então **esconder o card** (em vez de mostrá-lo desabilitado) evita confundir o cliente com uma configuração que ele não pode mudar.
+## Out of scope
 
-**2. Remover `/beta` da URL do Admin** — a rota de Shipping Strategy deve deixar de usar `/admin/shipping-strategy/beta/...` e passar a usar `/admin/shipping-strategy/...`.
-- Exemplos atuais:
-  - `/admin/shipping-strategy/beta/warehouses`
-  - `/admin/shipping-strategy/beta/docks`
-  - `/admin/shipping-strategy/beta/shipping-policies`
+- Backend / API (`sellerId` already exists).
+- Seller management (lives in Seller Register).
 
-## Fora de escopo
+## Success
 
-- Backend / API (o `sellerId` já existe).
-- Rename dos `id` das chaves de mensagem (só copy).
-- Gestão de sellers (vive no Seller Register).
+- Active `sellerType=3`: the field appears and allows binding a warehouse to a seller through the screen; inactive seller is blocked at save by the existing API validation.
+- Accounts without `sellerType=3`: the field is **not shown** — no reference to a seller in the form.
+- A **single UI version** covers both cases via a front-end conditional.
 
-## Sucesso
+## Open questions
 
-- sellerType=3 ativo: o campo aparece e permite vincular warehouse a um seller pela tela; seller inativo é bloqueado no save pela validação já existente da API.
-- Contas sem sellerType=3: o campo **não é exibido** — nenhuma referência a seller no form.
-- Uma **única versão de UI** cobre os dois casos via condicional no front.
-- URL do Admin deixa de expor `/beta` nas rotas de Shipping Strategy.
-
-## Em aberto
-
-- Como o front identifica conta sellerType=3 (agora é o **gate** que decide exibir ou ocultar o campo):
-  - Opção A (preferida): usar a feature flag/capability `sellerTypeLocation` do time de Marketplace.
-  - Opção B: verificar se já existe algum sellerType=3 cadastrado na conta.
-- Endpoint que lista sellers para busca no dropdown deve retornar apenas sellers `sellerType=3` ou a própria conta principal.
+- How the front-end identifies a `sellerType=3` account (now the **gate** that decides whether to show or hide the field):
+  - Option A (preferred): use the Marketplace team's `sellerTypeLocation` feature flag/capability — safest path since it reflects the source of the `sellerType=3` configuration.
+  - Option B (open): an equivalent feature flag on the Logistics side, to be aligned with the team, if the Marketplace one isn't accessible in the screen's context.
+  - Option C (fallback): check whether any `sellerType=3` already exists in the account.
+- The endpoint that lists sellers for the dropdown search must return only `sellerType=3` sellers or the main account itself.

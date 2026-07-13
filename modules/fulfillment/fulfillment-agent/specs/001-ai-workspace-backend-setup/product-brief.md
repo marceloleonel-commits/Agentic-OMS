@@ -1,9 +1,9 @@
-# Product Brief — AI Workspace Backend Setup for Delivery Options Agent
+# Product Brief — AI Workspace Backend Setup for Fulfillment Agent
 
 | Field | Value |
 | --- | --- |
-| **Spec** | 002 — AI Workspace Backend Setup |
-| **Module path** | fulfillment / delivery-options |
+| **Spec** | 001 — AI Workspace Backend Setup |
+| **Module path** | fulfillment / fulfillment-agent |
 | **Pillar** | Fulfillment / Agentic Configuration |
 | **PM** | [Carolina Tourinho](mailto:carolina.rodrigues@vtex.com) |
 | **Status** | Draft |
@@ -17,15 +17,15 @@
 
 ## Problem
 
-The Delivery Options Agent backend must follow the same standard the platform is already using for agentic applications. Building it outside of this standard would create inconsistency in infrastructure, deployment, and observability across VTEX's agent ecosystem.
+The Fulfillment Agent backend must follow the same standard the platform is already using for agentic applications. Building it outside of this standard would create inconsistency in infrastructure, deployment, and observability across VTEX's agent ecosystem.
 
 ---
 
 ## Opportunity
 
-VTEX's AI Workspace provides a standardized scaffolding template ([Create AI Workspace Agent](https://darkkitchen.vtex.com/create/templates/default/create-ai-workspace-agent)) that automates the most time-consuming parts of agent setup: Agent ID generation, repository creation, Tech Catalog registration, deployment pipelines, and credentials provisioning. Using this template eliminates manual configuration risk and ensures the Delivery Options Agent follows VTEX's standard agentic architecture from day one.
+VTEX's AI Workspace provides a standardized scaffolding template ([Create AI Workspace Agent](https://darkkitchen.vtex.com/create/templates/default/create-ai-workspace-agent)) that automates the most time-consuming parts of agent setup: Agent ID generation, repository creation, Tech Catalog registration, deployment pipelines, and credentials provisioning. Using this template eliminates manual configuration risk and ensures the Fulfillment Agent follows VTEX's standard agentic architecture from day one.
 
-**What this agent will do (beyond this release):** absorb logistics configuration workflows that require reading the merchant's **shipping policies, delivery routes, docks, warehouses, and existing Delivery Options** — at account level and, for enterprise seller architecture, **per seller** within the same account. Spec 002 only provisions the backend; see [product-spec.md](./product-spec.md#agent-purpose-long-term) for the full data context and API surface engineering needs for credentials scoping.
+**What this agent will do (beyond this release):** analyze the merchant's real delivery behavior using **Shipping Policies, Delivery Promise, Orders, delivery routes, docks, warehouses, inventory, and existing Delivery Options** — at account level and, for enterprise seller architecture, **per seller** within the same account. This spec only provisions the backend; see [product-spec.md](./product-spec.md#agent-purpose-long-term) for the full data context and API surface engineering needs for credentials scoping.
 
 ---
 
@@ -45,7 +45,7 @@ Using the Dark Kitchen template to:
 
 ## Out of scope
 
-- Agent task business logic (spec 001, spec 003, and others implement agent tasks; this spec provisions the host)
+- Agent task business logic (Delivery Options Same Day automation, VTEX Lab tasks, and others implement agent tasks; this spec provisions the host)
 - Agentic UI / Admin Shell frontend (separate future spec)
 - Storefront integration
 - LLM prompt engineering or model selection for agent tasks
@@ -54,7 +54,7 @@ Using the Dark Kitchen template to:
 
 ## Frontend and cycle scope
 
-The frontend of the Delivery Options Agent will live in Admin v4. Components and patterns to be used are already defined. This spec does not cover the frontend — the focus of this cycle is getting the backend infrastructure in place so the agent can be hosted, deployed, and observed following the platform standard.
+The Fulfillment Agent will be accessible through Admin v4 and AI Workspace. This spec does not cover either frontend experience — the focus of this cycle is getting the shared backend infrastructure in place so the agent can be hosted, deployed, and observed following the platform standard.
 
 ---
 

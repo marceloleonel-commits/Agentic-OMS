@@ -12,10 +12,10 @@
 ## Clarifications
 
 **Why rule-based automation for Same Day grouping?**
-Q2C2 ships **Derek's automation** as the deterministic engine for this workflow: SLA normalization (Clara's rules), Same Day eligibility analysis, grouping, and suggestion generation. The pipeline is rule-based — no LLM inference required for the core logic. That automation is productized as **agent tasks / MCP tools** inside the Delivery Options Agent; the agent invokes it and presents structured output (or guides the merchant through the same flow). **Being deterministic does not make it non-agentic** — this is the agent delivery for this release, not a temporary path before "real AI."
+Q2C2 ships **Derek's automation** as the deterministic engine for this workflow: SLA normalization (Clara's rules), Same Day eligibility analysis, grouping, and suggestion generation. The pipeline is rule-based — no LLM inference required for the core logic. That automation is productized as **agent tasks / MCP tools** inside the Fulfillment Agent's Delivery Options sub-agent; the agent invokes it and presents structured output (or guides the merchant through the same flow). **Being deterministic does not make it non-agentic** — this is the agent delivery for this release, not a temporary path before "real AI."
 
 **Why does this scope belong to the agent?**
-Same Day DO automation must live in the Delivery Options Agent — whether the agent invokes a rule-based tool and presents structured output, or walks the merchant conversationally through the same workflow. The agent owns the scope; interaction mode and reasoning style are implementation choices within that boundary. Implementation follows [spec 002](../002-ai-workspace-backend-setup/product-brief.md) and [ADR-001](../002-ai-workspace-backend-setup/ADR-001-fulfillment-agent.html): agent tasks in `fulfillment-config-agent` (`delivery-options` sub-agent), logistics reads/writes via MCP tools in `fulfillment-mcp-server`.
+Same Day DO automation must live in the Fulfillment Agent — whether the agent invokes a rule-based tool and presents structured output, or walks the merchant conversationally through the same workflow. The agent owns the scope; interaction mode and reasoning style are implementation choices within that boundary. Implementation follows [Fulfillment Agent spec 001](../../../fulfillment-agent/specs/001-ai-workspace-backend-setup/product-brief.md) and [ADR-001](../../../fulfillment-agent/specs/001-ai-workspace-backend-setup/ADR-001-fulfillment-agent.html): agent tasks in `fulfillment-config-agent` (`delivery-options` sub-agent), logistics reads/writes via MCP tools in `fulfillment-mcp-server`.
 
 **What is "Same Day" in this context?**
 A shipping policy is classified as Same Day-eligible if its **effective fulfillment time** is ≤1 business day for at least one active route. Effective fulfillment time is the sum of **warehouse time + dock time + delivery time** (carrier SLA) — not delivery time alone. Eligibility also considers the carrier's cutoff time and store operating hours. Merchants may have partial Same Day coverage (e.g., SP capital only) — the suggestion should reflect actual coverage, not theoretical maximum.
@@ -38,8 +38,8 @@ The primary deliverable of this release is the data and visibility layer: normal
 **What does "confirm" mean for the merchant?**
 The merchant reviews the suggestion (adaptive label, time target, coverage, eligible policies, rationale) and confirms. No form-filling required. Name and time target are editable before confirming. Each suggested DO can be confirmed or discarded independently.
 
-**How often does the automation run?**
-The SLA normalization routine runs at a defined frequency (e.g., daily) to keep the per-merchant SLA map updated. When it detects a change that affects existing Same Day DOs, the merchant is notified. The frequency must balance data freshness with infrastructure cost — to be defined with engineering.
+**How is the automation triggered?**
+The merchant requests the analysis through Admin v4 or AI Workspace. The agent reads the current configuration for that run and returns an action plan for review. Proactive background analysis and notifications are future interaction modes, not requirements for this release.
 
 ---
 
@@ -49,10 +49,10 @@ The SLA normalization routine runs at a defined frequency (e.g., daily) to keep 
 As a Logistics Operations Manager, I want the system to analyze my existing carrier and SLA configuration so that I can see which routes support Same Day delivery without having to check each shipping policy manually.
 
 **US-002 — Review suggested Delivery Option**
-As a Logistics Operations Manager, I want to review the auto-generated Same Day DO — including name, time target, coverage, and eligible policies — before it is activated, so that I can confirm it reflects my operation accurately.
+As a Logistics Manager, I want to review the suggested Same Day DO — including name, time target, coverage, and eligible policies — before it is created as an inactive draft, so that I can confirm it reflects my operation accurately.
 
-**US-003 — Activate with one action**
-As a Logistics Operations Manager, I want to activate the suggested Same Day DO in a single confirmation step, so that I don't need to navigate through multiple configuration screens.
+**US-003 — Create an inactive draft with one action**
+As a Logistics Manager, I want to create the approved Same Day DO as an inactive draft in a single confirmation step, so that I can review its sales-channel activation separately without rebuilding the configuration manually.
 
 **US-004 — Discard suggestion**
 As a Logistics Operations Manager, I want to be able to discard the suggestion if it doesn't match my needs, without any unintended changes to my configuration.
@@ -67,7 +67,7 @@ As a Logistics Operations Manager, I want to be able to discard the suggestion i
 | IR-002 | All Logistics API reads and writes must go through MCP tools in `fulfillment-mcp-server` — no direct API calls from agent tasks bypassing MCP |
 | IR-003 | Clara's SLA normalization rules must be embedded in the agent task / MCP tool layer — not productized as a standalone service outside the agent |
 | IR-004 | Agent task outputs must include structured rationale (carriers, routes, cutoff times) consumable by structured UI or conversational agent interaction — both are agent-delivered experiences |
-| IR-005 | Deployment, observability, and credentials must follow the AI Workspace standard provisioned in spec 002 |
+| IR-005 | Deployment, observability, and credentials must follow the AI Workspace standard provisioned in Fulfillment Agent spec 001 |
 
 ---
 
@@ -83,7 +83,7 @@ As a Logistics Operations Manager, I want to be able to discard the suggestion i
 | FR-004 | The system must calculate coverage for Same Day-eligible routes (postal code zones or regions) |
 | FR-005 | The system must group Same Day-eligible policies into time buckets and suggest 1–3 Same Day DOs maximum per merchant (platform limit is 20 DOs total; Same Day cap is 3) |
 | FR-006 | The grouping algorithm must consolidate routes by cutoff time to minimize the number of DOs while preserving meaningful precision (e.g., routes closing at 20:45 vs. 18:00 should not be merged if the time loss is significant) |
-| FR-007 | The system must run on a daily routine to keep the per-merchant SLA map updated and detect changes in delivery times |
+| FR-007 | The system must run on demand when requested through Admin v4 or AI Workspace and use the current logistics configuration for each analysis |
 
 ### Suggestion (frontstage)
 
@@ -94,7 +94,7 @@ As a Logistics Operations Manager, I want to be able to discard the suggestion i
 | FR-010 | The merchant must be able to edit the label and time target of each suggestion before confirming |
 | FR-011 | Each suggested DO must be independently confirmable or discardable |
 | FR-012 | If no Same Day-eligible routes are found, the system must inform the merchant and explain why (e.g., "No active carrier supports intraday delivery in your current configuration") |
-| FR-013 | When a daily routine detects that the merchant's delivery times have changed in a way that affects existing Same Day DOs, the merchant must be notified |
+| FR-013 | Re-running the analysis must show current suggestions and explain material differences from Delivery Options that already exist |
 
 ### Activation
 
@@ -115,7 +115,7 @@ As a Logistics Operations Manager, I want to be able to discard the suggestion i
 | AC-003 | Given a suggestion is presented, when the merchant discards a suggestion, then no DO is created for that suggestion and the merchant's configuration is unchanged |
 | AC-004 | Given a merchant with no Same Day-eligible routes, when the automation runs, then the merchant receives an explanation (no suggestion offered) |
 | AC-005 | Given the merchant edits the suggested label or time target, when they confirm, the created DO reflects the edited values |
-| AC-006 | Given a daily routine detects that the merchant's SLA configuration has changed in a way that affects an existing Same Day DO, then the merchant receives a notification |
+| AC-006 | Given the merchant requests a new analysis after configuration changes, then the suggestions use current data and explain material differences from existing DOs |
 | AC-007 | Given the underlying SLA data behind a suggestion, the merchant can view the carriers, routes, and cutoff times that drove the grouping |
 
 ---
@@ -133,12 +133,12 @@ As a Logistics Operations Manager, I want to be able to discard the suggestion i
 
 | Decision | Status | Owner |
 | --- | --- | --- |
-| How is the automation triggered? (on-demand button, on DO module activation, or background-only with notification) | Open | Carol + Derek |
+| How is the automation triggered? | Resolved — on demand through Admin v4 or AI Workspace | Carol + Derek |
 | Maximum number of Same Day DO suggestions per merchant | Resolved — max 3 (platform limit: 20 total DOs) | Carol |
 | Grouping algorithm for pharmacies: minimum time loss threshold to merge two time buckets? (e.g., merge if merchant loses <15min of Same Day window) | Open | Clara + Carol |
-| Should the daily change-detection routine trigger automatic DO update or only notify the merchant? (Camila: notification; auto-apply is out of scope for this release) | Resolved — notify only | Carol |
+| Should proactive change detection notify or update automatically? | Future — not part of this release; no automatic updates | Carol |
 | Should the created DO be linked to a specific sales channel automatically or remain unlinked? | Open — FR-015 assumes unlinked | Carol + Engineering |
-| VTEX Lab agent tasks scope and requirements | Covered in spec 003 | Carol |
+| VTEX Lab Fulfillment Actions — First Wave scope and requirements | Covered in Fulfillment Agent spec 002 | Carol |
 
 ---
 
@@ -147,18 +147,18 @@ As a Logistics Operations Manager, I want to be able to discard the suggestion i
 | Dependency | Status |
 | --- | --- |
 | Derek's Same Day automation (Clara's SLA normalization rules) — embedded in agent task / MCP tool layer | **In scope to build** — Derek (mission team) + Clara |
-| Delivery Options API — programmatic DO creation endpoint (exposed as MCP tool) | [PM INPUT NEEDED: confirm API readiness] |
-| AI Workspace backend (spec 002 — Ricardinho) | **Required prerequisite** — agent tasks cannot deploy without this infrastructure |
+| Delivery Options API — programmatic DO creation endpoint (exposed as MCP tool) | **Required dependency** — Engineering must validate endpoint readiness before implementation |
+| AI Workspace backend (Fulfillment Agent spec 001 — Ricardinho) | **Required prerequisite** — agent tasks cannot deploy without this infrastructure |
 
 ---
 
 ## Strategic reference
 
-This spec defines **agent scope** within the Delivery Options Agent. The Same Day pipeline uses deterministic grouping rules invoked by the agent — a valid agent pattern. It may ship in parallel with other agent tasks (e.g., spec 003). Evolution:
+This spec defines **agent scope** within the Fulfillment Agent's Delivery Options sub-agent. The Same Day pipeline uses deterministic grouping rules invoked by the agent — a valid agent pattern. It may ship in parallel with other agent tasks (e.g., Fulfillment Agent spec 002). Evolution:
 
-1. **Prerequisite (Q2C2):** AI Workspace backend — spec 002
+1. **Prerequisite (Q2C2):** AI Workspace backend — Fulfillment Agent spec 001
 2. **This release (Q2C2):** Same Day DO automation — deterministic tools within the `delivery-options` sub-agent
-3. **Next:** additional agent tasks (logistics unavailability detection) — spec 003
+3. **Next:** additional agent tasks (logistics unavailability detection) — Fulfillment Agent spec 002
 4. **Future:** same agent, broader DO types and interaction modes — no workflow reimplementation outside the agent
 
 See [product-vision.md](../../product-vision.md) for the full Delivery Options strategic context.

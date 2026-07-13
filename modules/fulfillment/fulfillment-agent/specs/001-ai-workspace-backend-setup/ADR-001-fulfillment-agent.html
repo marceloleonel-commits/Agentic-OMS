@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ADR-001 — Fulfillment Configuration Agent Architecture</title>
+<title>ADR-001 — Fulfillment Agent Architecture</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap');
 
@@ -117,13 +117,13 @@
 
 <div class="adr-header">
   <div class="adr-badge">ADR — Architecture Decision Record</div>
-  <div class="adr-title">Fulfillment Configuration Agent Architecture</div>
+  <div class="adr-title">Fulfillment Agent Architecture</div>
   <div class="status-badge"><span class="status-dot"></span>Accepted</div>
   <div class="meta-grid">
     <div class="meta-item"><div class="meta-label">ADR ID</div><div class="meta-value">ADR-001</div></div>
     <div class="meta-item"><div class="meta-label">Date</div><div class="meta-value">June 2026</div></div>
     <div class="meta-item"><div class="meta-label">Author</div><div class="meta-value">Ricardinho</div></div>
-    <div class="meta-item"><div class="meta-label">Related to</div><div class="meta-value">Spec 002 — Q2C2</div></div>
+    <div class="meta-item"><div class="meta-label">Related to</div><div class="meta-value">Fulfillment Agent Spec 001 — Q2C2</div></div>
     <div class="meta-item"><div class="meta-label">Domain</div><div class="meta-value">Fulfillment / Agentic</div></div>
     <div class="meta-item"><div class="meta-label">Pillar</div><div class="meta-value">Fulfillment Config</div></div>
   </div>
@@ -133,7 +133,7 @@
 <div class="section">
   <div class="section-header"><span class="section-num">01</span><span class="section-title">Context</span></div>
   <div class="section-content">
-    <p>The Fulfillment team is building a logistics configuration agent that starts with the Delivery Options use case but must be scalable to absorb other domains over time: inventory updates, Delivery Windows configuration, and more.</p>
+    <p>The Fulfillment team is building the Fulfillment Agent, which starts with Delivery Options and predefined logistics diagnostics but must be scalable to absorb other fulfillment actions over time.</p>
     <p>The agent needs to read and write data from VTEX's Logistics APIs, follow the platform's agentic architecture standard (AI Workspace / Dark Kitchen), and be viable for Q2C2 without premature over-engineering.</p>
     <p>The central decision is how to structure the repositories and the agents so the system is scalable, without creating unnecessary complexity at the start.</p>
   </div>
@@ -155,15 +155,17 @@
 <div class="section">
   <div class="section-header"><span class="section-num">03</span><span class="section-title">What the Agent Covers</span></div>
   <div class="section-content">
-    <p>The agent reads the logistics data stored on the platform, understands delivery routes from it, and translates that understanding into Delivery Options (lead times, coverage, filters).</p>
+    <p>The agent analyzes logistics configuration and real delivery behavior, explains risks and opportunities, and translates predefined diagnostics into editable action plans that are executed only after merchant approval.</p>
   </div>
 
   <div class="flow">
     <div class="flow-stage">
       <div class="flow-stage-num">INPUT — DATA READ</div>
-      <div class="flow-stage-title">Logistics data</div>
+      <div class="flow-stage-title">Fulfillment signals</div>
       <ul class="flow-stage-list">
         <li>Shipping policies (SLAs, costs, working hours)</li>
+        <li>Delivery Promise and shipping simulations</li>
+        <li>Aggregated order outcomes</li>
         <li>Docks</li>
         <li>Warehouses</li>
       </ul>
@@ -181,11 +183,11 @@
     <div class="flow-arrow">&#8594;</div>
     <div class="flow-stage">
       <div class="flow-stage-num">OUTPUT</div>
-      <div class="flow-stage-title">Delivery Options</div>
+      <div class="flow-stage-title">Action plans</div>
       <ul class="flow-stage-list">
-        <li>Lead times</li>
-        <li>Coverage</li>
-        <li>Filters</li>
+        <li>Delivery Option suggestions</li>
+        <li>Coverage and routing fixes</li>
+        <li>Individual or bulk approval</li>
       </ul>
     </div>
   </div>
@@ -195,8 +197,8 @@
 <div class="section">
   <div class="section-header"><span class="section-num">04</span><span class="section-title">Primary Objective</span></div>
   <div class="section-content">
-    <p>Help with logistics configurations related to Delivery Options, and fix configuration problems in the account's logistics setup more broadly.</p>
-    <p>Concretely, the agent is able to read the logistics data stored on the platform (see section 03), identify potential problems, translate them into Delivery Options, and based on that <strong>suggest optimizations for coverage, lead time, and shipping margin</strong>.</p>
+    <p>Recommend action plans based on predefined fulfillment diagnoses and execute them once approved by the Ecommerce Manager or Logistics Manager.</p>
+    <p>Concretely, the agent reads the signals in section 03, identifies risks and opportunities, explains the root cause and expected impact, and proposes <strong>editable Delivery Option, coverage, and routing actions</strong> for individual, partial, or bulk approval.</p>
   </div>
 </div>
 

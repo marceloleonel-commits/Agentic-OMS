@@ -94,13 +94,13 @@ Delivery Options are indexed by **Delivery Promise**, so activating DOs with PLP
 
 Clara's script already pulls and normalizes the merchant's existing SLA data — delivery deadlines by carrier, shipping policy, and region. This data is sufficient to deterministically identify which routes support intraday or next-cutoff delivery and auto-generate a Same Day Delivery Option with minimal merchant input.
 
-This is the shortest path to delivering an automated configuration experience — and **a scope owned by the Delivery Options Agent**. It must not be built as a standalone workflow outside the agent.
+This is the shortest path to delivering an automated configuration experience — and **a scope owned by the Fulfillment Agent through its Delivery Options sub-agent**. It must not be built as a standalone workflow outside the agent.
 
 ---
 
-## Relationship to the Delivery Options Agent
+## Relationship to the Fulfillment Agent
 
-**This scope belongs to the Delivery Options Agent — not a parallel track.** Same Day DO automation lives inside the agent architecture defined in [spec 002](../002-ai-workspace-backend-setup/product-brief.md) and [ADR-001](../002-ai-workspace-backend-setup/ADR-001-fulfillment-agent.html): `fulfillment-config-agent` (Orchestrator + `delivery-options` sub-agent) and `fulfillment-mcp-server` (MCP tools for Logistics APIs). It may ship alongside other agent tasks in Q2C2 (e.g., spec 003) — sequencing is an engineering decision, not a product constraint.
+**This scope belongs to the Fulfillment Agent — not a parallel track.** Same Day DO automation lives inside the agent architecture defined in [Fulfillment Agent spec 001](../../../fulfillment-agent/specs/001-ai-workspace-backend-setup/product-brief.md) and [ADR-001](../../../fulfillment-agent/specs/001-ai-workspace-backend-setup/ADR-001-fulfillment-agent.html): `fulfillment-config-agent` (Orchestrator + `delivery-options` sub-agent) and `fulfillment-mcp-server` (MCP tools for Logistics APIs). It may ship alongside other agent tasks in Q2C2 (e.g., [VTEX Lab Fulfillment Actions — First Wave](../../../fulfillment-agent/specs/002-vtex-lab-fulfillment-actions-first-wave/product-brief.md)) — sequencing is an engineering decision, not a product constraint.
 
 **Deterministic does not mean non-agentic.** The agent can invoke fully deterministic tools — rule-based SLA normalization, Same Day suggestion, DO creation — and present structured output to the merchant. It can also walk the merchant through the same flow conversationally. Both are valid agent behaviors. What matters is **scope ownership**: this workflow is executed by the agent, not by a standalone script, cron job, or microservice built outside it.
 
@@ -118,9 +118,9 @@ This is the shortest path to delivering an automated configuration experience �
 
 **Evolution path:**
 
-1. **Prerequisite:** AI Workspace backend setup — [spec 002](../002-ai-workspace-backend-setup/product-brief.md)
+1. **Prerequisite:** AI Workspace backend setup — [Fulfillment Agent spec 001](../../../fulfillment-agent/specs/001-ai-workspace-backend-setup/product-brief.md)
 2. **This release (Q2C2):** Same Day DO automation as agent scope — [spec 001](.) (may ship in parallel with other agent tasks)
-3. **Next:** additional agent tasks (e.g., logistics unavailability detection) — [spec 003](../003-vtex-lab-agent-tasks/product-brief.md)
+3. **Next:** first-wave VTEX Lab fulfillment actions (e.g., logistics unavailability detection) — [Fulfillment Agent spec 002](../../../fulfillment-agent/specs/002-vtex-lab-fulfillment-actions-first-wave/product-brief.md)
 4. **Future:** same agent, broader DO types and interaction modes — no reimplementation outside the agent
 
 See the [Design doc — Agentic experience for Delivery Options](https://docs.google.com/document/d/1XHLPdChfUZd9iqomJgEdQJtr7hUIfCpsVdomJ2BSLVw) and [product-vision.md](../../product-vision.md) for the full strategic context.
@@ -147,9 +147,9 @@ Concretely — delivered as **agent tasks** in the `delivery-options` sub-agent:
 - **Agent task + UI:** present suggestions for merchant review; merchant can confirm or discard each individually
 - **MCP tool:** on confirmation, create the Delivery Option(s) with **PLP filter enabled** where applicable (inactive by default until merchant activates)
 
-**Agent-owned scope.** The Same Day suggestion uses deterministic rules (Clara's normalization logic) — and that is a valid agent pattern. The agent invokes these rules as tools and surfaces structured suggestions for merchant review, or guides the merchant through the same flow conversationally. The automation runs at a defined frequency to keep the SLA map per merchant updated and notify merchants when their configuration changes in a way that affects existing DOs.
+**Agent-owned scope.** The Same Day suggestion uses deterministic rules (Clara's normalization logic) — and that is a valid agent pattern. The agent invokes these rules on request and surfaces structured suggestions for merchant review, or guides the merchant through the same flow conversationally in Admin v4 or AI Workspace.
 
-**Prerequisite:** [spec 002](../002-ai-workspace-backend-setup/product-brief.md) (AI Workspace backend) must be provisioned before this task can deploy.
+**Prerequisite:** [Fulfillment Agent spec 001](../../../fulfillment-agent/specs/001-ai-workspace-backend-setup/product-brief.md) (AI Workspace backend) must be provisioned before this task can deploy.
 
 **The focus is 100% on SLA.** Pricing configuration for the Same Day option is out of scope.
 
@@ -159,7 +159,7 @@ Concretely — delivered as **agent tasks** in the `delivery-options` sub-agent:
 
 - Pricing configuration for the Same Day option (handled separately by Delivery Pricing)
 - Storefront display configuration (handled by Delivery Promise)
-- Building this workflow outside the Delivery Options Agent — standalone script, cron job, or microservice outside `fulfillment-config-agent` / `fulfillment-mcp-server` (see [Relationship to the Delivery Options Agent](#relationship-to-the-delivery-options-agent))
+- Building this workflow outside the Fulfillment Agent — standalone script, cron job, or microservice outside `fulfillment-config-agent` / `fulfillment-mcp-server` (see [Relationship to the Fulfillment Agent](#relationship-to-the-fulfillment-agent))
 - Standard or Next Day DO generation (intraday filter only in this release)
 - Automatic reconfiguration of existing DOs when delivery times change (detection + notification is in scope; auto-apply is not)
 
@@ -183,11 +183,11 @@ Known accounts in this situation, identified from Clara's SLA analysis (May 2026
 | PagueMenos / SjDigital | 1–6h granular — up to 3 DOs |
 | DrogariasPacheco / Drogaria Catarinense | 1–6h highly granular — complex suggestion |
 
-This scope is being executed by Derek/mission team in Q2C2, leveraging work already in progress by Clara. It is **owned by the Delivery Options Agent** — deterministic tools and conversational guidance are both in-bounds; a standalone implementation outside the agent is not.
+This scope is being executed by Derek/mission team in Q2C2, leveraging work already in progress by Clara. It is **owned by the Fulfillment Agent's Delivery Options sub-agent** — deterministic tools and conversational guidance are both in-bounds; a standalone implementation outside the agent is not.
 
 ---
 
 ## Success criteria
 
-- 1 merchant with at least one Same Day Delivery Option auto-generated and activated in Q2C2
+- 1 merchant with at least one Same Day Delivery Option generated as an inactive draft in Q2C2
 - Merchant confirms the suggested DO without manual corrections in ≥70% of runs
