@@ -1340,19 +1340,19 @@ function openSplitPanel(taskId) {
     </div>
     <div class="cm-msgs" id="cm-msgs"></div>
     <div class="cm-suggestions" id="cm-suggestions"></div>
-    <div class="task-preview-mini" id="task-preview-mini"><strong>Resultado da divisão</strong>
+    <div class="task-preview-mini" id="task-preview-mini"><strong>Split result</strong>
       <div class="tpm-row" id="prev-part1">1ª parte: —</div>
       <div class="tpm-row" id="prev-part2">2ª parte: —</div>
     </div>
     <div class="cm-input-row">
-      <input class="cm-input" id="cm-input" placeholder="Digite..." onkeydown="if(event.key==='Enter')sendSplitChat()">
+      <input class="cm-input" id="cm-input" placeholder="Type..." onkeydown="if(event.key==='Enter')sendSplitChat()">
       <button class="cm-send" onclick="sendSplitChat()"><svg viewBox="0 0 16 16" stroke="white" stroke-width="2" fill="none" width="13" height="13"><path d="M2 8l12-6-4 12-3-4-5-2z"/></svg></button>
     </div>`;
   document.getElementById('sp-footer').innerHTML = `
     <button class="btn btn-secondary" style="flex:1;justify-content:center" onclick="closeSidePanel()">Cancel</button>
     <button class="btn btn-primary" id="split-btn" style="flex:1;justify-content:center;opacity:.4;cursor:not-allowed" disabled onclick="requestSplitConfirm()">Confirm Split</button>`;
   openSidePanel();
-  setTimeout(() => addCMsg('ai', `Vou ajudar a dividir "${task.name}" em duas etapas.\n\nComo você quer chamar a primeira parte?`), 200);
+  setTimeout(() => addCMsg('ai', `Vou ajudar a dividir "${task.name}" em duas etapas.\n\nWhat do you want to call the first part?`), 200);
 }
 
 function sendSplitChat() {
@@ -1370,7 +1370,7 @@ function sendSplitChat() {
     const p2 = document.getElementById('prev-part2');
     if (p2) p2.innerHTML = `2ª parte: <span>${text}</span>`;
     setTimeout(() => {
-      addCMsg('ai', `Perfeito! O workflow ficará assim:\n• "${splitDraft.name1}" → "${splitDraft.name2}"\n\nAmbas herdarão o supplier "${task?.supplier}" e podem ser editadas depois. Confirm a divisão?`);
+      addCMsg('ai', `Perfeito! O workflow will look like this:\n• "${splitDraft.name1}" → "${splitDraft.name2}"\n\nBoth will inherit the supplier "${task?.supplier}" e podem ser editadas depois. Confirm the split?`);
       const btn = document.getElementById('split-btn');
       if (btn) { btn.disabled=false; btn.style.opacity='1'; btn.style.cursor='pointer'; }
     }, 450);
@@ -1414,7 +1414,7 @@ function openCreatePanelAt(pos) {
       <div class="tpm-row" id="prev-cat">Category: —</div>
     </div>
     <div class="cm-input-row">
-      <input class="cm-input" id="cm-input" placeholder="Digite..." onkeydown="if(event.key==='Enter')sendStageChat()">
+      <input class="cm-input" id="cm-input" placeholder="Type..." onkeydown="if(event.key==='Enter')sendStageChat()">
       <button class="cm-send" onclick="sendStageChat()"><svg viewBox="0 0 16 16" stroke="white" stroke-width="2" fill="none" width="13" height="13"><path d="M2 8l12-6-4 12-3-4-5-2z"/></svg></button>
     </div>`;
   document.getElementById('sp-footer').innerHTML = `
@@ -1427,7 +1427,7 @@ function openCreatePanelAt(pos) {
 const stageChatFlows = [
   {ai:'What do you want to call this new stage?', field:'name', sugg:['Returns Triage','B2B Approval','Quality Control','Tax Validation']},
   {ai:'Em quais categorias de produtos essa etapa se aplica?', field:'category', sugg:['Todos os produtos','Electronics','Fashion & Footwear','Food','B2B']},
-  {ai:null, field:null, sugg:['Confirm e create']},
+  {ai:null, field:null, sugg:['Confirm and create']},
 ];
 
 const taskChatFlows = [
@@ -1550,7 +1550,7 @@ function sendTaskChat() {
 function sendChat() { sendStageChat(); }
 function updatePreviewMini() {
   const p = document.getElementById('task-preview-mini'); if(p) p.style.display='block';
-  if(document.getElementById('prev-name')) document.getElementById('prev-name').innerHTML = `Nome: <span>${newTaskDraft.name||'—'}</span>`;
+  if(document.getElementById('prev-name')) document.getElementById('prev-name').innerHTML = `Name: <span>${newTaskDraft.name||'—'}</span>`;
   if(document.getElementById('prev-cat')) document.getElementById('prev-cat').innerHTML = `Category: <span>${newTaskDraft.category||'—'}</span>`;
 }
 function createTask() {
@@ -1633,13 +1633,13 @@ function addTaskToStage(stageId) {
   document.getElementById('sp-title').textContent = '✚ Nova Tarefa';
   document.getElementById('sp-body').innerHTML = `
     <div id="task-preview-mini" style="display:none;background:#f9f9fb;border-radius:6px;padding:10px 12px;font-size:12px;color:#555;line-height:1.7;border:1px solid #efefef">
-      <div id="prev-name">Nome: <span style="color:#1a1a1a;font-weight:600">—</span></div>
+      <div id="prev-name">Name: <span style="color:#1a1a1a;font-weight:600">—</span></div>
       <div id="prev-cat">Category: <span style="color:#1a1a1a;font-weight:600">—</span></div>
     </div>
     <div class="cm-msgs" id="cm-msgs"></div>
     <div class="cm-suggestions" id="cm-suggestions"></div>
     <div class="cm-input-row">
-      <input class="cm-input" id="cm-input" placeholder="Digite..." onkeydown="if(event.key==='Enter')sendTaskChat()">
+      <input class="cm-input" id="cm-input" placeholder="Type..." onkeydown="if(event.key==='Enter')sendTaskChat()">
       <button class="cm-send" onclick="sendTaskChat()"><svg viewBox="0 0 16 16" stroke="white" stroke-width="2" fill="none" width="13" height="13"><path d="M2 8l12-6-4 12-3-4-5-2z"/></svg></button>
     </div>`;
   document.getElementById('sp-footer').innerHTML = `
@@ -1697,7 +1697,7 @@ const TASK_ACTIONS = [
 
 const SUPPLIER_CATALOG = {
   pagamento:      ['PagSeguro','Cielo','VTEX Payments','Adyen','PayPal','Rede','Stone'],
-  separation:      ['CD São Paulo','CD Rio de Janeiro','CD Recife','CD Manaus','Armazém Central','Fulfillment SP'],
+  separation:      ['CD São Paulo','CD Rio de Janeiro','CD Recife','CD Manaus','Central Warehouse','Fulfillment SP'],
   quality:      ['QA Team','Inspection Team SP','Inspection Team RJ','Quality Partner'],
   entrega:        ['Correios','Jadlog','Transportadora XYZ','Total Express','Loggi','Azul Cargo','DHL'],
   invoice:    ['Nota Fácil','NF-e.io','Bling','Omie','SAP NF','NF Paulistana'],
@@ -1710,16 +1710,16 @@ const SUPPLIER_CATALOG = {
 
 function getContextSuppliers(taskName) {
   const n = (taskName||'').toLowerCase();
-  if (/pagament|autoriz|captur|financ|cobranc|cobrança/.test(n)) return SUPPLIER_CATALOG.pagamento;
+  if (/pagament|autoriz|captur|financ|billing|billing/.test(n)) return SUPPLIER_CATALOG.pagamento;
   if (/separ|reserv|estoque|warehouse|warehouse|fulfillment|cd /.test(n)) return SUPPLIER_CATALOG.separation;
   if (/quality|confer|inspect|inspection|qa|audit/.test(n)) return SUPPLIER_CATALOG.quality;
   if (/entrega|expedi|transport|frete|logist|envio|coleta/.test(n)) return SUPPLIER_CATALOG.entrega;
   if (/nota.?fiscal|nf-?e|nfe|fiscal|sefaz/.test(n)) return SUPPLIER_CATALOG.invoice;
   if (/rastreio|rastreamento|tracking|code de rastreio/.test(n)) return SUPPLIER_CATALOG.rastreamento;
   if (/atendimento|suporte|devolu|troca|reclam/.test(n)) return SUPPLIER_CATALOG.atendimento;
-  if (/financ|contab|cobranc/.test(n)) return SUPPLIER_CATALOG.fiscal;
+  if (/financ|contab|billing/.test(n)) return SUPPLIER_CATALOG.fiscal;
   if (/personaliz|estampa|bordado|customiz|gravaction|gravaction|brk/.test(n)) return SUPPLIER_CATALOG.customization;
-  if (/instala|montagem|serviço|servico|técnico|tecnico|arte.*decolor/.test(n)) return SUPPLIER_CATALOG.installation;
+  if (/instala|assembly|service|service|technician|technician|art.*decolor/.test(n)) return SUPPLIER_CATALOG.installation;
   // default: mix of common ones
   return ['CD São Paulo','QA Team','Financeiro','Transportadora XYZ','VTEX Payments'];
 }
@@ -1765,7 +1765,7 @@ const MCP_SERVERS = [
 
 const AI_WORKSPACE_AGENTS = [
   {id:'quality-agent',   name:'Agente de Qualidade',  icon:'🔍',
-   description:'Analisa conformidade do produto com padrões de quality antes da expedição',
+   description:'Analisa conformidade do produto com quality standards before shipping',
    inputVars:['produto_id','quantidade','lote'],
    outputVars:['quality_aprovada','scolore_quality','motivo_reprovaction']},
   {id:'fraud-agent',     name:'Agente Antifraude',    icon:'🛡️',
@@ -1773,7 +1773,7 @@ const AI_WORKSPACE_AGENTS = [
    inputVars:['pedido_id','cliente_email','valor_total','ip_cliente'],
    outputVars:['risco_fraude','scolore_fraude','recomendaction']},
   {id:'logistics-agent', name:'Logistics Agent',  icon:'🗺️',
-   description:'Sugere melhor rota e transportadora com base no CEP e urgência do pedido',
+   description:'Sugere melhor rota e transportadora com base by postal code and order urgency',
    inputVars:['cep_destino','peso_total','urgencia'],
    outputVars:['transportadora_recomendada','prazo_dias','custo_frete']},
   {id:'support-agent',   name:'Agente de Atendimento', icon:'💬',
@@ -1795,7 +1795,7 @@ function showApiConfigInline() {
   div.style.cssText = 'background:#f0f7ff;border:1px solid #bfdbfe;border-radius:8px;padding:12px;margin-top:6px;display:flex;flex-direction:column;gap:8px';
   div.innerHTML = `
     <div style="font-size:11px;font-weight:700;color:#1d4ed8;margin-bottom:2px">⚡ Configuraction de API Externa</div>
-    <input id="api-url-inp" placeholder="URL da API (ex: https://api.seuservico.com/endpoint)" style="border:1px solid #bfdbfe;border-radius:4px;padding:6px 9px;font-size:12px;font-family:inherit;width:100%;box-sizing:border-box">
+    <input id="api-url-inp" placeholder="URL da API (ex: https://api.seuservice.com/endpoint)" style="border:1px solid #bfdbfe;border-radius:4px;padding:6px 9px;font-size:12px;font-family:inherit;width:100%;box-sizing:border-box">
     <div style="display:flex;gap:6px">
       <select id="api-method-sel" style="border:1px solid #bfdbfe;border-radius:4px;padding:5px;font-size:12px;font-family:inherit;background:#fff">
         <option>POST</option><option>GET</option><option>PUT</option><option>PATCH</option>
@@ -1818,8 +1818,8 @@ function applyApiConfig() {
     responseMapping: [{ key: 'api_result', path: returnField }]
   };
   if (activePanel === 'edit') { editDraft.externallApi = newTaskDraft.externallApi; refreshEditPreview(); }
-  addCMsg('ai', `✓ API configurada: ${method} ${url}\nRetorno mapeado como {{api_result}} para a próxima tarefa.\n\nDeseja create a tarefa agora?`);
-  renderCSuggs(['Criar tarefa','Add checkpoints','MCP Integration']);
+  addCMsg('ai', `✓ API configured: ${method} ${url}\nReturn mapped as {{api_result}} for the next task.\n\nDo you want to create the task now?`);
+  renderCSuggs(['Create task','Add checkpoints','MCP Integration']);
 }
 
 function showCheckpointBuilderInline() {
@@ -1955,11 +1955,11 @@ function renderWorkflowSettings() {
           </label>
           <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
             <input type="radio" name="trig-type" value="workflow-complete" ${trigger.type==='workflow-complete'?'checked':''} onchange="onTriggerTypeChange('workflow-complete')">
-            Conclusão de um workflow
+            Workflow completion
           </label>
           <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
             <input type="radio" name="trig-type" value="task-complete" ${trigger.type==='task-complete'?'checked':''} onchange="onTriggerTypeChange('task-complete')">
-            Conclusão de uma tarefa específica
+            Specific task completion
           </label>
         </div>
       </div>
@@ -1972,7 +1972,7 @@ function renderWorkflowSettings() {
         <div id="ws-trigger-task-row" style="${trigger.type==='task-complete'?'':'display:none'}">
           <label style="font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:4px">Tarefa de origem</label>
           <select id="ws-trigger-task" class="cm-input" style="width:100%">
-            <option value="">Selecione uma tarefa</option>
+            <option value="">Selecione a task</option>
             ${taskOptions}
           </select>
         </div>
@@ -1994,7 +1994,7 @@ function toggleDepDropdown() {
   if (isOpen) { dd.style.display = 'none'; return; }
   const wf = WORKFLOW_DEFS.find(w => w.id === currentSettingsWfId);
   const available = WORKFLOW_DEFS.filter(w => w.id !== currentSettingsWfId && !wf.dependencies.includes(w.id));
-  if (!available.length) { dd.innerHTML = '<div style="padding:10px 12px;font-size:12.5px;color:#888">Nenhum workflow disponível</div>'; }
+  if (!available.length) { dd.innerHTML = '<div style="padding:10px 12px;font-size:12.5px;color:#888">Nenhum workflow available</div>'; }
   else dd.innerHTML = available.map(w =>
     `<div onclick="addDep('${w.id}')" style="padding:10px 12px;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:8px;border-bottom:1px solid #f5f5f5" onmouseenter="this.style.background='#f5f5f5'" onmouseleave="this.style.background=''">${w.icon} ${w.name}</div>`
   ).join('');
@@ -2050,7 +2050,7 @@ function onTriggerWfChange(wfId) {
   const srcWf = WORKFLOW_DEFS.find(w => w.id === wfId);
   const taskSelect = document.getElementById('ws-trigger-task');
   if (taskSelect && srcWf) {
-    taskSelect.innerHTML = `<option value="">Selecione uma tarefa</option>` +
+    taskSelect.innerHTML = `<option value="">Selecione a task</option>` +
       (srcWf.tasks || []).map(s => `<option value="${s.id}">${s.name}</option>`).join('');
   }
 }
@@ -2061,18 +2061,18 @@ function onTriggerWfChange(wfId) {
 let orchChatState = 'idle';
 let orchRuleDraft = null;
 let orchRules = [
-  {id:'r1', condition:'Pedido travado há > 8h em Separaction', action:'Escalar para gerente de operactions', priority:'high', wf:'Preparando os itens', active:true},
-  {id:'r2', condition:'Amount do pedido > R$ 5.000', action:'Requer confirmaction humana antes de avançar', priority:'high', wf:'All', active:true},
-  {id:'r3', condition:'Supplier sem capacidade há > 2h', action:'Sugerir realocaction automaticamente', priority:'med', wf:'Preparando os itens', active:true},
-  {id:'r4', condition:'Amount de devolução < R$ 200', action:'Reembolso automático sem auditoria manual', priority:'low', wf:'Returns & Exchanges', active:false},
+  {id:'r1', condition:'Order stuck for > 8h at Picking', action:'Escalate to operations manager', priority:'high', wf:'Preparing Items', active:true},
+  {id:'r2', condition:'Order amount > R$ 5,000', action:'Require human confirmation before advancing', priority:'high', wf:'All', active:true},
+  {id:'r3', condition:'Supplier without capacity for > 2h', action:'Suggest reallocation automatically', priority:'med', wf:'Preparing Items', active:true},
+  {id:'r4', condition:'Return amount < R$ 200', action:'Automatic refund without manual audit', priority:'low', wf:'Returns & Exchanges', active:false},
 ];
 
 function initOrchChat() {
   const msgs = document.getElementById('orch-chat-msgs');
   if (!msgs || msgs.children.length > 0) return;
   orchChatState = 'idle';
-  addOrchMsg('ai', 'Olá! Sou o assistente de configuraction do Orchestration Agent. 🤖\n\nEste agente é composto por 3 sub-agentes:\n🗺️ Routing — seleciona o modo de fulfillment e provider por pedido\n⚙️ Orchestration — avança gates e dispara actions automaticamente\n🚨 Escalation — detecta inatividade e cria tarefas para operadores\n\nCurrent configuration:\n• Confiança mínima: 75%\n• SLA: 4h sem movimentaction\n• Cobertura: Preparando os itens + Troca e Devolução\n• 4 regras customizadas\n\nO que você gostaria de configurar?');
-  renderOrchSuggs(['Ajustar confiança', 'Configurar SLA', 'Cobertura de workflows', 'Definir regra customizada', 'Notificactions']);
+  addOrchMsg('ai', 'Hi! I am the Orchestration Agent configuration assistant. 🤖\n\nThis agent is composed of 3 sub-agents:\n🗺️ Routing — selects the fulfillment mode and provider per order\n⚙️ Orchestration — advances gates and triggers actions automatically\n🚨 Escalation — detects inactivity and creates tasks for operators\n\nCurrent configuration:\n• Minimum confidence: 75%\n• SLA: 4h without activity\n• Coverage: Preparing Items + Returns & Exchanges\n• 4 custom rules\n\nWhat would you like to configure?');
+  renderOrchSuggs(['Adjust confidence', 'Configure SLA', 'Workflow coverage', 'Define custom rule', 'Notifications']);
   renderCustomRules();
 }
 
@@ -2117,11 +2117,11 @@ function processOrchIntent(text) {
     if (!isNaN(num) && num >= 0 && num <= 100) {
       setOrchConfidence(num);
       orchChatState = 'idle';
-      const note = num < 50 ? '⚡ O agente agirá com bastante autonomia.' : num > 85 ? '🧑 O agente escalará com frequência para operadores.' : '✅ Configuraction balanceada.';
-      addOrchMsg('ai', `Confiança mínima ajustada para ${num}%. ${note}\n\nPosso ajudar com mais alguma configuraction?`);
-      renderOrchSuggs(['Configurar SLA', 'Cobertura de workflows', 'Definir regra customizada', 'Pronto!']);
+      const note = num < 50 ? '⚡ The agent will act with a lot of autonomy.' : num > 85 ? '🧑 The agent will frequently escalate to operators.' : '✅ Balanced configuration.';
+      addOrchMsg('ai', `Minimum confidence set to ${num}%. ${note}\n\nCan I help with any other configuration?`);
+      renderOrchSuggs(['Configure SLA', 'Workflow coverage', 'Define custom rule', 'Done!']);
     } else {
-      addOrchMsg('ai', 'Por favor, informe um número entre 0 e 100.');
+      addOrchMsg('ai', 'Please enter a number between 0 and 100.');
     }
     return;
   }
@@ -2133,10 +2133,10 @@ function processOrchIntent(text) {
       if (el) el.value = num;
       highlightOrchCard('ocard-sla');
       orchChatState = 'idle';
-      addOrchMsg('ai', `SLA definido: o agente intervirá após ${num}h sem movimentaction. ✅\n\nPosso ajudar com mais alguma configuraction?`);
-      renderOrchSuggs(['Ajustar confiança', 'Cobertura de workflows', 'Definir regra customizada', 'Pronto!']);
+      addOrchMsg('ai', `SLA set: the agent will intervene after ${num}h without activity. ✅\n\nCan I help with any other configuration?`);
+      renderOrchSuggs(['Adjust confidence', 'Workflow coverage', 'Define custom rule', 'Done!']);
     } else {
-      addOrchMsg('ai', 'Informe um valor entre 1 e 72 horas.');
+      addOrchMsg('ai', 'Enter a value between 1 and 72 hours.');
     }
     return;
   }
@@ -2144,15 +2144,15 @@ function processOrchIntent(text) {
   if (orchChatState === 'await-rule-condition') {
     orchRuleDraft.condition = text;
     orchChatState = 'await-rule-action';
-    addOrchMsg('ai', `Condição registrada: "${text}"\n\nQual action o agente deve executar quando essa condição for verdadeira?\n\nExemplos:\n• Escalar para gerente de operactions\n• Solicitar confirmaction humana\n• Cancel pedido automaticamente\n• Enviar alerta via Slack`);
+    addOrchMsg('ai', `Condition recorded: "${text}"\n\nWhat action should the agent take when this condition is true?\n\nExamples:\n• Escalate to operations manager\n• Request human confirmation\n• Cancel order automatically\n• Send alert via Slack`);
     return;
   }
 
   if (orchChatState === 'await-rule-action') {
     orchRuleDraft.action = text;
     orchChatState = 'await-rule-priority';
-    addOrchMsg('ai', `Ação definida: "${text}"\n\nQual a prioridade desta regra?`);
-    renderOrchSuggs(['Alta — executa antes das demais', 'Média — ordem padrão', 'Baixa — executa por último']);
+    addOrchMsg('ai', `Action defined: "${text}"\n\nWhat is the priority of this rule?`);
+    renderOrchSuggs(['High — runs before others', 'Medium — default order', 'Low — runs last']);
     return;
   }
 
@@ -2162,16 +2162,16 @@ function processOrchIntent(text) {
     else if (lower.includes('baix') || lower.includes('low')) priority = 'low';
     orchRuleDraft.priority = priority;
     orchChatState = 'await-rule-workflow';
-    addOrchMsg('ai', 'Para qual workflow esta regra se aplica?');
-    renderOrchSuggs(['Todos os workflows', 'Preparando os itens', 'Returns & Exchanges', 'Aprovaction de Payment']);
+    addOrchMsg('ai', 'Which workflow does this rule apply to?');
+    renderOrchSuggs(['All workflows', 'Preparing Items', 'Returns & Exchanges', 'Payment Approval']);
     return;
   }
 
   if (orchChatState === 'await-rule-workflow') {
     let wf = 'All';
-    if (lower.includes('padrão') || lower.includes('padrao')) wf = 'Preparando os itens';
-    else if (lower.includes('troca') || lower.includes('devolução') || lower.includes('devolucao')) wf = 'Returns & Exchanges';
-    else if (lower.includes('pagamento')) wf = 'Aprovaction de Payment';
+    if (lower.includes('padrao') || lower.includes('padrao')) wf = 'Preparing Items';
+    else if (lower.includes('return') || lower.includes('exchange')) wf = 'Returns & Exchanges';
+    else if (lower.includes('payment')) wf = 'Payment Approval';
     orchRuleDraft.wf = wf;
     orchRuleDraft.id = 'r' + Date.now();
     orchRuleDraft.active = true;
@@ -2180,39 +2180,39 @@ function processOrchIntent(text) {
     orchChatState = 'idle';
     renderCustomRules();
     highlightOrchCard('ocard-rules');
-    addOrchMsg('ai', 'Regra criada com sucesso! ✅\n\nEla já aparece no painel de Regras Customizadas à direita. Você pode ativá-la ou desativá-la pelo toggle.\n\nPosso ajudar com mais alguma configuraction?');
-    renderOrchSuggs(['Definir outra regra', 'Ajustar confiança', 'Configurar SLA', 'Pronto!']);
+    addOrchMsg('ai', 'Rule created successfully! ✅\n\nIt is now visible in the Custom Rules panel on the right. You can activate or deactivate it with the toggle.\n\nCan I help with any other configuration?');
+    renderOrchSuggs(['Define another rule', 'Adjust confidence', 'Configure SLA', 'Done!']);
     return;
   }
 
   /* ── routing by keyword ── */
   if (/confiança|confianca|threshold|autonomia/.test(lower)) {
     orchChatState = 'await-confidence';
-    addOrchMsg('ai', 'Confiança mínima atual: 75%\n\nEsta configuraction define o quão certo o agente precisa estar para agir sozinho. Abaixo desse valor ele escala para um operador humano.\n\nQual valor você deseja? (0–100%)');
-    renderOrchSuggs(['60% — mais autônomo', '75% — padrão atual', '85% — mais conservador', '95% — quase nunca age sozinho']);
+    addOrchMsg('ai', 'Current minimum confidence: 75%\n\nThis setting defines how certain the agent needs to be before acting on its own. Below this value it escalates to a human operator.\n\nWhat value do you want? (0–100%)');
+    renderOrchSuggs(['60% — more autonomous', '75% — current default', '85% — more conservative', '95% — almost never acts alone']);
     return;
   }
 
   if (/\bsla\b|hora|interv/.test(lower)) {
     orchChatState = 'await-sla';
-    addOrchMsg('ai', 'SLA atual: 4 horas\n\nApós quantas horas sem movimentaction o agente deve intervir? (1–72h)');
-    renderOrchSuggs(['2h — rigoroso', '4h — padrão atual', '8h — mais calmo', '24h — intervenção mínima']);
+    addOrchMsg('ai', 'Current SLA: 4 hours\n\nAfter how many hours without activity should the agent intervene? (1–72h)');
+    renderOrchSuggs(['2h — strict', '4h — current default', '8h — relaxed', '24h — minimal intervention']);
     return;
   }
 
   if (/cobertura|workflow|fluxo/.test(lower)) {
     highlightOrchCard('ocard-coverage');
     orchChatState = 'idle';
-    addOrchMsg('ai', 'Configuraction de cobertura destacada no painel à direita 👉\n\nStatus atual:\n✅ Preparando os itens — 4.256 orders\n✅ Troca e Devolução — 83 orders\n⬜ Aprovaction de Payment — desativado\n\nUse os toggles para ativar ou desativar cada workflow.');
-    renderOrchSuggs(['Ajustar confiança', 'Configurar SLA', 'Definir regra customizada', 'Pronto!']);
+    addOrchMsg('ai', 'Coverage settings highlighted in the right panel 👉\n\nCurrent status:\n✅ Preparing Items — 4,256 orders\n✅ Returns & Exchanges — 83 orders\n⬜ Payment Approval — disabled\n\nUse the toggles to activate or deactivate each workflow.');
+    renderOrchSuggs(['Adjust confidence', 'Configure SLA', 'Define custom rule', 'Done!']);
     return;
   }
 
   if (/notif|alerta|slack|email|webhook/.test(lower)) {
     highlightOrchCard('ocard-sla');
     orchChatState = 'idle';
-    addOrchMsg('ai', 'Settings de notificaction destacadas no painel à direita 👉\n\nAtualmente:\n✅ Email ao escalar para operador\n✅ Slack — #dom-alertas\n⬜ Custom webhook\n\nAlteractions diretas pelos checkboxes.');
-    renderOrchSuggs(['Ajustar confiança', 'Configurar SLA', 'Definir regra customizada', 'Pronto!']);
+    addOrchMsg('ai', 'Notification settings highlighted in the right panel 👉\n\nCurrently:\n✅ Email when escalating to operator\n✅ Slack — #oms-alerts\n⬜ Custom webhook\n\nEdit directly via the checkboxes.');
+    renderOrchSuggs(['Adjust confidence', 'Configure SLA', 'Define custom rule', 'Done!']);
     return;
   }
 
@@ -2221,22 +2221,22 @@ function processOrchIntent(text) {
     return;
   }
 
-  if (/action|actions|action|actions|habilit/.test(lower)) {
+  if (/action|actions|habilit/.test(lower)) {
     highlightOrchCard('ocard-behavior');
     orchChatState = 'idle';
-    addOrchMsg('ai', 'Ações do agente destacadas no painel à direita 👉\n\nVocê pode ativar ou desativar individualmente cada tipo de action que o agente pode executar.');
-    renderOrchSuggs(['Ajustar confiança', 'Configurar SLA', 'Definir regra customizada', 'Pronto!']);
+    addOrchMsg('ai', 'Agent actions highlighted in the right panel 👉\n\nYou can individually activate or deactivate each type of action the agent can execute.');
+    renderOrchSuggs(['Adjust confidence', 'Configure SLA', 'Define custom rule', 'Done!']);
     return;
   }
 
   if (/done|ok\b|salv|conclu/.test(lower)) {
-    addOrchMsg('ai', 'Tudo certo! 🎉 Clique em "Save" no topo para persistir as mudanças.\n\nPosso ajudar com mais alguma configuraction?');
-    renderOrchSuggs(['Ajustar confiança', 'Configurar SLA', 'Cobertura de workflows', 'Definir regra customizada']);
+    addOrchMsg('ai', 'All set! 🎉 Click "Save" at the top to persist the changes.\n\nCan I help with any other configuration?');
+    renderOrchSuggs(['Adjust confidence', 'Configure SLA', 'Workflow coverage', 'Define custom rule']);
     return;
   }
 
-  addOrchMsg('ai', 'Posso ajudar com:\n• Confiança mínima e actions habilitadas\n• SLA e horário de operaction\n• Cobertura por workflow\n• Notificactions e alertas\n• Regras customizadas\n\nO que você gostaria de configurar?');
-  renderOrchSuggs(['Ajustar confiança', 'Configurar SLA', 'Cobertura de workflows', 'Definir regra customizada']);
+  addOrchMsg('ai', 'I can help with:\n• Minimum confidence and enabled actions\n• SLA and operating hours\n• Workflow coverage\n• Notifications and alerts\n• Custom rules\n\nWhat would you like to configure?');
+  renderOrchSuggs(['Adjust confidence', 'Configure SLA', 'Workflow coverage', 'Define custom rule']);
 }
 
 function addRuleViaChat() {
@@ -2244,7 +2244,7 @@ function addRuleViaChat() {
   orchRuleDraft = {id:null, condition:'', action:'', priority:'med', wf:'All', active:true};
   const sugg = document.getElementById('orch-sugg-wrap');
   if (sugg) sugg.innerHTML = '';
-  addOrchMsg('ai', 'Vamos create uma nova regra customizada! 📏\n\nRegras definem condições específicas que o agente deve observar além do comportamento padrão.\n\nQual é a condição que deve disparar esta regra?\n\nExemplos:\n• Pedido travado há > 8h em Separaction\n• Amount do pedido > R$ 5.000\n• Supplier sem resposta há > 2h\n• Pedido com mais de 10 itens');
+  addOrchMsg('ai', "Let's create a new custom rule! 📏\n\nRules define specific conditions for the agent to monitor beyond default behavior.\n\nWhat condition should trigger this rule?\n\nExamples:\n• Order stuck for > 8h at Picking\n• Order amount > R$ 5,000\n• Supplier unresponsive for > 2h\n• Order with more than 10 items");
 }
 
 function setOrchConfidence(val) {
@@ -2271,10 +2271,10 @@ function renderCustomRules() {
   const list = document.getElementById('custom-rules-list');
   if (!list) return;
   if (!orchRules.length) {
-    list.innerHTML = '<div style="font-size:12px;color:#aaa;text-align:center;padding:20px 0">Nenhuma regra customizada. Clique em "+ Nova Regra" ou peça ao assistente.</div>';
+    list.innerHTML = '<div style="font-size:12px;color:#aaa;text-align:center;padding:20px 0">No custom rules. Click "+ New Rule" or ask the assistant.</div>';
     return;
   }
-  const prioLabel = {high:'Alta', med:'Média', low:'Baixa'};
+  const prioLabel = {high:'High', med:'Medium', low:'Low'};
   const prioBg    = {high:'#fef2f2', med:'#fffbeb', low:'#f0fdf4'};
   const prioColor = {high:'#dc2626', med:'#d97706', low:'#16a34a'};
   list.innerHTML = orchRules.map(r => `
@@ -2308,7 +2308,7 @@ function deleteOrchRule(id) {
 }
 
 function saveAgentConfig() {
-  showSuccessModal('Settings salvas!', 'O agente foi atualizado e está monitorando os workflows ativos.');
+  showSuccessModal('Settings salvas!', 'Agent updated and monitoring active workflows.');
 }
 
 // ══════════════════════════════════════════
@@ -2319,12 +2319,12 @@ const WF_ICONS = ['📦','↩️','💳','🚚','🔄','⚡','🏪','🌐','📋
 const WF_COLORS = ['#0c6fcd','#7c3aed','#059669','#d97706','#0891b2','#6366f1','#dc2626','#0f766e'];
 let newWfDraft = {}, newWfStep = 0;
 const newWfFlows = [
-  { id:'name',        ai:'Como você quer chamar esse Order Job?',                                       field:'name',        sugg:['Delivery Expressa','Marketplace Premium','Cross-docking','Delivery Agendada'] },
+  { id:'name',        ai:'What do you want to call this Order Job?',                                       field:'name',        sugg:['Express Delivery','Marketplace Premium','Cross-docking','Scheduled Delivery'] },
   { id:'origin',      ai:null,                                                                          field:null,          sugg:[] },
-  { id:'icon',        ai:'Escolha um ícone para identificar visualmente este Order Job:',               field:null,          sugg:[] },
-  { id:'description', ai:'Descreva brevemente o propósito deste Order Job:',                            field:'description', sugg:['Fluxo para entregas no mesmo dia','Delivery com agendamento pelo cliente','Modalidade para orders B2B','Delivery via parceiros logísticos regionais'] },
+  { id:'icon',        ai:'Choose an icon to visually identify this Order Job:',               field:null,          sugg:[] },
+  { id:'description', ai:'Briefly describe the purpose of this Order Job:',                            field:'description', sugg:['Same-day delivery flow','Scheduled delivery by customer','Modality for B2B orders','Delivery via regional logistics partners'] },
   { id:'marcos',      ai:null,                                                                          field:null,          sugg:[] },
-  { id:'confirm',     ai:null,                                                                          field:null,          sugg:['Confirm e create'] },
+  { id:'confirm',     ai:null,                                                                          field:null,          sugg:['Confirm and create'] },
 ];
 
 function openCreateWorkflowPanel() {
@@ -2333,17 +2333,17 @@ function openCreateWorkflowPanel() {
   const body = document.getElementById('new-wf-body');
   body.innerHTML = `
     <div id="nwf-preview" style="display:none;margin:12px 16px;background:#f9f9fb;border:1px solid #efefef;border-radius:6px;padding:10px 12px;font-size:12px;color:#555;line-height:1.8">
-      <div id="nwf-prev-name">Nome: <span style="color:#1a1a1a;font-weight:600">—</span></div>
+      <div id="nwf-prev-name">Name: <span style="color:#1a1a1a;font-weight:600">—</span></div>
       <div id="nwf-prev-icon">Icon: <span style="color:#1a1a1a;font-weight:600">—</span></div>
       <div id="nwf-prev-desc">Description: <span style="color:#1a1a1a;font-weight:600">—</span></div>
-      <div id="nwf-prev-source" style="display:none">Copiado de: <span style="color:#0c6fcd;font-weight:600">—</span></div>
+      <div id="nwf-prev-source" style="display:none">Copied from: <span style="color:#0c6fcd;font-weight:600">—</span></div>
     </div>
     <div class="cm-msgs" id="nwf-msgs" style="flex:1;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:8px"></div>
     <div id="nwf-origin-picker" style="display:none;padding:0 16px 8px;flex-direction:column;gap:8px"></div>
     <div id="nwf-icon-grid" style="display:none;padding:8px 16px;display:none;flex-wrap:wrap;gap:8px"></div>
     <div id="nwf-suggestions" style="padding:0 16px 8px;display:flex;flex-wrap:wrap;gap:6px"></div>
     <div style="padding:8px 16px;border-top:1px solid #f0f0f0;display:flex;gap:6px">
-      <input class="cm-input" id="nwf-input" placeholder="Digite..." onkeydown="if(event.key==='Enter')sendNewWfChat()" style="flex:1;border:1px solid #e0e0e0;border-radius:6px;padding:7px 10px;font-size:13px">
+      <input class="cm-input" id="nwf-input" placeholder="Type..." onkeydown="if(event.key==='Enter')sendNewWfChat()" style="flex:1;border:1px solid #e0e0e0;border-radius:6px;padding:7px 10px;font-size:13px">
       <button onclick="sendNewWfChat()" style="background:#0c6fcd;border:none;border-radius:6px;padding:7px 10px;cursor:pointer;display:flex;align-items:center"><svg viewBox="0 0 16 16" stroke="white" stroke-width="2" fill="none" width="13" height="13"><path d="M2 8l12-6-4 12-3-4-5-2z"/></svg></button>
     </div>`;
   document.getElementById('new-wf-footer').innerHTML = `
@@ -2424,7 +2424,7 @@ function pickWfIcon(icon) {
   newWfStep++;
   _updateNwfPreview();
   setTimeout(() => {
-    addNwfMsg('ai', newWfFlows[newWfStep]?.ai || 'Descreva o propósito deste Order Job:');
+    addNwfMsg('ai', newWfFlows[newWfStep]?.ai || 'Describe the purpose of this Order Job:');
     const baseSugg = newWfFlows[newWfStep]?.sugg || [];
     // If copying, offer inherited description as first suggestion
     const sugg = (newWfDraft.sourceId && newWfDraft.description)
@@ -2436,14 +2436,14 @@ function pickWfIcon(icon) {
 
 function _updateNwfPreview() {
   const p = document.getElementById('nwf-preview'); if (p) p.style.display = 'block';
-  const n = document.getElementById('nwf-prev-name'); if (n) n.innerHTML = `Nome: <span style="color:#1a1a1a;font-weight:600">${newWfDraft.name||'—'}</span>`;
+  const n = document.getElementById('nwf-prev-name'); if (n) n.innerHTML = `Name: <span style="color:#1a1a1a;font-weight:600">${newWfDraft.name||'—'}</span>`;
   const ic = document.getElementById('nwf-prev-icon'); if (ic) ic.innerHTML = `Icon: <span style="color:#1a1a1a;font-weight:600">${newWfDraft.icon||'—'}</span>`;
   const d = document.getElementById('nwf-prev-desc'); if (d) d.innerHTML = `Description: <span style="color:#1a1a1a;font-weight:600">${newWfDraft.description||'—'}</span>`;
   const src = document.getElementById('nwf-prev-source');
   if (src) {
     if (newWfDraft.sourceId) {
       const srcWf = WORKFLOW_DEFS.find(w => w.id === newWfDraft.sourceId);
-      src.innerHTML = `Copiado de: <span style="color:#0c6fcd;font-weight:600">${srcWf ? srcWf.name : '—'}</span>`;
+      src.innerHTML = `Copied from: <span style="color:#0c6fcd;font-weight:600">${srcWf ? srcWf.name : '—'}</span>`;
       src.style.display = 'block';
     } else {
       src.style.display = 'none';
@@ -2463,8 +2463,8 @@ function renderNwfStagesPreview() {
   newWfDraft.marcos = marcos;
 
   addNwfMsg('ai', src
-    ? `Estes são os ${marcos.length} marcos copiados de "${src.name}". Revise e confirme:`
-    : 'Seu Order Job terá os seguintes 4 marcos. Confirme para create:');
+    ? `These are the ${marcos.length} stages copied from "${src.name}". Revise e confirme:`
+    : 'Your Order Job will have the following 4 stages. Confirm to create:');
 
   // Render marcos as a visual block inside the chat
   const msgs = document.getElementById('nwf-msgs');
@@ -2490,7 +2490,7 @@ function renderNwfStagesPreview() {
   // Enable create button + show confirm suggestion
   setTimeout(() => {
     addNwfMsg('ai', 'Tudo certo! Clique em "Criar Job" ou confirme abaixo.');
-    renderNwfSuggs(['Confirm e create']);
+    renderNwfSuggs(['Confirm and create']);
     const btn = document.getElementById('new-wf-btn');
     if (btn) { btn.disabled = false; btn.style.opacity = '1'; btn.style.cursor = 'pointer'; }
   }, 350);
@@ -2527,14 +2527,14 @@ function confirmCreateWorkflow() {
 }
 
 function renderNwfOriginPicker() {
-  addNwfMsg('ai', 'Selecione o modelo base para este Order Job:');
+  addNwfMsg('ai', 'Select the base model for this Order Job:');
   const container = document.getElementById('nwf-origin-picker');
   container.style.display = 'flex';
   const BASE_MODELS = [
-    { id: null,         icon: '✨', name: 'Estrutura vazia',       desc: 'Crie os marcos e tarefas do zero' },
-    { id: 'oj-home',   icon: '🚚', name: 'Home Delivery', desc: '4 marcos · transportadora ao endereço' },
-    { id: 'oj-bopis',  icon: '🏪', name: 'Store Pickup',     desc: '4 marcos · BOPIS / pickup in store' },
-    { id: 'oj-digital',icon: '💻', name: 'Digital Delivery',      desc: '4 marcos · licença, e-mail, acesso' },
+    { id: null,         icon: '✨', name: 'Empty structure',       desc: 'Create stages and tasks from scratch' },
+    { id: 'oj-home',   icon: '🚚', name: 'Home Delivery', desc: '4 stages · carrier to address' },
+    { id: 'oj-bopis',  icon: '🏪', name: 'Store Pickup',     desc: '4 stages · BOPIS / pickup in store' },
+    { id: 'oj-digital',icon: '💻', name: 'Digital Delivery',      desc: '4 stages · license, email, access' },
   ];
   const btnStyle = 'display:flex;align-items:center;gap:10px;background:#f9f9fb;border:1.5px solid #e5e7eb;border-radius:8px;padding:10px 12px;cursor:pointer;text-align:left;width:100%;transition:border-color .15s';
   container.innerHTML = BASE_MODELS.map(m => `
@@ -2558,11 +2558,11 @@ function pickNwfOrigin(sourceId) {
     newWfDraft.description = src ? (src.description || '') : '';
     const marcosCount = src && src.marcos ? src.marcos.length : 0;
     addNwfMsg('user', `Usar modelo: ${src ? src.name : sourceId}`);
-    setTimeout(() => addNwfMsg('ai', `Ótimo! Vou usar os ${marcosCount} marcos de "${src ? src.name : sourceId}" como base. Agora escolha um ícone para o novo Order Job:`), 300);
+    setTimeout(() => addNwfMsg('ai', `Ótimo! Vou usar os ${marcosCount} marcos de "${src ? src.name : sourceId}" como base. Now choose an icon for the new Order Job:`), 300);
   } else {
     newWfDraft.sourceId = null;
     addNwfMsg('user', 'Estrutura vazia');
-    setTimeout(() => addNwfMsg('ai', 'Perfeito! Escolha um ícone para identificar visualmente este Order Job:'), 300);
+    setTimeout(() => addNwfMsg('ai', 'Great! Choose an icon to visually identify this Order Job:'), 300);
   }
   newWfStep = 2;
   _updateNwfPreview();
@@ -2629,8 +2629,8 @@ function openBulkConfigPanel() {
   const panel = document.getElementById('bulk-panel');
   if (panel) panel.style.right = '0';
   setTimeout(() => {
-    addBulkMsg('ai', 'Olá! Vou ajudá-lo a configurar múltiplos workflows de uma vez.\n\nO que deseja fazer?');
-    renderBulkSuggs(['Adicionar nova etapa', 'Adicionar nova tarefa em etapa existente']);
+    addBulkMsg('ai', 'Hello! I will help you configure multiple workflows at once.\n\nWhat would you liker?');
+    renderBulkSuggs(['Add new staga', 'Adicionar nova tarefa em etapa existente']);
   }, 200);
 }
 
@@ -2656,15 +2656,15 @@ function processBulkChat(text) {
   if (bulkChatState === 'select-operation') {
     if (lower.includes('etapa')) {
       bulkDraft.operation = 'add-stage'; bulkChatState = 'select-workflows';
-      addBulkMsg('ai', 'Perfeito! Vou adicionar uma nova etapa.\n\nEm quais workflows você deseja adicionar? Os disponíveis são:\n• ' + WORKFLOW_DEFS.map(w => w.name).join('\n• ') + '\n\nDigite os nomes ou selecione abaixo:');
+      addBulkMsg('ai', 'Perfeito! Vou adicionar uma nova etapa.\n\nEm which workflows do you want to add? Available ones are:\n• ' + WORKFLOW_DEFS.map(w => w.name).join('\n• ') + '\n\nDigite os nomes ou selecione abaixo:');
       renderBulkSuggs(WORKFLOW_DEFS.map(w => w.name).concat(['Todos os workflows']));
     } else if (lower.includes('tarefa')) {
       bulkDraft.operation = 'add-task'; bulkChatState = 'select-workflows';
-      addBulkMsg('ai', 'Entendido! Vou adicionar uma nova tarefa em uma etapa existente.\n\nEm quais workflows? Os disponíveis são:\n• ' + WORKFLOW_DEFS.map(w => w.name).join('\n• ') + '\n\nDigite os nomes ou selecione abaixo:');
+      addBulkMsg('ai', 'Entendido! Vou adicionar uma nova tarefa em uma etapa existente.\n\nEm quais workflows? Available ones are:\n• ' + WORKFLOW_DEFS.map(w => w.name).join('\n• ') + '\n\nDigite os nomes ou selecione abaixo:');
       renderBulkSuggs(WORKFLOW_DEFS.map(w => w.name).concat(['Todos os workflows']));
     } else {
-      addBulkMsg('ai', 'Por favor, escolha uma opção:');
-      renderBulkSuggs(['Adicionar nova etapa', 'Adicionar nova tarefa em etapa existente']);
+      addBulkMsg('ai', 'Please choose an option:');
+      renderBulkSuggs(['Add new staga', 'Adicionar nova tarefa em etapa existente']);
     }
     return;
   }
@@ -2680,7 +2680,7 @@ function processBulkChat(text) {
       });
     }
     if (!selected.length) {
-      addBulkMsg('ai', 'Não encontrei nenhum workflow com esse nome. Os disponíveis são:\n• ' + WORKFLOW_DEFS.map(w => w.name).join('\n• '));
+      addBulkMsg('ai', 'No workflow found with that name. Available ones are:\n•  + WORKFLOW_DEFS.map(w => w.name).join('\n• '));
       renderBulkSuggs(WORKFLOW_DEFS.map(w => w.name).concat(['Todos os workflows']));
       return;
     }
@@ -2701,7 +2701,7 @@ function processBulkChat(text) {
       bulkChatState = 'similarity-confirm';
       const warnText = warnings.map(w => '• "' + w.matchName + '" (' + w.matchType + ') em ' + w.wfName).join('\n');
       addBulkMsg('ai', '⚠️ Encontrei ' + (bulkDraft.operation === 'add-stage' ? 'etapas/tarefas' : 'tarefas') + ' similares nos workflows selecionados:\n' + warnText + '\n\nDeseja continuar mesmo assim?');
-      renderBulkSuggs(['Sim, continuar', 'Não, usar outro nome']);
+      renderBulkSuggs(['Yes, continue', 'No, use another name']);
     } else {
       _bulkAfterNameConfirmed();
     }
@@ -2728,7 +2728,7 @@ function processBulkChat(text) {
       if (stage) { foundStageId = stage.id; foundStageName = stage.name; break; }
     }
     if (!foundStageId) {
-      addBulkMsg('ai', 'Não encontrei essa etapa. Por favor selecione uma das opções abaixo:');
+      addBulkMsg('ai', 'Stage not found. Please select one of the options below:');
       _bulkAskStagePick();
       return;
     }
@@ -2743,22 +2743,22 @@ function processBulkChat(text) {
     });
     bulkDraft.impactWarnings = impactWarnings;
     if (impactWarnings.length) {
-      const warnText = impactWarnings.map(w => '• ' + w.wfName + ': ' + w.taskCount + ' tarefa(s) existente(s)').join('\n');
-      addBulkMsg('ai', 'ℹ️ A etapa "' + foundStageName + '" já possui tarefas em:\n' + warnText + '\n\n"' + bulkDraft.name + '" será adicionada junto às existentes.\n\nOnde dentro dessa etapa você quer posicionar a tarefa?');
+      const warnText = impactWarnings.map(w => '• ' + w.wfName + ': ' + w.taskCount + ' existing task(s)').join('\n');
+      addBulkMsg('ai', 'ℹ️ Stage "' + foundStageName + '" already has tasks in:\n' + warnText + '\n\n"' + bulkDraft.name + '" will be added alongside the existing ones.\n\nWhere within this stage do you want to position the task?');
     } else {
-      addBulkMsg('ai', '✓ Etapa "' + foundStageName + '" selecionada.\n\nOnde você quer posicionar "' + bulkDraft.name + '" dentro dessa etapa?');
+      addBulkMsg('ai', '✓ Stage "' + foundStageName + '" selected.\n\nWhere do you want to position "' + bulkDraft.name + '" within this stage?');
     }
-    renderBulkSuggs(['No início', 'No final']);
+    renderBulkSuggs(['At the beginning', 'At the end']);
     return;
   }
 
   if (bulkChatState === 'position-input') {
     if (bulkDraft.operation === 'add-task') {
-      bulkDraft.position = (lower.includes('início') || lower.includes('inicio')) ? 'start' : 'end';
+      bulkDraft.position = (lower.includes('at the beginning') || lower.includes('inicio') || lower.includes('beginning') || lower.includes('start')) ? 'start' : 'end';
       _bulkShowReview();
       return;
     }
-    if (lower.includes('início') || lower.includes('inicio') || lower === 'no início') {
+    if (lower.includes('at the beginning') || lower.includes('inicio') || lower.includes('beginning') || lower.includes('start') || lower === 'at the beginning') {
       bulkDraft.position = 'start'; bulkDraft.afterStageName = '';
     } else if (lower.includes('fim') || lower.includes('final') || lower === 'no final') {
       bulkDraft.position = 'end'; bulkDraft.afterStageName = '';
@@ -2774,7 +2774,7 @@ function processBulkChat(text) {
       }
     }
     bulkChatState = 'tasks-input';
-    addBulkMsg('ai', '✓ Posição definida.\n\nQuais tarefas você quer incluir na nova etapa "' + bulkDraft.name + '"?\n\nDigite os nomes (um por linha ou separados por vírgula), ou selecione:');
+    addBulkMsg('ai', '✓ Position set.\n\nWhich tasks do you want to include in the nova etapa "' + bulkDraft.name + '"?\n\nDigite os nomes (um por linhs or comma-separated), or select:');
     renderBulkSuggs(['Criar tarefa com nome da etapa (' + bulkDraft.name + ')', 'No tasks (create vazia)']);
     return;
   }
@@ -2812,9 +2812,9 @@ function _bulkAfterNameConfirmed() {
     bulkChatState = 'position-input';
     const wfId = bulkDraft.workflowIds[0];
     const wf = WORKFLOW_DEFS.find(w => w.id === wfId);
-    const posOptions = ['No início', 'No final'];
-    if (wf) wf.tasks.forEach(s => posOptions.push('Depois de ' + s.name));
-    addBulkMsg('ai', '✓ Nome definido: "' + bulkDraft.name + '".\n\n⚡ Checando impacto nos workflows selecionados...\n\nOnde você quer inserir a nova etapa "' + bulkDraft.name + '"?');
+    const posOptions = ['At the beginning', 'At the end'];
+    if (wf) wf.tasks.forEach(s => posOptions.push('After ' + s.name));
+    addBulkMsg('ai', '✓ Name set: "' + bulkDraft.name + '".\n\n⚡ Checking impact on selected workflows...\n\nWhere do you want to insert the new stage "' + bulkDraft.name + '"?');
     renderBulkSuggs(posOptions.slice(0, 4));
   }
 }
@@ -2825,7 +2825,7 @@ function _bulkAskStagePick() {
     const wf = WORKFLOW_DEFS.find(w => w.id === wfId); if (!wf) return;
     wf.tasks.forEach(s => { if (!stageNames.includes(s.name)) stageNames.push(s.name); });
   });
-  addBulkMsg('ai', 'Em qual etapa você quer adicionar a tarefa "' + bulkDraft.name + '"?\n\nEtapas disponíveis nos workflows selecionados:');
+  addBulkMsg('ai', 'In which stage do you want to add the task "' + bulkDraft.name + '"?\n\nAvailable stages in selected workflows:');
   renderBulkSuggs(stageNames.slice(0, 4));
 }
 
@@ -2834,11 +2834,11 @@ function _bulkShowReview() {
   const wfNames = bulkDraft.workflowIds.map(id => WORKFLOW_DEFS.find(w => w.id === id)?.name || id).join(', ');
   let summary = '';
   if (bulkDraft.operation === 'add-stage') {
-    const pos = bulkDraft.position === 'start' ? 'início' : bulkDraft.position === 'end' ? 'final' : 'depois de "' + bulkDraft.afterStageName + '"';
-    summary = '📋 Resumo da configuraction em lote:\n\n• Operaction: Adicionar etapa\n• Nome: "' + bulkDraft.name + '"\n• Workflows: ' + wfNames + '\n• Posição: ' + pos + '\n• Tasks: ' + (bulkDraft.tasks.join(', ') || '(nenhuma)');
+    const pos = bulkDraft.position === 'start' ? 'beginning' : bulkDraft.position === 'end' ? 'end' : 'depois de "' + bulkDraft.afterStageName + '"';
+    summary = '📋 Resumo da configuraction em lote:\n\n• Operaction: Adicionar etapa\n• Nome: "' + bulkDraft.name + '"\n• Workflows: ' + wfNames + '\n• Position: ' + pos + '\n• Tasks: ' + (bulkDraft.tasks.join(', ') || '(nenhuma)');
   } else {
-    const pos = bulkDraft.position === 'start' ? 'início da etapa' : 'final da etapa';
-    summary = '📋 Resumo da configuraction em lote:\n\n• Operaction: Adicionar tarefa\n• Nome: "' + bulkDraft.name + '"\n• Workflows: ' + wfNames + '\n• Posição: ' + pos;
+    const pos = bulkDraft.position === 'start' ? 'beginning of stage' : 'end of stage';
+    summary = '📋 Resumo da configuraction em lote:\n\n• Operaction: Adicionar tarefa\n• Nome: "' + bulkDraft.name + '"\n• Workflows: ' + wfNames + '\n• Position: ' + pos;
   }
   addBulkMsg('ai', summary + '\n\nConfirm e aplicar?');
   renderBulkSuggs(['Confirm e aplicar', 'Cancel']);
@@ -2950,7 +2950,7 @@ function openConnectorPanel(wfId) {
   const SLOTS = ['carrier_x','payment_processor','invoice_system','warehouse_x','notification_x'];
   const slotIcons  = { carrier_x:'🚚', payment_processor:'💳', invoice_system:'🧾', warehouse_x:'🏭', notification_x:'🔔' };
   const kindColor  = { discover:'#7c3aed', mutate:'#0c6fcd', cancel:'#dc2626', read:'#0891b2', preflight:'#d97706', maintain:'#6b7280' };
-  const kindLabel  = { discover:'descoberta', mutate:'mutaction', cancel:'cancelamento', read:'leitura', preflight:'pré-check', maintain:'reconciliaction' };
+  const kindLabel  = { discover:'descoberta', mutate:'mutaction', cancel:'cancelamento', read:'leitura', preflight:'pre-check', maintain:'reconciliation' };
 
   // Build slot → [{ stage, task, mapping }] from current WF_TASKS
   function getTasksForSlot(slot) {
@@ -3020,7 +3020,7 @@ function openConnectorPanel(wfId) {
     }).join('');
 
     const noTasksHtml = linkedTasks.length === 0
-      ? `<div style="font-size:11px;color:#aaa;font-style:italic;margin-top:8px;padding:8px 10px;background:#fafafa;border:1px solid #f0f0f0;border-radius:6px">Nenhuma tarefa desta workflow usa este slot.</div>`
+      ? `<div style="font-size:11px;color:#aaa;font-style:italic;margin-top:8px;padding:8px 10px;background:#fafafa;border:1px solid #f0f0f0;border-radius:6px">Nenha task desta workflow usa este slot.</div>`
       : '';
 
     const testedHtml = b?.lastTested
@@ -3064,7 +3064,7 @@ function openConnectorPanel(wfId) {
     <div style="padding:2px 0 8px">
       <div style="font-size:12px;color:#888;margin-bottom:14px;line-height:1.5">
         Cada slot vincula um sistema externo às tarefas desta workflow.<br>
-        O agente invoca a função indicada automaticamente ao avançar cada tarefa.
+        O agent invokes the indicated function automatically when advancing each task.
       </div>
       ${slotsHtml}
     </div>`;
@@ -3167,7 +3167,7 @@ function applyConnectorResult(wfId, slot) {
     if (applied) break;
   }
   renderWorkflowBoard();
-  showSuccessModal('Resultado aplicado!', 'O rastreio Intelipost foi registrado e a tarefa avançada.');
+  showSuccessModal('Resultado aplicado!', 'O rastreio Intelipost foi registrado and the task advanced.');
 }
 
 // ── Adyen webhook simulation ──────────────────────────────────────────────
@@ -3192,7 +3192,7 @@ function simulateAdyenWebhook() {
   .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</pre>
     <div style="margin-top:12px;padding:10px 12px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;font-size:12px;color:#15803d;font-weight:600">
       <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12" style="vertical-align:-1px"><path d="M3 7l2.5 2.5L11 4"/></svg>
-      Skill <code style="background:#d1fae5;padding:1px 5px;border-radius:3px;font-size:11px">advance_on_confirmation</code> ativada — tarefa avançada automaticamente.
+      Skill <code style="background:#d1fae5;padding:1px 5px;border-radius:3px;font-size:11px">advance_on_confirmation</code> activated — task advanced automatically.
     </div>`;
   openModal('modal-webhook');
 }
@@ -3329,16 +3329,16 @@ function confirmImportYaml() {
   try {
     parsed = jsyaml.load(raw);
   } catch(e) {
-    _showImportError('YAML inválido: ' + e.message); return;
+    _showImportError('Invalid YAML: ' + e.message); return;
   }
 
   // Validate required fields
-  if (!parsed || typeof parsed !== 'object') { _showImportError('YAML inválido: estrutura no reconhecida.'); return; }
-  if (!parsed.name || typeof parsed.name !== 'string') { _showImportError('Campo obrigatório ausente: name'); return; }
-  if (!Array.isArray(parsed.marcos) || parsed.marcos.length === 0) { _showImportError('Campo obrigatório ausente: marcos (deve ser um array com pelo menos 1 item)'); return; }
+  if (!parsed || typeof parsed !== 'object') { _showImportError('Invalid YAML: unrecognized structure.'); return; }
+  if (!parsed.name || typeof parsed.name !== 'string') { _showImportError('Required field missing: name'); return; }
+  if (!Array.isArray(parsed.marcos) || parsed.marcos.length === 0) { _showImportError('Required field missing: marcos (must be an array with at least 1 item)'); return; }
   for (const marco of parsed.marcos) {
-    if (!marco.name) { _showImportError(`Campo obrigatório ausente: marcos[].name (marco sem nome encontrado)`); return; }
-    if (!Array.isArray(marco.tasks)) { _showImportError(`Campo obrigatório ausente: marcos["${marco.name}"].tasks (deve ser um array)`); return; }
+    if (!marco.name) { _showImportError(`Required field missing: marcos[].name (unnamed stage found)`); return; }
+    if (!Array.isArray(marco.tasks)) { _showImportError(`Required field missing: marcos["${marco.name}"].tasks (must be an array)`); return; }
   }
 
   _importYamlParsed = parsed;
@@ -3348,9 +3348,9 @@ function confirmImportYaml() {
     const existing = WORKFLOW_DEFS.find(w => w.id === parsed.id);
     const totalTasks = (parsed.marcos || []).reduce((s, m) => s + (m.tasks || []).length, 0);
     document.getElementById('conflict-summary').innerHTML =
-      `A workflow <strong>${existing.name}</strong> (id: <code>${parsed.id}</code>) já existe.<br>` +
-      `O YAML importado contém <strong>${parsed.marcos.length} marcos</strong> e <strong>${totalTasks} tarefas</strong>.<br><br>` +
-      `Deseja substituí-la ou create uma cópia?`;
+      `Workflow <strong>${existing.name}</strong> (id: <code>${parsed.id}</code>) already exists.<br>` +
+      `The imported YAML contains <strong>${parsed.marcos.length} stages</strong> and <strong>${totalTasks} tasks</strong>.<br><br>` +
+      `Do you want to replace it or create a copy?`;
     closeModal('modal-import-yaml');
     openModal('modal-import-conflict');
     return;
@@ -3371,7 +3371,7 @@ function _applyImport(parsed, asCopy) {
 
   // Build new experience object
   const newId = asCopy ? ('oj-copy-' + Date.now()) : (parsed.id || ('oj-import-' + Date.now()));
-  const newName = asCopy ? (parsed.name + ' (cópia)') : parsed.name;
+  const newName = asCopy ? (parsed.name + ' (copy)') : parsed.name;
 
   const newWf = {
     id: newId,
@@ -3419,7 +3419,7 @@ function _applyImport(parsed, asCopy) {
         bindings[slot] = { connectorId: cat.id, authDisplay: '●●●●importado', state: 'active', lastTested: null };
       } else {
         bindings[slot] = null;
-        warnings.push(`Connector '${systemName}' no encontrado no catálogo — vínculo do slot '${slot}' ignorado.`);
+        warnings.push(`Connector '${systemName}' not found in catalog — slot '${slot}' binding ignored.`);
       }
     });
     CONNECTOR_BINDINGS[newId] = bindings;
