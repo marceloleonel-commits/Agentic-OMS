@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agentic Workflow — VTEX Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- GLOBAL NAV -->
+<nav class="global-nav">
+  <button class="hamburger">
+    <svg viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="18" height="18"><line x1="2" y1="4" x2="16" y2="4"/><line x1="2" y1="9" x2="16" y2="9"/><line x1="2" y1="14" x2="16" y2="14"/></svg>
+  </button>
+  <div class="vtex-logo-wrap">
+    <svg viewBox="0 0 80 68" fill="none" width="26" height="22"><path d="M40 0L80 68H0L40 0Z" fill="#F71963"/></svg>
+    <span class="store-name">recorrenciacharlie</span>
+  </div>
+  <div class="global-search">
+    <svg class="gs-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="7" cy="7" r="5"/><line x1="11" y1="11" x2="15" y2="15"/></svg>
+    <input type="text" placeholder="Search VTEX">
+  </div>
+  <div class="global-nav-right">
+    <button class="nav-action">Copilot</button>
+    <button class="nav-action">Visit store ↗</button>
+    <button class="nav-action">Help</button>
+    <div class="user-avatar">M</div>
+  </div>
+</nav>
+
+<div class="main-layout">
+  <aside class="sidebar">
+    <div class="nav-item" onclick="showScreen('orders')">
+      <svg class="nav-icon" viewBox="0 0 16 16"><rect x="2" y="2" width="12" height="3" rx="1"/><rect x="2" y="7" width="12" height="3" rx="1"/><rect x="2" y="12" width="8" height="2" rx="1"/></svg>
+      Dashboards
+    </div>
+    <div class="nav-item" id="nav-pedidos">
+      <svg class="nav-icon" viewBox="0 0 16 16"><path d="M3 2h10l1 4H2L3 2z"/><path d="M2 6l1 8h10l1-8"/><path d="M6 10h4"/></svg>
+      Orders
+      <svg class="nav-chevron" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="2" width="10" height="10"><path d="M2 4l3 3 3-3"/></svg>
+    </div>
+    <div class="nav-item sub active" onclick="showScreen('orders')" id="nav-all-orders">All orders</div>
+    <div class="nav-item sub">Transactions</div>
+    <div class="nav-item sub">Bank reconciliation</div>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-section">Agentic Workflow</div>
+    <div class="nav-item" onclick="showScreen('workflow-list')" id="nav-workflow" style="font-weight:500">
+      <svg class="nav-icon" viewBox="0 0 16 16"><circle cx="4" cy="4" r="2"/><circle cx="12" cy="4" r="2"/><circle cx="4" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><path d="M6 4h4M4 6v4M12 6v4M6 12h4"/></svg>
+      Manage Workflows
+</div>
+    <div class="nav-item" onclick="showScreen('agent-config')" id="nav-agent">
+      <svg class="nav-icon" viewBox="0 0 16 16"><circle cx="8" cy="5" r="3"/><path d="M2 14c0-3 2.7-5 6-5s6 2 6 5"/><circle cx="13" cy="3" r="1.5" fill="currentColor" stroke="none"/><path d="M13 5v2M11.5 6.5l1 1"/></svg>
+      Orchestration Agent
+    </div>
+    <div class="sidebar-divider"></div>
+    <div class="nav-item"><svg class="nav-icon" viewBox="0 0 16 16"><path d="M2 3h12v2H2zM2 7h8v2H2zM2 11h5v2H2z"/></svg>Catalog</div>
+    <div class="nav-item"><svg class="nav-icon" viewBox="0 0 16 16"><path d="M8 2v12M2 8h12"/></svg>Promotions</div>
+    <div class="nav-item"><svg class="nav-icon" viewBox="0 0 16 16"><rect x="2" y="2" width="12" height="12" rx="2"/></svg>Storefront</div>
+    <div class="nav-item"><svg class="nav-icon" viewBox="0 0 16 16"><rect x="2" y="4" width="12" height="10" rx="1"/><path d="M5 4V3a3 3 0 016 0v1"/></svg>Shipping</div>
+    <div class="nav-item"><svg class="nav-icon" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/></svg>Marketplace</div>
+    <div class="nav-item"><svg class="nav-icon" viewBox="0 0 16 16"><circle cx="8" cy="8" r="3"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2"/></svg>Store Settings</div>
+  </aside>
+
+  <div class="app-body">
+
+    <!-- ══ SCREEN: ORDERS ══ -->
+    <div class="screen active" id="screen-orders">
+      <div class="page-header">
+        <h1 class="page-title">All orders</h1>
+        <div class="page-header-actions">
+          <button class="btn btn-primary">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M8 2v10M4 8l4 4 4-4"/><path d="M2 14h12"/></svg>
+            Export
+          </button>
+        </div>
+      </div>
+      <div class="stats-bar">
+        <span class="stats-label">Total orders</span>
+        <div class="stats-group">
+          <div class="stats-item"><span class="stats-period">Today</span><span class="stats-value">1,185</span></div>
+          <div class="stats-item"><span class="stats-period">Yesterday</span><span class="stats-value">1,190</span><span class="stats-delta delta-neg">-0%</span></div>
+          <div class="stats-item"><span class="stats-period">Last 7 days</span><span class="stats-value">1,182</span><span class="stats-delta delta-pos">0%</span></div>
+        </div>
+        <div class="stats-divider"></div>
+        <span class="stats-label">Sales in BRL</span>
+        <div class="stats-group">
+          <div class="stats-item"><span class="stats-period">Sales</span><span class="stats-value">4,256</span></div>
+          <div class="stats-item"><span class="stats-period">Avg. order value</span><span class="stats-value">R$ 35.98</span></div>
+          <div class="stats-item"><span class="stats-period">Revenue</span><span class="stats-value">R$ 153,133.87</span></div>
+        </div>
+      </div>
+      <div class="search-filter-row">
+        <div class="search-box">
+          <svg class="search-box-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="7" cy="7" r="5"/><line x1="11" y1="11" x2="15" y2="15"/></svg>
+          <input type="text" placeholder="Search by Order Number, Tax ID, Customer Name...">
+        </div>
+        <div class="filter-chip ai-badge">
+          <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><circle cx="7" cy="7" r="5"/></svg>
+          AI Filters (beta) <span class="badge-num">13</span>
+        </div>
+        <div class="filter-chip">Status: In processing +2 <svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="2" width="10" height="10"><path d="M2 4l3 3 3-3"/></svg></div>
+        <div class="filter-chip">Created: Last 30 days <svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="2" width="10" height="10"><path d="M2 4l3 3 3-3"/></svg></div>
+        <span class="pagination-info">1 — 30 of 4256 orders</span>
+      </div>
+      <div class="table-wrap">
+        <div class="table-toolbar">
+          <span class="table-toolbar-title">Orders</span>
+          <button class="btn btn-secondary btn-sm" id="task-tree-toggle" onclick="toggleTaskTree()" style="margin-left:auto">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M2 4h3v3H2zM7 2h3v3H7zM7 8h3v3H7zM2 10h3v2H2z"/><path d="M5 5.5h2M5 11h2M10 3.5h2v9h-2"/></svg>
+            Show Tasks
+          </button>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Status</th>
+              <th>Processing</th>
+              <th>Order ID ⇅</th>
+              <th>Date ⇅</th>
+              <th>Customer</th>
+              <th>Items</th>
+              <th>Amount ⇅</th>
+              <th>Origin</th>
+              <th>Payment</th>
+              <th class="task-tree-col hidden" id="task-tree-header-col">Tasks</th>
+            </tr>
+          </thead>
+          <tbody id="orders-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ══ SCREEN: ORDER DETAIL ══ -->
+    <div class="screen" id="screen-detail">
+      <div class="detail-header">
+        <button class="back-btn" onclick="showScreen('orders')">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M10 4L6 8l4 4"/></svg>
+          Back
+        </button>
+        <span class="detail-order-id" id="detail-order-id"></span>
+        <span class="badge" id="detail-status-badge"></span>
+        <div class="detail-actions">
+          <button class="btn btn-secondary btn-sm">Print order</button>
+          <button class="btn btn-danger btn-sm">Cancel order</button>
+          <button class="btn btn-primary btn-sm">Invoice</button>
+        </div>
+      </div>
+      <p class="detail-meta" id="detail-meta"></p>
+
+      <div class="detail-sections">
+        <div class="detail-card">
+          <div class="detail-card-title">Customer</div>
+          <div class="detail-field-value" id="detail-client-name" style="font-weight:600;margin-bottom:2px"></div>
+          <div class="detail-field-value" style="color:#888;font-size:12px" id="detail-client-doc"></div>
+          <div class="detail-field-value link" style="margin-top:6px;font-size:12.5px">(82) 99675-0713</div>
+          <div class="detail-field-value link" style="font-size:12.5px">customer@vtex.com</div>
+        </div>
+        <div class="detail-card">
+          <div class="detail-card-title">Delivery</div>
+          <div style="font-size:11px;font-weight:600;color:#aaa;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Address</div>
+          <div class="detail-field-value">Rua Comendador Firmo Lopes, 75<br>Farol · Maceió, AL · 57050-030</div>
+          <div style="font-size:11px;font-weight:600;color:#aaa;text-transform:uppercase;letter-spacing:.4px;margin:10px 0 4px">Recipient</div>
+          <div class="detail-field-value" id="detail-client-name2"></div>
+        </div>
+        <div class="detail-card">
+          <div class="detail-card-title">Summary</div>
+          <div class="payment-row"><span class="payment-row-label">Items</span><span class="payment-row-value" id="detail-items-val"></span></div>
+          <div class="payment-row"><span class="payment-row-label">Shipping</span><span class="payment-row-value">R$ 2.00</span></div>
+          <div class="payment-row" style="margin-top:10px;padding-top:10px;border-top:1px solid #f0f0f0;font-weight:700">
+            <span style="color:#1a1a1a">Final amount</span>
+            <span style="color:#1a1a1a" id="detail-total-val"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="detail-status-card">
+        <div class="status-header">
+          <span class="status-title">Order status</span>
+          <div class="status-links">
+            <span class="status-link">View history</span>
+            <span class="status-link active-link">View full flow</span>
+          </div>
+        </div>
+        <div class="order-status-steps" id="order-status-steps"></div>
+      </div>
+
+      <div class="items-section">
+        <div class="items-section-title">
+          <svg viewBox="0 0 16 16" fill="none" stroke="#0c6fcd" stroke-width="2" width="16" height="16"><path d="M2 4h3v3H2zM7 2h3v3H7zM7 8h3v3H7zM2 10h3v2H2z"/><path d="M5 5.5h2M5 11h2M10 3.5h2v9h-2"/></svg>
+          Order Items — Tasks per Item
+          <span class="badge badge-blue" style="font-size:11px" id="detail-items-count"></span>
+        </div>
+        <div id="detail-items-list"></div>
+      </div>
+
+      <div class="detail-main-row">
+        <div></div>
+        <div class="payment-card">
+          <div class="payment-title">Payment</div>
+          <div class="payment-method">
+            <div class="payment-method-name">Promissory</div>
+            <div class="payment-row"><span class="payment-row-label">Method</span><span class="payment-row-value">Promissory</span></div>
+            <div class="payment-row"><span class="payment-row-label">Amount</span><span class="payment-row-value" id="detail-pay-val"></span></div>
+            <div style="margin-top:10px;padding-top:10px;border-top:1px solid #f0f0f0">
+              <div style="font-size:11px;font-weight:600;color:#aaa;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">Payment Status</div>
+              <span class="badge badge-yellow">Awaiting payment</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ SCREEN: WORKFLOW LIST ══ -->
+    <div class="screen" id="screen-workflow-list">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Manage Workflows</h1>
+          <div style="font-size:12.5px;color:#888;margin-top:3px">Manage the delivery workflows for your operation</div>
+        </div>
+        <div class="page-header-actions">
+          <button class="btn btn-secondary" onclick="openBulkConfigPanel()">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+              <rect x="2" y="2" width="5" height="5" rx="1"/><rect x="9" y="2" width="5" height="5" rx="1"/>
+              <rect x="2" y="9" width="5" height="5" rx="1"/><rect x="9" y="9" width="5" height="5" rx="1"/>
+            </svg>
+            Bulk Configure
+          </button>
+          <button class="btn btn-secondary" onclick="openImportModal()" style="gap:5px">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M8 2v8M4 7l4 4 4-4"/><path d="M2 13h12"/></svg>
+            Import
+          </button>
+          <button class="btn btn-primary" onclick="openCreateWorkflowPanel()">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M8 2v12M2 8h12"/></svg>
+            + New Workflow
+          </button>
+        </div>
+      </div>
+      <div id="wfl-grid" style="display:block"></div>
+      <div id="new-wf-panel" style="position:fixed;right:-400px;top:0;height:100vh;z-index:200;width:400px;background:#fff;border-left:1px solid #e8e8e8;display:flex;flex-direction:column;overflow:hidden;transition:right .25s ease;box-shadow:-4px 0 16px rgba(0,0,0,.08)">
+        <div style="display:flex;align-items:center;padding:14px 16px;border-bottom:1px solid #f0f0f0;gap:8px">
+          <span style="flex:1;font-size:14px;font-weight:600;color:#1a1a1a">🤖 New Order Job</span>
+          <button onclick="closeNewWfPanel()" style="background:none;border:none;cursor:pointer;padding:4px;color:#888;font-size:20px;line-height:1">×</button>
+        </div>
+        <div id="new-wf-body" style="flex:1;display:flex;flex-direction:column;overflow:hidden"></div>
+        <div id="new-wf-footer" style="display:flex;gap:8px;padding:10px 16px;border-top:1px solid #f0f0f0"></div>
+      </div>
+      <div id="bulk-panel" style="position:fixed;right:-400px;top:0;height:100vh;z-index:200;width:400px;background:#fff;border-left:1px solid #e8e8e8;display:flex;flex-direction:column;overflow:hidden;transition:right .25s ease;box-shadow:-4px 0 16px rgba(0,0,0,.08)">
+        <div style="display:flex;align-items:center;padding:14px 16px;border-bottom:1px solid #f0f0f0;gap:8px">
+          <span style="flex:1;font-size:14px;font-weight:600;color:#1a1a1a" id="bulk-sp-title">Bulk Configure</span>
+          <button onclick="closeBulkPanel()" style="background:none;border:none;cursor:pointer;padding:4px;color:#888;font-size:20px;line-height:1">×</button>
+        </div>
+        <div id="bulk-sp-body" style="flex:1;display:flex;flex-direction:column;overflow:hidden"></div>
+        <div id="bulk-sp-footer" style="display:flex;gap:8px;padding:10px 16px;border-top:1px solid #f0f0f0"></div>
+      </div>
+    </div>
+
+    <!-- ══ SCREEN: WORKFLOW BOARD ══ -->
+    <div class="screen" id="screen-workflow">
+      <div class="wf-toolbar">
+        <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0">
+          <button class="back-btn" onclick="showScreen('workflow-list')" style="flex-shrink:0;padding:5px 8px;border:1px solid #e0e0e0;border-radius:4px;background:#fff">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M10 4L6 8l4 4"/></svg>
+            Workflow List
+          </button>
+          <span style="color:#d0d0d0;font-size:16px;flex-shrink:0">/</span>
+          <div style="min-width:0">
+            <div class="wf-title" id="wf-board-title">Workflow</div>
+            <div style="font-size:11.5px;color:#888;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="wf-board-desc">Configure and organize the stages</div>
+          </div>
+        </div>
+        <div class="wf-toolbar-right">
+          <div class="impact-badge">
+            <svg viewBox="0 0 16 16" fill="none" stroke="#c2410c" stroke-width="2" width="13" height="13"><path d="M8 2l6 12H2L8 2z"/><path d="M8 7v3M8 12v.5"/></svg>
+            Changes apply to new orders only
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="showScreen('orders')">View Orders</button>
+          <button class="btn btn-secondary btn-sm" onclick="openWorkflowSettings(currentWorkflowId)" title="Workflow settings">
+            <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><circle cx="7" cy="7" r="2"/><path d="M7 1v2M7 11v2M1 7h2M11 7h2M3 3l1.4 1.4M9.6 9.6L11 11M3 11l1.4-1.4M9.6 4.4L11 3"/></svg>
+          </button>
+          <button class="btn btn-secondary btn-sm" onclick="exportExperience(currentWorkflowId)" style="gap:5px" title="Export as YAML">
+            <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M7 1v7M4 5l3 4 3-4"/><path d="M2 11h10"/></svg>
+            Export YAML
+          </button>
+          <button class="btn btn-secondary btn-sm" onclick="openConnectorPanel(currentWorkflowId)" id="btn-conectores" style="gap:5px">
+            <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><circle cx="4" cy="7" r="2.5"/><circle cx="10" cy="3" r="2"/><circle cx="10" cy="11" r="2"/><path d="M6.5 7h1.5M8 3h-1l-1 4M8 11h-1l-1-4"/></svg>
+            Connectors
+          </button>
+          <button class="btn btn-primary btn-sm" onclick="openCreatePanel()">+ New Stage</button>
+        </div>
+      </div>
+      <div class="wf-flow-bar" id="wf-flow-bar"></div>
+      <div class="wf-board-wrap">
+        <div class="wf-board-scroll" id="wf-board-scroll"></div>
+        <div class="side-panel closed" id="side-panel">
+          <div class="sp-header">
+            <span class="sp-title" id="sp-title">Edit Stage</span>
+            <button class="sp-close" onclick="closeSidePanel()">
+              <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M2 2l10 10M12 2L2 12"/></svg>
+            </button>
+          </div>
+          <div class="sp-body" id="sp-body"></div>
+          <div class="sp-footer" id="sp-footer"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ SCREEN: AGENT CONFIG ══ -->
+    <div class="screen" id="screen-agent-config">
+      <!-- Header -->
+      <div class="orch-header">
+        <div>
+          <h1 class="page-title" style="font-size:17px;margin:0">Orchestration Agent</h1>
+          <div style="font-size:12px;color:#888;margin-top:3px">Configure the behavior of the AI agent that orchestrates order workflows</div>
+        </div>
+        <div class="orch-header-right">
+          <div class="agent-status-bar" style="padding:8px 12px">
+            <div class="agent-status-dot"></div>
+            <span class="agent-status-label">Agent active</span>
+            <span class="agent-status-sub">· 4,256 orders</span>
+            <button class="toggle-switch on" id="agent-master-toggle" onclick="this.classList.toggle('on');this.classList.toggle('off')" style="margin-left:8px" title="Enable/disable agent"></button>
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="showScreen('workflow-list')">View Workflows</button>
+          <button class="btn btn-primary btn-sm" onclick="saveAgentConfig()">Save</button>
+        </div>
+      </div>
+
+      <!-- 2-column body -->
+      <div class="orch-layout">
+
+        <!-- LEFT: agentic chat -->
+        <div class="orch-chat-col">
+          <div class="orch-chat-header">
+            <div class="orch-agent-avatar">🤖</div>
+            <div>
+              <div style="font-size:13px;font-weight:600;color:#1a1a1a">Configuration Assistant</div>
+              <div style="font-size:11.5px;color:#888">AI · Interactive mode</div>
+            </div>
+          </div>
+          <div class="orch-chat-msgs" id="orch-chat-msgs"></div>
+          <div class="orch-sugg-wrap" id="orch-sugg-wrap"></div>
+          <div class="orch-chat-input-row">
+            <input class="cm-input" id="orch-chat-input" placeholder="Describe what you want to configure…" onkeydown="if(event.key==='Enter')sendOrchChat()">
+            <button class="cm-send" onclick="sendOrchChat()">
+              <svg viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="2" width="13" height="13"><path d="M14 2L2 8l4 2 2 4 6-12z"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- RIGHT: config panels -->
+        <div class="orch-config-col" id="orch-config-col">
+
+          <!-- ── 1. ORDER JOB ── -->
+          <div class="settings-card orch-card" id="ocard-orderjob">
+            <div class="settings-card-title"><span class="sc-title-icon">🗂️</span> Order Job — Item Grouping</div>
+            <div style="font-size:12px;color:#888;margin-top:-6px;margin-bottom:14px">Defines how order items are grouped. Items with the same parameters follow the same fulfillment flow together.</div>
+
+            <div style="font-size:12px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px">Fulfillment Model</div>
+            <div style="display:flex;flex-direction:column;gap:6px;padding:10px 12px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;margin-bottom:12px">
+              <div class="checkbox-row" style="margin:0"><input type="checkbox" id="fm-home" checked><label for="fm-home" style="font-size:12.5px">Home delivery<span class="sub">Items dispatched by carrier to the customer's address</span></label></div>
+              <div class="checkbox-row" style="margin:0"><input type="checkbox" id="fm-bopis" checked><label for="fm-bopis" style="font-size:12.5px">Store pickup (BOPIS)<span class="sub">Items separated for pickup at the point of sale</span></label></div>
+            </div>
+
+            <div style="font-size:12px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.4px;margin-bottom:10px">Grouping criteria</div>
+            <div class="checkbox-row"><input type="checkbox" id="oj-sla" checked><label for="oj-sla">Delivery SLA<span class="sub">Items with incompatible deadlines generate separate Order Jobs</span></label></div>
+            <div class="checkbox-row"><input type="checkbox" id="oj-sup" checked><label for="oj-sup">Delivery Supplier<span class="sub">Items from different suppliers/sellers generate distinct Order Jobs</span></label></div>
+
+            <div style="border-top:1px solid #f0f0f0;padding-top:12px;margin-top:8px">
+              <div style="font-size:12px;font-weight:600;color:#3f3f40;margin-bottom:8px">Grouping example</div>
+              <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:10px 12px;font-size:11.5px;line-height:1.8;color:#555">
+                <div style="font-weight:600;color:#1a1a1a;margin-bottom:6px">Order with 4 items → 2 Order Jobs</div>
+                <div style="display:flex;flex-direction:column;gap:6px">
+                  <div style="display:flex;gap:8px;align-items:flex-start">
+                    <span style="background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8;font-size:10px;font-weight:700;padding:1px 7px;border-radius:10px;flex-shrink:0;margin-top:1px">OJ 1</span>
+                    <span>3 items · Home delivery · DC São Paulo · Jadlog · SLA 3d</span>
+                  </div>
+                  <div style="display:flex;gap:8px;align-items:flex-start">
+                    <span style="background:#f5f3ff;border:1px solid #e9d5ff;color:#7c3aed;font-size:10px;font-weight:700;padding:1px 7px;border-radius:10px;flex-shrink:0;margin-top:1px">OJ 2</span>
+                    <span>1 item · Store pickup · Shopping Botafogo RJ</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ── 2. AGENTS & SKILLS ── -->
+          <!-- External Connectors -->
+          <div class="settings-card orch-card" id="ocard-connectors" style="margin-top:16px">
+            <div class="settings-card-title"><span class="sc-title-icon">🔌</span> External Connectors</div>
+            <div style="font-size:12px;color:#888;margin-top:-6px;margin-bottom:14px">External systems linked to this workflow's slots. Agents invoke these connectors to automatically advance tasks.</div>
+            <div id="orch-connector-list" style="display:flex;flex-direction:column;gap:8px">
+              <!-- rendered by renderOrchConnectors() -->
+            </div>
+          </div>
+
+          <div class="settings-card orch-card" id="ocard-agents" style="margin-top:16px">
+            <div class="settings-card-title"><span class="sc-title-icon">🤖</span> Agents &amp; Skills</div>
+            <div style="font-size:12px;color:#888;margin-top:-6px;margin-bottom:14px">Configure the agents that make up the orchestrator. Expand each agent to enable or disable its skills.</div>
+            <div style="display:flex;flex-direction:column;gap:10px">
+
+              <!-- Routing -->
+              <div style="border:1px solid #e5e7eb;border-radius:8px;overflow:hidden">
+                <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:#f9fafb;cursor:pointer" onclick="toggleAgentCard('agent-routing')">
+                  <span style="font-size:18px;line-height:1">🗺️</span>
+                  <div style="flex:1">
+                    <div style="font-size:13px;font-weight:600;color:#1a1a1a">Routing</div>
+                    <div style="font-size:11.5px;color:#888;margin-top:1px">Selects fulfillment mode and provider per order</div>
+                  </div>
+                  <button class="toggle-switch on" onclick="event.stopPropagation();this.classList.toggle('on');this.classList.toggle('off')"></button>
+                  <svg id="agent-routing-arrow" viewBox="0 0 16 16" fill="none" stroke="#888" stroke-width="2" width="14" height="14" style="flex-shrink:0;transition:transform .2s"><path d="M4 6l4 4 4-4"/></svg>
+                </div>
+                <div id="agent-routing" style="padding:12px 14px;border-top:1px solid #e5e7eb;display:none">
+                  <div style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Skills</div>
+                  <div style="display:flex;flex-direction:column;gap:5px">
+                    <div class="checkbox-row" style="margin:0"><input type="checkbox" id="sk-rt1" checked><label for="sk-rt1" style="font-size:12px">DC selection by proximity<span class="sub">Minimizes shipping cost and time</span></label></div>
+                    <div class="checkbox-row" style="margin:0"><input type="checkbox" id="sk-rt2" checked><label for="sk-rt2" style="font-size:12px">Real-time inventory check<span class="sub">Queries WMS before allocating</span></label></div>
+                    <div class="checkbox-row" style="margin:0"><input type="checkbox" id="sk-rt3" checked><label for="sk-rt3" style="font-size:12px">Order split by seller<span class="sub">Independent Order Jobs per supplier</span></label></div>
+                    <div class="checkbox-row" style="margin:0"><input type="checkbox" id="sk-rt4"><label for="sk-rt4" style="font-size:12px">Provider ranking by historical SLA<span class="sub">Data from last 30 days</span></label></div>
+                  </div>
+                  <div style="border-top:1px solid #f0f0f0;padding-top:10px;margin-top:10px;display:flex;flex-direction:column;gap:8px">
+                    <div class="field-group" style="margin:0">
+                      <div class="field-label">Decision mode</div>
+                      <select class="field-input" style="max-width:240px"><option selected>Automatic</option><option>Suggest + await approval</option></select>
+                    </div>
+                    <div class="field-group" style="margin:0">
+                      <div class="field-label">Fallback when no provider available</div>
+                      <select class="field-input" style="max-width:240px"><option selected>Escalate to operator</option><option>Try alternative provider</option><option>Cancel automatically</option></select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Orchestration -->
+              <div style="border:1px solid #e5e7eb;border-radius:8px;overflow:hidden">
+                <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:#f9fafb;cursor:pointer" onclick="toggleAgentCard('agent-orch')">
+                  <span style="font-size:18px;line-height:1">⚙️</span>
+                  <div style="flex:1">
+                    <div style="font-size:13px;font-weight:600;color:#1a1a1a">Orchestration</div>
+                    <div style="font-size:11.5px;color:#888;margin-top:1px">Monitors gates and triggers actions automatically</div>
+                  </div>
+                  <button class="toggle-switch on" onclick="event.stopPropagation();this.classList.toggle('on');this.classList.toggle('off')"></button>
+                  <svg id="agent-orch-arrow" viewBox="0 0 16 16" fill="none" stroke="#888" stroke-width="2" width="14" height="14" style="flex-shrink:0;transition:transform .2s"><path d="M4 6l4 4 4-4"/></svg>
+                </div>
+                <div id="agent-orch" style="padding:12px 14px;border-top:1px solid #e5e7eb;display:none">
+                  <div style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Skills</div>
+                  <div style="display:flex;flex-direction:column;gap:5px">
+                    <div class="checkbox-row" style="margin:0"><input type="checkbox" id="sk-oc1" checked><label for="sk-oc1" style="font-size:12px">Stuck order detection<span class="sub">Monitors statuses without movement beyond SLA</span></label></div>
+                    <div class="checkbox-row" style="margin:0"><input type="checkbox" id="sk-oc2" checked><label for="sk-oc2" style="font-size:12px">Automatic status advancement<span class="sub">Advances stages when all conditions are met</span></label></div>
+                    <div class="checkbox-row" style="margin:0"><input type="checkbox" id="sk-oc3" checked><label for="sk-oc3" style="font-size:12px">Inventory reallocation suggestion<span class="sub">Proposes new DC when the current one cannot fulfill</span></label></div>
+                    <div class="checkbox-row" style="margin:0"><input type="checkbox" id="sk-oc4" checked><label for="sk-oc4" style="font-size:12px">Task creation for operators<span class="sub">Creates tasks when confidence is below threshold</span></label></div>
+                    <div class="checkbox-row" style="margin:0"><input type="checkbox" id="sk-oc5"><label for="sk-oc5" style="font-size:12px">Automatic cancellation<span class="sub">Requires confidence ≥ 95% and manager approval</span></label></div>
+                  </div>
+                  <div style="border-top:1px solid #f0f0f0;padding-top:10px;margin-top:10px">
+                    <div class="slider-wrap">
+                      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+                        <span style="font-size:12px;font-weight:600;color:#3f3f40">Minimum confidence for automatic action</span>
+                        <span class="slider-val" id="conf-val">75%</span>
+                      </div>
+                      <div class="slider-track" style="position:relative;height:6px;background:#e5e7eb;border-radius:3px;overflow:visible">
+                        <div class="slider-fill" id="conf-fill" style="width:75%;height:100%;background:#0c6fcd;border-radius:3px;pointer-events:none"></div>
+                        <input type="range" min="0" max="100" value="75" id="conf-range" oninput="updateSlider(this,'conf-val','conf-fill')" style="width:100%;position:absolute;top:-5px;left:0;opacity:0;cursor:pointer;height:16px">
+                      </div>
+                      <div class="slider-labels"><span>0% — always acts</span><span>100% — never acts</span></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Escalation -->
+              <div style="border:1px solid #e5e7eb;border-radius:8px;overflow:hidden">
+                <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:#f9fafb;cursor:pointer" onclick="toggleAgentCard('agent-esc')">
+                  <span style="font-size:18px;line-height:1">🚨</span>
+                  <div style="flex:1">
+                    <div style="font-size:13px;font-weight:600;color:#1a1a1a">Escalation</div>
+                    <div style="font-size:11.5px;color:#888;margin-top:1px">Detects inactivity and creates tasks for operators</div>
+                  </div>
+                  <button class="toggle-switch on" onclick="event.stopPropagation();this.classList.toggle('on');this.classList.toggle('off')"></button>
+                  <svg id="agent-esc-arrow" viewBox="0 0 16 16" fill="none" stroke="#888" stroke-width="2" width="14" height="14" style="flex-shrink:0;transition:transform .2s"><path d="M4 6l4 4 4-4"/></svg>
+                </div>
+                <div id="agent-esc" style="padding:12px 14px;border-top:1px solid #e5e7eb;display:none">
+                  <div style="font-size:11px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Skills</div>
+                  <div style="display:flex;flex-direction:column;gap:5px">
+                    <div class="checkbox-row" style="margin:0"><input type="checkbox" id="sk-es1" checked><label for="sk-es1" style="font-size:12px">SLA monitoring per stage<span class="sub">Alerts when the stage deadline is at risk</span></label></div>
+                    <div class="checkbox-row" style="margin:0"><input type="checkbox" id="sk-es2" checked><label for="sk-es2" style="font-size:12px">Manual task creation for operator<span class="sub">Creates task with context and suggested action</span></label></div>
+                    <div class="checkbox-row" style="margin:0"><input type="checkbox" id="sk-es3" checked><label for="sk-es3" style="font-size:12px">Slack notification (#dom-alerts)<span class="sub">Sends real-time alert to team channel</span></label></div>
+                    <div class="checkbox-row" style="margin:0"><input type="checkbox" id="sk-es4" checked><label for="sk-es4" style="font-size:12px">Email notification<span class="sub">Exception summary to operations manager</span></label></div>
+                    <div class="checkbox-row" style="margin:0"><input type="checkbox" id="sk-es5"><label for="sk-es5" style="font-size:12px">Custom webhook<span class="sub">Sends payload to configured endpoint</span></label></div>
+                  </div>
+                  <div style="border-top:1px solid #f0f0f0;padding-top:10px;margin-top:10px;display:flex;flex-direction:column;gap:8px">
+                    <div class="field-group" style="margin:0">
+                      <div class="field-label">Intervene after (hours without movement)</div>
+                      <input class="field-input" type="number" value="4" min="1" max="72" style="max-width:100px">
+                    </div>
+                    <div class="field-group" style="margin:0">
+                      <div class="field-label">Operating hours</div>
+                      <select class="field-input" style="max-width:240px"><option selected>24h / 7 days</option><option>Business hours (08h–18h, Mon–Fri)</option></select>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div><!-- /agents list -->
+          </div>
+
+        </div><!-- /orch-config-col -->
+      </div><!-- /orch-layout -->
+    </div>
+
+    <!-- ══ SCREEN: WORKFLOW SETTINGS ══ -->
+    <div class="screen" id="screen-workflow-settings">
+      <div class="page-header">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <button class="back-btn" onclick="showScreen('workflow-list')" style="padding:5px 8px;border:1px solid #e0e0e0;border-radius:4px;background:#fff">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M10 4L6 8l4 4"/></svg>
+            Workflow List
+          </button>
+          <span style="color:#d0d0d0;font-size:16px">/</span>
+          <span id="ws-breadcrumb" style="font-size:14px;color:#888;font-weight:500"></span>
+          <span style="color:#d0d0d0;font-size:16px">/</span>
+          <h1 class="page-title" style="font-size:18px;margin:0">Settings</h1>
+        </div>
+        <div class="page-header-actions">
+          <button class="btn btn-secondary" onclick="showScreen('workflow-list')">Cancel</button>
+          <button class="btn btn-primary" onclick="saveWorkflowSettings()">Save Settings</button>
+        </div>
+      </div>
+      <div class="settings-layout">
+        <div class="settings-card" style="grid-column:1/-1">
+          <div class="settings-card-title"><span class="sc-title-icon">📝</span> General Information</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+            <div class="field-group"><div class="field-label">Workflow Name</div><input class="field-input" id="ws-name"></div>
+            <div class="field-group"><div class="field-label">Icon</div>
+              <div style="display:flex;gap:6px;flex-wrap:wrap" id="ws-icon-row"></div>
+            </div>
+          </div>
+          <div class="field-group"><div class="field-label">Description</div><textarea class="field-input" id="ws-desc" rows="2" style="resize:vertical"></textarea></div>
+        </div>
+        <div class="settings-card">
+          <div class="settings-card-title"><span class="sc-title-icon">⚡</span> Trigger</div>
+          <div style="font-size:12px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">When this workflow is started</div>
+          <div class="radio-row"><input type="radio" name="ws-trigger" id="wt-auto" checked><label for="wt-auto">Automatically for new orders<span class="sub">Triggered as soon as the order is created or after a dependency completes</span></label></div>
+          <div class="radio-row"><input type="radio" name="ws-trigger" id="wt-manual"><label for="wt-manual">Manually by operator<span class="sub">An operator or the AI agent must trigger it explicitly</span></label></div>
+          <div class="radio-row"><input type="radio" name="ws-trigger" id="wt-customer"><label for="wt-customer">By customer request<span class="sub">Triggered when the customer opens a request in the portal</span></label></div>
+          <div style="border-top:1px solid #f0f0f0;padding-top:12px;margin-top:4px">
+            <div class="toggle-row"><div><div class="toggle-label">AI agent orchestrates this workflow</div><div class="toggle-sub">The agent monitors and advances stages automatically</div></div><button class="toggle-switch on" onclick="this.classList.toggle('on');this.classList.toggle('off')"></button></div>
+          </div>
+        </div>
+        <div class="settings-card">
+          <div class="settings-card-title"><span class="sc-title-icon">🔗</span> Workflow Dependencies</div>
+          <div style="font-size:12.5px;color:#555;margin-bottom:10px">This workflow will only be triggered after completion of:</div>
+          <div id="ws-deps" style="display:flex;flex-wrap:wrap;gap:8px;min-height:32px;margin-bottom:10px"></div>
+          <button class="dep-add-btn" onclick="toggleDepDropdown()">
+            <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M7 2v10M2 7h10"/></svg>
+            Add dependency
+          </button>
+          <div id="dep-dropdown" style="display:none;margin-top:8px;border:1px solid #e0e0e0;border-radius:6px;overflow:hidden"></div>
+          <div style="border-top:1px solid #f0f0f0;padding-top:12px;margin-top:12px">
+            <div style="font-size:12px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">Workflows that depend on this one</div>
+            <div id="ws-dependents" style="font-size:12.5px;color:#888;line-height:1.6"></div>
+          </div>
+          <div style="border-top:1px solid #f0f0f0;padding-top:12px;margin-top:12px">
+            <div style="font-size:12px;font-weight:700;color:#333;margin-bottom:8px;text-transform:uppercase;letter-spacing:0.5px">Activation trigger</div>
+            <div id="ws-trigger"></div>
+          </div>
+        </div>
+        <div class="settings-card" style="grid-column:1/-1">
+          <div class="settings-card-title"><span class="sc-title-icon">📐</span> Application Rules</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px">
+            <div>
+              <div style="font-size:12px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Delivery type</div>
+              <div class="checkbox-row"><input type="checkbox" id="r-all" checked><label for="r-all">All types</label></div>
+              <div class="checkbox-row"><input type="checkbox" id="r-home"><label for="r-home">Home delivery</label></div>
+              <div class="checkbox-row"><input type="checkbox" id="r-pickup"><label for="r-pickup">Store pickup</label></div>
+              <div class="checkbox-row"><input type="checkbox" id="r-virtual"><label for="r-virtual">Virtual delivery</label></div>
+            </div>
+            <div>
+              <div style="font-size:12px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Sales channel</div>
+              <div class="checkbox-row"><input type="checkbox" id="c-all" checked><label for="c-all">All channels</label></div>
+              <div class="checkbox-row"><input type="checkbox" id="c-own"><label for="c-own">Own store</label></div>
+              <div class="checkbox-row"><input type="checkbox" id="c-mkt"><label for="c-mkt">Marketplace</label></div>
+              <div class="checkbox-row"><input type="checkbox" id="c-b2b"><label for="c-b2b">B2B</label></div>
+            </div>
+            <div>
+              <div style="font-size:12px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Product category</div>
+              <div class="checkbox-row"><input type="checkbox" id="p-all" checked><label for="p-all">All categories</label></div>
+              <div class="checkbox-row"><input type="checkbox" id="p-elec"><label for="p-elec">Electronics</label></div>
+              <div class="checkbox-row"><input type="checkbox" id="p-fashion"><label for="p-fashion">Fashion &amp; Footwear</label></div>
+              <div class="checkbox-row"><input type="checkbox" id="p-food"><label for="p-food">Food</label></div>
+              <div class="checkbox-row"><input type="checkbox" id="p-ebook"><label for="p-ebook">E-Books</label></div>
+              <div class="checkbox-row"><input type="checkbox" id="p-travel"><label for="p-travel">Airline Tickets</label></div>
+              <div class="checkbox-row"><input type="checkbox" id="p-custom"><label for="p-custom">Item Customization</label></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- MODALS -->
+<div class="modal-overlay" id="modal-delete">
+  <div class="modal">
+    <div class="modal-title">Delete Stage</div>
+    <div class="modal-body">Delete <strong id="del-name"></strong>? This action cannot be undone.</div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('modal-delete')">Cancel</button>
+      <button class="btn btn-danger" onclick="confirmDelete()">Delete</button>
+    </div>
+  </div>
+</div>
+<div class="modal-overlay" id="modal-edge">
+  <div class="modal">
+    <div class="modal-title" id="modal-edge-title">Manage Connection</div>
+    <div class="modal-body" id="modal-edge-body"></div>
+    <div class="modal-warning">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M8 2l6 12H2L8 2z"/><path d="M8 7v3M8 12v.5"/></svg>
+      <span>This change will apply only to <strong>new orders</strong>.</span>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('modal-edge')">Cancel</button>
+      <button class="btn btn-primary" id="modal-edge-confirm" onclick="confirmEdge()">Confirm</button>
+    </div>
+  </div>
+</div>
+<div class="modal-overlay" id="modal-reorder">
+  <div class="modal">
+    <div class="modal-title">Change Execution Order</div>
+    <div class="modal-body" id="modal-reorder-body"></div>
+    <div class="modal-warning">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M8 2l6 12H2L8 2z"/><path d="M8 7v3M8 12v.5"/></svg>
+      <span>This change will apply only to <strong>new orders</strong>.</span>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('modal-reorder')">Cancel</button>
+      <button class="btn btn-primary" onclick="confirmReorder()">Confirm</button>
+    </div>
+  </div>
+</div>
+<div class="modal-overlay" id="modal-split-confirm">
+  <div class="modal">
+    <div class="modal-title">Confirm Stage Split</div>
+    <div class="modal-body" id="modal-split-body"></div>
+    <div class="modal-warning">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M8 2l6 12H2L8 2z"/><path d="M8 7v3M8 12v.5"/></svg>
+      <span>This change will apply only to <strong>new orders</strong>. Orders in progress will not be affected.</span>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('modal-split-confirm')">Cancel</button>
+      <button class="btn btn-primary" onclick="confirmSplit()">Confirm Split</button>
+    </div>
+  </div>
+</div>
+<div class="modal-overlay" id="modal-wf-delete">
+  <div class="modal">
+    <div class="modal-title">Delete Workflow</div>
+    <div class="modal-body">Permanently delete <strong id="wf-del-name"></strong>? This action cannot be undone and will affect all linked orders.</div>
+    <div class="modal-warning">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M8 2l6 12H2L8 2z"/><path d="M8 7v3M8 12v.5"/></svg>
+      <span>Orders in progress <strong>will not be canceled</strong>, but will lose the workflow reference.</span>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('modal-wf-delete')">Cancel</button>
+      <button class="btn btn-danger" onclick="confirmDeleteWorkflow()">Delete</button>
+    </div>
+  </div>
+</div>
+<div class="modal-overlay" id="modal-task-action">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-title">Manage Stage Manually</div>
+    <div class="modal-body">
+      <div style="font-size:12.5px;color:#555;margin-bottom:14px;padding:8px 10px;background:#f9f9fb;border-radius:6px;border:1px solid #efefef">
+        Stage: <strong id="ta-task-name" style="color:#1a1a1a"></strong>
+        <span id="ta-task-sup" style="color:#aaa;margin-left:6px;font-size:11.5px"></span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div class="ta-option" id="ta-opt-pending" onclick="selectTaskAction('pending')">
+          <div class="ta-opt-icon" style="background:#f3f4f6;border:2px solid #d1d5db"><span style="font-size:16px">⏳</span></div>
+          <div><div class="ta-opt-label">Pending</div><div class="ta-opt-desc">Task awaiting execution</div></div>
+        </div>
+        <div class="ta-option" id="ta-opt-completed" onclick="selectTaskAction('completed')">
+          <div class="ta-opt-icon" style="background:#f0fdf4;border:2px solid #22c55e"><span style="font-size:16px">✅</span></div>
+          <div><div class="ta-opt-label">Completed</div><div class="ta-opt-desc">Task successfully completed</div></div>
+        </div>
+        <div class="ta-option" id="ta-opt-canceled" onclick="selectTaskAction('canceled')">
+          <div class="ta-opt-icon" style="background:#fef2f2;border:2px solid #dc2626"><span style="font-size:16px">❌</span></div>
+          <div><div class="ta-opt-label">Canceled</div><div class="ta-opt-desc">Task canceled</div></div>
+        </div>
+        <div class="ta-option" id="ta-opt-ignored" onclick="selectTaskAction('ignored')">
+          <div class="ta-opt-icon" style="background:#f9fafb;border:2px solid #9ca3af"><span style="font-size:16px">—</span></div>
+          <div><div class="ta-opt-label">Ignored</div><div class="ta-opt-desc">Task ignored/skipped</div></div>
+        </div>
+      </div>
+      <div id="ta-fail-reason-wrap" style="display:none;margin-top:12px">
+        <label style="font-size:11.5px;font-weight:600;color:#dc2626;display:block;margin-bottom:5px">Failure reason *</label>
+        <textarea id="ta-fail-reason-text" placeholder="Describe the failure reason..." style="width:100%;min-height:70px;border:1px solid #fca5a5;border-radius:6px;padding:8px 10px;font-size:12.5px;resize:vertical;box-sizing:border-box;color:#1a1a1a"></textarea>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('modal-task-action')">Cancel</button>
+      <button class="btn btn-primary" id="ta-confirm-btn" onclick="confirmTaskAction()">Confirm</button>
+    </div>
+  </div>
+</div>
+<div class="modal-overlay" id="modal-success">
+  <div class="modal" style="text-align:center">
+    <div style="width:50px;height:50px;border-radius:50%;background:#f0fdf4;border:2px solid #22c55e;display:flex;align-items:center;justify-content:center;margin:0 auto 14px">
+      <svg viewBox="0 0 16 16" fill="none" stroke="#16a34a" stroke-width="2.5" width="20" height="20"><path d="M3 8l4 4 6-7"/></svg>
+    </div>
+    <div class="modal-title" id="success-title">Saved!</div>
+    <div class="modal-body" id="success-body"></div>
+    <div class="modal-actions" style="justify-content:center;margin-top:16px">
+      <button class="btn btn-primary" onclick="closeModal('modal-success')">OK</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══ MODAL: CONNECTOR TEST ══ -->
+<div class="modal-overlay" id="modal-connector-test" style="align-items:flex-start;padding-top:40px">
+  <div class="modal" style="width:520px;max-width:95vw;max-height:85vh;overflow:hidden;display:flex;flex-direction:column">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+      <div id="ct-logo" style="font-size:22px;line-height:1"></div>
+      <div style="flex:1">
+        <div class="modal-title" id="ct-title" style="margin:0">Test Connector</div>
+        <div style="font-size:11.5px;color:#888;margin-top:2px" id="ct-subtitle"></div>
+      </div>
+      <button onclick="closeModal('modal-connector-test')" style="background:none;border:none;cursor:pointer;color:#888;padding:4px"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M2 2l10 10M12 2L2 12"/></svg></button>
+    </div>
+    <div style="overflow-y:auto;flex:1;margin-top:12px" id="ct-body">
+      <!-- filled by testConnector() -->
+    </div>
+    <div style="border-top:1px solid #e5e7eb;padding-top:12px;margin-top:12px;display:flex;gap:8px;justify-content:flex-end" id="ct-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-connector-test')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: WEBHOOK SIMULATION ══ -->
+<div class="modal-overlay" id="modal-webhook" style="align-items:flex-start;padding-top:40px">
+  <div class="modal" style="width:460px;max-width:95vw">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+      <span style="font-size:18px">📩</span>
+      <div class="modal-title" style="margin:0">Webhook Received</div>
+    </div>
+    <div id="webhook-body"></div>
+    <div class="modal-actions" style="margin-top:16px">
+      <button class="btn btn-primary" onclick="closeModal('modal-webhook')">OK</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: IMPORT YAML ══ -->
+<div class="modal-overlay" id="modal-import-yaml" style="align-items:flex-start;padding-top:40px">
+  <div class="modal" style="width:560px;max-width:96vw">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+      <span style="font-size:18px">📥</span>
+      <div class="modal-title" style="margin:0">Import Workflow</div>
+      <button onclick="closeModal('modal-import-yaml')" style="background:none;border:none;cursor:pointer;color:#888;padding:4px;margin-left:auto"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M2 2l10 10M12 2L2 12"/></svg></button>
+    </div>
+    <div style="margin-bottom:10px">
+      <label style="font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:6px">Paste YAML or select file</label>
+      <textarea id="import-yaml-text" style="width:100%;box-sizing:border-box;height:220px;font-family:monospace;font-size:11.5px;border:1px solid #d1d5db;border-radius:6px;padding:10px;resize:vertical;outline:none;color:#1a1a1a" placeholder="Paste YAML content here..."></textarea>
+      <div style="margin-top:8px;display:flex;align-items:center;gap:8px">
+        <label style="font-size:12px;color:#555;cursor:pointer;display:flex;align-items:center;gap:5px">
+          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" width="14" height="14"><path d="M2 13V5l4-4h5l3 3v9H2z"/><path d="M6 1v4H2"/></svg>
+          Select .yml
+          <input type="file" accept=".yml,.yaml" style="display:none" onchange="handleImportFile(this)">
+        </label>
+        <span id="import-file-name" style="font-size:11px;color:#888"></span>
+      </div>
+      <div id="import-error" style="margin-top:8px;font-size:12px;color:#dc2626;background:#fef2f2;border:1px solid #fecaca;border-radius:5px;padding:8px 10px;display:none"></div>
+    </div>
+    <div class="modal-actions" style="margin-top:14px">
+      <button class="btn btn-secondary" onclick="closeModal('modal-import-yaml')">Cancel</button>
+      <button class="btn btn-primary" onclick="confirmImportYaml()">Import Workflow</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: IMPORT CONFLICT ══ -->
+<div class="modal-overlay" id="modal-import-conflict" style="align-items:flex-start;padding-top:40px">
+  <div class="modal" style="width:440px;max-width:95vw">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px">
+      <span style="font-size:18px">⚠️</span>
+      <div class="modal-title" style="margin:0">Workflow already exists</div>
+    </div>
+    <div id="conflict-summary" style="font-size:13px;color:#444;line-height:1.6;margin-bottom:14px"></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('modal-import-conflict')">Cancel</button>
+      <button class="btn btn-secondary" onclick="resolveImportConflict('copy')">Create Copy</button>
+      <button class="btn btn-primary" onclick="resolveImportConflict('replace')">Replace</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js"></script>
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
