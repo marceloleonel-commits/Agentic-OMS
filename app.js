@@ -1047,7 +1047,7 @@ function processEditIntent(text) {
       setTimeout(() => { addCMsg('ai', '✓ Script removed. Any other changes?'); renderCSuggs(['Toggle visibility','API external','Save and close']); }, 350);
     } else if (lower.includes('ajustar') || lower.includes('nova') || lower.includes('reescrever') || lower.includes('mudar')) {
       editChatState = 'script-describe';
-      setTimeout(() => { addCMsg('ai', 'Describe again what the script should do and I'll generate an updated version.'); }, 350);
+      setTimeout(() => { addCMsg('ai', "Describe again what the script should do and I'll generate an updated version."); }, 350);
     } else {
       editChatState = 'idle'; refreshEditPreview();
       setTimeout(() => { addCMsg('ai', '✓ Script confirmed. Any other changes?'); renderCSuggs(['Toggle visibility','API external','Save and close']); }, 350);
@@ -2558,7 +2558,7 @@ function pickNwfOrigin(sourceId) {
     newWfDraft.description = src ? (src.description || '') : '';
     const marcosCount = src && src.marcos ? src.marcos.length : 0;
     addNwfMsg('user', `Usar modelo: ${src ? src.name : sourceId}`);
-    setTimeout(() => addNwfMsg('ai', `Ótimo! Vou usar os ${marcosCount} marcos de "${src ? src.name : sourceId}" como base. Now choose an icon for the new Order Job:`), 300);
+    setTimeout(() => addNwfMsg('ai', `Great! I will use the ${marcosCount} stages from "${src ? src.name : sourceId}" as a base. Now choose an icon for the new Order Job:`), 300);
   } else {
     newWfDraft.sourceId = null;
     addNwfMsg('user', 'Estrutura vazia');
@@ -2656,11 +2656,11 @@ function processBulkChat(text) {
   if (bulkChatState === 'select-operation') {
     if (lower.includes('etapa')) {
       bulkDraft.operation = 'add-stage'; bulkChatState = 'select-workflows';
-      addBulkMsg('ai', 'Perfeito! Vou adicionar uma nova etapa.\n\nEm which workflows do you want to add? Available ones are:\n• ' + WORKFLOW_DEFS.map(w => w.name).join('\n• ') + '\n\nDigite os nomes ou selecione abaixo:');
+      addBulkMsg('ai', 'Great! I will add a new stage.\n\nIn which workflows do you want to add it? Available ones are:\n• ' + WORKFLOW_DEFS.map(w => w.name).join('\n• ') + '\n\nType the names or select below:');
       renderBulkSuggs(WORKFLOW_DEFS.map(w => w.name).concat(['Todos os workflows']));
     } else if (lower.includes('tarefa')) {
       bulkDraft.operation = 'add-task'; bulkChatState = 'select-workflows';
-      addBulkMsg('ai', 'Entendido! Vou adicionar uma nova tarefa em uma etapa existente.\n\nEm quais workflows? Available ones are:\n• ' + WORKFLOW_DEFS.map(w => w.name).join('\n• ') + '\n\nDigite os nomes ou selecione abaixo:');
+      addBulkMsg('ai', 'Got it! I will add a new task to an existing stage.\n\nIn which workflows? Available ones are:\n• ' + WORKFLOW_DEFS.map(w => w.name).join('\n• ') + '\n\nType the names or select below:');
       renderBulkSuggs(WORKFLOW_DEFS.map(w => w.name).concat(['Todos os workflows']));
     } else {
       addBulkMsg('ai', 'Please choose an option:');
@@ -2680,7 +2680,7 @@ function processBulkChat(text) {
       });
     }
     if (!selected.length) {
-      addBulkMsg('ai', 'No workflow found with that name. Available ones are:\n•  + WORKFLOW_DEFS.map(w => w.name).join('\n• '));
+      addBulkMsg('ai', 'No workflow found with that name. Available ones are:\n• ' + WORKFLOW_DEFS.map(w => w.name).join('\n• '));
       renderBulkSuggs(WORKFLOW_DEFS.map(w => w.name).concat(['Todos os workflows']));
       return;
     }
