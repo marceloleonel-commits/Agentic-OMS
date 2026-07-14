@@ -106,8 +106,8 @@ function toggleArchiveWorkflow(id) {
   wf.archived = !wf.archived;
   renderWorkflowList();
   const msg = wf.archived
-    ? `"${wf.name}" foi arquivado e não receberá novos orders.`
-    : `"${wf.name}" foi reativado e voltará a receber orders.`;
+    ? `"${wf.name}" was archived and will not receive new orders.`
+    : `"${wf.name}" was reactivated and will receive new orders.`;
   showSuccessModal(wf.archived ? 'Workflow archived' : 'Workflow reactivated', msg);
 }
 function deleteWorkflow(id) {
@@ -194,7 +194,7 @@ function confirmTaskAction() {
   closeModal('modal-task-action');
   const orderObj = ORDERS.find(o => o.id === orderId);
   if (orderObj) renderItemsWithTasks(orderObj);
-  const labels = {completed:'concluída',canceled:'cancelada',ignored:'ignorada',pending:'marcada como pendente'};
+  const labels = {completed:'completed',canceled:'canceled',ignored:'ignored',pending:'marked as pending'};
   showSuccessModal('Task updated', `"${task.name}" foi ${labels[action]||action}.`);
 }
 
@@ -279,7 +279,7 @@ function openOrder(idx) {
   badge.textContent = sc.icon + ' ' + sc.label;
   badge.className = 'badge ' + sc.cls;
   badge.style.display = 'none';
-  document.getElementById('detail-meta').textContent = o.date + ' • Vendido por recorrenciacharlie';
+  document.getElementById('detail-meta').textContent = o.date + ' • Vendido por recolorrenciacharlie';
   document.getElementById('detail-client-name').textContent = o.client;
   document.getElementById('detail-client-name2').textContent = o.client;
   document.getElementById('detail-client-doc').textContent = '12681154448';
@@ -295,14 +295,14 @@ const MILESTONE_ORDER_IDS = ['1631888948228-01', '1631920951000-01'];
 
 function renderOrderStatus3Step(status, orderId) {
   const steps = [
-    {key:'not-processed',icon:'📋',label:'Not processed',sub:'Aguardando início das tarefas'},
+    {key:'not-processed',icon:'📋',label:'Not processed',sub:'Waiting for tasks to start'},
     {key:'processing',icon:'⚙️',label:'Processing',sub:'Tasks sendo executadas'},
-    {key:'processed',icon:'✅',label:'Processed',sub:'Todas as tarefas concluídas'},
+    {key:'processed',icon:'✅',label:'Processed',sub:'All tasks completed'},
   ];
   const activeIdx = steps.findIndex(s => s.key === status);
   const container = document.getElementById('order-status-steps');
   const card = container ? container.closest('.detail-status-card') : null;
-  // "Order status" section is hidden for all orders; status is shown via pipeline accordions
+  // "Order status" section is hidden for all orders; status is shown via pipeline accolordions
   if (card) card.style.display = 'none';
   return;
   let html = '';
@@ -323,11 +323,11 @@ function computeGroupMilestones(groupItems, order) {
   const isCanceled = order && order.orderStatus === 'canceled';
   const hasReturn  = groupItems.some(i => i.secondWorkflow);
   function statusOf(tasks) {
-    if (!tasks.length) return 'nao_iniciado';
+    if (!tasks.length) return 'no_iniciado';
     if (tasks.every(t => t.s === 'completed')) return 'finalizado';
     if (tasks.some(t => t.s === 'canceled')) return 'cancelado';
     if (tasks.some(t => t.s === 'completed' || t.s === 'blocked')) return 'em_andamento';
-    return 'nao_iniciado';
+    return 'no_iniciado';
   }
   const payTasks  = allPipelines.filter(p => p.wfId === 'wf-payments').flatMap(p => p.tasks || []);
   const prepTasks = allPipelines.filter(p => p.wfId === 'wf-standard').flatMap(p => p.tasks || []);
@@ -350,14 +350,14 @@ function computeGroupMilestones(groupItems, order) {
 function milestoneRowHtml(milestones) {
   const cfg = {
     finalizado:   { dot:'#15803d', text:'Finalizado',        bg:'#f0fdf4', border:'#bbf7d0', color:'#15803d' },
-    em_andamento: { dot:'#1d4ed8', text:'Em andamento',      bg:'#eff6ff', border:'#bfdbfe', color:'#1d4ed8' },
-    nao_iniciado: { dot:'#9ca3af', text:'Não iniciado',      bg:'#f9fafb', border:'#e5e7eb', color:'#6b7280' },
+    em_andamento: { dot:'#1d4ed8', text:'In progress',      bg:'#eff6ff', border:'#bfdbfe', color:'#1d4ed8' },
+    no_iniciado: { dot:'#9ca3af', text:'Not started',      bg:'#f9fafb', border:'#e5e7eb', color:'#6b7280' },
     cancelado:    { dot:'#dc2626', text:'Canceled',          bg:'#fef2f2', border:'#fecaca', color:'#dc2626' },
     estorno:      { dot:'#d97706', text:'Estorno realizado', bg:'#fffbeb', border:'#fde68a', color:'#b45309' },
   };
   return `<div style="display:grid;grid-template-columns:repeat(${milestones.length},1fr);gap:8px;margin:6px 0 10px">
     ${milestones.map(m => {
-      const c = cfg[m.status] || cfg.nao_iniciado;
+      const c = cfg[m.status] || cfg.no_iniciado;
       return `<div style="background:${c.bg};border:1px solid ${c.border};border-radius:8px;padding:10px 8px;text-align:center">
         <div style="font-size:20px;margin-bottom:5px">${m.icon}</div>
         <div style="font-size:11px;font-weight:600;color:#1a1a1a;line-height:1.35;margin-bottom:6px">${m.label}</div>
@@ -501,19 +501,19 @@ function renderItemsWithTasks(order) {
           <div class="orch-block-item">
             <div style="font-size:18px;flex-shrink:0">⚠️</div>
             <div style="flex:1;min-width:0">
-              <div class="orch-block-task">${t.name} — não pode ser executada</div>
+              <div class="orch-block-task">${t.name} — cannot be executed</div>
               <div class="orch-block-reason">${t.blockReason||''}</div>
               <div class="orch-block-source">${t.blockSource||''}</div>
               ${t.suggestion ? `<div class="orch-block-suggestion">
                 <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11"><path d="M7 1v8M4 7l3 3 3-3"/><path d="M1 11h12"/></svg>
-                Sugestão: ${t.suggestion}
+                Suggestion: ${t.suggestion}
               </div>` : ''}
             </div>
           </div>`).join('')}
         <div class="orch-block-actions">
           <button class="btn btn-primary btn-sm" style="flex:1;justify-content:center;background:#f97316;border-color:#f97316">
             <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><circle cx="7" cy="5" r="3"/><path d="M1 13c0-2.8 2.7-4 6-4s6 1.2 6 4"/><circle cx="12" cy="3" r="1.5" fill="currentColor" stroke="none"/></svg>
-            Aplicar sugestão do Agente
+            Apply Agent Suggestion
           </button>
           <button class="btn btn-secondary btn-sm" style="flex:1;justify-content:center">Escalar para Operador</button>
         </div>
@@ -560,7 +560,7 @@ function renderItemsWithTasks(order) {
         const pBlocked = pTasks.some(t => t.s === 'blocked');
         const pCanceled = pTasks.some(t => t.s === 'canceled');
         const pHasActive = pTasks.some(t => t.s === 'completed');
-        const pStatusLabel = pBlocked ? 'Blocked' : pCanceled ? 'Canceled' : pAllDone ? 'Completed' : pHasActive ? 'Em andamento' : 'Não iniciado';
+        const pStatusLabel = pBlocked ? 'Blocked' : pCanceled ? 'Canceled' : pAllDone ? 'Completed' : pHasActive ? 'In progress' : 'Not started';
         const pStatusColor = pBlocked ? '#c2410c' : pCanceled ? '#dc2626' : pAllDone ? '#15803d' : pHasActive ? '#1d4ed8' : '#9ca3af';
         const pStatusBg   = pBlocked ? '#fff7ed' : pCanceled ? '#fef2f2' : pAllDone ? '#f0fdf4' : pHasActive ? '#eff6ff' : '#f9fafb';
         const pipId = `pip-${order.id}-${itemIdx}-${pIdx}`;
@@ -594,8 +594,8 @@ function renderItemsWithTasks(order) {
           <div class="ric-agent-diagnosis">
             <div class="ric-diagnosis-header">
               <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8" width="12" height="12"><circle cx="7" cy="7" r="5.5"/><path d="M7 4.5v3M7 9v.5"/></svg>
-              Diagnóstico do Agente
-              <span class="ric-diagnosis-tag">confiança ${ri.agentDiagnosis.confidence}%</span>
+              Agent Diagnosis
+              <span class="ric-diagnosis-tag">confidence ${ri.agentDiagnosis.confidence}%</span>
             </div>
             ${ri.agentDiagnosis.insights.map(ins => `
             <div class="ric-insight">
@@ -609,7 +609,7 @@ function renderItemsWithTasks(order) {
           <div class="ric-agent-note">
             <div class="ric-agent-note-title">
               <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" width="11" height="11" style="color:#7c3aed"><circle cx="7" cy="7" r="5"/><path d="M7 4v4M7 9.5v.5"/></svg>
-              Diagnóstico do Agente
+              Agent Diagnosis
             </div>
             <div style="font-size:12px;color:#555;line-height:1.6">${ri.agentJustification}</div>
           </div>` : '');
@@ -631,7 +631,7 @@ function renderItemsWithTasks(order) {
       const swBlocked  = swTasks.some(t => t.s === 'blocked');
       const swCanceled = swTasks.some(t => t.s === 'canceled');
       const swHasActive= swTasks.some(t => t.s === 'completed');
-      const swStatusLabel = swBlocked?'Blocked':swCanceled?'Canceled':swAllDone?'Completed':swHasActive?'Em andamento':'Não iniciado';
+      const swStatusLabel = swBlocked?'Blocked':swCanceled?'Canceled':swAllDone?'Completed':swHasActive?'In progress':'Not started';
       const swStatusColor = swBlocked?'#c2410c':swCanceled?'#dc2626':swAllDone?'#15803d':swHasActive?'#1d4ed8':'#9ca3af';
       const swStatusBg    = swBlocked?'#fff7ed':swCanceled?'#fef2f2':swAllDone?'#f0fdf4':swHasActive?'#eff6ff':'#f9fafb';
       const swBadgeColor  = '#7c3aed';
@@ -652,7 +652,7 @@ function renderItemsWithTasks(order) {
     }
 
     const sellerBadge = item.seller ? `<span style="display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:600;padding:1px 7px;border-radius:10px;background:#f0f4ff;color:#3b5bdb;border:1px solid #c5d0f5;margin-left:4px">🏪 ${item.seller}</span>` : '';
-    const serviceBadge = item.isService ? `<span style="display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:600;padding:1px 7px;border-radius:10px;background:#f0f9ff;color:#0891b2;border:1px solid #bae6fd">🔧 Serviço</span>` : '';
+    const serviceBadge = item.isService ? `<span style="display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:600;padding:1px 7px;border-radius:10px;background:#f0f9ff;color:#0891b2;border:1px solid #bae6fd">🔧 Service</span>` : '';
     const cardHtml = `<div class="item-task-card">
       <div class="item-card-header">
         <div class="item-product-img">${item.emoji}</div>
@@ -691,7 +691,7 @@ function renderItemsWithTasks(order) {
       const deliverySup = (carrierTask ? carrierTask.sup : null) || (pipelineTasks.length ? pipelineTasks[pipelineTasks.length-1].sup : null) || seller || '';
       const icon = seller ? '🏪' : '🏭';
       const groupLabel = wfName === 'Item Preparation'
-        ? (seller ? 'Retirada em loja' : 'Delivery em Domicílio')
+        ? (seller ? 'Store Pickup' : 'Home Delivery')
         : wfName;
       const title = (deliveryPipeline && deliveryPipeline.wfId === 'wf-services')
         ? groupLabel
@@ -700,7 +700,7 @@ function renderItemsWithTasks(order) {
       const groupItems = groupIndices.map(idx => items[idx]);
       const showMilestones = groupItems.some(i => i.pipelines && i.pipelines.length);
 
-      // Accordion header
+      // Accolordion header
       finalHtml += `
 <div style="margin-top:${gIdx===0?'0':'16px'};margin-bottom:2px">
   <button onclick="toggleGroup('${gId}')" style="width:100%;display:flex;align-items:center;gap:10px;padding:9px 14px;background:#f8faff;border:1px solid #dce8ff;border-left:3px solid #0c6fcd;border-radius:6px;cursor:pointer;text-align:left;transition:background .15s" onmouseenter="this.style.background='#eef4ff'" onmouseleave="this.style.background='#f8faff'">
@@ -741,7 +741,7 @@ function renderItemsWithTasks(order) {
         }
       }
 
-      // Close accordion body + wrapper
+      // Close accolordion body + wrapper
       finalHtml += `</div></div>`;
     });
   } else {
@@ -874,8 +874,8 @@ function renderKanban() {
               ${subTask.mcpConfig ? `<span title="MCP: ${subTask.mcpConfig.serverName}" style="font-size:9px;padding:1px 5px;border-radius:3px;background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;font-weight:600;line-height:1.6">MCP</span>` : ''}
               ${subTask.agentConfig ? `<span title="${subTask.agentConfig.agentName}" style="font-size:11px;line-height:1">${subTask.agentConfig.agentIcon}</span>` : ''}
               ${subTask.visibility === 'internal'
-                ? `<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:#f5f3ff;border:1px solid #e9d5ff;color:#7c3aed;font-weight:600;line-height:1.6">🔒 Interna</span>`
-                : `<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;font-weight:600;line-height:1.6">👤 Usuário</span>`
+                ? `<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:#f5f3ff;border:1px solid #e9d5ff;color:#7c3aed;font-weight:600;line-height:1.6">🔒 Internall</span>`
+                : `<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;font-weight:600;line-height:1.6">👤 User</span>`
               }
               <div class="card-status-dot" style="background:${subTask.active!==false?'#22c55e':'#ef4444'}" title="${subTask.active!==false?'Ativa':'Inativa'}"></div>
             </div>
@@ -926,7 +926,7 @@ function dropOnCol(targetId) {
   const to   = WF_TASKS.find(s => s.id === targetId);
   if (!from || !to) return;
   pendingDragFrom = dragTaskId; pendingDragTo = targetId;
-  document.getElementById('modal-reorder-body').textContent = `Mover "${from.name}" para a posição de "${to.name}"?`;
+  document.getElementById('modal-reorder-body').textContent = `Move "${from.name}" to the position of "${to.name}"?`;
   openModal('modal-reorder');
 }
 function confirmReorder() {
@@ -958,9 +958,9 @@ function editTask(id) {
     color: stage.color, active: task.active !== false,
     visibility: task.visibility || 'user',
     script: task.script !== undefined ? task.script : null,
-    externalApi: task.externalApi ? {
-      url: task.externalApi.url||'', method: task.externalApi.method||'POST',
-      responseMapping: (task.externalApi.responseMapping||[]).map(m=>({...m}))
+    externallApi: task.externallApi ? {
+      url: task.externallApi.url||'', method: task.externallApi.method||'POST',
+      responseMapping: (task.externallApi.responseMapping||[]).map(m=>({...m}))
     } : null,
     mcpConfig: task.mcpConfig ? {...task.mcpConfig} : null,
     agentConfig: task.agentConfig ? {...task.agentConfig} : null,
@@ -976,19 +976,19 @@ function editTask(id) {
     </div>`;
   document.getElementById('sp-footer').innerHTML = `
     <button class="btn btn-secondary" style="flex:1;justify-content:center" onclick="closeSidePanel()">Cancel</button>
-    <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="applyEditDraft()">Save Alterações</button>`;
+    <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="applyEditDraft()">Save Changes</button>`;
   refreshEditPreview();
   openSidePanel(); renderKanban();
   setTimeout(() => {
-    let greeting = `Editando "${task.name}".\n\nConfiguração atual:\n• Category: ${task.category}`;
-    greeting += `\n• Visibility: ${task.visibility === 'internal' ? 'Interna (não visível no pedido)' : 'Usuário (visível no pedido)'}`;
-    if (task.externalApi) greeting += `\n• API externa: ${task.externalApi.url}`;
-    if (task.script !== null && task.script !== undefined) greeting += `\n• Script customizado: ativo`;
-    if (task.mcpConfig) greeting += `\n• MCP: ${task.mcpConfig.serverName} → ${task.mcpConfig.toolName||'tool não configurada'}`;
+    let greeting = `Editing "${task.name}".\n\nCurrent configuration:\n• Category: ${task.category}`;
+    greeting += `\n• Visibility: ${task.visibility === 'internal' ? 'Internall (not visible in order)' : 'User (visible in order)'}`;
+    if (task.externallApi) greeting += `\n• API external: ${task.externallApi.url}`;
+    if (task.script !== null && task.script !== undefined) greeting += `\n• Custom script: ativo`;
+    if (task.mcpConfig) greeting += `\n• MCP: ${task.mcpConfig.serverName} → ${task.mcpConfig.toolName||'tool not configured'}`;
     if (task.agentConfig) greeting += `\n• Agente AI: ${task.agentConfig.agentIcon} ${task.agentConfig.agentName}`;
     greeting += '\n\nO que deseja alterar?';
     addCMsg('ai', greeting);
-    renderCSuggs(['Renomear','Alternar visibilidade','Integração MCP','Agente AI Workspace','Script customizado']);
+    renderCSuggs(['Rename','Toggle visibility','MCP Integration','AI Workspace Agent','Custom script']);
   }, 200);
 }
 
@@ -996,8 +996,8 @@ function refreshEditPreview() {
   const ep = document.getElementById('edit-preview'); if (!ep) return;
   const dot = `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${editDraft.color||'#0c6fcd'};margin-right:5px;vertical-align:middle;flex-shrink:0"></span>`;
   const visHtml = editDraft.visibility === 'internal'
-    ? `<span style="font-size:10px;padding:1px 5px;border-radius:3px;background:#f5f3ff;border:1px solid #e9d5ff;color:#7c3aed;font-weight:500">🔒 Interna</span>`
-    : `<span style="font-size:10px;padding:1px 5px;border-radius:3px;background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;font-weight:500">👤 Usuário</span>`;
+    ? `<span style="font-size:10px;padding:1px 5px;border-radius:3px;background:#f5f3ff;border:1px solid #e9d5ff;color:#7c3aed;font-weight:500">🔒 Internall</span>`
+    : `<span style="font-size:10px;padding:1px 5px;border-radius:3px;background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;font-weight:500">👤 User</span>`;
   ep.innerHTML = `
     <div style="display:flex;align-items:center;gap:4px;font-weight:700;color:#1a1a1a;margin-bottom:5px;flex-wrap:wrap">
       ${dot}<span>${editDraft.name||'—'}</span>
@@ -1005,9 +1005,9 @@ function refreshEditPreview() {
     </div>
     <div style="color:#555;font-size:11.5px;margin-bottom:3px"><span style="font-weight:500">Cat:</span> ${editDraft.category||'—'}</div>
     <div style="font-size:11.5px;line-height:1.8"><span style="font-weight:500">Visibility:</span> ${visHtml}</div>
-    ${editDraft.script!==null&&editDraft.script!==undefined?'<div style="color:#7c3aed;font-size:10.5px;margin-top:3px">📜 Script customizado ativo</div>':''}
-    ${editDraft.externalApi?`<div style="color:#0891b2;font-size:10.5px;margin-top:2px">🌐 ${editDraft.externalApi.method} ${editDraft.externalApi.url||'(URL não definida)'}</div>`:''}
-    ${editDraft.mcpConfig?`<div style="color:#15803d;font-size:10.5px;margin-top:2px">🔌 MCP: ${editDraft.mcpConfig.serverName} → <code style="font-family:monospace">${editDraft.mcpConfig.toolName||'(tool não selecionada)'}</code></div>`:''}
+    ${editDraft.script!==null&&editDraft.script!==undefined?'<div style="color:#7c3aed;font-size:10.5px;margin-top:3px">📜 Custom script ativo</div>':''}
+    ${editDraft.externallApi?`<div style="color:#0891b2;font-size:10.5px;margin-top:2px">🌐 ${editDraft.externallApi.method} ${editDraft.externallApi.url||'(URL not defined)'}</div>`:''}
+    ${editDraft.mcpConfig?`<div style="color:#15803d;font-size:10.5px;margin-top:2px">🔌 MCP: ${editDraft.mcpConfig.serverName} → <code style="font-family:monospace">${editDraft.mcpConfig.toolName||'(tool not selected)'}</code></div>`:''}
     ${editDraft.agentConfig?`<div style="color:#7c3aed;font-size:10.5px;margin-top:2px">${editDraft.agentConfig.agentIcon} Agente: ${editDraft.agentConfig.agentName}</div>`:''}`;
 }
 
@@ -1021,69 +1021,69 @@ function sendEditChat() {
 
 function processEditIntent(text) {
   const lower = text.toLowerCase();
-  const idleSuggs = ['Renomear','Alternar visibilidade','Integração MCP','Agente AI Workspace','Save e fechar'];
+  const idleSuggs = ['Rename','Toggle visibility','MCP Integration','AI Workspace Agent','Save and close'];
 
   if (lower === 'salvar e fechar' || lower === 'salvar') { applyEditDraft(); return; }
 
   if (editChatState === 'rename') {
     editDraft.name = text; editChatState = 'idle'; refreshEditPreview();
-    setTimeout(() => { addCMsg('ai', `✓ Nome alterado para "${text}". Mais alguma alteração?`); renderCSuggs(['Alternar visibilidade','Script customizado','Save e fechar']); }, 350);
+    setTimeout(() => { addCMsg('ai', `✓ Name changed to "${text}". Any other changes?`); renderCSuggs(['Toggle visibility','Custom script','Save and close']); }, 350);
 
   } else if (editChatState === 'category') {
     editDraft.category = text; editChatState = 'idle'; refreshEditPreview();
-    setTimeout(() => { addCMsg('ai', `✓ Category definida como "${text}". Mais alguma alteração?`); renderCSuggs(['Renomear','Alternar visibilidade','Save e fechar']); }, 350);
+    setTimeout(() => { addCMsg('ai', `✓ Category set to "${text}". Any other changes?`); renderCSuggs(['Rename','Toggle visibility','Save and close']); }, 350);
 
   } else if (editChatState === 'script-describe') {
     const generated = generateScript(text);
     editDraft.script = generated; editChatState = 'script-review'; refreshEditPreview();
     setTimeout(() => {
-      addCMsg('ai', `Script gerado:\n\n${generated}\n\nEste código atende ao que você precisa?`);
-      renderCSuggs(['Confirm script','Ajustar descrição','Remover script']);
+      addCMsg('ai', `Script generated:\n\n${generated}\n\nDoes this code meet your needs?`);
+      renderCSuggs(['Confirm script','Adjust description','Remove script']);
     }, 500);
 
   } else if (editChatState === 'script-review') {
     if (lower.includes('remover') || lower.includes('excluir') || lower.includes('cancelar')) {
       editDraft.script = null; editChatState = 'idle'; refreshEditPreview();
-      setTimeout(() => { addCMsg('ai', '✓ Script removido. Mais alguma alteração?'); renderCSuggs(['Alternar visibilidade','API externa','Save e fechar']); }, 350);
+      setTimeout(() => { addCMsg('ai', '✓ Script removed. Any other changes?'); renderCSuggs(['Toggle visibility','API external','Save and close']); }, 350);
     } else if (lower.includes('ajustar') || lower.includes('nova') || lower.includes('reescrever') || lower.includes('mudar')) {
       editChatState = 'script-describe';
-      setTimeout(() => { addCMsg('ai', 'Descreva novamente o que o script deve fazer e vou gerar uma versão atualizada.'); }, 350);
+      setTimeout(() => { addCMsg('ai', 'Describe again what the script should do and I'll generate an updated version.'); }, 350);
     } else {
       editChatState = 'idle'; refreshEditPreview();
-      setTimeout(() => { addCMsg('ai', '✓ Script confirmado. Mais alguma alteração?'); renderCSuggs(['Alternar visibilidade','API externa','Save e fechar']); }, 350);
+      setTimeout(() => { addCMsg('ai', '✓ Script confirmed. Any other changes?'); renderCSuggs(['Toggle visibility','API external','Save and close']); }, 350);
     }
 
   } else if (editChatState === 'api-url') {
     const url = (text.startsWith('http') ? text : 'https://' + text).trim();
-    if (!editDraft.externalApi) editDraft.externalApi = {method:'POST', responseMapping:[]};
-    editDraft.externalApi.url = url; editChatState = 'api-method'; refreshEditPreview();
-    setTimeout(() => { addCMsg('ai', `URL: ${url}\n\nQual o método HTTP desta requisição?`); renderCSuggs(['POST','GET','PUT','PATCH']); }, 350);
+    if (!editDraft.externallApi) editDraft.externallApi = {method:'POST', responseMapping:[]};
+    editDraft.externallApi.url = url; editChatState = 'api-method'; refreshEditPreview();
+    setTimeout(() => { addCMsg('ai', `URL: ${url}\n\nWhat is the HTTP method for this request?`); renderCSuggs(['POST','GET','PUT','PATCH']); }, 350);
 
   } else if (editChatState === 'api-method') {
     const method = text.toUpperCase();
-    if (editDraft.externalApi) editDraft.externalApi.method = ['GET','POST','PUT','PATCH'].includes(method) ? method : 'POST';
+    if (editDraft.externallApi) editDraft.externallApi.method = ['GET','POST','PUT','PATCH'].includes(method) ? method : 'POST';
     editChatState = 'api-mapping'; refreshEditPreview();
     setTimeout(() => {
-      addCMsg('ai', `Method: ${editDraft.externalApi.method}.\n\nAgora mapeie os campos da resposta para variáveis de contexto.\nFormato: nome_var ← response.path\n\nExemplo:\n  nf_numero ← data.number\n  status ← data.status\n\nDigite um mapeamento por vez. "pronto" para finalizar.`);
+      addCMsg('ai', `Method: ${editDraft.externallApi.method}.\n\nNow map the response fields to context variables.\nFormat: var_name ← response.path\n\nExample:\n  invoice_number ← data.number\n  status ← data.status\n\nEnter one mapping at a time. Type "done" to finish.`);
     }, 350);
 
   } else if (editChatState === 'api-mapping') {
-    if (['pronto','ok','fim','finalizar','nenhum','feito'].includes(lower)) {
+    if (['done','ok','fim','finalizar','nenhum','feito'].includes(lower)) {
       editChatState = 'idle'; refreshEditPreview();
-      const maps = editDraft.externalApi?.responseMapping||[];
+      const maps = editDraft.externallApi?.responseMapping||[];
       const outputVars = maps.filter(m=>m.key).map(m=>`{{api_${selectedTaskId}.${m.key}}}`);
-      let msg = `✓ API configurada com ${maps.length} mapeamento${maps.length!==1?'s':''}.`;
-      if (outputVars.length) msg += `\n\nVariáveis geradas para etapas seguintes:\n${outputVars.map(v=>`• ${v}`).join('\n')}`;
-      msg += '\n\nMais alguma alteração?';
-      setTimeout(() => { addCMsg('ai', msg); renderCSuggs(['Alternar visibilidade','Script customizado','Save e fechar']); }, 350);
+      let msg = `✓ API configurada com ${maps.length} mapping${maps.length!==1?'s':''}.`;
+      if (outputVars.length) msg += `\n\nVariables generated for subsequent stages:\n${outputVars.map(v=>`• ${v}`).join('\n')}`;
+      msg += '\n\nAny other changes?';
+      setTimeout(() => { addCMsg('ai', msg); renderCSuggs(['Toggle visibility','Custom script','Save and close']); }, 350);
     } else {
       const match = text.match(/^([a-z_][a-z0-9_]*)\s*(?:←|<-|=|:)\s*(.+)$/i) || text.match(/^(\S+)\s+(\S+)$/);
       if (match) {
-        if (!editDraft.externalApi.responseMapping) editDraft.externalApi.responseMapping = [];
-        editDraft.externalApi.responseMapping.push({ key: match[1].trim(), path: match[2].trim() });
-        setTimeout(() => { addCMsg('ai', `✓ {{api_${selectedTaskId}.${match[1].trim()}}} ← ${match[2].trim()}\n\nAdicionado! Mais um mapeamento ou "pronto" para finalizar.`); }, 350);
+        if (!editDraft.externallApi.responseMapping) editDraft.externallApi.responseMapping = [];
+        editDraft.externallApi.responseMapping.push({ key: match[1].trim(), path: match[2].trim() });
+        setTimeout(() => { addCMsg('ai', `✓ {{api_${selectedTaskId}.${match[1].trim()}}} ← ${match[2].trim()}\n\nAdicionado! Mais um mapping ou "done" para finalizar.`); }, 350);
       } else {
-        setTimeout(() => { addCMsg('ai', 'Formato não reconhecido. Use:\n  nome_variavel ← response.path\n\nExemplo: nf_numero ← data.number'); }, 350);
+        setTimeout(() => { addCMsg('ai', 'Formato no reconhecido. Use:\n  nome_variavel ← response.path\n\nExemplo: nf_numero ← data.number'); }, 350);
       }
     }
 
@@ -1091,54 +1091,54 @@ function processEditIntent(text) {
     // idle — intent detection
     if (lower.includes('renomear') || lower === 'nome' || (lower.includes('nome') && lower.includes('mudar'))) {
       editChatState = 'rename';
-      setTimeout(() => { addCMsg('ai', `Qual será o novo nome da etapa "${editDraft.name}"?`); }, 350);
+      setTimeout(() => { addCMsg('ai', `What should be the new name for stage "${editDraft.name}"?`); }, 350);
     } else if (lower.includes('categoria') || lower.includes('produto')) {
       editChatState = 'category';
       setTimeout(() => { addCMsg('ai', `Category atual: "${editDraft.category}". Qual a nova?`); renderCSuggs(['Todos os produtos','Electronics','Fashion & Footwear','Food','B2B']); }, 350);
-    } else if (lower.includes('mcp') || lower === 'integração mcp' || lower === 'integracao mcp') {
+    } else if (lower.includes('mcp') || lower === 'mcp integration' || lower === 'mcp integration') {
       showMcpSelector();
     } else if (lower.includes('workspace') || lower === 'agente ai workspace' || lower === 'agente ai') {
       showAgentWsSelector();
-    } else if (lower.includes('visib') || lower.includes('interno') || lower.includes('usuário') || lower.includes('usuario') || lower.includes('alternar visib')) {
+    } else if (lower.includes('visib') || lower.includes('internal') || lower.includes('user') || lower.includes('user') || lower.includes('toggle visib')) {
       editDraft.visibility = editDraft.visibility === 'internal' ? 'user' : 'internal';
       refreshEditPreview();
-      setTimeout(() => { addCMsg('ai', `Visibility alterada para: ${editDraft.visibility === 'internal' ? '🔒 Interna' : '👤 Usuário'}`); renderCSuggs(['Renomear','Alternar visibilidade','Integração MCP','Agente AI Workspace','Script customizado']); }, 350);
-    } else if (/\bação\b|\bações\b|\bacao\b|\bacoes\b/.test(lower) || lower.includes('configurar ação') || lower.includes('configurar ações')) {
-      setTimeout(() => { addCMsg('ai', 'O conceito de ações foi substituído por Visibility (controla se a tarefa é visível no pedido para o cliente) e integrações MCP / API externa.\n\nUse "Alternar visibilidade" para mudar entre Interna e Usuário.'); renderCSuggs(idleSuggs); }, 350);
-    } else if (lower.includes('script') || lower.includes('código') || lower.includes('codigo') || lower.includes('customizado')) {
+      setTimeout(() => { addCMsg('ai', `Visibility alterada para: ${editDraft.visibility === 'internal' ? '🔒 Internall' : '👤 User'}`); renderCSuggs(['Rename','Toggle visibility','MCP Integration','AI Workspace Agent','Custom script']); }, 350);
+    } else if (/\baction\b|\bactions\b|\baction\b|\bactions\b/.test(lower) || lower.includes('configurar action') || lower.includes('configurar actions')) {
+      setTimeout(() => { addCMsg('ai', 'The concept of actions was replaced by Visibility (controls whether the task is visible in the order for the customer) and MCP / External API integrations.\n\nUse "Toggle visibility" to switch between Internal and User.'); renderCSuggs(idleSuggs); }, 350);
+    } else if (lower.includes('script') || lower.includes('code') || lower.includes('code') || lower.includes('custom')) {
       editChatState = 'script-describe';
       setTimeout(() => {
         const hasScript = editDraft.script !== null && editDraft.script !== undefined;
         addCMsg('ai', hasScript
-          ? `Script atual ativo. Descreva o que o novo script deve fazer e vou gerar uma versão atualizada:`
-          : `Descreva o que o script deve fazer.\n\nExemplos:\n• "calcular desconto por valor do pedido"\n• "validar limite de crédito B2B"\n• "verificar estoque e sugerir ação"\n\nO agente vai gerar o código.`);
+          ? `Script currently active. Describe what the new script should do and I'll generate an updated version:`
+          : `Descreva o que o script deve fazer.\n\nExemplos:\n• "calcular desconto por valor do pedido"\n• "validar limit de credit B2B"\n• "verificar estoque e sugerir action"\n\nO agente vai gerar o code.`);
       }, 350);
-    } else if (lower.includes('api') || lower.includes('externa') || lower.includes('webhook') || lower === 'integração' || lower === 'integracao') {
+    } else if (lower.includes('api') || lower.includes('external') || lower.includes('webhook') || lower === 'integration' || lower === 'integration') {
       editChatState = 'api-url';
       setTimeout(() => {
-        addCMsg('ai', editDraft.externalApi
-          ? `API atual: ${editDraft.externalApi.method} ${editDraft.externalApi.url}\n\nQual a nova URL da API?`
-          : `Qual a URL da API externa que esta etapa deve chamar?`);
+        addCMsg('ai', editDraft.externallApi
+          ? `API atual: ${editDraft.externallApi.method} ${editDraft.externallApi.url}\n\nQual a nova URL da API?`
+          : `Qual a URL da API external que esta etapa deve chamar?`);
       }, 350);
     } else if (lower.includes('agente')) {
       showAgentWsSelector();
     } else if ((lower.includes('remover') || lower.includes('excluir')) && lower.includes('mcp')) {
       editDraft.mcpConfig = null; refreshEditPreview();
-      setTimeout(() => { addCMsg('ai', '✓ Integração MCP removida. Mais alguma alteração?'); renderCSuggs(idleSuggs); }, 350);
+      setTimeout(() => { addCMsg('ai', '✓ MCP Integration removida. Any other changes?'); renderCSuggs(idleSuggs); }, 350);
     } else if ((lower.includes('remover') || lower.includes('excluir')) && (lower.includes('agente') || lower.includes('ai'))) {
       editDraft.agentConfig = null; refreshEditPreview();
-      setTimeout(() => { addCMsg('ai', '✓ Agente AI removido. Mais alguma alteração?'); renderCSuggs(idleSuggs); }, 350);
-    } else if (lower.includes('cor') || lower.includes('cor da etapa')) {
+      setTimeout(() => { addCMsg('ai', '✓ Agente AI removido. Any other changes?'); renderCSuggs(idleSuggs); }, 350);
+    } else if (lower.includes('color') || lower.includes('color da etapa')) {
       showColorSelector();
     } else if (lower.includes('desativar') || lower.includes('inativar')) {
       editDraft.active = false; refreshEditPreview();
-      setTimeout(() => { addCMsg('ai', '✓ Etapa marcada como inativa. Mais alguma alteração?'); renderCSuggs(['Ativar etapa','Renomear','Save e fechar']); }, 350);
+      setTimeout(() => { addCMsg('ai', '✓ Etapa marcada como inativa. Any other changes?'); renderCSuggs(['Activate stage','Rename','Save and close']); }, 350);
     } else if (lower.includes('ativar') && !lower.includes('desativar')) {
       editDraft.active = true; refreshEditPreview();
-      setTimeout(() => { addCMsg('ai', '✓ Etapa marcada como ativa. Mais alguma alteração?'); renderCSuggs(['Renomear','Alternar visibilidade','Save e fechar']); }, 350);
+      setTimeout(() => { addCMsg('ai', '✓ Etapa marcada como ativa. Any other changes?'); renderCSuggs(['Rename','Toggle visibility','Save and close']); }, 350);
     } else {
       setTimeout(() => {
-        addCMsg('ai', 'Posso ajudar com:\n• Renomear a etapa\n• Alternar visibilidade (Interna / Usuário)\n• Criar script customizado (com geração automática)\n• Configurar API externa + mapeamento\n• Integração MCP (ferramentas externas via Model Context Protocol)\n• Agente AI Workspace (agentes publicados no AI Workspace)\n• Alterar cor\n• Ativar / desativar\n\nO que deseja?');
+        addCMsg('ai', 'Posso ajudar com:\n• Rename the stage\n• Toggle visibility (Internal / User)\n• Criar custom script (com auto-generation)\n• Configurar API external + mapping\n• MCP Integration (external tools via Model Context Protocol)\n• AI Workspace Agent (agents published in AI Workspace)\n• Change color\n• Activate / deactivate\n\nO que deseja?');
         renderCSuggs(idleSuggs);
       }, 350);
     }
@@ -1150,7 +1150,7 @@ function processEditIntent(text) {
 function showColorSelector() {
   const colors = ['#0c6fcd','#7c3aed','#0891b2','#059669','#d97706','#dc2626','#6366f1','#0f766e'];
   setTimeout(() => {
-    addCMsg('ai', 'Escolha uma cor para a etapa:');
+    addCMsg('ai', 'Escolha uma color para a etapa:');
     const msgs = document.getElementById('cm-msgs'); if (!msgs) return;
     const div = document.createElement('div');
     div.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;margin-top:5px;padding:8px 10px;background:#f9f9f9;border:1px solid #e8e8e8;border-radius:6px';
@@ -1164,7 +1164,7 @@ function selectEditColor(color, el) {
   document.querySelectorAll('[onclick^="selectEditColor"]').forEach(d => d.style.border = '3px solid transparent');
   el.style.border = '3px solid #1a1a1a';
   editChatState = 'idle'; refreshEditPreview();
-  setTimeout(() => { addCMsg('ai', '✓ Cor atualizada! Mais alguma alteração?'); renderCSuggs(['Renomear','Alternar visibilidade','Save e fechar']); }, 350);
+  setTimeout(() => { addCMsg('ai', '✓ Cor atualizada! Any other changes?'); renderCSuggs(['Rename','Toggle visibility','Save and close']); }, 350);
 }
 
 function generateScript(description) {
@@ -1172,13 +1172,13 @@ function generateScript(description) {
   const d = description;
   if (lower.includes('desconto')) return `// ${d}\nconst total = context.total || 0;\ncontext.discount = total > 500 ? 0.10 : total > 200 ? 0.05 : 0;\ncontext.totalFinal = total * (1 - context.discount);\ncontext.descontoAplicado = context.discount > 0;`;
   if (lower.includes('cpf') || lower.includes('documento')) return `// ${d}\nconst cpf = (context.cpf || '').replace(/\\D/g,'');\ncontext.cpf_valido = cpf.length === 11 && !/^(\\d)\\1{10}$/.test(cpf);\ncontext.cpf_status = context.cpf_valido ? 'valido' : 'invalido';`;
-  if (lower.includes('crédito') || lower.includes('credito') || lower.includes('limite')) return `// ${d}\nconst total = context.total || 0;\nconst limite = context.limite_credito || 10000;\ncontext.credito_aprovado = total <= limite;\ncontext.saldo_restante = limite - total;\ncontext.credito_status = context.credito_aprovado ? 'aprovado' : 'excede_limite';`;
+  if (lower.includes('credit') || lower.includes('credit') || lower.includes('limit')) return `// ${d}\nconst total = context.total || 0;\nconst limit = context.limit_credit || 10000;\ncontext.credit_aprovado = total <= limit;\ncontext.saldo_restante = limit - total;\ncontext.credit_status = context.credit_aprovado ? 'aprovado' : 'excede_limit';`;
   if (lower.includes('frete') || lower.includes('cep')) return `// ${d}\nconst cep = (context.cep || '').replace(/\\D/g,'');\nconst uf = cep.startsWith('0')||cep.startsWith('1') ? 'SP' : cep.startsWith('2') ? 'RJ' : 'Outros';\ncontext.regiao_entrega = uf;\ncontext.frete_estimado = uf==='SP' ? 15 : uf==='RJ' ? 25 : 40;\ncontext.prazo_dias = uf==='SP' ? 2 : 4;`;
-  if (lower.includes('estoque') || lower.includes('quantidade')) return `// ${d}\nconst qtd = context.quantidade || 1;\nconst disp = parseFloat(context['validarEstoque.disponivel'] || 0);\ncontext.pode_separar = disp >= qtd;\ncontext.qtd_faltante = Math.max(0, qtd - disp);\ncontext.acao_recomendada = context.pode_separar ? 'separar' : 'realocar';`;
+  if (lower.includes('estoque') || lower.includes('quantidade')) return `// ${d}\nconst qtd = context.quantidade || 1;\nconst disp = parseFloat(context['validarEstoque.disponivel'] || 0);\ncontext.pode_separar = disp >= qtd;\ncontext.qtd_faltante = Math.max(0, qtd - disp);\ncontext.action_recomendada = context.pode_separar ? 'separar' : 'realocar';`;
   if (lower.includes('nota') || lower.includes('fiscal') || lower.includes('nf')) return `// ${d}\ncontext.nf_serie = '1';\ncontext.nf_numero_seq = Date.now();\ncontext.nf_emitida_em = new Date().toISOString();\ncontext.nf_ambiente = 'producao';\ncontext.nf_pronta = true;`;
-  if (lower.includes('email') || lower.includes('notif') || lower.includes('aviso')) return `// ${d}\ncontext.email_assunto = \`Pedido \${context.pedido_id||''} — atualização\`;\ncontext.email_template = 'status_update';\ncontext.email_prioridade = context.bloqueado ? 'alta' : 'normal';\ncontext.email_enviar = true;`;
+  if (lower.includes('email') || lower.includes('notif') || lower.includes('aviso')) return `// ${d}\ncontext.email_assunto = \`Pedido \${context.pedido_id||''} — update\`;\ncontext.email_template = 'status_update';\ncontext.email_prioridade = context.bloqueado ? 'alta' : 'normal';\ncontext.email_enviar = true;`;
   if (lower.includes('sla') || lower.includes('prazo') || lower.includes('tempo')) return `// ${d}\nconst criado = new Date(context.criado_em || Date.now());\ncontext.sla_horas = (Date.now() - criado) / 36e5;\ncontext.sla_ok = context.sla_horas <= 4;\ncontext.sla_status = context.sla_ok ? 'dentro_do_prazo' : 'atrasado';`;
-  return `// ${d}\n// TODO: implementar lógica específica\ncontext.resultado = null;\ncontext.status = 'pendente';\n\n// Variáveis disponíveis via context.*\n// Ex: context.pedido_id, context.total, context.cliente_email`;
+  return `// ${d}\n// TODO: implement specific logic\ncontext.result = null;\ncontext.status = 'pending';\n\n// Variables available via context.*\n// e.g.: context.order_id, context.total, context.customer_email`;
 }
 
 function applyEditDraft() {
@@ -1191,11 +1191,11 @@ function applyEditDraft() {
   task.active      = editDraft.active;
   task.visibility  = editDraft.visibility || 'user';
   task.script      = editDraft.script !== undefined ? editDraft.script : null;
-  task.externalApi = editDraft.externalApi;
+  task.externallApi = editDraft.externallApi;
   task.mcpConfig   = editDraft.mcpConfig || null;
   task.agentConfig = editDraft.agentConfig || null;
   closeSidePanel(); renderWorkflowBoard();
-  showSuccessModal('Task updated!', `"${task.name}" foi salva com as novas configurações.`);
+  showSuccessModal('Task updated!', `"${task.name}" was saved with the new settings.`);
 }
 
 function setTaskColor(id, color) {
@@ -1256,11 +1256,11 @@ function selectMcpTool(toolId) {
   addCMsg('user', tool.name);
   if (activePanel === 'edit') refreshEditPreview();
   setTimeout(() => {
-    addCMsg('ai', `✓ Integração MCP configurada: ${server.icon} ${server.name} → ${tool.name}\n\nEsta ferramenta será chamada durante a execução da etapa e seus resultados ficarão disponíveis como variáveis de contexto.\n\nMais alguma configuração?`);
+    addCMsg('ai', `✓ MCP Integration configured: ${server.icon} ${server.name} → ${tool.name}\n\nThis tool will be called during stage execution and its results will be available as context variables.\n\nAny other configuration?`);
     if (activePanel === 'edit') {
-      renderCSuggs(['Agente AI Workspace', 'Alternar visibilidade', 'Save e fechar']);
+      renderCSuggs(['AI Workspace Agent', 'Toggle visibility', 'Save and close']);
     } else {
-      renderCSuggs(['Criar agora', 'Agente AI Workspace']);
+      renderCSuggs(['Create now', 'AI Workspace Agent']);
     }
   }, 350);
 }
@@ -1296,11 +1296,11 @@ function selectAgentWs(agentId) {
   if (activePanel === 'edit') refreshEditPreview();
   setTimeout(() => {
     const outputList = agent.outputVars.map(v=>`• {{agent_${agentId}.${v}}}`).join('\n');
-    addCMsg('ai', `✓ Agente integrado: ${agent.icon} ${agent.name}\n\nO agente será chamado durante a execução desta etapa. Variáveis de saída disponíveis:\n${outputList}\n\nMais alguma configuração?`);
+    addCMsg('ai', `✓ Agent integrated: ${agent.icon} ${agent.name}\n\nThe agent will be called during stage execution. Output variables available:\n${outputList}\n\nAny other configuration?`);
     if (activePanel === 'edit') {
-      renderCSuggs(['Integração MCP', 'Alternar visibilidade', 'Save e fechar']);
+      renderCSuggs(['MCP Integration', 'Toggle visibility', 'Save and close']);
     } else {
-      renderCSuggs(['Criar agora', 'Integração MCP']);
+      renderCSuggs(['Create now', 'MCP Integration']);
     }
   }, 350);
 }
@@ -1350,7 +1350,7 @@ function openSplitPanel(taskId) {
     </div>`;
   document.getElementById('sp-footer').innerHTML = `
     <button class="btn btn-secondary" style="flex:1;justify-content:center" onclick="closeSidePanel()">Cancel</button>
-    <button class="btn btn-primary" id="split-btn" style="flex:1;justify-content:center;opacity:.4;cursor:not-allowed" disabled onclick="requestSplitConfirm()">Confirm Divisão</button>`;
+    <button class="btn btn-primary" id="split-btn" style="flex:1;justify-content:center;opacity:.4;cursor:not-allowed" disabled onclick="requestSplitConfirm()">Confirm Split</button>`;
   openSidePanel();
   setTimeout(() => addCMsg('ai', `Vou ajudar a dividir "${task.name}" em duas etapas.\n\nComo você quer chamar a primeira parte?`), 200);
 }
@@ -1364,7 +1364,7 @@ function sendSplitChat() {
     splitDraft.name1 = text; splitStep = 1;
     const p1 = document.getElementById('prev-part1');
     if (p1) { p1.innerHTML = `1ª parte: <span>${text}</span>`; document.getElementById('task-preview-mini').style.display='block'; }
-    setTimeout(() => addCMsg('ai', `"${text}" — ótimo! E a segunda parte da etapa?`), 400);
+    setTimeout(() => addCMsg('ai', `"${text}" — great! And the second part of the stage?`), 400);
   } else if (splitStep === 1) {
     splitDraft.name2 = text; splitStep = 2;
     const p2 = document.getElementById('prev-part2');
@@ -1425,15 +1425,15 @@ function openCreatePanelAt(pos) {
 }
 
 const stageChatFlows = [
-  {ai:'Como você quer chamar essa nova etapa?', field:'name', sugg:['Triagem de Devoluções','Aprovação B2B','Quality Control','Validação Fiscal']},
+  {ai:'What do you want to call this new stage?', field:'name', sugg:['Returns Triage','B2B Approval','Quality Control','Tax Validation']},
   {ai:'Em quais categorias de produtos essa etapa se aplica?', field:'category', sugg:['Todos os produtos','Electronics','Fashion & Footwear','Food','B2B']},
-  {ai:null, field:null, sugg:['Confirm e criar']},
+  {ai:null, field:null, sugg:['Confirm e create']},
 ];
 
 const taskChatFlows = [
-  {ai:'Como você quer chamar essa tarefa?', field:'name', sugg:['Validar Estoque','Emitir Nota Fiscal','Capturar Payment','Enviar Rastreio','Quality Check']},
-  {ai:'Esta tarefa deve ser visível no pedido ou é interna?', field:'visibility', sugg:['Visível no pedido','Interna']},
-  {ai:null, field:null, sugg:['Criar tarefa','Adicionar API externa','Add checkpoints']},
+  {ai:'What do you want to call this task?', field:'name', sugg:['Validate Stock','Issue Invoice','Capture Payment','Send Tracking','Quality Check']},
+  {ai:'Should this task be visible in the order or is it internal?', field:'visibility', sugg:['Visible in order','Internal']},
+  {ai:null, field:null, sugg:['Criar tarefa','Adicionar API external','Add checkpoints']},
 ];
 
 function addCMsg(who, text) {
@@ -1469,8 +1469,8 @@ function sendStageChat() {
       const next = stageChatFlows[chatStep];
       if (chatStep === stageChatFlows.length - 1) {
         // confirmation step
-        addCMsg('ai', `Perfeito! Resumo da etapa:\n• Nome: ${newTaskDraft.name||'—'}\n• Category: ${newTaskDraft.category||'—'}\n\nDeseja adicionar integrações ou criar agora?`);
-        renderCSuggs(['Criar agora','Integração MCP','Agente AI Workspace','API externa']);
+        addCMsg('ai', `Perfeito! Resumo da etapa:\n• Nome: ${newTaskDraft.name||'—'}\n• Category: ${newTaskDraft.category||'—'}\n\nDeseja adicionar integractions ou create now?`);
+        renderCSuggs(['Create now','MCP Integration','AI Workspace Agent','API external']);
       } else {
         if (next.ai) addCMsg('ai', next.ai);
         renderCSuggs(next.sugg || []);
@@ -1478,7 +1478,7 @@ function sendStageChat() {
     } else {
       // post-flow: integration or create
       const lower = text.toLowerCase();
-      if (lower === 'criar agora' || lower === 'criar' || lower === 'pular' || lower === 'não' || lower === 'nao') {
+      if (lower === 'create now' || lower === 'create' || lower === 'skip' || lower === 'no' || lower === 'no') {
         addCMsg('ai', 'Tudo certo! Clique em "Criar Etapa" para adicionar ao workflow.');
         const btn = document.getElementById('create-btn');
         if (btn) { btn.disabled=false; btn.style.opacity='1'; btn.style.cursor='pointer'; }
@@ -1490,8 +1490,8 @@ function sendStageChat() {
       } else if (lower.includes('api')) {
         showApiConfigInline();
       } else {
-        addCMsg('ai', 'Deseja adicionar alguma integração ou criar a etapa agora?');
-        renderCSuggs(['Criar agora','Integração MCP','Agente AI Workspace','API externa']);
+        addCMsg('ai', 'Deseja adicionar alguma integration ou create a etapa agora?');
+        renderCSuggs(['Create now','MCP Integration','AI Workspace Agent','API external']);
       }
     }
   }, 400);
@@ -1506,7 +1506,7 @@ function sendTaskChat() {
   const step = taskChatFlows[chatStep];
   if (step && step.field) {
     if (step.field === 'visibility') {
-      newTaskDraft.visibility = (text.toLowerCase().includes('interna') || text.toLowerCase().includes('interno')) ? 'internal' : 'user';
+      newTaskDraft.visibility = (text.toLowerCase().includes('interna') || text.toLowerCase().includes('internal')) ? 'internal' : 'user';
     } else {
       newTaskDraft[step.field] = text;
     }
@@ -1521,12 +1521,12 @@ function sendTaskChat() {
       renderCSuggs(taskChatFlows[1].sugg);
     } else if (chatStep === 2) {
       // After visibility: ask about extras
-      addCMsg('ai', `Tarefa "${newTaskDraft.name}" configurada!\n• Visibility: ${newTaskDraft.visibility === 'internal' ? '🔒 Interna' : '👤 Usuário'}\n\nDeseja adicionar checkpoints, API externa ou criar agora?`);
-      renderCSuggs(['Criar tarefa','Add checkpoints','Adicionar API externa','Integração MCP']);
+      addCMsg('ai', `Tarefa "${newTaskDraft.name}" configurada!\n• Visibility: ${newTaskDraft.visibility === 'internal' ? '🔒 Internall' : '👤 User'}\n\nDeseja adicionar checkpoints, API external ou create now?`);
+      renderCSuggs(['Criar tarefa','Add checkpoints','Adicionar API external','MCP Integration']);
     } else {
       // extras
       const lower = text.toLowerCase();
-      if (lower === 'criar tarefa' || lower === 'criar' || lower === 'criar agora') {
+      if (lower === 'create tarefa' || lower === 'create' || lower === 'create now') {
         addCMsg('ai', 'Tudo certo! Clique em "Criar Tarefa" para finalizar.');
         const btn = document.getElementById('create-btn');
         if (btn) { btn.disabled=false; btn.style.opacity='1'; btn.style.cursor='pointer'; }
@@ -1540,8 +1540,8 @@ function sendTaskChat() {
       } else if (lower.includes('agente') || lower.includes('workspace')) {
         showAgentWsSelector();
       } else {
-        addCMsg('ai', 'Deseja criar a tarefa ou adicionar mais configurações?');
-        renderCSuggs(['Criar tarefa','Add checkpoints','Adicionar API externa','Integração MCP']);
+        addCMsg('ai', 'Deseja create a tarefa ou adicionar mais configuractions?');
+        renderCSuggs(['Criar tarefa','Add checkpoints','Adicionar API external','MCP Integration']);
       }
     }
   }, 400);
@@ -1567,7 +1567,7 @@ function createTask() {
       supplier: newTaskDraft.supplier || 'A definir',
       category: newTaskDraft.category || 'All',
       active: true, visibility: 'user', script: null,
-      externalApi: newTaskDraft.externalApi || null,
+      externallApi: newTaskDraft.externallApi || null,
       mcpConfig: newTaskDraft.mcpConfig || null,
       agentConfig: newTaskDraft.agentConfig || null,
       contextOutput: [],
@@ -1587,10 +1587,10 @@ function openEdgeModal(edgeId) {
   const edge = WF_EDGES.find(e => e.id===edgeId); if(!edge) return;
   const from = WF_TASKS.find(s => s.id===edge.from), to = WF_TASKS.find(s => s.id===edge.to);
   pendingEdgeId = edgeId;
-  document.getElementById('modal-edge-title').textContent = edge.active ? 'Desativar Conexão' : 'Reativar Conexão';
+  document.getElementById('modal-edge-title').textContent = edge.active ? 'Disable Connection' : 'Re-enable Connection';
   document.getElementById('modal-edge-body').textContent = edge.active
-    ? `Desativar a dependência "${from?.name}" → "${to?.name}"? As etapas poderão rodar em paralelo.`
-    : `Reativar a dependência "${from?.name}" → "${to?.name}"?`;
+    ? `Disable the dependency "${from?.name}" → "${to?.name}"? The stages will be able to run in parallel.`
+    : `Re-enable the dependency "${from?.name}" → "${to?.name}"?`;
   document.getElementById('modal-edge-confirm').textContent = edge.active ? 'Desativar' : 'Reativar';
   openModal('modal-edge');
 }
@@ -1606,7 +1606,7 @@ function closeSidePanel() { document.getElementById('side-panel').classList.add(
 function renameStage(stageId) {
   const stage = WF_TASKS.find(s => s.id === stageId); if (!stage) return;
   activePanel = 'rename';
-  document.getElementById('sp-title').textContent = 'Renomear Etapa';
+  document.getElementById('sp-title').textContent = 'Rename Etapa';
   document.getElementById('sp-body').innerHTML = `
     <div style="padding:12px 0">
       <label style="font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:6px">Nome da etapa</label>
@@ -1661,7 +1661,7 @@ function createSubTask() {
     supplier: newTaskDraft.supplier || 'A definir',
     category: newTaskDraft.category || 'All',
     active: true, visibility: newTaskDraft.visibility || 'user', script: null,
-    externalApi: newTaskDraft.externalApi || null,
+    externallApi: newTaskDraft.externallApi || null,
     mcpConfig: newTaskDraft.mcpConfig || null,
     agentConfig: newTaskDraft.agentConfig || null,
     contextOutput: [],
@@ -1697,104 +1697,104 @@ const TASK_ACTIONS = [
 
 const SUPPLIER_CATALOG = {
   pagamento:      ['PagSeguro','Cielo','VTEX Payments','Adyen','PayPal','Rede','Stone'],
-  separacao:      ['CD São Paulo','CD Rio de Janeiro','CD Recife','CD Manaus','Armazém Central','Fulfillment SP'],
-  qualidade:      ['QA Team','Equipe Inspeção SP','Equipe Inspeção RJ','Parceiro Qualidade'],
+  separation:      ['CD São Paulo','CD Rio de Janeiro','CD Recife','CD Manaus','Armazém Central','Fulfillment SP'],
+  quality:      ['QA Team','Inspection Team SP','Inspection Team RJ','Quality Partner'],
   entrega:        ['Correios','Jadlog','Transportadora XYZ','Total Express','Loggi','Azul Cargo','DHL'],
-  nota_fiscal:    ['Nota Fácil','NF-e.io','Bling','Omie','SAP NF','NF Paulistana'],
+  invoice:    ['Nota Fácil','NF-e.io','Bling','Omie','SAP NF','NF Paulistana'],
   rastreamento:   ['Intelipost','Melhor Shipping','Aftership','Rastreio.net','Kangu'],
   atendimento:    ['Equipe Atendimento','VTEX Support','Help Desk SP','Customer Success'],
   fiscal:         ['Financeiro','Contabilidade','Depto Fiscal','Controladoria'],
-  personalizacao: ['BRK','Estamparia Digital','PrintShop Brasil','Custom Factory','Bordados SP','Gráfica Personalizada'],
-  instalacao:     ['Arte&Decor','Instaladores Pro','Casa & Serviços','Montag SP','TecnoFix','ServiçosMais'],
+  customization: ['BRK','Digital Printing','PrintShop Brasil','Custom Factory','Embroidery SP','Custom Graphics'],
+  installation:     ['Arte&Decolor','Pro Installers','Casa & Services','Montag SP','TecnoFix','ServicePlus'],
 };
 
 function getContextSuppliers(taskName) {
   const n = (taskName||'').toLowerCase();
   if (/pagament|autoriz|captur|financ|cobranc|cobrança/.test(n)) return SUPPLIER_CATALOG.pagamento;
-  if (/separ|reserv|estoque|armazem|armazém|fulfillment|cd /.test(n)) return SUPPLIER_CATALOG.separacao;
-  if (/qualidade|confer|inspeç|inspetion|qa|audit/.test(n)) return SUPPLIER_CATALOG.qualidade;
+  if (/separ|reserv|estoque|warehouse|warehouse|fulfillment|cd /.test(n)) return SUPPLIER_CATALOG.separation;
+  if (/quality|confer|inspect|inspection|qa|audit/.test(n)) return SUPPLIER_CATALOG.quality;
   if (/entrega|expedi|transport|frete|logist|envio|coleta/.test(n)) return SUPPLIER_CATALOG.entrega;
-  if (/nota.?fiscal|nf-?e|nfe|fiscal|sefaz/.test(n)) return SUPPLIER_CATALOG.nota_fiscal;
-  if (/rastreio|rastreamento|tracking|código de rastreio/.test(n)) return SUPPLIER_CATALOG.rastreamento;
+  if (/nota.?fiscal|nf-?e|nfe|fiscal|sefaz/.test(n)) return SUPPLIER_CATALOG.invoice;
+  if (/rastreio|rastreamento|tracking|code de rastreio/.test(n)) return SUPPLIER_CATALOG.rastreamento;
   if (/atendimento|suporte|devolu|troca|reclam/.test(n)) return SUPPLIER_CATALOG.atendimento;
   if (/financ|contab|cobranc/.test(n)) return SUPPLIER_CATALOG.fiscal;
-  if (/personaliz|estampa|bordado|customiz|gravação|gravacao|brk/.test(n)) return SUPPLIER_CATALOG.personalizacao;
-  if (/instala|montagem|serviço|servico|técnico|tecnico|arte.*decor/.test(n)) return SUPPLIER_CATALOG.instalacao;
+  if (/personaliz|estampa|bordado|customiz|gravaction|gravaction|brk/.test(n)) return SUPPLIER_CATALOG.customization;
+  if (/instala|montagem|serviço|servico|técnico|tecnico|arte.*decolor/.test(n)) return SUPPLIER_CATALOG.installation;
   // default: mix of common ones
   return ['CD São Paulo','QA Team','Financeiro','Transportadora XYZ','VTEX Payments'];
 }
 
 function showSupplierCategoryPicker() {
-  addCMsg('ai', 'Qual categoria de supplier você precisa consultar?');
-  renderCSuggs(['Payment','Separação/Armazém','Qualidade','Delivery/Transportadora','Nota Fiscal','Rastreamento','Atendimento']);
+  addCMsg('ai', 'What supplier category do you need to look up?');
+  renderCSuggs(['Payment','Picking/Warehouse','Qualidade','Delivery/Transportadora','Nota Fiscal','Rastreamento','Atendimento']);
   newTaskDraft._supplierPickMode = true;
 }
 
 const MCP_SERVERS = [
-  {id:'vtex-catalog', name:'VTEX Catalog', icon:'📚', description:'Acesso ao catálogo de produtos, SKUs e categorias',
+  {id:'vtex-catalog', name:'VTEX Catalog', icon:'📚', description:'Access to product catalog, SKUs and categories',
    tools:[
      {id:'get_product',        name:'get_product()',        desc:'Busca dados do produto por ID'},
      {id:'update_sku_status',  name:'update_sku_status()',  desc:'Ativa ou desativa um SKU'},
-     {id:'list_categories',    name:'list_categories()',    desc:'Lista todas as categorias do catálogo'},
+     {id:'list_categories',    name:'list_categories()',    desc:'Lists all catalog categories'},
    ]},
-  {id:'vtex-logistics', name:'VTEX Logistics', icon:'🚚', description:'Consulta e atualização de dados de logística e estoque',
+  {id:'vtex-logistics', name:'VTEX Logistics', icon:'🚚', description:'Query and update logistics and inventory data',
    tools:[
-     {id:'get_inventory',      name:'get_inventory()',      desc:'Consulta estoque disponível por SKU e warehouse'},
+     {id:'get_inventory',      name:'get_inventory()',      desc:'Queries available inventory by SKU and warehouse'},
      {id:'update_inventory',   name:'update_inventory()',   desc:'Atualiza quantidade em estoque'},
      {id:'get_freight_values', name:'get_freight_values()', desc:'Calcula frete e prazo por CEP'},
    ]},
-  {id:'vtex-payments', name:'VTEX Payments', icon:'💳', description:'Operações de captura, cancelamento e reembolso',
+  {id:'vtex-payments', name:'VTEX Payments', icon:'💳', description:'Operactions de captura, cancelamento e reembolso',
    tools:[
      {id:'capture_payment',    name:'capture_payment()',    desc:'Captura pagamento autorizado'},
      {id:'cancel_payment',     name:'cancel_payment()',     desc:'Cancela pagamento pendente'},
      {id:'create_refund',      name:'create_refund()',      desc:'Cria reembolso total ou parcial'},
    ]},
-  {id:'nfe-emitter', name:'NFe Emitter', icon:'🧾', description:'Emissão e consulta de notas fiscais eletrônicas',
+  {id:'nfe-emitter', name:'NFe Emitter', icon:'🧾', description:'Issues and queries electronic invoices',
    tools:[
      {id:'emit_nfe',           name:'emit_nfe()',           desc:'Emite nota fiscal para o pedido'},
      {id:'cancel_nfe',         name:'cancel_nfe()',         desc:'Cancela nota fiscal emitida'},
      {id:'get_nfe_status',     name:'get_nfe_status()',     desc:'Consulta status da nota fiscal'},
    ]},
-  {id:'crm-integration', name:'CRM Integration', icon:'👥', description:'Integração com dados de cliente e histórico de atendimento',
+  {id:'crm-integration', name:'CRM Integration', icon:'👥', description:'Integration with customer data and service history',
    tools:[
      {id:'get_customer',       name:'get_customer()',       desc:'Busca dados completos do cliente'},
-     {id:'add_interaction',    name:'add_interaction()',    desc:'Registra interação no histórico do CRM'},
-     {id:'get_loyalty_score',  name:'get_loyalty_score()', desc:'Consulta pontuação de fidelidade do cliente'},
+     {id:'add_interaction',    name:'add_interaction()',    desc:'Recolords interaction in CRM history'},
+     {id:'get_loyalty_scolore',  name:'get_loyalty_scolore()', desc:'Consulta pontuaction de fidelidade do cliente'},
    ]},
 ];
 
 const AI_WORKSPACE_AGENTS = [
   {id:'quality-agent',   name:'Agente de Qualidade',  icon:'🔍',
-   description:'Analisa conformidade do produto com padrões de qualidade antes da expedição',
+   description:'Analisa conformidade do produto com padrões de quality antes da expedição',
    inputVars:['produto_id','quantidade','lote'],
-   outputVars:['qualidade_aprovada','score_qualidade','motivo_reprovacao']},
+   outputVars:['quality_aprovada','scolore_quality','motivo_reprovaction']},
   {id:'fraud-agent',     name:'Agente Antifraude',    icon:'🛡️',
-   description:'Analisa risco de fraude no pedido com base em padrões comportamentais',
+   description:'Analyzes fraud risk in the order based on behavioral patterns',
    inputVars:['pedido_id','cliente_email','valor_total','ip_cliente'],
-   outputVars:['risco_fraude','score_fraude','recomendacao']},
-  {id:'logistics-agent', name:'Agente de Logística',  icon:'🗺️',
+   outputVars:['risco_fraude','scolore_fraude','recomendaction']},
+  {id:'logistics-agent', name:'Logistics Agent',  icon:'🗺️',
    description:'Sugere melhor rota e transportadora com base no CEP e urgência do pedido',
    inputVars:['cep_destino','peso_total','urgencia'],
    outputVars:['transportadora_recomendada','prazo_dias','custo_frete']},
   {id:'support-agent',   name:'Agente de Atendimento', icon:'💬',
-   description:'Classifica motivo de contato e gera resposta automática para o shopper',
+   description:'Classifies contact reason and generates automatic response for the shopper',
    inputVars:['mensagem_shopper','pedido_id'],
    outputVars:['categoria_contato','resposta_sugerida','encaminhar_humano']},
   {id:'fiscal-agent',    name:'Agente Fiscal',         icon:'📋',
-   description:'Valida regras fiscais e classifica tributação por estado e tipo de produto',
+   description:'Valida regras fiscais e classifica tributaction por estado e tipo de produto',
    inputVars:['uf_destino','ncm_produto','valor_total'],
-   outputVars:['aliquota_icms','regime_tributario','nota_fiscal_requerida']},
+   outputVars:['aliquota_icms','regime_tributario','invoice_requerida']},
 ];
 
 function getActiveDraft() { return activePanel === 'edit' ? editDraft : newTaskDraft; }
 
 function showApiConfigInline() {
-  addCMsg('ai', 'Configure a API externa desta tarefa:');
+  addCMsg('ai', 'Configure a API external desta tarefa:');
   const msgs = document.getElementById('cm-msgs'); if(!msgs) return;
   const div = document.createElement('div');
   div.style.cssText = 'background:#f0f7ff;border:1px solid #bfdbfe;border-radius:8px;padding:12px;margin-top:6px;display:flex;flex-direction:column;gap:8px';
   div.innerHTML = `
-    <div style="font-size:11px;font-weight:700;color:#1d4ed8;margin-bottom:2px">⚡ Configuração de API Externa</div>
+    <div style="font-size:11px;font-weight:700;color:#1d4ed8;margin-bottom:2px">⚡ Configuraction de API Externa</div>
     <input id="api-url-inp" placeholder="URL da API (ex: https://api.seuservico.com/endpoint)" style="border:1px solid #bfdbfe;border-radius:4px;padding:6px 9px;font-size:12px;font-family:inherit;width:100%;box-sizing:border-box">
     <div style="display:flex;gap:6px">
       <select id="api-method-sel" style="border:1px solid #bfdbfe;border-radius:4px;padding:5px;font-size:12px;font-family:inherit;background:#fff">
@@ -1802,8 +1802,8 @@ function showApiConfigInline() {
       </select>
       <input id="api-return-inp" placeholder="Campo de retorno (ex: data.status)" style="border:1px solid #bfdbfe;border-radius:4px;padding:6px 9px;font-size:12px;font-family:inherit;flex:1">
     </div>
-    <div style="font-size:10.5px;color:#6b7280">O retorno será disponível como variável de contexto para a próxima tarefa.</div>
-    <button onclick="applyApiConfig()" style="background:#0c6fcd;color:#fff;border:none;border-radius:4px;padding:6px 14px;font-size:12px;cursor:pointer;font-family:inherit;align-self:flex-start">Save configuração</button>`;
+    <div style="font-size:10.5px;color:#6b7280">The return value will be available as a context variable for the next task.</div>
+    <button onclick="applyApiConfig()" style="background:#0c6fcd;color:#fff;border:none;border-radius:4px;padding:6px 14px;font-size:12px;cursor:pointer;font-family:inherit;align-self:flex-start">Save configuraction</button>`;
   msgs.appendChild(div); msgs.scrollTop = msgs.scrollHeight;
   renderCSuggs([]);
 }
@@ -1813,13 +1813,13 @@ function applyApiConfig() {
   const method = document.getElementById('api-method-sel')?.value || 'POST';
   const returnField = document.getElementById('api-return-inp')?.value?.trim() || 'data.result';
   if (!url) { addCMsg('ai', 'Por favor informe a URL da API.'); return; }
-  newTaskDraft.externalApi = {
+  newTaskDraft.externallApi = {
     url, method,
     responseMapping: [{ key: 'api_result', path: returnField }]
   };
-  if (activePanel === 'edit') { editDraft.externalApi = newTaskDraft.externalApi; refreshEditPreview(); }
-  addCMsg('ai', `✓ API configurada: ${method} ${url}\nRetorno mapeado como {{api_result}} para a próxima tarefa.\n\nDeseja criar a tarefa agora?`);
-  renderCSuggs(['Criar tarefa','Add checkpoints','Integração MCP']);
+  if (activePanel === 'edit') { editDraft.externallApi = newTaskDraft.externallApi; refreshEditPreview(); }
+  addCMsg('ai', `✓ API configurada: ${method} ${url}\nRetorno mapeado como {{api_result}} para a próxima tarefa.\n\nDeseja create a tarefa agora?`);
+  renderCSuggs(['Criar tarefa','Add checkpoints','MCP Integration']);
 }
 
 function showCheckpointBuilderInline() {
@@ -1834,7 +1834,7 @@ function showCheckpointBuilderInline() {
     <div id="cp-list" style="display:flex;flex-direction:column;gap:5px"></div>
     <div style="display:flex;gap:6px">
       <input id="cp-label-inp" placeholder="Ex: Estoque reservado" style="border:1px solid #e0e0e0;border-radius:4px;padding:6px 9px;font-size:12px;font-family:inherit;flex:1">
-      <input id="cp-fail-inp" placeholder="Ação em falha" style="border:1px solid #e0e0e0;border-radius:4px;padding:6px 9px;font-size:12px;font-family:inherit;flex:1">
+      <input id="cp-fail-inp" placeholder="Failure action" style="border:1px solid #e0e0e0;border-radius:4px;padding:6px 9px;font-size:12px;font-family:inherit;flex:1">
       <button onclick="addCheckpointItem()" style="background:#142032;color:#fff;border:none;border-radius:4px;padding:6px 12px;font-size:12px;cursor:pointer;white-space:nowrap;font-family:inherit">+ Add</button>
     </div>
     <button onclick="applyCheckpoints()" style="background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0;border-radius:4px;padding:6px 14px;font-size:12px;cursor:pointer;font-family:inherit;align-self:flex-start">✓ Save checkpoints</button>`;
@@ -1864,8 +1864,8 @@ function addCheckpointItem() {
 
 function applyCheckpoints() {
   const count = (newTaskDraft.checkpoints||[]).length;
-  addCMsg('ai', `✓ ${count} checkpoint${count!==1?'s':''} configurado${count!==1?'s':''}.\n\nDeseja criar a tarefa agora?`);
-  renderCSuggs(['Criar tarefa','Adicionar API externa','Integração MCP']);
+  addCMsg('ai', `✓ ${count} checkpoint${count!==1?'s':''} configurado${count!==1?'s':''}.\n\nDeseja create a tarefa agora?`);
+  renderCSuggs(['Criar tarefa','Adicionar API external','MCP Integration']);
 }
 
 
@@ -1926,7 +1926,7 @@ function renderWorkflowSettings() {
           const depWf = WORKFLOW_DEFS.find(w => w.id === depId);
           return depWf ? `<span class="dep-tag" style="border-color:${depWf.color}40;background:${depWf.color}10">${depWf.icon} ${depWf.name}<span class="dep-remove" onclick="removeDep('${depId}')">×</span></span>` : '';
         }).join('')
-      : `<span style="font-size:12.5px;color:#aaa;font-style:italic">Nenhuma dependência — acionado imediatamente</span>`;
+      : `<span style="font-size:12.5px;color:#aaa;font-style:italic">No dependency — triggered immediately</span>`;
   }
 
   const dependents = WORKFLOW_DEFS.filter(w => w.dependencies.includes(wf.id));
@@ -1938,7 +1938,7 @@ function renderWorkflowSettings() {
   // Trigger configuration
   const triggerContainer = document.getElementById('ws-trigger');
   if (triggerContainer) {
-    const trigger = wf.trigger || { type:'order-created', label:'Acionado automaticamente no início do pedido' };
+    const trigger = wf.trigger || { type:'order-created', label:'Automatically triggered at order start' };
     const otherWorkflows = WORKFLOW_DEFS.filter(w => w.id !== wf.id);
     const taskOptions = trigger.workflowId
       ? (WORKFLOW_DEFS.find(w => w.id === trigger.workflowId)?.tasks || []).map(s =>
@@ -1947,11 +1947,11 @@ function renderWorkflowSettings() {
       : '';
     triggerContainer.innerHTML = `
       <div style="margin-bottom:8px">
-        <label style="font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:6px">Este workflow é acionado por:</label>
+        <label style="font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:6px">This workflow is triggered by:</label>
         <div style="display:flex;flex-direction:column;gap:6px">
           <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
             <input type="radio" name="trig-type" value="order-created" ${trigger.type==='order-created'?'checked':''} onchange="onTriggerTypeChange('order-created')">
-            Início do pedido (automático)
+            Order start (automatic)
           </label>
           <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer">
             <input type="radio" name="trig-type" value="workflow-complete" ${trigger.type==='workflow-complete'?'checked':''} onchange="onTriggerTypeChange('workflow-complete')">
@@ -2030,7 +2030,7 @@ function saveWorkflowSettings() {
   const trigTaskEl = document.getElementById('ws-trigger-task');
   if (trigTaskEl) wf.trigger.stageId = trigTaskEl.value;
   showScreen('workflow-list');
-  showSuccessModal('Workflow atualizado!', `As configurações de "${wf.name}" foram salvas.`);
+  showSuccessModal('Workflow atualizado!', `As configuractions de "${wf.name}" foram salvas.`);
 }
 
 function onTriggerTypeChange(type) {
@@ -2061,9 +2061,9 @@ function onTriggerWfChange(wfId) {
 let orchChatState = 'idle';
 let orchRuleDraft = null;
 let orchRules = [
-  {id:'r1', condition:'Pedido travado há > 8h em Separação', action:'Escalar para gerente de operações', priority:'high', wf:'Preparando os itens', active:true},
-  {id:'r2', condition:'Amount do pedido > R$ 5.000', action:'Requer confirmação humana antes de avançar', priority:'high', wf:'All', active:true},
-  {id:'r3', condition:'Supplier sem capacidade há > 2h', action:'Sugerir realocação automaticamente', priority:'med', wf:'Preparando os itens', active:true},
+  {id:'r1', condition:'Pedido travado há > 8h em Separaction', action:'Escalar para gerente de operactions', priority:'high', wf:'Preparando os itens', active:true},
+  {id:'r2', condition:'Amount do pedido > R$ 5.000', action:'Requer confirmaction humana antes de avançar', priority:'high', wf:'All', active:true},
+  {id:'r3', condition:'Supplier sem capacidade há > 2h', action:'Sugerir realocaction automaticamente', priority:'med', wf:'Preparando os itens', active:true},
   {id:'r4', condition:'Amount de devolução < R$ 200', action:'Reembolso automático sem auditoria manual', priority:'low', wf:'Returns & Exchanges', active:false},
 ];
 
@@ -2071,8 +2071,8 @@ function initOrchChat() {
   const msgs = document.getElementById('orch-chat-msgs');
   if (!msgs || msgs.children.length > 0) return;
   orchChatState = 'idle';
-  addOrchMsg('ai', 'Olá! Sou o assistente de configuração do Orchestration Agent. 🤖\n\nEste agente é composto por 3 sub-agentes:\n🗺️ Routing — seleciona o modo de fulfillment e provider por pedido\n⚙️ Orchestration — avança gates e dispara ações automaticamente\n🚨 Escalation — detecta inatividade e cria tarefas para operadores\n\nConfiguração atual:\n• Confiança mínima: 75%\n• SLA: 4h sem movimentação\n• Cobertura: Preparando os itens + Troca e Devolução\n• 4 regras customizadas\n\nO que você gostaria de configurar?');
-  renderOrchSuggs(['Ajustar confiança', 'Configurar SLA', 'Cobertura de workflows', 'Definir regra customizada', 'Notificações']);
+  addOrchMsg('ai', 'Olá! Sou o assistente de configuraction do Orchestration Agent. 🤖\n\nEste agente é composto por 3 sub-agentes:\n🗺️ Routing — seleciona o modo de fulfillment e provider por pedido\n⚙️ Orchestration — avança gates e dispara actions automaticamente\n🚨 Escalation — detecta inatividade e cria tarefas para operadores\n\nCurrent configuration:\n• Confiança mínima: 75%\n• SLA: 4h sem movimentaction\n• Cobertura: Preparando os itens + Troca e Devolução\n• 4 regras customizadas\n\nO que você gostaria de configurar?');
+  renderOrchSuggs(['Ajustar confiança', 'Configurar SLA', 'Cobertura de workflows', 'Definir regra customizada', 'Notificactions']);
   renderCustomRules();
 }
 
@@ -2117,8 +2117,8 @@ function processOrchIntent(text) {
     if (!isNaN(num) && num >= 0 && num <= 100) {
       setOrchConfidence(num);
       orchChatState = 'idle';
-      const note = num < 50 ? '⚡ O agente agirá com bastante autonomia.' : num > 85 ? '🧑 O agente escalará com frequência para operadores.' : '✅ Configuração balanceada.';
-      addOrchMsg('ai', `Confiança mínima ajustada para ${num}%. ${note}\n\nPosso ajudar com mais alguma configuração?`);
+      const note = num < 50 ? '⚡ O agente agirá com bastante autonomia.' : num > 85 ? '🧑 O agente escalará com frequência para operadores.' : '✅ Configuraction balanceada.';
+      addOrchMsg('ai', `Confiança mínima ajustada para ${num}%. ${note}\n\nPosso ajudar com mais alguma configuraction?`);
       renderOrchSuggs(['Configurar SLA', 'Cobertura de workflows', 'Definir regra customizada', 'Pronto!']);
     } else {
       addOrchMsg('ai', 'Por favor, informe um número entre 0 e 100.');
@@ -2133,7 +2133,7 @@ function processOrchIntent(text) {
       if (el) el.value = num;
       highlightOrchCard('ocard-sla');
       orchChatState = 'idle';
-      addOrchMsg('ai', `SLA definido: o agente intervirá após ${num}h sem movimentação. ✅\n\nPosso ajudar com mais alguma configuração?`);
+      addOrchMsg('ai', `SLA definido: o agente intervirá após ${num}h sem movimentaction. ✅\n\nPosso ajudar com mais alguma configuraction?`);
       renderOrchSuggs(['Ajustar confiança', 'Cobertura de workflows', 'Definir regra customizada', 'Pronto!']);
     } else {
       addOrchMsg('ai', 'Informe um valor entre 1 e 72 horas.');
@@ -2144,7 +2144,7 @@ function processOrchIntent(text) {
   if (orchChatState === 'await-rule-condition') {
     orchRuleDraft.condition = text;
     orchChatState = 'await-rule-action';
-    addOrchMsg('ai', `Condição registrada: "${text}"\n\nQual ação o agente deve executar quando essa condição for verdadeira?\n\nExemplos:\n• Escalar para gerente de operações\n• Solicitar confirmação humana\n• Cancel pedido automaticamente\n• Enviar alerta via Slack`);
+    addOrchMsg('ai', `Condição registrada: "${text}"\n\nQual action o agente deve executar quando essa condição for verdadeira?\n\nExemplos:\n• Escalar para gerente de operactions\n• Solicitar confirmaction humana\n• Cancel pedido automaticamente\n• Enviar alerta via Slack`);
     return;
   }
 
@@ -2163,7 +2163,7 @@ function processOrchIntent(text) {
     orchRuleDraft.priority = priority;
     orchChatState = 'await-rule-workflow';
     addOrchMsg('ai', 'Para qual workflow esta regra se aplica?');
-    renderOrchSuggs(['Todos os workflows', 'Preparando os itens', 'Returns & Exchanges', 'Aprovação de Payment']);
+    renderOrchSuggs(['Todos os workflows', 'Preparando os itens', 'Returns & Exchanges', 'Aprovaction de Payment']);
     return;
   }
 
@@ -2171,7 +2171,7 @@ function processOrchIntent(text) {
     let wf = 'All';
     if (lower.includes('padrão') || lower.includes('padrao')) wf = 'Preparando os itens';
     else if (lower.includes('troca') || lower.includes('devolução') || lower.includes('devolucao')) wf = 'Returns & Exchanges';
-    else if (lower.includes('pagamento')) wf = 'Aprovação de Payment';
+    else if (lower.includes('pagamento')) wf = 'Aprovaction de Payment';
     orchRuleDraft.wf = wf;
     orchRuleDraft.id = 'r' + Date.now();
     orchRuleDraft.active = true;
@@ -2180,7 +2180,7 @@ function processOrchIntent(text) {
     orchChatState = 'idle';
     renderCustomRules();
     highlightOrchCard('ocard-rules');
-    addOrchMsg('ai', 'Regra criada com sucesso! ✅\n\nEla já aparece no painel de Regras Customizadas à direita. Você pode ativá-la ou desativá-la pelo toggle.\n\nPosso ajudar com mais alguma configuração?');
+    addOrchMsg('ai', 'Regra criada com sucesso! ✅\n\nEla já aparece no painel de Regras Customizadas à direita. Você pode ativá-la ou desativá-la pelo toggle.\n\nPosso ajudar com mais alguma configuraction?');
     renderOrchSuggs(['Definir outra regra', 'Ajustar confiança', 'Configurar SLA', 'Pronto!']);
     return;
   }
@@ -2188,14 +2188,14 @@ function processOrchIntent(text) {
   /* ── routing by keyword ── */
   if (/confiança|confianca|threshold|autonomia/.test(lower)) {
     orchChatState = 'await-confidence';
-    addOrchMsg('ai', 'Confiança mínima atual: 75%\n\nEsta configuração define o quão certo o agente precisa estar para agir sozinho. Abaixo desse valor ele escala para um operador humano.\n\nQual valor você deseja? (0–100%)');
+    addOrchMsg('ai', 'Confiança mínima atual: 75%\n\nEsta configuraction define o quão certo o agente precisa estar para agir sozinho. Abaixo desse valor ele escala para um operador humano.\n\nQual valor você deseja? (0–100%)');
     renderOrchSuggs(['60% — mais autônomo', '75% — padrão atual', '85% — mais conservador', '95% — quase nunca age sozinho']);
     return;
   }
 
   if (/\bsla\b|hora|interv/.test(lower)) {
     orchChatState = 'await-sla';
-    addOrchMsg('ai', 'SLA atual: 4 horas\n\nApós quantas horas sem movimentação o agente deve intervir? (1–72h)');
+    addOrchMsg('ai', 'SLA atual: 4 horas\n\nApós quantas horas sem movimentaction o agente deve intervir? (1–72h)');
     renderOrchSuggs(['2h — rigoroso', '4h — padrão atual', '8h — mais calmo', '24h — intervenção mínima']);
     return;
   }
@@ -2203,7 +2203,7 @@ function processOrchIntent(text) {
   if (/cobertura|workflow|fluxo/.test(lower)) {
     highlightOrchCard('ocard-coverage');
     orchChatState = 'idle';
-    addOrchMsg('ai', 'Configuração de cobertura destacada no painel à direita 👉\n\nStatus atual:\n✅ Preparando os itens — 4.256 orders\n✅ Troca e Devolução — 83 orders\n⬜ Aprovação de Payment — desativado\n\nUse os toggles para ativar ou desativar cada workflow.');
+    addOrchMsg('ai', 'Configuraction de cobertura destacada no painel à direita 👉\n\nStatus atual:\n✅ Preparando os itens — 4.256 orders\n✅ Troca e Devolução — 83 orders\n⬜ Aprovaction de Payment — desativado\n\nUse os toggles para ativar ou desativar cada workflow.');
     renderOrchSuggs(['Ajustar confiança', 'Configurar SLA', 'Definir regra customizada', 'Pronto!']);
     return;
   }
@@ -2211,7 +2211,7 @@ function processOrchIntent(text) {
   if (/notif|alerta|slack|email|webhook/.test(lower)) {
     highlightOrchCard('ocard-sla');
     orchChatState = 'idle';
-    addOrchMsg('ai', 'Settings de notificação destacadas no painel à direita 👉\n\nAtualmente:\n✅ Email ao escalar para operador\n✅ Slack — #dom-alertas\n⬜ Custom webhook\n\nAlterações diretas pelos checkboxes.');
+    addOrchMsg('ai', 'Settings de notificaction destacadas no painel à direita 👉\n\nAtualmente:\n✅ Email ao escalar para operador\n✅ Slack — #dom-alertas\n⬜ Custom webhook\n\nAlteractions diretas pelos checkboxes.');
     renderOrchSuggs(['Ajustar confiança', 'Configurar SLA', 'Definir regra customizada', 'Pronto!']);
     return;
   }
@@ -2221,21 +2221,21 @@ function processOrchIntent(text) {
     return;
   }
 
-  if (/ação|ações|acao|acoes|habilit/.test(lower)) {
+  if (/action|actions|action|actions|habilit/.test(lower)) {
     highlightOrchCard('ocard-behavior');
     orchChatState = 'idle';
-    addOrchMsg('ai', 'Ações do agente destacadas no painel à direita 👉\n\nVocê pode ativar ou desativar individualmente cada tipo de ação que o agente pode executar.');
+    addOrchMsg('ai', 'Ações do agente destacadas no painel à direita 👉\n\nVocê pode ativar ou desativar individualmente cada tipo de action que o agente pode executar.');
     renderOrchSuggs(['Ajustar confiança', 'Configurar SLA', 'Definir regra customizada', 'Pronto!']);
     return;
   }
 
-  if (/pronto|ok\b|salv|conclu/.test(lower)) {
-    addOrchMsg('ai', 'Tudo certo! 🎉 Clique em "Save" no topo para persistir as mudanças.\n\nPosso ajudar com mais alguma configuração?');
+  if (/done|ok\b|salv|conclu/.test(lower)) {
+    addOrchMsg('ai', 'Tudo certo! 🎉 Clique em "Save" no topo para persistir as mudanças.\n\nPosso ajudar com mais alguma configuraction?');
     renderOrchSuggs(['Ajustar confiança', 'Configurar SLA', 'Cobertura de workflows', 'Definir regra customizada']);
     return;
   }
 
-  addOrchMsg('ai', 'Posso ajudar com:\n• Confiança mínima e ações habilitadas\n• SLA e horário de operação\n• Cobertura por workflow\n• Notificações e alertas\n• Regras customizadas\n\nO que você gostaria de configurar?');
+  addOrchMsg('ai', 'Posso ajudar com:\n• Confiança mínima e actions habilitadas\n• SLA e horário de operaction\n• Cobertura por workflow\n• Notificactions e alertas\n• Regras customizadas\n\nO que você gostaria de configurar?');
   renderOrchSuggs(['Ajustar confiança', 'Configurar SLA', 'Cobertura de workflows', 'Definir regra customizada']);
 }
 
@@ -2244,7 +2244,7 @@ function addRuleViaChat() {
   orchRuleDraft = {id:null, condition:'', action:'', priority:'med', wf:'All', active:true};
   const sugg = document.getElementById('orch-sugg-wrap');
   if (sugg) sugg.innerHTML = '';
-  addOrchMsg('ai', 'Vamos criar uma nova regra customizada! 📏\n\nRegras definem condições específicas que o agente deve observar além do comportamento padrão.\n\nQual é a condição que deve disparar esta regra?\n\nExemplos:\n• Pedido travado há > 8h em Separação\n• Amount do pedido > R$ 5.000\n• Supplier sem resposta há > 2h\n• Pedido com mais de 10 itens');
+  addOrchMsg('ai', 'Vamos create uma nova regra customizada! 📏\n\nRegras definem condições específicas que o agente deve observar além do comportamento padrão.\n\nQual é a condição que deve disparar esta regra?\n\nExemplos:\n• Pedido travado há > 8h em Separaction\n• Amount do pedido > R$ 5.000\n• Supplier sem resposta há > 2h\n• Pedido com mais de 10 itens');
 }
 
 function setOrchConfidence(val) {
@@ -2324,7 +2324,7 @@ const newWfFlows = [
   { id:'icon',        ai:'Escolha um ícone para identificar visualmente este Order Job:',               field:null,          sugg:[] },
   { id:'description', ai:'Descreva brevemente o propósito deste Order Job:',                            field:'description', sugg:['Fluxo para entregas no mesmo dia','Delivery com agendamento pelo cliente','Modalidade para orders B2B','Delivery via parceiros logísticos regionais'] },
   { id:'marcos',      ai:null,                                                                          field:null,          sugg:[] },
-  { id:'confirm',     ai:null,                                                                          field:null,          sugg:['Confirm e criar'] },
+  { id:'confirm',     ai:null,                                                                          field:null,          sugg:['Confirm e create'] },
 ];
 
 function openCreateWorkflowPanel() {
@@ -2405,7 +2405,7 @@ function sendNewWfChat() {
         if (next.ai) addNwfMsg('ai', next.ai);
         if (newWfStep === newWfFlows.length - 1) {
           const srcLine = newWfDraft.sourceId ? `\n• Modelo base: ${WORKFLOW_DEFS.find(w=>w.id===newWfDraft.sourceId)?.name||'—'}` : '';
-          addNwfMsg('ai', `Perfeito! Resumo do Order Job:\n• Nome: ${newWfDraft.name}\n• Icon: ${newWfDraft.icon}\n• Description: ${newWfDraft.description}${srcLine}\n• Stages: 4 marcos configurados\n\nDeseja criar o Order Job?`);
+          addNwfMsg('ai', `Perfeito! Resumo do Order Job:\n• Nome: ${newWfDraft.name}\n• Icon: ${newWfDraft.icon}\n• Description: ${newWfDraft.description}${srcLine}\n• Stages: 4 marcos configurados\n\nDeseja create o Order Job?`);
         }
         renderNwfSuggs(next.sugg || []);
       }
@@ -2464,7 +2464,7 @@ function renderNwfStagesPreview() {
 
   addNwfMsg('ai', src
     ? `Estes são os ${marcos.length} marcos copiados de "${src.name}". Revise e confirme:`
-    : 'Seu Order Job terá os seguintes 4 marcos. Confirme para criar:');
+    : 'Seu Order Job terá os seguintes 4 marcos. Confirme para create:');
 
   // Render marcos as a visual block inside the chat
   const msgs = document.getElementById('nwf-msgs');
@@ -2490,7 +2490,7 @@ function renderNwfStagesPreview() {
   // Enable create button + show confirm suggestion
   setTimeout(() => {
     addNwfMsg('ai', 'Tudo certo! Clique em "Criar Job" ou confirme abaixo.');
-    renderNwfSuggs(['Confirm e criar']);
+    renderNwfSuggs(['Confirm e create']);
     const btn = document.getElementById('new-wf-btn');
     if (btn) { btn.disabled = false; btn.style.opacity = '1'; btn.style.cursor = 'pointer'; }
   }, 350);
@@ -2775,14 +2775,14 @@ function processBulkChat(text) {
     }
     bulkChatState = 'tasks-input';
     addBulkMsg('ai', '✓ Posição definida.\n\nQuais tarefas você quer incluir na nova etapa "' + bulkDraft.name + '"?\n\nDigite os nomes (um por linha ou separados por vírgula), ou selecione:');
-    renderBulkSuggs(['Criar tarefa com nome da etapa (' + bulkDraft.name + ')', 'No tasks (criar vazia)']);
+    renderBulkSuggs(['Criar tarefa com nome da etapa (' + bulkDraft.name + ')', 'No tasks (create vazia)']);
     return;
   }
 
   if (bulkChatState === 'tasks-input') {
-    if (lower.includes('sem tarefa') || lower.includes('criar vazia') || lower === 'vazia') {
+    if (lower.includes('sem tarefa') || lower.includes('create vazia') || lower === 'vazia') {
       bulkDraft.tasks = [bulkDraft.name];
-    } else if (lower.includes('nome da etapa') || lower.includes('criar tarefa com nome')) {
+    } else if (lower.includes('nome da etapa') || lower.includes('create tarefa com nome')) {
       bulkDraft.tasks = [bulkDraft.name];
     } else {
       bulkDraft.tasks = text.split(/[,\n]+/).map(s => s.trim()).filter(Boolean);
@@ -2794,10 +2794,10 @@ function processBulkChat(text) {
   if (bulkChatState === 'review') {
     if (lower.includes('confirmar') || lower.includes('aplicar') || lower === 'sim') {
       applyBulkConfig();
-    } else if (lower.includes('não') || lower.includes('cancelar')) {
+    } else if (lower.includes('no') || lower.includes('cancelar')) {
       closeBulkPanel();
     } else {
-      addBulkMsg('ai', 'Confirm a aplicação?');
+      addBulkMsg('ai', 'Confirm a aplicaction?');
       renderBulkSuggs(['Confirm e aplicar', 'Cancel']);
     }
     return;
@@ -2835,10 +2835,10 @@ function _bulkShowReview() {
   let summary = '';
   if (bulkDraft.operation === 'add-stage') {
     const pos = bulkDraft.position === 'start' ? 'início' : bulkDraft.position === 'end' ? 'final' : 'depois de "' + bulkDraft.afterStageName + '"';
-    summary = '📋 Resumo da configuração em lote:\n\n• Operação: Adicionar etapa\n• Nome: "' + bulkDraft.name + '"\n• Workflows: ' + wfNames + '\n• Posição: ' + pos + '\n• Tasks: ' + (bulkDraft.tasks.join(', ') || '(nenhuma)');
+    summary = '📋 Resumo da configuraction em lote:\n\n• Operaction: Adicionar etapa\n• Nome: "' + bulkDraft.name + '"\n• Workflows: ' + wfNames + '\n• Posição: ' + pos + '\n• Tasks: ' + (bulkDraft.tasks.join(', ') || '(nenhuma)');
   } else {
     const pos = bulkDraft.position === 'start' ? 'início da etapa' : 'final da etapa';
-    summary = '📋 Resumo da configuração em lote:\n\n• Operação: Adicionar tarefa\n• Nome: "' + bulkDraft.name + '"\n• Workflows: ' + wfNames + '\n• Posição: ' + pos;
+    summary = '📋 Resumo da configuraction em lote:\n\n• Operaction: Adicionar tarefa\n• Nome: "' + bulkDraft.name + '"\n• Workflows: ' + wfNames + '\n• Posição: ' + pos;
   }
   addBulkMsg('ai', summary + '\n\nConfirm e aplicar?');
   renderBulkSuggs(['Confirm e aplicar', 'Cancel']);
@@ -2862,7 +2862,7 @@ function applyBulkConfig() {
         tasks: (bulkDraft.tasks.length ? bulkDraft.tasks : [bulkDraft.name]).map((tn, ti) => ({
           id: newId + '_' + ti,
           name: tn, supplier: 'A definir', category: 'All',
-          active: true, visibility: 'user', script: null, externalApi: null,
+          active: true, visibility: 'user', script: null, externallApi: null,
           mcpConfig: null, agentConfig: null, contextOutput: []
         }))
       };
@@ -2898,7 +2898,7 @@ function applyBulkConfig() {
       const newId = 'bt_' + Date.now() + '_' + Math.random().toString(36).slice(2,6);
       const newTask = {
         id: newId, name: bulkDraft.name, supplier: 'A definir', category: 'All',
-        active: true, visibility: 'user', script: null, externalApi: null,
+        active: true, visibility: 'user', script: null, externallApi: null,
         mcpConfig: null, agentConfig: null, contextOutput: []
       };
       if (!stage.tasks) stage.tasks = [];
@@ -2950,7 +2950,7 @@ function openConnectorPanel(wfId) {
   const SLOTS = ['carrier_x','payment_processor','invoice_system','warehouse_x','notification_x'];
   const slotIcons  = { carrier_x:'🚚', payment_processor:'💳', invoice_system:'🧾', warehouse_x:'🏭', notification_x:'🔔' };
   const kindColor  = { discover:'#7c3aed', mutate:'#0c6fcd', cancel:'#dc2626', read:'#0891b2', preflight:'#d97706', maintain:'#6b7280' };
-  const kindLabel  = { discover:'descoberta', mutate:'mutação', cancel:'cancelamento', read:'leitura', preflight:'pré-check', maintain:'reconciliação' };
+  const kindLabel  = { discover:'descoberta', mutate:'mutaction', cancel:'cancelamento', read:'leitura', preflight:'pré-check', maintain:'reconciliaction' };
 
   // Build slot → [{ stage, task, mapping }] from current WF_TASKS
   function getTasksForSlot(slot) {
@@ -2991,7 +2991,7 @@ function openConnectorPanel(wfId) {
         const fnColor = hasFn ? (kindColor[mapping.trigger] || '#888') : '#9ca3af';
         const fnBadge = hasFn
           ? `<span style="font-size:9.5px;font-weight:600;padding:1px 7px;border-radius:10px;background:${fnColor}15;color:${fnColor};border:1px solid ${fnColor}35;white-space:nowrap">${mapping.fn}</span><span style="font-size:9px;color:#aaa;margin-left:2px">[${kindLabel[mapping.trigger]||mapping.trigger}]</span>`
-          : `<span style="font-size:9.5px;color:#aaa;font-style:italic">sem chamada externa</span>`;
+          : `<span style="font-size:9.5px;color:#aaa;font-style:italic">sem chamada external</span>`;
         const noteHtml = mapping?.note
           ? `<div style="font-size:10px;color:#888;margin-top:2px;line-height:1.4;padding-left:14px">${mapping.note}</div>`
           : '';
@@ -3333,7 +3333,7 @@ function confirmImportYaml() {
   }
 
   // Validate required fields
-  if (!parsed || typeof parsed !== 'object') { _showImportError('YAML inválido: estrutura não reconhecida.'); return; }
+  if (!parsed || typeof parsed !== 'object') { _showImportError('YAML inválido: estrutura no reconhecida.'); return; }
   if (!parsed.name || typeof parsed.name !== 'string') { _showImportError('Campo obrigatório ausente: name'); return; }
   if (!Array.isArray(parsed.marcos) || parsed.marcos.length === 0) { _showImportError('Campo obrigatório ausente: marcos (deve ser um array com pelo menos 1 item)'); return; }
   for (const marco of parsed.marcos) {
@@ -3350,7 +3350,7 @@ function confirmImportYaml() {
     document.getElementById('conflict-summary').innerHTML =
       `A workflow <strong>${existing.name}</strong> (id: <code>${parsed.id}</code>) já existe.<br>` +
       `O YAML importado contém <strong>${parsed.marcos.length} marcos</strong> e <strong>${totalTasks} tarefas</strong>.<br><br>` +
-      `Deseja substituí-la ou criar uma cópia?`;
+      `Deseja substituí-la ou create uma cópia?`;
     closeModal('modal-import-yaml');
     openModal('modal-import-conflict');
     return;
@@ -3419,7 +3419,7 @@ function _applyImport(parsed, asCopy) {
         bindings[slot] = { connectorId: cat.id, authDisplay: '●●●●importado', state: 'active', lastTested: null };
       } else {
         bindings[slot] = null;
-        warnings.push(`Connector '${systemName}' não encontrado no catálogo — vínculo do slot '${slot}' ignorado.`);
+        warnings.push(`Connector '${systemName}' no encontrado no catálogo — vínculo do slot '${slot}' ignorado.`);
       }
     });
     CONNECTOR_BINDINGS[newId] = bindings;
