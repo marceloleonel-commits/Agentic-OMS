@@ -826,21 +826,18 @@ function renderKanban() {
   const scroll = document.getElementById('wf-board-scroll');
   let html = '';
   let globalTaskNum = 0;
-  WF_TASKS.forEach((stage, i) => {
-    if (i > 0) {
-      html += `<div class="col-connector">
-        <div class="connector-line"></div>
-        <span class="connector-arrow">▶</span>
-      </div>`;
-    }
-    const stageTasks = stage.tasks || [];
-    html += `<div class="kanban-col" id="col-${stage.id}" ondragover="event.preventDefault();dragOverCol('${stage.id}')" ondrop="dropOnCol('${stage.id}')" ondragleave="dragLeaveCol('${stage.id}')">
-      <div class="kanban-col-body">`;
-    stageTasks.forEach(subTask => {
+  WF_TASKS.forEach((stage) => {
+    (stage.tasks || []).forEach((subTask) => {
       globalTaskNum++;
       const taskNum = globalTaskNum;
       const isSel = selectedTaskId === subTask.id;
-      html += `<div class="task-card ${isSel?'selected':''}" id="card-${subTask.id}" draggable="true" ondragstart="dragStart(event,'${subTask.id}')" ondragend="dragEnd(event)" onclick="selectTask('${subTask.id}')">
+      if (taskNum > 1) {
+        html += `<div class="col-connector">
+          <div class="connector-line"></div>
+          <span class="connector-arrow">▶</span>
+        </div>`;
+      }
+      html += `<div class="task-card ${isSel?'selected':''}" id="card-${subTask.id}" draggable="true" ondragstart="dragStartFlat(event,'${subTask.id}')" ondragend="dragEndFlat(event)" ondragover="dragOverFlat(event,'${subTask.id}')" ondrop="dropOnFlat(event,'${subTask.id}')" onclick="selectTask('${subTask.id}')">
           <div style="display:flex;align-items:center;gap:6px;margin-bottom:5px">
             <span style="min-width:20px;height:20px;border-radius:50%;background:${stage.color};color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">${taskNum}</span>
             <span style="font-size:10px;font-weight:600;color:${stage.color};background:${stage.color}18;border:1px solid ${stage.color}40;padding:1px 7px;border-radius:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px" title="${stage.name}">${stage.name}</span>
@@ -867,7 +864,7 @@ function renderKanban() {
             ${subTask.checkpoints.length > 3 ? `<span style="font-size:9px;color:#9ca3af">+${subTask.checkpoints.length-3}</span>` : ''}
           </div>` : ''}
           <div class="card-footer">
-            ${i > 0 ? `<span class="card-dep"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" width="10" height="10"><path d="M2 6h8M7 3l3 3-3 3"/></svg> ${WF_TASKS[i-1].name}</span>` : `<span class="card-dep" style="color:#22c55e">Initial task</span>`}
+            ${taskNum === 1 ? `<span class="card-dep" style="color:#22c55e">Initial task</span>` : `<span class="card-dep"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" width="10" height="10"><path d="M2 6h8M7 3l3 3-3 3"/></svg> Task ${taskNum-1}</span>`}
             <div style="display:flex;align-items:center;gap:4px">
               ${subTask.mcpConfig ? `<span title="MCP: ${subTask.mcpConfig.serverName}" style="font-size:9px;padding:1px 5px;border-radius:3px;background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;font-weight:600;line-height:1.6">MCP</span>` : ''}
               ${subTask.agentConfig ? `<span title="${subTask.agentConfig.agentName}" style="font-size:11px;line-height:1">${subTask.agentConfig.agentIcon}</span>` : ''}
@@ -880,15 +877,55 @@ function renderKanban() {
           </div>
         </div>`;
     });
-    html += `<div class="add-task-card" onclick="addTaskToStage('${stage.id}')">
-          <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M7 2v10M2 7h10"/></svg>
-          Add here
-        </div>
-      </div>
-    </div>`;
   });
-  html += `<button class="add-col-btn" onclick="openCreatePanel()"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M8 2v12M2 8h12"/></svg> New Stage</button>`;
+  if (globalTaskNum > 0) {
+    html += `<div class="col-connector">
+      <div class="connector-line"></div>
+      <span class="connector-arrow">▶</span>
+    </div>`;
+  }
+  html += `<button class="add-col-btn" onclick="addTask()"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M8 2v12M2 8h12"/></svg> + Add Task</button>`;
   scroll.innerHTML = html;
+}
+
+function addTask() {
+  if (!WF_TASKS.length) openCreatePanel();
+  else addTaskToStage(WF_TASKS[WF_TASKS.length-1].id);
+}
+
+let dragTaskIdFlat = null;
+function dragStartFlat(e, taskId) {
+  dragTaskIdFlat = taskId;
+  e.dataTransfer.effectAllowed = 'move';
+  setTimeout(() => { const c = document.getElementById('card-'+taskId); if(c) c.classList.add('dragging'); }, 0);
+}
+function dragEndFlat(e) {
+  dragTaskIdFlat = null;
+  document.querySelectorAll('.task-card').forEach(c => c.classList.remove('dragging','drag-over'));
+}
+function dragOverFlat(e, taskId) {
+  e.preventDefault();
+  if (dragTaskIdFlat === taskId) return;
+  document.querySelectorAll('.task-card').forEach(c => c.classList.remove('drag-over'));
+  const card = document.getElementById('card-'+taskId);
+  if (card) card.classList.add('drag-over');
+}
+function dropOnFlat(e, targetTaskId) {
+  e.preventDefault();
+  document.querySelectorAll('.task-card').forEach(c => c.classList.remove('drag-over','dragging'));
+  if (!dragTaskIdFlat || dragTaskIdFlat === targetTaskId) return;
+  let srcTask = null;
+  for (const stage of WF_TASKS) {
+    const idx = (stage.tasks||[]).findIndex(t => t.id === dragTaskIdFlat);
+    if (idx !== -1) { [srcTask] = stage.tasks.splice(idx,1); break; }
+  }
+  if (!srcTask) return;
+  for (const stage of WF_TASKS) {
+    const idx = (stage.tasks||[]).findIndex(t => t.id === targetTaskId);
+    if (idx !== -1) { stage.tasks.splice(idx,0,srcTask); break; }
+  }
+  dragTaskIdFlat = null;
+  renderWorkflowBoard();
 }
 
 function findSubTask(taskId) {
