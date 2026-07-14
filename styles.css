@@ -244,13 +244,13 @@ tbody td{padding:10px 14px;font-size:13px;vertical-align:middle}
 
 /* Board */
 .wf-board-wrap{flex:1;overflow:hidden;display:flex;background:#f0f2f5}
-.wf-board-scroll{flex:1;overflow-x:auto;overflow-y:hidden;padding:16px 20px;display:flex;gap:0;align-items:flex-start}
+.wf-board-scroll{flex:1;overflow-x:hidden;overflow-y:auto;padding:16px 20px;display:flex;flex-wrap:wrap;gap:0;align-items:flex-start;align-content:flex-start}
 .wf-board-scroll::-webkit-scrollbar{height:6px}
 .wf-board-scroll::-webkit-scrollbar-track{background:#e8e8e8;border-radius:3px}
 .wf-board-scroll::-webkit-scrollbar-thumb{background:#c0c0c0;border-radius:3px}
 
 /* Connector between columns */
-.col-connector{display:flex;align-items:center;flex-direction:column;justify-content:center;flex-shrink:0;gap:3px;align-self:flex-start;margin-top:50px;width:44px}
+.col-connector{display:flex;align-items:center;flex-direction:column;justify-content:center;flex-shrink:0;gap:3px;align-self:flex-start;margin-top:44px;width:30px;margin-bottom:10px}
 .connector-line{height:2px;width:16px;background:#c0c0c0}
 .connector-line.inactive{background:transparent;border-top:2px dashed #c0c0c0}
 .connector-arrow{color:#c0c0c0;font-size:10px}
@@ -271,7 +271,7 @@ tbody td{padding:10px 14px;font-size:13px;vertical-align:middle}
 .kanban-col-body::-webkit-scrollbar-thumb{background:#c0c0c0;border-radius:2px}
 
 /* Task card */
-.task-card{background:#fff;border-radius:6px;padding:12px 13px;cursor:grab;box-shadow:0 1px 3px rgba(0,0,0,.08);border:2px solid transparent;transition:box-shadow .15s,border-color .15s,transform .15s,background .15s;user-select:none}
+.task-card{background:#fff;border-radius:6px;padding:12px 13px;cursor:grab;box-shadow:0 1px 3px rgba(0,0,0,.08);border:2px solid transparent;transition:box-shadow .15s,border-color .15s,transform .15s,background .15s;user-select:none;width:200px;min-width:200px;flex-shrink:0;margin-bottom:10px}
 .task-card:hover{box-shadow:0 3px 8px rgba(0,0,0,.12)}
 .task-card.selected{border-color:#0c6fcd}
 .task-card.dragging{opacity:.25;cursor:grabbing;transform:scale(.96) rotate(-1deg)}
@@ -297,7 +297,7 @@ tbody td{padding:10px 14px;font-size:13px;vertical-align:middle}
 /* Add card / add col */
 .add-task-card{background:transparent;border:2px dashed #c0c0c0;border-radius:6px;padding:10px;cursor:pointer;color:#888;font-size:12px;display:flex;align-items:center;justify-content:center;gap:5px;transition:all .15s}
 .add-task-card:hover{border-color:#0c6fcd;color:#0c6fcd;background:rgba(12,111,205,.04)}
-.add-col-btn{width:190px;min-width:190px;height:42px;border-radius:8px;border:2px dashed #c0c0c0;background:transparent;cursor:pointer;color:#888;font-size:13px;font-weight:500;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .15s;flex-shrink:0;align-self:flex-start;margin-left:14px}
+.add-col-btn{width:200px;min-width:200px;height:42px;border-radius:8px;border:2px dashed #c0c0c0;background:transparent;cursor:pointer;color:#888;font-size:13px;font-weight:500;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .15s;flex-shrink:0;align-self:flex-start;margin-left:8px;margin-top:44px}
 .add-col-btn:hover{border-color:#0c6fcd;color:#0c6fcd;background:rgba(12,111,205,.04)}
 
 /* Side panel */
