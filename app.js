@@ -825,6 +825,7 @@ function renderFlowBar() {
 function renderKanban() {
   const scroll = document.getElementById('wf-board-scroll');
   let html = '';
+  let globalTaskNum = 0;
   WF_TASKS.forEach((stage, i) => {
     if (i > 0) {
       const edge = WF_EDGES.find(e => e.from === WF_TASKS[i-1].id && e.to === stage.id);
@@ -833,27 +834,28 @@ function renderKanban() {
       html += `<div class="col-connector">
         <div class="connector-line ${eActive?'':'inactive'}"></div>
         <span class="connector-arrow">▶</span>
-        <div class="connector-badge ${eActive?'':'inactive'}" ${eId?`onclick="openEdgeModal('${eId}')"`:''}>${eActive?'Ativa':'Inativa'}</div>
+        <div class="connector-badge ${eActive?'':'inactive'}" ${eId?`onclick="openEdgeModal('${eId}')"`:''}>${eActive?'Active':'Inactive'}</div>
       </div>`;
     }
     const stageTasks = stage.tasks || [];
     html += `<div class="kanban-col" id="col-${stage.id}" ondragover="event.preventDefault();dragOverCol('${stage.id}')" ondrop="dropOnCol('${stage.id}')" ondragleave="dragLeaveCol('${stage.id}')">
-      <div class="kanban-col-header">
-        <div class="col-num" style="background:${stage.color}">${i+1}</div>
-        <span class="col-title" title="${stage.name}">${stage.name}</span>
-        <button class="col-menu-btn" onclick="renameStage('${stage.id}')">⋯</button>
-      </div>
       <div class="kanban-col-body">`;
     stageTasks.forEach(subTask => {
+      globalTaskNum++;
+      const taskNum = globalTaskNum;
       const isSel = selectedTaskId === subTask.id;
       html += `<div class="task-card ${isSel?'selected':''}" id="card-${subTask.id}" draggable="true" ondragstart="dragStart(event,'${subTask.id}')" ondragend="dragEnd(event)" onclick="selectTask('${subTask.id}')">
-          <div class="card-top">
-            <div class="card-name">${subTask.name}</div>
-            <div class="card-actions-row">
-              <button class="card-btn" title="Editar" onclick="event.stopPropagation();editTask('${subTask.id}')"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M9 2l3 3L4 13H1v-3L9 2z"/></svg></button>
-              <button class="card-btn" title="Dividir tarefa" onclick="event.stopPropagation();openSplitPanel('${subTask.id}')" style="font-size:12px;font-weight:700">✂</button>
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:5px">
+            <span style="min-width:20px;height:20px;border-radius:50%;background:${stage.color};color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">${taskNum}</span>
+            <span style="font-size:10px;font-weight:600;color:${stage.color};background:${stage.color}18;border:1px solid ${stage.color}40;padding:1px 7px;border-radius:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px" title="${stage.name}">${stage.name}</span>
+            <div class="card-actions-row" style="margin-left:auto">
+              <button class="card-btn" title="Edit" onclick="event.stopPropagation();editTask('${subTask.id}')"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M9 2l3 3L4 13H1v-3L9 2z"/></svg></button>
+              <button class="card-btn" title="Split task" onclick="event.stopPropagation();openSplitPanel('${subTask.id}')" style="font-size:12px;font-weight:700">✂</button>
               <button class="card-btn danger" title="Delete" onclick="event.stopPropagation();deleteTask('${subTask.id}')"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M2 4h10M5 4V2h4v2M5 6v5M9 6v5M3 4l1 8h6l1-8"/></svg></button>
             </div>
+          </div>
+          <div class="card-top" style="margin-bottom:4px">
+            <div class="card-name">${subTask.name}</div>
           </div>
           <div class="card-tags">
             <span class="card-tag tag-category">${subTask.category||''}</span>
@@ -874,10 +876,10 @@ function renderKanban() {
               ${subTask.mcpConfig ? `<span title="MCP: ${subTask.mcpConfig.serverName}" style="font-size:9px;padding:1px 5px;border-radius:3px;background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;font-weight:600;line-height:1.6">MCP</span>` : ''}
               ${subTask.agentConfig ? `<span title="${subTask.agentConfig.agentName}" style="font-size:11px;line-height:1">${subTask.agentConfig.agentIcon}</span>` : ''}
               ${subTask.visibility === 'internal'
-                ? `<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:#f5f3ff;border:1px solid #e9d5ff;color:#7c3aed;font-weight:600;line-height:1.6">🔒 Internall</span>`
+                ? `<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:#f5f3ff;border:1px solid #e9d5ff;color:#7c3aed;font-weight:600;line-height:1.6">🔒 Internal</span>`
                 : `<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;font-weight:600;line-height:1.6">👤 User</span>`
               }
-              <div class="card-status-dot" style="background:${subTask.active!==false?'#22c55e':'#ef4444'}" title="${subTask.active!==false?'Ativa':'Inativa'}"></div>
+              <div class="card-status-dot" style="background:${subTask.active!==false?'#22c55e':'#ef4444'}" title="${subTask.active!==false?'Active':'Inactive'}"></div>
             </div>
           </div>
         </div>`;
@@ -965,7 +967,7 @@ function editTask(id) {
     mcpConfig: task.mcpConfig ? {...task.mcpConfig} : null,
     agentConfig: task.agentConfig ? {...task.agentConfig} : null,
   };
-  document.getElementById('sp-title').textContent = '🤖 Editar com Agente';
+  document.getElementById('sp-title').textContent = '🤖 Edit com Agente';
   document.getElementById('sp-body').innerHTML = `
     <div id="edit-preview" style="padding:10px 12px;background:#f0f7ff;border:1px solid #bfdbfe;border-radius:8px;font-size:12px"></div>
     <div class="cm-msgs" id="cm-msgs"></div>
@@ -996,12 +998,12 @@ function refreshEditPreview() {
   const ep = document.getElementById('edit-preview'); if (!ep) return;
   const dot = `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${editDraft.color||'#0c6fcd'};margin-right:5px;vertical-align:middle;flex-shrink:0"></span>`;
   const visHtml = editDraft.visibility === 'internal'
-    ? `<span style="font-size:10px;padding:1px 5px;border-radius:3px;background:#f5f3ff;border:1px solid #e9d5ff;color:#7c3aed;font-weight:500">🔒 Internall</span>`
+    ? `<span style="font-size:10px;padding:1px 5px;border-radius:3px;background:#f5f3ff;border:1px solid #e9d5ff;color:#7c3aed;font-weight:500">🔒 Internalll</span>`
     : `<span style="font-size:10px;padding:1px 5px;border-radius:3px;background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;font-weight:500">👤 User</span>`;
   ep.innerHTML = `
     <div style="display:flex;align-items:center;gap:4px;font-weight:700;color:#1a1a1a;margin-bottom:5px;flex-wrap:wrap">
       ${dot}<span>${editDraft.name||'—'}</span>
-      <span style="font-size:10px;padding:1px 6px;border-radius:10px;background:${editDraft.active?'#f0fdf4':'#fef2f2'};border:1px solid ${editDraft.active?'#bbf7d0':'#fecaca'};color:${editDraft.active?'#15803d':'#dc2626'};font-weight:500;margin-left:2px">${editDraft.active?'Ativa':'Inativa'}</span>
+      <span style="font-size:10px;padding:1px 6px;border-radius:10px;background:${editDraft.active?'#f0fdf4':'#fef2f2'};border:1px solid ${editDraft.active?'#bbf7d0':'#fecaca'};color:${editDraft.active?'#15803d':'#dc2626'};font-weight:500;margin-left:2px">${editDraft.active?'Active':'Inactive'}</span>
     </div>
     <div style="color:#555;font-size:11.5px;margin-bottom:3px"><span style="font-weight:500">Cat:</span> ${editDraft.category||'—'}</div>
     <div style="font-size:11.5px;line-height:1.8"><span style="font-weight:500">Visibility:</span> ${visHtml}</div>
@@ -1102,7 +1104,7 @@ function processEditIntent(text) {
     } else if (lower.includes('visib') || lower.includes('internal') || lower.includes('user') || lower.includes('user') || lower.includes('toggle visib')) {
       editDraft.visibility = editDraft.visibility === 'internal' ? 'user' : 'internal';
       refreshEditPreview();
-      setTimeout(() => { addCMsg('ai', `Visibility alterada para: ${editDraft.visibility === 'internal' ? '🔒 Internall' : '👤 User'}`); renderCSuggs(['Rename','Toggle visibility','MCP Integration','AI Workspace Agent','Custom script']); }, 350);
+      setTimeout(() => { addCMsg('ai', `Visibility alterada para: ${editDraft.visibility === 'internal' ? '🔒 Internalll' : '👤 User'}`); renderCSuggs(['Rename','Toggle visibility','MCP Integration','AI Workspace Agent','Custom script']); }, 350);
     } else if (/\baction\b|\bactions\b|\baction\b|\bactions\b/.test(lower) || lower.includes('configurar action') || lower.includes('configurar actions')) {
       setTimeout(() => { addCMsg('ai', 'The concept of actions was replaced by Visibility (controls whether the task is visible in the order for the customer) and MCP / External API integrations.\n\nUse "Toggle visibility" to switch between Internal and User.'); renderCSuggs(idleSuggs); }, 350);
     } else if (lower.includes('script') || lower.includes('code') || lower.includes('code') || lower.includes('custom')) {
@@ -1521,7 +1523,7 @@ function sendTaskChat() {
       renderCSuggs(taskChatFlows[1].sugg);
     } else if (chatStep === 2) {
       // After visibility: ask about extras
-      addCMsg('ai', `Tarefa "${newTaskDraft.name}" configurada!\n• Visibility: ${newTaskDraft.visibility === 'internal' ? '🔒 Internall' : '👤 User'}\n\nDeseja adicionar checkpoints, API external ou create now?`);
+      addCMsg('ai', `Tarefa "${newTaskDraft.name}" configurada!\n• Visibility: ${newTaskDraft.visibility === 'internal' ? '🔒 Internalll' : '👤 User'}\n\nDeseja adicionar checkpoints, API external ou create now?`);
       renderCSuggs(['Criar tarefa','Add checkpoints','Adicionar API external','MCP Integration']);
     } else {
       // extras
@@ -1734,7 +1736,7 @@ const MCP_SERVERS = [
   {id:'vtex-catalog', name:'VTEX Catalog', icon:'📚', description:'Access to product catalog, SKUs and categories',
    tools:[
      {id:'get_product',        name:'get_product()',        desc:'Busca dados do produto por ID'},
-     {id:'update_sku_status',  name:'update_sku_status()',  desc:'Ativa ou desativa um SKU'},
+     {id:'update_sku_status',  name:'update_sku_status()',  desc:'Active ou desativa um SKU'},
      {id:'list_categories',    name:'list_categories()',    desc:'Lists all catalog categories'},
    ]},
   {id:'vtex-logistics', name:'VTEX Logistics', icon:'🚚', description:'Query and update logistics and inventory data',
@@ -2286,11 +2288,11 @@ function renderCustomRules() {
         <div class="rule-tags">
           <span class="rule-tag" style="background:${prioBg[r.priority]};color:${prioColor[r.priority]};border-color:${prioColor[r.priority]}44">${prioLabel[r.priority]}</span>
           <span class="rule-tag">${r.wf}</span>
-          ${!r.active ? '<span class="rule-tag" style="color:#bbb">Inativa</span>' : ''}
+          ${!r.active ? '<span class="rule-tag" style="color:#bbb">Inactive</span>' : ''}
         </div>
       </div>
       <div class="rule-btns">
-        <button class="toggle-switch ${r.active ? 'on' : 'off'}" onclick="toggleOrchRule('${r.id}')" style="transform:scale(.75);transform-origin:right center" title="${r.active ? 'Desativar' : 'Ativar'}"></button>
+        <button class="toggle-switch ${r.active ? 'on' : 'off'}" onclick="toggleOrchRule('${r.id}')" style="transform:scale(.75);transform-origin:right center" title="${r.active ? 'Desativar' : 'Activer'}"></button>
         <button onclick="deleteOrchRule('${r.id}')" style="border:none;background:transparent;cursor:pointer;padding:2px 4px;color:#ccc;font-size:13px;line-height:1" title="Delete">🗑</button>
       </div>
     </div>
