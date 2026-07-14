@@ -914,6 +914,11 @@ function dropOnFlat(e, targetTaskId) {
   e.preventDefault();
   document.querySelectorAll('.task-card').forEach(c => c.classList.remove('drag-over','dragging'));
   if (!dragTaskIdFlat || dragTaskIdFlat === targetTaskId) return;
+  let srcName = '', targetName = '';
+  for (const stage of WF_TASKS) {
+    const t = (stage.tasks||[]).find(t => t.id === dragTaskIdFlat); if (t) srcName = t.name;
+    const t2 = (stage.tasks||[]).find(t => t.id === targetTaskId); if (t2) targetName = t2.name;
+  }
   let srcTask = null;
   for (const stage of WF_TASKS) {
     const idx = (stage.tasks||[]).findIndex(t => t.id === dragTaskIdFlat);
@@ -924,8 +929,31 @@ function dropOnFlat(e, targetTaskId) {
     const idx = (stage.tasks||[]).findIndex(t => t.id === targetTaskId);
     if (idx !== -1) { stage.tasks.splice(idx,0,srcTask); break; }
   }
+  const movedId = dragTaskIdFlat;
   dragTaskIdFlat = null;
   renderWorkflowBoard();
+  requestAnimationFrame(() => {
+    const card = document.getElementById('card-'+movedId);
+    if (card) { card.classList.add('just-moved'); setTimeout(() => card.classList.remove('just-moved'), 700); }
+  });
+  showSwapToast(srcName, targetName);
+}
+
+function showSwapToast(movedName, beforeName) {
+  let toast = document.getElementById('swap-toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'swap-toast';
+    toast.className = 'swap-toast';
+    document.body.appendChild(toast);
+  }
+  toast.innerHTML = `<span style="font-size:15px">↕</span> <strong style="font-weight:600">${movedName}</strong><span style="color:#94a3b8;margin:0 4px">moved before</span><strong style="font-weight:600">${beforeName}</strong>`;
+  clearTimeout(toast._timer);
+  toast.classList.remove('visible');
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    toast.classList.add('visible');
+    toast._timer = setTimeout(() => toast.classList.remove('visible'), 2800);
+  }));
 }
 
 function findSubTask(taskId) {
