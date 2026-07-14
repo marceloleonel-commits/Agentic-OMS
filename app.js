@@ -828,13 +828,9 @@ function renderKanban() {
   let globalTaskNum = 0;
   WF_TASKS.forEach((stage, i) => {
     if (i > 0) {
-      const edge = WF_EDGES.find(e => e.from === WF_TASKS[i-1].id && e.to === stage.id);
-      const eActive = edge ? edge.active : true;
-      const eId = edge ? edge.id : null;
       html += `<div class="col-connector">
-        <div class="connector-line ${eActive?'':'inactive'}"></div>
+        <div class="connector-line"></div>
         <span class="connector-arrow">▶</span>
-        <div class="connector-badge ${eActive?'':'inactive'}" ${eId?`onclick="openEdgeModal('${eId}')"`:''}>${eActive?'Active':'Inactive'}</div>
       </div>`;
     }
     const stageTasks = stage.tasks || [];
