@@ -240,7 +240,7 @@ const ORDER_ITEMS = {
             {name:'Customer Briefing', sup:'BRK', s:'completed',
               checkpoints:[
                 {id:'cp1', label:'Briefing received and recorded', s:'completed', failAction:'Solicitar novamente ao cliente'},
-                {id:'cp2', label:'Art file or instructions attached', s:'completed', failAction:'Aguardar envio do cliente'},
+                {id:'cp2', label:'Art file or instructions attached', s:'completed', failAction:'Wait for customer submission'},
               ]},
             {name:'Art / Design', sup:'BRK', s:'completed',
               checkpoints:[
