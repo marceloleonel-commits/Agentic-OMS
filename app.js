@@ -125,7 +125,7 @@ function confirmDeleteWorkflow() {
     pendingDeleteWfId = null;
     closeModal('modal-wf-delete');
     renderWorkflowList();
-    showSuccessModal('Workflow deleted', `"${name}" foi removido permanentemente.`);
+    showSuccessModal('Workflow deleted', `"${name}" was permanently removed.`);
   }
 }
 
@@ -195,7 +195,7 @@ function confirmTaskAction() {
   const orderObj = ORDERS.find(o => o.id === orderId);
   if (orderObj) renderItemsWithTasks(orderObj);
   const labels = {completed:'completed',canceled:'canceled',ignored:'ignored',pending:'marked as pending'};
-  showSuccessModal('Task updated', `"${task.name}" foi ${labels[action]||action}.`);
+  showSuccessModal('Task updated', `"${task.name}" was ${labels[action]||action}.`);
 }
 
 function openWorkflow(id) {
@@ -302,7 +302,7 @@ function renderOrderStatus3Step(status, orderId) {
   const activeIdx = steps.findIndex(s => s.key === status);
   const container = document.getElementById('order-status-steps');
   const card = container ? container.closest('.detail-status-card') : null;
-  // "Order status" section is hidden for all orders; status is shown via pipeline accolordions
+  // "Order status" section is hidden for all orders; status is shown via pipeline accordions
   if (card) card.style.display = 'none';
   return;
   let html = '';
@@ -349,11 +349,11 @@ function computeGroupMilestones(groupItems, order) {
 }
 function milestoneRowHtml(milestones) {
   const cfg = {
-    finalizado:   { dot:'#15803d', text:'Finalizado',        bg:'#f0fdf4', border:'#bbf7d0', color:'#15803d' },
+    finalizado:   { dot:'#15803d', text:'Completed',        bg:'#f0fdf4', border:'#bbf7d0', color:'#15803d' },
     em_andamento: { dot:'#1d4ed8', text:'In progress',      bg:'#eff6ff', border:'#bfdbfe', color:'#1d4ed8' },
     no_iniciado: { dot:'#9ca3af', text:'Not started',      bg:'#f9fafb', border:'#e5e7eb', color:'#6b7280' },
     cancelado:    { dot:'#dc2626', text:'Canceled',          bg:'#fef2f2', border:'#fecaca', color:'#dc2626' },
-    estorno:      { dot:'#d97706', text:'Estorno realizado', bg:'#fffbeb', border:'#fde68a', color:'#b45309' },
+    estorno:      { dot:'#d97706', text:'Refund issued', bg:'#fffbeb', border:'#fde68a', color:'#b45309' },
   };
   return `<div style="display:grid;grid-template-columns:repeat(${milestones.length},1fr);gap:8px;margin:6px 0 10px">
     ${milestones.map(m => {
@@ -441,7 +441,7 @@ function renderItemsWithTasks(order) {
       return `<div class="pipe-step${isClickable?' clickable-step':''}" ${clickAttr}>
         ${ti > 0 ? `<div class="pipe-arrow ${arrowCls}"></div>` : ''}
         <div class="pipe-node ${isBlocked?'blocked':''}">
-          <div class="pipe-circle ${circleClass}" title="${isBlocked ? (t.blockReason||'Blocked') : isClickable ? 'Clique para gerenciar' : statusLabel}">
+          <div class="pipe-circle ${circleClass}" title="${isBlocked ? (t.blockReason||'Blocked') : isClickable ? 'Click to manage' : statusLabel}">
             ${icon}
           </div>
           <div class="pipe-label">${t.name}</div>
@@ -456,10 +456,10 @@ function renderItemsWithTasks(order) {
 
   function wfBadge(state) {
     if (state==='completed') return `<span class="wf-sec-badge" style="background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d">Completed</span>`;
-    if (state==='pending')   return `<span class="wf-sec-badge" style="background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8">Em andamento</span>`;
+    if (state==='pending')   return `<span class="wf-sec-badge" style="background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8">In progress</span>`;
     if (state==='blocked')   return `<span class="wf-sec-badge" style="background:#fef2f2;border:1px solid #fecaca;color:#dc2626">Blocked</span>`;
     if (state==='canceled')  return `<span class="wf-sec-badge" style="background:#fff7ed;border:1px solid #fed7aa;color:#c2410c">Canceled</span>`;
-    return `<span class="wf-sec-badge" style="background:#f9f9f9;border:1px solid #e0e0e0;color:#888">Aguardando</span>`;
+    return `<span class="wf-sec-badge" style="background:#f9f9f9;border:1px solid #e0e0e0;color:#888">Waiting</span>`;
   }
 
   const renderedCards = items.map((item, itemIdx) => {
@@ -484,7 +484,7 @@ function renderItemsWithTasks(order) {
     if (item.secondWorkflow)      { iSt = '↩️ In exchange/return'; iStCls = 'badge-return'; }
     else if (blockedTasks.length) { iSt = '🚫 Blocked';      iStCls = 'badge-red'; }
     else if (allDone)             { iSt = '✅ Completed';      iStCls = 'badge-processed'; }
-    else if (anyActive)           { iSt = '🔄 Em andamento';   iStCls = 'badge-processing'; }
+    else if (anyActive)           { iSt = '🔄 In progress';   iStCls = 'badge-processing'; }
     else                          { iSt = '⏳ Pending';        iStCls = 'badge-not-processed'; }
 
     // ── Context vars (hidden) ──
@@ -495,7 +495,7 @@ function renderItemsWithTasks(order) {
       <div class="orch-block-panel">
         <div class="orch-block-header">
           <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><circle cx="8" cy="8" r="6"/><path d="M8 5v4M8 11v.5"/></svg>
-          Orquestrador detectou ${blockedTasks.length} bloqueio${blockedTasks.length>1?'s':''} neste item
+          Orchestrator detected ${blockedTasks.length} block${blockedTasks.length>1?'s':''} on this item
         </div>
         ${blockedTasks.map(t => `
           <div class="orch-block-item">
@@ -515,7 +515,7 @@ function renderItemsWithTasks(order) {
             <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><circle cx="7" cy="5" r="3"/><path d="M1 13c0-2.8 2.7-4 6-4s6 1.2 6 4"/><circle cx="12" cy="3" r="1.5" fill="currentColor" stroke="none"/></svg>
             Apply Agent Suggestion
           </button>
-          <button class="btn btn-secondary btn-sm" style="flex:1;justify-content:center">Escalar para Operador</button>
+          <button class="btn btn-secondary btn-sm" style="flex:1;justify-content:center">Escalate to Operator</button>
         </div>
       </div>` : '';
 
@@ -546,8 +546,8 @@ function renderItemsWithTasks(order) {
           : '📦';
         let triggerLabel = '';
         if (pIdx > 0 && pipeline.triggeredAt) {
-          const byLabel = pipeline.triggeredBy === 'Agente AI' ? '🤖 Agente AI' : pipeline.triggeredBy === 'Shopper' ? '🛍️ Shopper' : '🏪 Merchant';
-          triggerLabel = `<div style="display:flex;align-items:center;gap:5px;margin:4px 0 2px;font-size:11px;color:#888"><div style="width:1px;height:10px;background:#d0d0d0"></div>↓ Acionado por ${byLabel} · ${pipeline.triggeredAt}</div>`;
+          const byLabel = (pipeline.triggeredBy === 'Agente AI' || pipeline.triggeredBy === 'AI Agent') ? '🤖 AI Agent' : pipeline.triggeredBy === 'Shopper' ? '🛍️ Shopper' : '🏪 Merchant';
+          triggerLabel = `<div style="display:flex;align-items:center;gap:5px;margin:4px 0 2px;font-size:11px;color:#888"><div style="width:1px;height:10px;background:#d0d0d0"></div>↓ Triggered by ${byLabel} · ${pipeline.triggeredAt}</div>`;
         } else if (pIdx > 0) {
           const wfDef = WORKFLOW_DEFS.find(w => w.id === pipeline.wfId);
           const trigLabel = wfDef && wfDef.trigger ? wfDef.trigger.label : '';
@@ -617,14 +617,14 @@ function renderItemsWithTasks(order) {
           <div class="return-info-card">
             <div class="ric-initiator-row">
               <span class="ric-badge ${initiatorCls}">${initiatorLabel}</span>
-              <span class="ric-time">Iniciado em ${ri.initiatedAt}</span>
+              <span class="ric-time">Started at ${ri.initiatedAt}</span>
             </div>
-            <div class="ric-field"><span class="ric-label">Motivo</span><span class="ric-reason">${ri.reasonLabel}</span></div>
+            <div class="ric-field"><span class="ric-label">Reason</span><span class="ric-reason">${ri.reasonLabel}</span></div>
             <div class="ric-field"><span class="ric-label">Description</span><span class="ric-desc">${ri.description}</span></div>
             ${diagHtml}
           </div>`;
       }
-      const separatorBy = ri ? (ri.initiator==='agent' ? 'por Agente AI' : ri.initiator==='shopper' ? 'por Shopper' : 'por Merchant') : `por ${sw.triggeredBy}`;
+      const separatorBy = ri ? (ri.initiator==='agent' ? 'by AI Agent' : ri.initiator==='shopper' ? 'by Shopper' : 'by Merchant') : `by ${sw.triggeredBy}`;
       // Status pill — same logic as pipelines
       const swTasks = sw.tasks || [];
       const swAllDone  = swTasks.length && swTasks.every(t => t.s === 'completed');
@@ -638,7 +638,7 @@ function renderItemsWithTasks(order) {
       const swBadgeBg     = '#f5f3ff';
       const retPipId = `ret-${order.id}-${itemIdx}`;
       chainHtml = `
-        <div style="display:flex;align-items:center;gap:5px;margin:8px 0 2px;font-size:11px;color:#888"><div style="width:1px;height:10px;background:#d0d0d0"></div>↓ Acionado ${separatorBy} · ${sw.triggeredAt}</div>
+        <div style="display:flex;align-items:center;gap:5px;margin:8px 0 2px;font-size:11px;color:#888"><div style="width:1px;height:10px;background:#d0d0d0"></div>↓ Triggered ${separatorBy} · ${sw.triggeredAt}</div>
         <button onclick="toggleGroup('${retPipId}')" style="width:100%;display:flex;align-items:center;gap:10px;margin-bottom:4px;margin-top:4px;padding:8px 12px;background:${swBadgeBg};border:none;border-left:3px solid ${swBadgeColor};border-radius:0 6px 6px 0;cursor:pointer;text-align:left;transition:filter .15s" onmouseenter="this.style.filter='brightness(.97)'" onmouseleave="this.style.filter=''">
           <span style="font-size:18px;line-height:1">↩️</span>
           <span style="font-size:13px;font-weight:700;color:${swBadgeColor};flex:1">${sw.wfName || 'Returns & Exchanges'}</span>
@@ -658,7 +658,7 @@ function renderItemsWithTasks(order) {
         <div class="item-product-img">${item.emoji}</div>
         <div style="flex:1">
           <div class="item-product-name">${item.name}</div>
-          <div class="item-product-meta">Qtd: ${item.qty} · ${item.price}${item.seller ? '' : ''}</div>
+          <div class="item-product-meta">Qty: ${item.qty} · ${item.price}${item.seller ? '' : ''}</div>
           <div style="margin-top:3px;display:flex;gap:4px;flex-wrap:wrap">${item.seller ? sellerBadge : ''}${item.isService ? serviceBadge : ''}</div>
         </div>
       </div>
@@ -700,7 +700,7 @@ function renderItemsWithTasks(order) {
       const groupItems = groupIndices.map(idx => items[idx]);
       const showMilestones = groupItems.some(i => i.pipelines && i.pipelines.length);
 
-      // Accolordion header
+      // Accordion header
       finalHtml += `
 <div style="margin-top:${gIdx===0?'0':'16px'};margin-bottom:2px">
   <button onclick="toggleGroup('${gId}')" style="width:100%;display:flex;align-items:center;gap:10px;padding:9px 14px;background:#f8faff;border:1px solid #dce8ff;border-left:3px solid #0c6fcd;border-radius:6px;cursor:pointer;text-align:left;transition:background .15s" onmouseenter="this.style.background='#eef4ff'" onmouseleave="this.style.background='#f8faff'">
@@ -741,7 +741,7 @@ function renderItemsWithTasks(order) {
         }
       }
 
-      // Close accolordion body + wrapper
+      // Close accordion body + wrapper
       finalHtml += `</div></div>`;
     });
   } else {
@@ -1021,20 +1021,20 @@ function editTask(id) {
     color: stage.color, active: task.active !== false,
     visibility: task.visibility || 'user',
     script: task.script !== undefined ? task.script : null,
-    externallApi: task.externallApi ? {
-      url: task.externallApi.url||'', method: task.externallApi.method||'POST',
-      responseMapping: (task.externallApi.responseMapping||[]).map(m=>({...m}))
+    externalApi: task.externalApi ? {
+      url: task.externalApi.url||'', method: task.externalApi.method||'POST',
+      responseMapping: (task.externalApi.responseMapping||[]).map(m=>({...m}))
     } : null,
     mcpConfig: task.mcpConfig ? {...task.mcpConfig} : null,
     agentConfig: task.agentConfig ? {...task.agentConfig} : null,
   };
-  document.getElementById('sp-title').textContent = '🤖 Edit com Agente';
+  document.getElementById('sp-title').textContent = '🤖 Edit with Agent support';
   document.getElementById('sp-body').innerHTML = `
     <div id="edit-preview" style="padding:10px 12px;background:#f0f7ff;border:1px solid #bfdbfe;border-radius:8px;font-size:12px"></div>
     <div class="cm-msgs" id="cm-msgs"></div>
     <div class="cm-suggestions" id="cm-suggestions"></div>
     <div class="cm-input-row">
-      <input class="cm-input" id="cm-input" placeholder="O que deseja alterar?" onkeydown="if(event.key==='Enter')sendEditChat()">
+      <input class="cm-input" id="cm-input" placeholder="What would you like to change?" onkeydown="if(event.key==='Enter')sendEditChat()">
       <button class="cm-send" onclick="sendEditChat()"><svg viewBox="0 0 16 16" stroke="white" stroke-width="2" fill="none" width="13" height="13"><path d="M2 8l12-6-4 12-3-4-5-2z"/></svg></button>
     </div>`;
   document.getElementById('sp-footer').innerHTML = `
@@ -1044,12 +1044,12 @@ function editTask(id) {
   openSidePanel(); renderKanban();
   setTimeout(() => {
     let greeting = `Editing "${task.name}".\n\nCurrent configuration:\n• Category: ${task.category}`;
-    greeting += `\n• Visibility: ${task.visibility === 'internal' ? 'Internall (not visible in order)' : 'User (visible in order)'}`;
-    if (task.externallApi) greeting += `\n• API external: ${task.externallApi.url}`;
-    if (task.script !== null && task.script !== undefined) greeting += `\n• Custom script: ativo`;
+    greeting += `\n• Visibility: ${task.visibility === 'internal' ? 'Internal (not visible in order)' : 'User (visible in order)'}`;
+    if (task.externalApi) greeting += `\n• API external: ${task.externalApi.url}`;
+    if (task.script !== null && task.script !== undefined) greeting += `\n• Custom script: active`;
     if (task.mcpConfig) greeting += `\n• MCP: ${task.mcpConfig.serverName} → ${task.mcpConfig.toolName||'tool not configured'}`;
-    if (task.agentConfig) greeting += `\n• Agente AI: ${task.agentConfig.agentIcon} ${task.agentConfig.agentName}`;
-    greeting += '\n\nO que deseja alterar?';
+    if (task.agentConfig) greeting += `\n• AI Agent: ${task.agentConfig.agentIcon} ${task.agentConfig.agentName}`;
+    greeting += '\n\nWhat would you like to change?';
     addCMsg('ai', greeting);
     renderCSuggs(['Rename','Toggle visibility','MCP Integration','AI Workspace Agent','Custom script']);
   }, 200);
@@ -1059,7 +1059,7 @@ function refreshEditPreview() {
   const ep = document.getElementById('edit-preview'); if (!ep) return;
   const dot = `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${editDraft.color||'#0c6fcd'};margin-right:5px;vertical-align:middle;flex-shrink:0"></span>`;
   const visHtml = editDraft.visibility === 'internal'
-    ? `<span style="font-size:10px;padding:1px 5px;border-radius:3px;background:#f5f3ff;border:1px solid #e9d5ff;color:#7c3aed;font-weight:500">🔒 Internalll</span>`
+    ? `<span style="font-size:10px;padding:1px 5px;border-radius:3px;background:#f5f3ff;border:1px solid #e9d5ff;color:#7c3aed;font-weight:500">🔒 Internal</span>`
     : `<span style="font-size:10px;padding:1px 5px;border-radius:3px;background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;font-weight:500">👤 User</span>`;
   ep.innerHTML = `
     <div style="display:flex;align-items:center;gap:4px;font-weight:700;color:#1a1a1a;margin-bottom:5px;flex-wrap:wrap">
@@ -1069,9 +1069,9 @@ function refreshEditPreview() {
     <div style="color:#555;font-size:11.5px;margin-bottom:3px"><span style="font-weight:500">Cat:</span> ${editDraft.category||'—'}</div>
     <div style="font-size:11.5px;line-height:1.8"><span style="font-weight:500">Visibility:</span> ${visHtml}</div>
     ${editDraft.script!==null&&editDraft.script!==undefined?'<div style="color:#7c3aed;font-size:10.5px;margin-top:3px">📜 Custom script ativo</div>':''}
-    ${editDraft.externallApi?`<div style="color:#0891b2;font-size:10.5px;margin-top:2px">🌐 ${editDraft.externallApi.method} ${editDraft.externallApi.url||'(URL not defined)'}</div>`:''}
+    ${editDraft.externalApi?`<div style="color:#0891b2;font-size:10.5px;margin-top:2px">🌐 ${editDraft.externalApi.method} ${editDraft.externalApi.url||'(URL not defined)'}</div>`:''}
     ${editDraft.mcpConfig?`<div style="color:#15803d;font-size:10.5px;margin-top:2px">🔌 MCP: ${editDraft.mcpConfig.serverName} → <code style="font-family:monospace">${editDraft.mcpConfig.toolName||'(tool not selected)'}</code></div>`:''}
-    ${editDraft.agentConfig?`<div style="color:#7c3aed;font-size:10.5px;margin-top:2px">${editDraft.agentConfig.agentIcon} Agente: ${editDraft.agentConfig.agentName}</div>`:''}`;
+    ${editDraft.agentConfig?`<div style="color:#7c3aed;font-size:10.5px;margin-top:2px">${editDraft.agentConfig.agentIcon} Agent: ${editDraft.agentConfig.agentName}</div>`:''}`;
 }
 
 function sendEditChat() {
@@ -1086,7 +1086,7 @@ function processEditIntent(text) {
   const lower = text.toLowerCase();
   const idleSuggs = ['Rename','Toggle visibility','MCP Integration','AI Workspace Agent','Save and close'];
 
-  if (lower === 'salvar e fechar' || lower === 'salvar') { applyEditDraft(); return; }
+  if (lower === 'salvar e fechar' || lower === 'salvar' || lower === 'save and close' || lower === 'save') { applyEditDraft(); return; }
 
   if (editChatState === 'rename') {
     editDraft.name = text; editChatState = 'idle'; refreshEditPreview();
@@ -1105,10 +1105,10 @@ function processEditIntent(text) {
     }, 500);
 
   } else if (editChatState === 'script-review') {
-    if (lower.includes('remover') || lower.includes('excluir') || lower.includes('cancelar')) {
+    if (lower.includes('remover') || lower.includes('remove') || lower.includes('excluir') || lower.includes('delete') || lower.includes('cancel')) {
       editDraft.script = null; editChatState = 'idle'; refreshEditPreview();
       setTimeout(() => { addCMsg('ai', '✓ Script removed. Any other changes?'); renderCSuggs(['Toggle visibility','API external','Save and close']); }, 350);
-    } else if (lower.includes('ajustar') || lower.includes('nova') || lower.includes('reescrever') || lower.includes('mudar')) {
+    } else if (lower.includes('ajustar') || lower.includes('adjust') || lower.includes('nova') || lower.includes('reescrever') || lower.includes('rewrite') || lower.includes('mudar') || lower.includes('change')) {
       editChatState = 'script-describe';
       setTimeout(() => { addCMsg('ai', "Describe again what the script should do and I'll generate an updated version."); }, 350);
     } else {
@@ -1118,46 +1118,46 @@ function processEditIntent(text) {
 
   } else if (editChatState === 'api-url') {
     const url = (text.startsWith('http') ? text : 'https://' + text).trim();
-    if (!editDraft.externallApi) editDraft.externallApi = {method:'POST', responseMapping:[]};
-    editDraft.externallApi.url = url; editChatState = 'api-method'; refreshEditPreview();
+    if (!editDraft.externalApi) editDraft.externalApi = {method:'POST', responseMapping:[]};
+    editDraft.externalApi.url = url; editChatState = 'api-method'; refreshEditPreview();
     setTimeout(() => { addCMsg('ai', `URL: ${url}\n\nWhat is the HTTP method for this request?`); renderCSuggs(['POST','GET','PUT','PATCH']); }, 350);
 
   } else if (editChatState === 'api-method') {
     const method = text.toUpperCase();
-    if (editDraft.externallApi) editDraft.externallApi.method = ['GET','POST','PUT','PATCH'].includes(method) ? method : 'POST';
+    if (editDraft.externalApi) editDraft.externalApi.method = ['GET','POST','PUT','PATCH'].includes(method) ? method : 'POST';
     editChatState = 'api-mapping'; refreshEditPreview();
     setTimeout(() => {
-      addCMsg('ai', `Method: ${editDraft.externallApi.method}.\n\nNow map the response fields to context variables.\nFormat: var_name ← response.path\n\nExample:\n  invoice_number ← data.number\n  status ← data.status\n\nEnter one mapping at a time. Type "done" to finish.`);
+      addCMsg('ai', `Method: ${editDraft.externalApi.method}.\n\nNow map the response fields to context variables.\nFormat: var_name ← response.path\n\nExample:\n  invoice_number ← data.number\n  status ← data.status\n\nEnter one mapping at a time. Type "done" to finish.`);
     }, 350);
 
   } else if (editChatState === 'api-mapping') {
     if (['done','ok','fim','finalizar','nenhum','feito'].includes(lower)) {
       editChatState = 'idle'; refreshEditPreview();
-      const maps = editDraft.externallApi?.responseMapping||[];
+      const maps = editDraft.externalApi?.responseMapping||[];
       const outputVars = maps.filter(m=>m.key).map(m=>`{{api_${selectedTaskId}.${m.key}}}`);
-      let msg = `✓ API configurada com ${maps.length} mapping${maps.length!==1?'s':''}.`;
+      let msg = `✓ API configured with ${maps.length} mapping${maps.length!==1?'s':''}.`;
       if (outputVars.length) msg += `\n\nVariables generated for subsequent stages:\n${outputVars.map(v=>`• ${v}`).join('\n')}`;
       msg += '\n\nAny other changes?';
       setTimeout(() => { addCMsg('ai', msg); renderCSuggs(['Toggle visibility','Custom script','Save and close']); }, 350);
     } else {
       const match = text.match(/^([a-z_][a-z0-9_]*)\s*(?:←|<-|=|:)\s*(.+)$/i) || text.match(/^(\S+)\s+(\S+)$/);
       if (match) {
-        if (!editDraft.externallApi.responseMapping) editDraft.externallApi.responseMapping = [];
-        editDraft.externallApi.responseMapping.push({ key: match[1].trim(), path: match[2].trim() });
-        setTimeout(() => { addCMsg('ai', `✓ {{api_${selectedTaskId}.${match[1].trim()}}} ← ${match[2].trim()}\n\nAdicionado! Mais um mapping ou "done" para finalizar.`); }, 350);
+        if (!editDraft.externalApi.responseMapping) editDraft.externalApi.responseMapping = [];
+        editDraft.externalApi.responseMapping.push({ key: match[1].trim(), path: match[2].trim() });
+        setTimeout(() => { addCMsg('ai', `✓ {{api_${selectedTaskId}.${match[1].trim()}}} ← ${match[2].trim()}\n\nAdded! Another mapping or "done" to finish.`); }, 350);
       } else {
-        setTimeout(() => { addCMsg('ai', 'Formato no reconhecido. Use:\n  nome_variavel ← response.path\n\nExemplo: nf_numero ← data.number'); }, 350);
+        setTimeout(() => { addCMsg('ai', 'Format not recognized. Use:\n  variable_name ← response.path\n\nExample: invoice_number ← data.number'); }, 350);
       }
     }
 
   } else {
     // idle — intent detection
-    if (lower.includes('renomear') || lower === 'nome' || (lower.includes('nome') && lower.includes('mudar'))) {
+    if (lower.includes('renomear') || lower.includes('rename') || lower === 'nome' || lower === 'name' || (lower.includes('nome') && lower.includes('mudar'))) {
       editChatState = 'rename';
       setTimeout(() => { addCMsg('ai', `What should be the new name for stage "${editDraft.name}"?`); }, 350);
-    } else if (lower.includes('categoria') || lower.includes('produto')) {
+    } else if (lower.includes('categoria') || lower.includes('category') || lower.includes('produto') || lower.includes('product')) {
       editChatState = 'category';
-      setTimeout(() => { addCMsg('ai', `Category atual: "${editDraft.category}". Qual a nova?`); renderCSuggs(['Todos os produtos','Electronics','Fashion & Footwear','Food','B2B']); }, 350);
+      setTimeout(() => { addCMsg('ai', `Current category: "${editDraft.category}". What should it be?`); renderCSuggs(['All products','Electronics','Fashion & Footwear','Food','B2B']); }, 350);
     } else if (lower.includes('mcp') || lower === 'mcp integration' || lower === 'mcp integration') {
       showMcpSelector();
     } else if (lower.includes('workspace') || lower === 'agente ai workspace' || lower === 'agente ai') {
@@ -1165,7 +1165,7 @@ function processEditIntent(text) {
     } else if (lower.includes('visib') || lower.includes('internal') || lower.includes('user') || lower.includes('user') || lower.includes('toggle visib')) {
       editDraft.visibility = editDraft.visibility === 'internal' ? 'user' : 'internal';
       refreshEditPreview();
-      setTimeout(() => { addCMsg('ai', `Visibility alterada para: ${editDraft.visibility === 'internal' ? '🔒 Internalll' : '👤 User'}`); renderCSuggs(['Rename','Toggle visibility','MCP Integration','AI Workspace Agent','Custom script']); }, 350);
+      setTimeout(() => { addCMsg('ai', `Visibility changed to: ${editDraft.visibility === 'internal' ? '🔒 Internal' : '👤 User'}`); renderCSuggs(['Rename','Toggle visibility','MCP Integration','AI Workspace Agent','Custom script']); }, 350);
     } else if (/\baction\b|\bactions\b|\baction\b|\bactions\b/.test(lower) || lower.includes('configurar action') || lower.includes('configurar actions')) {
       setTimeout(() => { addCMsg('ai', 'The concept of actions was replaced by Visibility (controls whether the task is visible in the order for the customer) and MCP / External API integrations.\n\nUse "Toggle visibility" to switch between Internal and User.'); renderCSuggs(idleSuggs); }, 350);
     } else if (lower.includes('script') || lower.includes('code') || lower.includes('code') || lower.includes('custom')) {
@@ -1174,34 +1174,34 @@ function processEditIntent(text) {
         const hasScript = editDraft.script !== null && editDraft.script !== undefined;
         addCMsg('ai', hasScript
           ? `Script currently active. Describe what the new script should do and I'll generate an updated version:`
-          : `Descreva o que o script deve fazer.\n\nExemplos:\n• "calcular desconto por valor do pedido"\n• "validar limit de credit B2B"\n• "verificar estoque e sugerir action"\n\nO agente vai gerar o code.`);
+          : `Describe what the script should do.\n\nExamples:\n• "calculate discount by order value"\n• "validate B2B credit limit"\n• "check stock and suggest action"\n\nThe agent will generate the code.`);
       }, 350);
     } else if (lower.includes('api') || lower.includes('external') || lower.includes('webhook') || lower === 'integration' || lower === 'integration') {
       editChatState = 'api-url';
       setTimeout(() => {
-        addCMsg('ai', editDraft.externallApi
-          ? `API atual: ${editDraft.externallApi.method} ${editDraft.externallApi.url}\n\nQual a nova URL da API?`
-          : `Qual a URL da API external que esta etapa deve chamar?`);
+        addCMsg('ai', editDraft.externalApi
+          ? `Current API: ${editDraft.externalApi.method} ${editDraft.externalApi.url}\n\nWhat is the new API URL?`
+          : `What is the URL of the external API this stage should call?`);
       }, 350);
     } else if (lower.includes('agente')) {
       showAgentWsSelector();
     } else if ((lower.includes('remover') || lower.includes('excluir')) && lower.includes('mcp')) {
       editDraft.mcpConfig = null; refreshEditPreview();
-      setTimeout(() => { addCMsg('ai', '✓ MCP Integration removida. Any other changes?'); renderCSuggs(idleSuggs); }, 350);
+      setTimeout(() => { addCMsg('ai', '✓ MCP integration removed. Any other changes?'); renderCSuggs(idleSuggs); }, 350);
     } else if ((lower.includes('remover') || lower.includes('excluir')) && (lower.includes('agente') || lower.includes('ai'))) {
       editDraft.agentConfig = null; refreshEditPreview();
-      setTimeout(() => { addCMsg('ai', '✓ Agente AI removido. Any other changes?'); renderCSuggs(idleSuggs); }, 350);
+      setTimeout(() => { addCMsg('ai', '✓ AI Agent removed. Any other changes?'); renderCSuggs(idleSuggs); }, 350);
     } else if (lower.includes('color') || lower.includes('color da etapa')) {
       showColorSelector();
-    } else if (lower.includes('desativar') || lower.includes('inativar')) {
+    } else if (lower.includes('desativar') || lower.includes('inativar') || lower.includes('deactivate') || lower.includes('disable')) {
       editDraft.active = false; refreshEditPreview();
-      setTimeout(() => { addCMsg('ai', '✓ Etapa marcada como inativa. Any other changes?'); renderCSuggs(['Activate stage','Rename','Save and close']); }, 350);
-    } else if (lower.includes('ativar') && !lower.includes('desativar')) {
+      setTimeout(() => { addCMsg('ai', '✓ Stage marked as inactive. Any other changes?'); renderCSuggs(['Activate stage','Rename','Save and close']); }, 350);
+    } else if ((lower.includes('ativar') || lower.includes('activate') || lower.includes('enable')) && !lower.includes('desativar') && !lower.includes('deactivate') && !lower.includes('disable')) {
       editDraft.active = true; refreshEditPreview();
-      setTimeout(() => { addCMsg('ai', '✓ Etapa marcada como ativa. Any other changes?'); renderCSuggs(['Rename','Toggle visibility','Save and close']); }, 350);
+      setTimeout(() => { addCMsg('ai', '✓ Stage marked as active. Any other changes?'); renderCSuggs(['Rename','Toggle visibility','Save and close']); }, 350);
     } else {
       setTimeout(() => {
-        addCMsg('ai', 'Posso ajudar com:\n• Rename the stage\n• Toggle visibility (Internal / User)\n• Criar custom script (com auto-generation)\n• Configurar API external + mapping\n• MCP Integration (external tools via Model Context Protocol)\n• AI Workspace Agent (agents published in AI Workspace)\n• Change color\n• Activate / deactivate\n\nO que deseja?');
+        addCMsg('ai', 'I can help with:\n• Rename the stage\n• Toggle visibility (Internal / User)\n• Create custom script (with auto-generation)\n• Configure external API + mapping\n• MCP Integration (external tools via Model Context Protocol)\n• AI Workspace Agent (agents published in AI Workspace)\n• Change color\n• Activate / deactivate\n\nWhat would you like to change?');
         renderCSuggs(idleSuggs);
       }, 350);
     }
@@ -1213,7 +1213,7 @@ function processEditIntent(text) {
 function showColorSelector() {
   const colors = ['#0c6fcd','#7c3aed','#0891b2','#059669','#d97706','#dc2626','#6366f1','#0f766e'];
   setTimeout(() => {
-    addCMsg('ai', 'Escolha uma color para a etapa:');
+    addCMsg('ai', 'Choose a color for the stage:');
     const msgs = document.getElementById('cm-msgs'); if (!msgs) return;
     const div = document.createElement('div');
     div.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;margin-top:5px;padding:8px 10px;background:#f9f9f9;border:1px solid #e8e8e8;border-radius:6px';
@@ -1227,20 +1227,20 @@ function selectEditColor(color, el) {
   document.querySelectorAll('[onclick^="selectEditColor"]').forEach(d => d.style.border = '3px solid transparent');
   el.style.border = '3px solid #1a1a1a';
   editChatState = 'idle'; refreshEditPreview();
-  setTimeout(() => { addCMsg('ai', '✓ Cor atualizada! Any other changes?'); renderCSuggs(['Rename','Toggle visibility','Save and close']); }, 350);
+  setTimeout(() => { addCMsg('ai', '✓ Color updated! Any other changes?'); renderCSuggs(['Rename','Toggle visibility','Save and close']); }, 350);
 }
 
 function generateScript(description) {
   const lower = description.toLowerCase();
   const d = description;
-  if (lower.includes('desconto')) return `// ${d}\nconst total = context.total || 0;\ncontext.discount = total > 500 ? 0.10 : total > 200 ? 0.05 : 0;\ncontext.totalFinal = total * (1 - context.discount);\ncontext.descontoAplicado = context.discount > 0;`;
-  if (lower.includes('cpf') || lower.includes('documento')) return `// ${d}\nconst cpf = (context.cpf || '').replace(/\\D/g,'');\ncontext.cpf_valido = cpf.length === 11 && !/^(\\d)\\1{10}$/.test(cpf);\ncontext.cpf_status = context.cpf_valido ? 'valido' : 'invalido';`;
+  if (lower.includes('desconto') || lower.includes('discount')) return `// ${d}\nconst total = context.total || 0;\ncontext.discount = total > 500 ? 0.10 : total > 200 ? 0.05 : 0;\ncontext.totalFinal = total * (1 - context.discount);\ncontext.descontoAplicado = context.discount > 0;`;
+  if (lower.includes('cpf') || lower.includes('documento') || lower.includes('document')) return `// ${d}\nconst cpf = (context.cpf || '').replace(/\\D/g,'');\ncontext.cpf_valido = cpf.length === 11 && !/^(\\d)\\1{10}$/.test(cpf);\ncontext.cpf_status = context.cpf_valido ? 'valido' : 'invalido';`;
   if (lower.includes('credit') || lower.includes('credit') || lower.includes('limit')) return `// ${d}\nconst total = context.total || 0;\nconst limit = context.limit_credit || 10000;\ncontext.credit_aprovado = total <= limit;\ncontext.saldo_restante = limit - total;\ncontext.credit_status = context.credit_aprovado ? 'aprovado' : 'excede_limit';`;
-  if (lower.includes('frete') || lower.includes('cep')) return `// ${d}\nconst cep = (context.cep || '').replace(/\\D/g,'');\nconst uf = cep.startsWith('0')||cep.startsWith('1') ? 'SP' : cep.startsWith('2') ? 'RJ' : 'Outros';\ncontext.regiao_entrega = uf;\ncontext.frete_estimado = uf==='SP' ? 15 : uf==='RJ' ? 25 : 40;\ncontext.prazo_dias = uf==='SP' ? 2 : 4;`;
-  if (lower.includes('estoque') || lower.includes('quantidade')) return `// ${d}\nconst qtd = context.quantidade || 1;\nconst disp = parseFloat(context['validarEstoque.disponivel'] || 0);\ncontext.pode_separar = disp >= qtd;\ncontext.qtd_faltante = Math.max(0, qtd - disp);\ncontext.action_recomendada = context.pode_separar ? 'separar' : 'realocar';`;
-  if (lower.includes('nota') || lower.includes('fiscal') || lower.includes('nf')) return `// ${d}\ncontext.nf_serie = '1';\ncontext.nf_numero_seq = Date.now();\ncontext.nf_emitida_em = new Date().toISOString();\ncontext.nf_ambiente = 'producao';\ncontext.nf_pronta = true;`;
+  if (lower.includes('frete') || lower.includes('cep') || lower.includes('shipping') || lower.includes('freight') || lower.includes('zip')) return `// ${d}\nconst cep = (context.cep || '').replace(/\\D/g,'');\nconst uf = cep.startsWith('0')||cep.startsWith('1') ? 'SP' : cep.startsWith('2') ? 'RJ' : 'Outros';\ncontext.regiao_entrega = uf;\ncontext.frete_estimado = uf==='SP' ? 15 : uf==='RJ' ? 25 : 40;\ncontext.prazo_dias = uf==='SP' ? 2 : 4;`;
+  if (lower.includes('estoque') || lower.includes('stock') || lower.includes('inventory') || lower.includes('quantidade') || lower.includes('quantity')) return `// ${d}\nconst qtd = context.quantidade || 1;\nconst disp = parseFloat(context['validarEstoque.disponivel'] || 0);\ncontext.pode_separar = disp >= qtd;\ncontext.qtd_faltante = Math.max(0, qtd - disp);\ncontext.action_recomendada = context.pode_separar ? 'separar' : 'realocar';`;
+  if (lower.includes('nota') || lower.includes('fiscal') || lower.includes('nf') || lower.includes('invoice')) return `// ${d}\ncontext.nf_serie = '1';\ncontext.nf_numero_seq = Date.now();\ncontext.nf_emitida_em = new Date().toISOString();\ncontext.nf_ambiente = 'producao';\ncontext.nf_pronta = true;`;
   if (lower.includes('email') || lower.includes('notif') || lower.includes('aviso')) return `// ${d}\ncontext.email_assunto = \`Pedido \${context.pedido_id||''} — update\`;\ncontext.email_template = 'status_update';\ncontext.email_prioridade = context.bloqueado ? 'alta' : 'normal';\ncontext.email_enviar = true;`;
-  if (lower.includes('sla') || lower.includes('prazo') || lower.includes('tempo')) return `// ${d}\nconst criado = new Date(context.criado_em || Date.now());\ncontext.sla_horas = (Date.now() - criado) / 36e5;\ncontext.sla_ok = context.sla_horas <= 4;\ncontext.sla_status = context.sla_ok ? 'dentro_do_prazo' : 'atrasado';`;
+  if (lower.includes('sla') || lower.includes('prazo') || lower.includes('tempo') || lower.includes('deadline') || lower.includes('time')) return `// ${d}\nconst criado = new Date(context.criado_em || Date.now());\ncontext.sla_horas = (Date.now() - criado) / 36e5;\ncontext.sla_ok = context.sla_horas <= 4;\ncontext.sla_status = context.sla_ok ? 'dentro_do_prazo' : 'atrasado';`;
   return `// ${d}\n// TODO: implement specific logic\ncontext.result = null;\ncontext.status = 'pending';\n\n// Variables available via context.*\n// e.g.: context.order_id, context.total, context.customer_email`;
 }
 
@@ -1254,7 +1254,7 @@ function applyEditDraft() {
   task.active      = editDraft.active;
   task.visibility  = editDraft.visibility || 'user';
   task.script      = editDraft.script !== undefined ? editDraft.script : null;
-  task.externallApi = editDraft.externallApi;
+  task.externalApi = editDraft.externalApi;
   task.mcpConfig   = editDraft.mcpConfig || null;
   task.agentConfig = editDraft.agentConfig || null;
   closeSidePanel(); renderWorkflowBoard();
@@ -1269,7 +1269,7 @@ function setTaskColor(id, color) {
 // ── MCP Selector ──
 function showMcpSelector() {
   setTimeout(() => {
-    addCMsg('ai', 'Selecione um servidor MCP para integrar com esta etapa:');
+    addCMsg('ai', 'Select an MCP server to integrate with this stage:');
     const msgs = document.getElementById('cm-msgs'); if (!msgs) return;
     const div = document.createElement('div');
     div.className = 'integration-selector';
@@ -1293,7 +1293,7 @@ function selectMcpServer(serverId) {
   addCMsg('user', server.name);
   if (activePanel === 'edit') refreshEditPreview();
   setTimeout(() => {
-    addCMsg('ai', `${server.icon} ${server.name} selecionado! Qual ferramenta (tool) esta etapa deve usar?`);
+    addCMsg('ai', `${server.icon} ${server.name} selected! Which tool should this stage use?`);
     const msgs = document.getElementById('cm-msgs'); if (!msgs) return;
     const div = document.createElement('div');
     div.className = 'integration-selector';
@@ -1331,7 +1331,7 @@ function selectMcpTool(toolId) {
 // ── AI Workspace Agent Selector ──
 function showAgentWsSelector() {
   setTimeout(() => {
-    addCMsg('ai', 'Selecione um agente publicado no AI Workspace para integrar com esta etapa:');
+    addCMsg('ai', 'Select an agent published in AI Workspace to integrate with this stage:');
     const msgs = document.getElementById('cm-msgs'); if (!msgs) return;
     const div = document.createElement('div');
     div.className = 'integration-selector';
@@ -1396,16 +1396,16 @@ function openSplitPanel(taskId) {
   const found = findSubTask(taskId); if (!found) return;
   const task = found.task;
   activePanel = 'split'; splitTaskId = taskId; splitDraft = { name1:'', name2:'' }; splitStep = 0;
-  document.getElementById('sp-title').textContent = '✂ Dividir Etapa com AI';
+  document.getElementById('sp-title').textContent = '✂ Split Stage with AI';
   document.getElementById('sp-body').innerHTML = `
     <div style="padding:10px 12px;background:#fef9c3;border:1px solid #fde68a;border-radius:6px;font-size:12px;color:#854d0e;margin-bottom:4px">
-      <strong>Dividindo:</strong> ${task.name}
+      <strong>Splitting:</strong> ${task.name}
     </div>
     <div class="cm-msgs" id="cm-msgs"></div>
     <div class="cm-suggestions" id="cm-suggestions"></div>
     <div class="task-preview-mini" id="task-preview-mini"><strong>Split result</strong>
-      <div class="tpm-row" id="prev-part1">1ª parte: —</div>
-      <div class="tpm-row" id="prev-part2">2ª parte: —</div>
+      <div class="tpm-row" id="prev-part1">Part 1: —</div>
+      <div class="tpm-row" id="prev-part2">Part 2: —</div>
     </div>
     <div class="cm-input-row">
       <input class="cm-input" id="cm-input" placeholder="Type..." onkeydown="if(event.key==='Enter')sendSplitChat()">
@@ -1415,7 +1415,7 @@ function openSplitPanel(taskId) {
     <button class="btn btn-secondary" style="flex:1;justify-content:center" onclick="closeSidePanel()">Cancel</button>
     <button class="btn btn-primary" id="split-btn" style="flex:1;justify-content:center;opacity:.4;cursor:not-allowed" disabled onclick="requestSplitConfirm()">Confirm Split</button>`;
   openSidePanel();
-  setTimeout(() => addCMsg('ai', `Vou ajudar a dividir "${task.name}" em duas etapas.\n\nWhat do you want to call the first part?`), 200);
+  setTimeout(() => addCMsg('ai', `I'll help split "${task.name}" into two stages.\n\nWhat do you want to call the first part?`), 200);
 }
 
 function sendSplitChat() {
@@ -1426,14 +1426,14 @@ function sendSplitChat() {
   if (splitStep === 0) {
     splitDraft.name1 = text; splitStep = 1;
     const p1 = document.getElementById('prev-part1');
-    if (p1) { p1.innerHTML = `1ª parte: <span>${text}</span>`; document.getElementById('task-preview-mini').style.display='block'; }
+    if (p1) { p1.innerHTML = `Part 1: <span>${text}</span>`; document.getElementById('task-preview-mini').style.display='block'; }
     setTimeout(() => addCMsg('ai', `"${text}" — great! And the second part of the stage?`), 400);
   } else if (splitStep === 1) {
     splitDraft.name2 = text; splitStep = 2;
     const p2 = document.getElementById('prev-part2');
-    if (p2) p2.innerHTML = `2ª parte: <span>${text}</span>`;
+    if (p2) p2.innerHTML = `Part 2: <span>${text}</span>`;
     setTimeout(() => {
-      addCMsg('ai', `Perfeito! O workflow will look like this:\n• "${splitDraft.name1}" → "${splitDraft.name2}"\n\nBoth will inherit the supplier "${task?.supplier}" e podem ser editadas depois. Confirm the split?`);
+      addCMsg('ai', `Perfect! The workflow will look like this:\n• "${splitDraft.name1}" → "${splitDraft.name2}"\n\nBoth will inherit the supplier "${task?.supplier}" and can be edited later. Confirm the split?`);
       const btn = document.getElementById('split-btn');
       if (btn) { btn.disabled=false; btn.style.opacity='1'; btn.style.cursor='pointer'; }
     }, 450);
@@ -1443,9 +1443,9 @@ function sendSplitChat() {
 function requestSplitConfirm() {
   const taskName = findSubTask(splitTaskId)?.task?.name || '';
   document.getElementById('modal-split-body').innerHTML =
-    `Dividir <strong>${taskName}</strong> em:<br><br>
-     <strong>1ª parte:</strong> ${splitDraft.name1}<br>
-     <strong>2ª parte:</strong> ${splitDraft.name2}`;
+    `Split <strong>${taskName}</strong> into:<br><br>
+     <strong>Part 1:</strong> ${splitDraft.name1}<br>
+     <strong>Part 2:</strong> ${splitDraft.name2}`;
   openModal('modal-split-confirm');
 }
 
@@ -1460,7 +1460,7 @@ function confirmSplit() {
   stage.tasks.splice(idx, 1, task1, task2);
   closeSidePanel();
   renderWorkflowBoard();
-  showSuccessModal('Tarefa dividida!', `"${task.name}" foi dividida em "${splitDraft.name1}" e "${splitDraft.name2}".`);
+  showSuccessModal('Task split!', `"${task.name}" was split into "${splitDraft.name1}" and "${splitDraft.name2}".`);
 }
 
 // ── Create panel ──
@@ -1473,7 +1473,7 @@ function openCreatePanelAt(pos) {
     <div class="cm-suggestions" id="cm-suggestions"></div>
     <div class="task-preview-mini" id="task-preview-mini">
       <strong>Preview</strong>
-      <div class="tpm-row" id="prev-name">Nome: —</div>
+      <div class="tpm-row" id="prev-name">Name: —</div>
       <div class="tpm-row" id="prev-cat">Category: —</div>
     </div>
     <div class="cm-input-row">
@@ -1482,21 +1482,21 @@ function openCreatePanelAt(pos) {
     </div>`;
   document.getElementById('sp-footer').innerHTML = `
     <button class="btn btn-secondary" style="flex:1;justify-content:center" onclick="closeSidePanel()">Cancel</button>
-    <button class="btn btn-primary" id="create-btn" style="flex:1;justify-content:center;opacity:.4;cursor:not-allowed" disabled onclick="createTask()">Criar Etapa</button>`;
+    <button class="btn btn-primary" id="create-btn" style="flex:1;justify-content:center;opacity:.4;cursor:not-allowed" disabled onclick="createTask()">Create Stage</button>`;
   openSidePanel();
   setTimeout(() => { addCMsg('ai', stageChatFlows[0].ai); renderCSuggs(stageChatFlows[0].sugg); }, 200);
 }
 
 const stageChatFlows = [
   {ai:'What do you want to call this new stage?', field:'name', sugg:['Returns Triage','B2B Approval','Quality Control','Tax Validation']},
-  {ai:'Em quais categorias de produtos essa etapa se aplica?', field:'category', sugg:['Todos os produtos','Electronics','Fashion & Footwear','Food','B2B']},
+  {ai:'Which product categories does this stage apply to?', field:'category', sugg:['All products','Electronics','Fashion & Footwear','Food','B2B']},
   {ai:null, field:null, sugg:['Confirm and create']},
 ];
 
 const taskChatFlows = [
   {ai:'What do you want to call this task?', field:'name', sugg:['Validate Stock','Issue Invoice','Capture Payment','Send Tracking','Quality Check']},
   {ai:'Should this task be visible in the order or is it internal?', field:'visibility', sugg:['Visible in order','Internal']},
-  {ai:null, field:null, sugg:['Criar tarefa','Adicionar API external','Add checkpoints']},
+  {ai:null, field:null, sugg:['Create task','Add external API','Add checkpoints']},
 ];
 
 function addCMsg(who, text) {
@@ -1532,7 +1532,7 @@ function sendStageChat() {
       const next = stageChatFlows[chatStep];
       if (chatStep === stageChatFlows.length - 1) {
         // confirmation step
-        addCMsg('ai', `Perfeito! Resumo da etapa:\n• Nome: ${newTaskDraft.name||'—'}\n• Category: ${newTaskDraft.category||'—'}\n\nDeseja adicionar integractions ou create now?`);
+        addCMsg('ai', `Perfect! Stage summary:\n• Name: ${newTaskDraft.name||'—'}\n• Category: ${newTaskDraft.category||'—'}\n\nWould you like to add integrations or create now?`);
         renderCSuggs(['Create now','MCP Integration','AI Workspace Agent','API external']);
       } else {
         if (next.ai) addCMsg('ai', next.ai);
@@ -1542,18 +1542,18 @@ function sendStageChat() {
       // post-flow: integration or create
       const lower = text.toLowerCase();
       if (lower === 'create now' || lower === 'create' || lower === 'skip' || lower === 'no' || lower === 'no') {
-        addCMsg('ai', 'Tudo certo! Clique em "Criar Etapa" para adicionar ao workflow.');
+        addCMsg('ai', 'All set! Click "Create Stage" to add it to the workflow.');
         const btn = document.getElementById('create-btn');
         if (btn) { btn.disabled=false; btn.style.opacity='1'; btn.style.cursor='pointer'; }
         renderCSuggs([]);
       } else if (lower.includes('mcp')) {
         showMcpSelector();
-      } else if (lower.includes('agente') || lower.includes('workspace')) {
+      } else if (lower.includes('agente') || lower.includes('agent') || lower.includes('workspace')) {
         showAgentWsSelector();
       } else if (lower.includes('api')) {
         showApiConfigInline();
       } else {
-        addCMsg('ai', 'Deseja adicionar alguma integration ou create a etapa agora?');
+        addCMsg('ai', 'Would you like to add an integration or create the stage now?');
         renderCSuggs(['Create now','MCP Integration','AI Workspace Agent','API external']);
       }
     }
@@ -1584,13 +1584,13 @@ function sendTaskChat() {
       renderCSuggs(taskChatFlows[1].sugg);
     } else if (chatStep === 2) {
       // After visibility: ask about extras
-      addCMsg('ai', `Tarefa "${newTaskDraft.name}" configurada!\n• Visibility: ${newTaskDraft.visibility === 'internal' ? '🔒 Internalll' : '👤 User'}\n\nDeseja adicionar checkpoints, API external ou create now?`);
-      renderCSuggs(['Criar tarefa','Add checkpoints','Adicionar API external','MCP Integration']);
+      addCMsg('ai', `Task "${newTaskDraft.name}" configured!\n• Visibility: ${newTaskDraft.visibility === 'internal' ? '🔒 Internal' : '👤 User'}\n\nWould you like to add checkpoints, external API, or create now?`);
+      renderCSuggs(['Create task','Add checkpoints','Add external API','MCP Integration']);
     } else {
       // extras
       const lower = text.toLowerCase();
-      if (lower === 'create tarefa' || lower === 'create' || lower === 'create now') {
-        addCMsg('ai', 'Tudo certo! Clique em "Criar Tarefa" para finalizar.');
+      if (lower === 'create tarefa' || lower === 'criar tarefa' || lower === 'create task' || lower === 'create' || lower === 'create now') {
+        addCMsg('ai', 'All set! Click "Create Task" to finish.');
         const btn = document.getElementById('create-btn');
         if (btn) { btn.disabled=false; btn.style.opacity='1'; btn.style.cursor='pointer'; }
         renderCSuggs([]);
@@ -1600,11 +1600,11 @@ function sendTaskChat() {
         showApiConfigInline();
       } else if (lower.includes('mcp')) {
         showMcpSelector();
-      } else if (lower.includes('agente') || lower.includes('workspace')) {
+      } else if (lower.includes('agente') || lower.includes('agent') || lower.includes('workspace')) {
         showAgentWsSelector();
       } else {
-        addCMsg('ai', 'Deseja create a tarefa ou adicionar mais configuractions?');
-        renderCSuggs(['Criar tarefa','Add checkpoints','Adicionar API external','MCP Integration']);
+        addCMsg('ai', 'Would you like to create the task or add more configuration?');
+        renderCSuggs(['Create task','Add checkpoints','Add external API','MCP Integration']);
       }
     }
   }, 400);
@@ -1627,10 +1627,10 @@ function createTask() {
     tasks: [{
       id: subId,
       name: newTaskDraft.name || 'New Stage',
-      supplier: newTaskDraft.supplier || 'A definir',
+      supplier: newTaskDraft.supplier || 'To be defined',
       category: newTaskDraft.category || 'All',
       active: true, visibility: 'user', script: null,
-      externallApi: newTaskDraft.externallApi || null,
+      externalApi: newTaskDraft.externalApi || null,
       mcpConfig: newTaskDraft.mcpConfig || null,
       agentConfig: newTaskDraft.agentConfig || null,
       contextOutput: [],
@@ -1642,7 +1642,7 @@ function createTask() {
   if (pos > 0) WF_EDGES.push({id:'e'+Date.now(), from:WF_TASKS[pos-1].id, to:newStage.id, active:true});
   if (pos < WF_TASKS.length-1) WF_EDGES.push({id:'e'+(Date.now()+1), from:newStage.id, to:WF_TASKS[pos+1].id, active:true});
   closeSidePanel(); renderWorkflowBoard();
-  showSuccessModal('Etapa criada!', `"${newStage.name}" foi adicionada ao workflow.`);
+  showSuccessModal('Stage created!', `"${newStage.name}" was added to the workflow.`);
 }
 
 // ── Edge modal ──
@@ -1669,11 +1669,11 @@ function closeSidePanel() { document.getElementById('side-panel').classList.add(
 function renameStage(stageId) {
   const stage = WF_TASKS.find(s => s.id === stageId); if (!stage) return;
   activePanel = 'rename';
-  document.getElementById('sp-title').textContent = 'Rename Etapa';
+  document.getElementById('sp-title').textContent = 'Rename Stage';
   document.getElementById('sp-body').innerHTML = `
     <div style="padding:12px 0">
-      <label style="font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:6px">Nome da etapa</label>
-      <input id="rename-input" class="cm-input" style="width:100%;box-sizing:border-box" value="${stage.name}" placeholder="Nome da etapa">
+      <label style="font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:6px">Stage name</label>
+      <input id="rename-input" class="cm-input" style="width:100%;box-sizing:border-box" value="${stage.name}" placeholder="Stage name">
     </div>`;
   document.getElementById('sp-footer').innerHTML = `
     <button class="btn btn-secondary" style="flex:1;justify-content:center" onclick="closeSidePanel()">Cancel</button>
@@ -1693,7 +1693,7 @@ function addTaskToStage(stageId) {
   activePanel = 'create-task';
   chatStep = 0;
   newTaskDraft = { stageId, name:'', supplier:'', category:'', visibility:'user', mcpConfig:null, agentConfig:null };
-  document.getElementById('sp-title').textContent = '✚ Nova Tarefa';
+  document.getElementById('sp-title').textContent = '✚ New Task';
   document.getElementById('sp-body').innerHTML = `
     <div id="task-preview-mini" style="display:none;background:#f9f9fb;border-radius:6px;padding:10px 12px;font-size:12px;color:#555;line-height:1.7;border:1px solid #efefef">
       <div id="prev-name">Name: <span style="color:#1a1a1a;font-weight:600">—</span></div>
@@ -1707,7 +1707,7 @@ function addTaskToStage(stageId) {
     </div>`;
   document.getElementById('sp-footer').innerHTML = `
     <button class="btn btn-secondary" style="flex:1;justify-content:center" onclick="closeSidePanel()">Cancel</button>
-    <button class="btn btn-primary" style="flex:1;justify-content:center;opacity:.4;cursor:not-allowed" id="create-btn" disabled onclick="createSubTask()">Criar Tarefa</button>`;
+    <button class="btn btn-primary" style="flex:1;justify-content:center;opacity:.4;cursor:not-allowed" id="create-btn" disabled onclick="createSubTask()">Create Task</button>`;
   openSidePanel();
   setTimeout(() => {
     addCMsg('ai', taskChatFlows[0].ai);
@@ -1720,18 +1720,18 @@ function createSubTask() {
   const newId = 't' + Date.now();
   if (!stage.tasks) stage.tasks = [];
   stage.tasks.push({
-    id: newId, name: newTaskDraft.name || 'Nova Tarefa',
-    supplier: newTaskDraft.supplier || 'A definir',
+    id: newId, name: newTaskDraft.name || 'New Task',
+    supplier: newTaskDraft.supplier || 'To be defined',
     category: newTaskDraft.category || 'All',
     active: true, visibility: newTaskDraft.visibility || 'user', script: null,
-    externallApi: newTaskDraft.externallApi || null,
+    externalApi: newTaskDraft.externalApi || null,
     mcpConfig: newTaskDraft.mcpConfig || null,
     agentConfig: newTaskDraft.agentConfig || null,
     contextOutput: [],
     checkpoints: newTaskDraft.checkpoints || [],
   });
   closeSidePanel(); renderWorkflowBoard();
-  showSuccessModal('Tarefa criada!', `"${newTaskDraft.name||'Nova Tarefa'}" foi adicionada à etapa "${stage.name}".`);
+  showSuccessModal('Task created!', `"${newTaskDraft.name||'New Task'}" was added to stage "${stage.name}".`);
 }
 
 // ── Modal helpers ──
@@ -1789,84 +1789,84 @@ function getContextSuppliers(taskName) {
 
 function showSupplierCategoryPicker() {
   addCMsg('ai', 'What supplier category do you need to look up?');
-  renderCSuggs(['Payment','Picking/Warehouse','Qualidade','Delivery/Transportadora','Nota Fiscal','Rastreamento','Atendimento']);
+  renderCSuggs(['Payment','Picking/Warehouse','Quality','Delivery/Carrier','Invoice','Tracking','Support']);
   newTaskDraft._supplierPickMode = true;
 }
 
 const MCP_SERVERS = [
   {id:'vtex-catalog', name:'VTEX Catalog', icon:'📚', description:'Access to product catalog, SKUs and categories',
    tools:[
-     {id:'get_product',        name:'get_product()',        desc:'Busca dados do produto por ID'},
-     {id:'update_sku_status',  name:'update_sku_status()',  desc:'Active ou desativa um SKU'},
+     {id:'get_product',        name:'get_product()',        desc:'Fetches product data by ID'},
+     {id:'update_sku_status',  name:'update_sku_status()',  desc:'Activates or deactivates a SKU'},
      {id:'list_categories',    name:'list_categories()',    desc:'Lists all catalog categories'},
    ]},
   {id:'vtex-logistics', name:'VTEX Logistics', icon:'🚚', description:'Query and update logistics and inventory data',
    tools:[
      {id:'get_inventory',      name:'get_inventory()',      desc:'Queries available inventory by SKU and warehouse'},
-     {id:'update_inventory',   name:'update_inventory()',   desc:'Atualiza quantidade em estoque'},
-     {id:'get_freight_values', name:'get_freight_values()', desc:'Calcula frete e prazo por CEP'},
+     {id:'update_inventory',   name:'update_inventory()',   desc:'Updates stock quantity'},
+     {id:'get_freight_values', name:'get_freight_values()', desc:'Calculates freight cost and delivery time by postal code'},
    ]},
-  {id:'vtex-payments', name:'VTEX Payments', icon:'💳', description:'Operactions de captura, cancelamento e reembolso',
+  {id:'vtex-payments', name:'VTEX Payments', icon:'💳', description:'Capture, cancellation and refund operations',
    tools:[
-     {id:'capture_payment',    name:'capture_payment()',    desc:'Captura pagamento autorizado'},
-     {id:'cancel_payment',     name:'cancel_payment()',     desc:'Cancela pagamento pendente'},
-     {id:'create_refund',      name:'create_refund()',      desc:'Cria reembolso total ou parcial'},
+     {id:'capture_payment',    name:'capture_payment()',    desc:'Captures an authorized payment'},
+     {id:'cancel_payment',     name:'cancel_payment()',     desc:'Cancels a pending payment'},
+     {id:'create_refund',      name:'create_refund()',      desc:'Creates a full or partial refund'},
    ]},
   {id:'nfe-emitter', name:'NFe Emitter', icon:'🧾', description:'Issues and queries electronic invoices',
    tools:[
-     {id:'emit_nfe',           name:'emit_nfe()',           desc:'Emite nota fiscal para o pedido'},
-     {id:'cancel_nfe',         name:'cancel_nfe()',         desc:'Cancela nota fiscal emitida'},
-     {id:'get_nfe_status',     name:'get_nfe_status()',     desc:'Consulta status da nota fiscal'},
+     {id:'emit_nfe',           name:'emit_nfe()',           desc:'Issues the invoice for the order'},
+     {id:'cancel_nfe',         name:'cancel_nfe()',         desc:'Cancels an issued invoice'},
+     {id:'get_nfe_status',     name:'get_nfe_status()',     desc:'Queries the invoice status'},
    ]},
   {id:'crm-integration', name:'CRM Integration', icon:'👥', description:'Integration with customer data and service history',
    tools:[
-     {id:'get_customer',       name:'get_customer()',       desc:'Busca dados completos do cliente'},
-     {id:'add_interaction',    name:'add_interaction()',    desc:'Recolords interaction in CRM history'},
-     {id:'get_loyalty_scolore',  name:'get_loyalty_scolore()', desc:'Consulta pontuaction de fidelidade do cliente'},
+     {id:'get_customer',       name:'get_customer()',       desc:'Fetches complete customer data'},
+     {id:'add_interaction',    name:'add_interaction()',    desc:'Records interaction in CRM history'},
+     {id:'get_loyalty_score',  name:'get_loyalty_score()', desc:'Queries the customer loyalty score'},
    ]},
 ];
 
 const AI_WORKSPACE_AGENTS = [
-  {id:'quality-agent',   name:'Agente de Qualidade',  icon:'🔍',
-   description:'Analisa conformidade do produto com quality standards before shipping',
-   inputVars:['produto_id','quantidade','lote'],
-   outputVars:['quality_aprovada','scolore_quality','motivo_reprovaction']},
-  {id:'fraud-agent',     name:'Agente Antifraude',    icon:'🛡️',
+  {id:'quality-agent',   name:'Quality Agent',  icon:'🔍',
+   description:'Analyzes product conformity with quality standards before shipping',
+   inputVars:['product_id','quantity','batch'],
+   outputVars:['quality_approved','quality_score','rejection_reason']},
+  {id:'fraud-agent',     name:'Fraud Prevention Agent',    icon:'🛡️',
    description:'Analyzes fraud risk in the order based on behavioral patterns',
-   inputVars:['pedido_id','cliente_email','valor_total','ip_cliente'],
-   outputVars:['risco_fraude','scolore_fraude','recomendaction']},
+   inputVars:['order_id','customer_email','total_amount','customer_ip'],
+   outputVars:['fraud_risk','fraud_score','recommendation']},
   {id:'logistics-agent', name:'Logistics Agent',  icon:'🗺️',
-   description:'Sugere melhor rota e transportadora com base by postal code and order urgency',
-   inputVars:['cep_destino','peso_total','urgencia'],
-   outputVars:['transportadora_recomendada','prazo_dias','custo_frete']},
-  {id:'support-agent',   name:'Agente de Atendimento', icon:'💬',
+   description:'Suggests the best route and carrier based on postal code and order urgency',
+   inputVars:['destination_zip','total_weight','urgency'],
+   outputVars:['recommended_carrier','delivery_days','freight_cost']},
+  {id:'support-agent',   name:'Support Agent', icon:'💬',
    description:'Classifies contact reason and generates automatic response for the shopper',
-   inputVars:['mensagem_shopper','pedido_id'],
-   outputVars:['categoria_contato','resposta_sugerida','encaminhar_humano']},
-  {id:'fiscal-agent',    name:'Agente Fiscal',         icon:'📋',
-   description:'Valida regras fiscais e classifica tributaction por estado e tipo de produto',
-   inputVars:['uf_destino','ncm_produto','valor_total'],
-   outputVars:['aliquota_icms','regime_tributario','invoice_requerida']},
+   inputVars:['shopper_message','order_id'],
+   outputVars:['contact_category','suggested_reply','escalate_to_human']},
+  {id:'fiscal-agent',    name:'Tax Agent',         icon:'📋',
+   description:'Validates tax rules and classifies taxation by state and product type',
+   inputVars:['destination_state','product_ncm','total_amount'],
+   outputVars:['icms_rate','tax_regime','invoice_required']},
 ];
 
 function getActiveDraft() { return activePanel === 'edit' ? editDraft : newTaskDraft; }
 
 function showApiConfigInline() {
-  addCMsg('ai', 'Configure a API external desta tarefa:');
+  addCMsg('ai', 'Configure this task\'s external API:');
   const msgs = document.getElementById('cm-msgs'); if(!msgs) return;
   const div = document.createElement('div');
   div.style.cssText = 'background:#f0f7ff;border:1px solid #bfdbfe;border-radius:8px;padding:12px;margin-top:6px;display:flex;flex-direction:column;gap:8px';
   div.innerHTML = `
-    <div style="font-size:11px;font-weight:700;color:#1d4ed8;margin-bottom:2px">⚡ Configuraction de API Externa</div>
-    <input id="api-url-inp" placeholder="URL da API (ex: https://api.seuservice.com/endpoint)" style="border:1px solid #bfdbfe;border-radius:4px;padding:6px 9px;font-size:12px;font-family:inherit;width:100%;box-sizing:border-box">
+    <div style="font-size:11px;font-weight:700;color:#1d4ed8;margin-bottom:2px">⚡ External API Configuration</div>
+    <input id="api-url-inp" placeholder="API URL (e.g.: https://api.yourservice.com/endpoint)" style="border:1px solid #bfdbfe;border-radius:4px;padding:6px 9px;font-size:12px;font-family:inherit;width:100%;box-sizing:border-box">
     <div style="display:flex;gap:6px">
       <select id="api-method-sel" style="border:1px solid #bfdbfe;border-radius:4px;padding:5px;font-size:12px;font-family:inherit;background:#fff">
         <option>POST</option><option>GET</option><option>PUT</option><option>PATCH</option>
       </select>
-      <input id="api-return-inp" placeholder="Campo de retorno (ex: data.status)" style="border:1px solid #bfdbfe;border-radius:4px;padding:6px 9px;font-size:12px;font-family:inherit;flex:1">
+      <input id="api-return-inp" placeholder="Return field (e.g.: data.status)" style="border:1px solid #bfdbfe;border-radius:4px;padding:6px 9px;font-size:12px;font-family:inherit;flex:1">
     </div>
     <div style="font-size:10.5px;color:#6b7280">The return value will be available as a context variable for the next task.</div>
-    <button onclick="applyApiConfig()" style="background:#0c6fcd;color:#fff;border:none;border-radius:4px;padding:6px 14px;font-size:12px;cursor:pointer;font-family:inherit;align-self:flex-start">Save configuraction</button>`;
+    <button onclick="applyApiConfig()" style="background:#0c6fcd;color:#fff;border:none;border-radius:4px;padding:6px 14px;font-size:12px;cursor:pointer;font-family:inherit;align-self:flex-start">Save configuration</button>`;
   msgs.appendChild(div); msgs.scrollTop = msgs.scrollHeight;
   renderCSuggs([]);
 }
@@ -1875,12 +1875,12 @@ function applyApiConfig() {
   const url = document.getElementById('api-url-inp')?.value?.trim();
   const method = document.getElementById('api-method-sel')?.value || 'POST';
   const returnField = document.getElementById('api-return-inp')?.value?.trim() || 'data.result';
-  if (!url) { addCMsg('ai', 'Por favor informe a URL da API.'); return; }
-  newTaskDraft.externallApi = {
+  if (!url) { addCMsg('ai', 'Please provide the API URL.'); return; }
+  newTaskDraft.externalApi = {
     url, method,
     responseMapping: [{ key: 'api_result', path: returnField }]
   };
-  if (activePanel === 'edit') { editDraft.externallApi = newTaskDraft.externallApi; refreshEditPreview(); }
+  if (activePanel === 'edit') { editDraft.externalApi = newTaskDraft.externalApi; refreshEditPreview(); }
   addCMsg('ai', `✓ API configured: ${method} ${url}\nReturn mapped as {{api_result}} for the next task.\n\nDo you want to create the task now?`);
   renderCSuggs(['Create task','Add checkpoints','MCP Integration']);
 }
@@ -1893,10 +1893,10 @@ function showCheckpointBuilderInline() {
   div.id = 'cp-builder';
   div.style.cssText = 'background:#fafafa;border:1px solid #e8e8e8;border-radius:8px;padding:12px;margin-top:6px;display:flex;flex-direction:column;gap:8px';
   div.innerHTML = `
-    <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:2px">📋 Checkpoints da tarefa</div>
+    <div style="font-size:11px;font-weight:700;color:#555;margin-bottom:2px">📋 Task checkpoints</div>
     <div id="cp-list" style="display:flex;flex-direction:column;gap:5px"></div>
     <div style="display:flex;gap:6px">
-      <input id="cp-label-inp" placeholder="Ex: Estoque reservado" style="border:1px solid #e0e0e0;border-radius:4px;padding:6px 9px;font-size:12px;font-family:inherit;flex:1">
+      <input id="cp-label-inp" placeholder="E.g.: Stock reserved" style="border:1px solid #e0e0e0;border-radius:4px;padding:6px 9px;font-size:12px;font-family:inherit;flex:1">
       <input id="cp-fail-inp" placeholder="Failure action" style="border:1px solid #e0e0e0;border-radius:4px;padding:6px 9px;font-size:12px;font-family:inherit;flex:1">
       <button onclick="addCheckpointItem()" style="background:#142032;color:#fff;border:none;border-radius:4px;padding:6px 12px;font-size:12px;cursor:pointer;white-space:nowrap;font-family:inherit">+ Add</button>
     </div>
@@ -1920,15 +1920,15 @@ function addCheckpointItem() {
       <div style="display:flex;align-items:center;gap:6px;padding:4px 6px;background:#fff;border:1px solid #f0f0f0;border-radius:4px;font-size:11.5px">
         <span style="color:#059669;font-size:10px">✓</span>
         <span style="flex:1">${cp.label}</span>
-        <span style="color:#9ca3af;font-size:10px">falha: ${cp.failAction}</span>
+        <span style="color:#9ca3af;font-size:10px">on failure: ${cp.failAction}</span>
       </div>`).join('');
   }
 }
 
 function applyCheckpoints() {
   const count = (newTaskDraft.checkpoints||[]).length;
-  addCMsg('ai', `✓ ${count} checkpoint${count!==1?'s':''} configurado${count!==1?'s':''}.\n\nDeseja create a tarefa agora?`);
-  renderCSuggs(['Criar tarefa','Adicionar API external','MCP Integration']);
+  addCMsg('ai', `✓ ${count} checkpoint${count!==1?'s':''} configured.\n\nCreate the task now?`);
+  renderCSuggs(['Create task','Add external API','MCP Integration']);
 }
 
 
@@ -1996,7 +1996,7 @@ function renderWorkflowSettings() {
   const depsEl = document.getElementById('ws-dependents');
   if (depsEl) depsEl.innerHTML = dependents.length
     ? dependents.map(d => `<span style="margin-right:6px">${d.icon} ${d.name}</span>`).join('')
-    : '<span style="font-style:italic">Nenhum workflow depende deste</span>';
+    : '<span style="font-style:italic">No workflow depends on this one</span>';
 
   // Trigger configuration
   const triggerContainer = document.getElementById('ws-trigger');
@@ -2027,15 +2027,15 @@ function renderWorkflowSettings() {
         </div>
       </div>
       <div id="ws-trigger-detail" style="margin-top:8px;${trigger.type==='order-created'?'display:none':''}">
-        <label style="font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:4px">Workflow de origem</label>
+        <label style="font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:4px">Source workflow</label>
         <select id="ws-trigger-wf" class="cm-input" style="width:100%;margin-bottom:8px" onchange="onTriggerWfChange(this.value)">
-          <option value="">Selecione um workflow</option>
+          <option value="">Select a workflow</option>
           ${otherWorkflows.map(w => `<option value="${w.id}" ${w.id === trigger.workflowId ? 'selected' : ''}>${w.icon} ${w.name}</option>`).join('')}
         </select>
         <div id="ws-trigger-task-row" style="${trigger.type==='task-complete'?'':'display:none'}">
-          <label style="font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:4px">Tarefa de origem</label>
+          <label style="font-size:12px;font-weight:600;color:#555;display:block;margin-bottom:4px">Source task</label>
           <select id="ws-trigger-task" class="cm-input" style="width:100%">
-            <option value="">Selecione a task</option>
+            <option value="">Select a task</option>
             ${taskOptions}
           </select>
         </div>
@@ -2057,7 +2057,7 @@ function toggleDepDropdown() {
   if (isOpen) { dd.style.display = 'none'; return; }
   const wf = WORKFLOW_DEFS.find(w => w.id === currentSettingsWfId);
   const available = WORKFLOW_DEFS.filter(w => w.id !== currentSettingsWfId && !wf.dependencies.includes(w.id));
-  if (!available.length) { dd.innerHTML = '<div style="padding:10px 12px;font-size:12.5px;color:#888">Nenhum workflow available</div>'; }
+  if (!available.length) { dd.innerHTML = '<div style="padding:10px 12px;font-size:12.5px;color:#888">No workflow available</div>'; }
   else dd.innerHTML = available.map(w =>
     `<div onclick="addDep('${w.id}')" style="padding:10px 12px;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:8px;border-bottom:1px solid #f5f5f5" onmouseenter="this.style.background='#f5f5f5'" onmouseleave="this.style.background=''">${w.icon} ${w.name}</div>`
   ).join('');
@@ -2093,7 +2093,7 @@ function saveWorkflowSettings() {
   const trigTaskEl = document.getElementById('ws-trigger-task');
   if (trigTaskEl) wf.trigger.stageId = trigTaskEl.value;
   showScreen('workflow-list');
-  showSuccessModal('Workflow atualizado!', `As configuractions de "${wf.name}" foram salvas.`);
+  showSuccessModal('Workflow updated!', `The settings for "${wf.name}" were saved.`);
 }
 
 function onTriggerTypeChange(type) {
@@ -2113,13 +2113,13 @@ function onTriggerWfChange(wfId) {
   const srcWf = WORKFLOW_DEFS.find(w => w.id === wfId);
   const taskSelect = document.getElementById('ws-trigger-task');
   if (taskSelect && srcWf) {
-    taskSelect.innerHTML = `<option value="">Selecione a task</option>` +
+    taskSelect.innerHTML = `<option value="">Select a task</option>` +
       (srcWf.tasks || []).map(s => `<option value="${s.id}">${s.name}</option>`).join('');
   }
 }
 
 // ══════════════════════════════════════════
-// AGENTE DE ORQUESTRAÇÃO — AGENTIC CHAT
+// ORCHESTRATION AGENT — AGENTIC CHAT
 // ══════════════════════════════════════════
 let orchChatState = 'idle';
 let orchRuleDraft = null;
@@ -2232,7 +2232,7 @@ function processOrchIntent(text) {
 
   if (orchChatState === 'await-rule-workflow') {
     let wf = 'All';
-    if (lower.includes('padrao') || lower.includes('padrao')) wf = 'Preparing Items';
+    if (lower.includes('padrao') || lower.includes('prepar')) wf = 'Preparing Items';
     else if (lower.includes('return') || lower.includes('exchange')) wf = 'Returns & Exchanges';
     else if (lower.includes('payment')) wf = 'Payment Approval';
     orchRuleDraft.wf = wf;
@@ -2249,7 +2249,7 @@ function processOrchIntent(text) {
   }
 
   /* ── routing by keyword ── */
-  if (/confiança|confianca|threshold|autonomia/.test(lower)) {
+  if (/confiança|confianca|confidence|threshold|autonomia|autonomy/.test(lower)) {
     orchChatState = 'await-confidence';
     addOrchMsg('ai', 'Current minimum confidence: 75%\n\nThis setting defines how certain the agent needs to be before acting on its own. Below this value it escalates to a human operator.\n\nWhat value do you want? (0–100%)');
     renderOrchSuggs(['60% — more autonomous', '75% — current default', '85% — more conservative', '95% — almost never acts alone']);
@@ -2279,7 +2279,7 @@ function processOrchIntent(text) {
     return;
   }
 
-  if (/regra|customiz|condiç|condic|\bse\b|\bif\b/.test(lower)) {
+  if (/regra|rule|customiz|custom|condiç|condic|condition|\bse\b|\bif\b/.test(lower)) {
     addRuleViaChat();
     return;
   }
@@ -2344,7 +2344,7 @@ function renderCustomRules() {
     <div class="rule-item ${r.active ? 'rule-active' : ''}" id="rule-${r.id}">
       <div class="rule-prio rule-prio-${r.priority}"></div>
       <div class="rule-body">
-        <div class="rule-cond">SE: ${r.condition}</div>
+        <div class="rule-cond">IF: ${r.condition}</div>
         <div class="rule-act">→ ${r.action}</div>
         <div class="rule-tags">
           <span class="rule-tag" style="background:${prioBg[r.priority]};color:${prioColor[r.priority]};border-color:${prioColor[r.priority]}44">${prioLabel[r.priority]}</span>
@@ -2411,7 +2411,7 @@ function openCreateWorkflowPanel() {
     </div>`;
   document.getElementById('new-wf-footer').innerHTML = `
     <button class="btn btn-secondary" style="flex:1;justify-content:center" onclick="closeNewWfPanel()">Cancel</button>
-    <button class="btn btn-primary" style="flex:1;justify-content:center;opacity:.4;cursor:default" id="new-wf-btn" disabled onclick="confirmCreateWorkflow()">Criar Job</button>`;
+    <button class="btn btn-primary" style="flex:1;justify-content:center;opacity:.4;cursor:default" id="new-wf-btn" disabled onclick="confirmCreateWorkflow()">Create Job</button>`;
   document.getElementById('new-wf-panel').style.right = '0';
   setTimeout(() => {
     addNwfMsg('ai', newWfFlows[0].ai);
@@ -2467,8 +2467,8 @@ function sendNewWfChat() {
         const grid = document.getElementById('nwf-icon-grid'); if (grid) grid.style.display = 'none';
         if (next.ai) addNwfMsg('ai', next.ai);
         if (newWfStep === newWfFlows.length - 1) {
-          const srcLine = newWfDraft.sourceId ? `\n• Modelo base: ${WORKFLOW_DEFS.find(w=>w.id===newWfDraft.sourceId)?.name||'—'}` : '';
-          addNwfMsg('ai', `Perfeito! Resumo do Order Job:\n• Nome: ${newWfDraft.name}\n• Icon: ${newWfDraft.icon}\n• Description: ${newWfDraft.description}${srcLine}\n• Stages: 4 marcos configurados\n\nDeseja create o Order Job?`);
+          const srcLine = newWfDraft.sourceId ? `\n• Base model: ${WORKFLOW_DEFS.find(w=>w.id===newWfDraft.sourceId)?.name||'—'}` : '';
+          addNwfMsg('ai', `Perfect! Order Job summary:\n• Name: ${newWfDraft.name}\n• Icon: ${newWfDraft.icon}\n• Description: ${newWfDraft.description}${srcLine}\n• Stages: 4 milestones configured\n\nCreate the Order Job?`);
         }
         renderNwfSuggs(next.sugg || []);
       }
@@ -2526,7 +2526,7 @@ function renderNwfStagesPreview() {
   newWfDraft.marcos = marcos;
 
   addNwfMsg('ai', src
-    ? `These are the ${marcos.length} stages copied from "${src.name}". Revise e confirme:`
+    ? `These are the ${marcos.length} stages copied from "${src.name}". Review and confirm:`
     : 'Your Order Job will have the following 4 stages. Confirm to create:');
 
   // Render marcos as a visual block inside the chat
@@ -2536,13 +2536,13 @@ function renderNwfStagesPreview() {
   wrap.innerHTML = marcos.map(m => {
     const taskList = m.tasks.length
       ? m.tasks.map(t => `<div style="font-size:11px;color:#555;padding:1px 0">• ${t.name}</div>`).join('')
-      : `<div style="font-size:11px;color:#aaa;font-style:italic">Stage sem tarefas definidas</div>`;
+      : `<div style="font-size:11px;color:#aaa;font-style:italic">Stage with no tasks defined</div>`;
     return `
       <div style="border:1px solid ${m.color}40;background:${m.color}08;border-radius:8px;padding:10px 12px">
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
           <span style="font-size:15px">${m.icon}</span>
           <span style="font-size:12.5px;font-weight:700;color:${m.color}">${m.name}</span>
-          <span style="margin-left:auto;font-size:10px;font-weight:600;background:${m.color}20;color:${m.color};padding:1px 7px;border-radius:10px">${m.tasks.length} tarefa${m.tasks.length !== 1 ? 's' : ''}</span>
+          <span style="margin-left:auto;font-size:10px;font-weight:600;background:${m.color}20;color:${m.color};padding:1px 7px;border-radius:10px">${m.tasks.length} task${m.tasks.length !== 1 ? 's' : ''}</span>
         </div>
         <div style="padding-left:4px">${taskList}</div>
       </div>`;
@@ -2552,7 +2552,7 @@ function renderNwfStagesPreview() {
 
   // Enable create button + show confirm suggestion
   setTimeout(() => {
-    addNwfMsg('ai', 'Tudo certo! Clique em "Criar Job" ou confirme abaixo.');
+    addNwfMsg('ai', 'All set! Click "Create Job" or confirm below.');
     renderNwfSuggs(['Confirm and create']);
     const btn = document.getElementById('new-wf-btn');
     if (btn) { btn.disabled = false; btn.style.opacity = '1'; btn.style.cursor = 'pointer'; }
@@ -2568,7 +2568,7 @@ function confirmCreateWorkflow() {
     : null;
   WORKFLOW_DEFS.push({
     id: newId,
-    name: newWfDraft.name || 'Novo Order Job',
+    name: newWfDraft.name || 'New Order Job',
     icon: newWfDraft.icon || '📦',
     color: newWfDraft.color,
     orderCount: 0,
@@ -2584,9 +2584,9 @@ function confirmCreateWorkflow() {
   closeNewWfPanel();
   renderWorkflowList();
   const msg = srcName
-    ? `"${newWfDraft.name}" foi criado com base em "${srcName}". Clique em "Abrir" para personalizar os marcos.`
-    : `"${newWfDraft.name}" foi adicionado. Clique em "Abrir" para configurar os marcos e tarefas.`;
-  showSuccessModal('Order Job criado!', msg);
+    ? `"${newWfDraft.name}" was created based on "${srcName}". Click "Open" to customize the milestones.`
+    : `"${newWfDraft.name}" was added. Click "Open" to configure the milestones and tasks.`;
+  showSuccessModal('Order Job created!', msg);
 }
 
 function renderNwfOriginPicker() {
@@ -2620,11 +2620,11 @@ function pickNwfOrigin(sourceId) {
     newWfDraft.icon    = src ? src.icon : '📦';
     newWfDraft.description = src ? (src.description || '') : '';
     const marcosCount = src && src.marcos ? src.marcos.length : 0;
-    addNwfMsg('user', `Usar modelo: ${src ? src.name : sourceId}`);
+    addNwfMsg('user', `Use model: ${src ? src.name : sourceId}`);
     setTimeout(() => addNwfMsg('ai', `Great! I will use the ${marcosCount} stages from "${src ? src.name : sourceId}" as a base. Now choose an icon for the new Order Job:`), 300);
   } else {
     newWfDraft.sourceId = null;
-    addNwfMsg('user', 'Estrutura vazia');
+    addNwfMsg('user', 'Empty structure');
     setTimeout(() => addNwfMsg('ai', 'Great! Choose an icon to visually identify this Order Job:'), 300);
   }
   newWfStep = 2;
@@ -2649,11 +2649,11 @@ function findSimilarInWorkflows(name, wfIds) {
     wf.tasks.forEach(stage => {
       const sn = norm(stage.name);
       if (sn === target || sn.includes(target) || target.includes(sn))
-        warnings.push({ wfName: wf.name, matchName: stage.name, matchType: 'etapa' });
+        warnings.push({ wfName: wf.name, matchName: stage.name, matchType: 'stage' });
       (stage.tasks || []).forEach(t => {
         const tn = norm(t.name);
         if (tn === target || tn.includes(target) || target.includes(tn))
-          warnings.push({ wfName: wf.name, matchName: t.name, matchType: 'tarefa' });
+          warnings.push({ wfName: wf.name, matchName: t.name, matchType: 'task' });
       });
     });
   });
@@ -2683,17 +2683,17 @@ function openBulkConfigPanel() {
     <div class="cm-msgs" id="bulk-msgs" style="flex:1;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:8px"></div>
     <div id="bulk-suggestions" style="padding:0 16px 8px;display:flex;flex-wrap:wrap;gap:6px"></div>
     <div style="padding:8px 16px;border-top:1px solid #f0f0f0;display:flex;gap:6px">
-      <input class="cm-input" id="bulk-input" placeholder="Digite ou selecione..." onkeydown="if(event.key==='Enter')sendBulkChat()" style="flex:1;border:1px solid #e0e0e0;border-radius:6px;padding:7px 10px;font-size:13px">
+      <input class="cm-input" id="bulk-input" placeholder="Type or select..." onkeydown="if(event.key==='Enter')sendBulkChat()" style="flex:1;border:1px solid #e0e0e0;border-radius:6px;padding:7px 10px;font-size:13px">
       <button onclick="sendBulkChat()" style="background:#0c6fcd;border:none;border-radius:6px;padding:7px 10px;cursor:pointer;display:flex;align-items:center"><svg viewBox="0 0 16 16" stroke="white" stroke-width="2" fill="none" width="13" height="13"><path d="M2 8l12-6-4 12-3-4-5-2z"/></svg></button>
     </div>`;
   document.getElementById('bulk-sp-footer').innerHTML = `
     <button class="btn btn-secondary" style="flex:1;justify-content:center" onclick="closeBulkPanel()">Close</button>
-    <button class="btn btn-primary" style="flex:1;justify-content:center;opacity:.4;cursor:default" id="bulk-apply-btn" disabled onclick="applyBulkConfig()">Aplicar</button>`;
+    <button class="btn btn-primary" style="flex:1;justify-content:center;opacity:.4;cursor:default" id="bulk-apply-btn" disabled onclick="applyBulkConfig()">Apply</button>`;
   const panel = document.getElementById('bulk-panel');
   if (panel) panel.style.right = '0';
   setTimeout(() => {
-    addBulkMsg('ai', 'Hello! I will help you configure multiple workflows at once.\n\nWhat would you liker?');
-    renderBulkSuggs(['Add new staga', 'Adicionar nova tarefa em etapa existente']);
+    addBulkMsg('ai', 'Hello! I will help you configure multiple workflows at once.\n\nWhat would you like to do?');
+    renderBulkSuggs(['Add new stage', 'Add new task to existing stage']);
   }, 200);
 }
 
@@ -2717,17 +2717,17 @@ function processBulkChat(text) {
   const lower = text.toLowerCase();
 
   if (bulkChatState === 'select-operation') {
-    if (lower.includes('etapa')) {
+    if (lower.includes('etapa') || lower.includes('stage')) {
       bulkDraft.operation = 'add-stage'; bulkChatState = 'select-workflows';
       addBulkMsg('ai', 'Great! I will add a new stage.\n\nIn which workflows do you want to add it? Available ones are:\n• ' + WORKFLOW_DEFS.map(w => w.name).join('\n• ') + '\n\nType the names or select below:');
-      renderBulkSuggs(WORKFLOW_DEFS.map(w => w.name).concat(['Todos os workflows']));
-    } else if (lower.includes('tarefa')) {
+      renderBulkSuggs(WORKFLOW_DEFS.map(w => w.name).concat(['All workflows']));
+    } else if (lower.includes('tarefa') || lower.includes('task')) {
       bulkDraft.operation = 'add-task'; bulkChatState = 'select-workflows';
       addBulkMsg('ai', 'Got it! I will add a new task to an existing stage.\n\nIn which workflows? Available ones are:\n• ' + WORKFLOW_DEFS.map(w => w.name).join('\n• ') + '\n\nType the names or select below:');
-      renderBulkSuggs(WORKFLOW_DEFS.map(w => w.name).concat(['Todos os workflows']));
+      renderBulkSuggs(WORKFLOW_DEFS.map(w => w.name).concat(['All workflows']));
     } else {
       addBulkMsg('ai', 'Please choose an option:');
-      renderBulkSuggs(['Add new staga', 'Adicionar nova tarefa em etapa existente']);
+      renderBulkSuggs(['Add new stage', 'Add new task to existing stage']);
     }
     return;
   }
@@ -2744,14 +2744,14 @@ function processBulkChat(text) {
     }
     if (!selected.length) {
       addBulkMsg('ai', 'No workflow found with that name. Available ones are:\n• ' + WORKFLOW_DEFS.map(w => w.name).join('\n• '));
-      renderBulkSuggs(WORKFLOW_DEFS.map(w => w.name).concat(['Todos os workflows']));
+      renderBulkSuggs(WORKFLOW_DEFS.map(w => w.name).concat(['All workflows']));
       return;
     }
     bulkDraft.workflowIds = selected;
     const wfNames = selected.map(id => WORKFLOW_DEFS.find(w => w.id === id)?.name || id).join(', ');
     bulkChatState = 'name-input';
-    const item = bulkDraft.operation === 'add-stage' ? 'etapa' : 'tarefa';
-    addBulkMsg('ai', '✓ Workflows selecionados: ' + wfNames + '\n\nQual o nome da nova ' + item + '?');
+    const item = bulkDraft.operation === 'add-stage' ? 'stage' : 'task';
+    addBulkMsg('ai', '✓ Selected workflows: ' + wfNames + '\n\nWhat is the name of the new ' + item + '?');
     renderBulkSuggs([]);
     return;
   }
@@ -2762,8 +2762,8 @@ function processBulkChat(text) {
     bulkDraft.similarityWarnings = warnings;
     if (warnings.length > 0) {
       bulkChatState = 'similarity-confirm';
-      const warnText = warnings.map(w => '• "' + w.matchName + '" (' + w.matchType + ') em ' + w.wfName).join('\n');
-      addBulkMsg('ai', '⚠️ Encontrei ' + (bulkDraft.operation === 'add-stage' ? 'etapas/tarefas' : 'tarefas') + ' similares nos workflows selecionados:\n' + warnText + '\n\nDeseja continuar mesmo assim?');
+      const warnText = warnings.map(w => '• "' + w.matchName + '" (' + w.matchType + ') in ' + w.wfName).join('\n');
+      addBulkMsg('ai', '⚠️ I found similar ' + (bulkDraft.operation === 'add-stage' ? 'stages/tasks' : 'tasks') + ' in the selected workflows:\n' + warnText + '\n\nDo you want to continue anyway?');
       renderBulkSuggs(['Yes, continue', 'No, use another name']);
     } else {
       _bulkAfterNameConfirmed();
@@ -2776,8 +2776,8 @@ function processBulkChat(text) {
       _bulkAfterNameConfirmed();
     } else {
       bulkChatState = 'name-input';
-      const item = bulkDraft.operation === 'add-stage' ? 'etapa' : 'tarefa';
-      addBulkMsg('ai', 'Ok! Digite um novo nome para a ' + item + ':');
+      const item = bulkDraft.operation === 'add-stage' ? 'stage' : 'task';
+      addBulkMsg('ai', 'Ok! Type a new name for the ' + item + ':');
       renderBulkSuggs([]);
     }
     return;
@@ -2823,10 +2823,10 @@ function processBulkChat(text) {
     }
     if (lower.includes('at the beginning') || lower.includes('inicio') || lower.includes('beginning') || lower.includes('start') || lower === 'at the beginning') {
       bulkDraft.position = 'start'; bulkDraft.afterStageName = '';
-    } else if (lower.includes('fim') || lower.includes('final') || lower === 'no final') {
+    } else if (lower.includes('at the end') || lower.includes('fim') || lower.includes('final') || lower === 'no final') {
       bulkDraft.position = 'end'; bulkDraft.afterStageName = '';
     } else {
-      const afterMatch = text.match(/depois d[aeo]?\s+(.+)/i);
+      const afterMatch = text.match(/depois d[aeo]?\s+(.+)/i) || text.match(/after\s+(.+)/i);
       if (afterMatch) {
         const stageName = afterMatch[1].trim();
         bulkDraft.afterStageName = stageName;
@@ -2837,15 +2837,15 @@ function processBulkChat(text) {
       }
     }
     bulkChatState = 'tasks-input';
-    addBulkMsg('ai', '✓ Position set.\n\nWhich tasks do you want to include in the nova etapa "' + bulkDraft.name + '"?\n\nDigite os nomes (um por linhs or comma-separated), or select:');
-    renderBulkSuggs(['Criar tarefa com nome da etapa (' + bulkDraft.name + ')', 'No tasks (create vazia)']);
+    addBulkMsg('ai', '✓ Position set.\n\nWhich tasks do you want to include in the new stage "' + bulkDraft.name + '"?\n\nType the names (one per line or comma-separated), or select:');
+    renderBulkSuggs(['Create task with the stage name (' + bulkDraft.name + ')', 'No tasks (create empty)']);
     return;
   }
 
   if (bulkChatState === 'tasks-input') {
-    if (lower.includes('sem tarefa') || lower.includes('create vazia') || lower === 'vazia') {
+    if (lower.includes('sem tarefa') || lower.includes('no task') || lower.includes('create vazia') || lower.includes('create empty') || lower === 'vazia' || lower === 'empty') {
       bulkDraft.tasks = [bulkDraft.name];
-    } else if (lower.includes('nome da etapa') || lower.includes('create tarefa com nome')) {
+    } else if (lower.includes('nome da etapa') || lower.includes('stage name') || lower.includes('create tarefa com nome') || lower.includes('create task with')) {
       bulkDraft.tasks = [bulkDraft.name];
     } else {
       bulkDraft.tasks = text.split(/[,\n]+/).map(s => s.trim()).filter(Boolean);
@@ -2855,13 +2855,13 @@ function processBulkChat(text) {
   }
 
   if (bulkChatState === 'review') {
-    if (lower.includes('confirmar') || lower.includes('aplicar') || lower === 'sim') {
+    if (lower.includes('confirmar') || lower.includes('confirm') || lower.includes('aplicar') || lower.includes('apply') || lower === 'sim' || lower === 'yes') {
       applyBulkConfig();
     } else if (lower.includes('no') || lower.includes('cancelar')) {
       closeBulkPanel();
     } else {
-      addBulkMsg('ai', 'Confirm a aplicaction?');
-      renderBulkSuggs(['Confirm e aplicar', 'Cancel']);
+      addBulkMsg('ai', 'Confirm and apply?');
+      renderBulkSuggs(['Confirm and apply', 'Cancel']);
     }
     return;
   }
@@ -2897,14 +2897,14 @@ function _bulkShowReview() {
   const wfNames = bulkDraft.workflowIds.map(id => WORKFLOW_DEFS.find(w => w.id === id)?.name || id).join(', ');
   let summary = '';
   if (bulkDraft.operation === 'add-stage') {
-    const pos = bulkDraft.position === 'start' ? 'beginning' : bulkDraft.position === 'end' ? 'end' : 'depois de "' + bulkDraft.afterStageName + '"';
-    summary = '📋 Resumo da configuraction em lote:\n\n• Operaction: Adicionar etapa\n• Nome: "' + bulkDraft.name + '"\n• Workflows: ' + wfNames + '\n• Position: ' + pos + '\n• Tasks: ' + (bulkDraft.tasks.join(', ') || '(nenhuma)');
+    const pos = bulkDraft.position === 'start' ? 'beginning' : bulkDraft.position === 'end' ? 'end' : 'after "' + bulkDraft.afterStageName + '"';
+    summary = '📋 Bulk configuration summary:\n\n• Operation: Add stage\n• Name: "' + bulkDraft.name + '"\n• Workflows: ' + wfNames + '\n• Position: ' + pos + '\n• Tasks: ' + (bulkDraft.tasks.join(', ') || '(none)');
   } else {
     const pos = bulkDraft.position === 'start' ? 'beginning of stage' : 'end of stage';
-    summary = '📋 Resumo da configuraction em lote:\n\n• Operaction: Adicionar tarefa\n• Nome: "' + bulkDraft.name + '"\n• Workflows: ' + wfNames + '\n• Position: ' + pos;
+    summary = '📋 Bulk configuration summary:\n\n• Operation: Add task\n• Name: "' + bulkDraft.name + '"\n• Workflows: ' + wfNames + '\n• Position: ' + pos;
   }
-  addBulkMsg('ai', summary + '\n\nConfirm e aplicar?');
-  renderBulkSuggs(['Confirm e aplicar', 'Cancel']);
+  addBulkMsg('ai', summary + '\n\nConfirm and apply?');
+  renderBulkSuggs(['Confirm and apply', 'Cancel']);
   const btn = document.getElementById('bulk-apply-btn');
   if (btn) { btn.disabled = false; btn.style.opacity = '1'; btn.style.cursor = 'pointer'; }
 }
@@ -2924,8 +2924,8 @@ function applyBulkConfig() {
         color: colors[wf.tasks.length % colors.length],
         tasks: (bulkDraft.tasks.length ? bulkDraft.tasks : [bulkDraft.name]).map((tn, ti) => ({
           id: newId + '_' + ti,
-          name: tn, supplier: 'A definir', category: 'All',
-          active: true, visibility: 'user', script: null, externallApi: null,
+          name: tn, supplier: 'To be defined', category: 'All',
+          active: true, visibility: 'user', script: null, externalApi: null,
           mcpConfig: null, agentConfig: null, contextOutput: []
         }))
       };
@@ -2960,8 +2960,8 @@ function applyBulkConfig() {
       if (!stage) return;
       const newId = 'bt_' + Date.now() + '_' + Math.random().toString(36).slice(2,6);
       const newTask = {
-        id: newId, name: bulkDraft.name, supplier: 'A definir', category: 'All',
-        active: true, visibility: 'user', script: null, externallApi: null,
+        id: newId, name: bulkDraft.name, supplier: 'To be defined', category: 'All',
+        active: true, visibility: 'user', script: null, externalApi: null,
         mcpConfig: null, agentConfig: null, contextOutput: []
       };
       if (!stage.tasks) stage.tasks = [];
@@ -2979,8 +2979,8 @@ function applyBulkConfig() {
 
   closeBulkPanel();
   if (typeof showSuccessModal === 'function') {
-    const opLabel = bulkDraft.operation === 'add-stage' ? 'Etapa' : 'Tarefa';
-    showSuccessModal(opLabel + ' adicionada!', '"' + bulkDraft.name + '" foi adicionada em ' + appliedCount + ' workflow(s).');
+    const opLabel = bulkDraft.operation === 'add-stage' ? 'Stage' : 'Task';
+    showSuccessModal(opLabel + ' added!', '"' + bulkDraft.name + '" was added to ' + appliedCount + ' workflow(s).');
   }
   renderWorkflowList();
 }
@@ -3013,7 +3013,7 @@ function openConnectorPanel(wfId) {
   const SLOTS = ['carrier_x','payment_processor','invoice_system','warehouse_x','notification_x'];
   const slotIcons  = { carrier_x:'🚚', payment_processor:'💳', invoice_system:'🧾', warehouse_x:'🏭', notification_x:'🔔' };
   const kindColor  = { discover:'#7c3aed', mutate:'#0c6fcd', cancel:'#dc2626', read:'#0891b2', preflight:'#d97706', maintain:'#6b7280' };
-  const kindLabel  = { discover:'descoberta', mutate:'mutaction', cancel:'cancelamento', read:'leitura', preflight:'pre-check', maintain:'reconciliation' };
+  const kindLabel  = { discover:'discovery', mutate:'mutation', cancel:'cancellation', read:'read', preflight:'pre-check', maintain:'reconciliation' };
 
   // Build slot → [{ stage, task, mapping }] from current WF_TASKS
   function getTasksForSlot(slot) {
@@ -3126,8 +3126,8 @@ function openConnectorPanel(wfId) {
   document.getElementById('sp-body').innerHTML = `
     <div style="padding:2px 0 8px">
       <div style="font-size:12px;color:#888;margin-bottom:14px;line-height:1.5">
-        Cada slot vincula um sistema externo às tarefas desta workflow.<br>
-        O agent invokes the indicated function automatically when advancing each task.
+        Each slot binds an external system to the tasks of this workflow.<br>
+        The agent invokes the indicated function automatically when advancing each task.
       </div>
       ${slotsHtml}
     </div>`;
@@ -3230,14 +3230,14 @@ function applyConnectorResult(wfId, slot) {
     if (applied) break;
   }
   renderWorkflowBoard();
-  showSuccessModal('Resultado aplicado!', 'O rastreio Intelipost foi registrado and the task advanced.');
+  showSuccessModal('Result applied!', 'The Intelipost tracking was recorded and the task advanced.');
 }
 
 // ── Adyen webhook simulation ──────────────────────────────────────────────
 function simulateAdyenWebhook() {
   const now = new Date().toISOString().replace('T',' ').substring(0,19);
   document.getElementById('webhook-body').innerHTML = `
-    <div style="font-size:11.5px;color:#888;margin-bottom:12px">Recebido em ${now} via <code style="background:#f5f3ff;color:#7c3aed;padding:1px 5px;border-radius:3px">POST /webhooks/adyen</code></div>
+    <div style="font-size:11.5px;color:#888;margin-bottom:12px">Received at ${now} via <code style="background:#f5f3ff;color:#7c3aed;padding:1px 5px;border-radius:3px">POST /webhooks/adyen</code></div>
     <pre style="font-size:10.5px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:6px;padding:10px;overflow-x:auto;line-height:1.5">${JSON.stringify({
   live: false, notificationItems: [{
     NotificationRequestItem: {
@@ -3270,7 +3270,7 @@ function renderOrchConnectors() {
 
   const configured = ALL_SLOTS.filter(s => bindings[s]);
   if (!configured.length) {
-    el.innerHTML = `<div style="font-size:12px;color:#aaa;text-align:center;padding:14px">Nenhum conector configurado nesta workflow.</div>`;
+    el.innerHTML = `<div style="font-size:12px;color:#aaa;text-align:center;padding:14px">No connector configured in this workflow.</div>`;
     return;
   }
   el.innerHTML = configured.map(slot => {
@@ -3386,7 +3386,7 @@ function _showImportError(msg) {
 
 function confirmImportYaml() {
   const raw = document.getElementById('import-yaml-text').value.trim();
-  if (!raw) { _showImportError('Cole o YAML ou selecione um arquivo antes de importar.'); return; }
+  if (!raw) { _showImportError('Paste the YAML or select a file before importing.'); return; }
 
   let parsed;
   try {
@@ -3450,7 +3450,7 @@ function _applyImport(parsed, asCopy) {
       tasks: (m.tasks || []).map(t => ({
         id: t.id || ('t-' + Date.now() + '-' + Math.random().toString(36).slice(2,6)),
         name: t.name,
-        supplier: t.supplier || 'A definir',
+        supplier: t.supplier || 'To be defined',
         category: t.category || 'All',
         visibility: t.visibility || 'internal',
         active: t.active !== false,
@@ -3479,7 +3479,7 @@ function _applyImport(parsed, asCopy) {
       if (!systemName) { bindings[slot] = null; return; }
       const cat = (typeof CONNECTOR_CATALOG !== 'undefined') && CONNECTOR_CATALOG.find(c => c.system === systemName);
       if (cat) {
-        bindings[slot] = { connectorId: cat.id, authDisplay: '●●●●importado', state: 'active', lastTested: null };
+        bindings[slot] = { connectorId: cat.id, authDisplay: '●●●●imported', state: 'active', lastTested: null };
       } else {
         bindings[slot] = null;
         warnings.push(`Connector '${systemName}' not found in catalog — slot '${slot}' binding ignored.`);
@@ -3491,9 +3491,9 @@ function _applyImport(parsed, asCopy) {
   // Navigate to the experiences list and refresh
   showScreen('workflow-list');
 
-  let msg = `"${newName}" foi importada com sucesso.`;
+  let msg = `"${newName}" was imported successfully.`;
   if (warnings.length) msg += '\n\n⚠️ ' + warnings.join('\n⚠️ ');
-  showSuccessModal('Workflow importada!', msg);
+  showSuccessModal('Workflow imported!', msg);
 }
 
 // ══════════════════════════════════════════
