@@ -369,6 +369,9 @@ select.input.select-ph { color: var(--sl-fg-soft); }
 .feedback-callout-link:hover { text-decoration: underline; color: var(--sl-accent-hover); }
 .feedback-callout-results { margin-top: 20px; margin-bottom: 0; }
 .sla-price { font-weight: 600; }
+.sla-shopper-price { font-weight: 600; color: var(--sl-fg); font-size: 14px; }
+.sla-shopper-option { font-size: 11px; color: var(--sl-fg-muted); margin-top: 2px; }
+.sla-shopper-empty { color: var(--sl-fg-disabled); }
 .sla-deadline { font-size: 13px; }
 .sla-deadline-sub { font-size: 11px; color: var(--sl-fg-muted); margin-top: 2px; }
 .sla-qty { font-size: 13px; color: var(--sl-fg-muted); }
@@ -635,6 +638,7 @@ select.input.select-ph { color: var(--sl-fg-soft); }
           <tr>
             <th data-i18n="col-carrier">Transportadora</th>
             <th data-i18n="col-price">Tarifa de envio</th>
+            <th data-i18n="col-shopper-price" id="th-shopper-price">Preço ao shopper</th>
             <th data-i18n="col-deadline">Prazo de entrega</th>
             <th data-i18n="col-qty">Qtd. disponível</th>
             <th></th>
@@ -731,6 +735,19 @@ const I18N_PT = {
   'lbl-route':'Rota logística',
   'lbl-sla-type':'Tipo de SLA',
   'lbl-calc':'Cálculo do prazo',
+  'col-shopper-price':'Preço ao shopper',
+  'lbl-delivery-pricing':'Delivery option e pricing',
+  'lbl-delivery-option':'Delivery option',
+  'lbl-pricing-model':'Delivery pricing',
+  'lbl-base-rate':'Tarifa da tabela (base)',
+  'lbl-shopper-price':'Preço final ao shopper',
+  'pricing-passthrough':'Repasse de custo',
+  'pricing-markup':'Markup',
+  'pricing-fixed':'Valor fixo',
+  'do-economy':'Econômica','do-fast':'Entrega rápida','do-scheduled':'Entrega agendada','do-sameday':'Entrega no mesmo dia','do-nextday':'Entrega em 1 dia',
+  'pricing-note-passthrough':'A tarifa da tabela de frete é repassada ao shopper sem alteração.',
+  'pricing-note-markup':'A delivery option aplica um markup sobre a tarifa da tabela de frete.',
+  'pricing-note-fixed':'A delivery option cobra um valor fixo, independente da tarifa da tabela de frete.',
   'lbl-transit':'Trânsito (transportadora)',
   'lbl-processing':'Processamento (estoque + doca)',
   'lbl-estimate-date':'Data estimada',
@@ -798,6 +815,19 @@ const I18N_EN = {
   'lbl-route':'Logistics route',
   'lbl-sla-type':'SLA type',
   'lbl-calc':'Delivery time breakdown',
+  'col-shopper-price':'Shopper price',
+  'lbl-delivery-pricing':'Delivery option & pricing',
+  'lbl-delivery-option':'Delivery option',
+  'lbl-pricing-model':'Delivery pricing',
+  'lbl-base-rate':'Rate table (base)',
+  'lbl-shopper-price':'Final shopper price',
+  'pricing-passthrough':'Cost pass-through',
+  'pricing-markup':'Markup',
+  'pricing-fixed':'Fixed amount',
+  'do-economy':'Economy','do-fast':'Fast delivery','do-scheduled':'Scheduled delivery','do-sameday':'Same-day delivery','do-nextday':'Next-day delivery',
+  'pricing-note-passthrough':'The shipping rate from the rate table is passed on to the shopper unchanged.',
+  'pricing-note-markup':'The delivery option applies a markup on top of the shipping rate.',
+  'pricing-note-fixed':'The delivery option charges a fixed amount, regardless of the shipping rate.',
   'lbl-transit':'Transit (carrier)',
   'lbl-processing':'Processing (warehouse + dock)',
   'lbl-estimate-date':'Estimated delivery',
@@ -855,6 +885,19 @@ const I18N_ES = {
   'lbl-route':'Ruta logística',
   'lbl-sla-type':'Tipo de SLA',
   'lbl-calc':'Cálculo del plazo',
+  'col-shopper-price':'Precio al comprador',
+  'lbl-delivery-pricing':'Opción de entrega y pricing',
+  'lbl-delivery-option':'Opción de entrega',
+  'lbl-pricing-model':'Delivery pricing',
+  'lbl-base-rate':'Tarifa de tabla (base)',
+  'lbl-shopper-price':'Precio final al comprador',
+  'pricing-passthrough':'Traspaso de costo',
+  'pricing-markup':'Markup',
+  'pricing-fixed':'Monto fijo',
+  'do-economy':'Económica','do-fast':'Entrega rápida','do-scheduled':'Entrega programada','do-sameday':'Entrega el mismo día','do-nextday':'Entrega en 1 día',
+  'pricing-note-passthrough':'La tarifa de la tabla de envío se traspasa al comprador sin cambios.',
+  'pricing-note-markup':'La opción de entrega aplica un markup sobre la tarifa de la tabla de envío.',
+  'pricing-note-fixed':'La opción de entrega cobra un monto fijo, independiente de la tarifa de la tabla de envío.',
   'lbl-transit':'Tránsito (transportista)',
   'lbl-processing':'Procesamiento (warehouse + muelle)',
   'lbl-estimate-date':'Fecha estimada',
@@ -1944,6 +1987,68 @@ function calcTotalLeadTime(sla) {
   return total === 1 ? '1 dia útil' : `${total} dias úteis`;
 }
 
+// ── Estimated dates — always computed from today so they never show a past date ──
+const MONTHS_ABBR = {
+  pt: ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'],
+  en: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],
+  es: ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic']
+};
+
+function addBusinessDays(date, n) {
+  const d = new Date(date);
+  let added = 0;
+  while (added < n) {
+    d.setDate(d.getDate() + 1);
+    const dow = d.getDay();
+    if (dow !== 0 && dow !== 6) added++;
+  }
+  return d;
+}
+
+function nextSaturday(date) {
+  const d = new Date(date);
+  do { d.setDate(d.getDate() + 1); } while (d.getDay() !== 6);
+  return d;
+}
+
+function formatEstimatedDate(d, isSaturday) {
+  const lang = isEsLang() ? 'es' : (currentLang === 'en' ? 'en' : 'pt');
+  const day = d.getDate();
+  const mon = MONTHS_ABBR[lang][d.getMonth()];
+  const year = d.getFullYear();
+  if (lang === 'en') return `${mon} ${day}, ${year}${isSaturday ? ' (Sat)' : ''}`;
+  return `${day} ${mon} ${year}${isSaturday ? ' (sáb)' : ''}`;
+}
+
+// Delivery arrival date = today + shippingEstimate, respecting business days
+// ("dias úteis" / "business days" / "días hábiles") and hour-based (same day).
+function computeArrivalDate(sla) {
+  const today = new Date();
+  if (sla.worksOnWeekends) return formatEstimatedDate(nextSaturday(today), true);
+  const estimate = sla.shippingEstimate || '';
+  const n = parseLeadDays(estimate);
+  let d;
+  if (/hora|hour/i.test(estimate) || n === 0) {
+    d = new Date(today); // hour-based / immediate → same day
+  } else if (/útil|úteis|business|hábil|hábiles/i.test(estimate)) {
+    d = addBusinessDays(today, n);
+  } else {
+    d = new Date(today);
+    d.setDate(d.getDate() + n);
+  }
+  return formatEstimatedDate(d, false);
+}
+
+// Pickup ready date derived from the relative readyLabel ("amanhã" = +1, "em N dias" = +N).
+function computePickupDate(p) {
+  const label = (p.readyLabel || '').toLowerCase();
+  const m = label.match(/(\d+)/);
+  const offset = m ? parseInt(m[1], 10) : 1;
+  const d = new Date();
+  d.setDate(d.getDate() + offset);
+  return formatEstimatedDate(d, false);
+}
+
 function isPharmaDataset() {
   return getDatasetKey() === 'pt-pharma';
 }
@@ -2004,7 +2109,7 @@ function appendPickupTable(container, pickups, i) {
       <td><div class="pickup-meta pickup-meta-inline">${ICON.clock} ${p.hours}</div></td>
       <td><div class="pickup-price">${p.price}</div></td>
       <td>
-        <div class="pickup-date">${p.readyDate}</div>
+        <div class="pickup-date">${computePickupDate(p)}</div>
         <div class="pickup-label">${p.readyLabel}</div>
       </td>`;
     pickupTbody.appendChild(tr);
@@ -2049,7 +2154,118 @@ function appendExcludedSection(parent, excluded, i, blockId) {
   });
 }
 
-function appendSlaRows(tbody, slas, i, hasKit, keyPrefix) {
+// ── Delivery option + pricing layer ─────────────────────────────────────────
+// Maps each shipping policy to the delivery option that groups it and the
+// pricing rule that turns the rate-table price into the price shown to the shopper.
+const PRICING_BY_POLICY = {
+  'correios-pac':       { opt:'do-economy',  model:'passthrough' },
+  'correios-sedex':     { opt:'do-fast',     model:'markup', pct:0.10 },
+  'lala-move-agendada': { opt:'do-scheduled',model:'fixed',  flat:24.90 },
+  'lala-move-mx':       { opt:'do-scheduled',model:'fixed',  flat:159 },
+  'estafeta-estandar':  { opt:'do-economy',  model:'passthrough' },
+  'dhl-express':        { opt:'do-fast',     model:'markup', pct:0.10 },
+  'ups-ground':         { opt:'do-economy',  model:'passthrough' },
+  'fedex-express':      { opt:'do-fast',     model:'markup', pct:0.10 },
+  'fedex-saturday':     { opt:'do-fast',     model:'markup', pct:0.15 },
+  'pharma-express-2h':  { opt:'do-sameday',  model:'fixed',  flat:9.90 },
+  'pharma-express-3h':  { opt:'do-sameday',  model:'fixed',  flat:8.90 },
+  'pharma-express-4h':  { opt:'do-sameday',  model:'fixed',  flat:7.90 },
+  'pharma-express-6h':  { opt:'do-sameday',  model:'fixed',  flat:6.90 },
+  'pharma-express-1d':  { opt:'do-nextday',  model:'markup', pct:0.10 }
+};
+
+// Pharmacy delivery pricing is capped so the shopper never pays more than R$ 9,90.
+const PHARMA_FIXED_CAP = 9.90;
+
+function pricingConfig(sla) {
+  const cfg = PRICING_BY_POLICY[sla.policyId] || (
+    // Fallback by SLA type: express carriers get a markup, standard is pass-through.
+    sla.typeClass === 'express'
+      ? { opt: 'do-fast', model: 'markup', pct: 0.10 }
+      : { opt: 'do-economy', model: 'passthrough' }
+  );
+  // Cap fixed pricing for the pharmacy account (low-ticket, convenience delivery).
+  if (isPharmaDataset() && cfg.model === 'fixed' && cfg.flat > PHARMA_FIXED_CAP) {
+    return { ...cfg, flat: PHARMA_FIXED_CAP };
+  }
+  return cfg;
+}
+
+// Parses "R$ 12,90" / "$ 8.90" / "MX$ 199" → { currency, value, sep, decimals }.
+// Returns null for non-numeric prices (e.g. "Grátis"/"Free").
+function parseMoney(str) {
+  if (!str) return null;
+  const m = String(str).match(/^(.*?)([\d.,]+)\s*$/);
+  if (!m || !/\d/.test(m[2])) return null;
+  const currency = m[1].trim();
+  const raw = m[2];
+  const hasComma = raw.includes(',');
+  let normalized, sep, decimals;
+  if (hasComma) {
+    sep = ',';
+    normalized = raw.replace(/\./g, '').replace(',', '.');
+    decimals = (raw.split(',')[1] || '').length || 2;
+  } else {
+    sep = '.';
+    normalized = raw;
+    decimals = raw.includes('.') ? (raw.split('.')[1] || '').length : 0;
+  }
+  return { currency, value: parseFloat(normalized), sep, decimals };
+}
+
+function formatMoney(currency, value, sep, decimals) {
+  const fixed = value.toFixed(decimals);
+  const withSep = decimals > 0 ? fixed.replace('.', sep) : fixed;
+  return `${currency} ${withSep}`.trim();
+}
+
+// Given an SLA, returns everything needed to render the shopper price + breakdown.
+function resolvePricing(sla, i) {
+  const cfg = pricingConfig(sla);
+  const base = parseMoney(sla.price);
+  const optionLabel = i[cfg.opt] || cfg.opt;
+  const modelLabel = i['pricing-' + cfg.model];
+  const note = i['pricing-note-' + cfg.model];
+
+  // "Has delivery pricing" means a rule beyond cost pass-through is configured
+  // and the base rate is numeric. Pure pass-through (or non-numeric base) adds
+  // nothing over the rate table, so the shopper column/block is suppressed.
+  const isPricingModel = cfg.model === 'markup' || cfg.model === 'fixed';
+
+  // Non-numeric base rate (e.g. free) → shopper price mirrors the base.
+  if (!base) {
+    return { optionLabel, modelLabel, note, model: cfg.model, hasPricing: false,
+             baseLabel: sla.price, shopperLabel: sla.price, modelDetail: '' };
+  }
+
+  let shopperValue, modelDetail = '';
+  if (cfg.model === 'markup') {
+    shopperValue = base.value * (1 + cfg.pct);
+    modelDetail = `+${Math.round(cfg.pct * 100)}%`;
+  } else if (cfg.model === 'fixed') {
+    shopperValue = cfg.flat;
+    modelDetail = formatMoney(base.currency, cfg.flat, base.sep, base.decimals);
+  } else {
+    shopperValue = base.value;
+  }
+
+  return {
+    optionLabel, modelLabel, note, model: cfg.model, modelDetail,
+    hasPricing: isPricingModel,
+    baseLabel: sla.price,
+    shopperLabel: formatMoney(base.currency, shopperValue, base.sep, base.decimals)
+  };
+}
+
+// True when at least one SLA in the set has delivery pricing configured
+// (markup or fixed amount). Used to show/hide the Shopper price column.
+function slasHaveDeliveryPricing(slas, i) {
+  return slas.some(s => resolvePricing(s, i).hasPricing);
+}
+
+function appendSlaRows(tbody, slas, i, hasKit, keyPrefix, showShopperCol) {
+  if (showShopperCol === undefined) showShopperCol = slasHaveDeliveryPricing(slas, i);
+  const colCount = showShopperCol ? 6 : 5;
   slas.forEach((sla, idx) => {
     const detailKey = keyPrefix ? `${keyPrefix}-${idx}` : String(idx);
     const totalLeadTime = calcTotalLeadTime(sla);
@@ -2069,6 +2285,36 @@ function appendSlaRows(tbody, slas, i, hasKit, keyPrefix) {
         </div>
       </div>` : '';
 
+    const pricing = resolvePricing(sla, i);
+    const arrival = computeArrivalDate(sla);
+
+    // Only rows with delivery pricing (markup/fixed) show the shopper cell.
+    // Pass-through rows in a mixed table render a muted dash to keep alignment.
+    const shopperCell = showShopperCol ? (pricing.hasPricing ? `
+      <td>
+        <div class="sla-shopper-price">${pricing.shopperLabel}</div>
+        <div class="sla-shopper-option">${pricing.optionLabel}</div>
+      </td>` : `<td><span class="sla-shopper-empty">—</span></td>`) : '';
+
+    // The delivery option & pricing block only appears when pricing is configured.
+    // Compact key/value layout mirroring the "Delivery time breakdown" block.
+    const pricingBlock = pricing.hasPricing ? `
+        <div class="detail-block">
+          <div class="detail-block-title">${i['lbl-delivery-pricing']}</div>
+          <div class="calc-row">
+            <span class="calc-label">${i['lbl-delivery-option']}</span>
+            <span class="calc-val">${pricing.optionLabel}</span>
+          </div>
+          <div class="calc-row">
+            <span class="calc-label">${i['lbl-pricing-model']}</span>
+            <span class="calc-val">${pricing.modelLabel}${pricing.modelDetail ? ` · ${pricing.modelDetail}` : ''}</span>
+          </div>
+          <div class="calc-row calc-row-total">
+            <span class="calc-label">${i['lbl-shopper-price']}</span>
+            <span class="calc-val">${pricing.shopperLabel}</span>
+          </div>
+        </div>` : '';
+
     const tr = document.createElement('tr');
     tr.className = 'sla-row';
     tr.id = `sla-row-${detailKey}`;
@@ -2080,9 +2326,10 @@ function appendSlaRows(tbody, slas, i, hasKit, keyPrefix) {
         </div>
       </td>
       <td><span class="sla-price">${sla.price}</span></td>
+      ${shopperCell}
       <td>
         <div class="sla-deadline">${sla.shippingEstimate}</div>
-        <div class="sla-deadline-sub">${sla.arrivalDate}</div>
+        <div class="sla-deadline-sub">${arrival}</div>
       </td>
       <td><span class="sla-qty">${sla.qty}</span></td>
       <td>
@@ -2095,7 +2342,7 @@ function appendSlaRows(tbody, slas, i, hasKit, keyPrefix) {
     const trDetail = document.createElement('tr');
     trDetail.className = 'sla-details-row hidden';
     trDetail.id = `detail-${detailKey}`;
-    trDetail.innerHTML = `<td colspan="5">
+    trDetail.innerHTML = `<td colspan="${colCount}">
       <div class="details-panel">
         <div class="detail-block">
           <div class="detail-block-title">${i['lbl-route']}</div>
@@ -2132,13 +2379,14 @@ function appendSlaRows(tbody, slas, i, hasKit, keyPrefix) {
           </div>
           <div class="calc-row">
             <span class="calc-label">${sla.scheduledDelivery ? i['lbl-estimate-date-scheduled'] : i['lbl-estimate-date']}</span>
-            <span class="calc-val">${sla.arrivalDate}</span>
+            <span class="calc-val">${arrival}</span>
           </div>
           <div class="calc-row calc-row-total">
             <span class="calc-label">${i['lbl-total']}</span>
             <span class="calc-val">${totalLeadTime}</span>
           </div>
         </div>
+        ${pricingBlock}
         ${kitExtra}
       </div>
     </td>`;
@@ -2192,17 +2440,19 @@ function buildIndividualResults(d, i) {
         <span class="section-divider-line"></span>`;
       block.appendChild(deliveryDivider);
 
+      const showShopperCol = slasHaveDeliveryPricing(slas, i);
       const table = document.createElement('table');
       table.className = 'sla-table';
       table.innerHTML = `<thead><tr>
         <th>${i['col-carrier']}</th>
         <th>${i['col-price']}</th>
+        ${showShopperCol ? `<th>${i['col-shopper-price']}</th>` : ''}
         <th>${i['col-deadline']}</th>
         <th>${i['col-qty']}</th>
         <th></th>
       </tr></thead><tbody></tbody>`;
       const tbody = table.querySelector('tbody');
-      appendSlaRows(tbody, slas, i, !!item.sku.kit, `item-${item.id}`);
+      appendSlaRows(tbody, slas, i, !!item.sku.kit, `item-${item.id}`, showShopperCol);
       block.appendChild(table);
       appendExcludedSection(block, excluded, i, `item-${item.id}`);
     }
@@ -2234,7 +2484,10 @@ function buildCombinedResults(d, i) {
   const tbody = document.getElementById('sla-tbody');
   tbody.innerHTML = '';
   const hasKit = Object.values(selectedSkus).some(s => s.kit);
-  appendSlaRows(tbody, slas, i, hasKit, '');
+  const showShopperCol = slasHaveDeliveryPricing(slas, i);
+  const thShopper = document.getElementById('th-shopper-price');
+  if (thShopper) thShopper.style.display = showShopperCol ? '' : 'none';
+  appendSlaRows(tbody, slas, i, hasKit, '', showShopperCol);
 
   const exSection = document.getElementById('excluded-section');
   const exTbody = document.getElementById('excluded-tbody');
