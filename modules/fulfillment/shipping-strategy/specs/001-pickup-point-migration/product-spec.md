@@ -11,8 +11,8 @@
 | **Status** | Draft |
 | **Created** | May 2026 |
 | **Personas** | Ecommerce Manager, Logistics Manager (secondary) |
-| **Infrastructure dependency** | Mandatory migration of the Pickup Point data layer off MasterData. Target database to be confirmed by engineering based on a technical study; **PostgreSQL is the likely target**. This spec cannot ship without the migration. |
-| **Source documents** | 2026 DOM On Site deck (internal); Customer Need — RONA; Customer Need — Arcaplanet; Customer Need — Mazda |
+| **Infrastructure dependency** | Mandatory migration of the Pickup Point data layer off MasterData to **PostgreSQL** (confirmed with engineering; historical backfill in progress). This spec cannot ship without the migration. |
+| **Source documents** | 2026 DOM On Site deck (internal); Customer Need — RONA; Customer Need — Arcaplanet; Customer Need — Mazda; engineering alignment with Vinícius Campos Silva (Jun 22 and Jul 24, 2026); [Delivery Promise setup blocked for `arcaplanetqa`](https://vtex.slack.com/archives/C0ABAPHQQCX/p1779739147445419?thread_ts=1775676320.166939&cid=C0ABAPHQQCX) (ticket #1389838, `DPT-180`) |
 
 ---
 
@@ -26,13 +26,14 @@
 
 ## Clarifications
 
-- **The primary deliverable is an infrastructure migration.** Pickup Point data currently lives in MasterData. The migration to a scalable data layer, likely **PostgreSQL** (to be confirmed by engineering after a technical study), is the prerequisite for everything else in this spec.
+- **The primary deliverable is an infrastructure migration.** Pickup Point data currently lives in MasterData. The migration to **PostgreSQL** — confirmed with engineering, with the historical backfill of the pickup point base already in progress — is the prerequisite for everything else in this spec.
+- **Two distinct query classes must be validated separately.** Logistics runtime systems (shipping calculation, SLA, indexation) query pickup points by fixed parameters, which maps well to a relational data layer. The Admin pickup point listing and search query relies on keyword/wildcard matching inherited from the Elasticsearch era, and is the query with the highest performance risk post-migration. Migration readiness depends on validating both, not only the runtime path.
 - **This spec addresses two coupled problems:** (1) the hard 50km radius limit that hides valid pickup points from shoppers in checkout, and (2) the merchant-facing radius configuration that should be replaced by a configurable limit on the *number* of nearest pickup points.
 - **The 50km limit is a MasterData constraint, not a product decision.** Removing it requires migrating off MasterData first. The migration is mandatory and cost-driven (~US$7,600/month recurring).
 - **The merchant config already exists in the Admin — but it does not work as displayed.** In `/admin/logistics#/config`, the merchant can set *"show only the first X pickup points within at most Y km of the delivery address."* Today neither field is honored as shown: the ~50km platform ceiling silently overrides the km field (the UI banner states "max distance considered is 50 km" even when the field shows 100), and the number of points (X) is a hard limit of 10. The work is mostly **making this existing config effective**, not building new UI.
 - **Current behavior:** the platform returns up to 300 pickup points ordered by proximity, filtered to a ~50km radius, and surfaces a hard limit of 10 nearest points in the experience. ZIP-to-coordinate conversion, proximity ordering, and the `distance` field in the response already exist. Pickup points beyond ~50km — or beyond the 10 nearest — are silently excluded with no error or explanation.
 - **Target behavior:** same 300 pickup points (technical API cap), same proximity ordering, same API contract — with **no distance ceiling** on `maxDistance`. The km radius field is removed from the Admin; the number of nearest points shown becomes **merchant-configurable**: the current hard limit of 10 becomes the default, raisable by the merchant up to a maximum of 300 (the technical API cap). One new field (`distanceKm`) is added to each pickup point entry. The 300 cap is the platform safeguard; the merchant-defined count is the shopper-facing limit, and km is never a filter.
-- **A second coupled constraint** exists: the Shipping API returns up to 10k pickup points per call, including inactive ones. Accounts with >10k PUPs risk incomplete Delivery Promise indexation. This is out of scope for this spec; to be addressed in a follow-up.
+- **A second coupled constraint is an active Delivery Promise onboarding blocker.** [`GET /api/logistics/pvt/configuration/pickuppoints/_search`](https://developers.vtex.com/docs/api-reference/logistics-api#get-/api/logistics/pvt/configuration/pickuppoints/_search) returns at most 10k pickup points — 100 per page across 100 pages. `pageSize` is hard-capped at 100 (`"Page size value must be less or equals to 100!"`) and the pagination window stops at an offset of 10,000, so a base larger than that cannot be read in full, even though the response exposes the real total (validated on `arcaplanetqa`: 42,464 pickup points). Inactive pickup points also consume the window. Because Delivery Promise depends on reading the full pickup point base, accounts above 10k cannot be onboarded — `arcaplanetqa` was formally declared **ineligible for Delivery Promise** for this reason ([Product Support → Engineering thread, May 25, 2026](https://vtex.slack.com/archives/C0ABAPHQQCX/p1779739147445419?thread_ts=1775676320.166939&cid=C0ABAPHQQCX); ticket #1389838, `DPT-180`). The target is no ceiling on traversal at all, or a ceiling resilient enough (on the order of 50k) that no real account reaches it — see FR-010.
 - Admin pickup point creation and management are out of scope except for the removal of the km radius field and making the "number of nearest points" config effective and flexible.
 
 ---
@@ -64,7 +65,7 @@ Today, any merchant who needs a radius above 50km must open a request and wait f
 
 ## Vision: What We Want
 
-1. **Migrate Pickup Point data off MasterData** — engineering owns the database selection (PostgreSQL is the current frontrunner); the migration is the prerequisite for everything else in this spec.
+1. **Migrate Pickup Point data off MasterData to PostgreSQL** — target confirmed with engineering; the migration is the prerequisite for everything else in this spec.
 2. **Remove the km radius configuration from the Admin frontend** — merchants should not define a maximum distance; the km field is removed.
 3. **Replace the radius with a configurable number of nearest points** — make the existing "first X pickup points" config effective and flexible, with a default of 10 and merchant-configurable up to a maximum of 300.
 4. **Surface the nearest eligible pickup points** to the shopper's ZIP code at checkout, regardless of distance — proximity-ordered, not radius-filtered — respecting the existing 300 pickup point API response limit.
@@ -75,19 +76,21 @@ The shopper experience becomes: *"I enter my ZIP and see the closest pickup opti
 
 ## User Stories
 
-### US-01 — Software Engineer Migrates Pickup Point Data Layer Off MasterData (prerequisite)
+### US-01 — Software Engineer Migrates Pickup Point Data Layer Off MasterData to PostgreSQL (prerequisite)
 
 **As** a software engineer,
-**I want** to evaluate candidate databases, run comparative tests, and execute a migration plan for the Pickup Point data layer off MasterData,
+**I want** to migrate the Pickup Point data layer from MasterData to PostgreSQL, with a validated initial load and performance evidence for every query pattern in use,
 **So that** the architectural root cause of the 50km constraint is eliminated and the platform can scale to support large pickup point networks at lower cost and higher reliability.
 
 > This user story must be executed using **SDD (Spec-Driven Development)**. The engineering team should produce a spec describing the target data layer, migration phases, and validation criteria before writing any implementation code. The spec is the handoff artifact.
 
 **Acceptance criteria:**
-- Engineering produces a comparative study of database candidates covering query performance, infrastructure cost, operational complexity, and migration risk.
-- A migration plan is defined with phasing, rollback strategy, and validation criteria at each stage.
+- The initial load reads from the MasterData source of truth (S3), not from the OpenSearch index, using the storage team's entity scan for `PICKUP_POINTS` under the `vtex` account.
+- Record counts are reconciled per account between MasterData and PostgreSQL before any read traffic is switched over. The MasterData `rest-content-range` header is an acceptable source for the expected total.
+- Performance evidence is produced for **both** query classes: the logistics runtime queries by fixed parameters, and the Admin listing/search query with keyword matching (see NFR-005).
 - Existing pickup point data is fully preserved post-migration with no data loss.
 - All existing shipping policies and storefront integrations continue to function without modification.
+- A migration plan is defined with phasing, rollback strategy, and validation criteria at each stage.
 
 ---
 
@@ -183,6 +186,66 @@ Track the following indicators separately for two cohorts (defined in FR-006):
 | Indicator | What it measures |
 |---|---|
 | API latency P50/P95/P99 on `_searchsellers` (pre/post) | Whether the new database performs acceptably at production load without the distance cap |
+| Latency P95/P99 and timeout rate on the Admin pickup point listing/search query (pre/post) | Whether the keyword-based Admin query — the highest-risk query in the migration — improves rather than degrades |
+| Error rate on pickup point reads by consuming system (pre/post) | Regression signal during the cutover, per consumer, not only in aggregate |
+
+### FR-008 — No Regression for Shoppers Already Served Today
+Removing the distance filter must not change what a shopper sees when the current behavior already satisfies them. For a ZIP that today returns the configured number of nearest pickup points entirely within ~50km, the post-migration response must contain the same pickup points, in the same proximity order.
+
+The behavior change is therefore additive and bounded: shoppers who see nothing (or a short list) today start seeing the nearest points regardless of distance, while shoppers already served see no difference. This is the requirement that keeps the migration from silently reshaping responses across the whole base at cutover.
+
+### FR-009 — Admin Pickup Point Search Must Stop Timing Out
+The Admin pickup point listing and search must return within the Admin request timeout for accounts with large pickup point bases. This query is the reason a documented Known Issue exists today (see *Known Issues Expected to Be Resolved*), and it is the query least favored by the move to a relational data layer because it relies on keyword/wildcard matching inherited from the Elasticsearch era.
+
+Two parts:
+1. **Behavior:** the search returns results — not a timeout — for accounts in the tens of thousands of pickup points.
+2. **Query review:** the wildcard matching must be reviewed field by field and reduced to what the merchant actually needs. Wildcard behavior that exists only because Elasticsearch made it free is not a requirement to preserve. Any reduction in match semantics must be an explicit product decision, not a side effect of the migration.
+
+### FR-010 — The Full Pickup Point Base Must Be Readable (unblocks Delivery Promise onboarding)
+Today `/pickuppoints/_search` cannot return more than 10k pickup points for an account (100 per page × 100 pages), and Delivery Promise needs the full base. This is not a cosmetic pagination limit — it has already cost an onboarding.
+
+**Documented evidence — Arcaplanet declared ineligible for Delivery Promise.** Source: [Product Support → Engineering thread](https://vtex.slack.com/archives/C0ABAPHQQCX/p1779739147445419?thread_ts=1775676320.166939&cid=C0ABAPHQQCX) (ticket #1389838, `DPT-180`, Apr–May 2026). What the thread establishes:
+
+- The DP setup for `arcaplanetqa` failed on `"To search for more then 10000 pickups use scroll api"`. The paged endpoint is described by engineering as "a API pública e recomendada", capped at 10k.
+- **The 10k window counts active and inactive pickup points alike.** The platform lists every registered pickup point regardless of status; the active/inactive distinction only happens later, when SLAs are built. Deactivating pickup points to get under the ceiling was considered and ruled out for this reason.
+- **Nobody could even measure how many are active**, because counting requires reading past the same 10k restriction.
+- **The scroll workaround was tested and failed.** An internal logistics route doing a `/scroll` against MasterData was attempted in a beta environment; its TTL is seconds rather than the VTEX standard, so there is not enough time to list a base this large.
+- **The path named by engineering was this migration:** "aguardar o MD sair do caminho", expected by the end of H2.
+- The account was ultimately declared ineligible, and >10k pickup points became a *de facto* eligibility criterion for Delivery Promise — with the explicit expectation that removing this blocker allows the criterion to be dropped from Open Beta.
+
+This is why the requirement is not "raise a number": the constraint has already been converted into a product eligibility rule, and it applies to more accounts than this one — engineering noted the same scenario across a list of accounts, concentrated in LATAM and EMEA.
+
+**The product target, in order of preference:**
+
+1. **No ceiling on how much of the base can be read.** A consumer can traverse every pickup point of an account, however many there are. This does not mean a single response carrying 50k records — page size stays bounded for payload and latency sanity; what becomes unbounded is the *traversal*, via cursor/keyset pagination instead of a capped offset window. This is the durable answer: the limit stops being something merchants can outgrow.
+2. **If a ceiling is unavoidable, it must be resilient rather than merely higher** — on the order of 50k, with headroom above the largest base we have today (~40k), so it is not a limit any real account is expected to reach.
+
+**What is not acceptable:** a fixed window that a known account already exceeds. Moving from 10k to, say, 15k would repeat the current failure with a different number.
+
+> **Open with engineering (Jul 27, 2026):** which of the two lands, and at what cost, depends on the performance tests that had not yet run. What is decided is the intent — Delivery Promise must be able to read the whole base — not the mechanism.
+
+---
+
+## Post-Migration Opportunity — Filter Pickup Points by Status *(possibility, not a requirement)*
+
+Registered for evaluation **after** the migration. Not scoped here and not committed.
+
+Today the platform lists every registered pickup point regardless of status; the active/inactive distinction happens later, when SLAs are built ([Product Support → Engineering thread](https://vtex.slack.com/archives/C0ABAPHQQCX/p1779739147445419?thread_ts=1775676320.166939&cid=C0ABAPHQQCX)). A status filter — most naturally an optional `isActive` query param applied server-side *before* pagination, with absence meaning "all" so existing consumers are untouched — could help in two distinct places:
+
+- **Delivery Promise onboarding:** reduces how much of the enumeration window inactive records consume. This does not replace FR-010 — an account with more than 10k *active* pickup points still needs unbounded traversal — but it could unblock accounts whose active base sits below the ceiling.
+- **Checkout:** the proximity search retrieves pickup points before status is considered. *Hypothesis to validate:* inactive pickup points may consume slots in the nearest-N selection and in the 300-result cap, so a shopper could see fewer real options than the merchant configured (FR-002b), while the platform pays to compute SLAs for points that are then discarded.
+
+**Why it is deferred rather than pursued now:** implementing the filter over MasterData while the PostgreSQL backfill is in flight would mean building it twice. Revisit after cutover, when it is a filter on the new data layer.
+
+**What it depends on:** how many pickup points are actually active in a large base — unmeasurable today, since counting requires reading past the same 10k restriction that blocks the onboarding.
+
+---
+
+## Known Issues Expected to Be Resolved
+
+| Known Issue | Why it happens | Expected post-migration |
+|---|---|---|
+| [Error when searching for pickup points and listing stores in the store locator](https://help.vtex.com/known-issues/error-when-searching-for-pickup-points-and-listing-stores-in-the-store-locator) | Timeout on the pickup point search query for accounts with large bases — the Admin pickup point screen stops loading (escalated for `thefoschini` in Jul 2026) | Expected to be resolved by the migration, since the root cause is query performance. **Not automatic:** this specific query uses keyword matching and must be explicitly load-tested before the KI is declared fixed (FR-009, NFR-005). |
 
 ---
 
@@ -216,9 +279,10 @@ A meaningful lift in pickup offer rate and conversion for the cohort is the sign
 |---|---|---|
 | ~50km hard radius ceiling | MasterData query cost above that threshold | Migrate to a scalable data layer; queries become cost-stable at any distance |
 | ~US$7,600/month recurring cost | MasterData storage + query pricing, growing with PUP count | Cost eliminated or significantly reduced post-migration |
-| 10k PUP API response cap | MasterData + API pagination limit; inactive PUPs consume quota | Out of scope; to be addressed in a follow-up spec |
+| 10k enumeration ceiling on `/pickuppoints/_search` (`pageSize` ≤ 100 × 100 pages) — already made `arcaplanetqa` ineligible for Delivery Promise | MasterData-backed pagination limit; active and inactive PUPs consume the window alike; the MD `/scroll` workaround fails on a seconds-long TTL | Unbounded traversal of the base, or a resilient ceiling (~50k) no real account reaches (FR-010) |
+| Admin pickup search timeouts on large bases | Keyword/wildcard query inherited from the Elasticsearch era, executed over MasterData | Expected to be resolved by the migration, conditional on load-testing this specific query (FR-009) |
 
-Engineering owns the database selection; **PostgreSQL is the likely target** pending the technical study. This spec defines requirements that are intentionally storage-layer agnostic.
+**Target data layer: PostgreSQL**, confirmed with engineering. The historical backfill of the pickup point base into PostgreSQL is already in progress ([logistics-critical#164](https://github.com/vtex/logistics-critical/pull/164)). Performance testing was still pending as of Jul 24, 2026 — it is the gate for the cutover, not a follow-up. The product requirements in this spec remain intentionally storage-layer agnostic.
 
 ---
 
@@ -249,17 +313,28 @@ ZIP centroid resolution must cover 100% of Brazilian ZIP codes at launch. Intern
 ### NFR-004 — Backward Compatibility
 No breaking changes to the existing delivery options API contract. New fields are additive.
 
+### NFR-005 — Performance Validation Is a Cutover Gate
+No read traffic is switched to PostgreSQL before performance evidence exists for both query classes, measured on a production-sized base:
+
+| Query class | Consumer | Validation |
+|---|---|---|
+| Fixed-parameter reads | Logistics runtime (shipping calculation, SLA, indexation) | P95/P99 equal to or better than MasterData at production load |
+| Keyword/wildcard search | Admin pickup point listing and search | No timeouts on accounts with tens of thousands of pickup points; reference cases: `thefoschini` (KI escalation) and an account above 40k PUPs such as `arcaplanet` |
+
+If the Admin keyword query does not meet this bar, the query is reworked (FR-009) — the cutover is not waived.
+
 ---
 
 ## Out of Scope
 
 - **The configuration surface for the configurable count** — the default (10) and maximum (300) are decided, but where the merchant sets the count (pickup shipping policy / Delivery Promise / checkout config) is an open question, not resolved in this spec.
 - **Coverage by polygon or region** — future capability; not in this spec.
-- **10k PUP API cap** — to be addressed in a follow-up spec.
+- **The pagination mechanism behind FR-010** — whether traversal becomes unbounded (cursor/keyset) or lands on a resilient ceiling around 50k is an engineering decision informed by the performance tests. The intent — the full base must be readable — is decided.
+- **A status filter on pickup point queries** — deliberately deferred to after the migration, registered as a possibility under *Post-Migration Opportunity*, not a requirement of this spec.
 - **International ZIP codes** — BR only at launch.
 - **Shopper GPS / device location** — proximity calculated from ZIP entered at checkout.
-- **Pickup point creation or management** — admin flows not modified except removal of the radius step.
-- **Infrastructure migration decision** — database selection owned by engineering.
+- **Pickup point creation or management** — admin flows not modified except removal of the radius step and the search query rework in FR-009.
+- **Migration design and rollout mechanics** — phasing, backfill strategy, and cutover execution owned by engineering; this spec defines the behavior and the gates.
 
 ---
 
@@ -282,6 +357,10 @@ No breaking changes to the existing delivery options API contract. New fields ar
 
 | # | Question | Owner | Priority |
 |---|---|---|---|
-| 1 | Confirm PostgreSQL as the target data layer (US-01), or surface alternative candidates. What is the expected timeline for the study and the migration? | Engineering | High |
+| 1 | What are the results of the performance tests, per query class (NFR-005)? Specifically: does the Admin keyword query hold on a base above 40k pickup points? | Engineering | High |
 | 2 | Do current PUP records in production have lat/lon coordinates populated at sufficient coverage? If not, what is the data remediation plan? | Engineering | High |
-| 3 | Post-migration, does the 300 pickup point response limit remain in place — but now we are able to return all 300 nearest results regardless of distance, with no silent exclusions due to the 50km cap? | Engineering + Carol | Medium |
+| 3 | Can traversal of the pickup point base become unbounded post-migration (cursor/keyset pagination), or do we land on a resilient ceiling around 50k (FR-010)? What does each option cost in latency for a base in the 40k range? | Engineering | High |
+| 4 | Which wildcard fields can be removed from the Admin search query (FR-009), and does removing them change any search behavior a merchant relies on today? | Engineering + Carol | High |
+| 5 | Post-migration, does the 300 pickup point response limit remain in place — but now we are able to return all 300 nearest results regardless of distance, with no silent exclusions due to the 50km cap? | Engineering + Carol | Medium |
+| 6 | Does the checkout proximity search carry inactive pickup points into the nearest-N selection and the 300-result cap? If so, the merchant-configured count (FR-002b) is silently degraded by records that will never be offered. | Engineering | Medium |
+| 7 | What is the expected timeline for the cutover, given the backfill is already in progress? | Engineering | Medium |

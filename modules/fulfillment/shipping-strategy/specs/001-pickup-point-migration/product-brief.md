@@ -5,8 +5,8 @@
 | **Module** | Fulfillment |
 | **Feature** | shipping-strategy |
 | **PM** | Carolina Tourinho |
-| **Eng Champion** | TBD |
-| **Status** | Under definition |
+| **Eng Champion** | Vinícius Campos Silva |
+| **Status** | In progress — PostgreSQL backfill underway, performance validation pending |
 | **Expected Release** | TBD |
 | **Availability** | TBD |
 | **Mode** | B2C & B2B |
@@ -43,25 +43,34 @@ VTEX has made a strategic decision to migrate all products off MasterData to mor
 **2. Cost effectiveness: we can run this better for less.**
 The current MasterData infrastructure for Pickup Points costs approximately ~US$7,600/month, a recurring expense that grows as the pickup point base expands. This is not just a cost line — it is a cost for a solution with known architectural limitations. A more robust database can handle geo-radius queries at any distance without the constraints that made the 50km limit necessary in the first place, and do so at a lower or comparable cost. The migration is an opportunity to improve performance, remove limitations, and reduce spend simultaneously.
 
-**3. Strategic alignment with VTEX's B2B growth.**
+**3. The current data layer is already failing merchants we have — including in Delivery Promise onboarding.**
+Two concrete failures today, neither of them about radius:
+
+- **Delivery Promise already lost an onboarding to this limit.** The listing API returns at most 10k pickup points (100 per page × 100 pages), while Delivery Promise needs the full base. Arcaplanet has ~40k, and after a failed setup, a rejected workaround, and a tested-but-unusable scroll route, the account was **declared ineligible for Delivery Promise** — with >10k pickup points becoming a de facto eligibility criterion, expected to be dropped once this blocker is removed ([thread](https://vtex.slack.com/archives/C0ABAPHQQCX/p1779739147445419?thread_ts=1775676320.166939&cid=C0ABAPHQQCX), ticket #1389838). Engineering's own answer at the time was to wait for MasterData to get out of the way — that is this migration. And it is not one account: the same scenario spans a list of accounts, concentrated in LATAM and EMEA.
+- **The Admin pickup point screen times out.** A documented Known Issue, escalated for `thefoschini` in Jul 2026: on large bases the pickup point search stops responding. The root cause is query performance, so the migration is expected to fix it — conditional on load-testing that specific query, which relies on keyword matching and is the one query that does not benefit automatically from the move.
+
+**4. Strategic alignment with VTEX's B2B growth.**
 VTEX is actively investing in B2B commerce — including the development of Buyer Portal and a broader suite of B2B capabilities. As VTEX expands its B2B footprint, pickup points become increasingly relevant: B2B buyers operate across large geographic areas, and DC-based pickup is a standard fulfillment model in many industries. The 50km limit is a direct blocker for this segment. Removing it is a prerequisite for making pickup a viable channel in VTEX's B2B offering as it scales.
 
 ---
 
 ## Scope
 
-- Migrate Pickup Point entity off MasterData to a new data layer, likely **PostgreSQL** (engineering study required; storage decision owned by engineering based on performance, cost, and operational complexity analysis).
+- Migrate Pickup Point entity off MasterData to **PostgreSQL** (target confirmed with engineering; historical backfill in progress). Cutover is gated on performance evidence for both query classes: the logistics runtime queries by fixed parameters and the Admin keyword search.
 - Remove the ~50km `maxDistance` limit, allowing the API to return up to 300 pickup points regardless of distance.
 - Remove the km radius field from the Admin frontend — merchants should no longer define a maximum distance when setting up a pickup point shipping policy (the field is non-functional today, overridden by the ~50km platform ceiling).
 - Make the existing "number of nearest pickup points" Admin config effective and flexible — the current hard limit of 10 becomes the default, merchant-configurable up to a healthy maximum of 300 (the technical API cap).
-- Preserve all existing pickup point data and backward compatibility for existing shipping policies and storefronts.
-- Execute a progressive and careful rollout. The migration plan — including phasing, rollback strategy, and validation criteria at each stage — is to be defined by engineering as part of the technical study (US-01).
+- Preserve all existing pickup point data and backward compatibility for existing shipping policies and storefronts. Shoppers already served today must see the same pickup points, in the same order — the behavior change is additive, not a reshaping of existing responses.
+- Fix the Admin pickup point search timeout and review the wildcard matching it inherited from Elasticsearch, so the Known Issue can be closed with evidence rather than assumed resolved.
+- Make the full pickup point base readable, so Delivery Promise onboarding is no longer blocked for accounts with large pickup point bases: no ceiling on traversal, or a resilient ceiling around 50k that no real account reaches. Page size stays bounded — what has to stop being capped is how much of the base can be read, not how much comes back per request.
+- Execute a progressive and careful rollout. The migration plan — including phasing, rollback strategy, and validation criteria at each stage — is owned by engineering (US-01).
 
 ## Not in Scope
 
 - The configuration surface for the configurable count (where the merchant sets it) — open question, not resolved here. The default (10) and maximum (300) are decided.
-- Pickup point creation or management flows in the Admin beyond the km field removal and the count config.
-- Resolution of the 10k PUP API response cap — known constraint, separate follow-up.
+- Pickup point creation or management flows in the Admin beyond the km field removal, the count config, and the search query fix.
+- The pagination mechanism that makes the full base readable — unbounded traversal or a resilient ceiling around 50k is an engineering decision informed by the performance tests. That the base must be readable in full is not.
+- A status filter on pickup point queries (active vs. inactive) — **deferred, not discarded.** Registered in the spec as a post-migration possibility: it could reduce how much of the enumeration window inactive records consume for Delivery Promise, and — to be validated — may also be costing shoppers real options at checkout, if inactive pickup points occupy slots in the nearest-N list before status is considered. Building it over MasterData now would mean building it twice.
 - International coverage — Brazil only at launch.
 
 ---
