@@ -126,6 +126,11 @@ const IconDotsSixVertical = ({ size = 16, ...rest }) => (
     <path d="M108,60A16,16,0,1,1,92,44,16,16,0,0,1,108,60Zm56-16a16,16,0,1,0,16,16A16,16,0,0,0,164,44ZM92,112a16,16,0,1,0,16,16A16,16,0,0,0,92,112Zm72,0a16,16,0,1,0,16,16A16,16,0,0,0,164,112ZM92,180a16,16,0,1,0,16,16A16,16,0,0,0,92,180Zm72,0a16,16,0,1,0,16,16A16,16,0,0,0,164,180Z"/>
   </svg>
 );
+const IconDotsThreeVertical = ({ size = 16, ...rest }) => (
+  <svg width={size} height={size} viewBox="0 0 256 256" fill="currentColor" xmlns="http://www.w3.org/2000/svg" {...rest}>
+    <path d="M128,44a20,20,0,1,1-20,20A20,20,0,0,1,128,44Zm0,64a20,20,0,1,0,20,20A20,20,0,0,0,128,108Zm0,64a20,20,0,1,0,20,20A20,20,0,0,0,128,172Z"/>
+  </svg>
+);
 const IconCaretLeftSmall = ({ size = 16, ...rest }) => (
   <svg width={size} height={size} viewBox="0 0 256 256" fill="currentColor" xmlns="http://www.w3.org/2000/svg" {...rest}>
     <path d="M165.66,202.34a8,8,0,0,1-11.32,11.32l-80-80a8,8,0,0,1,0-11.32l80-80a8,8,0,0,1,11.32,11.32L91.31,128Z"/>
@@ -210,6 +215,7 @@ window.IconCube = IconCube;
 window.IconCursorFill = IconCursorFill;
 window.IconDragDots = IconDragDots;
 window.IconDotsSixVertical = IconDotsSixVertical;
+window.IconDotsThreeVertical = IconDotsThreeVertical;
 window.IconPlayCircleFill = IconPlayCircleFill;
 window.IconCaretLeftSmall = IconCaretLeftSmall;
 window.IconCaretDown = IconCaretDown;

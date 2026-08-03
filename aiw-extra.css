@@ -1311,6 +1311,16 @@
   font-size: 13px; font-weight: 500;
   display: inline-flex; align-items: center;
 }
+[data-sl-button][data-variant="tertiary"][data-has-label].wf-tasks-reorder-btn {
+  padding-right: 10px;
+}
+/* Keep the reorder button's height/font/padding consistent across variants (tertiary ↔ primary) */
+.wf-tasks-reorder-btn[data-has-label] {
+  height: 2rem;
+  padding: 0 10px;
+  font-size: 13px;
+  font-weight: 500;
+}
 [data-sl-button][data-variant="tertiary"][data-tone="critical"] {
   color: var(--sl-fg-critical);
 }
@@ -1706,19 +1716,6 @@
 }
 .wf-stage-count {
   font-size: 12px; color: var(--fg-3); margin-top: 2px;
-}
-
-/* ---------- Open task cards — usa TaskKanbanCard compartilhado (view-tasks.jsx) ---------- */
-.task-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
-  align-items: stretch;
-}
-
-/* Garante que o wrapper div herde a altura do grid-cell */
-.task-grid > div {
-  display: contents;
 }
 
 /* ---------- Home (preview) — situation-room dashboard ---------- */
@@ -3944,11 +3941,17 @@ sl-tag[data-color="blue"] {
 .stage-reorder-btn:disabled { color: #ccc; cursor: default; }
 
 .stage-task {
+  position: relative;
+  /* z-index:0 (em vez de auto) cria um contexto de empilhamento local, para
+     que o z-index negativo do ::before (linha da trilha) fique restrito a
+     esta linha — atrás apenas dos próprios filhos (ex: stage-task-indicator),
+     sem vazar para trás de elementos irmãos/ancestrais. */
+  z-index: 0;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 0px 12px 0px 8px;
+  padding: 0px 12px 0px 16px;
   height: 56px;
   border-bottom: 1px solid var(--border);
   background: transparent;
@@ -3960,6 +3963,45 @@ sl-tag[data-color="blue"] {
 }
 .wf-flat-task-wrap:last-child .stage-task { border-bottom: none; }
 .stage-task:hover { background: rgba(255, 255, 255, 1); }
+/* Estado "editar ordem" tem padding-left/padding-right independentes do
+   estado padrão (não-editável), para que um não sobrescreva o outro. */
+.stage-task--reorder {
+  padding-left: 12px;
+  padding-right: 20px;
+}
+/* Linha vertical "de ponta a ponta" da linha, centralizada no indicador da
+   etapa (.stage-task-indicator) — cria o efeito de trilha contínua entre as
+   tarefas. Centro = padding-left + metade da largura do indicador (24px). */
+.stage-task::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 28px;
+  width: 1px;
+  height: 100%;
+  background: var(--border);
+  pointer-events: none;
+  z-index: -1;
+}
+.stage-task--reorder::before {
+  /* Em modo de reordenação a lista pode ser reordenada livremente, então a
+     trilha de continuidade entre tarefas deixa de fazer sentido — some. */
+  display: none;
+}
+/* Na primeira tarefa não há vizinho acima para conectar, então a trilha
+   começa no centro do indicador (metade da altura da linha) e vai só até
+   embaixo. Na última tarefa é o oposto: vai do topo até o centro. Quando é
+   a única tarefa da lista, as duas regras se combinam e a linha some. */
+.wf-flat-task-wrap:first-child .stage-task::before {
+  top: 50%;
+  height: 50%;
+}
+.wf-flat-task-wrap:last-child .stage-task::before {
+  height: 50%;
+}
+.wf-flat-task-wrap:first-child:last-child .stage-task::before {
+  display: none;
+}
 .stage-task-num {
   font: var(--sl-text-body);
   letter-spacing: var(--sl-text-body-letter-spacing);
@@ -3978,6 +4020,11 @@ sl-tag[data-color="blue"] {
   color: var(--sl-fg-base);
   flex: none;
 }
+/* Tarefa inativa: sem tag própria — em vez disso o ícone da etapa perde a cor
+   (vira escala de cinza) e o nome fica esmaecido, direto na linha. */
+.stage-task-name--inactive {
+  color: var(--fg-3);
+}
 .stage-task-tag {
   display: inline-flex; align-items: center; justify-content: center;
   width: 24px; height: 24px;
@@ -3986,6 +4033,43 @@ sl-tag[data-color="blue"] {
 }
 .stage-task-tag.auto   { background: #DBEAFE; color: #0064C3; }
 .stage-task-tag.manual { background: #E5E7EB; color: #1F1F1F; }
+
+/* Execução · Visibilidade — resumo sempre visível na linha, como texto simples
+   alinhado à direita (o detalhe editável fica no trigger-dropdown, aberto
+   pelo botão de lápis). */
+.stage-task-meta {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  text-align: right;
+  min-width: 0;
+  overflow: hidden;
+}
+.stage-task-meta-text {
+  font-size: 12px;
+  color: var(--fg-3);
+  white-space: nowrap;
+}
+.stage-task-meta-dot {
+  font-size: 12px;
+  color: var(--fg-3);
+}
+
+/* Indicador de classificação da tarefa (auto/manual) — mesmo padrão visual
+   do stage-flat-card-indicator (bloco colorido + ícone), só que compacto
+   para caber na linha de 56px da tarefa. */
+.stage-task-indicator {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 24px; height: 24px;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+.stage-task-indicator--inactive {
+  background: var(--bg-muted);
+  color: var(--fg-3);
+}
 
 .stage-task-grip {
   display: inline-flex; align-items: center; justify-content: center;
@@ -5406,7 +5490,7 @@ button.stage-add-task-btn[data-sl-button][data-variant="tertiary"][data-has-labe
   height: 18px;
   padding: 0 5px;
   border-radius: 20px;
-  background: rgba(196, 148, 255, 1);
+  background: var(--sl-bg-accent-strong);
   color: #fff;
   font-size: 10px;
   font-weight: 700;
@@ -5414,10 +5498,10 @@ button.stage-add-task-btn[data-sl-button][data-variant="tertiary"][data-has-labe
   flex-shrink: 0;
 }
 
-/* Task inline config collapse */
+/* Task row with trigger-style dropdown open (floats over content, no collapse) */
 .stage-task--open {
-  background: var(--bg);
-  border-bottom: none;
+  z-index: 5;
+  background: var(--bg-soft);
 }
 .stage-task--open .stage-task-chevron {
   box-shadow: none;
@@ -5448,6 +5532,8 @@ button.stage-add-task-btn[data-sl-button][data-variant="tertiary"][data-has-labe
 }
 
 .stage-task-chevron {
+  position: relative;
+  z-index: 1;
   margin-left: auto;
   display: inline-flex;
   align-items: center;
@@ -5496,10 +5582,32 @@ button.stage-add-task-btn[data-sl-button][data-variant="tertiary"][data-has-labe
 .stage-task-edit-btn {
   display: inline-flex;
 }
+/* Botão de editar fixo na linha (não fica escondido atrás do hover como o
+   antigo grupo de ações) — sempre visível, alinhado à direita da linha. */
+.stage-task-edit-btn--fixed {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+.stage-task-action-btn--danger:hover {
+  color: var(--sl-color-red-9, #EC3727);
+  background: var(--sl-color-red-1, #FDF6F5);
+}
 .stage-task-config {
   border-bottom: none;
   background: #fff;
   padding: 0 16px 8px;
+}
+
+/* Dropdown de configuração rápida da tarefa (Etapa/Status/Como executa/
+   Visibilidade) — flutua sobre a lista em vez de abrir um colapse, para não
+   empurrar as linhas seguintes. Ancorado ao próprio .stage-task (position:relative). */
+.stage-task-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 12px;
+  width: 260px;
+  z-index: 10;
+  cursor: default;
 }
 
 /* ── Task quick-info cards (Figma node 1505:3209) ───────── */
@@ -8218,6 +8326,84 @@ button.stage-add-task-btn[data-sl-button][data-variant="tertiary"][data-has-labe
   font-size: 13px;
 }
 
+/* ---------- Occurrences list (home) — mesma linha do My Initiatives,
+   trocando progresso/responsável por escopo/SLA restante/severidade ---------- */
+[data-sl-occurrence-row] [data-sl-initiative-row-status] {
+  width: 24px;
+}
+
+[data-sl-occurrence-row-scope] {
+  flex: 0 0 auto;
+  width: 132px;
+  font-size: 12px;
+  color: var(--sl-color-gray-8, #707070);
+}
+
+[data-sl-occurrence-row-sla] {
+  flex: 0 0 auto;
+  width: 120px;
+  font-size: 12px;
+  color: var(--sl-color-gray-7, #999);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+[data-sl-occurrence-row-severity] {
+  flex: 0 0 auto;
+  width: 100px;
+}
+
+/* Cabeçalho de colunas — mesma grade da linha, com o estilo do header
+   da tabela de Pedidos (data-sl-orders-row[data-orders-head]): 48px,
+   fundo branco, borda inferior, texto 12px/400 em cinza — sem bold/uppercase. */
+[data-sl-occurrence-list-head] {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 48px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--sl-color-gray-3, #E0E5EF);
+  background: var(--sl-bg-base, #fff);
+}
+
+[data-sl-occurrence-head-status] {
+  width: 24px;
+  flex-shrink: 0;
+}
+
+[data-sl-occurrence-head-main],
+[data-sl-occurrence-head-scope],
+[data-sl-occurrence-head-sla],
+[data-sl-occurrence-head-severity] {
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--sl-color-gray-6, #7F8C9E);
+}
+
+[data-sl-occurrence-head-main] {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+[data-sl-occurrence-head-scope] {
+  flex: 0 0 auto;
+  width: 132px;
+}
+
+[data-sl-occurrence-head-sla] {
+  flex: 0 0 auto;
+  width: 120px;
+}
+
+[data-sl-occurrence-head-severity] {
+  flex: 0 0 auto;
+  width: 100px;
+}
+
 /* ---------- Chats list ---------- */
 [data-sl-chats-row-icon] {
   display: inline-flex;
@@ -8370,8 +8556,215 @@ button.stage-add-task-btn[data-sl-button][data-variant="tertiary"][data-has-labe
 }
 .canvas-a-run-btn:hover { background: var(--bg-soft, #f5f5f5); }
 .canvas-a-run-btn--primary {
-  background: var(--fg, #171717);
-  color: var(--bg, #fff);
-  border-color: var(--fg, #171717);
+  background: #2158E8;
+  color: #fff;
+  border-color: #2158E8;
 }
-.canvas-a-run-btn--primary:hover { opacity: .85; }
+.canvas-a-run-btn.canvas-a-run-btn--primary:hover {
+  background: #1b4bd1;
+  color: #fff;
+}
+.canvas-a-run-btn--danger {
+  color: var(--sl-color-red-9, #EC3727);
+  border-color: var(--sl-color-red-4, #FFD0C7);
+}
+.canvas-a-run-btn--danger:hover { background: var(--sl-color-red-1, #FDF6F5); }
+
+/* ══════════════════════════════════════════════════════════
+   Canvas Pattern D · Devoluções — decisão necessária em lote
+   (hybrid: conteúdo do wireframe · componentes já existentes)
+   ══════════════════════════════════════════════════════════ */
+
+/* ── Metadados no mesmo style dt/dd do canvas de pedido (.detail-fields.od-meta) —
+   reseta o margin-top negativo do od-meta (pensado para o od-header) e o
+   min-width do rótulo (200px é largo demais para "Status"/"Lead" sozinhos). ── */
+.canvas-d-meta {
+  grid-template-columns: 140px 1fr;
+  margin-top: 0;
+}
+
+/* ── Diagnóstico · badge "Confiança Alta" no cabeçalho do accordion + popover ── */
+.canvas-d-conf-badge-wrap {
+  position: relative;
+  display: inline-flex;
+  vertical-align: middle;
+  margin-left: 10px;
+}
+.canvas-d-conf-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 3px 10px;
+  border-radius: 99px;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background .12s ease;
+}
+.canvas-d-conf-badge--high { color: var(--sl-fg-success, #0E6E3A); border-color: var(--sl-color-green-4, #BBF7D0); }
+.canvas-d-conf-badge--med  { color: var(--sl-color-orange-8, #E57001); border-color: var(--sl-color-orange-4, #FFDDB0); }
+.canvas-d-conf-badge:hover,
+.canvas-d-conf-badge.open { background: var(--bg-soft, #f5f5f5); }
+.canvas-d-conf-popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  width: 280px;
+  background: var(--bg, #fff);
+  border: 1px solid var(--border, #E5E5E5);
+  border-radius: 16px;
+  box-shadow: 0 20px 25px -5px rgba(0,0,0,.1), 0 8px 10px -6px rgba(0,0,0,.1);
+  padding: 14px 16px;
+  z-index: 60;
+  animation: composer-add-menu-in .15s ease-out;
+  cursor: default;
+}
+/* Shoreline h3 (display-3) + caption (caption-1) */
+.canvas-d-conf-popover-title {
+  font: var(--sl-text-display-3);
+  letter-spacing: var(--sl-text-display-3-letter-spacing);
+  color: var(--fg);
+  margin-bottom: 6px;
+}
+.canvas-d-conf-popover-text {
+  font: 500 .75rem/1rem "Inter", sans-serif; /* --sl-text-caption-1-font */
+  color: var(--fg-2);
+}
+
+/* ── Diagnóstico · notas (mesma linguagem visual do canvas-a-diag-meta-item,
+   mas full-width e sem cor de fundo — só borda + ícone) ── */
+.canvas-d-note {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius, 10px);
+  margin-top: 14px;
+}
+.canvas-d-note-icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  color: var(--fg-3);
+}
+.canvas-d-note-text {
+  flex: 1;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--fg-2);
+}
+.canvas-d-note-link {
+  flex-shrink: 0;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--fg);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  padding: 0;
+}
+.canvas-d-note-link:hover { text-decoration: underline; }
+
+/* ── Tarefas sugeridas · subtítulo abaixo do título + tag "Tarefa 2" ── */
+.canvas-d-task-title {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.canvas-d-task-title-line { display: flex; align-items: center; }
+.canvas-task-sub {
+  display: block;
+  font-size: 12px;
+  color: var(--fg-3);
+  font-weight: 400;
+}
+.canvas-d-tag {
+  display: inline-block;
+  margin-left: 8px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--fg-3);
+  background: var(--bg-soft);
+  border-radius: 99px;
+  padding: 1px 8px;
+  vertical-align: middle;
+}
+/* "Aguardando" — mesmo botão canvas-a-run-btn, só que desabilitado */
+.canvas-a-run-btn:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+  background: transparent;
+  color: var(--fg-3);
+}
+.canvas-a-run-btn:disabled:hover { background: transparent; }
+
+/* Task row clicável (tarefas com detailKey abrem o subview dedicado,
+   igual ao clique numa linha da ImpactedTable abre o pedido) */
+.canvas-task-row--clickable { cursor: pointer; transition: background .12s ease; }
+.canvas-task-row--clickable:hover { background: var(--bg-soft, #f5f5f5); }
+
+/* ── Casos que precisam de decisão · duas tabelas (Exceções / Duplicadas) ── */
+.canvas-d-decision-group { margin-bottom: 16px; }
+.canvas-d-decision-group:last-child { margin-bottom: 0; }
+.canvas-d-decision-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--fg-3);
+  margin-bottom: 8px;
+}
+/* ── Cards detalhados por solicitação (item, foto, motivo, citação do
+   cliente, situação e as duas ações) — substitui a tabela compacta. ── */
+.decision-cards { display: flex; flex-direction: column; gap: 10px; }
+.decision-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius, 10px);
+  background: #fff;
+}
+.decision-card-photo {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius, 10px);
+  background: var(--bg-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+}
+.decision-card-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.decision-card-head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.decision-card-id { font-family: ui-monospace, "SF Mono", monospace; font-size: 13px; color: var(--fg-3); }
+.decision-card-item { font-size: 15px; font-weight: 500; color: var(--fg); }
+.decision-card-reason { font-size: 13px; color: var(--fg-2); }
+.decision-card-quote {
+  margin: 4px 0 0;
+  padding: 8px 12px;
+  border-left: 2px solid var(--border);
+  font-size: 13px;
+  font-style: italic;
+  line-height: 1.5;
+  color: var(--fg-2);
+}
+.decision-card-status {
+  margin-top: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--sl-color-orange-8, #E57001);
+}
+.decision-card-status--danger { color: var(--sl-color-red-9, #EC3727); }
+.decision-card-actions {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.decision-card-actions .canvas-a-run-btn { padding: 5px 12px; font-size: 13px; text-align: center; }
+.canvas-d-decision-group--subview .decision-card-actions { flex-direction: row; }
+

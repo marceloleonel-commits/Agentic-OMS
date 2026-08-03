@@ -1,4 +1,4 @@
-/* global React, Icon, AIWData, MessageComposer, ChatEngine, SevPill, Dropdown */
+/* global React, Icon, AIWData, MessageComposer, ChatEngine, SevPill, Dropdown, StatusIcon */
 const { useState, useEffect, useRef } = React;
 
 /* ------- Overview metric sparkline (v3 port: OverviewMetricChart) ------- */
@@ -124,8 +124,86 @@ function WorkflowStagesCard() {
   );
 }
 
-/* ------- Open tasks — uses shared TaskKanbanCard from view-tasks.jsx ------- */
-const OPEN_TASKS_MAX = 4;
+/* ------- Occurrences list — reaproveita o padrão de linha do My Initiatives ------- */
+const OPEN_TASKS_MAX = 8;
+
+const OCCURRENCE_STATUS_LABEL = {
+  triage:    "Em aberto",
+  active:    "Em execução",
+  attention: "Requer atenção",
+  completed: "Concluída",
+};
+
+// Nº de pedidos afetados — vem de detail.affectedOrders (Canvas A) ou detail.impacted (demais tarefas).
+function occurrenceScopeCount(t) {
+  const d = t.detail || {};
+  if (t.canvasPattern === "A") return d.affectedOrders?.total ?? (d.affectedOrders?.items?.length || 0);
+  return (d.impacted || []).length;
+}
+
+// Texto completo do escopo — a maioria das tarefas escopa em "pedidos afetados",
+// mas o Canvas D (triagem de devoluções em lote) escopa em "casos em decisão".
+function occurrenceScopeLabel(t) {
+  const d = t.detail || {};
+  if (t.canvasPattern === "D") {
+    const n = (d.exceptions?.rows?.length || 0) + (d.duplicates?.rows?.length || 0);
+    return `${n} caso${n === 1 ? "" : "s"} em decisão`;
+  }
+  const scope = occurrenceScopeCount(t);
+  return `${scope} pedido${scope === 1 ? "" : "s"} afetado${scope === 1 ? "" : "s"}`;
+}
+
+// SLA restante — só horas ou dias restantes, calculado a partir de detail.slaHours
+// (positivo = horas restantes, negativo = horas em atraso, null = sem SLA formal).
+function occurrenceSlaLabel(t) {
+  const h = t.detail && t.detail.slaHours;
+  if (h == null) return "Sem SLA";
+  if (h < 0) {
+    const overdue = Math.abs(h);
+    return overdue >= 24 ? `Expirado há ${Math.round(overdue / 24)}d` : `Expirado há ${overdue}h`;
+  }
+  if (h < 24) return `${h}h restantes`;
+  return `${Math.round(h / 24)}d restantes`;
+}
+
+function OccurrenceRow({ t, onOpen }) {
+  const status = t.status || (t.priority === "high" ? "attention" : "active");
+  const scopeLabel = occurrenceScopeLabel(t);
+  const sla = occurrenceSlaLabel(t);
+  return (
+    <button data-sl-initiative-row="" data-sl-occurrence-row="" onClick={() => onOpen(t.id)}>
+      <span data-sl-occurrence-row-severity="">
+        <SevPill level={(t.detail && t.detail.severity) || "medium"} />
+      </span>
+      <span data-sl-initiative-row-main="">
+        <span data-sl-initiative-row-title="">{t.title}</span>
+        <span data-sl-initiative-row-meta="">
+          <span>{t.tag || (t.source && t.source.label) || "Orders"}</span>
+          <span data-sl-initiative-row-dot="">·</span>
+          <span>{OCCURRENCE_STATUS_LABEL[status] || status}</span>
+        </span>
+      </span>
+      <span data-sl-occurrence-row-scope="">{scopeLabel}</span>
+      <span data-sl-occurrence-row-sla="">{sla}</span>
+      <span data-sl-initiative-row-status="">
+        <StatusIcon status={status} />
+      </span>
+    </button>
+  );
+}
+
+/* Cabeçalho de colunas — mesma grade da linha, com peso visual menor. */
+function OccurrenceListHead() {
+  return (
+    <div data-sl-occurrence-list-head="">
+      <span data-sl-occurrence-head-severity="">Severidade</span>
+      <span data-sl-occurrence-head-main="">Ocorrência</span>
+      <span data-sl-occurrence-head-scope="">Escopo</span>
+      <span data-sl-occurrence-head-sla="">SLA</span>
+      <span data-sl-occurrence-head-status="" />
+    </div>
+  );
+}
 
 function OpenTasksCard({ onOpen, onGotoTasks }) {
   const { tasks } = AIWData;
@@ -134,29 +212,18 @@ function OpenTasksCard({ onOpen, onGotoTasks }) {
   return (
     <section className="aiw-section">
       <div className="aiw-section-head">
-        <h2>Tarefas em aberto</h2>
+        <h2>Iniciativas</h2>
         {remaining > 0 && (
           <button className="filter-pill" onClick={() => onGotoTasks && onGotoTasks()}>
             Ver todas ({tasks.length}) <Icon name="chevron-right" size={12} />
           </button>
         )}
       </div>
-      <div className="task-grid">
-        {visible.map((t) => {
-          const task = {
-            id:               t.id,
-            title:            t.title,
-            status:           t.status || (t.priority === "high" ? "attention" : "active"),
-            source:           t.source || { kind: "order", label: t.tag || "Orders" },
-            assigneeInitials: t.assigneeInitials || t.assigneeInitial || "—",
-            assigneeName:     t.assigneeName || "",
-          };
-          return (
-            <div key={t.id} onClick={() => onOpen(t.id)} style={{ cursor: "pointer" }}>
-              <TaskKanbanCard task={task} />
-            </div>
-          );
-        })}
+      <div data-sl-initiative-list="">
+        <OccurrenceListHead />
+        {visible.map((t) => (
+          <OccurrenceRow key={t.id} t={t} onOpen={onOpen} />
+        ))}
       </div>
     </section>
   );

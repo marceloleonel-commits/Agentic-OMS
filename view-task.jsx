@@ -1480,7 +1480,7 @@ function DocMetaRow({ label, children }) {
 /* Accordion section — v3 InitiativeDocumentAccordionSection (defaultOpen).
    Optional `count` badge next to the title and a `loadingMs` skeleton phase
    (shown the first time the section is opened, to simulate an agent query). */
-function DocAccordionSection({ title, defaultOpen = true, count, loadingMs = 0, skeleton, children }) {
+function DocAccordionSection({ title, defaultOpen = true, count, loadingMs = 0, skeleton, badge, children }) {
   const [open, setOpen] = useState(defaultOpen);
   const [loaded, setLoaded] = useState(!loadingMs || defaultOpen);
   const [loading, setLoading] = useState(false);
@@ -1503,6 +1503,7 @@ function DocAccordionSection({ title, defaultOpen = true, count, loadingMs = 0, 
         <span data-sl-doc-section-title="">
           {title}
           {typeof count === "number" && <span data-sl-doc-section-count="">{count}</span>}
+          {badge}
         </span>
         <svg
           data-sl-doc-accordion-chevron=""
@@ -1615,6 +1616,19 @@ function TaskListSubview({ kind, task, onOpenOrder }) {
       <div data-sl-task-document-content="">
         <h1 data-sl-task-document-title="">Pedidos {isCanvasA ? "afetados" : "impactados"}</h1>
         <ImpactedTable rows={rows} onOpenOrder={isCanvasA ? (() => {}) : onOpenOrder} />
+      </div>
+    );
+  }
+  if (kind === "duplicates" || kind === "exceptions") {
+    const group = d[kind];
+    const suggested = (d.suggestedTasks || []).find((t) => t.detailKey === kind);
+    return (
+      <div data-sl-task-document-content="">
+        <h1 data-sl-task-document-title="">{suggested ? suggested.title : group.label}</h1>
+        {suggested && <p data-sl-task-document-summary="">{suggested.sub}</p>}
+        <div className="canvas-d-decision-group canvas-d-decision-group--subview">
+          <CanvasDDecisionGroupBody group={group} />
+        </div>
       </div>
     );
   }
@@ -1858,6 +1872,227 @@ function CanvasPatternA({ task, onOpenOrder, onOpenList }) {
   );
 }
 
+/* ══════════════════════════════════════════════════════════
+   Canvas Pattern D — Devolução e reembolso (fluxo multi-etapa
+   com decisão humana), variante "triagem em lote" (wireframe:
+   canvas_pattern_4_return_refund + tela de decisão em massa).
+   Blocos: metadados · diagnóstico · tarefas sugeridas ·
+   casos que precisam de decisão · reasoning da tarefa.
+   Reaproveita DocMetaRow, canvas-tasks-card/SubTaskStatusIcon,
+   canvas-a-run-btn e CanvasAConfidence já usados no Canvas A —
+   sem introduzir estilo próprio (cores/boxes) do wireframe.
+   ══════════════════════════════════════════════════════════ */
+function CanvasDSuggestedRow({ t, onOpen }) {
+  const isPending = t.state === "pending";
+  const status = t.state === "done" ? "completed" : t.state;
+  const clickable = !!(t.detailKey && onOpen);
+  return (
+    <div
+      className={`canvas-task-row${clickable ? " canvas-task-row--clickable" : ""}`}
+      onClick={clickable ? () => onOpen(t.detailKey) : undefined}
+      role={clickable ? "button" : undefined}
+      tabIndex={clickable ? 0 : undefined}
+    >
+      <div className="canvas-task-left" data-sl-initiative-tasks-row-left="">
+        <span data-sl-initiative-tasks-status-slot="">
+          {isPending ? <span className="task-pending" /> : <SubTaskStatusIcon status={status} />}
+        </span>
+        <span className="canvas-task-title canvas-d-task-title">
+          <span className="canvas-d-task-title-line">
+            {t.title}
+            {t.tag && <span className="canvas-d-tag">{t.tag}</span>}
+          </span>
+          <span className="canvas-task-sub">{t.sub}</span>
+        </span>
+      </div>
+      {t.action ? (
+        <button type="button" className={`canvas-a-run-btn${t.primary ? " canvas-a-run-btn--primary" : ""}`}>
+          {t.action}{t.external ? " ↗" : ""}
+        </button>
+      ) : t.waitingLabel ? (
+        <button type="button" className="canvas-a-run-btn" disabled>{t.waitingLabel}</button>
+      ) : null}
+    </div>
+  );
+}
+
+/* Badge "Confiança Alta" no cabeçalho do accordion Diagnóstico — ao clicar,
+   abre um popover explicando a confiança (lacunas, critérios avaliados etc.)
+   sem expandir/recolher a seção (stopPropagation no clique do badge). */
+function ConfidenceBadge({ label, pct, detail }) {
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDocClick = (e) => { if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false); };
+    document.addEventListener("mousedown", onDocClick);
+    return () => document.removeEventListener("mousedown", onDocClick);
+  }, [open]);
+
+  const tone = pct >= 80 ? "high" : "med";
+
+  return (
+    <span className="canvas-d-conf-badge-wrap" ref={wrapRef}>
+      <span
+        className={`canvas-d-conf-badge canvas-d-conf-badge--${tone}${open ? " open" : ""}`}
+        role="button"
+        tabIndex={0}
+        onClick={(e) => { e.stopPropagation(); setOpen((o) => !o); }}
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); e.stopPropagation(); setOpen((o) => !o); } }}
+      >
+        Confiança {label}
+      </span>
+      {open && (
+        <div className="canvas-d-conf-popover" onClick={(e) => e.stopPropagation()}>
+          <div className="canvas-d-conf-popover-title">Confiança {label} ({pct}%)</div>
+          <p className="canvas-d-conf-popover-text">{detail}</p>
+        </div>
+      )}
+    </span>
+  );
+}
+
+/* Card detalhado por solicitação: foto do item, motivo, texto do cliente
+   (caixa de citação) e as duas ações — usado tanto no bloco "Precisam de
+   Decisão" quanto no subview dedicado de uma tarefa sugerida (duplicidade /
+   exceções), da mesma forma que ImpactedTable alimenta o subview de pedido. */
+function CanvasDDecisionCard({ r, primaryAction, secondaryAction, danger }) {
+  return (
+    <div className="decision-card">
+      <span className="decision-card-photo">{r.photo}</span>
+      <div className="decision-card-body">
+        <div className="decision-card-head">
+          <span className="decision-card-id">{r.id}</span>
+          <span className="decision-card-item">{r.item}</span>
+        </div>
+        <div className="decision-card-reason">{r.reason}</div>
+        <blockquote className="decision-card-quote">“{r.reasonDetail}”</blockquote>
+        <div className={`decision-card-status${danger ? " decision-card-status--danger" : ""}`}>{r.status}</div>
+      </div>
+      <div className="decision-card-actions">
+        <button type="button" className="canvas-a-run-btn canvas-a-run-btn--primary">{primaryAction}</button>
+        <button type="button" className={`canvas-a-run-btn${danger ? " canvas-a-run-btn--danger" : ""}`}>{secondaryAction}</button>
+      </div>
+    </div>
+  );
+}
+
+function CanvasDDecisionGroupBody({ group }) {
+  return (
+    <div className="decision-cards">
+      {group.rows.map((r, i) => (
+        <CanvasDDecisionCard
+          key={i}
+          r={r}
+          primaryAction={group.primaryAction}
+          secondaryAction={group.secondaryAction}
+          danger={group.secondaryAction === "Encerrar"}
+        />
+      ))}
+    </div>
+  );
+}
+
+function CanvasDDecisionGroup({ group }) {
+  return (
+    <div className="canvas-d-decision-group">
+      <div className="canvas-d-decision-label">{group.label} · {group.rows.length}</div>
+      <CanvasDDecisionGroupBody group={group} />
+    </div>
+  );
+}
+
+function CanvasPatternD({ task, onOpenList }) {
+  const d = task.detail;
+  const decisionCount = d.exceptions.rows.length + d.duplicates.rows.length;
+  const resolvedTasks = d.resolvedTasks || [];
+  const reasoningActivities = d.reasoningActivities || [];
+
+  return (
+    <div data-sl-task-document-content="">
+      <div data-sl-task-document-heading-block="">
+        <div data-sl-task-document-title-block="">
+          <h1 data-sl-task-document-title="">{d.title}</h1>
+        </div>
+
+        {/* Metadados no mesmo style dt/dd do canvas de pedido (.detail-fields) */}
+        <dl className="detail-fields od-meta canvas-d-meta">
+          <dt>Status</dt>
+          <dd><TaskDocStatus status={task.status} /></dd>
+
+          <dt>Severidade</dt>
+          <dd><SevPill level={d.severity} /></dd>
+
+          <dt>Lead</dt>
+          <dd>{d.lead}</dd>
+
+          <dt>Reportado por</dt>
+          <dd>
+            <span className="reporter">
+              <span className="reporter-emoji reporter-emoji--img">
+                <img src="my-assistant.png" alt="" />
+              </span>
+              <span><b>{d.reportedBy.agent}</b> · {d.reportedBy.note}</span>
+            </span>
+          </dd>
+        </dl>
+      </div>
+
+      <div data-sl-initiative-document-accordion-stack="">
+        <DocAccordionSection
+          title="Diagnóstico"
+          badge={<ConfidenceBadge label={d.confidence.label} pct={d.confidence.pct} detail={d.confidence.detail} />}
+        >
+          <p className="detail-section-body">{d.diagnosisText}</p>
+        </DocAccordionSection>
+
+        <DocAccordionSection title="Tarefas" count={d.suggestedTasks.length + resolvedTasks.length}>
+          <div className="canvas-tasks-card canvas-a-suggested">
+            <div className="canvas-tasks-head"><span>Tarefas a fazer</span><span>Ação</span></div>
+            {d.suggestedTasks.map((t, i) => (
+              <React.Fragment key={i}>
+                {i > 0 && <div className="canvas-tasks-row-divider" />}
+                <CanvasDSuggestedRow t={t} onOpen={onOpenList} />
+              </React.Fragment>
+            ))}
+            {resolvedTasks.length > 0 && (
+              <>
+                <div className="canvas-tasks-group-divider" />
+                <div className="canvas-tasks-head"><span>Tarefas já feitas</span><span>Ação</span></div>
+                {resolvedTasks.map((t, i) => (
+                  <React.Fragment key={i}>
+                    {i > 0 && <div className="canvas-tasks-row-divider" />}
+                    <CanvasDSuggestedRow t={t} />
+                  </React.Fragment>
+                ))}
+              </>
+            )}
+          </div>
+        </DocAccordionSection>
+
+        <DocAccordionSection title="Precisam de Decisão" count={decisionCount}>
+          <CanvasDDecisionGroup group={d.exceptions} />
+          <CanvasDDecisionGroup group={d.duplicates} />
+          {d.decisionNote && (
+            <div className="canvas-d-note">
+              <span className="canvas-d-note-icon"><Icon name={d.decisionNote.icon} size={14} /></span>
+              <span className="canvas-d-note-text">{d.decisionNote.text}</span>
+              {d.decisionNote.action && <button type="button" className="canvas-d-note-link">{d.decisionNote.action} ↗</button>}
+            </div>
+          )}
+        </DocAccordionSection>
+
+        <DocAccordionSection title="Reasoning" count={reasoningActivities.length}>
+          <ActivitiesList items={reasoningActivities} />
+        </DocAccordionSection>
+      </div>
+
+      <div data-sl-canvas-doc-end-spacer="" style={{ height: 24 }} />
+    </div>
+  );
+}
+
 function TaskCanvas({ task, onBack }) {
   const [subView, setSubView] = useState(null);
   const d = task.detail;
@@ -1877,7 +2112,9 @@ function TaskCanvas({ task, onBack }) {
             <Icon name="x" size={18} />
           </button>
         )}
-        <span className="canvas-topbar-title">{inSub ? `Voltar para ${task.id}` : d.title}</span>
+        <span className="canvas-topbar-title">
+          {inSub ? `Voltar para ${task.id}` : (task.occurrenceId ? `${task.occurrenceId} · ${d.title}` : d.title)}
+        </span>
         <button className="canvas-topbar-icon" aria-label="Mais opções" title="Mais opções">
           <Icon name="more" size={18} />
         </button>
@@ -1890,6 +2127,8 @@ function TaskCanvas({ task, onBack }) {
             <TaskListSubview kind={subView.kind} task={task} onOpenOrder={openOrder} />
           ) : task.canvasPattern === "A" ? (
             <CanvasPatternA task={task} onOpenOrder={() => {}} onOpenList={(kind) => setSubView({ type: "list", kind })} />
+          ) : task.canvasPattern === "D" ? (
+            <CanvasPatternD task={task} onOpenList={(kind) => setSubView({ type: "list", kind })} />
           ) : (
             <TaskCanvasMain task={task} onOpenOrder={openOrder} onOpenList={(kind) => setSubView({ type: "list", kind })} />
           )}
@@ -1931,7 +2170,7 @@ function TaskView({ taskId, onBack, onOpenOrder }) {
     engineRef.current && engineRef.current.send(text);
   };
 
-  const intro = `Reportada por ${d.reportedBy.agent} · ${d.reportedBy.at}`;
+  const intro = `Reportada por ${d.reportedBy.agent} · ${d.reportedBy.at || d.reportedBy.note || ""}`;
 
   return (
     <ResizableSplit screenLabel={`02 Task ${taskId}`} initialWidth={400}>
