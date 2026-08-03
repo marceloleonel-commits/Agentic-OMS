@@ -334,3 +334,4 @@ function TasksView() {
 
 window.TasksView = TasksView;
 window.TaskKanbanCard = TaskKanbanCard;
+window.StatusIcon = StatusIcon;

@@ -85,6 +85,7 @@ window.AIWData = (function () {
         title: "Seller Fashion Hub — falha de despacho",
         reportedBy: { agent: "Tarefa gerada por agente", at: "14 jun 2026, 09:42" },
         severity: "high",
+        slaHours: 3,
         assignees: ["Seller Agent", "Order Agent", "Logistics Agent"],
         scope: "23 pedidos · Seller Fashion Hub · Canal: Site + App",
         slaRisk: "14 pedidos entregariam hoje",
@@ -120,6 +121,76 @@ window.AIWData = (function () {
       }
     },
 
+    /* ── Canvas D · Devoluções — decisão necessária em 5 casos ── */
+    {
+      id: "TA-CANVAS-D",
+      occurrenceId: "O093",
+      priority: "high",
+      status: "attention",
+      title: "Devoluções — decisão necessária em 5 casos",
+      tag: "Devoluções",
+      source: { kind: "return", label: "Devoluções" },
+      canvasPattern: "D",
+      chips: [
+        { icon: "layers", label: "Ver as 4 exceções fora do prazo" },
+        { icon: "send",   label: "Resolver duplicidade"            },
+        { icon: "search", label: "Ver reasoning da tarefa"         },
+      ],
+      detail: {
+        title: "Devoluções — decisão necessária em 5 casos",
+        severity: "high",
+        slaHours: null,
+        confidence: {
+          label: "Alta",
+          pct: 93,
+          detail: "Nenhuma lacuna identificada: as 9 devoluções aprovadas automaticamente têm prazo, categoria e ausência de duplicidade validados com dados completos. As 4 exceções fora do prazo não têm regra automática aplicável — por isso dependem de decisão humana, e não reduzem a confiança do restante da triagem.",
+        },
+        lead: "SAC",
+        reportedBy: { agent: "Agente", note: "triagem de 14 devoluções do dia" },
+        diagnosisText: "Das 14 solicitações do dia, 9 estavam dentro da política e seguiram sem intervenção. Restam 4 exceções fora do prazo e 1 duplicidade — só estas dependem de decisão do operador.",
+        decisionNote: { icon: "check", text: "9 devoluções elegíveis processadas automaticamente — etiquetas reversas emitidas, clientes notificados.", action: "Ver log" },
+        suggestedTasks: [
+          { title: "Resolver duplicidade",             sub: "1 pedido com 2 solicitações abertas",           state: "triage",  action: "Resolver", primary: true, detailKey: "duplicates" },
+          { title: "Decidir exceções fora do prazo",    sub: "4 casos sem política automática aplicável",     state: "triage",  action: "Revisar",  external: true, detailKey: "exceptions" },
+          { title: "Emitir etiquetas dos aprovados",    sub: "Bloqueada pela duplicidade e exceções acima",   state: "pending", waitingLabel: "Aguardando" },
+        ],
+        resolvedTasks: [
+          { title: "9 devoluções elegíveis processadas automaticamente", sub: "Etiquetas reversas emitidas, clientes notificados", state: "done", action: "Ver log", external: true },
+        ],
+        exceptions: {
+          label: "Fora do prazo — Exceções",
+          primaryAction: "Aprovar",
+          secondaryAction: "Rejeitar",
+          rows: [
+            { id: "#SAC-8841", item: "Camiseta linho premium — P · Branco", photo: "👕", reason: "Defeito de fabricação",  reasonDetail: "Recebi a camiseta com um fio puxado e a costura da manga já abrindo. Parece defeito de fabricação, não é uso.", status: "+3 dias fora do prazo" },
+            { id: "#SAC-8853", item: "Tênis Run 42",                       photo: "👟", reason: "Arrependimento",          reasonDetail: "Acabei comprando o tamanho errado e não gostei do modelo ao provar em casa. Gostaria de devolver.",             status: "+8 dias fora do prazo" },
+            { id: "#SAC-8860", item: "Jaqueta M",                          photo: "🧥", reason: "Tamanho incompatível",    reasonDetail: "A jaqueta ficou pequena, o tamanho não bateu com a tabela de medidas do site. Preciso de um M maior ou reembolso.", status: "+2 dias fora do prazo" },
+            { id: "#SAC-8871", item: "Bolsa de couro",                     photo: "👜", reason: "Defeito de fabricação",  reasonDetail: "O zíper da bolsa travou já no segundo uso. Acho que é um defeito, a bolsa é nova.",                             status: "+5 dias fora do prazo" },
+          ],
+        },
+        duplicates: {
+          label: "Duplicadas",
+          primaryAction: "Manter",
+          secondaryAction: "Encerrar",
+          rows: [
+            { id: "#SAC-8848", item: "Relógio smart", photo: "⌚", reason: "Troca de modelo · canal Site", reasonDetail: "Comprei o relógio errado, quero trocar por outro modelo. Abri o pedido pelo site.",             status: "Duplicada — mesmo pedido, 2 solicitações" },
+            { id: "#SAC-8849", item: "Relógio smart", photo: "⌚", reason: "Troca de modelo · canal App",  reasonDetail: "Reenviei a solicitação de troca pelo app porque não vi resposta do site em 2 dias.",         status: "Duplicada — mesmo pedido, 2 solicitações" },
+          ],
+        },
+        reasoningActivities: [
+          { time: "06:02", actor: "Agente", agent: true, action: "identificou 14 solicitações de devolução recebidas hoje e iniciou a triagem automática pela política vigente" },
+          { time: "06:04", actor: "Agente", agent: true, action: "processou 9 devoluções elegíveis automaticamente", note: "Prazo, categoria e ausência de duplicidade validados — etiquetas reversas emitidas e clientes notificados." },
+          { time: "06:05", actor: "Agente", agent: true, action: "identificou 1 pedido com 2 solicitações de devolução abertas (duplicidade)", note: "Mesmo SKU e mesma quantidade — emitir as duas etiquetas criaria risco de reembolso duplo." },
+          { time: "06:06", actor: "Agente", agent: true, action: "identificou 4 solicitações fora do prazo de 7 dias da política, sem regra automática aplicável" },
+          { time: "06:07", actor: "Agente", agent: true, action: "criou este canvas de decisão", note: "Consolidou a duplicidade e as 4 exceções fora do prazo — únicos casos que dependem de decisão humana entre as 14 solicitações do dia." },
+        ],
+        chat: [
+          { from: "agent", text: "Das 14 devoluções recebidas hoje, já processei 9 automaticamente — dentro da política, com etiqueta reversa emitida e cliente notificado." },
+          { from: "agent", text: "Restam 5 casos que dependem de você: 4 exceções fora do prazo e 1 duplicidade. Quer revisar agora?" }
+        ]
+      }
+    },
+
     /* ── TA-1 · Interromper separação — cancelamento ObraMax ── */
     {
       id: "TA431435",
@@ -143,6 +214,7 @@ window.AIWData = (function () {
         diagnosis: "Cancelamento recebido às 11:45. O workflow de Cancelamento foi acionado e o agente validou a janela — item ainda não expedido, elegível. A etapa 'Bloquear Expedição' está em andamento, mas o WMS não confirmou a interrupção do Picking. O agente sinalizou cancelSignal no step e aguarda confirmação manual. SLA do pedido expirou às 21:58 de 01/06.",
         attributedTo: { name: "Guilherme Vecchi", initial: "G" },
         severity: "high",
+        slaHours: -8,
         followUp: [
           { state: "attention", title: "Confirmar parada do Picking no WMS (Cola CI-1KG-VIN)",   assignee: "WMS Operator",        initial: "G" },
           { state: "loading",   title: "Concluir Bloquear Expedição e acionar estorno de estoque", assignee: "Orchestration Agent", agent: true }
@@ -192,6 +264,7 @@ window.AIWData = (function () {
         diagnosis: "O pedido tem dois Order Jobs: produto virtual (NF-e em processamento → bloqueando entrega digital) e produto físico (Packing ativo, 4 etapas manuais ou dependentes à frente). O caminho crítico do físico exige Packing → Labeling → NF → Expedição antes de 16:14. O agente projeta que o tempo médio restante para concluir todas as etapas supera o SLA em ~1h15.",
         attributedTo: { name: "Maria Santos", initial: "M" },
         severity: "high",
+        slaHours: 4,
         followUp: [
           { state: "attention", title: "Priorizar Packing e Labeling na fila WMS (SKU DS-VC-1000)", assignee: "WMS Operator",     initial: "G" },
           { state: "attention", title: "Verificar e desbloquear emissão de NF-e produto virtual",    assignee: "Fiscal Service",   initial: "M" },
@@ -241,6 +314,7 @@ window.AIWData = (function () {
         diagnosis: "Fluxo BOPIS: Picking e Packing concluídos pela loja, cliente notificado às 11:22. O SLA de retirada é de 4h (deadline ~15:22). Faltam Customer Check-in → Emissão de NF → Handover at POS. A loja precisa estar ciente e preparada para atender quando o cliente chegar. Se não houver check-in até 14:45, o agente sugere reenviar a notificação ao cliente.",
         attributedTo: { name: "Ana Pessoa", initial: "A" },
         severity: "medium",
+        slaHours: 2,
         followUp: [
           { state: "attention", title: "Confirmar que loja C&A Botafogo está pronta para atendimento", assignee: "Operador Loja", initial: "A" },
           { state: "loading",   title: "Reenviar notificação ao cliente se não houver check-in às 14:45", assignee: "Orchestration Agent", agent: true }
@@ -287,6 +361,7 @@ window.AIWData = (function () {
         diagnosis: "Fluxo de devolução iniciado em 01/06/2026 18:32. Etiqueta reversa gerada e enviada por e-mail 4 minutos depois. O passo 'Confirmar Postagem' está ativo há +24h. O cliente pode não ter visto o e-mail, ter dúvidas sobre o processo, ou estar aguardando conveniência para ir à agência. Não há SLA formal para esta etapa, mas o agente monitora para evitar que o prazo de devolução expire.",
         attributedTo: { name: "Rafael Vianna", initial: "R" },
         severity: "low",
+        slaHours: null,
         followUp: [
           { state: "attention", title: "Entrar em contato com o cliente para confirmar recebimento da etiqueta", assignee: "CS Operator", initial: "R" },
           { state: "loading",   title: "Monitorar status de postagem via API da Carrier", assignee: "Returns Agent", agent: true }
@@ -335,6 +410,7 @@ window.AIWData = (function () {
         diagnosis: "Pedido recebido em 10/06 às 08:47. Pagamento confirmado às 08:48. O workflow de Fabricação de Lente foi acionado automaticamente. A tarefa 'Verificar anexo de receita' está ativa há +26 min sem resposta do time de Atendimento. O agente identificou risco de atraso: se a receita não for aprovada em até 2h, o prazo de fabricação (10 dias úteis) não será cumprido e o SLA de entrega expirará.",
         attributedTo: { name: "Atendimento Óptico", initial: "A" },
         severity: "high",
+        slaHours: 2,
         followUp: [
           { state: "attention", title: "Verificar anexo da receita médica no pedido",         assignee: "Atendimento Óptico", initial: "A" },
           { state: "attention", title: "Validar grau, eixo e parâmetros técnicos da lente",   assignee: "Atendimento Óptico", initial: "A" },
@@ -420,10 +496,15 @@ window.AIWData = (function () {
           appliedTo: "new_orders_only", activeOrdersAtPublish: 0,
           deltas: [{ entity: "general config", change: "changed", detail: "Workflow criado" }] },
       ],
+      // Ordem de execução na visão "Tarefas" (flat) — independente do agrupamento
+      // por etapa: Captura de Pagamento só ocorre após o pedido estar pronto para
+      // envio (Labeling), mas a tarefa continua pertencendo à etapa Confirmação de
+      // Pagamento (indicador azul) para fins de classificação/gate.
+      flatOrder: ["ed-1", "ed-3", "ed-4", "ed-5", "ed-6", "ed-2", "ed-7", "ed-8", "ed-9", "ed-10", "ed-11"],
       stages: [
         { id: "ed-s1", name: "Confirmação de Pagamento", gate: "payment_settled", linkedToNext: true, category: "PAYMENT", tasks: [
           { id: "ed-1", name: "Autorização de Pagamento", type: "auto",   owner: "Adyen",          desc: "Pré-autorização do valor junto à adquirente/gateway." },
-          { id: "ed-2", name: "Captura de Pagamento",     type: "auto",   owner: "Adyen",          desc: "Confirmação e captura definitiva do valor autorizado." },
+          { id: "ed-2", name: "Captura de Pagamento",     type: "auto",   owner: "Adyen",          desc: "Confirmação e captura definitiva do valor autorizado, após o pedido estar pronto para envio." },
         ]},
         { id: "ed-s2", name: "Manuseio", linkedToNext: true, category: "FULFILLMENT", tasks: [
           { id: "ed-3", name: "Reserva de Estoque", type: "auto",   owner: "GFL Logística", desc: "Reserva dos itens no estoque para garantir disponibilidade." },
@@ -1176,6 +1257,85 @@ window.AIWData = (function () {
                 { label:"Emissão de Nota Fiscal",   icon:"🧾", status:"pending", agent:true,  time:null },
                 { label:"Customer Check-in",        icon:"🏪", status:"pending", agent:false, time:null },
                 { label:"Handover at POS",          icon:"🤝", status:"pending", agent:false, time:null },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+
+    /* ══ Pedido 9 · Loja própria · Canvas D — devolução com defeito confirmado ══ */
+    {
+      id:"v-PRD-00944", short:"PRD00944",
+      date:"07/06/2026 - 15:10", customer:"Fernanda Rocha",
+      origin:"Loja própria", qty:1, total:"R$ 289,00",
+      status:"return", statusLabel:"Troca e devolução",
+      sla:"—", seller:"Loja própria", eta:"15/06/2026",
+      customerDetail:{
+        taxId:"294.671.038-50",
+        phone:"(41) 98891-2276",
+        email:"fernanda.rocha@email.com",
+        address:"Rua Mateus Leme, 1780, Apto 604 · São Francisco – Curitiba, PR · CEP 80510-190",
+        billingAddress:"Rua Mateus Leme, 1780, Apto 604 · São Francisco – Curitiba, PR · CEP 80510-190",
+        card:"Visa **** 7742",
+      },
+      note:{
+        useCase:"Devolução com defeito de fabricação confirmado na conferência — decisão de resolução pendente",
+        text:"Cliente solicitou devolução via WhatsApp SAC (Ticket #SAC-8841) alegando defeito de fabricação na costura da peça. O item retornou ao CD Sul e a conferência confirmou o defeito — por isso não é elegível para reintegração ao estoque. Falta apenas a decisão do SAC/Financeiro sobre o tipo de resolução (reembolso integral, troca, parcial ou voucher) para liberar o financeiro e comunicar a cliente.",
+      },
+      itemGroups:[
+        {
+          id:"g-delivery", workflow:"entrega-domicilio", fulfillmentType:"delivery",
+          supplier:"Correios SEDEX",
+          label:"Entrega em Domicílio · Correios SEDEX",
+          projections:[
+            { name:"warehouse", connector:"wms",             status:"done" },
+            { name:"carrier",   connector:"correios-sedex",  status:"done" },
+            { name:"payment",   connector:"payment-gateway", status:"done" },
+            { name:"invoice",   connector:"fiscal-service",  status:"done" },
+          ],
+          stages:[
+            { icon:"💳", label:"Confirmação de Pagamento", status:"done" },
+            { icon:"📦", label:"Handling",                 status:"done" },
+            { icon:"🧾", label:"Faturamento",              status:"done" },
+            { icon:"🚚", label:"Entrega",                  status:"done" },
+          ],
+          items:[
+            { name:"Camiseta Linho Premium — P · Branco", emoji:"👕", sku:"CMB-LIN-001-P-WH", qty:1, price:"R$ 289,00", steps:stepsDeliveryAllDone("07/06/2026") },
+          ],
+        },
+        {
+          id:"g-return", workflow:"troca-devolucao", type:"return",
+          fulfillmentType:"return",
+          supplier:"Correios SEDEX",
+          label:"Troca e Devolução",
+          projections:[
+            { name:"carrier",   connector:"correios-sedex",   status:"done"    },
+            { name:"warehouse", connector:"wms",              status:"done"    },
+            { name:"payment",   connector:"payment-gateway",  status:"active"  },
+          ],
+          returnDetail:{
+            reason:"Defeito de fabricação — costura lateral",
+            customerText:"Recebi o item com defeito na costura lateral. Já uso peças assim há anos e nunca tive esse problema — parece falha de fabricação mesmo, não desgaste de uso.",
+            requestedAt:"13/06/2026 14:22",
+            classification:"Devolução — decisão de resolução pendente",
+          },
+          stages:[
+            { icon:"📝", label:"Solicitação",         status:"done"    },
+            { icon:"📦", label:"Coleta Reversa",       status:"done"    },
+            { icon:"🔍", label:"Inspeção no CD",       status:"done"    },
+            { icon:"✅", label:"Resolução",             status:"active"  },
+          ],
+          items:[
+            { name:"Camiseta Linho Premium — P · Branco", emoji:"👕", sku:"CMB-LIN-001-P-WH", qty:1, price:"R$ 289,00",
+              steps:[
+                { label:"Abertura de Solicitação",         icon:"📝", status:"done",    agent:true,  time:"13/06/2026 14:22", note:"Ticket #SAC-8841 · canal WhatsApp SAC." },
+                { label:"Validar Elegibilidade",           icon:"🔍", status:"done",    agent:true,  time:"13/06/2026 09:15" },
+                { label:"Receber Produto no CD",           icon:"📦", status:"done",    agent:false, time:"13/06/2026 09:15" },
+                { label:"Conferir Estado do Produto",      icon:"🔎", status:"done",    agent:false, time:"13/06/2026 09:45", note:"Defeito de fabricação confirmado na costura lateral. Reintegração ao estoque descartada." },
+                { label:"Definir Tipo de Resolução",       icon:"🔀", status:"active",  agent:false, time:null, note:"Decisão humana do SAC: reembolso integral, troca, reembolso parcial ou voucher." },
+                { label:"Processar Resolução Financeira",  icon:"💰", status:"pending", agent:true,  time:null },
+                { label:"Notificar Cliente — Concluído",   icon:"✅", status:"pending", agent:true,  time:null },
               ],
             },
           ],

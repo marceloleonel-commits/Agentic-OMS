@@ -1,5 +1,9 @@
-/* global React, Icon, IconSparkleFill, IconHandFill, IconPencil, IconCursorFill, IconDragDots, IconDotsSixVertical, IconPlayCircleFill, IconCaretLeftSmall, IconCaretDown, IconCaretUp, IconTrash, IconCheck, IconCube, IconCurrencyCircleDollar, IconNewspaper, IconTruck, AIWData, ChatPanel, ResizableSplit, IconButton */
+/* global React, Icon, IconSparkleFill, IconHandFill, IconPencil, IconCursorFill, IconDragDots, IconDotsSixVertical, IconDotsThreeVertical, IconPlayCircleFill, IconCaretLeftSmall, IconCaretDown, IconCaretUp, IconTrash, IconCheck, IconCube, IconCurrencyCircleDollar, IconNewspaper, IconTruck, AIWData, ChatPanel, ResizableSplit, IconButton, SidebarTooltip */
 const { useState, useRef, useEffect, useCallback } = React;
+
+// Usuário da sessão atual — mesmo e-mail já usado como autor/editor nos dados
+// mock (data-aiw.js), usado para preencher "Publicado em" ao publicar.
+const CURRENT_USER_EMAIL = "jackeline@vtex.com";
 
 /* ---------- Filter Dropdown (rules section) ---------- */
 function FilterDropdown({ label, options, checked, onChange }) {
@@ -693,83 +697,135 @@ function StageConfigView({ workflow, stageId, onDirtyChange }) {
 }
 
 
-/* ---------- Inline task row with collapse ---------- */
+/* ---------- Inline task row with trigger-style dropdown ---------- */
 
-function StageTaskRow({ task, workflow, idx, dragging, dragOver, onDragStart, onDragOver, onDrop, onDragEnd, onChanged, onRemove, isOpen, onToggle, isNew, onStageChange }) {
+function StageTaskRow({ task, stage, workflow, idx, dragging, dragOver, onDragStart, onDragOver, onDrop, onDragEnd, onChanged, onRemove, isOpen, onToggle, isNew, onStageChange, publishSignal, reorderMode = true }) {
   const [dirtyCount, setDirtyCount] = useState(0);
   const [confirmRemove, setConfirmRemove] = useState(false);
-  const [execType, setExecType] = useState(task.type); // "manual" | "auto" — synced with TaskConfigView agentOrch
+  const [execType, setExecType] = useState(task.type); // "manual" | "auto"
+  const [active, setActive] = useState(true);
+  const [visibility, setVisibility] = useState("internal"); // "internal" | "user"
+
+  const rowRef = useRef(null);
+
+  const mark = () => { setDirtyCount(c => c + 1); onChanged?.(); };
+
+  // "Publicar" limpa o contador de alterações não salvas da linha — o valor
+  // dos campos em si (status/execução/visibilidade) permanece, só o selo some.
+  useEffect(() => {
+    if (publishSignal) setDirtyCount(0);
+  }, [publishSignal]);
+
+  // Fecha ao clicar fora da linha inteira — cliques dentro da própria linha
+  // (nome, tags, dropdown) já são tratados pelo onClick da linha / stopPropagation
+  // dos itens internos, então não devem disparar um segundo toggle aqui.
+  useEffect(() => {
+    if (!isOpen) return;
+    const handler = (e) => {
+      if (rowRef.current && !rowRef.current.contains(e.target)) {
+        onToggle?.();
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [isOpen]);
+
+  // Indicador da linha reflete a etapa a que a tarefa pertence — mesmo
+  // ícone/cor do stage-flat-card-indicator, para localizar a etapa mesmo
+  // com a lista de Tarefas separada da lista de Etapas.
+  const StageIcon = getStageIcon(stage);
 
   return (
     <>
       <div
-        className={`stage-task${dragging === idx ? " is-dragging" : ""}${dragOver === idx ? " drag-over" : ""}${isOpen ? " stage-task--open" : ""}${isNew ? " stage-task--new" : ""}`}
+        ref={rowRef}
+        className={`stage-task${reorderMode ? " stage-task--reorder" : ""}${dragging === idx ? " is-dragging" : ""}${dragOver === idx ? " drag-over" : ""}${isOpen ? " stage-task--open" : ""}${isNew ? " stage-task--new" : ""}`}
         data-task-id={task.id}
-        draggable={!isOpen}
-        onDragStart={!isOpen ? onDragStart : undefined}
-        onDragOver={!isOpen ? onDragOver : undefined}
-        onDrop={!isOpen ? onDrop : undefined}
-        onDragEnd={!isOpen ? onDragEnd : undefined}
+        draggable={reorderMode && !isOpen}
+        onDragStart={reorderMode && !isOpen ? onDragStart : undefined}
+        onDragOver={reorderMode && !isOpen ? onDragOver : undefined}
+        onDrop={reorderMode && !isOpen ? onDrop : undefined}
+        onDragEnd={reorderMode && !isOpen ? onDragEnd : undefined}
         onClick={onToggle}
         role="button"
         tabIndex={0}
         onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onToggle(); } }}
       >
-        <span className="stage-task-grip" aria-hidden="true">
-          <IconDotsSixVertical size={20} />
+        {reorderMode && (
+          <span className="stage-task-grip" aria-hidden="true">
+            <IconDotsSixVertical size={20} />
+          </span>
+        )}
+        <SidebarTooltip label={stage?.name} placement="top" enabled={!!stage?.name}>
+          <span
+            className={`stage-task-indicator${!active ? " stage-task-indicator--inactive" : ""}`}
+            style={active ? { background: getStageColor(stage), color: getStageIconColor(stage) } : undefined}
+          >
+            {StageIcon && <StageIcon size={13} />}
+          </span>
+        </SidebarTooltip>
+        <span className={`stage-task-name${!active ? " stage-task-name--inactive" : ""}`}>{task.name}</span>
+
+        <span className="stage-task-meta">
+          <span className="stage-task-meta-text">{execType === "auto" ? "Automático" : "Manual"}</span>
+          <span className="stage-task-meta-dot">·</span>
+          <span className="stage-task-meta-text">{visibility === "user" ? "Externa" : "Interna"}</span>
         </span>
-        <span className="stage-task-num" aria-hidden="true">{idx + 1}</span>
-        <span className="stage-task-name">{task.name}</span>
+
         {dirtyCount > 0 && (
           <span className="stage-task-dirty-badge" title={`${dirtyCount} alteração${dirtyCount !== 1 ? "ões" : ""} não salva${dirtyCount !== 1 ? "s" : ""}`}>
             {dirtyCount}
           </span>
         )}
-        {isOpen ? (
-          <span className="stage-task-open-btns">
-            <button
-              data-sl-button
-              data-variant="tertiary"
-              data-tone="critical"
-              title="Remover tarefa"
-              onClick={e => { e.stopPropagation(); setConfirmRemove(true); }}
-            >
-              <IconTrash size={20} />
-            </button>
-            <button
-              data-sl-button
-              data-variant="secondary"
-              title="Fechar"
-              onClick={e => { e.stopPropagation(); onToggle(); }}
-            >
-              <IconCheck size={20} />
-            </button>
-          </span>
-        ) : (
-          <Actions>
-            <CiteBtn text={`[Tarefa: ${task.name}]`} />
-            <button
-              className="stage-task-action-btn stage-task-edit-btn"
-              title="Abrir tarefa"
-              onClick={e => { e.stopPropagation(); onToggle(); }}
-            >
-              <IconPencil size={14} />
-            </button>
-          </Actions>
+
+        {!reorderMode && (
+          <IconButton
+            className="stage-task-edit-btn--fixed"
+            icon={<IconDotsThreeVertical size={16} />}
+            label="Configurar tarefa"
+            variant="tertiary"
+            onClick={e => { e.stopPropagation(); onToggle(); }}
+          />
+        )}
+
+        {isOpen && (
+          <div className="trigger-dropdown stage-task-dropdown" onClick={e => e.stopPropagation()}>
+            <div className="trigger-dropdown-section">
+              <div className="trigger-dropdown-label">Status</div>
+              <div className="trigger-orch-row" style={{ borderTop: "none", padding: 0 }}>
+                <button className={`trigger-orch-btn${active ? " selected" : ""}`} onClick={() => { setActive(true); mark(); }}>Ativo</button>
+                <button className={`trigger-orch-btn${!active ? " selected" : ""}`} onClick={() => { setActive(false); mark(); }}>Inativo</button>
+              </div>
+            </div>
+
+            <div className="trigger-dropdown-section" style={{ borderTop: "1px solid var(--border)", paddingTop: 10 }}>
+              <div className="trigger-dropdown-label">Como executa</div>
+              <div className="trigger-orch-row" style={{ borderTop: "none", padding: 0 }}>
+                <button className={`trigger-orch-btn${execType !== "auto" ? " selected" : ""}`} onClick={() => { setExecType("manual"); mark(); }}>Manual</button>
+                <button className={`trigger-orch-btn${execType === "auto" ? " selected" : ""}`} onClick={() => { setExecType("auto"); mark(); }}>Automático</button>
+              </div>
+            </div>
+
+            <div className="trigger-dropdown-section" style={{ borderTop: "1px solid var(--border)", paddingTop: 10 }}>
+              <div className="trigger-dropdown-label">Visibilidade</div>
+              <div className="trigger-orch-row" style={{ borderTop: "none", padding: 0 }}>
+                <button className={`trigger-orch-btn${visibility === "internal" ? " selected" : ""}`} onClick={() => { setVisibility("internal"); mark(); }}>Interna</button>
+                <button className={`trigger-orch-btn${visibility === "user" ? " selected" : ""}`} onClick={() => { setVisibility("user"); mark(); }}>Externa</button>
+              </div>
+            </div>
+
+            <div className="trigger-dropdown-section" style={{ borderTop: "1px solid var(--border)", paddingTop: 10 }}>
+              <button
+                className="stage-task-remove-btn"
+                onClick={e => { e.stopPropagation(); onToggle?.(); setConfirmRemove(true); }}
+              >
+                <IconTrash size={14} /> Remover tarefa
+              </button>
+            </div>
+          </div>
         )}
       </div>
-      {isOpen && !confirmRemove && (
-        <div className="stage-task-config" onClick={e => e.stopPropagation()}>
-          <TaskConfigView
-            workflow={workflow}
-            taskId={task.id}
-            onDirtyChange={() => setDirtyCount(c => c + 1)}
-            onExecTypeChange={isAuto => setExecType(isAuto ? "auto" : "manual")}
-            onStageChange={onStageChange}
-          />
-        </div>
-      )}
-      {isOpen && confirmRemove && (
+      {confirmRemove && (
         <div className="stage-task-config-footer">
           <span className="stage-task-remove-confirm-text">Remover tarefa permanentemente?</span>
           <button className="btn btn-sm btn-ghost" onClick={() => setConfirmRemove(false)}>Cancelar</button>
@@ -801,7 +857,7 @@ function AddTaskBtn({ disabled, onClick }) {
 
 /* ---------- Stage card (Figma-spec layout) ---------- */
 
-function StageCard({ stage, workflow, startNum, onOpenTask, onOpenStage, canMoveUp, canMoveDown, onMoveUp, onMoveDown, onChanged, stageDragging, stageDragOver, onStageDragStart, onStageDragOver, onStageDrop, onStageDragEnd }) {
+function StageCard({ stage, workflow, startNum, onOpenTask, onOpenStage, canMoveUp, canMoveDown, onMoveUp, onMoveDown, onChanged, stageDragging, stageDragOver, onStageDragStart, onStageDragOver, onStageDrop, onStageDragEnd, publishSignal }) {
   const [tasks, setTasks] = useState(() => stage.tasks);
   const [dragging, setDragging] = useState(null);
   const [dragOver, setDragOver] = useState(null);
@@ -1077,6 +1133,7 @@ function StageCard({ stage, workflow, startNum, onOpenTask, onOpenStage, canMove
           }}
           isOpen={openTaskId === task.id}
           onToggle={() => toggleTask(task.id)}
+          publishSignal={publishSignal}
         />
       )}
 
@@ -1486,9 +1543,10 @@ function WfVersionHistory({ workflow }) {
 function WorkflowDetailView1Passo({ workflow, onOpenTask, onOpenStage, onOpenSettings, detailActionsRef, onDirtyChange }) {
   const [stages, setStages] = useState(() => workflow.stages);
   const [isDirty, setIsDirty] = useState(false);
+  const [publishSignal, setPublishSignal] = useState(0);
 
   const markDirty = () => { setIsDirty(true); onDirtyChange?.(true); };
-  const clearDirty = () => { setIsDirty(false); onDirtyChange?.(false); };
+  const clearDirty = () => { setIsDirty(false); onDirtyChange?.(false); setPublishSignal(s => s + 1); };
 
   // Stage drag-and-drop
   const [stageDraggingIdx, setStageDraggingIdx] = useState(null);
@@ -1592,6 +1650,7 @@ function WorkflowDetailView1Passo({ workflow, onOpenTask, onOpenStage, onOpenSet
                     onStageDragOver={(e) => handleStageDragOver(e, si)}
                     onStageDrop={(e) => handleStageDrop(e, si)}
                     onStageDragEnd={handleStageDragEnd}
+                    publishSignal={publishSignal}
                   />
                 </div>
                 {si < stages.length - 1 && (
@@ -1614,9 +1673,10 @@ function WorkflowDetailView1Passo({ workflow, onOpenTask, onOpenStage, onOpenSet
 function WorkflowDetailView2Passos({ workflow, onOpenTask, onOpenStage, onOpenSettings, detailActionsRef, onDirtyChange }) {
   const [stages, setStages] = useState(() => workflow.stages);
   const [isDirty, setIsDirty] = useState(false);
+  const [publishSignal, setPublishSignal] = useState(0);
 
   const markDirty = () => { setIsDirty(true); onDirtyChange?.(true); };
-  const clearDirty = () => { setIsDirty(false); onDirtyChange?.(false); };
+  const clearDirty = () => { setIsDirty(false); onDirtyChange?.(false); setPublishSignal(s => s + 1); };
   const [insertingAt, setInsertingAt] = useState(null);
   const [newStageName, setNewStageName] = useState("");
   const newStageRef = useRef(null);
@@ -1742,6 +1802,7 @@ function WorkflowDetailView2Passos({ workflow, onOpenTask, onOpenStage, onOpenSe
                   onStageDragOver={(e) => handleStageDragOver(e, si)}
                   onStageDrop={(e) => handleStageDrop(e, si)}
                   onStageDragEnd={handleStageDragEnd}
+                  publishSignal={publishSignal}
                 />
                 {si < stages.length - 1 && (
                   <div className="stage-linker" />
@@ -2018,15 +2079,30 @@ function WorkflowDetailViewFlat({ workflow, onOpenTask, onOpenStage, onOpenSetti
 
   const [stages, setStages] = useState(() => workflow.stages);
 
-  // Flat task list: each entry knows its source stage index
-  const [flatTasks, setFlatTasks] = useState(() =>
-    workflow.stages.flatMap((stage, si) =>
+  // Flat task list: each entry knows its source stage index (used for the
+  // classification indicator). The visual order normally follows stage order,
+  // but a workflow may define `flatOrder` (task ids) to show a task in a
+  // different position than its stage grouping — e.g. a payment capture that
+  // only happens after fulfillment is ready, while still belonging to the
+  // payment stage for gate/classification purposes.
+  const [flatTasks, setFlatTasks] = useState(() => {
+    const natural = workflow.stages.flatMap((stage, si) =>
       stage.tasks.map(task => ({ task, stageIdx: si }))
-    )
-  );
+    );
+    if (!workflow.flatOrder) return natural;
+    const byId = new Map(natural.map(ft => [ft.task.id, ft]));
+    const ordered = workflow.flatOrder.map(id => byId.get(id)).filter(Boolean);
+    natural.forEach(ft => { if (!workflow.flatOrder.includes(ft.task.id)) ordered.push(ft); });
+    return ordered;
+  });
 
+  const [publishSignal, setPublishSignal] = useState(0);
   const markDirty = () => onDirtyChange?.(true);
-  const clearDirty = () => onDirtyChange?.(false);
+  const clearDirty = () => { onDirtyChange?.(false); setPublishSignal(s => s + 1); };
+
+  // "Editar ordem" — arrastar/soltar tarefas só fica disponível nesse modo;
+  // na visualização normal a alça de arrasto nem é renderizada.
+  const [reorderMode, setReorderMode] = useState(false);
 
   const removeStage = (si) => {
     setStages(prev => prev.filter((_, i) => i !== si));
@@ -2155,6 +2231,81 @@ function WorkflowDetailViewFlat({ workflow, onOpenTask, onOpenStage, onOpenSetti
 
       <WfSettingsInline workflow={workflow} onDirtyChange={onDirtyChange} />
 
+      {/* ── Tasks ── */}
+      <SectionBlock
+        title="Tarefas"
+        actions={
+          <>
+            <button
+              className="wf-tasks-reorder-btn"
+              data-sl-button
+              data-variant={reorderMode ? "primary" : "tertiary"}
+              data-has-label
+              onClick={() => setReorderMode(v => !v)}
+            >
+              {reorderMode ? "Concluir" : "Editar ordem"}
+            </button>
+            <IconButton
+              icon={<Icon name="plus" size={16} />}
+              label="Adicionar tarefa"
+              variant="secondary"
+              size="medium"
+              disabled={chatAddingTask || reorderMode}
+              onClick={() => chatStartAddTask?.(stages[0]?.name)}
+            />
+          </>
+        }
+      >
+        <div className="wf-flat-tasks" ref={flatViewRef}>
+          {flatTasks.map(({ task, stageIdx }, idx) => {
+            const stage = stages[stageIdx] || stages[0];
+            const color = STAGE_COLORS[stageIdx % STAGE_COLORS.length];
+            return (
+              <div key={task.id} className="wf-flat-task-wrap">
+                <div className="wf-flat-task-body">
+                  <StageTaskRow
+                    task={task}
+                    stage={stage}
+                    workflow={workflow}
+                    idx={idx}
+                    isNew={newlyAddedId === task.id}
+                    reorderMode={reorderMode}
+                    dragging={taskDragging}
+                    dragOver={taskDragOver}
+                    onDragStart={e => handleTaskDragStart(e, idx)}
+                    onDragOver={e => handleTaskDragOver(e, idx)}
+                    onDrop={e => handleTaskDrop(e, idx)}
+                    onDragEnd={handleTaskDragEnd}
+                    onChanged={markDirty}
+                    onRemove={() => {
+                      const removed = { task, stageIdx };
+                      setFlatTasks(prev => prev.filter((_, i) => i !== idx));
+                      markDirty();
+                      notifyTaskRemoved?.(task.name, stage?.name || "", () =>
+                        setFlatTasks(prev => {
+                          const next = [...prev];
+                          next.splice(idx, 0, removed);
+                          return next;
+                        })
+                      );
+                    }}
+                    isOpen={openTaskId === task.id}
+                    onToggle={() => setOpenTaskId(prev => prev === task.id ? null : task.id)}
+                    onStageChange={newStageId => {
+                      const newSi = stages.findIndex(s => s.id === newStageId);
+                      if (newSi === -1) return;
+                      setFlatTasks(prev => prev.map((ft, i) => i === idx ? { ...ft, stageIdx: newSi } : ft));
+                      markDirty();
+                    }}
+                    publishSignal={publishSignal}
+                  />
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </SectionBlock>
+
       {/* ── Stages ── */}
       <SectionBlock
         title="Etapas"
@@ -2185,66 +2336,6 @@ function WorkflowDetailViewFlat({ workflow, onOpenTask, onOpenStage, onOpenSetti
               />
             </React.Fragment>
           ))}
-        </div>
-      </SectionBlock>
-
-      {/* ── Tasks ── */}
-      <SectionBlock
-        title="Tarefas"
-        actions={
-          <IconButton
-            icon={<Icon name="plus" size={16} />}
-            label="Adicionar tarefa"
-            variant="secondary"
-            disabled={chatAddingTask}
-            onClick={() => chatStartAddTask?.(stages[0]?.name)}
-          />
-        }
-      >
-        <div className="wf-flat-tasks" ref={flatViewRef}>
-          {flatTasks.map(({ task, stageIdx }, idx) => {
-            const stage = stages[stageIdx] || stages[0];
-            const color = STAGE_COLORS[stageIdx % STAGE_COLORS.length];
-            return (
-              <div key={task.id} className="wf-flat-task-wrap">
-                <div className="wf-flat-task-body">
-                  <StageTaskRow
-                    task={task}
-                    workflow={workflow}
-                    idx={idx}
-                    isNew={newlyAddedId === task.id}
-                    dragging={taskDragging}
-                    dragOver={taskDragOver}
-                    onDragStart={e => handleTaskDragStart(e, idx)}
-                    onDragOver={e => handleTaskDragOver(e, idx)}
-                    onDrop={e => handleTaskDrop(e, idx)}
-                    onDragEnd={handleTaskDragEnd}
-                    onChanged={markDirty}
-                    onRemove={() => {
-                      const removed = { task, stageIdx };
-                      setFlatTasks(prev => prev.filter((_, i) => i !== idx));
-                      markDirty();
-                      notifyTaskRemoved?.(task.name, stage?.name || "", () =>
-                        setFlatTasks(prev => {
-                          const next = [...prev];
-                          next.splice(idx, 0, removed);
-                          return next;
-                        })
-                      );
-                    }}
-                    isOpen={openTaskId === task.id}
-                    onToggle={() => setOpenTaskId(prev => prev === task.id ? null : task.id)}
-                    onStageChange={newStageId => {
-                      const newSi = stages.findIndex(s => s.id === newStageId);
-                      if (newSi === -1) return;
-                      setFlatTasks(prev => prev.map((ft, i) => i === idx ? { ...ft, stageIdx: newSi } : ft));
-                      markDirty();
-                    }}
-                  />
-                </div>
-              </div>
-            );
-          })}
         </div>
       </SectionBlock>
     </>
@@ -2576,6 +2667,14 @@ function WorkflowBoardCanvas({
             <button data-sl-button data-variant="primary" data-size="small" data-has-label onClick={() => {
               detailActionsRef.current?.save?.();
               setDetailHasChanges(false);
+              if (workflow) {
+                const now = new Date().toISOString();
+                workflow.publishedAt = now;
+                workflow.publishedBy = CURRENT_USER_EMAIL;
+                workflow.lastEditedAt = now;
+                workflow.lastEditedBy = CURRENT_USER_EMAIL;
+                workflow.wfStatus = "published";
+              }
               const wfName = workflow?.name ?? "workflow";
               agentSay?.({
                 from: "agent",
