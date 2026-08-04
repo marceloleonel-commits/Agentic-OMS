@@ -22,6 +22,10 @@ const Icon = ({ name, size = 16, ...rest }) => {
       return (<svg {...common}><path d="M9 6l6 6-6 6"/></svg>);
     case "chevron-down":
       return (<svg {...common}><path d="M6 9l6 6 6-6"/></svg>);
+    case "arrow-left":
+      return (<svg {...common}><path d="M19 12H5M12 19l-7-7 7-7"/></svg>);
+    case "arrow-left":
+      return (<svg {...common}><path d="M19 12H5M12 19l-7-7 7-7"/></svg>);
     case "settings":
       return (<svg {...common}><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1A2 2 0 1 1 4.3 17l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1A1.7 1.7 0 0 0 4.6 9a1.7 1.7 0 0 0-.3-1.8l-.1-.1A2 2 0 1 1 7 4.3l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>);
     case "grid":
@@ -131,6 +135,12 @@ const IconDotsThreeVertical = ({ size = 16, ...rest }) => (
     <path d="M128,44a20,20,0,1,1-20,20A20,20,0,0,1,128,44Zm0,64a20,20,0,1,0,20,20A20,20,0,0,0,128,108Zm0,64a20,20,0,1,0,20,20A20,20,0,0,0,128,172Z"/>
   </svg>
 );
+/* Material Symbols Outlined "edit", wght 300 */
+const IconEdit = ({ size = 16, ...rest }) => (
+  <svg width={size} height={size} viewBox="0 -960 960 960" fill="currentColor" xmlns="http://www.w3.org/2000/svg" {...rest}>
+    <path d="M200-200h50.46l409.46-409.46-50.46-50.46L200-250.46V-200Zm-60 60v-135.38l527.62-527.39q9.07-8.24 20.03-12.73 10.97-4.5 23-4.5t23.3 4.27q11.28 4.27 19.97 13.58l48.85 49.46q9.31 8.69 13.27 20 3.96 11.31 3.96 22.62 0 12.07-4.12 23.03-4.12 10.97-13.11 20.04L275.38-140H140Zm620.38-570.15-50.23-50.23 50.23 50.23Zm-126.13 75.9-24.79-25.67 50.46 50.46-25.67-24.79Z"/>
+  </svg>
+);
 const IconCaretLeftSmall = ({ size = 16, ...rest }) => (
   <svg width={size} height={size} viewBox="0 0 256 256" fill="currentColor" xmlns="http://www.w3.org/2000/svg" {...rest}>
     <path d="M165.66,202.34a8,8,0,0,1-11.32,11.32l-80-80a8,8,0,0,1,0-11.32l80-80a8,8,0,0,1,11.32,11.32L91.31,128Z"/>
@@ -201,6 +211,11 @@ const IconNewspaper = ({ size = 16, ...rest }) => (
     <path d="M88,112a8,8,0,0,1,8-8h80a8,8,0,0,1,0,16H96A8,8,0,0,1,88,112Zm8,40h80a8,8,0,0,0,0-16H96a8,8,0,0,0,0,16ZM232,64V184a24,24,0,0,1-24,24H32A24,24,0,0,1,8,184.11V88a8,8,0,0,1,16,0v96a8,8,0,0,0,16,0V64A16,16,0,0,1,56,48H216A16,16,0,0,1,232,64Zm-16,0H56V184a23.84,23.84,0,0,1-1.37,8H208a8,8,0,0,0,8-8Z"/>
   </svg>
 );
+const IconReorder = ({ size = 16, ...rest }) => (
+  <svg width={size} height={size} viewBox="0 -960 960 960" fill="currentColor" xmlns="http://www.w3.org/2000/svg" {...rest}>
+    <path d="M160-240v-40h640v40H160Zm0-146.92v-40h640v40H160Zm0-146.16v-40h640v40H160ZM160-680v-40h640v40H160Z"/>
+  </svg>
+);
 const IconTruck = ({ size = 16, ...rest }) => (
   <svg width={size} height={size} viewBox="0 0 256 256" fill="currentColor" xmlns="http://www.w3.org/2000/svg" {...rest}>
     <path d="M255.42,117l-14-35A15.93,15.93,0,0,0,226.58,72H192V64a8,8,0,0,0-8-8H32A16,16,0,0,0,16,72V184a16,16,0,0,0,16,16H49a32,32,0,0,0,62,0h50a32,32,0,0,0,62,0h17a16,16,0,0,0,16-16V120A7.94,7.94,0,0,0,255.42,117ZM192,88h34.58l9.6,24H192ZM32,72H176v64H32ZM80,208a16,16,0,1,1,16-16A16,16,0,0,1,80,208Zm81-24H111a32,32,0,0,0-62,0H32V152H176v12.31A32.11,32.11,0,0,0,161,184Zm31,24a16,16,0,1,1,16-16A16,16,0,0,1,192,208Zm48-24H223a32.06,32.06,0,0,0-31-24V128h48Z"/>
@@ -216,6 +231,7 @@ window.IconCursorFill = IconCursorFill;
 window.IconDragDots = IconDragDots;
 window.IconDotsSixVertical = IconDotsSixVertical;
 window.IconDotsThreeVertical = IconDotsThreeVertical;
+window.IconEdit = IconEdit;
 window.IconPlayCircleFill = IconPlayCircleFill;
 window.IconCaretLeftSmall = IconCaretLeftSmall;
 window.IconCaretDown = IconCaretDown;
@@ -232,6 +248,7 @@ window.IconArrowUpRight = IconArrowUpRight;
 window.IconCurrencyCircleDollar = IconCurrencyCircleDollar;
 window.IconNewspaper = IconNewspaper;
 window.IconTruck = IconTruck;
+window.IconReorder = IconReorder;
 window.useState = useState;
 window.useMemo = useMemo;
 window.useRef = useRef;
