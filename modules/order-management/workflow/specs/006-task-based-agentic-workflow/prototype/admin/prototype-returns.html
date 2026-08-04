@@ -1,0 +1,1393 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Troca & Devolução — VTEX Admin + Jornada do Cliente</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ── RESET & BASE ── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',system-ui,sans-serif;font-size:14px;background:#f8f9fb;color:#1a1d23;height:100vh;overflow:hidden;display:flex;flex-direction:column}
+button{cursor:pointer;font-family:inherit}
+a{text-decoration:none;color:inherit}
+
+/* ── TOP SWITCHER ── */
+.mode-bar{display:flex;align-items:center;gap:0;background:#0d0d14;padding:8px 20px;border-bottom:1px solid #1e2030;flex-shrink:0}
+.mode-bar .vtex-logo{display:flex;align-items:center;gap:8px;margin-right:28px}
+.mode-bar .vtex-logo svg{flex-shrink:0}
+.mode-bar .vtex-logo span{color:#fff;font-weight:700;font-size:13px;letter-spacing:.3px}
+.mode-tab{padding:5px 16px;border-radius:6px;border:none;font-size:12.5px;font-weight:600;color:#8b93a7;background:transparent;transition:all .15s}
+.mode-tab.active{background:#1e2030;color:#fff}
+.mode-tab:hover:not(.active){color:#cdd2de}
+.mode-sep{width:1px;height:18px;background:#2a2d3e;margin:0 8px}
+.mode-bar-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+.scenario-label{font-size:11px;color:#8b93a7;margin-right:4px}
+.scenario-pill{padding:3px 10px;border-radius:12px;border:1px solid #2a2d3e;font-size:11px;font-weight:600;color:#8b93a7;background:transparent;cursor:pointer;transition:all .15s}
+.scenario-pill.active{background:#7c3aed20;color:#a78bfa;border-color:#7c3aed40}
+
+/* ── MAIN LAYOUT ── */
+.main-wrap{display:flex;flex:1;overflow:hidden}
+
+/* ══════════════════════════════════
+   ADMIN SIDE
+══════════════════════════════════ */
+#view-admin{display:flex;flex:1;overflow:hidden}
+#view-admin.hidden{display:none}
+
+.adm-sidebar{width:220px;background:#fff;border-right:1px solid #e8eaef;display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
+.adm-sidebar-logo{padding:14px 16px 12px;border-bottom:1px solid #f0f1f5;display:flex;align-items:center;gap:8px}
+.adm-sidebar-logo svg{flex-shrink:0}
+.adm-sidebar-logo span{font-weight:700;font-size:12px;color:#6b7280;letter-spacing:.3px}
+.adm-nav-section{padding:8px 10px 4px;font-size:10px;font-weight:700;color:#9ca3af;letter-spacing:.6px;text-transform:uppercase}
+.adm-nav-item{display:flex;align-items:center;gap:8px;padding:7px 12px;border-radius:7px;margin:1px 6px;font-size:12.5px;font-weight:500;color:#6b7280;cursor:pointer;transition:all .12s}
+.adm-nav-item:hover{background:#f8f9fb;color:#374151}
+.adm-nav-item.active{background:#7c3aed12;color:#7c3aed;font-weight:600}
+.adm-nav-item svg{flex-shrink:0;opacity:.7}
+.adm-nav-item.active svg{opacity:1}
+
+.adm-body{flex:1;overflow-y:auto;padding:0}
+
+/* page header */
+.page-hdr{display:flex;align-items:center;gap:12px;padding:20px 24px 16px;border-bottom:1px solid #f0f1f5;background:#fff;position:sticky;top:0;z-index:10}
+.page-hdr h1{font-size:18px;font-weight:700;color:#111827;flex:1}
+.page-hdr-sub{font-size:12px;color:#9ca3af;margin-top:1px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;font-size:12.5px;font-weight:600;border:none;transition:all .14s;white-space:nowrap}
+.btn-primary{background:#7c3aed;color:#fff}.btn-primary:hover{background:#6d28d9}
+.btn-secondary{background:#fff;color:#374151;border:1px solid #e5e7eb}.btn-secondary:hover{background:#f9fafb}
+.btn-ghost{background:transparent;color:#7c3aed;padding:6px 10px}.btn-ghost:hover{background:#7c3aed08}
+.btn-sm{padding:5px 10px;font-size:11.5px}
+
+/* workflow type tabs */
+.wf-tabs{display:flex;gap:0;padding:0 24px;background:#fff;border-bottom:1px solid #e8eaef}
+.wf-tab{padding:11px 16px;font-size:12.5px;font-weight:600;color:#6b7280;border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap;transition:all .14s}
+.wf-tab.active{color:#7c3aed;border-bottom-color:#7c3aed}
+.wf-tab:hover:not(.active){color:#374151}
+.wf-tab .tab-count{display:inline-block;background:#f3f4f6;color:#9ca3af;border-radius:8px;padding:1px 6px;font-size:10px;font-weight:700;margin-left:5px}
+.wf-tab.active .tab-count{background:#7c3aed15;color:#7c3aed}
+
+/* flow card */
+.flow-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px;padding:24px}
+.flow-card{background:#fff;border-radius:12px;border:1px solid #e8eaef;overflow:hidden;cursor:pointer;transition:all .15s}
+.flow-card:hover{border-color:#c4b5fd;box-shadow:0 4px 16px #7c3aed10}
+.flow-card.active-card{border-color:#7c3aed;box-shadow:0 0 0 2px #7c3aed20}
+.fc-header{padding:14px 16px 10px;display:flex;align-items:flex-start;gap:10px;border-bottom:1px solid #f5f3ff}
+.fc-icon{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.fc-meta{flex:1;min-width:0}
+.fc-name{font-size:13px;font-weight:700;color:#111827}
+.fc-desc{font-size:11.5px;color:#9ca3af;margin-top:2px}
+.fc-flow-label{font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:8px;margin-top:6px;display:inline-block}
+.fc-body{padding:12px 16px}
+.fc-tags{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px}
+.fc-tag{font-size:10.5px;font-weight:600;padding:2px 8px;border-radius:8px;background:#f3f4f6;color:#6b7280;border:1px solid #e5e7eb}
+.fc-tag.highlight{background:#7c3aed10;color:#7c3aed;border-color:#7c3aed20}
+.fc-stages{display:flex;align-items:center;gap:0;flex-wrap:wrap;margin-bottom:8px}
+.fc-stage{font-size:10px;font-weight:600;padding:3px 8px;background:#f8f9fb;border:1px solid #e8eaef;border-radius:4px;color:#374151;white-space:nowrap}
+.fc-stage-arrow{font-size:11px;color:#d1d5db;margin:0 2px}
+.fc-footer{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-top:1px solid #f5f3ff;background:#fcfaff}
+.fc-stat{display:flex;flex-direction:column;gap:1px}
+.fc-stat-val{font-size:14px;font-weight:700;color:#374151}
+.fc-stat-lbl{font-size:10px;color:#9ca3af}
+
+/* detail panel */
+#detail-panel{display:none;position:fixed;right:0;top:42px;bottom:0;width:520px;background:#fff;border-left:1px solid #e8eaef;z-index:100;overflow-y:auto;box-shadow:-4px 0 24px #0000000d}
+#detail-panel.visible{display:flex;flex-direction:column}
+.dp-header{padding:16px 20px 14px;border-bottom:1px solid #f0f1f5;display:flex;align-items:flex-start;gap:12px;position:sticky;top:0;background:#fff;z-index:5}
+.dp-close{background:none;border:none;padding:4px;color:#9ca3af;border-radius:6px;cursor:pointer;margin-left:auto;flex-shrink:0}
+.dp-close:hover{background:#f3f4f6;color:#374151}
+.dp-title{font-size:15px;font-weight:700;color:#111827}
+.dp-subtitle{font-size:12px;color:#9ca3af;margin-top:2px}
+
+/* tasks pipeline in detail */
+.dp-section{padding:16px 20px;border-bottom:1px solid #f5f3ff}
+.dp-section-title{font-size:11px;font-weight:700;color:#9ca3af;letter-spacing:.5px;text-transform:uppercase;margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.task-pipeline{display:flex;flex-direction:column;gap:0}
+.task-row{display:flex;align-items:stretch;gap:0}
+.task-connector{display:flex;flex-direction:column;align-items:center;width:28px;flex-shrink:0;padding-top:4px}
+.task-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;margin-top:4px}
+.task-dot.completed{background:#059669;border:2px solid #d1fae5}
+.task-dot.pending{background:#fff;border:2px solid #d1d5db}
+.task-dot.active{background:#7c3aed;border:2px solid #c4b5fd;box-shadow:0 0 0 3px #7c3aed20}
+.task-dot.failed{background:#dc2626;border:2px solid #fecaca}
+.task-dot.skipped{background:#9ca3af;border:2px solid #e5e7eb}
+.task-line{flex:1;width:2px;background:#e8eaef;margin:2px 0}
+.task-card-wrap{flex:1;padding-bottom:10px}
+.task-card{background:#f8f9fb;border:1px solid #e8eaef;border-radius:8px;padding:10px 12px;margin-left:4px}
+.task-card.active-task{background:#f5f3ff;border-color:#c4b5fd}
+.task-card.completed-task{background:#f0fdf4;border-color:#bbf7d0}
+.task-card.failed-task{background:#fef2f2;border-color:#fecaca}
+.task-card-name{font-size:12.5px;font-weight:600;color:#111827}
+.task-card-meta{display:flex;align-items:center;gap:8px;margin-top:4px}
+.task-card-sup{font-size:11px;color:#9ca3af;display:flex;align-items:center;gap:4px}
+.task-card-outcome{font-size:10.5px;font-weight:700;padding:2px 7px;border-radius:6px}
+.outcome-approved{background:#d1fae5;color:#059669}
+.outcome-pending{background:#fef3c7;color:#d97706}
+.outcome-denied{background:#fef2f2;color:#dc2626}
+.outcome-partial{background:#e0e7ff;color:#4338ca}
+.outcome-skipped{background:#f3f4f6;color:#9ca3af}
+.task-card-note{font-size:11px;color:#6b7280;margin-top:5px;padding-top:5px;border-top:1px dashed #e8eaef;font-style:italic}
+
+/* gate badge */
+.gate-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;border:1.5px dashed}
+.gate-cleared{background:#f0fdf4;border-color:#86efac;color:#059669}
+.gate-pending{background:#fefce8;border-color:#fde68a;color:#b45309}
+.gate-blocked{background:#fef2f2;border-color:#fca5a5;color:#dc2626}
+
+/* decision branches */
+.branch-section{margin-top:10px;padding:10px 12px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px}
+.branch-label{font-size:11px;font-weight:700;color:#b45309;margin-bottom:6px;display:flex;align-items:center;gap:5px}
+.branch-row{display:flex;gap:8px;flex-wrap:wrap}
+.branch-opt{flex:1;min-width:130px;padding:8px 10px;background:#fff;border:1.5px solid #e8eaef;border-radius:7px;cursor:pointer;transition:all .13s}
+.branch-opt:hover{border-color:#7c3aed;background:#f5f3ff}
+.branch-opt.selected{border-color:#7c3aed;background:#f5f3ff}
+.branch-opt-label{font-size:11px;font-weight:700;color:#374151}
+.branch-opt-desc{font-size:10.5px;color:#9ca3af;margin-top:2px}
+
+/* order example box */
+.order-example{background:#f8f9fb;border:1px solid #e8eaef;border-radius:10px;padding:12px 14px;margin-bottom:12px}
+.oe-header{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.oe-id{font-size:12px;font-weight:700;color:#374151}
+.oe-badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:8px}
+.oe-item{display:flex;align-items:center;gap:8px;padding:6px 8px;background:#fff;border:1px solid #e8eaef;border-radius:7px;margin-bottom:4px}
+.oe-item-emoji{font-size:16px}
+.oe-item-name{font-size:12px;font-weight:600;color:#374151}
+.oe-item-price{font-size:12px;color:#9ca3af;margin-left:auto}
+.oe-item-tag{font-size:10px;padding:1px 6px;border-radius:6px;font-weight:600}
+
+/* reason codes */
+.rc-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.rc-item{padding:6px 10px;background:#fff;border:1.5px solid #e8eaef;border-radius:7px}
+.rc-code{font-size:10px;font-weight:700;color:#7c3aed}
+.rc-label{font-size:11.5px;font-weight:600;color:#374151;margin-top:1px}
+.rc-note{font-size:10.5px;color:#9ca3af;margin-top:2px}
+
+
+/* ══════════════════════════════════
+   CUSTOMER JOURNEY (mobile frame)
+══════════════════════════════════ */
+#view-customer{display:none;flex:1;overflow:hidden;align-items:center;justify-content:center;background:linear-gradient(135deg,#1a0533 0%,#0d1b3e 100%)}
+#view-customer.visible{display:flex}
+
+.customer-frame{width:390px;height:calc(100vh - 42px);background:#fff;border-radius:0;overflow:hidden;display:flex;flex-direction:column;position:relative;box-shadow:0 0 80px #0000004d}
+
+/* customer top bar */
+.cust-topbar{display:flex;align-items:center;gap:8px;padding:14px 16px 12px;background:#fff;border-bottom:1px solid #f3f4f6;flex-shrink:0}
+.cust-back-btn{width:32px;height:32px;display:flex;align-items:center;justify-content:center;background:#f8f9fb;border:none;border-radius:8px;color:#374151;cursor:pointer}
+.cust-page-title{font-size:14px;font-weight:700;color:#111827;flex:1}
+.cust-help{font-size:12px;color:#7c3aed;font-weight:600;border:none;background:none;cursor:pointer}
+
+/* progress bar */
+.cust-progress{padding:12px 16px 0;flex-shrink:0}
+.cust-progress-steps{display:flex;gap:4px;margin-bottom:4px}
+.cust-progress-step{flex:1;height:4px;border-radius:2px;background:#e8eaef;transition:all .3s}
+.cust-progress-step.done{background:#7c3aed}
+.cust-progress-step.active{background:#a78bfa}
+.cust-progress-label{font-size:10.5px;color:#9ca3af;font-weight:500}
+
+/* journey screens */
+.cust-screen{display:none;flex:1;overflow-y:auto;padding:16px}
+.cust-screen.visible{display:flex;flex-direction:column;gap:14px}
+
+/* journey step navs */
+.cust-nav-row{display:flex;gap:8px;padding:12px 16px;border-top:1px solid #f3f4f6;background:#fff;flex-shrink:0}
+.cust-nav-row .btn{flex:1;justify-content:center}
+
+/* product selector */
+.prod-card{display:flex;align-items:center;gap:10px;padding:12px;background:#fff;border:2px solid #e8eaef;border-radius:10px;cursor:pointer;transition:all .15s}
+.prod-card.selected{border-color:#7c3aed;background:#f5f3ff}
+.prod-card:hover:not(.selected){border-color:#c4b5fd}
+.prod-emoji{font-size:28px;flex-shrink:0}
+.prod-info{flex:1}
+.prod-name{font-size:13px;font-weight:700;color:#111827}
+.prod-sku{font-size:11px;color:#9ca3af}
+.prod-price{font-size:12px;font-weight:600;color:#374151}
+.prod-checkbox{width:20px;height:20px;border-radius:5px;border:2px solid #d1d5db;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#7c3aed}
+.prod-card.selected .prod-checkbox{background:#7c3aed;border-color:#7c3aed;color:#fff}
+
+/* reason selector */
+.reason-card{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:#fff;border:2px solid #e8eaef;border-radius:9px;cursor:pointer;transition:all .15s;margin-bottom:6px}
+.reason-card.selected{border-color:#7c3aed;background:#f5f3ff}
+.reason-dot{width:16px;height:16px;border-radius:50%;border:2px solid #d1d5db;flex-shrink:0;margin-top:1px;transition:all .15s}
+.reason-card.selected .reason-dot{background:#7c3aed;border-color:#7c3aed;box-shadow:inset 0 0 0 3px #fff}
+.reason-code{font-size:10px;font-weight:700;color:#7c3aed}
+.reason-label{font-size:12.5px;font-weight:600;color:#111827}
+.reason-desc{font-size:11px;color:#9ca3af;margin-top:2px}
+
+/* status card */
+.status-card{padding:16px;background:linear-gradient(135deg,#7c3aed,#4f46e5);border-radius:12px;color:#fff;text-align:center}
+.status-card-icon{font-size:36px;margin-bottom:8px}
+.status-card-title{font-size:16px;font-weight:700;margin-bottom:4px}
+.status-card-sub{font-size:12px;opacity:.85}
+
+/* timeline */
+.timeline{display:flex;flex-direction:column;gap:0}
+.tl-item{display:flex;gap:10px}
+.tl-left{display:flex;flex-direction:column;align-items:center;width:20px;flex-shrink:0}
+.tl-icon{width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;flex-shrink:0}
+.tl-icon.done{background:#059669;color:#fff}
+.tl-icon.active{background:#7c3aed;color:#fff;box-shadow:0 0 0 3px #7c3aed30}
+.tl-icon.waiting{background:#e8eaef;color:#9ca3af}
+.tl-vline{flex:1;width:2px;background:#e8eaef;margin:2px 0}
+.tl-right{flex:1;padding-bottom:14px}
+.tl-title{font-size:12.5px;font-weight:600;color:#111827}
+.tl-subtitle{font-size:11px;color:#9ca3af;margin-top:2px}
+.tl-time{font-size:10px;color:#9ca3af;margin-top:2px}
+
+/* info row */
+.info-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #f3f4f6}
+.info-row:last-child{border-bottom:none}
+.info-label{font-size:12px;color:#9ca3af}
+.info-value{font-size:12px;font-weight:600;color:#374151}
+
+/* refund card */
+.refund-card{padding:14px;background:#f0fdf4;border:1.5px solid #bbf7d0;border-radius:10px}
+.refund-amount{font-size:24px;font-weight:800;color:#059669}
+.refund-label{font-size:12px;color:#6b7280;margin-bottom:4px}
+.refund-detail{font-size:11.5px;color:#059669;margin-top:2px}
+
+/* label image stub */
+.label-stub{background:#1a1d23;border-radius:10px;padding:16px;color:#fff;text-align:center}
+.label-stub .barcode{font-family:monospace;font-size:8px;letter-spacing:2px;color:#4ade80;display:block;margin:8px 0}
+.label-stub .tracking-code{font-size:13px;font-weight:700;letter-spacing:1px;color:#fff}
+
+/* alert box */
+.alert{padding:10px 12px;border-radius:8px;font-size:12px;display:flex;gap:8px}
+.alert-warn{background:#fffbeb;border:1px solid #fde68a;color:#92400e}
+.alert-info{background:#eff6ff;border:1px solid #bfdbfe;color:#1e40af}
+.alert-success{background:#f0fdf4;border:1px solid #bbf7d0;color:#065f46}
+.alert-purple{background:#f5f3ff;border:1px solid #ddd6fe;color:#4c1d95}
+
+/* section title */
+.section-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#9ca3af;margin-bottom:8px}
+
+/* BDD accordion */
+.bdd-wrap{background:#fff;border:1px solid #e8eaef;border-radius:10px;overflow:hidden;margin-top:12px}
+.bdd-header{display:flex;align-items:center;gap:8px;padding:10px 14px;cursor:pointer;border-bottom:1px solid #e8eaef}
+.bdd-header:hover{background:#f8f9fb}
+.bdd-title{font-size:12px;font-weight:700;color:#374151;flex:1}
+.bdd-chevron{transition:transform .2s;color:#9ca3af}
+.bdd-body{padding:12px 14px;display:none;font-size:11.5px;color:#374151}
+.bdd-body.open{display:block}
+.bdd-body pre{background:#f8f9fb;border:1px solid #e8eaef;border-radius:7px;padding:10px 12px;font-family:'JetBrains Mono','Fira Code',monospace;font-size:10.5px;line-height:1.6;overflow-x:auto;white-space:pre-wrap;color:#374151}
+.bdd-kw{color:#7c3aed;font-weight:700}
+.bdd-ctx{color:#059669}
+.bdd-act{color:#b45309}
+.bdd-ass{color:#0891b2}
+</style>
+</head>
+<body>
+
+<!-- ── TOP MODE BAR ── -->
+<div class="mode-bar">
+  <div class="vtex-logo">
+    <svg viewBox="0 0 80 68" fill="none" width="24" height="20"><path d="M40 0L80 68H0L40 0Z" fill="#F71963"/></svg>
+    <span>VTEX Admin</span>
+  </div>
+  <div class="mode-sep"></div>
+  <button class="mode-tab active" id="btn-admin" onclick="switchMode('admin')">⚙️ Admin</button>
+  <button class="mode-tab" id="btn-customer" onclick="switchMode('customer')">📱 Jornada do Cliente</button>
+  <div class="mode-bar-right">
+    <span class="scenario-label">Cenário:</span>
+    <button class="scenario-pill active" id="pill-a" onclick="setScenario('a')">Flow A · Standard</button>
+    <button class="scenario-pill" id="pill-b" onclick="setScenario('b')">Flow A · Crédito (NI)</button>
+    <button class="scenario-pill" id="pill-c" onclick="setScenario('c')">Flow B · Não-entrega</button>
+    <button class="scenario-pill" id="pill-d" onclick="setScenario('d')">Flow C · Credit Note</button>
+  </div>
+</div>
+
+<div class="main-wrap">
+
+<!-- ══════════════════════════════════════════════════════
+     ADMIN VIEW
+══════════════════════════════════════════════════════ -->
+<div id="view-admin">
+
+  <!-- sidebar -->
+  <aside class="adm-sidebar">
+    <div class="adm-sidebar-logo">
+      <svg viewBox="0 0 80 68" fill="none" width="20" height="17"><path d="M40 0L80 68H0L40 0Z" fill="#7c3aed"/></svg>
+      <span>recorrenciacharlie</span>
+    </div>
+    <div style="height:8px"></div>
+    <div class="adm-nav-section">Pedidos</div>
+    <div class="adm-nav-item" onclick="switchAdminTab('orders')">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" width="15" height="15"><path d="M3 2h10l1 4H2L3 2z"/><path d="M2 6l1 8h10l1-8"/><path d="M6 10h4"/></svg>
+      Todos os pedidos
+    </div>
+    <div class="adm-nav-section">Agentic Workflow</div>
+    <div class="adm-nav-item active" onclick="switchAdminTab('workflows')">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" width="15" height="15"><circle cx="4" cy="4" r="2"/><circle cx="12" cy="4" r="2"/><circle cx="4" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><path d="M6 4h4M4 6v4M12 6v4M6 12h4"/></svg>
+      Gerenciar Workflows
+    </div>
+    <div class="adm-nav-item" onclick="switchAdminTab('returns-ops')">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" width="15" height="15"><path d="M3 8V5a5 5 0 0110 0v3"/><path d="M1 8h3v4H1zM12 8h3v4h-3"/></svg>
+      Devoluções &amp; Trocas
+    </div>
+    <div class="adm-nav-item" onclick="switchAdminTab('routing')">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" width="15" height="15"><path d="M2 4h4v4H2zM10 4h4v4h-4M6 6h4M4 8v4M12 8v4M4 12h8"/></svg>
+      Políticas de Roteamento
+    </div>
+    <div style="height:8px"></div>
+    <div class="adm-nav-section">Configurações</div>
+    <div class="adm-nav-item">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" width="15" height="15"><circle cx="8" cy="8" r="3"/><path d="M8 1v2M8 13v2M1 8h2M13 8h2"/></svg>
+      Configurações da loja
+    </div>
+  </aside>
+
+  <!-- body -->
+  <div class="adm-body" id="admin-body">
+
+    <!-- ── SCREEN: WORKFLOW LIST ── -->
+    <div id="adm-screen-workflows" class="adm-screen" style="display:block">
+      <div class="page-hdr">
+        <div>
+          <h1>Troca &amp; Devolução — Workflows</h1>
+          <div class="page-hdr-sub">4 workflows ativos · 347 pedidos em andamento</div>
+        </div>
+        <button class="btn btn-primary">
+          <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" width="12" height="12"><path d="M7 1v12M1 7h12"/></svg>
+          Novo Workflow
+        </button>
+      </div>
+
+      <!-- flow type tabs -->
+      <div class="wf-tabs">
+        <div class="wf-tab active" onclick="setFlowTab(this,'all')">Todos <span class="tab-count">4</span></div>
+        <div class="wf-tab" onclick="setFlowTab(this,'a')">Flow A · Retorno físico <span class="tab-count">2</span></div>
+        <div class="wf-tab" onclick="setFlowTab(this,'b')">Flow B · Não-entrega <span class="tab-count">1</span></div>
+        <div class="wf-tab" onclick="setFlowTab(this,'c')">Flow C · Credit Note <span class="tab-count">1</span></div>
+      </div>
+
+      <div class="flow-grid" id="flow-cards-grid"></div>
+    </div>
+
+    <!-- ── SCREEN: RETURNS OPS ── -->
+    <div id="adm-screen-returns-ops" class="adm-screen" style="display:none">
+      <div class="page-hdr">
+        <div>
+          <h1>Central de Devoluções</h1>
+          <div class="page-hdr-sub">Visão operacional das devoluções em andamento</div>
+        </div>
+        <button class="btn btn-secondary btn-sm">Exportar</button>
+      </div>
+      <div style="padding:24px">
+        <!-- returns in-progress table -->
+        <div style="background:#fff;border:1px solid #e8eaef;border-radius:12px;overflow:hidden">
+          <div style="padding:14px 16px;border-bottom:1px solid #f0f1f5;display:flex;align-items:center;gap:10px">
+            <span style="font-weight:700;font-size:13px">Devoluções em andamento</span>
+            <span style="background:#7c3aed15;color:#7c3aed;font-size:11px;font-weight:700;padding:2px 8px;border-radius:8px">347</span>
+            <div style="margin-left:auto;display:flex;gap:8px">
+              <button class="btn btn-secondary btn-sm">Filtrar</button>
+            </div>
+          </div>
+          <table style="width:100%;border-collapse:collapse">
+            <thead><tr style="background:#f8f9fb;font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.4px">
+              <th style="padding:8px 14px;text-align:left">Pedido</th>
+              <th style="padding:8px 14px;text-align:left">Cliente</th>
+              <th style="padding:8px 14px;text-align:left">Workflow</th>
+              <th style="padding:8px 14px;text-align:left">Etapa atual</th>
+              <th style="padding:8px 14px;text-align:left">Outcome esperado</th>
+              <th style="padding:8px 14px;text-align:left">SLA</th>
+              <th style="padding:8px 14px;text-align:left">Ação</th>
+            </tr></thead>
+            <tbody id="returns-ops-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SCREEN: ROUTING ── -->
+    <div id="adm-screen-routing" class="adm-screen" style="display:none">
+      <div class="page-hdr">
+        <div><h1>Políticas de Roteamento</h1><div class="page-hdr-sub">Regras que determinam qual workflow de devolução é acionado</div></div>
+        <button class="btn btn-primary">+ Nova Regra</button>
+      </div>
+      <div style="padding:24px">
+        <div class="alert alert-info" style="margin-bottom:16px">
+          <span>ℹ️</span>
+          <span>As regras são avaliadas em ordem de prioridade. A primeira que corresponder ao pedido define o workflow acionado. Se nenhuma corresponder, o pedido vai para fila de revisão manual.</span>
+        </div>
+        <div id="routing-rules-list"></div>
+      </div>
+    </div>
+
+    <!-- ── SCREEN: ORDERS ── -->
+    <div id="adm-screen-orders" class="adm-screen" style="display:none">
+      <div class="page-hdr">
+        <div><h1>Pedidos com Devolução</h1><div class="page-hdr-sub">Filtrando: pedidos com workflow de troca/devolução ativo</div></div>
+      </div>
+      <div style="padding:24px">
+        <div class="alert alert-purple" style="margin-bottom:16px">
+          <span>↩️</span>
+          <span>Mostrando pedidos com devolução ativa. Para ver todos os pedidos, use o menu <b>Todos os pedidos</b>.</span>
+        </div>
+        <div id="orders-with-returns"></div>
+      </div>
+    </div>
+
+  </div><!-- /adm-body -->
+
+  <!-- ── DETAIL PANEL ── -->
+  <div id="detail-panel">
+    <div class="dp-header">
+      <div>
+        <div class="dp-title" id="dp-title">Workflow de Devolução</div>
+        <div class="dp-subtitle" id="dp-subtitle">Detalhes do fluxo</div>
+      </div>
+      <button class="dp-close" onclick="closeDetail()">
+        <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.2" width="16" height="16"><path d="M2 2l10 10M12 2L2 12"/></svg>
+      </button>
+    </div>
+    <div id="dp-content"></div>
+  </div>
+
+</div><!-- /view-admin -->
+
+
+<!-- ══════════════════════════════════════════════════════
+     CUSTOMER VIEW
+══════════════════════════════════════════════════════ -->
+<div id="view-customer">
+  <div class="customer-frame">
+
+    <!-- topbar -->
+    <div class="cust-topbar">
+      <button class="cust-back-btn" onclick="custBack()">
+        <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14"><path d="M9 2L4 7l5 5"/></svg>
+      </button>
+      <span class="cust-page-title" id="cust-page-title">Solicitar Devolução</span>
+      <button class="cust-help">Ajuda</button>
+    </div>
+
+    <!-- progress -->
+    <div class="cust-progress">
+      <div class="cust-progress-steps" id="cust-steps"></div>
+      <div class="cust-progress-label" id="cust-step-label">Passo 1 de 6</div>
+    </div>
+
+    <!-- screens -->
+    <!-- S1: select item -->
+    <div class="cust-screen visible" id="cust-s1">
+      <div class="section-title">Selecione o item para devolver</div>
+      <div class="prod-card selected" id="prod-jaqueta" onclick="toggleProd('prod-jaqueta')">
+        <div class="prod-emoji">🧥</div>
+        <div class="prod-info">
+          <div class="prod-name">Jaqueta Calvin Klein G</div>
+          <div class="prod-sku">SKU JCK-BLK-G · Preto · Comprado em 13/05/2026</div>
+          <div class="prod-price">R$ 790,00</div>
+        </div>
+        <div class="prod-checkbox">
+          <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.5" width="10" height="10"><path d="M2 6l3 3 5-5"/></svg>
+        </div>
+      </div>
+      <div class="prod-card" id="prod-cinto" onclick="toggleProd('prod-cinto')">
+        <div class="prod-emoji">👔</div>
+        <div class="prod-info">
+          <div class="prod-name">Cinto Couro Marrom</div>
+          <div class="prod-sku">SKU CLT-MRN-M · Marrom · Comprado em 13/05/2026</div>
+          <div class="prod-price">R$ 440,00</div>
+        </div>
+        <div class="prod-checkbox">
+          <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.5" width="10" height="10"><path d="M2 6l3 3 5-5"/></svg>
+        </div>
+      </div>
+      <div class="alert alert-info">
+        <span>🗓️</span>
+        <span>Prazo de devolução: até <b>12/06/2026</b> (30 dias da entrega). Fora desse prazo, a solicitação pode ser recusada.</span>
+      </div>
+    </div>
+
+    <!-- S2: reason -->
+    <div class="cust-screen" id="cust-s2">
+      <div class="section-title">Qual o motivo da devolução?</div>
+      <div id="reason-list"></div>
+      <div class="alert alert-warn" id="cust-reason-ni-alert" style="display:none">
+        <span>📦</span>
+        <span>Para este motivo, <b>não será necessário devolver o produto</b>. O reembolso é processado automaticamente após análise.</span>
+      </div>
+    </div>
+
+    <!-- S3: confirm -->
+    <div class="cust-screen" id="cust-s3">
+      <div class="status-card">
+        <div class="status-card-icon" id="s3-icon">✅</div>
+        <div class="status-card-title" id="s3-title">Devolução confirmada!</div>
+        <div class="status-card-sub" id="s3-sub">Número de protocolo: DEV-2026-48721</div>
+      </div>
+      <div id="s3-instructions"></div>
+      <div class="bdd-wrap">
+        <div class="bdd-header" onclick="toggleBdd(this)">
+          <span class="bdd-title">📋 BDD — Cenário ativo</span>
+          <svg class="bdd-chevron" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.2" width="12" height="12"><path d="M2 4l4 4 4-4"/></svg>
+        </div>
+        <div class="bdd-body">
+          <pre id="bdd-scenario-text"></pre>
+        </div>
+      </div>
+    </div>
+
+    <!-- S4: shipping label -->
+    <div class="cust-screen" id="cust-s4">
+      <div class="label-stub" id="s4-label-area">
+        <div style="font-size:11px;color:#9ca3af;margin-bottom:6px">ETIQUETA DE POSTAGEM REVERSA</div>
+        <div style="font-size:20px;margin-bottom:4px">📦</div>
+        <div class="barcode" id="s4-barcode">| | ||| | ||| |||| | ||| | ||||| | ||| |</div>
+        <div class="tracking-code" id="s4-tracking">BR892401234567890BR</div>
+        <div style="font-size:10px;color:#9ca3af;margin-top:6px" id="s4-carrier">Correios PAC · Postagem em até 5 dias</div>
+      </div>
+      <div id="s4-instructions-extra"></div>
+      <div class="alert alert-success">
+        <span>✅</span>
+        <span id="s4-alert-text">Etiqueta válida por 10 dias. Leve ao ponto de coleta mais próximo.</span>
+      </div>
+    </div>
+
+    <!-- S5: tracking -->
+    <div class="cust-screen" id="cust-s5">
+      <div class="section-title">Acompanhamento</div>
+      <div class="timeline" id="s5-timeline"></div>
+    </div>
+
+    <!-- S6: refund -->
+    <div class="cust-screen" id="cust-s6">
+      <div class="refund-card">
+        <div class="refund-label" id="s6-label">Reembolso aprovado</div>
+        <div class="refund-amount" id="s6-amount">R$ 790,00</div>
+        <div class="refund-detail" id="s6-detail">Crédito no cartão em até 5 dias úteis</div>
+      </div>
+      <div class="section-title" style="margin-top:4px">Resumo da devolução</div>
+      <div style="background:#fff;border:1px solid #e8eaef;border-radius:10px;overflow:hidden">
+        <div id="s6-summary"></div>
+      </div>
+      <div class="alert alert-success">
+        <span>🎉</span>
+        <span id="s6-closing-msg">Devolução encerrada com sucesso. Obrigado pela confiança!</span>
+      </div>
+    </div>
+
+    <!-- nav buttons -->
+    <div class="cust-nav-row">
+      <button class="btn btn-secondary" id="cust-btn-back" onclick="custBack()" style="display:none">Voltar</button>
+      <button class="btn btn-primary" id="cust-btn-next" onclick="custNext()">Continuar</button>
+    </div>
+
+  </div><!-- /customer-frame -->
+</div><!-- /view-customer -->
+
+</div><!-- /main-wrap -->
+
+
+<script>
+// ══════════════════════════════════════════════════════
+// DATA
+// ══════════════════════════════════════════════════════
+
+const FLOW_DEFS = [
+  {
+    id:'wf-return-standard',
+    name:'Devolução Standard',
+    icon:'↩️',
+    color:'#7c3aed',
+    flowType:'a',
+    flowLabel:'Flow A · Retorno físico',
+    orderCount: 198,
+    desc:'Arrependimento, defeito ou item errado — produto retorna fisicamente ao CD. Suporta verificação parcial e taxa de restock.',
+    tags:['inventory: impacta','reason: CN / ID / WI / EE','executor: shopper ou CSR'],
+    stages:['Solicitação','Elegibilidade','Geração de Etiqueta','Aguardando CD','Verificação','Reembolso','Fechamento'],
+    tasks:[
+      {name:'Solicitação Recebida', sup:'Atendimento / Shopper', executor:'operator', s:'completed', outcome:'approved', note:'Reason code e item referenciado obrigatório'},
+      {name:'Análise de Elegibilidade', sup:'Returns Agent (sistema)', executor:'system', s:'completed', outcome:'approved', note:'Valida janela de devolução, reason code e política'},
+      {name:'Geração de Etiqueta Reversa', sup:'Transportadora (webhook)', executor:'webhook', s:'completed', outcome:'approved', note:'Integração com carrier via webhook — label_url retornado no output'},
+      {name:'Aguardando Postagem', sup:'Shopper', executor:'operator', s:'active', outcome:'pending', note:'SLA: 5 dias para postar. Abre task manual se não postar em 48h'},
+      {name:'Recebimento no CD', sup:'WMS / Armazém (webhook)', executor:'webhook', s:'pending', outcome:null, note:'WMS confirma recebimento físico do item'},
+      {name:'Verificação de Qualidade', sup:'QA Team (operator)', executor:'operator', s:'pending', outcome:null, note:'Pode gerar: package_verified, partial_verified (restock fee), denied'},
+      {name:'Processamento de Reembolso', sup:'Gateway Financeiro (webhook)', executor:'webhook', s:'pending', outcome:null, note:'Valor = produto - restock fee (se houver)'},
+      {name:'Fechamento & Reconciliação', sup:'Sistema VTEX', executor:'system', s:'pending', outcome:null, note:'Atualiza estoque, notifica marketplace, fecha ciclo'},
+    ],
+    gates:['eligibility_cleared','label_generated','package_received','package_verified','refund_processed'],
+    bdd:`<span class="bdd-kw">Funcionalidade:</span> Devolução Standard com retorno físico
+
+<span class="bdd-kw">Cenário:</span> <span class="bdd-ctx">Shopper solicita devolução por arrependimento</span>
+  <span class="bdd-kw">Dado que</span> o pedido #45821-01 foi entregue há 5 dias
+  <span class="bdd-kw">E</span> o item "Jaqueta Calvin Klein G" está dentro da janela de 30 dias
+  <span class="bdd-kw">E</span> o reason code é CN (Customer No longer wants)
+  <span class="bdd-kw">Quando</span> o shopper abre a solicitação de devolução
+  <span class="bdd-kw">Então</span> o sistema cria um WorkflowInstance do tipo wf-return-standard
+  <span class="bdd-kw">E</span> o Returns Agent valida a elegibilidade automaticamente
+  <span class="bdd-kw">E</span> uma etiqueta reversa é gerada via webhook da transportadora
+  <span class="bdd-kw">E</span> o status avança para "Aguardando Postagem"
+
+<span class="bdd-kw">Cenário:</span> <span class="bdd-ctx">Verificação parcial — apenas 1 de 2 itens recebidos</span>
+  <span class="bdd-kw">Dado que</span> o shopper solicitou devolução de 2 itens
+  <span class="bdd-kw">Quando</span> o WMS confirma recebimento de apenas 1 item
+  <span class="bdd-kw">Então</span> o outcome da tarefa é "partial_verified"
+  <span class="bdd-kw">E</span> o reembolso é calculado apenas para o item recebido
+  <span class="bdd-kw">E</span> o status do segundo item permanece "Aguardando"
+
+<span class="bdd-kw">Cenário:</span> <span class="bdd-ctx">Item recebido com dano — restock fee aplicado</span>
+  <span class="bdd-kw">Dado que</span> o WMS recebeu o item
+  <span class="bdd-kw">Quando</span> o QA Team verifica o produto com condição ruim
+  <span class="bdd-kw">Então</span> o outcome é "partial_refund" com restock_fee informado
+  <span class="bdd-kw">E</span> o reembolso = valor do item - restock fee`
+  },
+  {
+    id:'wf-return-credit',
+    name:'Devolução Crédito (sem retorno)',
+    icon:'💳',
+    color:'#0891b2',
+    flowType:'a',
+    flowLabel:'Flow A · Crédito (NI)',
+    orderCount: 87,
+    desc:'Produto danificado ou de baixo valor — empresa opta por reembolsar sem exigir retorno físico (auto-verification path).',
+    tags:['inventory: NÃO impacta','reason: ID / DC / WF / EP','executor: CSR ou shopper'],
+    stages:['Solicitação','Elegibilidade','Auto-verificação','Reembolso','Fechamento'],
+    tasks:[
+      {name:'Solicitação Recebida', sup:'Shopper / CSR', executor:'operator', s:'completed', outcome:'approved', note:'Reason code ID, DC ou EP — produto com dano ou política de custo'},
+      {name:'Análise de Elegibilidade', sup:'Returns Agent (sistema)', executor:'system', s:'completed', outcome:'approved', note:'Verifica se item se qualifica para crédito sem retorno (valor, categoria, política)'},
+      {name:'Auto-verificação (sem WMS)', sup:'Sistema VTEX', executor:'system', s:'active', outcome:'auto_approved', note:'Não aciona WMS nem gera etiqueta — caminho automático de verificação'},
+      {name:'Processamento de Reembolso', sup:'Gateway Financeiro (webhook)', executor:'webhook', s:'pending', outcome:null, note:'Reembolso total ou parcial (ex: desconto appeasement 10%)'},
+      {name:'Fechamento', sup:'Sistema VTEX', executor:'system', s:'pending', outcome:null, note:'NÃO restitui estoque — item não retornou ao CD'},
+    ],
+    gates:['eligibility_cleared','auto_verification_done','refund_processed'],
+    bdd:`<span class="bdd-kw">Funcionalidade:</span> Devolução com crédito sem retorno físico
+
+<span class="bdd-kw">Cenário:</span> <span class="bdd-ctx">Produto danificado de baixo valor — crédito automático</span>
+  <span class="bdd-kw">Dado que</span> o pedido #45823-01 foi entregue com lacre violado
+  <span class="bdd-kw">E</span> o reason code é ID (Item Damaged)
+  <span class="bdd-kw">E</span> a política da loja isenta itens &lt; R$ 150 de retorno físico
+  <span class="bdd-kw">Quando</span> o shopper abre a solicitação
+  <span class="bdd-kw">Então</span> o sistema usa o wf-return-credit (NI)
+  <span class="bdd-kw">E</span> a etapa de verificação é executada automaticamente (sem WMS)
+  <span class="bdd-kw">E</span> o estoque NÃO é atualizado
+  <span class="bdd-kw">E</span> o reembolso é processado em até 2 dias úteis
+
+<span class="bdd-kw">Cenário:</span> <span class="bdd-ctx">Appeasement — 10% de desconto sem devolução</span>
+  <span class="bdd-kw">Dado que</span> o cliente reclamou de qualidade mas não quer devolver
+  <span class="bdd-kw">Quando</span> o CSR aplica credit note com 10% de desconto
+  <span class="bdd-kw">Então</span> o reembolso parcial (10% do valor) é processado
+  <span class="bdd-kw">E</span> o order item é referenciado para cálculo de devolução futura
+  <span class="bdd-kw">E</span> se o cliente devolver depois, o reembolso considera o desconto já concedido`
+  },
+  {
+    id:'wf-return-nondelivery',
+    name:'Recusa de Entrega (NotDelivery)',
+    icon:'🚫',
+    color:'#dc2626',
+    flowType:'b',
+    flowLabel:'Flow B · Não-entrega',
+    orderCount: 34,
+    desc:'Cliente recusou entrega por embalagem danificada ou item errado. Produto nunca chegou efetivamente ao cliente — tratado como UR ao chegar no CD.',
+    tags:['inventory: impacta','reason: DC / WS / WF / UR','executor: transportadora ou WMS'],
+    stages:['Registro Recusa','Retorno Automático','Recebimento CD','Reembolso','Fechamento'],
+    tasks:[
+      {name:'Registro de Recusa de Entrega', sup:'Transportadora (webhook)', executor:'webhook', s:'completed', outcome:'refused', note:'Transportadora informa recusa — item retorna ao CD sem solicitar coleta'},
+      {name:'Criação Automática de Return', sup:'Returns Agent (sistema)', executor:'system', s:'completed', outcome:'approved', note:'Cria WorkflowInstance como UR (Unauthorized Return) retroativamente'},
+      {name:'Recebimento Confirmado no CD', sup:'WMS (webhook)', executor:'webhook', s:'active', outcome:'pending', note:'WMS confirma chegada do item que foi recusado — mesmo fluxo que Flow A daqui em diante'},
+      {name:'Verificação de Qualidade', sup:'QA Team', executor:'operator', s:'pending', outcome:null, note:'Verifica condição do item (pode ter sido danificado na recusa)'},
+      {name:'Processamento de Reembolso', sup:'Gateway Financeiro', executor:'webhook', s:'pending', outcome:null, note:'Reembolso total — cliente nunca recebeu o produto'},
+      {name:'Fechamento', sup:'Sistema VTEX', executor:'system', s:'pending', outcome:null, note:'Atualiza estoque, notifica marketplace'},
+    ],
+    gates:['refusal_registered','return_created','package_received','refund_processed'],
+    bdd:`<span class="bdd-kw">Funcionalidade:</span> Recusa de entrega — NotDelivery Return
+
+<span class="bdd-kw">Cenário:</span> <span class="bdd-ctx">Cliente recusa entrega parcial por embalagem amassada</span>
+  <span class="bdd-kw">Dado que</span> o pedido #45824-01 tem 3 itens
+  <span class="bdd-kw">E</span> a transportadora tentou entrega com embalagem da TV danificada
+  <span class="bdd-kw">Quando</span> o cliente recusa apenas a TV (DC - Damaged Carrier)
+  <span class="bdd-kw">Então</span> a transportadora registra a recusa via webhook
+  <span class="bdd-kw">E</span> o Returns Agent cria automaticamente um return como UR
+  <span class="bdd-kw">E</span> os outros 2 itens entregues NÃO são afetados
+  <span class="bdd-kw">Quando</span> o CD confirma recebimento da TV
+  <span class="bdd-kw">Então</span> o fluxo continua como Flow A Standard a partir daí`
+  },
+  {
+    id:'wf-credit-note',
+    name:'Credit Note (sem item)',
+    icon:'🧾',
+    color:'#d97706',
+    flowType:'c',
+    flowLabel:'Flow C · Credit Note',
+    orderCount: 28,
+    desc:'Ajuste financeiro puro — frete indevido, price match, erro de preço. Sem item físico, sem WMS. Order item referenciado para rastreabilidade de reembolso futuro.',
+    tags:['inventory: NÃO impacta','reason: DF / EP / EE','order item: opcional (referenciado)','executor: CSR'],
+    stages:['Solicitação','Análise','Aprovação','Reembolso Parcial','Fechamento'],
+    tasks:[
+      {name:'Abertura do Ajuste Financeiro', sup:'CSR / Shopper', executor:'operator', s:'completed', outcome:'approved', note:'Reason code DF (frete) ou EP (price change) — sem item obrigatório mas referência recomendada'},
+      {name:'Análise do Ajuste', sup:'Financeiro (operator)', executor:'operator', s:'active', outcome:'pending', note:'Valida se frete foi cobrado indevidamente ou se price match se aplica'},
+      {name:'Aprovação do Credit Note', sup:'Supervisor Financeiro', executor:'operator', s:'pending', outcome:null, note:'Pode ser rejected se política não se aplicar'},
+      {name:'Emissão do Reembolso Parcial', sup:'Gateway Financeiro (webhook)', executor:'webhook', s:'pending', outcome:null, note:'Reembolso do valor do frete ou da diferença de preço'},
+      {name:'Fechamento', sup:'Sistema VTEX', executor:'system', s:'pending', outcome:null, note:'Registra ajuste vinculado ao pedido — afeta base de cálculo de devoluções futuras'},
+    ],
+    gates:['adjustment_opened','analysis_done','credit_note_approved','refund_processed'],
+    bdd:`<span class="bdd-kw">Funcionalidade:</span> Credit Note — ajuste financeiro sem retorno físico
+
+<span class="bdd-kw">Cenário:</span> <span class="bdd-ctx">Frete cobrado indevidamente</span>
+  <span class="bdd-kw">Dado que</span> o pedido #45825-01 deveria ter frete grátis
+  <span class="bdd-kw">E</span> foi cobrado R$ 35,00 de frete por erro de cálculo
+  <span class="bdd-kw">Quando</span> o CSR abre um credit note com reason DF
+  <span class="bdd-kw">E</span> o Financeiro aprova o ajuste
+  <span class="bdd-kw">Então</span> o reembolso de R$ 35,00 é processado no gateway
+  <span class="bdd-kw">E</span> nenhum estoque é afetado
+  <span class="bdd-kw">E</span> o ajuste fica registrado no pedido para futuras devoluções
+
+<span class="bdd-kw">Cenário:</span> <span class="bdd-ctx">Price match — produto ficou mais barato</span>
+  <span class="bdd-kw">Dado que</span> o pedido #45826-01 comprou produto por R$ 199
+  <span class="bdd-kw">E</span> o produto caiu para R$ 159 dentro da janela de price match
+  <span class="bdd-kw">Quando</span> o shopper solicita price match (reason EP)
+  <span class="bdd-kw">Então</span> um credit note de R$ 40,00 é emitido
+  <span class="bdd-kw">E</span> se o cliente devolver depois, o reembolso considera R$ 159 (não R$ 199)
+
+<span class="bdd-kw">Cenário:</span> <span class="bdd-ctx">CSR rejeita ajuste fora da política</span>
+  <span class="bdd-kw">Dado que</span> o pedido está fora da janela de price match (8 dias)
+  <span class="bdd-kw">Quando</span> o Financeiro analisa e rejeita
+  <span class="bdd-kw">Então</span> o status do credit note vai para "Rejected"
+  <span class="bdd-kw">E</span> o cliente é notificado com justificativa`
+  },
+];
+
+const ROUTING_RULES = [
+  {priority:1, cond:'returnItem.logistics_modal = "pickup" E return.resolution_type = "refund"', select:'Flow A Standard', tags:['logistics:pickup','resolution:refund'], active:true},
+  {priority:2, cond:'returnItem.value < 150 E return.reason_code IN ["ID","DC"]', select:'Flow A Crédito (NI)', tags:['credit_only','no_inventory'], active:true},
+  {priority:3, cond:'return.source = "carrier_refusal"', select:'Flow B NotDelivery', tags:['nondelivery','carrier_refusal'], active:true},
+  {priority:4, cond:'return.type = "credit_note" E order_item.optional = true', select:'Flow C Credit Note', tags:['credit_note','no_physical_return'], active:true},
+  {priority:5, cond:'fallback (sem match acima)', select:'Fila de Revisão Manual', tags:['manual'], active:true, fallback:true},
+];
+
+const RETURNS_OPS_DATA = [
+  {id:'DEV-4821',order:'45821-01',client:'Ana Carvalho',wf:'Flow A Standard',stage:'Aguardando Postagem',outcome:'Reembolso',sla:'3 dias',slaOk:true,action:'ver'},
+  {id:'DEV-4822',order:'45823-01',client:'Marcos Pinto',wf:'Flow A Crédito (NI)',stage:'Auto-verificação',outcome:'Crédito automático',sla:'1 dia',slaOk:true,action:'ver'},
+  {id:'DEV-4823',order:'45824-01',client:'Júlia Ramos',wf:'Flow B NotDelivery',stage:'Recebimento CD',outcome:'Reembolso total',sla:'⚠️ Vencendo hoje',slaOk:false,action:'ver'},
+  {id:'DEV-4824',order:'45825-01',client:'Pedro Alves',wf:'Flow C Credit Note',stage:'Análise',outcome:'Ajuste frete R$ 35',sla:'2 dias',slaOk:true,action:'ver'},
+  {id:'DEV-4825',order:'45826-01',client:'Clara Mendes',wf:'Flow C Credit Note',stage:'Aprovação',outcome:'Price match R$ 40',sla:'1 dia',slaOk:true,action:'ver'},
+];
+
+// Scenario-driven data for customer journey
+const SCENARIOS = {
+  a:{
+    label:'Flow A · Standard',
+    reasonCode:'CN', reasonLabel:'Não quero mais (arrependimento)',
+    ni:false,
+    tracking:'BR892401234567890BR',
+    carrier:'Correios PAC · Postagem em até 5 dias',
+    refundAmount:'R$ 790,00',
+    refundDetail:'Crédito no cartão em até 5 dias úteis',
+    confirmTitle:'Devolução confirmada!',
+    confirmSub:'Protocolo DEV-2026-48721 · Etiqueta de postagem gerada',
+    confirmIcon:'✅',
+    instructions:[
+      {icon:'📦', text:'Embale o produto da mesma forma que recebeu ou em caixa equivalente.'},
+      {icon:'🏷️', text:'Cole a etiqueta na parte externa da embalagem.'},
+      {icon:'📮', text:'Poste em qualquer agência dos Correios ou ponto de coleta até 20/06/2026.'},
+      {icon:'📱', text:'Você receberá um e-mail quando o item chegar ao nosso CD.'},
+    ],
+    timeline:[
+      {icon:'✅',state:'done',title:'Solicitação criada',sub:'Pedido de devolução registrado',time:'14/05/2026 10:23'},
+      {icon:'✅',state:'done',title:'Elegibilidade aprovada',sub:'Returns Agent validou automaticamente',time:'14/05/2026 10:24'},
+      {icon:'✅',state:'done',title:'Etiqueta gerada',sub:'Transportadora confirmou criação da etiqueta',time:'14/05/2026 10:25'},
+      {icon:'⏳',state:'active',title:'Aguardando postagem',sub:'O agente monitorará o prazo de 5 dias',time:'Prazo: 19/05/2026'},
+      {icon:'⬜',state:'waiting',title:'Recebimento no CD',sub:'WMS confirmará chegada do item',time:''},
+      {icon:'⬜',state:'waiting',title:'Verificação de qualidade',sub:'QA Team inspecionará o produto',time:''},
+      {icon:'⬜',state:'waiting',title:'Reembolso processado',sub:'',time:''},
+    ],
+    closingMsg:'Devolução encerrada com sucesso. Obrigado pela confiança!',
+    summaryRows:[
+      {label:'Produto',value:'Jaqueta Calvin Klein G'},
+      {label:'Motivo',value:'CN · Arrependimento'},
+      {label:'Reembolso',value:'R$ 790,00'},
+      {label:'Método',value:'Cartão de crédito'},
+      {label:'Prazo',value:'5 dias úteis'},
+      {label:'Protocolo',value:'DEV-2026-48721'},
+    ]
+  },
+  b:{
+    label:'Flow A · Crédito (NI)',
+    reasonCode:'ID', reasonLabel:'Item danificado',
+    ni:true,
+    tracking:null,
+    refundAmount:'R$ 790,00',
+    refundDetail:'Crédito automático — processamento sem retorno físico',
+    confirmTitle:'Crédito aprovado automaticamente!',
+    confirmSub:'Protocolo DEV-2026-48722 · Nenhum envio necessário',
+    confirmIcon:'💳',
+    instructions:[
+      {icon:'🎉', text:'Boa notícia! Por política da loja, não é necessário devolver o produto.'},
+      {icon:'💰', text:'O reembolso de R$ 790,00 será processado em até 2 dias úteis.'},
+      {icon:'📦', text:'Você pode ficar com o produto.'},
+    ],
+    timeline:[
+      {icon:'✅',state:'done',title:'Solicitação criada',sub:'Produto danificado registrado',time:'14/05/2026 10:23'},
+      {icon:'✅',state:'done',title:'Elegibilidade aprovada',sub:'Política NI aplicada automaticamente',time:'14/05/2026 10:24'},
+      {icon:'⏳',state:'active',title:'Auto-verificação em andamento',sub:'Sistema processando sem WMS',time:'~2 horas'},
+      {icon:'⬜',state:'waiting',title:'Reembolso será processado',sub:'',time:''},
+    ],
+    closingMsg:'Reembolso processado com sucesso! Produto pode ser mantido.',
+    summaryRows:[
+      {label:'Produto',value:'Jaqueta Calvin Klein G'},
+      {label:'Motivo',value:'ID · Item danificado'},
+      {label:'Reembolso',value:'R$ 790,00'},
+      {label:'Retorno físico',value:'NÃO necessário'},
+      {label:'Prazo',value:'2 dias úteis'},
+      {label:'Protocolo',value:'DEV-2026-48722'},
+    ]
+  },
+  c:{
+    label:'Flow B · Não-entrega',
+    reasonCode:'DC', reasonLabel:'Dano na entrega (recusa)',
+    ni:false,
+    tracking:'BR89241234RECUSA',
+    carrier:'Retorno automático pela transportadora',
+    refundAmount:'R$ 790,00',
+    refundDetail:'Reembolso total — produto nunca entregue',
+    confirmTitle:'Recusa de entrega registrada',
+    confirmSub:'Protocolo DEV-2026-48723 · Transportadora iniciou retorno',
+    confirmIcon:'🚫',
+    instructions:[
+      {icon:'📋', text:'A recusa foi registrada pela transportadora. Nenhuma ação necessária da sua parte.'},
+      {icon:'🔄', text:'O produto está em trânsito de volta ao nosso CD.'},
+      {icon:'💰', text:'O reembolso será processado após a chegada no armazém.'},
+    ],
+    timeline:[
+      {icon:'✅',state:'done',title:'Recusa registrada',sub:'Transportadora informou recusa de entrega',time:'14/05/2026 15:30'},
+      {icon:'✅',state:'done',title:'Return criado automaticamente',sub:'Returns Agent criou devolução como UR',time:'14/05/2026 15:31'},
+      {icon:'⏳',state:'active',title:'Em trânsito para o CD',sub:'Produto retornando pela transportadora',time:'ETA: 16/05/2026'},
+      {icon:'⬜',state:'waiting',title:'Recebimento no CD',sub:'WMS confirmará chegada',time:''},
+      {icon:'⬜',state:'waiting',title:'Reembolso total',sub:'',time:''},
+    ],
+    closingMsg:'Reembolso total processado. Desculpe pelo inconveniente na entrega.',
+    summaryRows:[
+      {label:'Produto',value:'TV Samsung 55"'},
+      {label:'Motivo',value:'DC · Dano na transportadora'},
+      {label:'Reembolso',value:'R$ 790,00 (total)'},
+      {label:'Trigger',value:'Transportadora (automático)'},
+      {label:'Protocolo',value:'DEV-2026-48723'},
+    ]
+  },
+  d:{
+    label:'Flow C · Credit Note',
+    reasonCode:'DF', reasonLabel:'Frete cobrado indevidamente',
+    ni:true,
+    tracking:null,
+    refundAmount:'R$ 35,00',
+    refundDetail:'Ajuste de frete — sem retorno de produto',
+    confirmTitle:'Credit Note aberto',
+    confirmSub:'Protocolo DEV-2026-48724 · Aguardando aprovação do Financeiro',
+    confirmIcon:'🧾',
+    instructions:[
+      {icon:'💼', text:'O CSR registrou o ajuste de frete. A equipe financeira analisará em até 24h.'},
+      {icon:'📧', text:'Você receberá e-mail com a decisão.'},
+      {icon:'💰', text:'Se aprovado, R$ 35,00 serão creditados em até 3 dias úteis.'},
+    ],
+    timeline:[
+      {icon:'✅',state:'done',title:'Ajuste solicitado',sub:'CSR abriu credit note DF (frete)',time:'14/05/2026 10:23'},
+      {icon:'⏳',state:'active',title:'Em análise pelo Financeiro',sub:'Equipe verificando cobrança',time:'Prazo: 24h'},
+      {icon:'⬜',state:'waiting',title:'Aprovação do Supervisor',sub:'',time:''},
+      {icon:'⬜',state:'waiting',title:'Reembolso de R$ 35,00',sub:'',time:''},
+    ],
+    closingMsg:'Ajuste de frete processado com sucesso!',
+    summaryRows:[
+      {label:'Tipo',value:'Credit Note'},
+      {label:'Motivo',value:'DF · Frete indevido'},
+      {label:'Valor do ajuste',value:'R$ 35,00'},
+      {label:'Item referenciado',value:'Pedido #45825-01'},
+      {label:'Prazo',value:'3 dias úteis'},
+      {label:'Protocolo',value:'DEV-2026-48724'},
+    ]
+  }
+};
+
+const REASONS = [
+  {code:'CN', label:'Não quero mais', desc:'Mudei de ideia — produto em condição original', ni:false},
+  {code:'ID', label:'Item danificado', desc:'Produto chegou com dano ou defeito', ni:null, niPolicy:true},
+  {code:'WI', label:'Item errado', desc:'Recebi produto diferente do pedido', ni:false},
+  {code:'EP', label:'Mudança de preço', desc:'Price match — produto ficou mais barato', ni:true},
+  {code:'DF', label:'Frete indevido', desc:'Fui cobrado de frete que não deveria ter sido cobrado', ni:true},
+  {code:'DC', label:'Dano na entrega', desc:'Embalagem chegou danificada pela transportadora', ni:null, niPolicy:true},
+];
+
+// ══════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════
+
+let currentMode = 'admin';
+let currentScenario = 'a';
+let currentFlowTab = 'all';
+let custStep = 1;
+const TOTAL_STEPS = 6;
+let selectedReason = null;
+
+function init() {
+  renderFlowCards();
+  renderReturnsOps();
+  renderRoutingRules();
+  renderOrdersWithReturns();
+  initCustomer();
+  updateScenarioPills();
+}
+
+// ── MODE SWITCH ──
+function switchMode(m) {
+  currentMode = m;
+  document.getElementById('view-admin').style.display = m === 'admin' ? 'flex' : 'none';
+  document.getElementById('view-customer').className = m === 'customer' ? 'visible' : '';
+  document.getElementById('btn-admin').className = 'mode-tab' + (m === 'admin' ? ' active' : '');
+  document.getElementById('btn-customer').className = 'mode-tab' + (m === 'customer' ? ' active' : '');
+}
+
+// ── SCENARIO ──
+function setScenario(s) {
+  currentScenario = s;
+  updateScenarioPills();
+  if (currentMode === 'customer') resetCustomer();
+}
+
+function updateScenarioPills() {
+  ['a','b','c','d'].forEach(s => {
+    document.getElementById('pill-'+s).className = 'scenario-pill' + (s === currentScenario ? ' active' : '');
+  });
+}
+
+// ── ADMIN NAV ──
+function switchAdminTab(tab) {
+  document.querySelectorAll('.adm-screen').forEach(s => s.style.display = 'none');
+  document.querySelectorAll('.adm-nav-item').forEach(n => n.classList.remove('active'));
+  const screen = document.getElementById('adm-screen-' + tab);
+  if (screen) screen.style.display = 'block';
+  event && event.currentTarget && event.currentTarget.classList.add('active');
+  if (tab !== 'workflows') closeDetail();
+}
+
+// ── FLOW TABS ──
+function setFlowTab(el, tab) {
+  currentFlowTab = tab;
+  document.querySelectorAll('.wf-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderFlowCards();
+}
+
+// ══════════════════════════════════════════════════════
+// RENDER — ADMIN
+// ══════════════════════════════════════════════════════
+
+function renderFlowCards() {
+  const grid = document.getElementById('flow-cards-grid');
+  if (!grid) return;
+  const defs = currentFlowTab === 'all' ? FLOW_DEFS : FLOW_DEFS.filter(f => f.flowType === currentFlowTab);
+  grid.innerHTML = defs.map(f => `
+    <div class="flow-card" id="fc-${f.id}" onclick="openFlowDetail('${f.id}')">
+      <div class="fc-header">
+        <div class="fc-icon" style="background:${f.color}18;font-size:20px">${f.icon}</div>
+        <div class="fc-meta">
+          <div class="fc-name">${f.name}</div>
+          <div class="fc-desc">${f.desc}</div>
+          <span class="fc-flow-label" style="background:${f.color}12;color:${f.color}">${f.flowLabel}</span>
+        </div>
+      </div>
+      <div class="fc-body">
+        <div class="fc-tags">
+          ${f.tags.map(t => `<span class="fc-tag ${t.startsWith('inventory: NÃO')?'':''}${t.startsWith('reason')?'highlight':''}">${t}</span>`).join('')}
+        </div>
+        <div class="fc-stages">
+          ${f.stages.map((s,i) => `<span class="fc-stage">${s}</span>${i<f.stages.length-1?'<span class="fc-stage-arrow">→</span>':''}`).join('')}
+        </div>
+      </div>
+      <div class="fc-footer">
+        <div class="fc-stat">
+          <span class="fc-stat-val">${f.orderCount}</span>
+          <span class="fc-stat-lbl">Devoluções ativas</span>
+        </div>
+        <div class="fc-stat">
+          <span class="fc-stat-val">${f.tasks.length}</span>
+          <span class="fc-stat-lbl">Tarefas</span>
+        </div>
+        <div class="fc-stat">
+          <span class="fc-stat-val">${f.gates.length}</span>
+          <span class="fc-stat-lbl">Gates</span>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();openFlowDetail('${f.id}')">Detalhes →</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function openFlowDetail(id) {
+  const f = FLOW_DEFS.find(x => x.id === id);
+  if (!f) return;
+  document.querySelectorAll('.flow-card').forEach(c => c.classList.remove('active-card'));
+  const card = document.getElementById('fc-'+id);
+  if (card) card.classList.add('active-card');
+
+  document.getElementById('dp-title').textContent = f.name;
+  document.getElementById('dp-subtitle').textContent = f.flowLabel + ' · ' + f.tasks.length + ' tarefas · ' + f.gates.length + ' gates';
+
+  const executorIcon = {system:'⚙️ Sistema', operator:'👤 Operador', webhook:'🔗 Webhook'};
+  const taskHtml = f.tasks.map((t, i) => {
+    const dotClass = t.s === 'completed' ? 'completed' : t.s === 'active' ? 'active' : 'pending';
+    const cardClass = t.s === 'active' ? 'active-task' : t.s === 'completed' ? 'completed-task' : '';
+    let outcomeHtml = '';
+    if (t.outcome) {
+      const oc = t.outcome === 'approved' || t.outcome === 'auto_approved' ? 'approved' : t.outcome === 'refused' ? 'denied' : 'pending';
+      const ocLabel = {approved:'✓ Aprovado',auto_approved:'⚙️ Auto-aprovado',refused:'↩ Recusa registrada',pending:'⏳ Pendente'}[t.outcome] || t.outcome;
+      outcomeHtml = `<span class="task-card-outcome outcome-${oc}">${ocLabel}</span>`;
+    }
+    return `
+      <div class="task-row">
+        <div class="task-connector">
+          <div class="task-dot ${dotClass}"></div>
+          ${i < f.tasks.length - 1 ? '<div class="task-line"></div>' : ''}
+        </div>
+        <div class="task-card-wrap">
+          <div class="task-card ${cardClass}">
+            <div class="task-card-name">${t.name}</div>
+            <div class="task-card-meta">
+              <span class="task-card-sup">
+                <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" width="10" height="10"><circle cx="6" cy="4" r="2.5"/><path d="M1 11c0-2.5 2-4 5-4s5 1.5 5 4"/></svg>
+                ${t.sup}
+              </span>
+              <span style="font-size:10.5px;color:#9ca3af;margin-left:auto">${executorIcon[t.executor]||t.executor}</span>
+              ${outcomeHtml}
+            </div>
+            ${t.note ? `<div class="task-card-note">💡 ${t.note}</div>` : ''}
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+
+  const gateHtml = f.gates.map(g => {
+    const done = f.tasks.find(t => t.s === 'active') ? f.gates.indexOf(g) < f.tasks.findIndex(t => t.s === 'active') : false;
+    const cls = done ? 'gate-cleared' : 'gate-pending';
+    const ico = done ? '✓' : '◎';
+    return `<span class="gate-badge ${cls}">${ico} ${g}</span>`;
+  }).join(' ');
+
+  const reasonCodes = f.tags.find(t => t.startsWith('reason:'))?.replace('reason:','').trim() || '—';
+
+  document.getElementById('dp-content').innerHTML = `
+    <div class="dp-section">
+      <div class="dp-section-title">📋 Casos de uso mapeados</div>
+      <div class="order-example">
+        <div class="oe-header">
+          <span style="font-size:16px">${f.icon}</span>
+          <span class="oe-id">${f.flowLabel}</span>
+          <span class="oe-badge" style="background:${f.color}15;color:${f.color}">${f.orderCount} devoluções ativas</span>
+        </div>
+        <div class="rc-grid">
+          <div class="rc-item"><div class="rc-code">Reason Codes</div><div class="rc-label" style="font-size:12px">${reasonCodes}</div></div>
+          <div class="rc-item"><div class="rc-code">Impacto Estoque</div><div class="rc-label">${f.tags.find(t=>t.startsWith('inventory: NÃO'))?'❌ Não impacta':'✅ Impacta'}</div></div>
+          <div class="rc-item"><div class="rc-code">Gates</div><div class="rc-label" style="font-size:11px">${f.gates.length} checkpoints</div></div>
+          <div class="rc-item"><div class="rc-code">Tarefas</div><div class="rc-label">${f.tasks.length} steps</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dp-section">
+      <div class="dp-section-title">🚦 Gates de coordenação</div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px">${gateHtml}</div>
+    </div>
+
+    <div class="dp-section">
+      <div class="dp-section-title">⚙️ Tarefas e executores</div>
+      <div class="task-pipeline">${taskHtml}</div>
+    </div>
+
+    <div class="dp-section">
+      <div class="dp-section-title">🔀 Decisões e branches</div>
+      <div class="branch-section">
+        <div class="branch-label">⚠️ Outcomes possíveis na Verificação de Qualidade</div>
+        <div class="branch-row">
+          <div class="branch-opt selected" onclick="selectBranch(this,'approved')">
+            <div class="branch-opt-label">✅ package_verified</div>
+            <div class="branch-opt-desc">Item em perfeitas condições → reembolso total</div>
+          </div>
+          <div class="branch-opt" onclick="selectBranch(this,'partial')">
+            <div class="branch-opt-label">⚠️ partial_verified</div>
+            <div class="branch-opt-desc">Restock fee aplicado → reembolso parcial</div>
+          </div>
+          <div class="branch-opt" onclick="selectBranch(this,'denied')">
+            <div class="branch-opt-label">❌ denied</div>
+            <div class="branch-opt-desc">Item não corresponde → sem reembolso</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dp-section">
+      <div class="dp-section-title">📋 BDD — Cenários</div>
+      <div class="bdd-wrap">
+        <div class="bdd-header" onclick="toggleBdd(this)">
+          <span class="bdd-title">Expandir cenários BDD</span>
+          <svg class="bdd-chevron" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.2" width="12" height="12"><path d="M2 4l4 4 4-4"/></svg>
+        </div>
+        <div class="bdd-body">
+          <pre>${f.bdd}</pre>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('detail-panel').classList.add('visible');
+}
+
+function closeDetail() {
+  document.getElementById('detail-panel').classList.remove('visible');
+  document.querySelectorAll('.flow-card').forEach(c => c.classList.remove('active-card'));
+}
+
+function selectBranch(el, outcome) {
+  el.closest('.branch-row').querySelectorAll('.branch-opt').forEach(b => b.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function toggleBdd(header) {
+  const body = header.nextElementSibling;
+  const chevron = header.querySelector('.bdd-chevron');
+  const open = body.classList.toggle('open');
+  chevron.style.transform = open ? 'rotate(180deg)' : '';
+}
+
+function renderReturnsOps() {
+  const tbody = document.getElementById('returns-ops-tbody');
+  if (!tbody) return;
+  tbody.innerHTML = RETURNS_OPS_DATA.map(r => `
+    <tr style="border-bottom:1px solid #f3f4f6;font-size:12.5px">
+      <td style="padding:10px 14px"><span style="font-weight:700;color:#7c3aed">${r.id}</span><br><span style="font-size:11px;color:#9ca3af">#${r.order}</span></td>
+      <td style="padding:10px 14px">${r.client}</td>
+      <td style="padding:10px 14px"><span style="background:#7c3aed10;color:#7c3aed;padding:2px 7px;border-radius:6px;font-size:11px;font-weight:600">${r.wf}</span></td>
+      <td style="padding:10px 14px;font-weight:500">${r.stage}</td>
+      <td style="padding:10px 14px;color:#6b7280">${r.outcome}</td>
+      <td style="padding:10px 14px"><span style="${r.slaOk?'color:#059669':'color:#dc2626'};font-weight:600;font-size:12px">${r.sla}</span></td>
+      <td style="padding:10px 14px"><button class="btn btn-secondary btn-sm">Ver →</button></td>
+    </tr>
+  `).join('');
+}
+
+function renderRoutingRules() {
+  const el = document.getElementById('routing-rules-list');
+  if (!el) return;
+  el.innerHTML = ROUTING_RULES.map(r => `
+    <div style="background:#fff;border:1px solid ${r.fallback?'#fde68a':'#e8eaef'};border-radius:10px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px">
+      <span style="width:24px;height:24px;border-radius:50%;background:${r.fallback?'#fef3c7':'#7c3aed15'};color:${r.fallback?'#b45309':'#7c3aed'};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0">${r.priority}</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12.5px;font-weight:600;color:#374151;font-family:monospace">${r.cond}</div>
+        <div style="display:flex;gap:5px;margin-top:5px;flex-wrap:wrap">
+          ${r.tags.map(t => `<span style="font-size:10px;font-weight:700;background:#7c3aed10;color:#7c3aed;padding:1px 7px;border-radius:8px">${t}</span>`).join('')}
+        </div>
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        <div style="font-size:11px;color:#9ca3af">→ seleciona</div>
+        <div style="font-size:12.5px;font-weight:700;color:${r.fallback?'#b45309':'#059669'}">${r.select}</div>
+      </div>
+      <span style="width:8px;height:8px;border-radius:50%;background:${r.active?'#22c55e':'#9ca3af'};flex-shrink:0"></span>
+    </div>
+  `).join('');
+}
+
+function renderOrdersWithReturns() {
+  const el = document.getElementById('orders-with-returns');
+  if (!el) return;
+  const orders = [
+    {id:'1631858947234-01',client:'Ana Carvalho',wf:'Flow A Standard',item:'Jaqueta Calvin Klein G',stage:'Aguardando Postagem',initiated:'14/05/2026'},
+    {id:'1631888948500-01',client:'Marcos Pinto',wf:'Flow A Crédito',item:'Perfume Importado',stage:'Auto-verificação',initiated:'12/05/2026'},
+    {id:'1631898949000-01',client:'Júlia Ramos',wf:'Flow B NotDelivery',item:'TV Samsung 55"',stage:'Recebimento CD',initiated:'10/05/2026'},
+  ];
+  el.innerHTML = orders.map(o => `
+    <div style="background:#fff;border:1px solid #e8eaef;border-radius:10px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;cursor:pointer" onmouseenter="this.style.borderColor='#c4b5fd'" onmouseleave="this.style.borderColor='#e8eaef'">
+      <span style="font-size:20px">↩️</span>
+      <div style="flex:1">
+        <div style="font-size:12.5px;font-weight:700;color:#374151">${o.id} <span style="font-weight:400;color:#9ca3af">· ${o.client}</span></div>
+        <div style="font-size:11.5px;color:#6b7280;margin-top:2px">${o.item} → <b>${o.wf}</b> → etapa: ${o.stage}</div>
+      </div>
+      <div style="font-size:11px;color:#9ca3af">Iniciado ${o.initiated}</div>
+      <button class="btn btn-secondary btn-sm">Abrir →</button>
+    </div>
+  `).join('');
+}
+
+// ══════════════════════════════════════════════════════
+// RENDER — CUSTOMER JOURNEY
+// ══════════════════════════════════════════════════════
+
+const PAGE_TITLES = ['Selecionar Item','Motivo','Confirmação','Etiqueta','Acompanhamento','Reembolso'];
+
+function initCustomer() {
+  renderCustomerSteps();
+  renderReasons();
+}
+
+function resetCustomer() {
+  custStep = 1;
+  selectedReason = null;
+  document.querySelectorAll('.cust-screen').forEach(s => s.classList.remove('visible'));
+  document.getElementById('cust-s1').classList.add('visible');
+  renderCustomerSteps();
+  updateCustNav();
+  document.getElementById('cust-page-title').textContent = PAGE_TITLES[0];
+  renderReasons();
+}
+
+function renderCustomerSteps() {
+  const stepsEl = document.getElementById('cust-steps');
+  let html = '';
+  for (let i = 1; i <= TOTAL_STEPS; i++) {
+    html += `<div class="cust-progress-step ${i < custStep ? 'done' : i === custStep ? 'active' : ''}"></div>`;
+  }
+  stepsEl.innerHTML = html;
+  document.getElementById('cust-step-label').textContent = `Passo ${custStep} de ${TOTAL_STEPS} · ${PAGE_TITLES[custStep-1]}`;
+}
+
+function renderReasons() {
+  const sc = SCENARIOS[currentScenario];
+  const list = document.getElementById('reason-list');
+  if (!list) return;
+  list.innerHTML = REASONS.map(r => {
+    const isSel = selectedReason === r.code || (!selectedReason && r.code === sc.reasonCode);
+    if (!selectedReason && r.code === sc.reasonCode) selectedReason = r.code;
+    return `
+      <div class="reason-card ${isSel ? 'selected' : ''}" onclick="selectReason('${r.code}',${r.ni}, ${r.niPolicy||false})">
+        <div class="reason-dot"></div>
+        <div>
+          <div class="reason-code">${r.code}</div>
+          <div class="reason-label">${r.label}</div>
+          <div class="reason-desc">${r.desc}</div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function selectReason(code, ni, niPolicy) {
+  selectedReason = code;
+  document.querySelectorAll('.reason-card').forEach(c => c.classList.remove('selected'));
+  event.currentTarget.classList.add('selected');
+  const alert = document.getElementById('cust-reason-ni-alert');
+  alert.style.display = (ni || niPolicy) ? 'flex' : 'none';
+}
+
+function toggleProd(id) {
+  document.getElementById(id).classList.toggle('selected');
+}
+
+function custNext() {
+  const sc = SCENARIOS[currentScenario];
+  if (custStep < TOTAL_STEPS) {
+    if (custStep === 2) buildConfirmScreen(sc);
+    if (custStep === 3) buildLabelScreen(sc);
+    if (custStep === 4) buildTrackingScreen(sc);
+    if (custStep === 5) buildRefundScreen(sc);
+
+    document.querySelectorAll('.cust-screen').forEach(s => s.classList.remove('visible'));
+    custStep++;
+    document.getElementById('cust-s'+custStep).classList.add('visible');
+    document.getElementById('cust-page-title').textContent = PAGE_TITLES[custStep-1];
+    renderCustomerSteps();
+    updateCustNav();
+  }
+}
+
+function custBack() {
+  if (custStep > 1) {
+    document.querySelectorAll('.cust-screen').forEach(s => s.classList.remove('visible'));
+    custStep--;
+    document.getElementById('cust-s'+custStep).classList.add('visible');
+    document.getElementById('cust-page-title').textContent = PAGE_TITLES[custStep-1];
+    renderCustomerSteps();
+    updateCustNav();
+  }
+}
+
+function updateCustNav() {
+  document.getElementById('cust-btn-back').style.display = custStep > 1 ? '' : 'none';
+  const nextBtn = document.getElementById('cust-btn-next');
+  nextBtn.textContent = custStep >= TOTAL_STEPS ? '✓ Concluir' : 'Continuar';
+  if (custStep >= TOTAL_STEPS) {
+    nextBtn.onclick = () => resetCustomer();
+    nextBtn.className = 'btn btn-secondary';
+    nextBtn.textContent = '↩ Recomeçar';
+  } else {
+    nextBtn.onclick = custNext;
+    nextBtn.className = 'btn btn-primary';
+  }
+}
+
+function buildConfirmScreen(sc) {
+  document.getElementById('s3-icon').textContent = sc.confirmIcon;
+  document.getElementById('s3-title').textContent = sc.confirmTitle;
+  document.getElementById('s3-sub').textContent = sc.confirmSub;
+  const bdd = document.getElementById('bdd-scenario-text');
+  const wf = FLOW_DEFS.find(f => {
+    if (currentScenario === 'a') return f.id === 'wf-return-standard';
+    if (currentScenario === 'b') return f.id === 'wf-return-credit';
+    if (currentScenario === 'c') return f.id === 'wf-return-nondelivery';
+    return f.id === 'wf-credit-note';
+  });
+  bdd.innerHTML = wf ? wf.bdd : '';
+  const instrEl = document.getElementById('s3-instructions');
+  instrEl.innerHTML = `
+    <div class="section-title" style="margin-top:4px">Próximos passos</div>
+    ${sc.instructions.map(i => `
+      <div class="alert alert-purple" style="margin-bottom:6px">
+        <span style="font-size:16px">${i.icon}</span>
+        <span>${i.text}</span>
+      </div>
+    `).join('')}
+  `;
+}
+
+function buildLabelScreen(sc) {
+  if (!sc.tracking) {
+    // no label needed (NI or credit note)
+    document.getElementById('s4-label-area').innerHTML = `
+      <div style="font-size:30px;margin-bottom:8px">💳</div>
+      <div style="font-size:13px;font-weight:600;color:#fff;margin-bottom:4px">Sem envio necessário</div>
+      <div style="font-size:11px;color:#9ca3af">Reembolso será processado automaticamente</div>
+    `;
+    document.getElementById('s4-alert-text').textContent = 'Nenhuma ação de postagem necessária. Aguarde a confirmação por e-mail.';
+    document.getElementById('s4-instructions-extra').innerHTML = '';
+  } else {
+    document.getElementById('s4-tracking').textContent = sc.tracking;
+    document.getElementById('s4-carrier').textContent = sc.carrier;
+    document.getElementById('s4-barcode').textContent = '| | ||| | ||| |||| | ||| | ||||| | ||| |';
+    document.getElementById('s4-alert-text').textContent = 'Etiqueta válida por 10 dias. Leve ao ponto de coleta mais próximo.';
+    document.getElementById('s4-instructions-extra').innerHTML = `
+      <div class="section-title">Como postar</div>
+      <div class="alert alert-info" style="margin-bottom:6px"><span>📍</span><span>Use o código do rastreio para encontrar o ponto de coleta mais próximo no app dos Correios.</span></div>
+      <div class="alert alert-warn"><span>⏰</span><span>Prazo para postagem: <b>5 dias corridos</b> a partir de hoje.</span></div>
+    `;
+  }
+}
+
+function buildTrackingScreen(sc) {
+  const tl = document.getElementById('s5-timeline');
+  tl.innerHTML = sc.timeline.map((t, i) => `
+    <div class="tl-item">
+      <div class="tl-left">
+        <div class="tl-icon ${t.state}">${t.icon}</div>
+        ${i < sc.timeline.length - 1 ? '<div class="tl-vline"></div>' : ''}
+      </div>
+      <div class="tl-right">
+        <div class="tl-title" style="${t.state==='active'?'color:#7c3aed;font-weight:700':t.state==='waiting'?'color:#9ca3af':''}">${t.title}</div>
+        <div class="tl-subtitle">${t.sub}</div>
+        ${t.time ? `<div class="tl-time">${t.time}</div>` : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+function buildRefundScreen(sc) {
+  document.getElementById('s6-amount').textContent = sc.refundAmount;
+  document.getElementById('s6-detail').textContent = sc.refundDetail;
+  document.getElementById('s6-label').textContent = sc.refundAmount.startsWith('R$ 35') || sc.refundAmount.startsWith('R$ 40') ? 'Ajuste financeiro aprovado' : 'Reembolso aprovado';
+  document.getElementById('s6-closing-msg').textContent = sc.closingMsg;
+  const summary = document.getElementById('s6-summary');
+  summary.innerHTML = sc.summaryRows.map(r => `
+    <div class="info-row" style="padding:8px 14px">
+      <span class="info-label">${r.label}</span>
+      <span class="info-value">${r.value}</span>
+    </div>
+  `).join('');
+}
+
+// ── BOOT ──
+init();
+</script>
+</body>
+</html>

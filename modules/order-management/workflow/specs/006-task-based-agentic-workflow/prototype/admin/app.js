@@ -195,7 +195,18 @@ function confirmTaskAction() {
   const orderObj = ORDERS.find(o => o.id === orderId);
   if (orderObj) renderItemsWithTasks(orderObj);
   const labels = {completed:'concluída',canceled:'cancelada',ignored:'ignorada',pending:'marcada como pendente'};
-  showSuccessModal('Tarefa atualizada', `"${task.name}" foi ${labels[action]||action}.`);
+  // Show compensation_action notice when a cancellable task with compensation is cancelled
+  if (action === 'canceled' && task.cancellable && task.compensation_action) {
+    const compType = task.compensation_action.type || 'webhook';
+    const compPayload = task.compensation_action.payload_template ? JSON.stringify(task.compensation_action.payload_template) : '';
+    const retries = task.compensation_action.retry_policy?.max_attempts || 3;
+    showSuccessModal(
+      'Tarefa cancelada — Compensation Action disparada',
+      `"${task.name}" foi cancelada. Uma compensation action (${compType}) foi despachada automaticamente${compPayload ? ` com payload: ${compPayload}` : ''}. Máximo de ${retries} tentativas.`
+    );
+  } else {
+    showSuccessModal('Tarefa atualizada', `"${task.name}" foi ${labels[action]||action}.`);
+  }
 }
 
 function openWorkflow(id) {
@@ -438,6 +449,32 @@ function renderItemsWithTasks(order) {
         const label = hasFailed ? `${failed} falha` : allDone ? 'Completo' : partial ? `${done}/${total}` : `0/${total}`;
         return `<div style="font-size:8.5px;font-weight:600;color:${color};margin-top:1px;background:${hasFailed?'#fef2f2':allDone?'#f0fdf4':partial?'#fff7ed':'#f9f9f9'};padding:1px 4px;border-radius:3px">${label} ckpt</div>`;
       })() : '';
+      // TaskInstance runtime badges
+      const slaBadge = t.sla_breached
+        ? `<div style="font-size:8px;font-weight:700;color:#dc2626;background:#fef2f2;border:1px solid #fecaca;padding:1px 4px;border-radius:3px;margin-top:2px">⚠ SLA breach</div>`
+        : (t.sla_deadline && !isCompleted && t.s !== 'pending' || (t.sla_deadline && t.s === 'pending'))
+          ? `<div style="font-size:8px;color:#92400e;background:#fffbeb;padding:1px 4px;border-radius:3px;margin-top:2px" title="SLA deadline">⏱ ${t.sla_deadline}</div>`
+          : '';
+      const resolvedSupplierBadge = (t.resolved_supplier && t.resolved_supplier.name)
+        ? `<div style="font-size:8px;color:#1d4ed8;background:#eff6ff;border:1px solid #bfdbfe;padding:1px 4px;border-radius:3px;margin-top:1px" title="Resolved supplier">👤 ${t.resolved_supplier.name}</div>`
+        : '';
+      const outcomeBadge = t.outcome
+        ? `<div style="font-size:8px;font-weight:600;color:#15803d;background:#f0fdf4;border:1px solid #bbf7d0;padding:1px 4px;border-radius:3px;margin-top:1px">✓ ${t.outcome}</div>`
+        : '';
+      const outputKeys = t.outputs ? Object.keys(t.outputs).filter(k => !['amount'].includes(k)) : [];
+      const outputsBadge = outputKeys.length
+        ? `<div style="font-size:7.5px;color:#6b7280;margin-top:1px" title="${outputKeys.map(k=>`${k}: ${t.outputs[k]}`).join(', ')}">${outputKeys.slice(0,2).map(k=>`${k}: ${String(t.outputs[k]).substring(0,12)}`).join(' · ')}${outputKeys.length > 2 ? ' …' : ''}</div>`
+        : '';
+      if (t.shipping_events && t.shipping_events.length) {
+        window._trackingRegistry = window._trackingRegistry || {};
+        const tKey = t.instance_id || ('track_' + ti);
+        window._trackingRegistry[tKey] = { events: t.shipping_events, outputs: t.outputs || {} };
+      }
+      const shippingEventsBadge = (t.shipping_events && t.shipping_events.length)
+        ? `<button onclick="event.stopPropagation();openTrackingModal(window._trackingRegistry['${t.instance_id || ('track_' + ti)}'].events,window._trackingRegistry['${t.instance_id || ('track_' + ti)}'].outputs)" style="margin-top:6px;display:flex;align-items:center;gap:4px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:5px;padding:4px 8px;cursor:pointer;font-size:8.5px;font-weight:600;color:#1d4ed8;width:100%;justify-content:center">
+            📦 Ver rastreamento
+          </button>`
+        : '';
       return `<div class="pipe-step${isClickable?' clickable-step':''}" ${clickAttr}>
         ${ti > 0 ? `<div class="pipe-arrow ${arrowCls}"></div>` : ''}
         <div class="pipe-node ${isBlocked?'blocked':''}">
@@ -448,6 +485,11 @@ function renderItemsWithTasks(order) {
           <div class="pipe-sup">${t.sup||''}</div>
           <div style="font-size:9.5px;font-weight:600;color:${statusColor};margin-top:1px">${statusLabel}</div>
           ${cpHtml}
+          ${resolvedSupplierBadge}
+          ${outcomeBadge}
+          ${outputsBadge}
+          ${shippingEventsBadge}
+          ${slaBadge}
           ${isBlocked && t.blockReason ? `<div class="pipe-label" style="font-size:9px;color:#c2410c;max-width:80px;text-align:center;line-height:1.2">${t.blockReason.substring(0,40)}…</div>` : ''}
         </div>
       </div>`;
@@ -825,51 +867,80 @@ function renderFlowBar() {
 function renderKanban() {
   const scroll = document.getElementById('wf-board-scroll');
   let html = '';
-  WF_TASKS.forEach((stage, i) => {
-    if (i > 0) {
-      const edge = WF_EDGES.find(e => e.from === WF_TASKS[i-1].id && e.to === stage.id);
-      const eActive = edge ? edge.active : true;
-      const eId = edge ? edge.id : null;
-      html += `<div class="col-connector">
-        <div class="connector-line ${eActive?'':'inactive'}"></div>
-        <span class="connector-arrow">▶</span>
-        <div class="connector-badge ${eActive?'':'inactive'}" ${eId?`onclick="openEdgeModal('${eId}')"`:''}>${eActive?'Ativa':'Inativa'}</div>
-      </div>`;
-    }
-    const stageTasks = stage.tasks || [];
-    html += `<div class="kanban-col" id="col-${stage.id}" ondragover="event.preventDefault();dragOverCol('${stage.id}')" ondrop="dropOnCol('${stage.id}')" ondragleave="dragLeaveCol('${stage.id}')">
-      <div class="kanban-col-header">
-        <div class="col-num" style="background:${stage.color}">${i+1}</div>
-        <span class="col-title" title="${stage.name}">${stage.name}</span>
-        <button class="col-menu-btn" onclick="renameStage('${stage.id}')">⋯</button>
-      </div>
-      <div class="kanban-col-body">`;
-    stageTasks.forEach(subTask => {
+  let globalTaskNum = 0;
+  WF_TASKS.forEach((stage) => {
+    (stage.tasks || []).forEach((subTask) => {
+      globalTaskNum++;
+      const taskNum = globalTaskNum;
       const isSel = selectedTaskId === subTask.id;
-      html += `<div class="task-card ${isSel?'selected':''}" id="card-${subTask.id}" draggable="true" ondragstart="dragStart(event,'${subTask.id}')" ondragend="dragEnd(event)" onclick="selectTask('${subTask.id}')">
-          <div class="card-top">
-            <div class="card-name">${subTask.name}</div>
-            <div class="card-actions-row">
+
+      if (taskNum > 1) {
+        html += `<div class="col-connector">
+          <div class="connector-line"></div>
+          <span class="connector-arrow">▶</span>
+        </div>`;
+      }
+
+      const grp = subTask._group || { name: stage.name, color: stage.color };
+      const numBadge = `<span style="min-width:20px;height:20px;border-radius:50%;background:${grp.color};color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">${taskNum}</span>`;
+
+      // Routing pills: show when on_outcome has branching (≥2 distinct next_stage values)
+      const onOutcome = subTask.contract && subTask.contract.on_outcome;
+      const routingPills = (() => {
+        if (!onOutcome) return '';
+        const entries = Object.entries(onOutcome);
+        const nextKey = v => v.next_task || v.next_stage;
+        const destinations = [...new Set(entries.map(([,v]) => nextKey(v)))];
+        if (destinations.length <= 1) return ''; // no branching, don't clutter the card
+        return `<div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:4px">${
+          entries.map(([outcome, cfg]) => {
+            const dest_id = nextKey(cfg);
+            let destName = null;
+            if (dest_id) {
+              for (const s of WF_TASKS) {
+                const t = (s.tasks||[]).find(t => t.id === dest_id);
+                if (t) { destName = t.name; break; }
+              }
+              if (!destName) destName = dest_id;
+            }
+            const color = dest_id ? '#0891b2' : '#9ca3af';
+            const dest  = destName ? `→ ${destName}` : '✕ Encerrar';
+            return `<span style="font-size:9px;padding:2px 7px;border-radius:10px;border:1px solid ${color}50;background:${color}14;color:${color};font-weight:600">${outcome}: ${dest}</span>`;
+          }).join('')
+        }</div>`;
+      })();
+
+      html += `<div class="task-card ${isSel?'selected':''}" id="card-${subTask.id}" draggable="true" ondragstart="dragStartFlat(event,'${subTask.id}')" ondragend="dragEndFlat(event)" ondragover="dragOverFlat(event,'${subTask.id}')" ondrop="dropOnFlat(event,'${subTask.id}')" onclick="selectTask('${subTask.id}')">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:5px">
+            ${numBadge}
+            <span style="font-size:10px;font-weight:600;color:${grp.color};background:${grp.color}18;border:1px solid ${grp.color}40;padding:1px 7px;border-radius:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:140px" title="${grp.name}">${grp.name}</span>
+            <div class="card-actions-row" style="margin-left:auto">
               <button class="card-btn" title="Editar" onclick="event.stopPropagation();editTask('${subTask.id}')"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M9 2l3 3L4 13H1v-3L9 2z"/></svg></button>
               <button class="card-btn" title="Dividir tarefa" onclick="event.stopPropagation();openSplitPanel('${subTask.id}')" style="font-size:12px;font-weight:700">✂</button>
               <button class="card-btn danger" title="Excluir" onclick="event.stopPropagation();deleteTask('${subTask.id}')"><svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M2 4h10M5 4V2h4v2M5 6v5M9 6v5M3 4l1 8h6l1-8"/></svg></button>
             </div>
           </div>
+          <div class="card-top" style="margin-bottom:4px">
+            <div class="card-name">${subTask.name}</div>
+          </div>
           <div class="card-tags">
             <span class="card-tag tag-category">${subTask.category||''}</span>
+            ${subTask.executor_type ? `<span class="card-tag" style="background:${subTask.executor_type==='webhook'?'#f0f9ff':'#fff7ed'};color:${subTask.executor_type==='webhook'?'#0891b2':'#c2410c'};border-color:${subTask.executor_type==='webhook'?'#bae6fd':'#fed7aa'};font-size:9px">${subTask.executor_type==='webhook'?'⚡ webhook':'👤 operator'}</span>` : ''}
+            ${subTask.sla_hours ? `<span class="card-tag" style="background:#fffbeb;color:#92400e;border-color:#fde68a;font-size:9px">⏱ ${subTask.sla_hours}h SLA</span>` : ''}
             ${(typeof TASK_SLOT_MAP !== 'undefined' && TASK_SLOT_MAP[subTask.id]) ? (() => {
               const sl = TASK_SLOT_MAP[subTask.id];
               const cn = getSlotConnectorName(currentWorkflowId, sl);
               return cn ? `<span class="card-tag" style="background:#f5f3ff;color:#7c3aed;border-color:#ddd6fe;font-size:9px" title="Slot: ${sl}">${sl.replace('_x','·x')} ${cn}</span>` : '';
             })() : ''}
           </div>
+          ${routingPills}
           ${subTask.checkpoints?.length ? `
           <div style="margin-top:5px;display:flex;gap:3px;flex-wrap:wrap">
             ${subTask.checkpoints.slice(0,3).map(cp => `<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;font-weight:500">✓ ${cp.label.substring(0,18)}${cp.label.length>18?'…':''}</span>`).join('')}
             ${subTask.checkpoints.length > 3 ? `<span style="font-size:9px;color:#9ca3af">+${subTask.checkpoints.length-3}</span>` : ''}
           </div>` : ''}
           <div class="card-footer">
-            ${i > 0 ? `<span class="card-dep"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" width="10" height="10"><path d="M2 6h8M7 3l3 3-3 3"/></svg> ${WF_TASKS[i-1].name}</span>` : `<span class="card-dep" style="color:#22c55e">Tarefa inicial</span>`}
+            ${taskNum === 1 ? `<span class="card-dep" style="color:#22c55e">Tarefa inicial</span>` : `<span class="card-dep"><svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" width="10" height="10"><path d="M2 6h8M7 3l3 3-3 3"/></svg> Tarefa ${taskNum-1}</span>`}
             <div style="display:flex;align-items:center;gap:4px">
               ${subTask.mcpConfig ? `<span title="MCP: ${subTask.mcpConfig.serverName}" style="font-size:9px;padding:1px 5px;border-radius:3px;background:#f0fdf4;border:1px solid #bbf7d0;color:#15803d;font-weight:600;line-height:1.6">MCP</span>` : ''}
               ${subTask.agentConfig ? `<span title="${subTask.agentConfig.agentName}" style="font-size:11px;line-height:1">${subTask.agentConfig.agentIcon}</span>` : ''}
@@ -882,15 +953,83 @@ function renderKanban() {
           </div>
         </div>`;
     });
-    html += `<div class="add-task-card" onclick="addTaskToStage('${stage.id}')">
-          <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="2" width="12" height="12"><path d="M7 2v10M2 7h10"/></svg>
-          Adicionar aqui
-        </div>
-      </div>
-    </div>`;
   });
-  html += `<button class="add-col-btn" onclick="openCreatePanel()"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M8 2v12M2 8h12"/></svg> Nova Etapa</button>`;
+  if (globalTaskNum > 0) {
+    html += `<div class="col-connector">
+      <div class="connector-line"></div>
+      <span class="connector-arrow">▶</span>
+    </div>`;
+  }
+  html += `<button class="add-col-btn" onclick="addTask()"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M8 2v12M2 8h12"/></svg> + Add Task</button>`;
   scroll.innerHTML = html;
+}
+
+function addTask() {
+  if (!WF_TASKS.length) openCreatePanel();
+  else addTaskToStage(WF_TASKS[WF_TASKS.length-1].id);
+}
+
+let dragTaskIdFlat = null;
+function dragStartFlat(e, taskId) {
+  dragTaskIdFlat = taskId;
+  e.dataTransfer.effectAllowed = 'move';
+  setTimeout(() => { const c = document.getElementById('card-'+taskId); if(c) c.classList.add('dragging'); }, 0);
+}
+function dragEndFlat(e) {
+  dragTaskIdFlat = null;
+  document.querySelectorAll('.task-card').forEach(c => c.classList.remove('dragging','drag-over'));
+}
+function dragOverFlat(e, taskId) {
+  e.preventDefault();
+  if (dragTaskIdFlat === taskId) return;
+  document.querySelectorAll('.task-card').forEach(c => c.classList.remove('drag-over'));
+  const card = document.getElementById('card-'+taskId);
+  if (card) card.classList.add('drag-over');
+}
+function dropOnFlat(e, targetTaskId) {
+  e.preventDefault();
+  document.querySelectorAll('.task-card').forEach(c => c.classList.remove('drag-over','dragging'));
+  if (!dragTaskIdFlat || dragTaskIdFlat === targetTaskId) return;
+  // Find which stage owns each task
+  let srcStage = null, targetStage = null, srcName = '', targetName = '';
+  for (const stage of WF_TASKS) {
+    for (const t of (stage.tasks||[])) {
+      if (t.id === dragTaskIdFlat)  { srcStage = stage;    srcName    = t.name; }
+      if (t.id === targetTaskId)    { targetStage = stage; targetName = t.name; }
+    }
+  }
+  if (!srcStage || !targetStage) { dragTaskIdFlat = null; return; }
+  // Remove from source stage
+  const srcIdx = srcStage.tasks.findIndex(t => t.id === dragTaskIdFlat);
+  const [srcTask] = srcStage.tasks.splice(srcIdx, 1);
+  // Insert into target stage at target position
+  const targetIdx = targetStage.tasks.findIndex(t => t.id === targetTaskId);
+  targetStage.tasks.splice(targetIdx, 0, srcTask);
+  const movedId = dragTaskIdFlat;
+  dragTaskIdFlat = null;
+  renderWorkflowBoard();
+  requestAnimationFrame(() => {
+    const card = document.getElementById('card-'+movedId);
+    if (card) { card.classList.add('just-moved'); setTimeout(() => card.classList.remove('just-moved'), 700); }
+  });
+  showSwapToast(srcName, targetName);
+}
+
+function showSwapToast(movedName, beforeName) {
+  let toast = document.getElementById('swap-toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'swap-toast';
+    toast.className = 'swap-toast';
+    document.body.appendChild(toast);
+  }
+  toast.innerHTML = `<span style="font-size:15px">↕</span> <strong style="font-weight:600">${movedName}</strong><span style="color:#94a3b8;margin:0 4px">moved before</span><strong style="font-weight:600">${beforeName}</strong>`;
+  clearTimeout(toast._timer);
+  toast.classList.remove('visible');
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    toast.classList.add('visible');
+    toast._timer = setTimeout(() => toast.classList.remove('visible'), 2800);
+  }));
 }
 
 function findSubTask(taskId) {
@@ -946,6 +1085,39 @@ function selectTaskFromPill(stageId) {
   if (col) col.scrollIntoView({behavior:'smooth',inline:'center',block:'nearest'});
 }
 
+function getWorkflowContext(currentTaskId) {
+  const wf = WORKFLOW_DEFS.find(w => w.id === currentWorkflowId);
+  if (!wf) return { availableFields: [], allTasks: [] };
+  const edgeMap = {};
+  (wf.edges || []).forEach(e => { edgeMap[e.from] = e.to; });
+  const targets = new Set((wf.edges || []).map(e => e.to));
+  const stageMap = {};
+  (wf.marcos || []).forEach(m => stageMap[m.id] = m);
+  const firstStage = (wf.marcos || []).find(m => !targets.has(m.id));
+  const stageOrder = [];
+  let cur = firstStage ? firstStage.id : null;
+  while (cur && stageMap[cur]) { stageOrder.push(stageMap[cur]); cur = edgeMap[cur] || null; }
+  const currentStageIdx = stageOrder.findIndex(s => (s.tasks || []).some(t => t.id === currentTaskId));
+  const availableFields = [];
+  for (let i = 0; i < currentStageIdx; i++) {
+    (stageOrder[i].tasks || []).forEach(t => {
+      if (t.contract && t.contract.output_context) {
+        t.contract.output_context.forEach(f => { if (!availableFields.includes(f)) availableFields.push(f); });
+      }
+      if (t.contract && t.contract.outputs) {
+        Object.values(t.contract.outputs).forEach(out => {
+          (out.required || []).concat(out.optional || []).forEach(f => { if (!availableFields.includes(f)) availableFields.push(f); });
+        });
+      }
+    });
+  }
+  const allTasks = [];
+  stageOrder.forEach(stage => {
+    (stage.tasks || []).forEach(t => { allTasks.push({ id: t.id, name: t.name, stageName: stage.name }); });
+  });
+  return { availableFields, allTasks };
+}
+
 function editTask(id) {
   const found = findSubTask(id); if (!found) return;
   const task = found.task;
@@ -953,6 +1125,11 @@ function editTask(id) {
   selectedTaskId = id;
   activePanel = 'edit';
   editChatState = 'idle';
+  const c = task.contract || {};
+  const contractOutcomes = c.allowed_outcomes || [];
+  const contractOnOutcome = c.on_outcome || {};
+  const contractOutputs = c.outputs || {};
+  const contractInputs = c.inputs || { required: [], optional: [] };
   editDraft = {
     name: task.name, supplier: task.supplier, category: task.category,
     color: stage.color, active: task.active !== false,
@@ -964,10 +1141,38 @@ function editTask(id) {
     } : null,
     mcpConfig: task.mcpConfig ? {...task.mcpConfig} : null,
     agentConfig: task.agentConfig ? {...task.agentConfig} : null,
+    inputs: { required: [...contractInputs.required], optional: [...contractInputs.optional] },
+    allowed_outcomes: [...contractOutcomes],
+    on_outcome: contractOutcomes.reduce((acc, o) => {
+      acc[o] = { next_task: (contractOnOutcome[o] && (contractOnOutcome[o].next_task || contractOnOutcome[o].next_stage)) || null };
+      return acc;
+    }, {}),
+    outputs: contractOutcomes.reduce((acc, o) => {
+      const src = contractOutputs[o] || {};
+      acc[o] = { required: [...(src.required||[])], optional: [...(src.optional||[])] };
+      return acc;
+    }, {}),
   };
+  const wfCtx = getWorkflowContext(id);
+  editDraft._availableFields = wfCtx.availableFields;
+  editDraft._allTasks = wfCtx.allTasks;
+  // load structured rules from contract, then merge simple {condition, skip} rules from task level
+  const contractRules = (task.contract && task.contract.routing_rules)
+    ? JSON.parse(JSON.stringify(task.contract.routing_rules)) : [];
+  const simpleRules = (task.routing_rules || []).map(r => ({
+    id: 'rr-simple-' + Math.random().toString(36).slice(2),
+    conditions: [{ field: r.condition, operator: 'expr', value: '' }],
+    action: r.skip ? 'skip' : 'execute',
+    target_task_id: null,
+    target_workflow_id: null,
+    _raw_condition: r.condition
+  }));
+  editDraft.routing_rules = [...contractRules, ...simpleRules];
   document.getElementById('sp-title').textContent = '🤖 Editar com Agente';
   document.getElementById('sp-body').innerHTML = `
     <div id="edit-preview" style="padding:10px 12px;background:#f0f7ff;border:1px solid #bfdbfe;border-radius:8px;font-size:12px"></div>
+    <div id="edit-routing-rules-section" style="margin-top:10px"></div>
+    <div id="edit-outcomes-section" style="margin-top:8px"></div>
     <div class="cm-msgs" id="cm-msgs"></div>
     <div class="cm-suggestions" id="cm-suggestions"></div>
     <div class="cm-input-row">
@@ -978,6 +1183,8 @@ function editTask(id) {
     <button class="btn btn-secondary" style="flex:1;justify-content:center" onclick="closeSidePanel()">Cancelar</button>
     <button class="btn btn-primary" style="flex:1;justify-content:center" onclick="applyEditDraft()">Salvar Alterações</button>`;
   refreshEditPreview();
+  renderRoutingRulesSection();
+  renderOutcomeSection();
   openSidePanel(); renderKanban();
   setTimeout(() => {
     let greeting = `Editando "${task.name}".\n\nConfiguração atual:\n• Categoria: ${task.category}`;
@@ -1010,6 +1217,317 @@ function refreshEditPreview() {
     ${editDraft.mcpConfig?`<div style="color:#15803d;font-size:10.5px;margin-top:2px">🔌 MCP: ${editDraft.mcpConfig.serverName} → <code style="font-family:monospace">${editDraft.mcpConfig.toolName||'(tool não selecionada)'}</code></div>`:''}
     ${editDraft.agentConfig?`<div style="color:#7c3aed;font-size:10.5px;margin-top:2px">${editDraft.agentConfig.agentIcon} Agente: ${editDraft.agentConfig.agentName}</div>`:''}`;
 }
+
+const ROUTING_FIELDS = [
+  'order.total','order.state','order.sales_channel','order.items_count',
+  'payment.method','payment.installments','payment.card_brand','payment.gateway',
+  'item.delivery_type','item.category','item.requires_inspection',
+  'customer.is_new','customer.risk_score','merchant.id','event.type'
+];
+const ROUTING_OPS = [
+  {v:'eq',l:'= igual'},
+  {v:'neq',l:'≠ diferente'},
+  {v:'gt',l:'> maior que'},
+  {v:'gte',l:'>= maior ou igual'},
+  {v:'lt',l:'< menor que'},
+  {v:'lte',l:'<= menor ou igual'},
+  {v:'in',l:'∈ contém na lista'},
+  {v:'not_in',l:'∉ não está na lista'},
+  {v:'contains',l:'~ contém texto'},
+];
+
+function renderRoutingRulesSection() {
+  const el = document.getElementById('edit-routing-rules-section');
+  if (!el) return;
+  const rules = editDraft.routing_rules || [];
+  const allTasks = editDraft._allTasks || [];
+
+  const fieldOpts = ROUTING_FIELDS.map(f => `<option value="${f}">${f}</option>`).join('');
+  const opOpts    = ROUTING_OPS.map(o => `<option value="${o.v}">${o.l}</option>`).join('');
+  const taskOpts  = allTasks.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+  const wfOpts    = WORKFLOW_DEFS.map(w => `<option value="${w.id}">${w.icon||'🔄'} ${w.name}</option>`).join('');
+
+  const ruleCards = rules.map((rule, ri) => {
+    const isExpr = rule._raw_condition || (rule.conditions||[]).some(c => c.operator === 'expr');
+    const condRows = isExpr
+      ? `<div style="display:flex;gap:6px;align-items:center;margin-bottom:4px">
+           <code style="flex:1;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:5px;padding:4px 8px;font-size:10.5px;color:#334155;font-family:monospace">${rule._raw_condition || (rule.conditions[0]||{}).field}</code>
+           <span style="font-size:9px;color:#94a3b8;white-space:nowrap">expr livre</span>
+         </div>`
+      : (rule.conditions||[]).map((cond, ci) => `
+      <div style="display:flex;gap:4px;align-items:center;margin-bottom:4px">
+        <select onchange="updateRuleCond(${ri},${ci},'field',this.value)"
+          style="flex:1.2;border:1px solid #d1d5db;border-radius:5px;padding:2px 4px;font-size:10px">
+          ${fieldOpts.replace(`value="${cond.field}"`,`value="${cond.field}" selected`)}
+        </select>
+        <select onchange="updateRuleCond(${ri},${ci},'operator',this.value)"
+          style="flex:1;border:1px solid #d1d5db;border-radius:5px;padding:2px 4px;font-size:10px">
+          ${opOpts.replace(`value="${cond.operator}"`,`value="${cond.operator}" selected`)}
+        </select>
+        <input type="text" value="${cond.value||''}" placeholder="valor"
+          onchange="updateRuleCond(${ri},${ci},'value',this.value)"
+          style="flex:1;border:1px solid #d1d5db;border-radius:5px;padding:2px 5px;font-size:10px">
+        <button onclick="removeRuleCond(${ri},${ci})"
+          style="background:none;border:none;cursor:pointer;color:#ef4444;font-size:13px;line-height:1;padding:0 2px">×</button>
+      </div>`).join('');
+
+    const actionColor = rule.action==='skip' ? '#dc2626' : rule.action==='goto' ? '#0891b2' : rule.action==='spawn_workflow' ? '#7c3aed' : '#15803d';
+    const actionLabel = rule.action==='skip' ? '⏭ Pular task' : rule.action==='goto' ? '↪ Ir para task' : '▶ Executar task';
+
+    return `<div style="border:1px solid #e5e7eb;border-radius:7px;padding:9px 11px;margin-bottom:7px;background:#fff">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px">
+        <span style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px">SE (todas as condições)</span>
+        <button onclick="removeRoutingRule(${ri})"
+          style="background:none;border:none;cursor:pointer;color:#ef4444;font-size:14px;line-height:1">✕</button>
+      </div>
+      ${condRows}
+      <button onclick="addRuleCond(${ri})"
+        style="background:none;border:1px dashed #d1d5db;border-radius:5px;color:#9ca3af;font-size:10px;padding:2px 8px;cursor:pointer;width:100%;margin-bottom:8px">
+        ＋ condição
+      </button>
+      <div style="border-top:1px solid #f3f4f6;padding-top:7px">
+        <span style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.4px;display:block;margin-bottom:5px">ENTÃO</span>
+        <div style="display:flex;gap:5px;align-items:center">
+          <select onchange="updateRuleAction(${ri},'action',this.value)"
+            style="flex:1;border:1px solid ${actionColor}60;border-radius:5px;padding:3px 5px;font-size:11px;font-weight:600;color:${actionColor};background:${actionColor}08">
+            <option value="execute"        ${rule.action==='execute'        ?'selected':''}>▶ Executar task</option>
+            <option value="skip"           ${rule.action==='skip'           ?'selected':''}>⏭ Pular task</option>
+            <option value="goto"           ${rule.action==='goto'           ?'selected':''}>↪ Ir para task</option>
+            <option value="spawn_workflow" ${rule.action==='spawn_workflow' ?'selected':''}>🔀 Iniciar workflow paralelo</option>
+          </select>
+          ${rule.action==='goto' ? `<select onchange="updateRuleAction(${ri},'target_task_id',this.value)"
+            style="flex:1.2;border:1px solid #d1d5db;border-radius:5px;padding:3px 5px;font-size:11px">
+            <option value="">— selecionar task —</option>
+            ${taskOpts.replace(`value="${rule.target_task_id}"`,`value="${rule.target_task_id}" selected`)}
+          </select>` : ''}
+          ${rule.action==='spawn_workflow' ? `<select onchange="updateRuleAction(${ri},'target_workflow_id',this.value)"
+            style="flex:1.2;border:1px solid #d1d5db;border-radius:5px;padding:3px 5px;font-size:11px">
+            <option value="">— selecionar workflow —</option>
+            ${wfOpts.replace(`value="${rule.target_workflow_id}"`,`value="${rule.target_workflow_id}" selected`)}
+          </select>` : ''}
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  el.innerHTML = `
+    <div style="background:#fafafa;border:1px solid #e5e7eb;border-radius:8px;padding:10px 12px">
+      <div style="font-size:10.5px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px">
+        📐 Regras de Roteamento
+      </div>
+      <div style="font-size:10px;color:#9ca3af;margin-bottom:8px">Condições avaliadas antes de executar a task. Primeira regra que aplicar vence.</div>
+      ${ruleCards}
+      <button onclick="addRoutingRule()"
+        style="background:none;border:1px dashed #9ca3af;border-radius:5px;color:#6b7280;font-size:11px;padding:4px 10px;cursor:pointer;width:100%">
+        ＋ Adicionar regra
+      </button>
+    </div>`;
+}
+
+function addRoutingRule() {
+  if (!editDraft.routing_rules) editDraft.routing_rules = [];
+  editDraft.routing_rules.push({
+    id: 'rr-' + Date.now(),
+    conditions: [{ field: 'order.total', operator: 'gt', value: '' }],
+    action: 'execute',
+    target_task_id: null,
+    target_workflow_id: null
+  });
+  renderRoutingRulesSection();
+}
+
+function removeRoutingRule(ri) {
+  editDraft.routing_rules.splice(ri, 1);
+  renderRoutingRulesSection();
+}
+
+function addRuleCond(ri) {
+  editDraft.routing_rules[ri].conditions.push({ field: 'payment.method', operator: 'eq', value: '' });
+  renderRoutingRulesSection();
+}
+
+function removeRuleCond(ri, ci) {
+  editDraft.routing_rules[ri].conditions.splice(ci, 1);
+  renderRoutingRulesSection();
+}
+
+function updateRuleCond(ri, ci, key, value) {
+  editDraft.routing_rules[ri].conditions[ci][key] = value;
+}
+
+function updateRuleAction(ri, key, value) {
+  editDraft.routing_rules[ri][key] = value || null;
+  if (key === 'action') renderRoutingRulesSection();
+}
+
+function renderOutcomeSection() {
+  const el = document.getElementById('edit-outcomes-section');
+  if (!el) return;
+
+  const chip = (field, removeCall) =>
+    `<span style="display:inline-flex;align-items:center;gap:3px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:10px;padding:1px 7px;font-size:10px;color:#1d4ed8;font-weight:500;white-space:nowrap">
+      ${field}<button onclick="${removeCall}" style="background:none;border:none;cursor:pointer;color:#93c5fd;font-size:11px;line-height:1;padding:0 0 0 2px">×</button>
+    </span>`;
+
+  const addFieldBtn = (oncommit, suggestFn) =>
+    `<span class="add-field-btn" onclick="${suggestFn}(this,'${oncommit}')"
+      style="display:inline-flex;align-items:center;gap:2px;background:none;border:1px dashed #d1d5db;border-radius:10px;padding:1px 7px;font-size:10px;color:#9ca3af;cursor:pointer;white-space:nowrap">
+      ＋ campo
+    </span>`;
+
+
+  // ── OUTCOMES block ────────────────────────────────────
+  const outcomes = editDraft.allowed_outcomes || [];
+  const allTasks = editDraft._allTasks || [];
+  // Group by stage for <optgroup>
+  const tasksByStage = {};
+  allTasks.forEach(t => {
+    if (!tasksByStage[t.stageName]) tasksByStage[t.stageName] = [];
+    tasksByStage[t.stageName].push(t);
+  });
+  const taskOptions = Object.entries(tasksByStage).map(([stageName, tasks]) =>
+    `<optgroup label="${stageName}">${tasks.map(t => `<option value="${t.id}">${t.name}</option>`).join('')}</optgroup>`
+  ).join('');
+
+  const outcomeCards = outcomes.map((outcome, idx) => {
+    const currentNext = (editDraft.on_outcome[outcome] || {}).next_stage || '';
+    const outs = (editDraft.outputs && editDraft.outputs[outcome]) || { required: [], optional: [] };
+    const outReqChips = outs.required.map((f,i) => chip(f, `removeOutputField('${outcome}','required',${i})`)).join('');
+    const outOptChips = outs.optional.map((f,i) => chip(f, `removeOutputField('${outcome}','optional',${i})`)).join('');
+
+    return `<div style="border:1px solid #e5e7eb;border-radius:6px;padding:8px 10px;margin-bottom:6px;background:#fff">
+      <div style="display:flex;gap:6px;align-items:center;margin-bottom:7px">
+        <input type="text" value="${outcome}" onchange="renameOutcomeRow(${idx}, this.value)"
+          style="flex:1;border:1px solid #d1d5db;border-radius:5px;padding:3px 7px;font-size:12px;font-weight:600;box-sizing:border-box">
+        <span style="font-size:10px;color:#6b7280;white-space:nowrap">→</span>
+        <select onchange="updateOutcomeRoute('${outcome}', this.value)"
+          style="flex:1.2;border:1px solid #d1d5db;border-radius:5px;padding:3px 5px;font-size:11px;box-sizing:border-box">
+          <option value="" ${!currentNext?'selected':''}>✕ Encerrar workflow</option>
+          ${taskOptions.replace(`value="${currentNext}"`, `value="${currentNext}" selected`)}
+        </select>
+        <button onclick="removeOutcomeRow(${idx})"
+          style="background:none;border:none;cursor:pointer;color:#ef4444;font-size:15px;line-height:1;flex-shrink:0">✕</button>
+      </div>
+      <div style="margin-bottom:4px;display:flex;flex-wrap:wrap;gap:4px;align-items:center">
+        <span style="font-size:10px;color:#6b7280;font-weight:600;min-width:60px">📤 Outputs<br><span style="font-weight:400">obrig.</span></span>
+        ${outReqChips}${addFieldBtn('campo',`addOutputField_${outcome}_required`)}
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:4px;align-items:center">
+        <span style="font-size:10px;color:#6b7280;font-weight:600;min-width:60px"><br><span style="font-weight:400">opcion.</span></span>
+        ${outOptChips}${addFieldBtn('campo',`addOutputField_${outcome}_optional`)}
+      </div>
+    </div>`;
+  }).join('');
+
+  const outcomesHtml = `
+    <div style="background:#fafafa;border:1px solid #e5e7eb;border-radius:8px;padding:10px 12px">
+      <div style="font-size:10.5px;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">
+        🔀 Outcomes, Outputs & Routing
+      </div>
+      ${outcomeCards}
+      <button onclick="addOutcomeRow()"
+        style="background:none;border:1px dashed #9ca3af;border-radius:5px;color:#6b7280;font-size:11px;padding:4px 10px;cursor:pointer;width:100%;margin-top:2px">
+        ＋ Adicionar outcome
+      </button>
+    </div>`;
+
+  el.innerHTML = outcomesHtml;
+}
+
+function updateOutcomeRoute(outcome, nextStageId) {
+  if (!editDraft.on_outcome) editDraft.on_outcome = {};
+  editDraft.on_outcome[outcome] = { next_stage: nextStageId || null };
+}
+
+function renameOutcomeRow(idx, newName) {
+  const old = editDraft.allowed_outcomes[idx];
+  editDraft.allowed_outcomes[idx] = newName;
+  if (editDraft.on_outcome && editDraft.on_outcome[old] !== undefined) {
+    editDraft.on_outcome[newName] = editDraft.on_outcome[old];
+    delete editDraft.on_outcome[old];
+  }
+  if (editDraft.outputs && editDraft.outputs[old] !== undefined) {
+    editDraft.outputs[newName] = editDraft.outputs[old];
+    delete editDraft.outputs[old];
+  }
+}
+
+function addOutcomeRow() {
+  if (!editDraft.allowed_outcomes) editDraft.allowed_outcomes = [];
+  if (!editDraft.on_outcome) editDraft.on_outcome = {};
+  if (!editDraft.outputs) editDraft.outputs = {};
+  const name = 'novo_outcome_' + (editDraft.allowed_outcomes.length + 1);
+  editDraft.allowed_outcomes.push(name);
+  editDraft.on_outcome[name] = { next_stage: null };
+  editDraft.outputs[name] = { required: [], optional: [] };
+  renderOutcomeSection();
+}
+
+function removeOutcomeRow(idx) {
+  const removed = editDraft.allowed_outcomes.splice(idx, 1)[0];
+  if (editDraft.on_outcome) delete editDraft.on_outcome[removed];
+  if (editDraft.outputs) delete editDraft.outputs[removed];
+  renderOutcomeSection();
+}
+
+// ── Input field helpers ──
+function promptAddField(btnEl, commitFn) {
+  const input = document.createElement('input');
+  input.type = 'text'; input.placeholder = 'nome_do_campo';
+  input.style.cssText = 'border:1px solid #93c5fd;border-radius:10px;padding:1px 7px;font-size:10px;color:#1d4ed8;width:90px;outline:none';
+  btnEl.replaceWith(input);
+  input.focus();
+  const commit = () => {
+    const val = input.value.trim();
+    if (val) { window[commitFn] && window[commitFn](val); }
+    else renderOutcomeSection();
+  };
+  input.onblur = commit;
+  input.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); commit(); } if (e.key === 'Escape') renderOutcomeSection(); };
+}
+
+function addInputField_required(val) {
+  if (!editDraft.inputs) editDraft.inputs = { required: [], optional: [] };
+  editDraft.inputs.required.push(val); renderOutcomeSection();
+}
+function addInputField_optional(val) {
+  if (!editDraft.inputs) editDraft.inputs = { required: [], optional: [] };
+  editDraft.inputs.optional.push(val); renderOutcomeSection();
+}
+function removeInputField(kind, idx) {
+  editDraft.inputs[kind].splice(idx, 1); renderOutcomeSection();
+}
+
+// ── Output field helpers (dynamic — outcome encoded in fn name) ──
+function addOutputField(outcome, kind, val) {
+  if (!editDraft.outputs) editDraft.outputs = {};
+  if (!editDraft.outputs[outcome]) editDraft.outputs[outcome] = { required: [], optional: [] };
+  editDraft.outputs[outcome][kind].push(val); renderOutcomeSection();
+}
+function removeOutputField(outcome, kind, idx) {
+  if (editDraft.outputs && editDraft.outputs[outcome]) {
+    editDraft.outputs[outcome][kind].splice(idx, 1);
+  }
+  renderOutcomeSection();
+}
+
+// Bridge for the dynamic function names encoded in onclick strings
+window.addEventListener('DOMContentLoaded', () => {});
+(function registerDynamicOutputHandlers() {
+  const origPrompt = window.promptAddField;
+  window.promptAddField = function(btnEl, commitFn) {
+    // commitFn may be "addOutputField_<outcome>_<kind>" or "addInputField_required/optional"
+    if (commitFn.startsWith('addOutputField_')) {
+      const parts = commitFn.split('_');
+      // format: addOutputField_<outcome>_<kind>  — outcome may contain underscores
+      const kind = parts[parts.length - 1]; // last segment = required|optional
+      const outcome = parts.slice(1, parts.length - 1).join('_');
+      const wrappedFn = commitFn;
+      window[wrappedFn] = (val) => addOutputField(outcome, kind, val);
+    }
+    origPrompt(btnEl, commitFn);
+  };
+}());
 
 function sendEditChat() {
   const input = document.getElementById('cm-input'); if (!input) return;
@@ -1194,6 +1712,14 @@ function applyEditDraft() {
   task.externalApi = editDraft.externalApi;
   task.mcpConfig   = editDraft.mcpConfig || null;
   task.agentConfig = editDraft.agentConfig || null;
+  if (!task.contract) task.contract = {};
+  if (editDraft.inputs) task.contract.inputs = { required: [...editDraft.inputs.required], optional: [...editDraft.inputs.optional] };
+  task.contract.routing_rules = JSON.parse(JSON.stringify(editDraft.routing_rules || []));
+  if (editDraft.allowed_outcomes) {
+    task.contract.allowed_outcomes = [...editDraft.allowed_outcomes];
+    task.contract.on_outcome = { ...editDraft.on_outcome };
+    task.contract.outputs = JSON.parse(JSON.stringify(editDraft.outputs || {}));
+  }
   closeSidePanel(); renderWorkflowBoard();
   showSuccessModal('Tarefa atualizada!', `"${task.name}" foi salva com as novas configurações.`);
 }
@@ -1656,10 +2182,32 @@ function createSubTask() {
   if (!stage) return;
   const newId = 't' + Date.now();
   if (!stage.tasks) stage.tasks = [];
+  const executorType = newTaskDraft.executor_type || 'operator';
+  const srpId = newTaskDraft.supplier_resolution_policy_id || 'srp-self';
+  const slaHours = newTaskDraft.sla_hours || (executorType === 'webhook' ? 2 : 8);
+  const cancellable = newTaskDraft.cancellable !== false;
+  const contract = newTaskDraft.contract || {
+    outcome_field: 'outcome',
+    allowed_outcomes: ['completed', 'failed'],
+    outputs: {
+      completed: { required: [], optional: [] },
+      failed:    { required: ['reason'], optional: [] },
+    },
+    output_context: [],
+  };
   stage.tasks.push({
     id: newId, name: newTaskDraft.name || 'Nova Tarefa',
     supplier: newTaskDraft.supplier || 'A definir',
+    supplier_resolution_policy_id: srpId,
     category: newTaskDraft.category || 'Todos',
+    executor_type: executorType,
+    sla_hours: slaHours,
+    is_blocking: newTaskDraft.is_blocking !== false,
+    on_sla_breach: newTaskDraft.on_sla_breach || 'escalate',
+    on_payload_error: newTaskDraft.on_payload_error || 'block',
+    cancellable,
+    compensation_action: cancellable ? (newTaskDraft.compensation_action || null) : null,
+    contract,
     active: true, visibility: newTaskDraft.visibility || 'user', script: null,
     externalApi: newTaskDraft.externalApi || null,
     mcpConfig: newTaskDraft.mcpConfig || null,
@@ -1680,6 +2228,53 @@ function showSuccessModal(title, body) {
   openModal('modal-success');
 }
 document.querySelectorAll('.modal-overlay').forEach(o => o.addEventListener('click', e => { if(e.target===o) o.classList.remove('open'); }));
+
+function openTrackingModal(events, outputs) {
+  const code = outputs.tracking_code || outputs.reverse_code || '';
+  const url  = outputs.carrier_url   || '';
+  const eventsHtml = events.map((e, i) => {
+    const isLast = i === events.length - 1;
+    return `
+      <div style="display:flex;gap:14px;align-items:flex-start;padding:12px 0;${i > 0 ? 'border-top:1px solid #f1f5f9' : ''}">
+        <div style="display:flex;flex-direction:column;align-items:center;flex-shrink:0">
+          <div style="width:12px;height:12px;border-radius:50%;background:${isLast ? '#0ea5e9' : '#cbd5e1'};border:2px solid ${isLast ? '#bae6fd' : '#e2e8f0'}"></div>
+          ${i < events.length - 1 ? `<div style="width:2px;flex:1;min-height:20px;background:#e2e8f0;margin-top:4px"></div>` : ''}
+        </div>
+        <div style="flex:1">
+          <div style="font-size:11px;color:#94a3b8;margin-bottom:2px">${e.date}</div>
+          <div style="font-size:13px;color:${isLast ? '#0f172a' : '#475569'};font-weight:${isLast ? '600' : '400'};line-height:1.4">${e.description}</div>
+        </div>
+      </div>`;
+  }).join('');
+
+  let modal = document.getElementById('modal-tracking');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'modal-tracking';
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+      <div style="background:#fff;border-radius:12px;padding:24px;max-width:480px;width:calc(100% - 48px);box-shadow:0 20px 60px rgba(0,0,0,.25)">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px">
+          <div>
+            <div style="font-weight:700;font-size:16px;color:#0f172a">📦 Histórico de Rastreamento</div>
+            <div id="tracking-modal-code" style="font-size:12px;color:#64748b;margin-top:3px"></div>
+          </div>
+          <button onclick="closeModal('modal-tracking')" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;width:28px;height:28px;font-size:16px;cursor:pointer;color:#64748b;line-height:1;display:flex;align-items:center;justify-content:center">×</button>
+        </div>
+        <div id="tracking-modal-events" style="max-height:360px;overflow-y:auto"></div>
+        <div id="tracking-modal-link" style="margin-top:16px;padding-top:14px;border-top:1px solid #f1f5f9"></div>
+      </div>`;
+    document.body.appendChild(modal);
+    modal.addEventListener('click', e => { if (e.target === modal) modal.classList.remove('open'); });
+  }
+
+  document.getElementById('tracking-modal-code').textContent = code ? `Código: ${code}` : '';
+  document.getElementById('tracking-modal-events').innerHTML = eventsHtml;
+  document.getElementById('tracking-modal-link').innerHTML = url
+    ? `<a href="${url}" target="_blank" style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#2563eb;text-decoration:none;font-weight:500">🔗 Rastrear na transportadora ↗</a>`
+    : '';
+  openModal('modal-tracking');
+}
 
 // ══════════════════════════════════════════
 // TASK ACTIONS CATALOG
@@ -1921,15 +2516,15 @@ function renderWorkflowSettings() {
 
   const depsContainer = document.getElementById('ws-deps');
   if (depsContainer) {
-    depsContainer.innerHTML = wf.dependencies.length
-      ? wf.dependencies.map(depId => {
+    depsContainer.innerHTML = (wf.dependencies||[]).length
+      ? (wf.dependencies||[]).map(depId => {
           const depWf = WORKFLOW_DEFS.find(w => w.id === depId);
           return depWf ? `<span class="dep-tag" style="border-color:${depWf.color}40;background:${depWf.color}10">${depWf.icon} ${depWf.name}<span class="dep-remove" onclick="removeDep('${depId}')">×</span></span>` : '';
         }).join('')
       : `<span style="font-size:12.5px;color:#aaa;font-style:italic">Nenhuma dependência — acionado imediatamente</span>`;
   }
 
-  const dependents = WORKFLOW_DEFS.filter(w => w.dependencies.includes(wf.id));
+  const dependents = WORKFLOW_DEFS.filter(w => (w.dependencies||[]).includes(wf.id));
   const depsEl = document.getElementById('ws-dependents');
   if (depsEl) depsEl.innerHTML = dependents.length
     ? dependents.map(d => `<span style="margin-right:6px">${d.icon} ${d.name}</span>`).join('')
@@ -1978,6 +2573,95 @@ function renderWorkflowSettings() {
         </div>
       </div>`;
   }
+
+  renderRoutingSection(wf);
+}
+
+function renderRoutingSection(wf) {
+  const container = document.getElementById('ws-routing-section');
+  if (!container) return;
+
+  const rp = ROUTING_POLICIES.find(p => p.id === wf.routing_policy_id);
+  if (!window._routingDraft || window._routingDraft.wfId !== wf.id) {
+    window._routingDraft = { wfId: wf.id, conditions: rp ? rp.conditions.map(c => Object.assign({}, c)) : [] };
+  }
+
+  const FIELD_OPTIONS = [
+    'item.delivery_type','item.item_type','payment.method',
+    'order.total','order.sales_channel','order.origin',
+    'event.type','merchant.id',
+  ];
+  const OPERATOR_OPTIONS = [
+    { value:'eq',       label:'= igual a' },
+    { value:'neq',      label:'≠ diferente de' },
+    { value:'contains', label:'⊃ contém' },
+    { value:'gt',       label:'> maior que' },
+    { value:'gte',      label:'≥ maior ou igual a' },
+    { value:'lt',       label:'< menor que' },
+    { value:'lte',      label:'≤ menor ou igual a' },
+  ];
+
+  const rows = window._routingDraft.conditions.map((c, i) => `
+    <div style="display:flex;gap:8px;align-items:center;padding:8px 10px;background:#fafafa;border:1px solid #eee;border-radius:6px;margin-bottom:6px">
+      <select class="cm-input" style="flex:2;font-size:12px" onchange="updateRoutingCondition(${i},'field',this.value)">
+        ${FIELD_OPTIONS.map(f => `<option value="${f}" ${c.field===f?'selected':''}>${f}</option>`).join('')}
+      </select>
+      <select class="cm-input" style="flex:1.2;font-size:12px" onchange="updateRoutingCondition(${i},'operator',this.value)">
+        ${OPERATOR_OPTIONS.map(o => `<option value="${o.value}" ${c.operator===o.value?'selected':''}>${o.label}</option>`).join('')}
+      </select>
+      <input class="cm-input" style="flex:2;font-size:12px" value="${c.value||''}" placeholder="valor" oninput="updateRoutingCondition(${i},'value',this.value)">
+      <button onclick="removeRoutingCondition(${i})" style="background:none;border:none;cursor:pointer;color:#dc2626;font-size:18px;padding:0 4px;line-height:1" title="Remover">×</button>
+    </div>`).join('');
+
+  const policyBanner = rp
+    ? `<div style="margin-bottom:10px;padding:8px 10px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:6px;font-size:12px;color:#1d4ed8"><strong>Política ativa:</strong> ${rp.name} · Prioridade ${rp.priority}</div>`
+    : `<div style="margin-bottom:10px;padding:8px 10px;background:#fffbeb;border:1px solid #fde68a;border-radius:6px;font-size:12px;color:#92400e">Sem política de roteamento. Adicione condições para criar uma.</div>`;
+
+  container.innerHTML = `
+    ${policyBanner}
+    <div style="font-size:11px;font-weight:600;color:#888;text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Condições de ativação (lógica AND)</div>
+    <div id="routing-conditions-list">
+      ${rows || `<div style="color:#aaa;font-size:13px;font-style:italic;padding:6px 0">Nenhuma condição — acionado para todos os pedidos</div>`}
+    </div>
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button onclick="addRoutingCondition()" style="display:flex;align-items:center;gap:5px;padding:6px 12px;border:1px dashed #0c6fcd;border-radius:6px;background:#eff6ff;color:#0c6fcd;font-size:12px;font-weight:600;cursor:pointer">+ Condição</button>
+      <button onclick="saveRoutingPolicy()" style="padding:6px 16px;border:none;border-radius:6px;background:#0c6fcd;color:#fff;font-size:12px;font-weight:600;cursor:pointer">Salvar roteamento</button>
+    </div>`;
+}
+
+function updateRoutingCondition(i, key, value) {
+  if (window._routingDraft) window._routingDraft.conditions[i][key] = value;
+}
+
+function addRoutingCondition() {
+  if (!window._routingDraft) return;
+  window._routingDraft.conditions.push({ field: 'item.delivery_type', operator: 'eq', value: '' });
+  const wf = WORKFLOW_DEFS.find(w => w.id === window._routingDraft.wfId);
+  if (wf) renderRoutingSection(wf);
+}
+
+function removeRoutingCondition(i) {
+  if (!window._routingDraft) return;
+  window._routingDraft.conditions.splice(i, 1);
+  const wf = WORKFLOW_DEFS.find(w => w.id === window._routingDraft.wfId);
+  if (wf) renderRoutingSection(wf);
+}
+
+function saveRoutingPolicy() {
+  if (!window._routingDraft) return;
+  const wf = WORKFLOW_DEFS.find(w => w.id === window._routingDraft.wfId);
+  if (!wf) return;
+  const conditions = window._routingDraft.conditions.filter(c => c.field && c.value);
+  if (wf.routing_policy_id) {
+    const rp = ROUTING_POLICIES.find(p => p.id === wf.routing_policy_id);
+    if (rp) rp.conditions = conditions;
+  } else if (conditions.length) {
+    const newId = 'rp-' + wf.id.replace(/^(wf|oj)-/, '');
+    ROUTING_POLICIES.push({ id: newId, name: wf.name, description: 'Criado via configurações', workflow_definition_id: wf.id, priority: ROUTING_POLICIES.length + 1, conditions });
+    wf.routing_policy_id = newId;
+  }
+  renderRoutingSection(wf);
+  if (typeof showSwapToast === 'function') showSwapToast('Roteamento', 'salvo');
 }
 
 function selectWsIcon(btn, icon) {
@@ -2511,6 +3195,10 @@ function confirmCreateWorkflow() {
     orderCount: 0,
     archived: false,
     description: newWfDraft.description || '',
+    version: 1,
+    tags: newWfDraft.tags || [],
+    routing_policy_id: null,
+    cancellation_policy: { on_compensation_failure: 'escalate' },
     edges: [
       { id:'e1', from:'wf-payments', to:'wf-standard', active:true },
       { id:'e2', from:'wf-standard', to:'wf-nfe',      active:true },
@@ -3020,7 +3708,7 @@ function openConnectorPanel(wfId) {
     }).join('');
 
     const noTasksHtml = linkedTasks.length === 0
-      ? `<div style="font-size:11px;color:#aaa;font-style:italic;margin-top:8px;padding:8px 10px;background:#fafafa;border:1px solid #f0f0f0;border-radius:6px">Nenhuma tarefa desta experiência usa este slot.</div>`
+      ? `<div style="font-size:11px;color:#aaa;font-style:italic;margin-top:8px;padding:8px 10px;background:#fafafa;border:1px solid #f0f0f0;border-radius:6px">Nenhuma tarefa desta workflow usa este slot.</div>`
       : '';
 
     const testedHtml = b?.lastTested
@@ -3063,7 +3751,7 @@ function openConnectorPanel(wfId) {
   document.getElementById('sp-body').innerHTML = `
     <div style="padding:2px 0 8px">
       <div style="font-size:12px;color:#888;margin-bottom:14px;line-height:1.5">
-        Cada slot vincula um sistema externo às tarefas desta experiência.<br>
+        Cada slot vincula um sistema externo às tarefas desta workflow.<br>
         O agente invoca a função indicada automaticamente ao avançar cada tarefa.
       </div>
       ${slotsHtml}
@@ -3207,7 +3895,7 @@ function renderOrchConnectors() {
 
   const configured = ALL_SLOTS.filter(s => bindings[s]);
   if (!configured.length) {
-    el.innerHTML = `<div style="font-size:12px;color:#aaa;text-align:center;padding:14px">Nenhum conector configurado nesta experiência.</div>`;
+    el.innerHTML = `<div style="font-size:12px;color:#aaa;text-align:center;padding:14px">Nenhum conector configurado nesta workflow.</div>`;
     return;
   }
   el.innerHTML = configured.map(slot => {
@@ -3348,7 +4036,7 @@ function confirmImportYaml() {
     const existing = WORKFLOW_DEFS.find(w => w.id === parsed.id);
     const totalTasks = (parsed.marcos || []).reduce((s, m) => s + (m.tasks || []).length, 0);
     document.getElementById('conflict-summary').innerHTML =
-      `A experiência <strong>${existing.name}</strong> (id: <code>${parsed.id}</code>) já existe.<br>` +
+      `A workflow <strong>${existing.name}</strong> (id: <code>${parsed.id}</code>) já existe.<br>` +
       `O YAML importado contém <strong>${parsed.marcos.length} marcos</strong> e <strong>${totalTasks} tarefas</strong>.<br><br>` +
       `Deseja substituí-la ou criar uma cópia?`;
     closeModal('modal-import-yaml');
@@ -3430,7 +4118,7 @@ function _applyImport(parsed, asCopy) {
 
   let msg = `"${newName}" foi importada com sucesso.`;
   if (warnings.length) msg += '\n\n⚠️ ' + warnings.join('\n⚠️ ');
-  showSuccessModal('Experiência importada!', msg);
+  showSuccessModal('Workflow importada!', msg);
 }
 
 // ══════════════════════════════════════════
