@@ -1,4 +1,4 @@
-/* global React, Icon, IconSparkleFill, IconHandFill, IconPencil, IconCursorFill, IconDragDots, IconDotsSixVertical, IconDotsThreeVertical, IconPlayCircleFill, IconCaretLeftSmall, IconCaretDown, IconCaretUp, IconTrash, IconCheck, IconCube, IconCurrencyCircleDollar, IconNewspaper, IconTruck, AIWData, ChatPanel, ResizableSplit, IconButton, SidebarTooltip */
+/* global React, Icon, IconSparkleFill, IconHandFill, IconPencil, IconCursorFill, IconDragDots, IconDotsSixVertical, IconDotsThreeVertical, IconEdit, IconPlayCircleFill, IconCaretLeftSmall, IconCaretDown, IconCaretUp, IconTrash, IconCheck, IconCube, IconCurrencyCircleDollar, IconNewspaper, IconTruck, IconReorder, AIWData, ChatPanel, ResizableSplit, IconButton, SidebarTooltip */
 const { useState, useRef, useEffect, useCallback } = React;
 
 // Usuário da sessão atual — mesmo e-mail já usado como autor/editor nos dados
@@ -779,18 +779,20 @@ function StageTaskRow({ task, stage, workflow, idx, dragging, dragOver, onDragSt
         )}
 
         {!reorderMode && (
-          <IconButton
-            className="stage-task-edit-btn--fixed"
-            icon={<IconDotsThreeVertical size={16} />}
-            label="Configurar tarefa"
-            variant="tertiary"
-            onClick={e => { e.stopPropagation(); onToggle(); }}
-          />
+          <SidebarTooltip label="Configurar tarefa" placement="top">
+            <IconButton
+              className="stage-task-edit-btn--fixed"
+              icon={<IconEdit size={16} />}
+              label="Configurar tarefa"
+              variant="tertiary"
+              onClick={e => { e.stopPropagation(); onToggle(); }}
+            />
+          </SidebarTooltip>
         )}
 
         {isOpen && (
           <div className="trigger-dropdown stage-task-dropdown" onClick={e => e.stopPropagation()}>
-            <div className="trigger-dropdown-section">
+            <div className="trigger-dropdown-section" style={{ paddingBottom: 0 }}>
               <div className="trigger-dropdown-label">Status</div>
               <div className="trigger-orch-row" style={{ borderTop: "none", padding: 0 }}>
                 <button className={`trigger-orch-btn${active ? " selected" : ""}`} onClick={() => { setActive(true); mark(); }}>Ativo</button>
@@ -798,7 +800,7 @@ function StageTaskRow({ task, stage, workflow, idx, dragging, dragOver, onDragSt
               </div>
             </div>
 
-            <div className="trigger-dropdown-section" style={{ borderTop: "1px solid var(--border)", paddingTop: 10 }}>
+            <div className="trigger-dropdown-section" style={{ borderTop: "none", paddingTop: 10, paddingBottom: 0 }}>
               <div className="trigger-dropdown-label">Como executa</div>
               <div className="trigger-orch-row" style={{ borderTop: "none", padding: 0 }}>
                 <button className={`trigger-orch-btn${execType !== "auto" ? " selected" : ""}`} onClick={() => { setExecType("manual"); mark(); }}>Manual</button>
@@ -806,7 +808,7 @@ function StageTaskRow({ task, stage, workflow, idx, dragging, dragOver, onDragSt
               </div>
             </div>
 
-            <div className="trigger-dropdown-section" style={{ borderTop: "1px solid var(--border)", paddingTop: 10 }}>
+            <div className="trigger-dropdown-section" style={{ borderTop: "none", paddingTop: 10, paddingBottom: 16 }}>
               <div className="trigger-dropdown-label">Visibilidade</div>
               <div className="trigger-orch-row" style={{ borderTop: "none", padding: 0 }}>
                 <button className={`trigger-orch-btn${visibility === "internal" ? " selected" : ""}`} onClick={() => { setVisibility("internal"); mark(); }}>Interna</button>
@@ -814,7 +816,7 @@ function StageTaskRow({ task, stage, workflow, idx, dragging, dragOver, onDragSt
               </div>
             </div>
 
-            <div className="trigger-dropdown-section" style={{ borderTop: "1px solid var(--border)", paddingTop: 10 }}>
+            <div className="trigger-dropdown-section" style={{ borderTop: "1px solid var(--border)", paddingTop: 12, paddingBottom: 12 }}>
               <button
                 className="stage-task-remove-btn"
                 onClick={e => { e.stopPropagation(); onToggle?.(); setConfirmRemove(true); }}
@@ -1161,6 +1163,39 @@ const WF_STATUS_META = {
   archived:                { label: "Arquivado",                         color: "neutral" },
 };
 
+/* ── Editable workflow title — auto-resizing textarea styled as h1, mirrors
+   the campaign title field from vtex-ads-campaign-manager-design-prototype ── */
+function WfEditableTitle({ value, onChange, className = "" }) {
+  const ref = useRef(null);
+
+  const syncHeight = () => {
+    const el = ref.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  };
+
+  useEffect(() => { syncHeight(); }, [value]);
+  useEffect(() => {
+    const onResize = () => syncHeight();
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  return (
+    <textarea
+      ref={ref}
+      rows={1}
+      className={`detail-title detail-title-input ${className}`}
+      value={value}
+      onChange={(e) => onChange(e.target.value.replace(/\r?\n/g, " "))}
+      onKeyDown={(e) => { if (e.key === "Enter") e.preventDefault(); }}
+      placeholder="Nome do workflow"
+      aria-label="Nome do workflow"
+    />
+  );
+}
+
 /* ── Inline actor span — mirrors span.reporter from view-task.jsx ──────── */
 function WfActorSpan({ who, date }) {
   const isHuman = who && who.includes("@");
@@ -1181,11 +1216,8 @@ function WfMetaSection({ workflow, onOpenSettings }) {
   const sm  = WF_STATUS_META[workflow.wfStatus] || WF_STATUS_META.draft;
   const log = workflow.versionLog || [];
   const runningVersion = (workflow.wfStatus === "published_with_changes" && log.length > 0) ? log[0].version : null;
+  // O histórico não fica mais inline empurrando os campos abaixo — abre num modal.
   const [histOpen, setHistOpen] = useState(false);
-
-  const ENTITY_LABEL = { task: "Tarefa", dependency: "Dependência", trigger: "Gatilho", supplier: "Fornecedor", contingency: "Contingência", "general config": "Config. geral" };
-  const CHANGE_LABEL = { added: "adicionado", removed: "removido", renamed: "renomeado", edited: "editado", changed: "alterado", connected: "conectado", disconnected: "desconectado", replaced: "substituído" };
-  const CHANGE_SIGN  = { added: "+", removed: "−", replaced: "⇄", renamed: "~", edited: "~", changed: "~", connected: "+", disconnected: "−" };
 
   return (
     <dl className="detail-fields" style={{ marginBottom: 24 }}>
@@ -1203,285 +1235,465 @@ function WfMetaSection({ workflow, onOpenSettings }) {
 
       <dt>Versão</dt>
       <dd>
-        <span className="wf-meta-ver">{sm.label}</span>
-        {' '}
-        <span className="wf-meta-ver">(v{workflow.version})</span>
+        {log.length > 0 ? (
+          <button type="button" className="wf-ver-badge-btn" onClick={() => setHistOpen(true)} title="Histórico de versões">
+            <span className="wf-ver-badge-label">{sm.label} • versão {workflow.version}</span>
+            <Icon name="chevron-right" size={12} className="wf-ver-badge-chevron" />
+          </button>
+        ) : (
+          <span className="wf-ver-badge-btn wf-ver-badge-btn--static">
+            <span className="wf-ver-badge-label">{sm.label} • versão {workflow.version}</span>
+          </span>
+        )}
         {runningVersion && (
           <span className="wf-meta-running">v{runningVersion} em produção</span>
         )}
-        {log.length > 0 && (
-          <button
-            className={`icon-btn wf-ver-hist-btn${histOpen ? " wf-ver-hist-btn--active" : ""}`}
-            onClick={() => setHistOpen(o => !o)}
-            title="Histórico de versões"
-          >
-            <span className="wf-meta-hist-count">{log.length}</span>
-          </button>
-        )}
       </dd>
-
-      {histOpen && log.length > 0 && <>
-        <dt style={{ paddingTop: 4 }}>
-          <span className="wf-ver-hist-popup-title">Histórico</span>
-        </dt>
-        <dd>
-          <div className="wf-ver-hist-inline">
-            {log.slice(0, 3).map((entry) => (
-              <div key={entry.version} className="wf-meta-hist-entry">
-                <div className="wf-meta-hist-head">
-                  <span className="wf-meta-hist-ver">v{entry.version}</span>
-                  <span className="wf-meta-hist-when">{fmtWfDate(entry.publishedAt)}</span>
-                  <span className="wf-meta-hist-who">{entry.publishedBy}</span>
-                </div>
-                <p className="wf-meta-hist-desc">"{entry.description}"</p>
-                <ul className="wf-meta-hist-deltas">
-                  {entry.deltas.map((d, i) => (
-                    <li key={i} className={`wf-meta-delta wf-meta-delta--${d.change}`}>
-                      <span className="wf-meta-delta-sign">{CHANGE_SIGN[d.change] || "·"}</span>
-                      <span className="wf-meta-delta-entity">{ENTITY_LABEL[d.entity] || d.entity}</span>
-                      <span className="wf-meta-delta-change">{CHANGE_LABEL[d.change] || d.change}</span>
-                      <span className="wf-meta-delta-detail">{d.detail}</span>
-                    </li>
-                  ))}
-                </ul>
-                <div className="wf-meta-hist-footer">
-                  <span>{entry.appliedTo === "all_orders" ? "Aplicado a todos os pedidos" : "Somente pedidos novos"}</span>
-                  <span>{entry.activeOrdersAtPublish.toLocaleString("pt-BR")} pedidos ativos na publicação</span>
-                </div>
-              </div>
-            ))}
-            {log.length > 3 && (
-              <button className="wf-ver-hist-see-all" data-sl-button data-variant="tertiary" data-has-label style={{ marginTop: 8 }} onClick={() => onOpenSettings("history")}>
-                Ver todo o histórico
-                <IconCaretRightSmall size={12} />
-              </button>
-            )}
-          </div>
-        </dd>
-      </>}
 
       {workflow.publishedAt && <>
         <dt>Publicado em</dt>
         <dd className="wf-meta-actor"><WfActorSpan who={workflow.publishedBy} date={fmtWfDate(workflow.publishedAt)} /></dd>
       </>}
+
+      {histOpen && (
+        <WfVersionHistoryModal workflow={workflow} onClose={() => setHistOpen(false)} />
+      )}
     </dl>
+  );
+}
+
+/* Histórico de versões — antes expandia inline (empurrando "Publicado em" e
+   os campos seguintes), agora abre num modal separado, sem afetar o layout
+   do painel de detalhes. */
+function WfVersionHistoryModal({ workflow, onClose }) {
+  const log = workflow.versionLog || [];
+
+  const ENTITY_LABEL = { task: "Tarefa", dependency: "Dependência", trigger: "Gatilho", supplier: "Fornecedor", contingency: "Contingência", "general config": "Config. geral" };
+  const CHANGE_LABEL = { added: "adicionado", removed: "removido", renamed: "renomeado", edited: "editado", changed: "alterado", connected: "conectado", disconnected: "desconectado", replaced: "substituído" };
+  const CHANGE_SIGN  = { added: "+", removed: "−", replaced: "⇄", renamed: "~", edited: "~", changed: "~", connected: "+", disconnected: "−" };
+
+  useEffect(() => {
+    const handler = (e) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [onClose]);
+
+  return ReactDOM.createPortal(
+    <div
+      className="wf-side-drawer-backdrop"
+      onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div className="wf-side-drawer" role="dialog" aria-modal="true" aria-label="Histórico de versões">
+        <div className="stage-config-modal-head">
+          <SidebarTooltip label="Voltar" placement="top">
+            <IconButton icon={<Icon name="arrow-left" size={18} />} label="Voltar" variant="tertiary" onClick={onClose} />
+          </SidebarTooltip>
+          <h2 className="stage-config-modal-title">
+            Histórico de versões
+            {log.length > 0 && <span className="wf-meta-hist-count">{log.length}</span>}
+          </h2>
+        </div>
+
+        <div className="wf-side-drawer-body">
+          {log.length === 0 ? (
+            <p className="setting-help">Nenhuma versão publicada ainda.</p>
+          ) : (
+            <div className="wf-meta-hist-list">
+              {log.map((entry) => (
+                <div key={entry.version} className="wf-meta-hist-entry">
+                  <div className="wf-meta-hist-head">
+                    <span className="wf-meta-hist-ver">v{entry.version}</span>
+                    <span className="wf-meta-hist-when">{fmtWfDate(entry.publishedAt)}</span>
+                    <span className="wf-meta-hist-who">{entry.publishedBy}</span>
+                  </div>
+                  <p className="wf-meta-hist-desc">"{entry.description}"</p>
+                  <ul className="wf-meta-hist-deltas">
+                    {entry.deltas.map((d, i) => (
+                      <li key={i} className={`wf-meta-delta wf-meta-delta--${d.change}`}>
+                        <span className="wf-meta-delta-sign">{CHANGE_SIGN[d.change] || "·"}</span>
+                        <span className="wf-meta-delta-entity">{ENTITY_LABEL[d.entity] || d.entity}</span>
+                        <span className="wf-meta-delta-change">{CHANGE_LABEL[d.change] || d.change}</span>
+                        <span className="wf-meta-delta-detail">{d.detail}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="wf-meta-hist-footer">
+                    <span>{entry.appliedTo === "all_orders" ? "Aplicado a todos os pedidos" : "Somente pedidos novos"}</span>
+                    <span>{entry.activeOrdersAtPublish.toLocaleString("pt-BR")} pedidos ativos na publicação</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
+/* Drawer lateral genérico para escolha de uma opção única (Gatilho,
+   Orquestração, etc.) — mesmo padrão do "Drawer de segmentação" das
+   campaigns: lista de cards de opção, aberto a partir de um botão-valor
+   estilo "Segmentar por", em vez do dropdown flutuante anterior. */
+function WfChoiceDrawer({ title, options, selectedKey, onSelect, onClose, children }) {
+  useEffect(() => {
+    const handler = (e) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [onClose]);
+
+  return ReactDOM.createPortal(
+    <div
+      className="wf-side-drawer-backdrop"
+      onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div className="wf-side-drawer" role="dialog" aria-modal="true" aria-label={title}>
+        <div className="stage-config-modal-head">
+          <SidebarTooltip label="Voltar" placement="top">
+            <IconButton icon={<Icon name="arrow-left" size={18} />} label="Voltar" variant="tertiary" onClick={onClose} />
+          </SidebarTooltip>
+          <h2 className="stage-config-modal-title">{title}</h2>
+        </div>
+
+        <div className="wf-side-drawer-body">
+          <div className="trigger-choice-list">
+            {options.map(opt => (
+              <button
+                key={opt.key}
+                className={`trigger-choice-card${selectedKey === opt.key ? " selected" : ""}`}
+                onClick={() => onSelect(opt.key)}
+              >
+                <span className="trigger-choice-copy">
+                  <span className="setting-row-title">{opt.label}</span>
+                  <span className="setting-row-desc">{opt.desc}</span>
+                </span>
+              </button>
+            ))}
+          </div>
+          {children}
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
+/* Drawer lateral para escolha múltipla de workflows (Dependências: "depende
+   de" / "desbloqueia") — mesmo drawer do WfChoiceDrawer, mas cada item é um
+   toggle (não fecha ao selecionar) em vez de uma opção única. */
+function WfWorkflowPickerDrawer({ title, workflows, selected, onToggle, onClose }) {
+  useEffect(() => {
+    const handler = (e) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [onClose]);
+
+  return ReactDOM.createPortal(
+    <div
+      className="wf-side-drawer-backdrop"
+      onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div className="wf-side-drawer" role="dialog" aria-modal="true" aria-label={title}>
+        <div className="stage-config-modal-head">
+          <SidebarTooltip label="Voltar" placement="top">
+            <IconButton icon={<Icon name="arrow-left" size={18} />} label="Voltar" variant="tertiary" onClick={onClose} />
+          </SidebarTooltip>
+          <h2 className="stage-config-modal-title">{title}</h2>
+        </div>
+
+        <div className="wf-side-drawer-body">
+          {workflows.length === 0 ? (
+            <span className="setting-help">Nenhum outro workflow disponível</span>
+          ) : (
+            <div className="dep-choice-list" style={{ marginTop: 0 }}>
+              {workflows.map(w => {
+                const isSelected = selected.some(d => d.wfId === w.id);
+                return (
+                  <button key={w.id} className={`dep-choice-item${isSelected ? " selected" : ""}`} onClick={() => onToggle(w)}>
+                    <span className="dep-choice-name">{w.name}</span>
+                    {isSelected && <IconCheck size={14} className="dep-choice-check" />}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>,
+    document.body
   );
 }
 
 /* ── Inline workflow settings (replaces separate settings route) ─────────── */
 function WfSettingsInline({ workflow, onDirtyChange }) {
-  const [trigger, setTrigger] = useState("order-start");
-  const [aiOrch,  setAiOrch]  = useState(workflow.agentEnabled ?? true);
+  const [trigger,       setTrigger]       = useState("order-start");
+  // Workflow(s) de origem do gatilho — o operador pode selecionar mais de um
+  const [triggerWfIds,  setTriggerWfIds]  = useState([]);
+  const [triggerTaskId, setTriggerTaskId] = useState("");
+  // Gatilho card fica colapsado (só a opção selecionada) até o operador clicar em "Editar"
+  const [editingTrigger, setEditingTrigger] = useState(false);
+  // Quem avança as etapas deste workflow: o agente AI ou um operador manualmente
+  const [orchMode, setOrchMode] = useState(workflow.agentEnabled === false ? "manual" : "agent");
+  const [editingOrch, setEditingOrch] = useState(false);
+  // Workflows que precisam concluir antes deste ativar ("depende de")
   const [deps, setDeps]       = useState([]);
+  const [editingDeps, setEditingDeps] = useState(false);
+  // Workflows que este, ao concluir, libera ("desbloqueia")
+  const [unlocks, setUnlocks] = useState([]);
+  const [editingUnlocks, setEditingUnlocks] = useState(false);
 
   const mark = () => onDirtyChange?.(true);
-  const [trigDropOpen, setTrigDropOpen] = useState(false);
-  const trigBtnRef  = useRef(null);
-  const trigDropRef = useRef(null);
-  const trigPos     = useRef(null);
-
-  const [depsDropOpen, setDepsDropOpen] = useState(false);
-  const depsBtnRef  = useRef(null);
-  const depsDropRef = useRef(null);
-  const depsPos     = useRef(null);
-
-  const chatSend = React.useContext(ChatSendContext);
 
   const allWorkflows = (AIWData && AIWData.workflows) ? AIWData.workflows.filter(w => w.id !== workflow.id) : [];
+  const selectedTriggerWfs = allWorkflows.filter(w => triggerWfIds.includes(w.id));
+  // Tarefas de todos os workflows de origem selecionados, para a escolha de "tarefa específica"
+  const triggerWfTasks = selectedTriggerWfs.flatMap(w =>
+    w.stages.flatMap(s => s.tasks.map(t => ({ ...t, stageName: s.name, wfId: w.id, wfName: w.name, wfIcon: w.icon })))
+  );
+
+  function toggleTriggerWf(w) {
+    setTriggerWfIds(prev => {
+      const isSelected = prev.includes(w.id);
+      return isSelected ? prev.filter(id => id !== w.id) : [...prev, w.id];
+    });
+    // Se a tarefa selecionada pertencia ao workflow que está sendo removido, limpa a seleção
+    if (triggerTaskId && w.stages.some(s => s.tasks.some(t => t.id === triggerTaskId))) {
+      setTriggerTaskId("");
+    }
+    mark();
+  }
 
   const TRIGGER_OPTS = [
-    { key: "order-start",     label: "Início do pedido" },
-    { key: "wf-completion",   label: "Conclusão de workflow" },
-    { key: "task-completion", label: "Conclusão de tarefa" },
+    { key: "order-start",     label: "Início do pedido",
+      desc: "Dispara automaticamente assim que o pedido é criado, sem depender de nenhum outro workflow." },
+    { key: "wf-completion",   label: "Conclusão de um workflow",
+      desc: "Dispara quando um workflow inteiro, selecionado como origem, é concluído." },
+    { key: "task-completion", label: "Conclusão de uma tarefa específica",
+      desc: "Dispara quando uma tarefa nomeada, dentro de um workflow de origem selecionado, é concluída — mais granular que esperar o workflow inteiro terminar." },
   ];
 
-  useEffect(() => {
-    if (!trigDropOpen) return;
-    const handler = (e) => {
-      if (trigDropRef.current && !trigDropRef.current.contains(e.target) &&
-          trigBtnRef.current  && !trigBtnRef.current.contains(e.target)) {
-        setTrigDropOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [trigDropOpen]);
+  const currentTriggerOpt = TRIGGER_OPTS.find(o => o.key === trigger);
+  const triggerTaskName = triggerWfTasks.find(t => t.id === triggerTaskId)?.name;
+  const triggerOriginLabel = selectedTriggerWfs.length > 0
+    ? `${selectedTriggerWfs.map(w => `${w.icon} ${w.name}`).join(", ")}${triggerTaskName ? ` · ${triggerTaskName}` : ""}`
+    : null;
 
-  useEffect(() => {
-    if (!depsDropOpen) return;
-    const handler = (e) => {
-      if (depsDropRef.current && !depsDropRef.current.contains(e.target) &&
-          depsBtnRef.current  && !depsBtnRef.current.contains(e.target)) {
-        setDepsDropOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [depsDropOpen]);
+  const ORCH_OPTS = [
+    { key: "agent",  label: "Agente AI orquestra este workflow",
+      desc: "O agente monitora o andamento das tarefas e avança as etapas automaticamente, sem precisar de confirmação manual." },
+    { key: "manual", label: "Workflow orquestrado manualmente",
+      desc: "As etapas só avançam quando um operador confirma manualmente cada uma — o agente não toma nenhuma ação automática neste workflow." },
+  ];
+  const currentOrchOpt = ORCH_OPTS.find(o => o.key === orchMode);
+  // Rótulo curto do valor selecionado no botão da linha (padrão "Segmentar
+  // por" das campaigns), diferente da frase completa usada no dropdown.
+  const ORCH_SHORT_LABEL = { agent: "Agêntica", manual: "Manual" };
 
-  const currentTrigger = TRIGGER_OPTS.find(o => o.key === trigger);
+  const toggleDep = (w) => {
+    setDeps(prev => prev.find(d => d.wfId === w.id) ? prev.filter(d => d.wfId !== w.id) : [...prev, { wfId: w.id, wfName: w.name, wfIcon: w.icon }]);
+    mark();
+  };
+  const toggleUnlock = (w) => {
+    setUnlocks(prev => prev.find(d => d.wfId === w.id) ? prev.filter(d => d.wfId !== w.id) : [...prev, { wfId: w.id, wfName: w.name, wfIcon: w.icon }]);
+    mark();
+  };
+
+  // Gatilho, Orquestração, Depende de e Desbloqueia abrem um drawer lateral
+  // (WfChoiceDrawer / WfWorkflowPickerDrawer), estilo "Segmentar por" das
+  // campaigns, em vez de expandir inline ou abrir um dropdown flutuante.
 
   return (
-    <div className="wf-settings-inline detail-section-block">
-      <SectionTitle as="h1">Estratégia</SectionTitle>
+    <>
+      <div className="wf-settings-inline detail-section-block">
+        <SectionTitle as="h1">Estratégia</SectionTitle>
 
-      <div className="wf-settings-inline-prose">
-        <div className="wf-settings-inline-cards">
+        <div className="wf-settings-inline-prose">
 
-          {/* Gatilho card */}
-          <div className="wf-settings-inline-card">
-            <span className="wf-settings-inline-card-label">Gatilho</span>
-            <span className="wf-settings-inline-token">{currentTrigger?.label ?? "—"}</span>
-            <span className="wf-settings-inline-card-sub">
-              Orquestração{" "}
-              <span className={`wf-settings-inline-token ${aiOrch ? "wf-settings-inline-token--purple" : ""}`}>
-                {aiOrch ? "agêntica" : "manual"}
-              </span>
-            </span>
-            <Actions card>
-              <CiteBtn text={`[Gatilho: ${currentTrigger?.label ?? "—"}, Orquestração: ${aiOrch ? "agêntica" : "manual"}]`} />
-              <button
-                ref={trigBtnRef}
-                className="stage-task-action-btn"
-                title="Alterar gatilho"
-                onClick={e => {
-                  e.stopPropagation();
-                  if (!trigDropOpen && trigBtnRef.current) {
-                    const r = trigBtnRef.current.getBoundingClientRect();
-                    trigPos.current = { top: r.bottom + 6, left: r.right, width: 240 };
-                  }
-                  setTrigDropOpen(o => !o);
-                }}
-              >
-                <IconPencil size={14} />
-              </button>
-            </Actions>
-          </div>
-          {trigDropOpen && trigPos.current && ReactDOM.createPortal(
-            <div
-              ref={trigDropRef}
-              className="trigger-dropdown"
-              style={{ position: "fixed", top: trigPos.current.top, left: trigPos.current.left - trigPos.current.width, width: trigPos.current.width, zIndex: 9999 }}
-            >
-              <div className="trigger-dropdown-section">
-                <div className="trigger-dropdown-label">Gatilho</div>
-                <div className="trigger-opt-list">
-                  {TRIGGER_OPTS.map(opt => (
-                    <button
-                      key={opt.key}
-                      className={`trigger-opt-item${trigger === opt.key ? " selected" : ""}`}
-                      style={{ flexDirection: "row", alignItems: "center", gap: "8px", padding: "8px 10px" }}
-                      onClick={() => { setTrigger(opt.key); mark(); }}
-                    >
-                      {opt.label}
-                      {trigger === opt.key && <IconCheck size={14} style={{ marginLeft: "auto", flexShrink: 0 }} />}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div className="trigger-orch-row">
-                <button className={`trigger-orch-btn${aiOrch ? " selected" : ""}`} onClick={() => { setAiOrch(true); mark(); }}>
-                  <IconSparkleFill size={11} /> Agêntica
-                </button>
-                <button className={`trigger-orch-btn${!aiOrch ? " selected" : ""}`} onClick={() => { setAiOrch(false); mark(); }}>
-                  <IconHandFill size={11} /> Manual
-                </button>
-              </div>
-            </div>,
-            document.body
-          )}
-
-          {/* Dependências card */}
-          <div className="wf-settings-inline-card">
-            <span className="wf-settings-inline-card-label">Dependências</span>
-            {deps.length > 0 ? (
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-                {deps.map((d, i) => (
-                  <span key={i} className="wf-settings-dep-chip wf-settings-dep-chip--removable">
-                    <span>{d.wfIcon} {d.wfName}</span>
-                    <button
-                      className="dep-chip-remove"
-                      title="Remover"
-                      onClick={e => { e.stopPropagation(); setDeps(prev => prev.filter((_, idx) => idx !== i)); mark(); }}
-                    >×</button>
+          {/* ── Gatilho ── linha "rótulo em negrito + botão com o valor atual",
+               mesmo padrão da linha "Segmentar por" da Segmentação (campaigns):
+               o botão abre um drawer lateral com as 3 opções (WfChoiceDrawer). */}
+          <section className="wf-settings-card wf-settings-card--flush">
+            <div className="wf-trigger-orch-row">
+              <span className="wf-trigger-orch-label">Gatilho</span>
+              <div className="wf-trigger-orch-value">
+                <button type="button" className="wf-ver-badge-btn" onClick={() => setEditingTrigger(true)}>
+                  <span className="wf-ver-badge-label">
+                    {currentTriggerOpt?.label}{triggerOriginLabel && <> · {triggerOriginLabel}</>}
                   </span>
-                ))}
+                  <Icon name="chevron-right" size={14} className="wf-ver-badge-chevron" />
+                </button>
               </div>
-            ) : (
-              <span style={{ color: "var(--fg-3)", fontSize: 14 }}>Nenhuma</span>
-            )}
-            <Actions card>
-              <CiteBtn text={deps.length > 0 ? `[Dependências: ${deps.map(d => d.wfName).join(", ")}]` : `[Dependências: nenhuma]`} />
-              <button
-                ref={depsBtnRef}
-                className="stage-task-action-btn"
-                title="Editar dependências"
-                onClick={e => {
-                  e.stopPropagation();
-                  if (!depsDropOpen && depsBtnRef.current) {
-                    const r = depsBtnRef.current.getBoundingClientRect();
-                    depsPos.current = { top: r.bottom + 6, left: r.right, width: 260 };
-                  }
-                  setDepsDropOpen(o => !o);
-                }}
-              >
-                <IconPencil size={14} />
-              </button>
-            </Actions>
-          </div>
-          {depsDropOpen && depsPos.current && ReactDOM.createPortal(
-            <div
-              ref={depsDropRef}
-              className="trigger-dropdown"
-              style={{ position: "fixed", top: depsPos.current.top, left: depsPos.current.left - depsPos.current.width, width: depsPos.current.width, zIndex: 9999 }}
-            >
-              {deps.length > 0 && (
-                <div className="trigger-dropdown-section">
-                  <div className="trigger-dropdown-label">Dependências ativas</div>
-                  <div className="trigger-opt-list">
-                    {deps.map((d, i) => (
-                      <div key={i} className="trigger-opt-item" style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-                        <span>{d.wfIcon} {d.wfName}</span>
-                        <button
-                          className="dep-row-remove"
-                          title="Remover"
-                          onClick={() => { setDeps(prev => prev.filter((_, idx) => idx !== i)); mark(); }}
-                        >×</button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-              <div className="trigger-dropdown-section" style={deps.length > 0 ? { borderTop: "1px solid var(--border)", paddingTop: 10 } : {}}>
-                <div className="trigger-dropdown-label">Adicionar dependência</div>
-                <div className="trigger-opt-list">
-                  {allWorkflows.filter(w => !deps.find(d => d.wfId === w.id)).length === 0 ? (
-                    <span style={{ fontSize: 12, color: "var(--fg-3)", padding: "4px 2px" }}>Todos os workflows já adicionados</span>
-                  ) : (
-                    allWorkflows.filter(w => !deps.find(d => d.wfId === w.id)).map(w => (
-                      <button
-                        key={w.id}
-                        className="trigger-opt-item"
-                        style={{ flexDirection: "row", alignItems: "center" }}
-                        onClick={() => {
-                          setDeps(prev => [...prev, { wfId: w.id, wfName: w.name, wfIcon: w.icon }]);
-                          mark();
-                        }}
-                      >
-                        <span style={{ fontSize: 15 }}>{w.icon}</span> {w.name}
-                      </button>
-                    ))
-                  )}
-                </div>
+            </div>
+
+            <div className="setting-divider" style={{ margin: "14px 0" }} />
+
+            {/* ── Orquestração ── quem avança as etapas: o agente ou um operador
+                 manualmente. Mesmo padrão de linha + drawer do Gatilho. */}
+            <div className="wf-trigger-orch-row">
+              <span className="wf-trigger-orch-label">Orquestração</span>
+              <div className="wf-trigger-orch-value">
+                <button type="button" className="wf-ver-badge-btn" onClick={() => setEditingOrch(true)}>
+                  <span className="wf-ver-badge-label">{ORCH_SHORT_LABEL[orchMode] || currentOrchOpt?.label}</span>
+                  <Icon name="chevron-right" size={14} className="wf-ver-badge-chevron" />
+                </button>
               </div>
-            </div>,
-            document.body
-          )}
+            </div>
+          </section>
 
         </div>
-
       </div>
-    </div>
+
+      {editingTrigger && (
+        <WfChoiceDrawer
+          title="Gatilho"
+          options={TRIGGER_OPTS}
+          selectedKey={trigger}
+          onClose={() => setEditingTrigger(false)}
+          onSelect={(key) => {
+            setTrigger(key); mark();
+            if (key === "order-start") setEditingTrigger(false);
+          }}
+        >
+          {(trigger === "wf-completion" || trigger === "task-completion") && (
+            <div className="setting-field" style={{ marginTop: 16 }}>
+              <label>Workflow de origem</label>
+              {allWorkflows.length === 0 ? (
+                <span className="setting-help">Nenhum outro workflow disponível</span>
+              ) : (
+                <div className="dep-choice-list" style={{ marginTop: 8 }}>
+                  {allWorkflows.map(w => {
+                    const isSelected = triggerWfIds.includes(w.id);
+                    return (
+                      <button
+                        key={w.id}
+                        type="button"
+                        className={`dep-choice-item${isSelected ? " selected" : ""}`}
+                        onClick={() => toggleTriggerWf(w)}
+                      >
+                        <span className="dep-choice-name">{w.name}</span>
+                        {isSelected && <IconCheck size={14} className="dep-choice-check" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+          {trigger === "task-completion" && triggerWfIds.length > 0 && (
+            <div className="setting-field" style={{ marginTop: 10 }}>
+              <label>Tarefa de origem</label>
+              {triggerWfTasks.length === 0 ? (
+                <span className="setting-help">Nenhuma tarefa encontrada nos workflows selecionados</span>
+              ) : (
+                <div className="dep-choice-list" style={{ marginTop: 8 }}>
+                  {triggerWfTasks.map(t => {
+                    const isSelected = triggerTaskId === t.id;
+                    return (
+                      <button
+                        key={t.id}
+                        type="button"
+                        className={`dep-choice-item${isSelected ? " selected" : ""}`}
+                        onClick={() => { setTriggerTaskId(t.id); mark(); }}
+                      >
+                        <span className="dep-choice-copy">
+                          <span className="dep-choice-name">{t.name}</span>
+                          <span className="dep-choice-meta">
+                            {t.stageName}{triggerWfIds.length > 1 ? ` · ${t.wfIcon} ${t.wfName}` : ""}
+                          </span>
+                        </span>
+                        {isSelected && <IconCheck size={14} className="dep-choice-check" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+        </WfChoiceDrawer>
+      )}
+
+      {editingOrch && (
+        <WfChoiceDrawer
+          title="Orquestração"
+          options={ORCH_OPTS}
+          selectedKey={orchMode}
+          onClose={() => setEditingOrch(false)}
+          onSelect={(key) => { setOrchMode(key); mark(); setEditingOrch(false); }}
+        />
+      )}
+
+      {/* ── Dependências ── sessão própria com título nível 1, mesmo padrão
+           "rótulo em negrito + botão com o valor atual" do Gatilho, abrindo
+           um drawer lateral com a lista de workflows para marcar/desmarcar. */}
+      <div className="wf-settings-inline detail-section-block">
+        <SectionTitle as="h1">Dependências</SectionTitle>
+
+        <div className="wf-settings-inline-prose">
+          <section className="wf-settings-card wf-settings-card--flush">
+            <div className="wf-trigger-orch-row">
+              <span className="wf-trigger-orch-label">Dependência</span>
+              <div className="wf-trigger-orch-value">
+                <button
+                  type="button"
+                  className="wf-ver-badge-btn"
+                  disabled={allWorkflows.length === 0}
+                  onClick={() => setEditingDeps(true)}
+                >
+                  <span className="wf-ver-badge-label">
+                    {allWorkflows.length === 0
+                      ? "Nenhum outro workflow disponível"
+                      : deps.length === 0 ? "Nenhum selecionado" : deps.map(d => d.wfName).join(", ")}
+                  </span>
+                  <Icon name="chevron-right" size={14} className="wf-ver-badge-chevron" />
+                </button>
+              </div>
+            </div>
+
+            <div className="setting-divider" style={{ margin: "14px 0" }} />
+
+            <div className="wf-trigger-orch-row">
+              <span className="wf-trigger-orch-label">Desbloqueia</span>
+              <div className="wf-trigger-orch-value">
+                <button
+                  type="button"
+                  className="wf-ver-badge-btn"
+                  disabled={allWorkflows.length === 0}
+                  onClick={() => setEditingUnlocks(true)}
+                >
+                  <span className="wf-ver-badge-label">
+                    {allWorkflows.length === 0
+                      ? "Nenhum outro workflow disponível"
+                      : unlocks.length === 0 ? "Nenhum selecionado" : unlocks.map(d => d.wfName).join(", ")}
+                  </span>
+                  <Icon name="chevron-right" size={14} className="wf-ver-badge-chevron" />
+                </button>
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      {editingDeps && (
+        <WfWorkflowPickerDrawer
+          title="Dependência"
+          workflows={allWorkflows}
+          selected={deps}
+          onToggle={toggleDep}
+          onClose={() => setEditingDeps(false)}
+        />
+      )}
+
+      {editingUnlocks && (
+        <WfWorkflowPickerDrawer
+          title="Desbloqueia"
+          workflows={allWorkflows}
+          selected={unlocks}
+          onToggle={toggleUnlock}
+          onClose={() => setEditingUnlocks(false)}
+        />
+      )}
+    </>
   );
 }
 
@@ -1542,6 +1754,7 @@ function WfVersionHistory({ workflow }) {
 // ── 1-passo detail view ───────────────────────────────────────────────────────
 function WorkflowDetailView1Passo({ workflow, onOpenTask, onOpenStage, onOpenSettings, detailActionsRef, onDirtyChange }) {
   const [stages, setStages] = useState(() => workflow.stages);
+  const [title, setTitle] = useState(workflow.name);
   const [isDirty, setIsDirty] = useState(false);
   const [publishSignal, setPublishSignal] = useState(0);
 
@@ -1617,7 +1830,7 @@ function WorkflowDetailView1Passo({ workflow, onOpenTask, onOpenStage, onOpenSet
   return (
     <>
       <div className="wf-detail-head">
-        <h1 className="detail-title">{workflow.name}</h1>
+        <WfEditableTitle value={title} onChange={(v) => { setTitle(v); markDirty(); }} />
       </div>
 
       {(workflow.version || workflow.wfStatus) && <WfMetaSection workflow={workflow} onOpenSettings={onOpenSettings} />}
@@ -1672,6 +1885,7 @@ function WorkflowDetailView1Passo({ workflow, onOpenTask, onOpenStage, onOpenSet
 // ── 2-passos detail view ──────────────────────────────────────────────────────
 function WorkflowDetailView2Passos({ workflow, onOpenTask, onOpenStage, onOpenSettings, detailActionsRef, onDirtyChange }) {
   const [stages, setStages] = useState(() => workflow.stages);
+  const [title, setTitle] = useState(workflow.name);
   const [isDirty, setIsDirty] = useState(false);
   const [publishSignal, setPublishSignal] = useState(0);
 
@@ -1769,7 +1983,7 @@ function WorkflowDetailView2Passos({ workflow, onOpenTask, onOpenStage, onOpenSe
     <>
       <SectionBlock>
         <div className="wf-detail-head">
-          <h1 className="detail-title">{workflow.name}</h1>
+          <WfEditableTitle value={title} onChange={(v) => { setTitle(v); markDirty(); }} />
         </div>
 
         {(workflow.version || workflow.wfStatus) && <WfMetaSection workflow={workflow} onOpenSettings={onOpenSettings} />}
@@ -1821,6 +2035,37 @@ function WorkflowDetailView2Passos({ workflow, onOpenTask, onOpenStage, onOpenSe
 // ── Flat view: stage colors ───────────────────────────────────────────────────
 const STAGE_COLORS = ["#2962FF", "#7C5CFF", "#F71963", "#22C55E", "#F59E0B", "#06B6D4", "#EF4444", "#8B5CF6"];
 
+// Tabs of the stage config modal, in display order.
+const STAGE_CONFIG_TABS = [
+  { key: "geral",       label: "Geral" },
+  { key: "suppliers",   label: "Suppliers" },
+  { key: "mcpAiw",      label: "MCP e AIW" },
+  { key: "integracoes", label: "Integrações" },
+  { key: "checkpoints", label: "Checkpoints" },
+];
+
+// Checkpoints are read-only/fixed in this prototype — same list for every stage.
+const STAGE_CHECKPOINTS = [{ id: "cp1", label: "Validação inicial", failAction: "Escalar para operador" }];
+
+// Default per-stage config (Suppliers/MCP/Integrações tabs) before the operator opens
+// a given stage for the first time — lazily replaced by initStageConfig(stage) on open.
+const DEFAULT_STAGE_CONFIG = {
+  agentEnabled: false,
+  connectors: [],
+  mcpEnabled: false, mcpServer: "",
+  apiEnabled: false, apiUrl: "",
+  scriptEnabled: false, scriptBody: "",
+};
+
+function initStageConfig(stage) {
+  const seen = new Set();
+  const connectors = (stage.tasks || [])
+    .map(t => t.owner).filter(Boolean)
+    .filter(o => { const ok = !seen.has(o); seen.add(o); return ok; })
+    .map((o, i) => ({ id: `conn-${i}`, label: o, enabled: true }));
+  return { ...DEFAULT_STAGE_CONFIG, connectors };
+}
+
 function getStageIcon(stage) {
   if (!stage) return null;
   if (stage.category === "PAYMENT")  return IconCurrencyCircleDollar;
@@ -1829,6 +2074,19 @@ function getStageIcon(stage) {
     return stage.gate === "deliverable_ready" ? IconNewspaper : IconCube;
   }
   return null;
+}
+
+// Fictitious description shown read-only in the Geral tab — this prototype's data
+// model has no persisted stage-level description field yet.
+function getStageFakeDescription(stage) {
+  if (!stage) return "";
+  if (stage.category === "PAYMENT")
+    return "Etapa responsável pela confirmação e captura do pagamento do pedido junto ao gateway, antes de liberar o fluxo de fulfillment.";
+  if (stage.category === "DELIVERY")
+    return "Etapa responsável pela entrega final do pedido ao cliente, incluindo o acompanhamento até a confirmação de recebimento.";
+  if (stage.category === "FULFILLMENT")
+    return "Etapa responsável pela separação, embalagem e preparação dos itens do pedido para envio.";
+  return "Etapa configurada para este workflow, responsável pelas tarefas listadas em \"Tarefas vinculadas\".";
 }
 
 function getStageColor(stage) {
@@ -1856,217 +2114,283 @@ function getStageIconColor(stage) {
 }
 
 // ── Stage header-only card (used in flat view — no task list inside) ──────────
-function StageHeaderCard({ stage, si, stageColor, onChanged, onRemove, stageDragging, stageDragOver, onStageDragStart, onStageDragOver, onStageDrop, onStageDragEnd }) {
-  const chatAddingTask  = React.useContext(ChatAddingTaskContext);
-  const chatStartAddTask = React.useContext(ChatStartAddTaskContext);
-  const [isConfigOpen, setIsConfigOpen] = useState(false);
-  const [confirmRemove, setConfirmRemove] = useState(false);
-  const [stageName,    setStageName]    = useState(stage.name ?? "");
-  const [responsible,  setResponsible]  = useState("");
-  const [stageCategory, setStageCategory] = useState("");
-  const [agentEnabled, setAgentEnabled] = useState(false);
-  const [checkpoints]  = useState([{ id: "cp1", label: "Validação inicial", failAction: "Escalar para operador" }]);
-  const [connectors, setConnectors] = useState(() => {
-    const seen = new Set();
-    return stage.tasks
-      .map(t => t.owner).filter(Boolean)
-      .filter(o => { const ok = !seen.has(o); seen.add(o); return ok; })
-      .map((o, i) => ({ id: `conn-${i}`, label: o, enabled: true }));
-  });
-  const [mcpEnabled,    setMcpEnabled]    = useState(false);
-  const [mcpServer,     setMcpServer]     = useState("");
-  const [apiEnabled,    setApiEnabled]    = useState(false);
-  const [apiUrl,        setApiUrl]        = useState("");
-  const [scriptEnabled, setScriptEnabled] = useState(false);
-  const [scriptBody,    setScriptBody]    = useState("");
+// Config now lives in a single shared <StageConfigModal> (rendered once by the
+// parent) so the operator can jump between stages without closing the modal.
+function StageHeaderCard({ stage, config, onOpenConfig, stageDragging, stageDragOver, onStageDragStart, onStageDragOver, onStageDrop, onStageDragEnd }) {
+  const StageIcon = getStageIcon(stage);
+  const cfg = config || DEFAULT_STAGE_CONFIG;
+  const activeSuppliers  = cfg.connectors.filter(c => c.enabled).length;
+  const activeMcpAgents  = (cfg.agentEnabled ? 1 : 0) + (cfg.mcpEnabled ? 1 : 0);
 
   return (
     <div
-      className={`stage-flat-card${stageDragging ? " is-dragging" : ""}${stageDragOver ? " drag-over" : ""}${isConfigOpen ? " stage-flat-card--open" : ""}`}
-      draggable={!isConfigOpen}
-      onDragStart={!isConfigOpen ? onStageDragStart : undefined}
+      className={`stage-flat-card${stageDragging ? " is-dragging" : ""}${stageDragOver ? " drag-over" : ""}`}
+      draggable
+      onDragStart={onStageDragStart}
       onDragOver={onStageDragOver}
       onDrop={onStageDrop}
       onDragEnd={onStageDragEnd}
     >
       <div
         className="stage-flat-card-head"
-        onClick={() => setIsConfigOpen(o => !o)}
-        title={isConfigOpen ? "Recolher configurações" : "Editar etapa"}
+        onClick={() => onOpenConfig(stage)}
+        title="Editar etapa"
         role="button"
         tabIndex={0}
-        onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setIsConfigOpen(o => !o); } }}
+        onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onOpenConfig(stage); } }}
       >
-        {(() => { const StageIcon = getStageIcon(stage); return (
-          <div className="stage-flat-card-indicator" style={{ background: getStageColor(stage), color: getStageIconColor(stage) }}>
-            {StageIcon && <StageIcon size={20} />}
-          </div>
-        ); })()}
-        <span className="stage-flat-card-name">{stageName}</span>
-        {isConfigOpen ? (
-          <span className="stage-task-open-btns">
-            <button
-              data-sl-button
-              data-variant="tertiary"
-              data-tone="critical"
-              title="Remover etapa"
-              onClick={e => { e.stopPropagation(); setConfirmRemove(true); }}
-            >
-              <IconTrash size={20} />
-            </button>
-            <button
-              data-sl-button
-              data-variant="secondary"
-              title="Fechar"
-              onClick={e => { e.stopPropagation(); setIsConfigOpen(false); setConfirmRemove(false); }}
-            >
-              <IconCheck size={20} />
-            </button>
+        <div className="stage-flat-card-indicator" style={{ background: getStageColor(stage), color: getStageIconColor(stage) }}>
+          {StageIcon && <StageIcon size={20} />}
+        </div>
+        <div className="stage-flat-card-info">
+          <span className="stage-flat-card-name">{stage.name}</span>
+          {/* Resumo sempre visível — sem precisar abrir o modal para ver a configuração básica */}
+          <span className="stage-flat-card-sub">
+            {activeSuppliers} suppliers ativos
+            <span className="stage-flat-card-sub-dot">•</span>
+            {stage.tasks.length} tarefas
+            <span className="stage-flat-card-sub-dot">•</span>
+            {activeMcpAgents} MCPs e Agentes ativos
           </span>
-        ) : (
-          <Actions>
-            <CiteBtn text={`[Etapa: ${stageName}]`} />
-            <button
-              className="stage-task-action-btn stage-task-edit-btn"
-              title="Editar etapa"
-              onClick={e => { e.stopPropagation(); setIsConfigOpen(true); }}
-            >
-              <IconPencil size={14} />
-            </button>
-          </Actions>
-        )}
+        </div>
       </div>
+    </div>
+  );
+}
 
-      {isConfigOpen && !confirmRemove && (
-        <div className="stage-task-config">
+// ── Stage config modal — shared across all stages, with a lateral tab to jump
+// between them without closing (spec: navegar em todas as etapas e fazer mudanças) ──
+function StageConfigModal({ stages, activeStageId, activeTab, onTabChange, onSelectStage, getConfig, updateConfig, onClose, onRemoveStage, onChanged }) {
+  const [confirmRemove, setConfirmRemove] = useState(false);
 
-          {/* ── Identificação ── */}
-          <section className="wf-settings-card">
-            <div className="wf-settings-title-row">
-              <h3 className="wf-settings-title">Identificação</h3>
-              <Actions card><CiteBtn text={`[Etapa: ${stageName}]`} /></Actions>
-            </div>
-            <div className="field-rows">
-              <div className="field-row">
-                <span className="field-label">Nome da etapa</span>
-                <input
-                  className="stage-prop-input"
-                  value={stageName}
-                  onChange={e => { setStageName(e.target.value); onChanged?.(); }}
-                  onClick={e => e.stopPropagation()}
-                />
-                <Actions><CiteBtn text={`[Nome: ${stageName}]`} /></Actions>
-              </div>
-              <div className="field-row">
-                <span className="field-label">Categoria</span>
-                <input
-                  className="stage-prop-input"
-                  value={stageCategory}
-                  placeholder="Ex: Pagamento, Fulfillment"
-                  onChange={e => { setStageCategory(e.target.value); onChanged?.(); }}
-                  onClick={e => e.stopPropagation()}
-                />
-                <Actions><CiteBtn text={`[Categoria: ${stageCategory || "—"}]`} /></Actions>
-              </div>
-              <div className="field-row">
-                <span className="field-label">Agente AI</span>
-                <button className={`aiw-toggle ${agentEnabled ? "on" : ""}`}
-                  onClick={() => { setAgentEnabled(v => !v); onChanged?.(); }}>
-                  <span className="aiw-toggle-knob" />
+  const activeIdx = stages.findIndex(s => s.id === activeStageId);
+  const stage = stages[activeIdx];
+
+  useEffect(() => {
+    const handler = (e) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [onClose]);
+
+  useEffect(() => { setConfirmRemove(false); }, [activeStageId, activeTab]);
+
+  if (!stage) return null;
+
+  const cfg = getConfig(stage.id);
+  const mark = () => onChanged?.();
+  const patch = (p) => updateConfig(stage.id, curr => ({ ...curr, ...(typeof p === "function" ? p(curr) : p) }));
+
+  return ReactDOM.createPortal(
+    <div
+      className="stage-config-modal-backdrop"
+      onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div className="stage-config-modal" role="dialog" aria-modal="true" aria-label="Configurar etapas">
+        <div className="stage-config-modal-head">
+          <h2 className="stage-config-modal-title">Configurar etapas</h2>
+          <SidebarTooltip label="Fechar" placement="top">
+            <IconButton icon={<Icon name="x" size={18} />} label="Fechar" variant="tertiary" onClick={onClose} />
+          </SidebarTooltip>
+        </div>
+
+        <div className="stage-config-modal-main">
+          {/* Lateral: navegação entre todas as etapas do workflow, sem fechar o modal */}
+          <div className="stage-config-modal-sidebar" role="tablist" aria-label="Etapas do workflow">
+            {stages.map((s, i) => {
+              const SIcon = getStageIcon(s);
+              return (
+                <button
+                  key={s.id ?? i}
+                  role="tab"
+                  aria-selected={s.id === activeStageId}
+                  className={`stage-config-modal-sidebar-item${s.id === activeStageId ? " active" : ""}`}
+                  onClick={() => onSelectStage(s)}
+                >
+                  <span className="stage-config-modal-sidebar-icon" style={{ background: getStageColor(s), color: getStageIconColor(s) }}>
+                    {SIcon && <SIcon size={13} />}
+                  </span>
+                  <span className="stage-config-modal-sidebar-name">{s.name}</span>
                 </button>
-                <Actions><CiteBtn text={`[Agente AI: ${agentEnabled ? "ativo" : "inativo"}]`} /></Actions>
-              </div>
-            </div>
-          </section>
+              );
+            })}
+          </div>
 
-          {/* ── Checkpoints ── */}
-          <section className="wf-settings-card">
-            <div className="wf-settings-title-row">
-              <h3 className="wf-settings-title">Checkpoints</h3>
-              <Actions card><CiteBtn text={`[Checkpoints: ${checkpoints.map(cp => cp.label).join(", ")}]`} /></Actions>
-            </div>
-            <div className="field-rows">
-              {checkpoints.map(cp =>
-                <div key={cp.id} className="field-row">
-                  <span className="field-label">{cp.label}</span>
-                  <span className="field-value-pill disabled">{cp.failAction}</span>
-                  <Actions><CiteBtn text={`[Checkpoint: ${cp.label}]`} /></Actions>
-                </div>
-              )}
-            </div>
-          </section>
-
-          <section className="wf-settings-card">
-            <div className="wf-settings-title-row">
-              <h3 className="wf-settings-title">Conectores</h3>
-              <Actions card><CiteBtn text={`[Conectores: ${connectors.filter(c => c.enabled).map(c => c.label).join(", ") || "nenhum"}]`} /></Actions>
-            </div>
-            <div className="field-rows">
-              {connectors.length === 0 && <span className="stage-connectors-empty">Nenhum conector configurado</span>}
-              {connectors.map(conn => (
-                <div key={conn.id} className="field-row">
-                  <span className="field-label">{conn.label}</span>
-                  <button className={`aiw-toggle ${conn.enabled ? "on" : ""}`}
-                    onClick={() => { setConnectors(prev => prev.map(c => c.id === conn.id ? { ...c, enabled: !c.enabled } : c)); onChanged?.(); }}>
-                    <span className="aiw-toggle-knob" />
-                  </button>
-                  <Actions><CiteBtn text={`[Conector ${conn.label}: ${conn.enabled ? "ativo" : "inativo"}]`} /></Actions>
-                </div>
+          <div className="stage-config-modal-content">
+            <div className="stage-config-modal-tabs" role="tablist">
+              {STAGE_CONFIG_TABS.map(t => (
+                <button
+                  key={t.key}
+                  role="tab"
+                  aria-selected={activeTab === t.key}
+                  className={`stage-config-modal-tab${activeTab === t.key ? " active" : ""}`}
+                  onClick={() => onTabChange(t.key)}
+                >
+                  {t.label}
+                </button>
               ))}
             </div>
-          </section>
 
-          <section className="wf-settings-card">
-            <h3 className="wf-settings-title">Integrações</h3>
-            <div className="field-rows">
-              <div className="field-row">
-                <span className="field-label">Servidor MCP</span>
-                <button className={`aiw-toggle ${mcpEnabled ? "on" : ""}`} onClick={() => { setMcpEnabled(v => !v); onChanged?.(); }}>
-                  <span className="aiw-toggle-knob" />
-                </button>
-                <Actions><CiteBtn text={`[Servidor MCP: ${mcpEnabled ? "ativado" : "desativado"}]`} /></Actions>
-              </div>
-              {mcpEnabled && <InlineField label="Endereço MCP" value={mcpServer} onChange={v => { setMcpServer(v); onChanged?.(); }} placeholder="Nome do servidor MCP" />}
-              <div className="field-row">
-                <span className="field-label">API Externa</span>
-                <button className={`aiw-toggle ${apiEnabled ? "on" : ""}`} onClick={() => { setApiEnabled(v => !v); onChanged?.(); }}>
-                  <span className="aiw-toggle-knob" />
-                </button>
-                <Actions><CiteBtn text={`[API Externa: ${apiEnabled ? "ativada" : "desativada"}]`} /></Actions>
-              </div>
-              {apiEnabled && <InlineField label="URL da API" value={apiUrl} onChange={v => { setApiUrl(v); onChanged?.(); }} placeholder="https://..." />}
-              <div className="field-row">
-                <span className="field-label">Script customizado</span>
-                <button className={`aiw-toggle ${scriptEnabled ? "on" : ""}`} onClick={() => { setScriptEnabled(v => !v); onChanged?.(); }}>
-                  <span className="aiw-toggle-knob" />
-                </button>
-                <Actions><CiteBtn text={`[Script customizado: ${scriptEnabled ? "ativado" : "desativado"}]`} /></Actions>
-              </div>
-              {scriptEnabled && (
-                <div className="field-row field-row--textarea">
-                  <span className="field-label">Script</span>
-                  <textarea className="stage-prop-input" value={scriptBody} rows={4}
-                    onChange={e => { setScriptBody(e.target.value); onChanged?.(); }}
-                    placeholder={"// Lógica customizada em JavaScript\nreturn { status: 'completed' };"}
-                    style={{ fontFamily: "monospace", fontSize: 12, resize: "vertical" }} />
-                  <Actions><CiteBtn text={`[Script: ${scriptBody ? "definido" : "vazio"}]`} /></Actions>
+            <div className="stage-config-modal-body">
+
+              {/* ── Geral (somente leitura) ── */}
+              {activeTab === "geral" && (
+                <div className="stage-task-config">
+                  <section className="wf-settings-card">
+                    <div className="stage-config-modal-title-block">
+                      <h3 className="stage-config-modal-stage-name">{stage.name}</h3>
+                      <p className="stage-config-modal-stage-desc">{getStageFakeDescription(stage)}</p>
+                    </div>
+                  </section>
+
+                  {/* ── Tarefas vinculadas ── */}
+                  <section className="wf-settings-card">
+                    <div className="wf-settings-title-row">
+                      <h3 className="wf-settings-title">Tarefas vinculadas</h3>
+                    </div>
+                    {stage.tasks.length === 0 ? (
+                      <span className="stage-connectors-empty">Nenhuma tarefa vinculada</span>
+                    ) : (
+                      <div className="stage-modal-linked-tasks">
+                        {stage.tasks.map(t => (
+                          <div key={t.id} className="stage-modal-linked-task-row">
+                            <span className="stage-modal-linked-task-name">{t.name}</span>
+                            <span className="field-value-tag">{t.type === "auto" ? "Automático" : "Manual"}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </section>
+
+                  {/* ── Remover etapa ── */}
+                  <button
+                    type="button"
+                    className="stage-task-remove-btn"
+                    onClick={() => setConfirmRemove(true)}
+                  >
+                    <IconTrash size={14} /> Remover etapa
+                  </button>
+                </div>
+              )}
+
+              {/* ── Suppliers ── */}
+              {activeTab === "suppliers" && (
+                <div className="stage-task-config">
+                  <section className="wf-settings-card">
+                    <div className="field-rows">
+                      {cfg.connectors.length === 0 && <span className="stage-connectors-empty">Nenhum conector configurado</span>}
+                      {cfg.connectors.map(conn => (
+                        <div key={conn.id} className="field-row">
+                          <span className="field-label">{conn.label}</span>
+                          <button className={`aiw-toggle ${conn.enabled ? "on" : ""}`}
+                            onClick={() => { patch(c => ({ connectors: c.connectors.map(x => x.id === conn.id ? { ...x, enabled: !x.enabled } : x) })); mark(); }}>
+                            <span className="aiw-toggle-knob" />
+                          </button>
+                          <Actions><CiteBtn text={`[Conector ${conn.label}: ${conn.enabled ? "ativo" : "inativo"}]`} /></Actions>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                </div>
+              )}
+
+              {/* ── MCP e AIW ── */}
+              {activeTab === "mcpAiw" && (
+                <div className="stage-task-config">
+                  <section className="wf-settings-card">
+                    <div className="field-rows">
+                      <div className="field-row">
+                        <span className="field-label">Agente AI</span>
+                        <button className={`aiw-toggle ${cfg.agentEnabled ? "on" : ""}`}
+                          onClick={() => { patch({ agentEnabled: !cfg.agentEnabled }); mark(); }}>
+                          <span className="aiw-toggle-knob" />
+                        </button>
+                        <Actions><CiteBtn text={`[Agente AI: ${cfg.agentEnabled ? "ativo" : "inativo"}]`} /></Actions>
+                      </div>
+                      <div className="field-row">
+                        <span className="field-label">Servidor MCP</span>
+                        <button className={`aiw-toggle ${cfg.mcpEnabled ? "on" : ""}`} onClick={() => { patch({ mcpEnabled: !cfg.mcpEnabled }); mark(); }}>
+                          <span className="aiw-toggle-knob" />
+                        </button>
+                        <Actions><CiteBtn text={`[Servidor MCP: ${cfg.mcpEnabled ? "ativado" : "desativado"}]`} /></Actions>
+                      </div>
+                      {cfg.mcpEnabled && <InlineField label="Endereço MCP" value={cfg.mcpServer} onChange={v => { patch({ mcpServer: v }); mark(); }} placeholder="Nome do servidor MCP" />}
+                    </div>
+                  </section>
+                </div>
+              )}
+
+              {/* ── Integrações ── */}
+              {activeTab === "integracoes" && (
+                <div className="stage-task-config">
+                  <section className="wf-settings-card">
+                    <div className="field-rows">
+                      <div className="field-row">
+                        <span className="field-label">API Externa</span>
+                        <button className={`aiw-toggle ${cfg.apiEnabled ? "on" : ""}`} onClick={() => { patch({ apiEnabled: !cfg.apiEnabled }); mark(); }}>
+                          <span className="aiw-toggle-knob" />
+                        </button>
+                        <Actions><CiteBtn text={`[API Externa: ${cfg.apiEnabled ? "ativada" : "desativada"}]`} /></Actions>
+                      </div>
+                      {cfg.apiEnabled && <InlineField label="URL da API" value={cfg.apiUrl} onChange={v => { patch({ apiUrl: v }); mark(); }} placeholder="https://..." />}
+                      <div className="field-row">
+                        <span className="field-label">Script customizado</span>
+                        <button className={`aiw-toggle ${cfg.scriptEnabled ? "on" : ""}`} onClick={() => { patch({ scriptEnabled: !cfg.scriptEnabled }); mark(); }}>
+                          <span className="aiw-toggle-knob" />
+                        </button>
+                        <Actions><CiteBtn text={`[Script customizado: ${cfg.scriptEnabled ? "ativado" : "desativado"}]`} /></Actions>
+                      </div>
+                      {cfg.scriptEnabled && (
+                        <div className="field-row field-row--textarea">
+                          <span className="field-label">Script</span>
+                          <textarea className="stage-prop-input" value={cfg.scriptBody} rows={4}
+                            onChange={e => { patch({ scriptBody: e.target.value }); mark(); }}
+                            placeholder={"// Lógica customizada em JavaScript\nreturn { status: 'completed' };"}
+                            style={{ fontFamily: "monospace", fontSize: 12, resize: "vertical" }} />
+                          <Actions><CiteBtn text={`[Script: ${cfg.scriptBody ? "definido" : "vazio"}]`} /></Actions>
+                        </div>
+                      )}
+                    </div>
+                  </section>
+                </div>
+              )}
+
+              {/* ── Checkpoints ── */}
+              {activeTab === "checkpoints" && (
+                <div className="stage-task-config">
+                  <section className="wf-settings-card">
+                    <div className="field-rows">
+                      {STAGE_CHECKPOINTS.map(cp =>
+                        <div key={cp.id} className="field-row">
+                          <span className="field-label">{cp.label}</span>
+                          <span className="field-value-pill disabled">{cp.failAction}</span>
+                          <Actions><CiteBtn text={`[Checkpoint: ${cp.label}]`} /></Actions>
+                        </div>
+                      )}
+                    </div>
+                  </section>
                 </div>
               )}
             </div>
-          </section>
+          </div>
         </div>
-      )}
-      {isConfigOpen && confirmRemove && (
-        <div className="stage-task-config-footer">
-          <span className="stage-task-remove-confirm-text">Remover etapa permanentemente?</span>
-          <button className="btn btn-sm btn-ghost" onClick={() => setConfirmRemove(false)}>Cancelar</button>
-          <button className="btn btn-sm btn-danger" onClick={() => onRemove?.()}>
-            <Icon name="x" size={12} /> Remover
-          </button>
-        </div>
-      )}
 
-    </div>
+        {confirmRemove ? (
+          <div className="stage-task-config-footer">
+            <span className="stage-task-remove-confirm-text">Remover etapa permanentemente?</span>
+            <button className="btn btn-sm btn-ghost" onClick={() => setConfirmRemove(false)}>Cancelar</button>
+            <button className="btn btn-sm btn-danger" onClick={() => { onRemoveStage(stage.id); onClose(); }}>
+              <Icon name="x" size={12} /> Remover
+            </button>
+          </div>
+        ) : (
+          <div className="stage-config-modal-footer">
+            <button className="btn btn-sm btn-ghost" onClick={onClose}>Cancelar</button>
+            <button className="btn btn-sm btn-primary" onClick={() => { mark(); onClose(); }}>Salvar</button>
+          </div>
+        )}
+      </div>
+    </div>,
+    document.body
   );
 }
 
@@ -2078,6 +2402,40 @@ function WorkflowDetailViewFlat({ workflow, onOpenTask, onOpenStage, onOpenSetti
   const chatStartAddStage  = React.useContext(ChatStartAddStageContext);
 
   const [stages, setStages] = useState(() => workflow.stages);
+  const [title, setTitle] = useState(workflow.name);
+
+  // Per-stage config (Suppliers/MCP/Integrações) for the shared <StageConfigModal>,
+  // keyed by stage id — lazily initialized the first time a stage's modal opens.
+  const [stageConfigs, setStageConfigs] = useState({});
+  const [openStageId, setOpenStageId] = useState(null);
+  const [stageModalTab, setStageModalTab] = useState("geral");
+
+  const getStageConfig = (stageId) => stageConfigs[stageId] || DEFAULT_STAGE_CONFIG;
+  const updateStageConfig = (stageId, updater) => {
+    setStageConfigs(prev => {
+      const current = prev[stageId] || initStageConfig(stages.find(s => s.id === stageId) || { tasks: [] });
+      const next = typeof updater === "function" ? updater(current) : { ...current, ...updater };
+      return { ...prev, [stageId]: next };
+    });
+  };
+  const ensureStageConfig = (stage) => {
+    setStageConfigs(prev => prev[stage.id] ? prev : { ...prev, [stage.id]: initStageConfig(stage) });
+  };
+  // Opening from a stage card resets to the first tab; switching stages via the
+  // modal's own lateral nav keeps whichever tab the operator was already on.
+  const openStageConfig = (stage) => {
+    ensureStageConfig(stage);
+    setOpenStageId(stage.id);
+    setStageModalTab("geral");
+  };
+  const selectStageInModal = (stage) => {
+    ensureStageConfig(stage);
+    setOpenStageId(stage.id);
+  };
+  const removeStageById = (stageId) => {
+    const idx = stages.findIndex(s => s.id === stageId);
+    if (idx !== -1) removeStage(idx);
+  };
 
   // Flat task list: each entry knows its source stage index (used for the
   // classification indicator). The visual order normally follows stage order,
@@ -2105,7 +2463,11 @@ function WorkflowDetailViewFlat({ workflow, onOpenTask, onOpenStage, onOpenSetti
   const [reorderMode, setReorderMode] = useState(false);
 
   const removeStage = (si) => {
-    setStages(prev => prev.filter((_, i) => i !== si));
+    setStages(prev => {
+      const removedId = prev[si]?.id;
+      if (removedId) setStageConfigs(cfgs => { const { [removedId]: _drop, ...rest } = cfgs; return rest; });
+      return prev.filter((_, i) => i !== si);
+    });
     markDirty();
   };
 
@@ -2187,7 +2549,7 @@ function WorkflowDetailViewFlat({ workflow, onOpenTask, onOpenStage, onOpenSetti
     if (!detailActionsRef) return;
     detailActionsRef.current = {
       addStage: (stageName) => {
-        setStages(prev => [...prev, { name: stageName, tasks: [] }]);
+        setStages(prev => [...prev, { id: "s" + Date.now(), name: stageName, tasks: [] }]);
         markDirty();
       },
       addTask: (stageName, taskName, taskType = "auto", owner = "", visibility = "internal") => {
@@ -2224,7 +2586,7 @@ function WorkflowDetailViewFlat({ workflow, onOpenTask, onOpenStage, onOpenSetti
     <>
       <SectionBlock>
         <div className="wf-detail-head">
-          <h1 className="detail-title">{workflow.name}</h1>
+          <WfEditableTitle value={title} onChange={(v) => { setTitle(v); markDirty(); }} />
         </div>
         {(workflow.version || workflow.wfStatus) && <WfMetaSection workflow={workflow} onOpenSettings={onOpenSettings} />}
       </SectionBlock>
@@ -2236,23 +2598,25 @@ function WorkflowDetailViewFlat({ workflow, onOpenTask, onOpenStage, onOpenSetti
         title="Tarefas"
         actions={
           <>
-            <button
-              className="wf-tasks-reorder-btn"
-              data-sl-button
-              data-variant={reorderMode ? "primary" : "tertiary"}
-              data-has-label
-              onClick={() => setReorderMode(v => !v)}
-            >
-              {reorderMode ? "Concluir" : "Editar ordem"}
-            </button>
-            <IconButton
-              icon={<Icon name="plus" size={16} />}
-              label="Adicionar tarefa"
-              variant="secondary"
-              size="medium"
-              disabled={chatAddingTask || reorderMode}
-              onClick={() => chatStartAddTask?.(stages[0]?.name)}
-            />
+            <SidebarTooltip label={reorderMode ? "Concluir" : "Editar ordem"} placement="top">
+              <IconButton
+                icon={<IconReorder size={16} />}
+                label={reorderMode ? "Concluir" : "Editar ordem"}
+                variant={reorderMode ? "primary" : "tertiary"}
+                size="medium"
+                onClick={() => setReorderMode(v => !v)}
+              />
+            </SidebarTooltip>
+            <SidebarTooltip label="Adicionar tarefa" placement="top">
+              <IconButton
+                icon={<Icon name="plus" size={16} />}
+                label="Adicionar tarefa"
+                variant="tertiary"
+                size="medium"
+                disabled={chatAddingTask || reorderMode}
+                onClick={() => chatStartAddTask?.(stages[0]?.name)}
+              />
+            </SidebarTooltip>
           </>
         }
       >
@@ -2310,12 +2674,15 @@ function WorkflowDetailViewFlat({ workflow, onOpenTask, onOpenStage, onOpenSetti
       <SectionBlock
         title="Etapas"
         actions={
-          <IconButton
-            icon={<Icon name="plus" size={16} />}
-            label="Adicionar etapa"
-            variant="secondary"
-            onClick={() => chatStartAddStage?.()}
-          />
+          <SidebarTooltip label="Adicionar etapa" placement="top">
+            <IconButton
+              icon={<Icon name="plus" size={16} />}
+              label="Adicionar etapa"
+              variant="tertiary"
+              size="medium"
+              onClick={() => chatStartAddStage?.()}
+            />
+          </SidebarTooltip>
         }
       >
         <div className="wf-flat-stages">
@@ -2323,10 +2690,8 @@ function WorkflowDetailViewFlat({ workflow, onOpenTask, onOpenStage, onOpenSetti
             <React.Fragment key={stage.id ?? si}>
               <StageHeaderCard
                 stage={stage}
-                si={si}
-                stageColor={STAGE_COLORS[si % STAGE_COLORS.length]}
-                onChanged={markDirty}
-                onRemove={() => removeStage(si)}
+                config={getStageConfig(stage.id)}
+                onOpenConfig={openStageConfig}
                 stageDragging={stageDraggingIdx === si}
                 stageDragOver={stageDragOverIdx === si}
                 onStageDragStart={e => handleStageDragStart(e, si)}
@@ -2338,6 +2703,21 @@ function WorkflowDetailViewFlat({ workflow, onOpenTask, onOpenStage, onOpenSetti
           ))}
         </div>
       </SectionBlock>
+
+      {openStageId && (
+        <StageConfigModal
+          stages={stages}
+          activeStageId={openStageId}
+          activeTab={stageModalTab}
+          onTabChange={setStageModalTab}
+          onSelectStage={selectStageInModal}
+          getConfig={getStageConfig}
+          updateConfig={updateStageConfig}
+          onClose={() => setOpenStageId(null)}
+          onRemoveStage={removeStageById}
+          onChanged={markDirty}
+        />
+      )}
     </>
   );
 }
@@ -2652,17 +3032,6 @@ function WorkflowBoardCanvas({
         )}
         <span className="canvas-topbar-title">{headerTitle}</span>
         <div className="detail-head-right">
-          {isList && !showWizard && (() => {
-            const activeWfs = AIWData.workflows.filter(w => !w.archived);
-            const totalOrders = AIWData.workflows.reduce((s, w) => s + (w.orders || 0), 0);
-            return (
-              <>
-                <span className="canvas-meta-count"><Icon name="list" size={14} /> {activeWfs.length}</span>
-                <span className="canvas-meta-count"><Icon name="cart" size={14} /> {totalOrders.toLocaleString("pt-BR")}</span>
-                <button className="canvas-topbar-icon" title="Mais opções"><Icon name="more" size={18} /></button>
-              </>
-            );
-          })()}
           {(isDetail || isTask || isStage || isSettings) && detailHasChanges &&
             <button data-sl-button data-variant="primary" data-size="small" data-has-label onClick={() => {
               detailActionsRef.current?.save?.();
@@ -2702,6 +3071,10 @@ function WorkflowBoardCanvas({
 
             const renderExpanded = (w) => {
               const tt = w.stages.reduce((s, st) => s + st.tasks.length, 0);
+              // Visão de tarefas do workflow inteiro (não mais agrupada por etapa) —
+              // um card por tarefa, com chevron entre os cards, igual à lista de
+              // tarefas dentro do detalhe do workflow (.wf-flat-tasks).
+              const allTasks = w.stages.flatMap(st => st.tasks);
               return (
                 <button key={w.id} className="wf-list-card wf-list-card--expanded"
                         onClick={() => setMode({ kind: "detail", workflowId: w.id })}>
@@ -2726,24 +3099,17 @@ function WorkflowBoardCanvas({
                       </button>
                     </span>
                   </div>
-                  <div className="wf-list-stages">
-                    {w.stages.map((stage, si) => (
-                      <React.Fragment key={stage.id}>
-                        <div className="wf-list-stage-col">
-                          <div className="wf-list-stage-head">
-                            <div style={{ padding: '8px 8px', background: 'rgb(247, 248, 250)', borderRadius: '4px' }}>
-                              <span className="wf-list-stage-name">{stage.name}</span>
-                            </div>
-                          </div>
-                          <div className="wf-list-task-list">
-                            {stage.tasks.map((t, ti) => (
-                              <React.Fragment key={t.id}>
-                                {ti > 0 && <div className="wf-list-task-divider" />}
-                                <div className="wf-list-task-item">{t.name}</div>
-                              </React.Fragment>
-                            ))}
-                          </div>
+                  <div className="wf-list-tasks">
+                    {allTasks.map((t, ti) => (
+                      <React.Fragment key={t.id}>
+                        <div className="wf-list-task-card">
+                          <span className="wf-list-task-card-name">{t.name}</span>
                         </div>
+                        {ti < allTasks.length - 1 && (
+                          <span className="wf-list-task-arrow">
+                            <Icon name="chevron-right" size={14} />
+                          </span>
+                        )}
                       </React.Fragment>
                     ))}
                   </div>

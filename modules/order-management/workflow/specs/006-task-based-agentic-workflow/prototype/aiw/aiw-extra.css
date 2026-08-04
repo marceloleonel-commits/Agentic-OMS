@@ -837,19 +837,21 @@
 .detail-head-right { display: flex; align-items: center; gap: 6px; }
 .canvas-name { font-size: 13px; color: var(--fg-2); font-weight: 500; }
 
-/* Task canvas header — v3 canvas-tool topbar parity ([X] · título · [⋮]) */
+/* Task canvas header — mesmas proporções do header do doc de campaigns
+   (vtex-ads-campaign-manager-design-prototype/components/CampaignDocument.tsx):
+   altura 64px, ícone de voltar 28px com canto arredondado, título 20px. */
 .detail-head.canvas-topbar {
   gap: 8px;
   min-height: 64px;
-  padding: 0 12px;
+  padding: 0 20px;
   border-bottom: none;
 }
 .canvas-topbar-title {
   flex: 1;
   min-width: 0;
-  font-size: 16px;
+  font-size: 20px;
   font-weight: 600;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.45px;
   line-height: 1.2;
   color: var(--fg);
   white-space: nowrap;
@@ -858,9 +860,9 @@
 }
 .canvas-topbar-icon {
   flex-shrink: 0;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--sl-radius-2);
   display: grid;
   place-items: center;
   color: var(--fg-2);
@@ -880,6 +882,27 @@
   gap: 44px;
 }
 .detail-title { font: var(--sl-text-display-1); letter-spacing: var(--sl-text-display-1-letter-spacing); margin: 0; text-wrap: pretty; }
+/* Editable workflow title — auto-resizing textarea that reads like an <h1>,
+   mirroring the campaign name field from vtex-ads-campaign-manager-design-prototype. */
+.detail-title-input {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  resize: none;
+  overflow: hidden;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--sl-fg-base);
+  border-radius: var(--sl-radius-2);
+  padding: 2px 8px;
+  margin: -2px -8px;
+  cursor: text;
+  transition: background-color 0.15s ease;
+}
+.detail-title-input:hover { background: var(--sl-bg-base-hover, rgba(0,0,0,0.04)); }
+.detail-title-input:focus { background: var(--sl-bg-base-hover, rgba(0,0,0,0.04)); }
+.detail-title-input::placeholder { color: var(--sl-fg-base-muted); }
 .detail-desc  { font-size: 14px; color: var(--fg-2); line-height: 1.55; margin: 8px 0 0; text-wrap: pretty; }
 
 .detail-fields {
@@ -1249,6 +1272,16 @@
   padding: var(--sl-space-3) var(--sl-space-4);
   height: 2.75rem;
 }
+/* Botão "Publicar" do canvas-topbar — mesma altura/tipografia do pill de
+   status do header do doc de campaigns (h-7, text-[11px] font-semibold) */
+[data-sl-button][data-size="small"] {
+  height: 1.75rem;
+  min-width: unset;
+  padding: 0 10px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: -0.22px;
+}
 [data-sl-button][data-variant="secondary"] {
   background: var(--sl-bg-muted);
   color: var(--sl-fg-muted);
@@ -1310,16 +1343,6 @@
   gap: 4px;
   font-size: 13px; font-weight: 500;
   display: inline-flex; align-items: center;
-}
-[data-sl-button][data-variant="tertiary"][data-has-label].wf-tasks-reorder-btn {
-  padding-right: 10px;
-}
-/* Keep the reorder button's height/font/padding consistent across variants (tertiary ↔ primary) */
-.wf-tasks-reorder-btn[data-has-label] {
-  height: 2rem;
-  padding: 0 10px;
-  font-size: 13px;
-  font-weight: 500;
 }
 [data-sl-button][data-variant="tertiary"][data-tone="critical"] {
   color: var(--sl-fg-critical);
@@ -2408,7 +2431,7 @@
 
 .person-avatar {
   display: inline-grid; place-items: center;
-  width: 28px; height: 28px; border-radius: 50%;
+  width: 20px; height: 20px; border-radius: 50%;
   aspect-ratio: 1 / 1;
   flex-shrink: 0;
   background: linear-gradient(135deg, #5d6c83, #2a3f5e);
@@ -2774,28 +2797,11 @@
   border-radius: var(--sl-radius-2, 0.5rem);
   overflow: hidden;
 }
-.wf-list-stage-head {
-  padding: 8px 12px 0;
-  background: #fff;
-}
 .wf-list-stage-name {
   font-size: 12px; font-weight: 500;
   color: var(--fg-2);
   white-space: normal;
   word-break: break-word;
-}
-.wf-list-task-list {
-  display: flex; flex-direction: column;
-  padding: 2px 0;
-}
-.wf-list-task-divider {
-  height: 1px; background: var(--border);
-  margin: 0 12px;
-}
-.wf-list-task-item {
-  padding: 8px 16px;
-  font-size: 11.5px; color: var(--fg-2);
-  white-space: normal; word-break: break-word;
 }
 .wf-list-stage-arrow {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -2810,6 +2816,39 @@
 .wf-list-stage-arrow svg {
   border-radius: 2px;
 }
+
+/* Task summary section — mesma ideia do wf-list-stages, mas um card por
+   tarefa (não agrupado por etapa) com chevron entre os cards, para ficar
+   igual à visão de tarefas dentro do detalhe do workflow (.wf-flat-tasks). */
+.wf-list-tasks {
+  display: flex; flex-wrap: wrap; align-items: center;
+  gap: 6px;
+  padding: 16px 12px;
+  margin: 0 0 32px;
+  border-radius: 16px;
+  background: var(--bg-soft);
+}
+.wf-list-task-card {
+  display: flex; align-items: center;
+  padding: 10px 12px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--sl-radius-2, 0.5rem);
+}
+.wf-list-task-card-name {
+  font-size: 12.5px; font-weight: 500;
+  color: var(--fg);
+  white-space: nowrap;
+}
+.wf-list-task-arrow {
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+  color: var(--fg-4, #d1d5db);
+  padding: 4px;
+  background-color: var(--bg-muted);
+  border-radius: 4px;
+}
+.wf-list-task-arrow svg { border-radius: 2px; }
 /* ── Documento layout overrides ─────────────────────────────────── */
 .wf-list--documento { gap: 32px; }
 .wf-list--documento .wf-list-card {
@@ -3099,7 +3138,7 @@
 }
 .setting-field { display: flex; flex-direction: column; gap: 8px; }
 .setting-field label {
-  font-size: 13px; font-weight: 500; color: var(--fg);
+  font-size: 14px; font-weight: 600; color: var(--fg);
 }
 .setting-help { font-size: 12px; color: var(--fg-3); }
 .setting-ends {
@@ -3289,13 +3328,6 @@ body.resizing-x .split-resizer::before { background: var(--primary); }
 .detail-head.no-border { border-bottom: none; }
 
 /* Canvas head — meta counts (replaces the Run button) */
-.canvas-meta-count {
-  display: inline-flex; align-items: center; gap: 4px;
-  font-size: 12.5px;
-  color: var(--fg-3);
-  padding: 0 2px;
-}
-
 /* Run button next to follow-up task */
 .task-run-btn {
   width: 22px; height: 22px;
@@ -4185,7 +4217,6 @@ sl-tag[data-color="blue"] {
   transition: background .1s;
 }
 .stage-flat-card-head:hover { background: #fff; }
-.stage-flat-card--open .stage-flat-card-head { background: #fff; }
 .stage-flat-card-head:hover .stage-task-chevron {
   box-shadow: 0px 2px 8px 0px rgba(0, 0, 0, 0.2);
   color: var(--fg);
@@ -4203,8 +4234,14 @@ sl-tag[data-color="blue"] {
   align-items: center;
   justify-content: center;
 }
-.stage-flat-card-name {
+.stage-flat-card-info {
   flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.stage-flat-card-name {
   font: var(--sl-text-body);
   letter-spacing: var(--sl-text-body-letter-spacing);
   color: var(--sl-fg-base);
@@ -4213,14 +4250,27 @@ sl-tag[data-color="blue"] {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.stage-flat-card-sub {
+  font-size: 12.5px;
+  color: var(--fg-3);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.stage-flat-card-sub-dot { flex-shrink: 0; }
 .stage-flat-card-count {
   font-size: 10.5px;
   color: var(--fg-3);
   background: var(--bg-muted);
   border: 1px solid var(--border);
   border-radius: 10px;
-  padding: 1px 7px;
+  padding: 3px 8px;
   flex-shrink: 0;
+  white-space: nowrap;
 }
 .stage-flat-card-chevron {
   flex-shrink: 0;
@@ -4232,6 +4282,237 @@ sl-tag[data-color="blue"] {
 .stage-flat-card-chevron.open { transform: rotate(180deg); }
 .stage-flat-card .stage-task-config {
   border-top: none;
+}
+
+/* ── Stage config modal (replaces the old inline expand/collapse) ────────── */
+.stage-config-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 17, 21, .5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  animation: fadeIn .15s ease-out;
+}
+.stage-config-modal {
+  display: flex;
+  flex-direction: column;
+  width: 760px;
+  max-width: calc(100% - 32px);
+  height: 640px;
+  max-height: calc(100vh - 64px);
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  animation: popIn .18s cubic-bezier(.2,.8,.3,1.2);
+}
+.stage-config-modal-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.stage-config-modal-title {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font: var(--sl-text-display-3);
+  letter-spacing: var(--sl-text-display-3-letter-spacing);
+  color: var(--fg);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Body: lateral stage nav on the left, tabs + content on the right */
+.stage-config-modal-main {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  overflow: hidden;
+}
+.stage-config-modal-sidebar {
+  flex-shrink: 0;
+  min-height: 0;
+  width: 200px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 0;
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  background: #fff;
+}
+.stage-config-modal-sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 0px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--fg-2);
+  text-align: left;
+  cursor: pointer;
+  transition: background .12s, color .12s;
+}
+.stage-config-modal-sidebar-item:hover { background: var(--bg-muted); }
+.stage-config-modal-sidebar-item.active {
+  background: var(--bg-muted);
+  color: var(--fg);
+}
+.stage-config-modal-sidebar-icon {
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.stage-config-modal-sidebar-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.stage-config-modal-content {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.stage-config-modal-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 20px;
+}
+.stage-config-modal-body .stage-task-config {
+  padding: 0;
+}
+.stage-config-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+/* Tabs inside the stage config modal (Geral / Suppliers / MCP e AIW / Integrações / Checkpoints) */
+.stage-config-modal-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  overflow-x: auto;
+}
+.stage-config-modal-tab {
+  display: inline-flex;
+  align-items: center;
+  padding: 10px 2px;
+  margin-right: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--fg-3);
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color .12s, border-color .12s;
+}
+.stage-config-modal-tab:last-child { margin-right: 0; }
+.stage-config-modal-tab:hover { color: var(--fg); }
+.stage-config-modal-tab.active {
+  padding-top: 16px;
+  padding-bottom: 16px;
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+  font-weight: 600;
+}
+
+/* Geral tab — read-only field display */
+/* Nome/descrição da etapa não são editáveis aqui — exibidos como título +
+   texto, em vez de um field-row (que sugeriria edição inline). */
+.stage-config-modal-title-block {
+  padding: 0 0 16px;
+  border-bottom: none;
+  margin-bottom: 4px;
+}
+.stage-config-modal-stage-name {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--fg);
+  margin: 0 0 4px;
+}
+.stage-config-modal-stage-desc {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--fg-2);
+  margin: 0;
+}
+/* "Remover etapa" é uma ação simples (mesmo padrão do "Remover tarefa"),
+   não precisa do destaque de um card de perigo */
+.stage-task-config > .stage-task-remove-btn { margin-top: 16px; }
+.field-value-text {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--fg-2);
+}
+.stage-modal-toggle-copy {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.stage-modal-toggle-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--fg);
+}
+.stage-modal-toggle-sub {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--fg-3);
+}
+.aiw-toggle--readonly {
+  cursor: default;
+  opacity: .85;
+}
+
+/* Tarefas vinculadas — read-only list, one task per line */
+.stage-modal-linked-tasks {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.stage-modal-linked-task-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--bg-soft);
+}
+.stage-modal-linked-task-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  color: var(--fg);
 }
 
 /* Flat task list */
@@ -4441,24 +4722,28 @@ sl-tag[data-color="blue"] {
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 20px;
 }
-.wf-settings-inline-cards {
-  display: flex;
-  gap: 8px;
+.wf-settings-inline-divider {
+  height: 1px;
+  background: var(--border);
 }
-.wf-settings-inline-card {
-  flex: 1;
-  min-width: 0;
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 16px;
-  background: #fff;
+/* Gatilho/Dependências render as two standalone cards, one below the other,
+   separated by .wf-settings-inline-divider (a plain line, not another card). */
+.wf-settings-inline-prose > .wf-settings-card {
   border: 1px solid var(--border);
-  border-radius: 12px;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+  padding: 20px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+/* Gatilho/Orquestração — sem a moldura de card, padding horizontal zerado
+   (mesma leitura "solta" da linha "Segmentar por" das campaigns, sem caixa). */
+.wf-settings-inline-prose > .wf-settings-card.wf-settings-card--flush {
+  border: none;
+  box-shadow: none;
+  padding-left: 0;
+  padding-right: 0;
+  padding-top: 16px;
+  padding-bottom: 0;
 }
 .wf-card-chevron {
   position: absolute;
@@ -4470,36 +4755,112 @@ sl-tag[data-color="blue"] {
   pointer-events: none;
   transition: opacity 0.15s, box-shadow 0.15s;
 }
-.wf-settings-inline-card:hover .wf-card-chevron {
-  opacity: 1;
-  pointer-events: auto;
-  box-shadow: 0px 2px 8px 0px rgba(0, 0, 0, 0.12);
+
+/* Gatilho — selectable big cards, one per activation mode */
+.trigger-choice-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
-.wf-settings-inline-card:hover .stage-task-action-btn {
-  opacity: 1;
-  pointer-events: auto;
+.trigger-choice-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: #fff;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color .15s, box-shadow .15s, background .15s, filter .15s;
 }
-/* Override global display:none on field-cite-btn inside wf cards */
-.wf-settings-inline-card .field-cite-btn {
-  display: inline-flex;
+.trigger-choice-card:hover { border-color: var(--border-strong); box-shadow: 0 0 0 3px var(--bg-muted); filter: grayscale(1); }
+.trigger-choice-card.selected { border-color: var(--fg); background: var(--bg-muted); }
+.trigger-choice-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
 }
-.wf-settings-inline-card .field-cite-btn.stage-task-action-btn:hover {
-  background: var(--bg-soft);
-  color: var(--fg);
+.trigger-choice-copy .setting-row-title { font-size: 14px; }
+.trigger-choice-copy .setting-row-desc  { font-size: 12px; }
+/* Collapsed read-only summary of the currently selected trigger option
+   (also reused by the Dependências questions when collapsed) */
+.trigger-summary-row {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding-top: 2px;
 }
-.wf-settings-inline-card-label {
-  font-size: 13px;
-  font-weight: 600;
-  text-transform: capitalize;
-  letter-spacing: 0;
-  color: var(--fg);
+/* Linhas de Gatilho/Orquestração — rótulo em negrito + botão com o valor
+   atual, mesmo padrão da linha "Segmentar por" da Segmentação (campaigns),
+   em vez do título+descrição empilhados do .trigger-summary-row. */
+.wf-trigger-orch-row {
+  display: flex;
+  align-items: center;
+  gap: 20px;
 }
-.wf-settings-inline-card-sub {
+.wf-trigger-orch-label {
+  flex: 0 0 140px;
+  width: 140px;
   font-size: 14px;
-  font-weight: 500;
-  color: var(--fg-3);
-  margin-top: 1px;
+  font-weight: 600;
+  color: var(--fg);
 }
+.wf-trigger-orch-value {
+  flex: 1;
+  min-width: 0;
+}
+.dep-summary-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+/* Dependências — toggleable workflow list, reused for "depende de" and "desbloqueia" */
+.dep-choice-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 4px;
+}
+.dep-choice-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color .15s, background .15s, color .15s;
+}
+.dep-choice-item:hover { border-color: var(--border-strong); background: var(--bg-soft); }
+.dep-choice-item.selected { border-color: var(--primary); background: var(--primary-soft); color: var(--primary); font-weight: 500; }
+/* Mesmo tamanho de fonte do meta da linha de tarefa (.stage-task-meta-text) */
+.dep-choice-name { flex: 1; min-width: 0; font-size: 12px; }
+.dep-choice-check { flex-shrink: 0; color: var(--primary); }
+/* Item com nome + meta em duas linhas (ex.: tarefa de origem do gatilho,
+   onde a etapa/workflow de origem aparece como legenda abaixo do nome) */
+.dep-choice-copy { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.dep-choice-meta { font-size: 11px; color: var(--fg-3); }
+.dep-choice-item.selected .dep-choice-meta { color: var(--primary); }
+
+/* Dropdown flutuante do "Editar" do Gatilho/Dependências — ancorado ao
+   .trigger-summary-row (position:relative), mesmo padrão do menu rápido da
+   tarefa: flutua sobre o card em vez de empurrar as linhas seguintes. */
+.wf-inline-edit-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 400px;
+  max-width: calc(100vw - 48px);
+  max-height: 360px;
+  overflow-y: auto;
+  cursor: default;
+}
+.wf-inline-edit-dropdown .trigger-dropdown-section { padding: 14px; }
+
 .wf-settings-inline-quick-edit {
   display: inline-flex;
   align-items: center;
@@ -4526,14 +4887,6 @@ sl-tag[data-color="blue"] {
   font-weight: 400;
   font-family: var(--sl-font-family-sans);
   color: var(--sl-fg-base-soft);
-}
-.wf-settings-inline-token {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--fg);
-}
-.wf-settings-inline-token--purple {
-  color: #7c3aed;
 }
 .wf-settings-inline-section {
   padding: 16px 16px 8px;
@@ -4679,7 +5032,7 @@ sl-tag[data-color="blue"] {
   align-items: center;
   padding: 2px 8px;
   border-radius: 4px;
-  background: var(--bg-soft, #f4f5f8);
+  background-color: rgba(255, 255, 255, 1);
   font-size: 12px;
   color: var(--fg-2);
 }
@@ -4712,16 +5065,6 @@ sl-tag[data-color="blue"] {
   margin: 0;
   font-size: 13px; color: var(--fg-3); line-height: 1.5;
 }
-.wf-settings-edit-btn {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 0 14px; height: 32px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: #fff; color: var(--fg-2);
-  font-size: 13px; font-weight: 500;
-  cursor: pointer; flex-shrink: 0;
-}
-.wf-settings-edit-btn:hover { background: var(--bg-soft); color: var(--fg); }
 .wf-settings-dl {
   display: flex; flex-direction: column; gap: 0;
   border: none;
@@ -4769,6 +5112,13 @@ sl-tag[data-color="blue"] {
   flex-direction: column;
   gap: 0;
 }
+.wf-settings-card--danger {
+  border: 1px solid var(--sl-color-red-3);
+  border-radius: var(--radius-lg);
+  background: var(--sl-bg-critical);
+  padding: 14px 16px;
+}
+.wf-settings-card--danger .stage-modal-toggle-title { color: var(--sl-color-red-11); }
 .wf-settings-title {
   font: var(--sl-text-display-3);
   letter-spacing: var(--sl-text-display-3-letter-spacing);
@@ -5014,9 +5364,9 @@ sl-tag[data-color="blue"] {
 }
 .trigger-dropdown-section { padding: 12px; }
 .trigger-dropdown-label {
-  font-size: 12px; font-weight: 600; color: var(--fg);
+  font-size: 12px; font-weight: 400; color: var(--fg);
   text-transform: capitalize; letter-spacing: 0; margin-bottom: 8px;
-  padding: 4px 8px;
+  padding: 4px 0 0;
 }
 .trigger-opt-list { display: flex; flex-direction: column; gap: 2px; }
 .trigger-opt-item {
@@ -5034,13 +5384,14 @@ sl-tag[data-color="blue"] {
 }
 .trigger-orch-btn {
   flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 5px;
-  padding: 5px 8px; border-radius: 5px; font-size: 12px; cursor: pointer;
+  padding: 8px 8px; border-radius: 5px; font-size: 12px; cursor: pointer;
   border: 1px solid var(--border); background: transparent; color: var(--fg-2);
   transition: all .1s;
 }
 .trigger-orch-btn svg { display: none; }
+.trigger-orch-btn:hover:not(.selected) { border-color: var(--border-strong); }
 .trigger-orch-btn.selected {
-  border-color: var(--primary); background: var(--primary-soft); color: var(--primary); font-weight: 500;
+  border-color: var(--sl-fg-base); background: var(--bg-muted); color: var(--fg); font-weight: 500;
 }
 
 .dep-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 4px; }
@@ -5503,6 +5854,9 @@ button.stage-add-task-btn[data-sl-button][data-variant="tertiary"][data-has-labe
   z-index: 5;
   background: var(--bg-soft);
 }
+.stage-task--open:hover {
+  background: var(--bg-soft);
+}
 .stage-task--open .stage-task-chevron {
   box-shadow: none;
   background: transparent;
@@ -5587,6 +5941,9 @@ button.stage-add-task-btn[data-sl-button][data-variant="tertiary"][data-has-labe
 .stage-task-edit-btn--fixed {
   margin-left: auto;
   flex-shrink: 0;
+}
+.stage-task-edit-btn--fixed[data-sl-button]:hover {
+  color: var(--fg-2);
 }
 .stage-task-action-btn--danger:hover {
   color: var(--sl-color-red-9, #EC3727);
@@ -5729,10 +6086,15 @@ button.stage-add-task-btn[data-sl-button][data-variant="tertiary"][data-has-labe
   padding-bottom: 0;
   margin-bottom: 0;
 }
+/* Card do bloco título (nome/descrição da etapa, somente leitura) não tem
+   divisor próprio — a separação visual já vem do espaçamento entre seções. */
+.stage-task-config .wf-settings-card:has(> .stage-config-modal-title-block) {
+  border-bottom: none;
+}
 .stage-task-config .wf-settings-card + .wf-settings-card {
   margin-top: 16px;
 }
-.stage-task-config .wf-settings-card:last-child {
+.stage-task-config .wf-settings-card:last-of-type {
   border-bottom: none;
   padding-bottom: 4px;
 }
@@ -5825,6 +6187,7 @@ button.stage-add-task-btn[data-sl-button][data-variant="tertiary"][data-has-labe
   border-top: none;
   background: var(--sl-bg-critical);
   animation: stage-task-footer-in 0.18s ease-out both;
+  flex-shrink: 0;
 }
 .stage-task-remove-btn {
   display: inline-flex;
@@ -5832,11 +6195,11 @@ button.stage-add-task-btn[data-sl-button][data-variant="tertiary"][data-has-labe
   gap: 5px;
   font-size: 12.5px;
   font-weight: 500;
-  color: var(--fg-3);
+  color: #DC2626;
   background: transparent;
   border: none;
   cursor: pointer;
-  padding: 4px 6px;
+  padding: 8px 6px;
   border-radius: 4px;
   transition: color .12s, background .12s;
 }
@@ -6383,11 +6746,6 @@ button.stage-add-task-btn[data-sl-button][data-variant="tertiary"][data-has-labe
   padding: 8px 14px 8px 0;
   display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
 }
-.wf-meta-ver {
-  font-weight: 600;
-  font-size: 14px;
-  color: var(--fg);
-}
 .wf-meta-badge {
   display: inline-flex; align-items: center;
   font-size: 11.5px; font-weight: 500;
@@ -6765,69 +7123,97 @@ button.stage-add-task-btn[data-sl-button][data-variant="tertiary"][data-has-labe
   font-size: 12px;
 }
 
-/* ── Version history popup ───────────────────────────────────────────── */
-.wf-ver-hist-btn {
+/* ── Version badge — pill button that opens the version history modal,
+   mirroring the "Segmentar por" pill from vtex-ads-campaign-manager-design-prototype ── */
+.wf-ver-badge-btn {
   display: inline-flex;
   align-items: center;
-  justify-content: flex-start;
-  gap: 0;
-  padding: 0;
-  border-radius: 6px;
-  color: var(--fg-3);
-  transition: background 0.12s, color 0.12s;
-  margin-left: 0;
+  gap: 6px;
+  padding: 6px 10px;
+  border: none;
+  border-radius: 8px;
+  background: var(--bg-soft, #f8f8f8);
+  transition: background 0.15s ease;
 }
-.wf-ver-hist-btn:hover,
-.wf-ver-hist-btn--active {
-  background: var(--bg-soft);
+button.wf-ver-badge-btn {
+  cursor: pointer;
+}
+button.wf-ver-badge-btn:hover {
+  background: var(--border, #ebebeb);
+}
+.wf-ver-badge-btn--static {
+  cursor: default;
+}
+.wf-ver-badge-icon {
+  color: var(--fg-3);
+  flex-shrink: 0;
+}
+.wf-ver-badge-label {
+  font-size: 13px;
+  font-weight: 400;
   color: var(--fg);
 }
-.wf-ver-hist-btn .wf-meta-hist-count {
+.wf-ver-badge-count.wf-meta-hist-count {
   margin-left: 0;
 }
-.wf-ver-hist-inline {
+.wf-ver-badge-chevron {
+  color: var(--fg-3);
+  flex-shrink: 0;
+}
+
+/* Drawer lateral genérico — mesmo padrão de painel lateral usado em
+   "Segmentar por" (campaigns), abrindo pela direita em vez de um modal
+   centralizado. Reutilizado pelo histórico de versões (WfVersionHistoryModal)
+   e pelos seletores de opção única (WfChoiceDrawer: Gatilho, Orquestração). */
+.wf-side-drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 17, 21, .5);
+  display: flex;
+  align-items: stretch;
+  justify-content: flex-end;
+  z-index: 200;
+  animation: fadeIn .15s ease-out;
+}
+.wf-side-drawer {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  width: 460px;
+  max-width: calc(100% - 32px);
+  height: 100%;
+  background: #fff;
+  box-shadow: -16px 0 40px rgba(15,17,21,.08);
+  overflow: hidden;
+  animation: wf-side-drawer-in .22s cubic-bezier(.2,.8,.3,1);
 }
-.wf-ver-hist-popup {
-  position: fixed;
-  z-index: 400;
-  width: 440px;
-  max-height: 480px;
-  overflow-y: auto;
-  background: var(--bg, #fff);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.13), 0 2px 8px rgba(0,0,0,0.07);
-  padding: 0 20px 20px;
+@keyframes wf-side-drawer-in {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
 }
-.wf-ver-hist-popup-footer {
-  border-top: 1px solid var(--border);
-  padding-top: 12px;
-  margin-top: 4px;
+.wf-side-drawer .stage-config-modal-head {
+  height: 64px;
+  padding: 0 20px;
+  border-bottom: none;
 }
-.wf-ver-hist-see-all {
-  height: auto;
-  padding: 4px 8px;
-}
-.wf-ver-hist-popup-head {
+.wf-side-drawer .stage-config-modal-title {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 12px 0 10px;
-  border-bottom: 1px solid var(--border);
-  margin-bottom: 12px;
-  position: sticky;
-  top: 0;
-  background: var(--bg, #fff);
-  z-index: 1;
-}
-.wf-ver-hist-popup-title {
-  font-size: 15px;
+  gap: 8px;
+  font: inherit;
+  font-size: 20px;
   font-weight: 600;
-  color: var(--fg);
+  letter-spacing: -0.45px;
 }
+.wf-side-drawer-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 4px 20px 20px;
+}
+.wf-side-drawer-body .wf-meta-hist-entry:first-child { border-top: none; }
+/* WfChoiceDrawer (Gatilho, Orquestração) — mesma lista de cards de opção
+   usada no dropdown flutuante anterior, agora dentro do drawer. */
+.wf-side-drawer-body .trigger-choice-list:first-child { margin-top: 12px; }
 
 /* ── Workflow metadata section (WfMetaSection) ───────────────────────── */
 .wf-meta-section {
@@ -6860,11 +7246,6 @@ button.stage-add-task-btn[data-sl-button][data-variant="tertiary"][data-has-labe
   color: var(--fg-3);
   padding: 8px 14px 8px 0;
   display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
-}
-.wf-meta-ver {
-  font-weight: 600;
-  font-size: 14px;
-  color: var(--fg);
 }
 .wf-meta-badge {
   display: inline-flex; align-items: center;

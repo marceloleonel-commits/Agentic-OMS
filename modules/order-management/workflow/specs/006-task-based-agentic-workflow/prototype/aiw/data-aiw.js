@@ -502,7 +502,7 @@ window.AIWData = (function () {
       // Pagamento (indicador azul) para fins de classificação/gate.
       flatOrder: ["ed-1", "ed-3", "ed-4", "ed-5", "ed-6", "ed-2", "ed-7", "ed-8", "ed-9", "ed-10", "ed-11"],
       stages: [
-        { id: "ed-s1", name: "Confirmação de Pagamento", gate: "payment_settled", linkedToNext: true, category: "PAYMENT", tasks: [
+        { id: "ed-s1", name: "Pagamento", gate: "payment_settled", linkedToNext: true, category: "PAYMENT", tasks: [
           { id: "ed-1", name: "Autorização de Pagamento", type: "auto",   owner: "Adyen",          desc: "Pré-autorização do valor junto à adquirente/gateway." },
           { id: "ed-2", name: "Captura de Pagamento",     type: "auto",   owner: "Adyen",          desc: "Confirmação e captura definitiva do valor autorizado, após o pedido estar pronto para envio." },
         ]},
@@ -549,7 +549,7 @@ window.AIWData = (function () {
           deltas: [{ entity: "general config", change: "changed", detail: "Workflow criado" }] },
       ],
       stages: [
-        { id: "rl-s1", name: "Confirmação de Pagamento", gate: "payment_settled", linkedToNext: true, category: "PAYMENT", tasks: [
+        { id: "rl-s1", name: "Pagamento", gate: "payment_settled", linkedToNext: true, category: "PAYMENT", tasks: [
           { id: "rl-1", name: "Autorização de Pagamento", type: "auto", owner: "Cielo", desc: "Pré-autorização do valor junto à adquirente/gateway." },
           { id: "rl-2", name: "Captura de Pagamento",     type: "auto", owner: "Cielo", desc: "Confirmação e captura definitiva do valor autorizado." },
         ]},
@@ -586,7 +586,7 @@ window.AIWData = (function () {
           deltas: [{ entity: "general config", change: "changed", detail: "Workflow criado" }] },
       ],
       stages: [
-        { id: "vd-s1", name: "Confirmação de Pagamento", gate: "payment_settled", linkedToNext: true, category: "PAYMENT", tasks: [
+        { id: "vd-s1", name: "Pagamento", gate: "payment_settled", linkedToNext: true, category: "PAYMENT", tasks: [
           { id: "vd-1", name: "Autorização de Pagamento", type: "auto", owner: "Stripe",      desc: "Pré-autorização do valor junto à adquirente/gateway." },
           { id: "vd-2", name: "Captura de Pagamento",     type: "auto", owner: "Stripe",      desc: "Confirmação e captura definitiva do valor autorizado." },
         ]},
@@ -830,7 +830,7 @@ window.AIWData = (function () {
             { name:"invoice",        connector:"fiscal-service",   status:"pending" },
           ],
           stages:[
-            { icon:"💳", label:"Confirmação de Pagamento", status:"done" },
+            { icon:"💳", label:"Pagamento", status:"done" },
             { icon:"🏪", label:"Handling na Loja",          status:"done" },
             { icon:"🧾", label:"Faturamento",               status:"pending" },
             { icon:"🤝", label:"Entrega em Loja",           status:"pending" },
@@ -852,7 +852,7 @@ window.AIWData = (function () {
             { name:"invoice",        connector:"fiscal-service",   status:"done" },
           ],
           stages:[
-            { icon:"💳", label:"Confirmação de Pagamento", status:"done" },
+            { icon:"💳", label:"Pagamento", status:"done" },
             { icon:"📦", label:"Handling",                 status:"done" },
             { icon:"🧾", label:"Faturamento",              status:"done" },
             { icon:"🚚", label:"Entrega",                  status:"done" },
@@ -896,7 +896,7 @@ window.AIWData = (function () {
             { name:"invoice",        connector:"fiscal-service",   status:"done" },
           ],
           stages:[
-            { icon:"💳", label:"Confirmação de Pagamento", status:"done" },
+            { icon:"💳", label:"Pagamento", status:"done" },
             { icon:"📦", label:"Handling",                 status:"done" },
             { icon:"🧾", label:"Faturamento",              status:"done" },
             { icon:"🚚", label:"Entrega",                  status:"done" },
@@ -978,7 +978,7 @@ window.AIWData = (function () {
             { name:"invoice",        connector:"fiscal-service",    status:"error"   },
           ],
           stages:[
-            { icon:"💳", label:"Confirmação de Pagamento", status:"done"    },
+            { icon:"💳", label:"Pagamento", status:"done"    },
             { icon:"💻", label:"Ativação Digital",          status:"active"  },
             { icon:"📧", label:"Entrega Digital",           status:"pending" },
           ],
@@ -1006,7 +1006,7 @@ window.AIWData = (function () {
             { name:"invoice",        connector:"fiscal-service",    status:"pending" },
           ],
           stages:[
-            { icon:"💳", label:"Confirmação de Pagamento", status:"done"    },
+            { icon:"💳", label:"Pagamento", status:"done"    },
             { icon:"📦", label:"Handling",                 status:"active"  },
             { icon:"🧾", label:"Faturamento",              status:"pending" },
             { icon:"🚚", label:"Entrega",                  status:"pending" },
@@ -1064,7 +1064,7 @@ window.AIWData = (function () {
             { name:"invoice",        connector:"fiscal-service",    status:"done"   },
           ],
           stages:[
-            { icon:"💳", label:"Confirmação de Pagamento", status:"done"   },
+            { icon:"💳", label:"Pagamento", status:"done"   },
             { icon:"📦", label:"Handling",                 status:"done"   },
             { icon:"🧾", label:"Faturamento",              status:"done"   },
             { icon:"🚚", label:"Entrega",                  status:"active" },
@@ -1106,7 +1106,7 @@ window.AIWData = (function () {
             { name:"invoice",        connector:"fiscal-service",    status:"pending" },
           ],
           stages:[
-            { icon:"💳", label:"Confirmação de Pagamento", status:"done"    },
+            { icon:"💳", label:"Pagamento", status:"done"    },
             { icon:"📦", label:"Handling",                 status:"active"  },
             { icon:"🧾", label:"Faturamento",              status:"pending" },
             { icon:"🚚", label:"Entrega",                  status:"pending" },
@@ -1182,7 +1182,7 @@ window.AIWData = (function () {
             { name:"carrier",    connector:"jadlog",          status:"pending" },
           ],
           stages:[
-            { icon:"💳", label:"Confirmação de Pagamento", status:"done"    },
+            { icon:"💳", label:"Pagamento", status:"done"    },
             { icon:"📋", label:"Validação de Receita",     status:"active"  },
             { icon:"🔬", label:"Produção da Lente",        status:"pending" },
             { icon:"📦", label:"Montagem e Manuseio",      status:"pending" },
@@ -1240,7 +1240,7 @@ window.AIWData = (function () {
             { name:"invoice",   connector:"fiscal-service",  status:"pending" },
           ],
           stages:[
-            { icon:"💳", label:"Confirmação de Pagamento", status:"done"    },
+            { icon:"💳", label:"Pagamento", status:"done"    },
             { icon:"🏪", label:"Handling na Loja",          status:"done"    },
             { icon:"🧾", label:"Faturamento",               status:"pending" },
             { icon:"🤝", label:"Entrega em Loja",           status:"pending" },
@@ -1295,7 +1295,7 @@ window.AIWData = (function () {
             { name:"invoice",   connector:"fiscal-service",  status:"done" },
           ],
           stages:[
-            { icon:"💳", label:"Confirmação de Pagamento", status:"done" },
+            { icon:"💳", label:"Pagamento", status:"done" },
             { icon:"📦", label:"Handling",                 status:"done" },
             { icon:"🧾", label:"Faturamento",              status:"done" },
             { icon:"🚚", label:"Entrega",                  status:"done" },

@@ -48,15 +48,17 @@ function Slider({ value, onChange, min = 0, max = 100, suffix = "%" }) {
 }
 
 /* ── IconButton (Shoreline-compatible icon-only button) ─────────────────── */
-function IconButton({ icon, label, variant = "tertiary", size = "large", onClick, className, disabled, ...rest }) {
+// forwardRef so it can be wrapped in <SidebarTooltip> (which clones its child
+// and attaches a ref to measure position).
+const IconButton = React.forwardRef(function IconButton({ icon, label, variant = "tertiary", size = "large", onClick, className, disabled, ...rest }, ref) {
   return (
     <button
+      ref={ref}
       data-sl-button="true"
       data-icon-button="true"
       data-variant={variant}
       data-size={size}
       aria-label={label}
-      title={label}
       onClick={onClick}
       disabled={disabled}
       className={className}
@@ -65,7 +67,7 @@ function IconButton({ icon, label, variant = "tertiary", size = "large", onClick
       {icon}
     </button>
   );
-}
+});
 
 /* ── Dropdown (click-outside aware menu) ────────────────────────────────── */
 function Dropdown({ trigger, children, align = "right" }) {
