@@ -219,7 +219,7 @@ Delivery Promise team integrates Operational Capacity signals into checkout, tar
 Capacity releases automatically when orders are invoiced ahead of their delivery date. Developed in conjunction with Pick & Pack — both modules can serve as data sources for the release trigger. Shares the indicators infrastructure from Phase 2.
 *Unlocks: accurate delivery promise for high-performing stores; additional order volume for efficient sellers; path toward 30%+ omnichannel customer adoption of automatic capacity release.*
 
-*See:* `specs/automatic-capacity-release.md`
+*See:* `specs/dynamic-capacity.md`
 
 **Note on Fulfillment Agent**
 The Fulfillment Agent is not a phase of Operational Capacity — it is a consumer of it. The observability infrastructure built in Phase 2 (order-level allocation, event log, utilization history, structured data access) is what enables the agent to read capacity context, identify gaps, and create resolution tasks. There is no separate phase to build for the agent: the investment is in making the data structured and accessible. The agent layer is built and owned outside this module.
@@ -234,7 +234,7 @@ The vision document defines the strategic direction for Operational Capacity. Ea
 |---|---|---|---|
 | `specs/past-capacity-observability.md` | Past capacity history, order-level allocation, event log, value metrics, data access | Phase 2 | Pending |
 | `specs/proactive-limit-recommendations.md` | Data-driven limit suggestions based on utilization patterns | Phase 3 | Pending |
-| `specs/automatic-capacity-release.md` | Automatic capacity release on invoice, Pick & Pack integration | Phase 4 | Pending |
+| `specs/dynamic-capacity.md` | Capacity release based on order progress (invoice trigger), configured vs. consumed visibility | Phase 4 | Draft |
 
 Additional specs will be created for Delivery Promise integration (Phase 3) and Fulfillment Agent integration (Phase 5) as those phases are scoped.
 

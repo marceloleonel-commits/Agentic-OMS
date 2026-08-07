@@ -242,7 +242,7 @@ All three new public endpoints must be fully documented on developers.vtex.com b
 
 - **Value metrics dashboard** (orders protected count, delivery promise extensions count, utilization trends) — these are a separate capability in Phase 2 and will be specced independently.
 - **Proactive limit recommendations** — Phase 3.
-- **Dynamic capacity release** — Phase 4, `automatic-capacity-release.md`.
+- **Dynamic capacity release** — Phase 4, `dynamic-capacity.md`.
 - **Delivery Promise integration** — owned by the Delivery Promise team, Phase 3.
 - **Fulfillment Agent integration** — the observability infrastructure built here enables the agent to consume this data, but the agent layer is built and owned outside this module.
 - **Real-time streaming or webhooks** — API access in this spec is pull-based (REST GET). Event-driven access (webhooks, streams) is not in scope.
