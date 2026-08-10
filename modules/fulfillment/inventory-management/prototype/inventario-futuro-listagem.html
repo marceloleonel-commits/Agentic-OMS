@@ -1,0 +1,2311 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Inventário futuro — Listagem (protótipo)</title>
+
+<!--
+  Protótipo da listagem do módulo Inventário futuro, nas duas granularidades:
+  por lote e por SKU.
+
+  Fidelidade visual vem do CSS real do Shoreline, carregado do unpkg com a
+  versão pinada. A estilização do Shoreline é feita por seletores de atributo
+  (data-sl-*), então funciona em HTML estático, sem React e sem build.
+
+  A versão está pinada porque os atributos data-sl-* não são API pública
+  documentada para escrita manual: uma atualização do Shoreline pode mudá-los.
+-->
+<link rel="stylesheet" href="https://unpkg.com/@vtex/shoreline@1.12.13/dist/themes/sunrise/styles.css">
+
+<!--
+  O token --sl-font-family-sans pede Inter, mas o Shoreline não empacota o
+  webfont: no Admin real quem carrega a fonte é o shell. Sem isto o protótipo
+  cai no fallback do sistema e muda de aparência em cada máquina — só quem tem
+  Inter instalado localmente veria o resultado certo.
+-->
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap">
+
+<style>
+  /* ─────────────────────────────────────────────────────────────
+     Cromo do Admin (topbar e sidebar).
+     Não existe componente Shoreline para isso, então é CSS próprio —
+     mas todo valor vem de token --sl-*. Portado do shell mockado em React.
+     ───────────────────────────────────────────────────────────── */
+
+  /* O reset do Shoreline manda os controles herdarem a fonte
+     (input, button { font: inherit }) e o base.css só define cor e fundo do
+     body — a família de fonte fica por conta da aplicação. Sem declarar aqui,
+     todo o cromo do Admin herda a serifada padrão do navegador. */
+  body { margin: 0; font-family: var(--sl-font-family-sans); }
+
+  .shell { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+
+  /* No Figma a barra tem 60px: 36px de conteúdo mais 12px de padding em cima e
+     embaixo. min-height em vez de height deixa a borda de baixo ficar fora dos
+     60px, como no desenho, em vez de comer 1px do conteúdo. */
+  .topbar {
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    gap: var(--sl-space-4);
+    min-height: 60px; padding: var(--sl-space-3);
+    background: var(--sl-bg-base);
+    border-bottom: var(--sl-border-base);
+  }
+  .topbar-start { display: flex; align-items: center; gap: var(--sl-space-2); flex: 1; min-width: 0; }
+  .topbar-center { display: flex; justify-content: center; flex: 0 1 400px; min-width: 0; }
+  .topbar-end { display: flex; align-items: center; justify-content: flex-end; gap: var(--sl-space-1); flex: 1; min-width: 0; }
+
+  /* Os botões da barra são Button e IconButton tertiary de verdade: altura,
+     padding, raio, texto em text-action e estados de hover vêm todos do
+     Shoreline. A única regra que a topbar dispensa é o min-width de 100px do
+     Button — no Figma "Help" tem 75px, ou seja, largura do conteúdo. */
+  .topbar [data-sl-button] { min-width: auto; }
+
+  .logo-account { display: flex; align-items: center; gap: var(--sl-space-1); height: 36px; }
+  .logo {
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    width: 36px; height: 36px; border-radius: var(--sl-radius-2);
+  }
+  .account {
+    display: flex; align-items: center; height: 36px;
+    padding: 0 var(--sl-space-3); border-radius: var(--sl-radius-2);
+    font: var(--sl-text-emphasis-font); letter-spacing: var(--sl-text-emphasis-letter-spacing);
+    color: var(--sl-fg-base); white-space: nowrap;
+  }
+
+  /* 400x36 no Figma, fundo bg-muted (5% de cinza sobre o branco) e o texto de
+     apoio em text-action, não em text-body. */
+  .topbar-search {
+    display: flex; align-items: center; justify-content: center; gap: var(--sl-space-2);
+    width: 100%; max-width: 400px; height: 36px;
+    padding: var(--sl-space-2) var(--sl-space-3);
+    background: var(--sl-bg-muted); border-radius: var(--sl-radius-2);
+    color: var(--sl-fg-muted); cursor: text;
+    font: var(--sl-text-action-font); letter-spacing: var(--sl-text-action-letter-spacing);
+    white-space: nowrap;
+  }
+  /* Sem width/height: cada ícone fica no tamanho para o qual foi desenhado —
+     20px no Normal, 16px no Small. Como o traço é non-scaling-stroke, encolher
+     um ícone de 20 para 16 mantém 1,5px de traço sobre um desenho menor, o que
+     muda o peso aparente e tira os detalhes da grade de pixels. */
+  .topbar-search svg { flex-shrink: 0; }
+
+  /* A caixa de 36px alinha o avatar com os botões vizinhos; o círculo de 24px é
+     o avatar em si. O Figma aponta direto para color-blue-3 e color-blue-10. */
+  .avatar {
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    width: 36px; height: 36px;
+  }
+  .avatar-initial {
+    display: flex; align-items: center; justify-content: center;
+    width: 24px; height: 24px; border-radius: var(--sl-radius-full);
+    background: var(--sl-color-blue-3); color: var(--sl-color-blue-10);
+    font: var(--sl-text-action-font); letter-spacing: var(--sl-text-action-letter-spacing);
+  }
+
+  .body { display: flex; flex: 1; min-height: 0; }
+
+  /* 280px é a largura total, borda inclusa: box-sizing: border-box vem do reset
+     do Shoreline. Os 20px de padding no topo colocam o primeiro item a 20px da
+     borda do container, e os 20px na lateral é o que recua a pílula do item
+     selecionado, deixando as linhas com 240px. */
+  .sidebar {
+    display: flex; flex-direction: column; flex-shrink: 0;
+    width: 280px;
+    padding: var(--sl-space-5) var(--sl-space-5) var(--sl-space-6);
+    background: var(--sl-bg-base-soft);
+    border-right: var(--sl-border-base);
+    overflow-x: hidden; overflow-y: auto;
+    transition: width 180ms ease, border-right-width 180ms ease, padding 180ms ease;
+  }
+
+  /* Em coluna flex, todo filho encolhe por padrão quando a lista não cabe. Sem
+     travar isso, os itens perdem altura em telas mais baixas — 34px viravam
+     30,14px numa janela de 760px — e a nav sai da grade de 4px. Quem cede
+     espaço tem de ser a rolagem da sidebar, não a altura dos itens. */
+  .sidebar > * { flex-shrink: 0; }
+
+  /* Recolhida pelo hamburger: o Admin esconde a navegação inteira e o
+     conteúdo assume a largura toda. box-sizing: border-box vem do reset do
+     Shoreline, então os itens colapsam junto com o padding. */
+  /* O padding lateral também zera: com box-sizing: border-box, width 0 ainda
+     deixaria os 40px de padding ocupando espaço. */
+  .nav-collapsed .sidebar { width: 0; padding-left: 0; padding-right: 0; border-right-width: 0; }
+  .sidebar::-webkit-scrollbar { width: 6px; }
+  .sidebar::-webkit-scrollbar-thumb { background: var(--sl-color-gray-4); border-radius: var(--sl-radius-full); }
+
+  /* Área de 36px no item e no sub-item. Os tokens de texto trazem 14px/20px:
+     13px não existe na escala do Shoreline, que só tem 12, 14, 16, 20 e 24px.
+
+     O raio de 6px não é token do Shoreline — fica entre radius-1 (4px) e
+     radius-2 (8px) — mas é o que o Figma usa: calibrei o avanço do canto do
+     print contra pílulas de 4, 6, 8 e 12px, e só o de 6px bate. */
+  .nav-item, .nav-sub-item {
+    display: flex; align-items: center;
+    width: 100%; height: 36px;
+    border: none; border-radius: 6px; background: transparent;
+    font: var(--sl-text-body-font); letter-spacing: var(--sl-text-body-letter-spacing);
+    color: var(--sl-fg-muted); text-align: left; cursor: pointer;
+  }
+  /* Sobre uma superfície soft, gray-1 de hover seria invisível: é a mesma cor do
+     fundo. O hover neutro do Shoreline é uma camada de gray-12 a 5%, que escurece
+     qualquer superfície por baixo. */
+  .nav-item:hover, .nav-sub-item:hover {
+    background: var(--sl-bg-muted-plain-hover); color: var(--sl-fg-muted-hover);
+  }
+
+  /* O ícone encosta na borda esquerda da linha, e o rótulo começa 20px depois
+     dele: é o que o print mostra, ícone a 20px da borda da nav e rótulo a 60px.
+     Os 4px à direita são o respiro do caret. Os 4px de baixo são a folga entre
+     itens — o passo do print é 40px no item e 36px no sub-item, que é contíguo. */
+  .nav-item {
+    gap: var(--sl-space-5);
+    padding-right: var(--sl-space-1);
+    margin-bottom: var(--sl-space-1);
+  }
+  /* O ícone herda a cor do item, então acompanha o hover junto com o rótulo. */
+  .nav-item svg { flex-shrink: 0; }
+  .nav-item-label { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .nav-item-expanded .nav-item-label {
+    font: var(--sl-text-emphasis-font); letter-spacing: var(--sl-text-emphasis-letter-spacing);
+    color: var(--sl-fg-base);
+  }
+  .caret { display: flex; align-items: center; color: var(--sl-fg-base-soft); }
+
+  /* 40px = os 20px do ícone mais os 20px de gap, para o sub-item alinhar com o
+     rótulo do item. No print os dois nascem no mesmo x. */
+  .nav-sub-item {
+    padding: 0 var(--sl-space-1) 0 40px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+
+  /* O item selecionado é uma pílula recuada 20px de cada lado, o que vem do
+     padding da própria sidebar. A cor medida no print é #eaeaea, que é
+     exatamente gray-12 a 5% sobre a superfície soft — ou seja, a camada que o
+     Shoreline chama de hover, não de pressed. Mantenho o valor do Figma e uso a
+     camada de 10% no hover, senão passar o mouse no item ativo não daria
+     retorno nenhum. */
+  .nav-sub-item-active {
+    background: var(--sl-bg-muted-plain-hover); color: var(--sl-fg-accent);
+    font: var(--sl-text-emphasis-font); letter-spacing: var(--sl-text-emphasis-letter-spacing);
+  }
+  .nav-sub-item-active:hover {
+    background: var(--sl-bg-muted-plain-pressed); color: var(--sl-fg-accent);
+  }
+
+  /* 20px acima e 8px abaixo, alinhado com os sub-itens: no print o bloco do
+     rótulo ocupa 44px entre a última linha de um grupo e a primeira do outro. */
+  .nav-group-label {
+    padding: var(--sl-space-5) 0 var(--sl-space-2) 40px;
+    font: var(--sl-text-caption-1-font); letter-spacing: var(--sl-text-caption-1-letter-spacing);
+    color: var(--sl-fg-base-soft);
+  }
+
+  /* Respiro entre grupos: no print são 24px entre a última linha do grupo
+     "Inventário" e o item seguinte, que é o respiro de 20px mais os 4px de folga
+     que todo item já carrega. Um sub-item não tem folga embaixo, então aqui os
+     24px vêm inteiros deste margin. */
+  .nav-item-group-start { margin-top: var(--sl-space-6); }
+
+  .content { flex: 1; min-width: 0; overflow-y: auto; background: var(--sl-bg-base); }
+
+  /* O padding do cabeçalho vem do Container + Content do próprio Shoreline
+     (ver a marcação de [data-sl-page-header-container]), não de regra própria. */
+
+  /* ─────────────────────────────────────────────────────────────
+     Layout da listagem
+     ───────────────────────────────────────────────────────────── */
+
+  /* Busca, filtros, tabela e paginação vivem dentro de [data-sl-collection] e
+     [data-sl-collection-row], que são os contêineres oficiais da listagem: uma
+     pilha vertical com gap e linhas flex. Nenhum dos dois tem borda, fundo ou
+     raio — a tabela do Admin não é um cartão. */
+
+  /* A busca encolhe antes da paginação: o Shoreline não impede o rótulo
+     "1 — 25 de 74" de quebrar, então quem cede espaço é o campo de busca. */
+  .toolbar-end { display: flex; align-items: center; gap: var(--sl-space-5); flex-shrink: 0; }
+  .list-search { flex: 1 1 300px; min-width: 200px; max-width: 340px; }
+
+  /* Dois botões, não Tab: Tab pressupõe um painel montado por aba e estado
+     próprio de cada painel, e as duas visões compartilham de propósito a mesma
+     busca, os mesmos filtros e a mesma paginação. */
+  .segmented { display: flex; gap: var(--sl-space-1); }
+
+  /* Posicionamento do popover é responsabilidade do React Aria no Shoreline.
+     Em HTML estático, faço à mão — a aparência continua vindo do CSS oficial. */
+  .filter { position: relative; }
+  .filter-popover { position: absolute; top: calc(100% + var(--sl-space-2)); left: 0; display: none; }
+  .filter[data-open="true"] .filter-popover { display: block; }
+
+  /* Mesma ancoragem à mão para o Calendar que o DatePicker abre. Ele fica com a
+     largura que os sete dias pedem, então é mais largo que o popover de filtro e
+     sobra para a direita — é o mesmo bottom-start do componente, que também não
+     se limita à largura do campo. O min-width de 320px do DatePicker não caberia
+     nos 260px do popover; ele é custom property justamente para ser ajustado. */
+  .date-picker { position: relative; width: 100%; }
+  .date-picker [data-sl-date-picker-input] { --sl-datepicker-min-width: 0; }
+  .calendar-popover { position: absolute; top: calc(100% + var(--sl-space-2)); left: 0; display: none; }
+  .date-picker[data-open="true"] .calendar-popover { display: block; }
+
+  /* Mesma ancoragem à mão para o ContextualHelp do cabeçalho "Destino". No
+     Shoreline o popover é levado para o body por portal, então nunca herda o
+     white-space: nowrap da célula de cabeçalho — aqui ele é filho da célula, e
+     sem desfazer o nowrap o texto sairia numa linha só. */
+  .header-help { position: relative; display: flex; }
+  .header-help-popover {
+    position: absolute; top: calc(100% + var(--sl-space-2)); left: 0;
+    display: none; white-space: normal;
+  }
+  .header-help[data-open="true"] .header-help-popover { display: block; }
+
+  /* Intervalo de data e de quantidade não são FilterItem: o Filter do Shoreline
+     não tem primitiva para intervalo. Nosso aqui é só o arranjo em par — cada
+     campo é Field + Label + Input, os dois empilhados num Stack, e o aviso de
+     intervalo invertido é um FieldError. Nada disso precisa de CSS local. As
+     listas de opção usam data-sl-filter-list e data-sl-filter-item. */
+
+  /* Desvio deliberado do CSS que o Shoreline publica hoje: o hover do item
+     responde no tipo do item, não na linha. Num item de múltipla escolha quem
+     reage é a caixa, com os mesmos estados do Checkbox. O CSS do Filter mostra
+     essa migração pela metade — ele declara o fundo de pressed e de item ativo
+     e, três regras abaixo, desfaz os dois, deixando só o hover da linha para
+     trás. Como o <style> daqui está fora de @layer, ele vence a camada
+     sl-components sem precisar de especificidade extra. */
+  [data-sl-filter-item]:hover,
+  [data-sl-filter-item]:active {
+    background: var(--sl-bg-muted-plain);
+    color: var(--sl-fg-base);
+  }
+  [data-sl-filter-item]:hover [data-sl-filter-item-check] {
+    border: var(--sl-border-base-strong-hover);
+  }
+  /* Marcada, a caixa fica coberta pelo indicador, que esconde a borda sob um
+     anel de 1px da própria cor de fundo. Por isso o anel acompanha o fundo em
+     cada estado, senão a borda antiga reapareceria por baixo. */
+  [data-sl-filter-item]:hover [data-sl-filter-item-check-indicator] {
+    background: var(--sl-bg-accent-strong-hover);
+    box-shadow: 0 0 0 var(--sl-filter-item-check-border-width) var(--sl-bg-accent-strong-hover);
+  }
+  [data-sl-filter-item]:active [data-sl-filter-item-check-indicator] {
+    background: var(--sl-bg-accent-strong-pressed);
+    box-shadow: 0 0 0 var(--sl-filter-item-check-border-width) var(--sl-bg-accent-strong-pressed);
+  }
+
+  /* Rodapé de carregamento da lista de destinos. O Shoreline não tem esse
+     elemento porque não tem scroll infinito em filtro; o spinner é dele. */
+  .filter-list-more {
+    display: flex;
+    justify-content: center;
+    padding: var(--sl-space-3) var(--sl-space-0);
+    color: var(--sl-fg-base-soft);
+  }
+
+  /* 20px da primeira linha + 4px de gap + 16px da segunda = 40px, que com os
+     12px de padding da densidade default fecham a linha de 64px do Shoreline. */
+  .cell-stack { display: flex; flex-direction: column; gap: var(--sl-space-1); min-width: 0; }
+  .cell-soft { font: var(--sl-text-caption-1-font); color: var(--sl-fg-base-soft); }
+  .num { justify-content: flex-end; text-align: right; }
+  .muted { color: var(--sl-fg-base-soft); }
+
+  /* 16px entre as colunas da direita. A densidade default do Shoreline aplica
+     12px nos quatro lados, e o vão entre dois conteúdos é a soma dos paddings
+     vizinhos: 24px. Para chegar a 16px, o grupo da direita usa 8px na lateral.
+     O padding vertical continua em 12px, que é o que sustenta a linha de 64px. */
+  [data-sl-table] [data-sl-table-cell]:nth-child(n + 2),
+  [data-sl-table] [data-sl-table-header-cell]:nth-child(n + 2) {
+    padding-left: var(--sl-space-2);
+    padding-right: var(--sl-space-2);
+  }
+  /* A borda externa fica nos 12px da densidade, senão o menu de cada linha sai
+     do alinhamento com a paginação e com o cabeçalho da página. */
+  [data-sl-table] [data-sl-table-cell]:last-child,
+  [data-sl-table] [data-sl-table-header-cell]:last-child {
+    padding-right: var(--sl-space-3);
+  }
+
+  .lot-cell { display: flex; align-items: center; gap: var(--sl-space-2); min-width: 0; }
+  .lot-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /* O botão de expandir é o IconButton do Shoreline, sem CSS próprio: os estados
+     de hover, pressed, foco e desabilitado vêm da variante tertiary. */
+
+  /* Miniatura mais pilha de texto: a mesma célula na linha filha da visão por
+     lote e na linha da visão por SKU. */
+  .sku-cell, .product-cell { display: flex; align-items: center; gap: var(--sl-space-3); min-width: 0; }
+
+  /* Só a linha filha recua: 28px levam o SKU até depois do botão de expandir do
+     lote, que tem 36px e, com o Bleed de -8px de cada lado, deixa 20px na
+     célula, mais o gap de 8px. A visão por SKU não tem botão de expandir. */
+  .sku-cell { padding-left: 28px; }
+  .sku-thumb {
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    width: 36px; height: 36px; border-radius: var(--sl-radius-2);
+    background: var(--sl-color-gray-2); color: var(--sl-color-gray-8);
+  }
+
+  /* O Figma desenha a imagem do produto em 44px, o que somado aos 12px de
+     padding da densidade default daria uma linha de 68px. 40px é o maior
+     quadro que fecha exatamente os 64px que a Table prescreve. */
+  .product-thumb {
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    width: 40px; height: 40px; border-radius: var(--sl-radius-2);
+    background: var(--sl-color-gray-2); color: var(--sl-color-gray-8);
+  }
+
+  .row-child [data-sl-table-cell] { background: var(--sl-bg-base-soft); }
+
+  /* Fora do Shoreline: o Figma trata lote aberto e seus SKUs como um bloco só.
+     Por isso a linha do lote perde a borda de baixo quando está aberta, e a
+     última filha fecha o bloco só com o arredondamento e o fundo cinza, sem
+     borda — a mudança de cor já demarca onde o bloco termina.
+     As linhas são display: contents, então o raio vai nas células das pontas. */
+  [data-sl-table-row][data-expanded="true"] > [data-sl-table-cell],
+  .row-child-last > [data-sl-table-cell] { border-bottom: none; }
+
+  .row-child-last > [data-sl-table-cell]:first-child { border-bottom-left-radius: 12px; }
+  .row-child-last > [data-sl-table-cell]:last-child { border-bottom-right-radius: 12px; }
+</style>
+</head>
+
+<body>
+<div class="shell">
+
+  <header class="topbar">
+    <div class="topbar-start">
+      <button data-sl-button data-sl-icon-button data-variant="tertiary" data-size="normal"
+              id="btn-menu" aria-label="Menu" aria-expanded="true" aria-controls="sidebar">
+        <span data-sl-button-content>
+          <i data-icon="list"></i>
+        </span>
+      </button>
+      <div class="logo-account">
+        <span class="logo">
+          <!-- Desenho exportado do próprio Figma: o logo não é um ícone do
+               Shoreline, então não sai da biblioteca de ícones. -->
+          <svg width="24" height="20.571" viewBox="0 0 23.9997 20.571" fill="none" role="img" aria-label="VTEX">
+            <path d="M22.2027 0C23.5561 0.000285555 24.4223 1.4451 23.7876 2.64355L14.8042 19.5898C14.1104 20.8999 12.2379 20.8974 11.5464 19.5859L9.58157 15.8574L8.01516 18.8125C7.91354 19.0049 7.76172 19.166 7.57571 19.2783C7.38966 19.3906 7.17665 19.4502 6.95949 19.4502C6.74231 19.4502 6.52936 19.3906 6.34328 19.2783C6.1572 19.166 6.0045 19.0049 5.90285 18.8125L0.137229 7.87207C0.0413395 7.6895 -0.00548147 7.48456 0.000510567 7.27832C0.00657233 7.07223 0.0651566 6.87087 0.171409 6.69434C0.277712 6.5178 0.427859 6.37193 0.606956 6.27051C0.786036 6.16912 0.98821 6.11537 1.19387 6.11523H4.44387L2.65188 2.71191C2.00181 1.48068 2.89122 0 4.28078 0H22.2027ZM5.73782 6.10059C5.60089 6.10101 5.46625 6.13726 5.34719 6.20508C5.22822 6.27291 5.12854 6.37061 5.05813 6.48828C4.9878 6.60595 4.94849 6.73982 4.94485 6.87695C4.94122 7.01418 4.97353 7.15017 5.03762 7.27148L8.87356 14.5498C8.94122 14.6775 9.04196 14.7848 9.16555 14.8594C9.28928 14.934 9.43132 14.9736 9.57571 14.9736C9.7201 14.9736 9.86211 14.934 9.98586 14.8594C10.1096 14.7848 10.2111 14.6777 10.2788 14.5498L14.1519 7.24023C14.2144 7.12219 14.2461 6.99005 14.2427 6.85645C14.2392 6.72261 14.2011 6.59132 14.1323 6.47656C14.0636 6.36192 13.9662 6.26709 13.8501 6.20117C13.7339 6.13525 13.6018 6.10059 13.4683 6.10059H5.73782Z" fill="#E6175C"/>
+          </svg>
+        </span>
+        <span class="account">account</span>
+      </div>
+    </div>
+
+    <div class="topbar-center">
+      <div class="topbar-search">
+        <i data-icon="magnifying-glass-small"></i>
+        <span>Search VTEX</span>
+      </div>
+    </div>
+
+    <div class="topbar-end">
+      <button data-sl-button data-variant="tertiary" data-size="normal">
+        <span data-sl-button-content>
+          Visit store
+          <i data-icon="arrow-up-right-small"></i>
+        </span>
+      </button>
+      <button data-sl-button data-variant="tertiary" data-size="normal">
+        <span data-sl-button-content>
+          <i data-icon="question"></i>
+          Help
+        </span>
+      </button>
+      <div class="avatar"><span class="avatar-initial">N</span></div>
+    </div>
+  </header>
+
+  <div class="body">
+    <nav class="sidebar" id="sidebar">
+      <button class="nav-item">
+        <i data-icon="chart-bar"></i>
+        <span class="nav-item-label">Dashboards</span>
+      </button>
+      <button class="nav-item">
+        <i data-icon="shopping-cart-simple"></i>
+        <span class="nav-item-label">Orders</span>
+      </button>
+
+      <button class="nav-item nav-item-expanded">
+        <i data-icon="tag"></i>
+        <span class="nav-item-label">Catalog</span>
+        <!-- Seção aberta: o Admin mostra o caret para cima. -->
+        <span class="caret"><i data-icon="caret-up-small"></i></span>
+      </button>
+
+      <button class="nav-sub-item">Products &amp; SKUs</button>
+      <button class="nav-sub-item">Categories</button>
+      <button class="nav-sub-item">Brands</button>
+      <button class="nav-sub-item">Collections</button>
+      <button class="nav-sub-item">List Types</button>
+      <button class="nav-sub-item">Custom Product Attributes</button>
+      <button class="nav-sub-item">Import and Export</button>
+      <button class="nav-sub-item">Reports</button>
+      <button class="nav-sub-item">Reviews</button>
+      <button class="nav-sub-item">Suppliers</button>
+      <button class="nav-sub-item">Assembly Options</button>
+
+      <div class="nav-group-label">Inventário</div>
+      <button class="nav-sub-item">Inventário físico</button>
+      <button class="nav-sub-item nav-sub-item-active" aria-current="page">Inventário futuro</button>
+
+      <button class="nav-item nav-item-group-start">
+        <i data-icon="megaphone"></i>
+        <span class="nav-item-label">Promotions</span>
+      </button>
+      <button class="nav-item">
+        <i data-icon="cube"></i>
+        <span class="nav-item-label">Shipping</span>
+      </button>
+      <button class="nav-item">
+        <i data-icon="layout"></i>
+        <span class="nav-item-label">Storefront</span>
+      </button>
+      <button class="nav-item">
+        <i data-icon="storefront"></i>
+        <span class="nav-item-label">Marketplace</span>
+      </button>
+    </nav>
+
+    <main class="content">
+      <div data-sl-page>
+
+        <!-- PageHeader do Shoreline = Container > Content (narrow) > header >
+             [data-sl-page-header]. É o Content que dá o padding, por container
+             query: 40px na horizontal e 32px na vertical a partir de 800px. -->
+        <div data-sl-container>
+          <header data-sl-content data-narrow="true" data-sl-page-header-container>
+            <div data-sl-page-header>
+              <div data-sl-page-header-row>
+                <h1 data-sl-heading data-variant="display1" data-sl-page-heading>Inventário futuro</h1>
+                <div data-sl-stack data-horizontal="true" style="--sl-stack-space: var(--sl-space-4)">
+                  <!-- Cada ação vai num Bleed de -8px no topo e na base, como nas
+                       stories do Page: um botão large não deve esticar a linha. -->
+                  <div data-sl-bleed>
+                    <div data-sl-bleed-content style="--sl-bleed-top: var(--sl-space-2); --sl-bleed-bottom: var(--sl-space-2)">
+                      <!-- Inerte por especificação (FR-14): renderiza, não age. -->
+                      <button data-sl-button data-variant="primary" data-size="large" id="btn-create">
+                        <span data-sl-button-content>
+                          <i data-icon="plus"></i>
+                          Criar lote futuro
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+                  <div data-sl-bleed>
+                    <div data-sl-bleed-content style="--sl-bleed-top: var(--sl-space-2); --sl-bleed-bottom: var(--sl-space-2)">
+                      <button data-sl-button data-sl-icon-button data-variant="tertiary" data-size="large" aria-label="Mais ações">
+                        <span data-sl-button-content>
+                          <i data-icon="dots-three-vertical"></i>
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </header>
+        </div>
+
+        <div data-sl-page-container>
+          <div data-sl-page-content data-layout="wide">
+
+            <div data-sl-collection>
+
+            <div data-sl-collection-row>
+              <div data-sl-search class="list-search">
+                <span data-sl-pre-icon>
+                  <i data-icon="magnifying-glass-small"></i>
+                </span>
+                <input data-sl-search-input id="search" placeholder="Buscar lote ou SKU" autocomplete="off">
+              </div>
+
+              <div class="toolbar-end">
+                <!-- A visão selecionada é anunciada por aria-pressed, não só
+                     pela variante do botão: cor sozinha não é acessível. -->
+                <div class="segmented" id="view-toggle">
+                  <button data-sl-button data-variant="secondary" data-size="normal" data-view="lots" aria-pressed="true">
+                    <span data-sl-button-content>
+                      <i data-icon="rows"></i>
+                      Por lote
+                    </span>                  </button>
+                  <button data-sl-button data-variant="tertiary" data-size="normal" data-view="skus" aria-pressed="false">
+                    <span data-sl-button-content>
+                      <i data-icon="tag"></i>
+                      Por SKU
+                    </span>                  </button>
+                </div>
+
+                <!-- O Pagination não tem layout próprio: quem põe rótulo e setas
+                     lado a lado é o Stack horizontal que ele renderiza dentro. -->
+                <div data-sl-pagination>
+                  <div data-sl-stack data-horizontal="true" style="--sl-stack-space: var(--sl-space-2)">
+                    <div data-sl-pagination-label data-loading="false" id="pag-label">—</div>
+                    <div data-sl-pagination-actions>
+                      <button data-sl-button data-sl-icon-button data-variant="tertiary" data-size="normal" data-sl-pagination-action-prev id="pag-prev" aria-label="Página anterior">
+                        <span data-sl-button-content>
+                          <i data-icon="caret-left"></i>
+                        </span>
+                      </button>
+                      <button data-sl-button data-sl-icon-button data-variant="tertiary" data-size="normal" data-sl-pagination-action-next id="pag-next" aria-label="Próxima página">
+                        <span data-sl-button-content>
+                          <i data-icon="caret-right"></i>
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div data-sl-collection-row style="--justify: flex-start" id="filter-row">
+              <!-- Cada filtro: gatilho + popover. Conteúdo montado pelo script. -->
+              <div class="filter" data-filter="destinations" data-open="false">
+                <button data-sl-filter-trigger data-sl-button data-variant="secondary" data-size="normal" aria-expanded="false">
+                  <span data-sl-button-content>
+                    <span>Destino</span><span data-sl-filter-value></span>
+                    <i data-icon="caret-down-small"></i>
+                  </span>                </button>
+                <div class="filter-popover" data-sl-filter-popover data-sl-popover>
+                  <!-- Conteúdo montado pelo script: o grid do contêiner distribui
+                       as linhas pelos filhos diretos, então a lista e o rodapé
+                       não podem ficar dentro de um invólucro. -->
+                  <div data-sl-container></div>
+                </div>
+              </div>
+
+              <div class="filter" data-filter="arrival" data-open="false">
+                <button data-sl-filter-trigger data-sl-button data-variant="secondary" data-size="normal" aria-expanded="false">
+                  <span data-sl-button-content>
+                    <span>Data de chegada</span><span data-sl-filter-value></span>
+                    <i data-icon="caret-down-small"></i>
+                  </span>                </button>
+                <div class="filter-popover" data-sl-filter-popover data-sl-popover>
+                  <!-- Conteúdo montado pelo script: o grid do contêiner distribui
+                       as linhas pelos filhos diretos, então a lista e o rodapé
+                       não podem ficar dentro de um invólucro. -->
+                  <div data-sl-container></div>
+                </div>
+              </div>
+
+              <div class="filter" data-filter="quantity" data-open="false">
+                <button data-sl-filter-trigger data-sl-button data-variant="secondary" data-size="normal" aria-expanded="false">
+                  <span data-sl-button-content>
+                    <span>Quantidade</span><span data-sl-filter-value></span>
+                    <i data-icon="caret-down-small"></i>
+                  </span>                </button>
+                <div class="filter-popover" data-sl-filter-popover data-sl-popover>
+                  <!-- Conteúdo montado pelo script: o grid do contêiner distribui
+                       as linhas pelos filhos diretos, então a lista e o rodapé
+                       não podem ficar dentro de um invólucro. -->
+                  <div data-sl-container></div>
+                </div>
+              </div>
+
+              <div class="filter" data-filter="statuses" data-open="false">
+                <button data-sl-filter-trigger data-sl-button data-variant="secondary" data-size="normal" aria-expanded="false">
+                  <span data-sl-button-content>
+                    <span>Status</span><span data-sl-filter-value></span>
+                    <i data-icon="caret-down-small"></i>
+                  </span>                </button>
+                <div class="filter-popover" data-sl-filter-popover data-sl-popover>
+                  <!-- Conteúdo montado pelo script: o grid do contêiner distribui
+                       as linhas pelos filhos diretos, então a lista e o rodapé
+                       não podem ficar dentro de um invólucro. -->
+                  <div data-sl-container></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- header-sticky troca o overflow interno da tabela por rolagem da
+                 página e fixa o cabeçalho: é o mecanismo do próprio componente.
+
+                 Cabeçalho e grade são montados pelo script a partir de COLUMNS,
+                 porque as duas visões têm um número diferente de colunas — e
+                 porque é a mesma definição que o esqueleto de carregamento lê. -->
+            <div data-sl-table id="table" data-sl-table-header-sticky="true" data-sl-table-density="default">
+              <div data-sl-table-header id="thead"></div>
+              <div data-sl-table-body id="tbody"></div>
+            </div>
+
+            <div id="state-slot"></div>
+
+            <!-- A paginação de baixo é uma linha alinhada à direita, sem rodapé
+                 nem contagem: o rótulo do próprio Pagination já traz o total. -->
+            <div data-sl-collection-row style="--justify: flex-end" id="table-footer">
+              <div data-sl-pagination>
+                <div data-sl-stack data-horizontal="true" style="--sl-stack-space: var(--sl-space-2)">
+                  <div data-sl-pagination-label data-loading="false" id="pag-label-2">—</div>
+                  <div data-sl-pagination-actions>
+                    <button data-sl-button data-sl-icon-button data-variant="tertiary" data-size="normal" data-sl-pagination-action-prev id="pag-prev-2" aria-label="Página anterior">
+                      <span data-sl-button-content>
+                        <i data-icon="caret-left"></i>
+                      </span>
+                    </button>
+                    <button data-sl-button data-sl-icon-button data-variant="tertiary" data-size="normal" data-sl-pagination-action-next id="pag-next-2" aria-label="Próxima página">
+                      <span data-sl-button-content>
+                        <i data-icon="caret-right"></i>
+                      </span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            </div><!-- /data-sl-collection -->
+
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script>
+(() => {
+  'use strict'
+
+  /* ─────────────────────────────────────────────────────────────
+     Ícones
+
+     Extraídos do @vtex/shoreline 1.12.13 (dist/index.mjs) para bater com o
+     Admin real. Os ícones do Shoreline vêm do Phosphor no peso Light e recebem
+     stroke-width 1.5 com vector-effect non-scaling-stroke — é essa combinação,
+     e não o peso Regular do Phosphor, que o guia de ícones do design system
+     manda usar. Como o traço não escala, o ícone precisa ser exibido no tamanho
+     de projeto: 20px no Normal, 16px nas variantes Small.
+     ───────────────────────────────────────────────────────────── */
+
+  const STROKE = 'vector-effect="non-scaling-stroke" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"'
+
+  const line = (...ds) => ds.map((d) => `<path d="${d}" ${STROKE}/>`).join('')
+  const solid = (d, extra = '') => `<path ${extra} d="${d}" fill="currentColor"/>`
+  /* Pontos (o "i" do Question, o furo da Tag) levam traço fino além do preenchimento. */
+  const dot = (d) => `<path d="${d}" fill="currentColor" vector-effect="non-scaling-stroke" stroke="currentColor" stroke-width="0.125"/>`
+
+  const ICONS = {
+    list: { box: 20, body: line('M3.125 10H16.875', 'M3.125 5H16.875', 'M3.125 15H16.875') },
+
+    question: { box: 20, body:
+      dot('M10.7188 14.0625C10.7188 14.4595 10.397 14.7812 10 14.7812C9.60305 14.7812 9.28125 14.4595 9.28125 14.0625C9.28125 13.6655 9.60305 13.3438 10 13.3438C10.397 13.3438 10.7188 13.6655 10.7188 14.0625Z') +
+      line('M10 11.25V10.625C11.3805 10.625 12.5 9.64531 12.5 8.4375C12.5 7.22969 11.3805 6.25 10 6.25C8.61953 6.25 7.5 7.22969 7.5 8.4375V8.75',
+           'M10 17.5C14.1421 17.5 17.5 14.1421 17.5 10C17.5 5.85786 14.1421 2.5 10 2.5C5.85786 2.5 2.5 5.85786 2.5 10C2.5 14.1421 5.85786 17.5 10 17.5Z') },
+
+    'chart-bar': { box: 20, body: line('M3.75 16.25V10.625H7.5', 'M17.5 16.25H2.5', 'M7.5 16.25V6.875H11.875', 'M11.875 16.25V3.125H16.25V16.25') },
+
+    'shopping-cart-simple': { box: 20, body:
+      solid('M6.625 17.9688C7.22906 17.9688 7.71875 17.4791 7.71875 16.875C7.71875 16.2709 7.22906 15.7812 6.625 15.7812C6.02094 15.7812 5.53125 16.2709 5.53125 16.875C5.53125 17.4791 6.02094 17.9688 6.625 17.9688Z') +
+      solid('M14.75 17.9688C15.3541 17.9688 15.8438 17.4791 15.8438 16.875C15.8438 16.2709 15.3541 15.7812 14.75 15.7812C14.1459 15.7812 13.6562 16.2709 13.6562 16.875C13.6562 17.4791 14.1459 17.9688 14.75 17.9688Z') +
+      line('M3.67891 5.625H17.875L15.6469 12.868C15.5682 13.1235 15.4096 13.3471 15.1945 13.5058C14.9793 13.6646 14.7189 13.7501 14.4516 13.75H6.94297C6.6713 13.7501 6.40699 13.6617 6.19005 13.4982C5.9731 13.3347 5.81533 13.1049 5.74063 12.8437L2.91484 2.95312C2.87751 2.82259 2.79868 2.70777 2.69029 2.62601C2.5819 2.54426 2.44983 2.50003 2.31406 2.5H1') },
+
+    tag: { box: 20, body:
+      line('M3.30781 10.8078C3.19082 10.6907 3.12508 10.5319 3.125 10.3664V3.125H10.3664C10.5319 3.12508 10.6907 3.19082 10.8078 3.30781L18.5672 11.0672C18.6843 11.1844 18.7501 11.3433 18.7501 11.509C18.7501 11.6747 18.6843 11.8336 18.5672 11.9508L11.9531 18.5672C11.8359 18.6843 11.677 18.7501 11.5113 18.7501C11.3456 18.7501 11.1867 18.6843 11.0695 18.5672L3.30781 10.8078Z') +
+      dot('M7.28125 6.5625C7.28125 6.95945 6.95945 7.28125 6.5625 7.28125C6.16555 7.28125 5.84375 6.95945 5.84375 6.5625C5.84375 6.16555 6.16555 5.84375 6.5625 5.84375C6.95945 5.84375 7.28125 6.16555 7.28125 6.5625Z') },
+
+    megaphone: { box: 20, body: line(
+      'M8.125 6.25V15.6773C8.12494 15.7801 8.09953 15.8813 8.05101 15.9719C8.0025 16.0626 7.93238 16.1398 7.84688 16.1969L6.9875 16.7695C6.90414 16.8251 6.80865 16.8598 6.70906 16.8708C6.60947 16.8817 6.50872 16.8686 6.41528 16.8324C6.32184 16.7963 6.23846 16.7382 6.17217 16.6631C6.10588 16.5879 6.05862 16.498 6.03438 16.4008L5 12.5',
+      'M17.5 15.625C17.5 15.7441 17.466 15.8606 17.402 15.961C17.338 16.0613 17.2466 16.1413 17.1387 16.1915C17.0308 16.2418 16.9108 16.2601 16.7928 16.2445C16.6748 16.2288 16.5637 16.1798 16.4727 16.1032C12.3789 12.6688 8.125 12.5 8.125 12.5H5C4.1712 12.5 3.37634 12.1708 2.79029 11.5848C2.20424 10.9987 1.875 10.2039 1.875 9.37505C1.875 8.54625 2.20424 7.75139 2.79029 7.16534C3.37634 6.57929 4.1712 6.25005 5 6.25005H8.125C8.125 6.25005 12.3789 6.0813 16.4727 2.64771C16.5637 2.57112 16.6747 2.52211 16.7926 2.50643C16.9105 2.49075 17.0305 2.50905 17.1384 2.55917C17.2462 2.6093 17.3376 2.68917 17.4016 2.78941C17.4657 2.88965 17.4998 3.00609 17.5 3.12505V15.625Z') },
+
+    layout: { box: 20, body: line('M8.125 8.125V16.25', 'M2.5 8.125H17.5',
+      'M16.875 3.75H3.125C2.77982 3.75 2.5 4.02982 2.5 4.375V15.625C2.5 15.9702 2.77982 16.25 3.125 16.25H16.875C17.2202 16.25 17.5 15.9702 17.5 15.625V4.375C17.5 4.02982 17.2202 3.75 16.875 3.75Z') },
+
+    cube: { box: 20, body: line('M2.55469 6.0094L10 10.0844L17.4453 6.0094',
+      'M10.3 1.95317L17.175 5.71723C17.2732 5.77095 17.3551 5.85003 17.4123 5.94623C17.4695 6.04243 17.4997 6.15221 17.5 6.26411V13.736C17.4997 13.8479 17.4695 13.9577 17.4123 14.0539C17.3551 14.1501 17.2732 14.2291 17.175 14.2829L10.3 18.0469C10.208 18.0973 10.1049 18.1236 10 18.1236C9.89515 18.1236 9.79198 18.0973 9.7 18.0469L2.825 14.2829C2.72683 14.2291 2.64488 14.1501 2.58772 14.0539C2.53055 13.9577 2.50025 13.8479 2.5 13.736V6.26411C2.50025 6.15221 2.53055 6.04243 2.58772 5.94623C2.64488 5.85003 2.72683 5.77095 2.825 5.71723L9.7 1.95317C9.79198 1.90284 9.89515 1.87646 10 1.87646C10.1049 1.87646 10.208 1.90284 10.3 1.95317Z',
+      'M10 10.0852V18.125') },
+
+    storefront: { box: 20, body: line(
+      'M3.75 10.9053V16.2499C3.75 16.4157 3.81585 16.5747 3.93306 16.6919C4.05027 16.8091 4.20924 16.8749 4.375 16.8749H15.625C15.7908 16.8749 15.9497 16.8091 16.0669 16.6919C16.1842 16.5747 16.25 16.4157 16.25 16.2499V10.9054',
+      'M4.22144 3.125H15.7786C15.9144 3.125 16.0465 3.16924 16.1549 3.25103C16.2634 3.33282 16.3422 3.44771 16.3795 3.5783L17.5 7.5H2.5L3.62049 3.5783C3.6578 3.44771 3.73664 3.33282 3.84507 3.25103C3.9535 3.16924 4.08562 3.125 4.22144 3.125Z',
+      'M7.5 7.5V8.75C7.5 9.41304 7.23661 10.0489 6.76777 10.5178C6.29893 10.9866 5.66304 11.25 5 11.25C4.33696 11.25 3.70107 10.9866 3.23223 10.5178C2.76339 10.0489 2.5 9.41304 2.5 8.75V7.5',
+      'M12.5 7.5V8.75C12.5 9.41304 12.2366 10.0489 11.7678 10.5178C11.2989 10.9866 10.663 11.25 10 11.25C9.33696 11.25 8.70107 10.9866 8.23223 10.5178C7.76339 10.0489 7.5 9.41304 7.5 8.75V7.5',
+      'M17.5 7.5V8.75C17.5 9.41304 17.2366 10.0489 16.7678 10.5178C16.2989 10.9866 15.663 11.25 15 11.25C14.337 11.25 13.7011 10.9866 13.2322 10.5178C12.7634 10.0489 12.5 9.41304 12.5 8.75V7.5') },
+
+    'image-square': { box: 20, body: line(
+      'M16.25 3.125H3.75C3.40482 3.125 3.125 3.40482 3.125 3.75V16.25C3.125 16.5952 3.40482 16.875 3.75 16.875H16.25C16.5952 16.875 16.875 16.5952 16.875 16.25V3.75C16.875 3.40482 16.5952 3.125 16.25 3.125Z',
+      'M7.5 8.75C8.19036 8.75 8.75 8.19036 8.75 7.5C8.75 6.80964 8.19036 6.25 7.5 6.25C6.80964 6.25 6.25 6.80964 6.25 7.5C6.25 8.19036 6.80964 8.75 7.5 8.75Z',
+      'M4.42871 16.875L12.9951 8.30782C13.0532 8.24971 13.1221 8.20361 13.198 8.17215C13.2738 8.1407 13.3552 8.12451 13.4373 8.12451C13.5194 8.12451 13.6008 8.1407 13.6766 8.17215C13.7525 8.20361 13.8214 8.24971 13.8795 8.30782L16.8748 11.3039') },
+
+    plus: { box: 20, body: line('M3.125 10H16.875', 'M10 3.125V16.875') },
+
+    'plus-circle': { box: 20, body: line(
+      'M10 17.5C14.1421 17.5 17.5 14.1421 17.5 10C17.5 5.85786 14.1421 2.5 10 2.5C5.85786 2.5 2.5 5.85786 2.5 10C2.5 14.1421 5.85786 17.5 10 17.5Z',
+      'M6.875 10H13.125',
+      'M10 6.875V13.125') },
+
+    rows: { box: 20, body: line(
+      'M16.25 11.25H3.75C3.40482 11.25 3.125 11.5298 3.125 11.875V15C3.125 15.3452 3.40482 15.625 3.75 15.625H16.25C16.5952 15.625 16.875 15.3452 16.875 15V11.875C16.875 11.5298 16.5952 11.25 16.25 11.25Z',
+      'M16.25 4.375H3.75C3.40482 4.375 3.125 4.65482 3.125 5V8.125C3.125 8.47018 3.40482 8.75 3.75 8.75H16.25C16.5952 8.75 16.875 8.47018 16.875 8.125V5C16.875 4.65482 16.5952 4.375 16.25 4.375Z') },
+
+    'magnifying-glass': { box: 20, body: line(
+      'M8.75 15C12.2018 15 15 12.2018 15 8.75C15 5.29822 12.2018 2.5 8.75 2.5C5.29822 2.5 2.5 5.29822 2.5 8.75C2.5 12.2018 5.29822 15 8.75 15Z',
+      'M13.1694 13.1694L17.4999 17.4999') },
+
+    'calendar-blank': { box: 20, body: line(
+      'M16.25 3.125H3.75C3.40482 3.125 3.125 3.40482 3.125 3.75V16.25C3.125 16.5952 3.40482 16.875 3.75 16.875H16.25C16.5952 16.875 16.875 16.5952 16.875 16.25V3.75C16.875 3.40482 16.5952 3.125 16.25 3.125Z',
+      'M13.75 1.875V4.375',
+      'M6.25 1.875V4.375',
+      'M3.125 6.875H16.875') },
+
+    'dots-three-vertical': { box: 20, body: solid(
+      'M10 6.09375C10.8629 6.09375 11.5625 5.39419 11.5625 4.53125C11.5625 3.66831 10.8629 2.96875 10 2.96875C9.13706 2.96875 8.4375 3.66831 8.4375 4.53125C8.4375 5.39419 9.13706 6.09375 10 6.09375ZM10 11.5625C10.8629 11.5625 11.5625 10.8629 11.5625 10C11.5625 9.13705 10.8629 8.4375 10 8.4375C9.13706 8.4375 8.4375 9.13705 8.4375 10C8.4375 10.8629 9.13706 11.5625 10 11.5625ZM11.5625 15.4688C11.5625 16.3317 10.8629 17.0312 10 17.0312C9.13706 17.0312 8.4375 16.3317 8.4375 15.4688C8.4375 14.6058 9.13706 13.9062 10 13.9062C10.8629 13.9062 11.5625 14.6058 11.5625 15.4688Z',
+      'fill-rule="evenodd" clip-rule="evenodd"') },
+
+    'caret-left': { box: 20, body: line('M12.5 16.25L6.25 10L12.5 3.75') },
+    'caret-right': { box: 20, body: line('M7.5 3.75L13.75 10L7.5 16.25') },
+    'caret-down': { box: 20, body: line('M16.25 7.5L10 13.75L3.75 7.5') },
+
+    'magnifying-glass-small': { box: 16, body: line(
+      'M7 12C9.76142 12 12 9.76142 12 7C12 4.23858 9.76142 2 7 2C4.23858 2 2 4.23858 2 7C2 9.76142 4.23858 12 7 12Z',
+      'M10.5356 10.5356L14 14') },
+
+    'arrow-up-right-small': { box: 16, body: line('M4 12L12 4', 'M5.5 4H12V10.5') },
+
+    'caret-down-small': { box: 16, body: line('M13 6L8 11L3 6') },
+    'caret-up-small': { box: 16, body: line('M3 10L8 5L13 10') },
+    'caret-right-small': { box: 16, body: line('M6 3L11 8L6 13') },
+    'check-small': { box: 16, body: line('M2.3999 8.5L5.8999 12L13.8999 4') },
+  }
+
+  /* As variantes Small carregam data-sl-icon-small; as normais, data-sl-icon.
+     O Shoreline usa esse atributo para posicionar o ícone dentro de botões. */
+  const icon = (name, size) => {
+    const { box, body } = ICONS[name]
+    const px = size || box
+    const attr = box === 16 ? 'data-sl-icon-small' : 'data-sl-icon'
+    return `<svg ${attr} width="${px}" height="${px}" viewBox="0 0 ${box} ${box}" fill="none" aria-hidden="true" focusable="false">${body}</svg>`
+  }
+
+  /* Troca os marcadores <i data-icon="nome"> do HTML estático pelo SVG real.
+     Substitui o próprio marcador para o ícone continuar sendo filho direto de
+     [data-sl-button-content], de onde parte a regra de margem do Shoreline. */
+  const hydrateIcons = (root = document) => {
+    root.querySelectorAll('[data-icon]').forEach((el) => {
+      el.outerHTML = icon(el.dataset.icon)
+    })
+  }
+
+  const PAGE_SIZE = 25
+
+  /* Ciclo de vida do lote. Substitui o par Ativo/Inativo desenhado no Figma:
+     o problema de negócio é agendado → recebido / cancelado / inativo. */
+  const STATUSES = [
+    { id: 'scheduled', label: 'Agendado',  color: 'blue'  },
+    { id: 'received',  label: 'Recebido',  color: 'green' },
+    { id: 'cancelled', label: 'Cancelado', color: 'red'   },
+    { id: 'inactive',  label: 'Inativo',   color: 'gray'  },
+  ]
+  const statusById = (id) => STATUSES.find((s) => s.id === id)
+
+  const PRODUCTS = [
+    { skuId: '#123', name: "adidas Men's Performance Polo - Blast Blue (L)" },
+    { skuId: '#204', name: 'Nike Dri-FIT Camiseta Preta (M)' },
+    { skuId: '#318', name: 'Tênis de Corrida Ultraboost 22 (42)' },
+    { skuId: '#442', name: 'Mochila Cargo 28L Cinza' },
+    { skuId: '#517', name: 'Boné Trucker Aba Curva' },
+    { skuId: '#629', name: 'Jaqueta Corta-vento Verde (G)' },
+  ]
+
+  const FIGMA_DESTINATIONS = [
+    { seller: 'Filial São Lucas',        warehouse: 'Estoque principal' },
+    { seller: 'Filial Centro Histórico', warehouse: 'Estoque principal' },
+    { seller: 'Filial Jardim Primavera', warehouse: 'Estoque principal' },
+    { seller: 'Filial Vila Nova',        warehouse: 'Estoque principal' },
+    { seller: 'Filial Bela Vista',       warehouse: 'Estoque principal' },
+  ]
+
+  const BRANCHES = [
+    'Aclimação', 'Água Branca', 'Alto da Lapa', 'Barra Funda', 'Bom Retiro',
+    'Brooklin', 'Butantã', 'Campo Belo', 'Casa Verde', 'Freguesia do Ó',
+    'Ipiranga', 'Itaim Bibi', 'Jabaquara', 'Lapa', 'Liberdade', 'Moema',
+    'Mooca', 'Morumbi', 'Penha', 'Perdizes', 'Pinheiros', 'Santana',
+    'Santo Amaro', 'Saúde', 'Tatuapé', 'Tucuruvi', 'Vila Madalena',
+    'Vila Mariana', 'Vila Olímpia', 'Vila Prudente',
+  ]
+
+  const HUBS = [
+    'São Paulo', 'Recife', 'Belo Horizonte', 'Brasília', 'Campinas', 'Curitiba',
+    'Fortaleza', 'Goiânia', 'Manaus', 'Porto Alegre', 'Ribeirão Preto',
+    'Rio de Janeiro', 'Salvador',
+  ]
+
+  const destKey = (d) => `${d.seller} — ${d.warehouse}`
+
+  /* O filtro lista os estoques da conta, não só os que têm lote a caminho — por
+     isso o catálogo é uma fonte à parte, e não mais a projeção dos lotes. São 48
+     destinos: passa de cinco, que é quando o Shoreline manda pôr busca, e é
+     grande o bastante para o carregamento em partes fazer diferença. */
+  const DESTINATIONS = [
+    ...FIGMA_DESTINATIONS,
+    ...BRANCHES.map((name) => ({ seller: `Filial ${name}`, warehouse: 'Estoque principal' })),
+    ...HUBS.map((name) => ({ seller: `CD ${name}`, warehouse: 'Estoque de reposição' })),
+  ].sort((a, b) => destKey(a).localeCompare(destKey(b), 'pt-BR'))
+
+  /* Ordem alfabética é uma das que as boas práticas do Filter aceitam, e é a que
+     faz sentido numa lista longa em que nenhum destino é mais provável. */
+  const DESTINATION_OPTIONS = DESTINATIONS.map(destKey)
+
+  /* Os lotes ocupam 20 dos 48. O resto existe e aparece no filtro, mas não tem
+     lote a caminho — filtrar por ele leva ao estado vazio, que é o que acontece
+     no Admin quando o estoque escolhido não tem nada previsto. */
+  const LOT_DESTINATIONS = [
+    ...FIGMA_DESTINATIONS,
+    ...DESTINATIONS.filter((d) => !FIGMA_DESTINATIONS.includes(d)).slice(0, 15),
+  ]
+
+  /* As cinco primeiras linhas reproduzem o Figma, incluindo as quantidades:
+     o total do lote é sempre a soma dos SKUs, nunca um número guardado.
+
+     Um SKU aparece no máximo uma vez por lote: na visão por SKU o par
+     (lote, SKU) é a própria linha, e repetir o produto renderizaria linhas
+     idênticas. O #001 do Figma repetia o produto 0 três vezes; virou três
+     produtos distintos com as mesmas quantidades, então o total continua 15. */
+  const FIGMA_LOTS = [
+    { code: '#001', name: 'Reposição de agosto',     dest: 0, date: '2026-08-05', status: 'scheduled', items: [[0, 3], [1, 2], [2, 10]] },
+    { code: '#002', name: 'Reposição natal',         dest: 1, date: '2026-08-12', status: 'received',  items: [[1, 4], [2, 6]] },
+    { code: '#003', name: 'Reposição BF',            dest: 2, date: '2026-08-19', status: 'scheduled', items: [[3, 20], [4, 3]] },
+    { code: '#004', name: 'Reposição setembro',      dest: 3, date: '2026-08-26', status: 'cancelled', items: [[5, 19]] },
+    { code: '#005', name: 'Coleção primavera verão', dest: 4, date: '2026-08-31', status: 'inactive',  items: [[0, 24], [1, 18], [2, 12]] },
+  ]
+
+  const EXTRA_NAMES = [
+    'Reposição semanal', 'Coleção cápsula', 'Reposição outlet', 'Lote promocional',
+    'Reposição fim de mês', 'Coleção inverno', 'Reposição express', 'Lote de fornecedor',
+    'Reposição marketplace', 'Coleção verão',
+  ]
+
+  /* Fixture determinística: o arquivo renderiza igual em qualquer abertura. */
+  function buildLots() {
+    const lots = FIGMA_LOTS.map((raw, index) => ({
+      id: `lot-${index + 1}`,
+      code: raw.code,
+      name: raw.name,
+      destination: FIGMA_DESTINATIONS[raw.dest],
+      arrivalDate: raw.date,
+      status: raw.status,
+      items: raw.items.map(([productIndex, quantity], itemIndex) => ({
+        id: `lot-${index + 1}-item-${itemIndex + 1}`,
+        ...PRODUCTS[productIndex],
+        quantity,
+      })),
+    }))
+
+    for (let i = 5; i < 74; i += 1) {
+      const code = `#${String(i + 1).padStart(3, '0')}`
+      const name = `${EXTRA_NAMES[i % EXTRA_NAMES.length]} ${Math.floor(i / EXTRA_NAMES.length) + 1}`
+      const day = ((i * 3) % 27) + 1
+      const month = 8 + (i % 4)
+      const itemCount = (i % 3) + 1
+      const items = []
+
+      for (let k = 0; k < itemCount; k += 1) {
+        const product = PRODUCTS[(i + k) % PRODUCTS.length]
+        items.push({
+          id: `lot-${i + 1}-item-${k + 1}`,
+          ...product,
+          quantity: ((i + k * 7) % 40) + 2,
+        })
+      }
+
+      lots.push({
+        id: `lot-${i + 1}`,
+        code,
+        name,
+        destination: LOT_DESTINATIONS[i % LOT_DESTINATIONS.length],
+        arrivalDate: `2026-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`,
+        /* O deslocamento por volta é o que impede status e destino de andarem
+           juntos: com 20 destinos e 4 status, i % 4 seria constante dentro de um
+           destino, e filtrar pelos dois ao mesmo tempo quase nunca acharia nada. */
+        status: STATUSES[(i + Math.floor(i / LOT_DESTINATIONS.length)) % STATUSES.length].id,
+        items,
+      })
+    }
+
+    return lots
+  }
+
+  const LOTS = buildLots()
+
+  /* A visão por SKU é a mesma fixture achatada: cada lote contribui uma linha
+     por item, e a linha guarda uma projeção do lote em vez de repetir a busca
+     depois. Destino, chegada e status são propriedade do lote — a linha lê, não
+     declara. O achatamento acontece uma vez, na carga. */
+  const buildSkuRows = (lots) =>
+    lots.flatMap((lot) =>
+      lot.items.map((item, itemIndex) => ({
+        id: `${lot.id}:${item.skuId}`,
+        skuId: item.skuId,
+        name: item.name,
+        quantity: item.quantity,
+        itemIndex,
+        lot: {
+          id: lot.id,
+          code: lot.code,
+          name: lot.name,
+          destination: lot.destination,
+          arrivalDate: lot.arrivalDate,
+          status: lot.status,
+        },
+      })))
+
+  const SKU_ROWS = buildSkuRows(LOTS)
+
+  const state = {
+    /* 'lots' ou 'skus'. A busca, os filtros e a paginação são os mesmos nas
+       duas visões; só muda o que cada linha representa. */
+    view: 'lots',
+    search: '',
+    filters: {
+      destinations: [],
+      arrival: { start: null, end: null },
+      quantity: { min: null, max: null },
+      statuses: [],
+    },
+    page: 1,
+    expanded: new Set(),
+    /* Um recolhimento explícito vence a expansão automática da busca. */
+    collapsedDuringSearch: new Set(),
+    isLoading: true,
+  }
+
+  const norm = (value) =>
+    String(value).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+
+  const lotQuantity = (lot) => lot.items.reduce((total, item) => total + item.quantity, 0)
+
+  const formatDate = (iso) => {
+    const [year, month, day] = iso.split('-')
+    return `${day}/${month}/${year}`
+  }
+
+  const escapeHtml = (value) =>
+    String(value).replace(/[&<>"']/g, (c) =>
+      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
+
+  const hasActiveQuery = () => {
+    const f = state.filters
+    return Boolean(
+      state.search.trim() ||
+      f.destinations.length ||
+      f.statuses.length ||
+      f.arrival.start || f.arrival.end ||
+      f.quantity.min !== null || f.quantity.max !== null
+    )
+  }
+
+  const isDateRangeValid = (start, end) => !start || !end || start <= end
+
+  /* Os três filtros que perguntam ao lote — destino, chegada e status — valem
+     igual nas duas visões, então moram numa função só: assim uma mudança de
+     semântica não pode passar a valer em uma visão e não na outra. Só a
+     quantidade fica de fora, porque é o único filtro cujo sujeito muda.
+     Os filtros são uma conjunção, então a ordem entre eles não altera o
+     resultado. */
+  function matchesLotFilters(lot, filters) {
+    if (filters.destinations.length && !filters.destinations.includes(destKey(lot.destination))) return false
+
+    if (isDateRangeValid(filters.arrival.start, filters.arrival.end)) {
+      if (filters.arrival.start && lot.arrivalDate < filters.arrival.start) return false
+      if (filters.arrival.end && lot.arrivalDate > filters.arrival.end) return false
+    }
+
+    if (filters.statuses.length && !filters.statuses.includes(lot.status)) return false
+
+    return true
+  }
+
+  /* Pipeline na ordem documentada: busca → destino → data → quantidade → status. */
+  function runQuery() {
+    const term = norm(state.search.trim())
+    const f = state.filters
+    const skuMatched = []
+
+    let result = LOTS.filter((lot) => {
+      if (term) {
+        const direct = norm(lot.code).includes(term) || norm(lot.name).includes(term)
+        const viaSku = lot.items.some(
+          (item) => norm(item.name).includes(term) || norm(item.skuId).includes(term)
+        )
+        if (!direct && !viaSku) return false
+        if (!direct && viaSku) skuMatched.push(lot.id)
+      }
+
+      if (!matchesLotFilters(lot, f)) return false
+
+      const quantity = lotQuantity(lot)
+      if (f.quantity.min !== null && quantity < f.quantity.min) return false
+      if (f.quantity.max !== null && quantity > f.quantity.max) return false
+
+      return true
+    })
+
+    const total = result.length
+    const start = (state.page - 1) * PAGE_SIZE
+
+    return { lots: result.slice(start, start + PAGE_SIZE), total, skuMatched }
+  }
+
+  /* Mesma pipeline sobre as linhas achatadas, com duas diferenças: a quantidade
+     limitada é a do SKU na linha — sempre o número que está na coluna visível —
+     e não existe expansão automática, porque aqui o SKU que casou já é a linha.
+
+     Achatar destrói a ordem por código que buildLots produzia de graça, então
+     esta é a única consulta do arquivo que ordena: por chegada, e depois por
+     código do lote e posição do SKU dentro dele, o que torna a ordem total e a
+     paginação estável entre renders. */
+  function runSkuQuery() {
+    const term = norm(state.search.trim())
+    const f = state.filters
+
+    const result = SKU_ROWS.filter((row) => {
+      if (term) {
+        const matched = norm(row.name).includes(term) ||
+          norm(row.skuId).includes(term) ||
+          norm(row.lot.code).includes(term) ||
+          norm(row.lot.name).includes(term)
+        if (!matched) return false
+      }
+
+      if (!matchesLotFilters(row.lot, f)) return false
+
+      if (f.quantity.min !== null && row.quantity < f.quantity.min) return false
+      if (f.quantity.max !== null && row.quantity > f.quantity.max) return false
+
+      return true
+    }).sort((a, b) =>
+      a.lot.arrivalDate.localeCompare(b.lot.arrivalDate) ||
+      a.lot.code.localeCompare(b.lot.code) ||
+      a.itemIndex - b.itemIndex)
+
+    const total = result.length
+    const start = (state.page - 1) * PAGE_SIZE
+
+    return { rows: result.slice(start, start + PAGE_SIZE), total }
+  }
+
+  /* Placeholder de imagem do SKU: 18px dentro do quadro de 36px. */
+  const THUMB = `<span class="sku-thumb">${icon('image-square', 18)}</span>`
+
+  /* O mesmo placeholder no quadro de 40px da visão por SKU, onde o ícone cabe
+     no tamanho de projeto. */
+  const PRODUCT_THUMB = `<span class="product-thumb">${icon('image-square')}</span>`
+
+  const DOTS = icon('dots-three-vertical')
+
+  /* A coluna de expandir do Shoreline troca o ícone em vez de girar um só, e usa
+     os carets Normal de 20px (getExpandedColumn no pacote ts-table). */
+  const CARET_RIGHT = icon('caret-right')
+  const CARET_DOWN = icon('caret-down')
+
+  function lotRowHtml(lot, isExpanded) {
+    const status = statusById(lot.status)
+
+    return `
+      <div data-sl-table-row data-dim-on-hover="true" data-selected="false" data-expanded="${isExpanded}">
+        <div data-sl-table-cell>
+          <div class="lot-cell">
+            <div data-sl-bleed>
+              <div data-sl-bleed-content style="--sl-bleed-top: var(--sl-space-2); --sl-bleed-bottom: var(--sl-space-2); --sl-bleed-start: var(--sl-space-2); --sl-bleed-end: var(--sl-space-2)">
+                <button data-sl-button data-sl-icon-button data-variant="tertiary" data-size="normal"
+                        data-toggle="${lot.id}" aria-expanded="${isExpanded}"
+                        aria-label="${isExpanded ? 'Recolher' : 'Expandir'} lote ${escapeHtml(lot.code)}">
+                  <span data-sl-button-content>${isExpanded ? CARET_DOWN : CARET_RIGHT}</span>
+                </button>
+              </div>
+            </div>
+            <span class="lot-name">${escapeHtml(lot.code)} ${escapeHtml(lot.name)}</span>
+          </div>
+        </div>
+        <div data-sl-table-cell>
+          <div class="cell-stack">
+            <span>${escapeHtml(lot.destination.seller)}</span>
+            <span class="cell-soft">${escapeHtml(lot.destination.warehouse)}</span>
+          </div>
+        </div>
+        <div data-sl-table-cell class="num">${lotQuantity(lot)}</div>
+        <div data-sl-table-cell>${formatDate(lot.arrivalDate)}</div>
+        <div data-sl-table-cell>
+          <span data-sl-tag data-color="${status.color}" data-size="normal" data-variant="secondary">${status.label}</span>
+        </div>
+        <div data-sl-table-cell>
+          <button data-sl-button data-sl-icon-button data-variant="tertiary" data-size="normal" aria-label="Ações do lote ${escapeHtml(lot.code)}">
+            <span data-sl-button-content>${DOTS}</span>
+          </button>
+        </div>
+      </div>`
+  }
+
+  /* Um SKU herda destino, chegada e status do lote — por isso o travessão. */
+  function itemRowHtml(item, isLast) {
+    return `
+      <div data-sl-table-row class="row-child${isLast ? ' row-child-last' : ''}" data-selected="false">
+        <div data-sl-table-cell>
+          <div class="sku-cell">
+            ${THUMB}
+            <div class="cell-stack">
+              <span class="lot-name">${escapeHtml(item.name)}</span>
+              <span class="cell-soft">SKU ID ${escapeHtml(item.skuId)}</span>
+            </div>
+          </div>
+        </div>
+        <div data-sl-table-cell class="muted">—</div>
+        <div data-sl-table-cell class="num">${item.quantity}</div>
+        <div data-sl-table-cell class="muted">—</div>
+        <div data-sl-table-cell class="muted">—</div>
+        <div data-sl-table-cell></div>
+      </div>`
+  }
+
+  /* Uma linha é o par (lote, SKU). Destino, chegada e status vêm do lote e
+     aparecem por extenso: aqui eles são a resposta que o lojista procura, não
+     um placeholder como no travessão da linha filha da visão por lote. */
+  function skuRowHtml(row) {
+    const status = statusById(row.lot.status)
+
+    return `
+      <div data-sl-table-row data-dim-on-hover="true" data-selected="false">
+        <div data-sl-table-cell>
+          <div class="product-cell">
+            ${PRODUCT_THUMB}
+            <div class="cell-stack">
+              <span class="lot-name" title="${escapeHtml(row.name)}">${escapeHtml(row.name)}</span>
+              <span class="cell-soft">SKU ID ${escapeHtml(row.skuId)}</span>
+            </div>
+          </div>
+        </div>
+        <div data-sl-table-cell>
+          <div class="cell-stack">
+            <span class="lot-name">${escapeHtml(row.lot.name)}</span>
+            <span class="cell-soft">${escapeHtml(row.lot.code)}</span>
+          </div>
+        </div>
+        <div data-sl-table-cell>
+          <div class="cell-stack">
+            <span>${escapeHtml(row.lot.destination.seller)}</span>
+            <span class="cell-soft">${escapeHtml(row.lot.destination.warehouse)}</span>
+          </div>
+        </div>
+        <div data-sl-table-cell class="num">${row.quantity}</div>
+        <div data-sl-table-cell>${formatDate(row.lot.arrivalDate)}</div>
+        <div data-sl-table-cell>
+          <span data-sl-tag data-color="${status.color}" data-size="normal" data-variant="secondary">${status.label}</span>
+        </div>
+        <div data-sl-table-cell>
+          <button data-sl-button data-sl-icon-button data-variant="tertiary" data-size="normal" aria-label="Ações do SKU ${escapeHtml(row.skuId)} no lote ${escapeHtml(row.lot.code)}">
+            <span data-sl-button-content>${DOTS}</span>
+          </button>
+        </div>
+      </div>`
+  }
+
+  const el = (id) => document.getElementById(id)
+
+  /* ── Geometria da tabela ─────────────────────────────────── */
+
+  /* Definição das colunas por visão: rótulo, largura na grade, classe da célula
+     e as barras que o esqueleto desenha. Cabeçalho, grade e esqueleto leem
+     daqui — é o que garante que nenhuma coluna mude de largura quando o dado
+     substitui o esqueleto.
+
+     Cada largura é o conteúdo mais largo da fixture mais os 16px de separação;
+     Quantidade é medida pelo cabeçalho, que é bem mais largo que o número. São
+     larguras fixas, e não max-content, porque com max-content quem media as
+     colunas eram as barras do esqueleto — e aí elas pulavam ao sair.
+
+     Cinco colunas da visão por SKU carregam o mesmo conteúdo da visão por lote
+     e herdam as medidas de lá. As duas novas foram medidas no navegador: Lote
+     vale o nome mais longo da fixture, 168px em "Reposição marketplace 4", mais
+     os 16px; Produto fica com a coluna flexível e repete o piso de 230px que o
+     Lote tem na outra visão — o bastante para a miniatura, a linha do SKU ID e
+     um pedaço legível do nome, que trunca com reticências. */
+  const DESTINO_HELP = 'Seller e estoque que receberão o lote'
+
+  const COLUMNS = {
+    lots: [
+      { label: 'Lote',       width: 'minmax(230px, 1fr)', bars: ['70%'] },
+      { label: 'Destino',    width: '166px',              bars: ['90%', '60%'] },
+      { label: 'Quantidade', width: '94px',  cell: 'num', bars: ['60%'] },
+      { label: 'Chegada',    width: '97px',               bars: ['80%'] },
+      { label: 'Status',     width: '106px',              bars: ['72%'] },
+      { label: '',           width: '56px',               bars: [] },
+    ],
+    skus: [
+      { label: 'Produto',    width: 'minmax(230px, 1fr)', thumb: true, bars: ['90%', '60%'] },
+      { label: 'Lote',       width: '184px',              bars: ['90%', '60%'] },
+      { label: 'Destino',    width: '166px', help: DESTINO_HELP, bars: ['90%', '60%'] },
+      { label: 'Quantidade', width: '94px',  cell: 'num', bars: ['60%'] },
+      { label: 'Chegada',    width: '97px',               bars: ['80%'] },
+      { label: 'Status',     width: '106px',              bars: ['72%'] },
+      { label: '',           width: '56px',               bars: [] },
+    ],
+  }
+
+  /* O ContextualHelp do Shoreline: IconButton com o "?" num círculo cinza, e um
+     popover com Container > Content. O gatilho tem 24px e a linha de texto do
+     cabeçalho tem 20px, então o Bleed de -2px devolve os 44px que a Table
+     prescreve para o cabeçalho. */
+  function contextualHelpHtml(label, message) {
+    return `
+      <div data-sl-stack data-horizontal="true" style="--sl-stack-space: var(--sl-space-1)">
+        <span>${escapeHtml(label)}</span>
+        <div data-sl-bleed>
+          <div data-sl-bleed-content style="--sl-bleed-top: var(--sl-space-05); --sl-bleed-bottom: var(--sl-space-05)">
+            <div data-sl-contextual-help class="header-help" data-open="false">
+              <button data-sl-button data-sl-icon-button data-sl-contextual-help-trigger
+                      data-variant="secondary" data-size="normal" type="button"
+                      aria-expanded="false" aria-label="Sobre a coluna ${escapeHtml(label)}">
+                <span data-sl-button-content>
+                  <span data-sl-contextual-help-trigger-bg>?</span>
+                </span>
+              </button>
+              <div class="header-help-popover" data-sl-contextual-help-popover data-sl-popover>
+                <div data-sl-container>
+                  <div data-sl-content data-narrow="false">${escapeHtml(message)}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>`
+  }
+
+  /* Só é chamado na carga e ao trocar de visão: a geometria depende de
+     state.view e de mais nada, e refazer o cabeçalho a cada busca fecharia a
+     ajuda contextual no meio da digitação. */
+  function renderTableHead() {
+    const columns = COLUMNS[state.view]
+
+    el('table').style.setProperty(
+      '--sl-table-grid-template-columns',
+      columns.map((column) => column.width).join(' '))
+
+    el('thead').innerHTML = `
+      <div data-sl-table-row>${columns.map((column) => `
+        <div data-sl-table-header-cell${column.cell ? ` class="${column.cell}"` : ''}>${
+          column.help ? contextualHelpHtml(column.label, column.help) : escapeHtml(column.label)
+        }</div>`).join('')}
+      </div>`
+  }
+
+  /* Rótulo e setas mudam sempre juntos, inclusive nos estados sem lista: com o
+     resultado vazio a paginação precisa dizer "0 de 0", não o total anterior.
+     Carregando, o Shoreline troca o rótulo por um Skeleton e desabilita as duas
+     setas — é o que data-loading="true" dimensiona no CSS. */
+  function updatePagination({ total, isLoading = false }) {
+    const labels = ['pag-label', 'pag-label-2'].map(el)
+    const buttons = ['pag-prev', 'pag-prev-2', 'pag-next', 'pag-next-2'].map(el)
+
+    if (isLoading) {
+      for (const label of labels) {
+        label.dataset.loading = 'true'
+        label.innerHTML = '<div data-sl-skeleton></div>'
+      }
+      for (const button of buttons) button.disabled = true
+      return
+    }
+
+    const first = (state.page - 1) * PAGE_SIZE + 1
+    const last = Math.min(state.page * PAGE_SIZE, total)
+    const lastPage = Math.ceil(total / PAGE_SIZE)
+
+    /* Numa única página o Shoreline omite o intervalo: "6 de 6", não "1 — 6 de 6". */
+    const text = total <= PAGE_SIZE
+      ? `${last} de ${total}`
+      : `${first} — ${last} de ${total}`
+
+    for (const label of labels) {
+      label.dataset.loading = 'false'
+      label.textContent = text
+    }
+    for (const id of ['pag-prev', 'pag-prev-2']) el(id).disabled = state.page === 1
+    for (const id of ['pag-next', 'pag-next-2']) el(id).disabled = state.page >= lastPage
+  }
+
+  /* O carregamento acontece dentro da tabela, com cabeçalho visível e uma
+     skeleton por célula. Assim a linha de carregamento tem a mesma geometria da
+     linha com dado — inclusive os 64px — e nada salta quando o dado chega. */
+  function renderSkeleton() {
+    const bar = (width, height = 20) =>
+      `<div data-sl-skeleton data-sl-skeleton-shape="rect" style="--sl-skeleton-width: ${width}; --sl-skeleton-height: ${height}px"></div>`
+
+    /* flex: 1 porque a pilha só tem barras de largura percentual: sem conteúdo
+       de texto ela não tem largura intrínseca, e a porcentagem resolveria em
+       zero. Com base 0 ela também cede a miniatura de 40px na coluna Produto. */
+    const cell = (column) => {
+      const stack = column.bars.length > 1
+        ? `<div class="cell-stack" style="flex: 1">${column.bars.map((width, i) => bar(width, i ? 16 : 20)).join('')}</div>`
+        : column.bars.map((width) => bar(width)).join('')
+
+      const content = column.thumb
+        ? `<div class="product-cell" style="flex: 1">${bar('40px', 40)}${stack}</div>`
+        : stack
+
+      return `<div data-sl-table-cell${column.cell ? ` class="${column.cell}"` : ''}>${content}</div>`
+    }
+
+    el('table').style.display = ''
+    el('table-footer').style.display = 'none'
+    el('state-slot').innerHTML = ''
+    updatePagination({ total: 0, isLoading: true })
+
+    const cells = COLUMNS[state.view].map(cell).join('')
+
+    el('tbody').innerHTML = Array.from({ length: 6 }, () => `
+      <div data-sl-table-row data-dim-on-hover="false">${cells}</div>`).join('')
+  }
+
+  /* O CollectionView do Shoreline: fora do estado "ready" ele troca a lista por
+     um EmptyState size="large" — ilustração, título, descrição e ação — dentro
+     de um data-sl-collection-view, que é quem centraliza o bloco e reserva os
+     380px de altura mínima. As descrições começam por verbo e não terminam em
+     ponto, como o guia do componente pede.
+
+     O título de "sem resultado" carrega o substantivo da visão; o de "sem dado
+     nenhum" fala em lote nas duas, porque ali o substantivo segue a ação
+     oferecida, que é criar um lote. */
+  function renderEmpty() {
+    el('table').style.display = 'none'
+    el('table-footer').style.display = 'none'
+    updatePagination({ total: 0 })
+
+    const filtered = hasActiveQuery()
+    const noun = state.view === 'skus' ? 'SKU' : 'lote'
+
+    const heading = filtered ? `Nenhum ${noun} encontrado` : 'Nenhum lote futuro ainda'
+    const description = filtered
+      ? 'Tente outros termos ou filtros'
+      : 'Crie um lote para programar as chegadas'
+    const action = filtered
+      ? `<button data-sl-button data-sl-collection-view-action data-variant="secondary" data-size="normal" type="button" id="btn-clear-all">
+           <span data-sl-button-content>Limpar filtros</span>
+         </button>`
+      : `<button data-sl-button data-sl-collection-view-action data-variant="primary" data-size="normal" type="button">
+           <span data-sl-button-content>${icon('plus')}Criar lote futuro</span>
+         </button>`
+
+    el('state-slot').innerHTML = `
+      <div data-sl-collection-view>
+        <div data-sl-empty-state data-sl-size="large">
+          <div data-sl-empty-state-container>
+            <div data-sl-empty-state-illustration data-sl-collection-view-illustration
+                 style="color: var(--sl-color-gray-8)">${icon(filtered ? 'magnifying-glass' : 'plus-circle')}</div>
+            <h3 data-sl-heading data-variant="context" data-sl-collection-view-heading>${heading}</h3>
+            <span data-sl-text data-variant="context" data-sl-collection-view-description>${description}</span>
+            <div data-sl-empty-state-actions>${action}</div>
+          </div>
+        </div>
+      </div>`
+
+    const clear = el('btn-clear-all')
+    if (clear) clear.addEventListener('click', clearEverything)
+  }
+
+  /* Monta o corpo da visão por lote, com a expansão e a abertura automática da
+     busca — nada disso existe na visão por SKU, onde o SKU que casou já é a
+     própria linha. */
+  function lotBodyHtml(lots, skuMatched) {
+    const searching = Boolean(state.search.trim())
+
+    return lots.map((lot) => {
+      const autoExpanded = searching &&
+        skuMatched.includes(lot.id) &&
+        !state.collapsedDuringSearch.has(lot.id)
+      const isExpanded = state.expanded.has(lot.id) || autoExpanded
+
+      return lotRowHtml(lot, isExpanded) +
+        (isExpanded
+          ? lot.items.map((item, i) => itemRowHtml(item, i === lot.items.length - 1)).join('')
+          : '')
+    }).join('')
+  }
+
+  function render() {
+    if (state.isLoading) {
+      renderSkeleton()
+      return
+    }
+
+    const isSkuView = state.view === 'skus'
+    const result = isSkuView ? runSkuQuery() : runQuery()
+
+    if (!result.total) {
+      renderEmpty()
+      syncFilterTriggers()
+      return
+    }
+
+    el('state-slot').innerHTML = ''
+    el('table').style.display = ''
+    el('table-footer').style.display = ''
+
+    el('tbody').innerHTML = isSkuView
+      ? result.rows.map(skuRowHtml).join('')
+      : lotBodyHtml(result.lots, result.skuMatched)
+
+    updatePagination({ total: result.total })
+    syncFilterTriggers()
+  }
+
+  /* Trocar de visão é a mesma pergunta noutra granularidade: busca e filtros
+     sobrevivem intocados. A página volta para a primeira porque os totais das
+     duas visões são diferentes — a página 5 da visão por SKU não existe na
+     visão por lote. */
+  function setView(view) {
+    if (state.view === view) return
+
+    state.view = view
+
+    for (const button of document.querySelectorAll('#view-toggle [data-view]')) {
+      const isCurrent = button.dataset.view === view
+      button.dataset.variant = isCurrent ? 'secondary' : 'tertiary'
+      button.setAttribute('aria-pressed', String(isCurrent))
+    }
+
+    resetToFirstPage()
+    renderTableHead()
+    render()
+  }
+
+  /* Qualquer mudança de busca ou filtro volta para a primeira página. */
+  function resetToFirstPage() {
+    state.page = 1
+    state.expanded.clear()
+  }
+
+  function clearEverything() {
+    state.search = ''
+    el('search').value = ''
+    state.filters = {
+      destinations: [],
+      arrival: { start: null, end: null },
+      quantity: { min: null, max: null },
+      statuses: [],
+    }
+    state.collapsedDuringSearch.clear()
+    resetToFirstPage()
+    buildFilterBodies()
+    render()
+  }
+
+  /* ── Filtros ─────────────────────────────────────────────── */
+
+  const filterNode = (name) => document.querySelector(`.filter[data-filter="${name}"]`)
+
+  /* Mesmo IconCheckSmall que o FilterItem do Shoreline usa no modo múltiplo. */
+  const CHECK = icon('check-small')
+
+  /* O indicador só existe quando a opção está marcada: é ele que pinta o
+     quadrado de azul. A caixa vazia vem do próprio data-sl-filter-item-check. */
+  function filterItemHtml(value, label, isSelected) {
+    return `
+      <span data-sl-filter-item role="option" aria-selected="${isSelected}" data-value="${escapeHtml(value)}">
+        <span data-sl-filter-item-check data-multiselect="true" aria-hidden="true">
+          ${isSelected ? `<span data-sl-filter-item-check-indicator data-multiselect="true">${CHECK}</span>` : ''}
+        </span>
+        <span>${escapeHtml(label)}</span>
+      </span>`
+  }
+
+  function optionListHtml(options, selected) {
+    return `<div data-sl-filter-list role="listbox" aria-multiselectable="true">${
+      options.map((o) => filterItemHtml(o.value, o.label, selected.includes(o.value))).join('')
+    }</div>`
+  }
+
+  /* ── Lista de destinos ───────────────────────────────────────
+     Duas coisas acontecem aqui. A busca é padrão do Shoreline: as boas práticas
+     do Filter mandam incluir uma Search quando a lista costuma passar de cinco
+     itens, e a story assíncrona do componente mostra o desenho — Search no topo,
+     FilterListSkeleton na espera, EmptyState pequeno quando não casa nada.
+
+     O carregamento em partes não é: o Shoreline não tem paginação nem scroll
+     infinito em filtro, a story dele corta o resultado em dez no servidor e
+     encerra o assunto. As dez por vez daqui são extensão nossa, resolvendo o
+     caso de uma conta com muitos estoques.
+     ───────────────────────────────────────────────────────────── */
+
+  const DESTINATION_PAGE = 10
+  const DESTINATION_DELAY = 400
+
+  const destinationList = { search: '', loaded: 0, loading: false, token: 0 }
+
+  /* A seleção pendente vive fora do DOM porque a lista se refaz a cada busca e a
+     cada página: um destino marcado que sai da lista continua marcado, e é isso
+     que o Aplicar precisa enxergar. */
+  const pendingSelection = { destinations: new Set(), statuses: new Set() }
+
+  const destinationMatches = () => {
+    const term = norm(destinationList.search.trim())
+    return term ? DESTINATION_OPTIONS.filter((o) => norm(o).includes(term)) : DESTINATION_OPTIONS
+  }
+
+  /* As cinco barras do FilterListSkeleton, com as larguras que o componente fixa
+     e o respiro de 8px na primeira e na última. */
+  const filterSkeletonHtml = () => {
+    const bar = (width, extra = '') =>
+      `<div data-sl-skeleton data-sl-skeleton-shape="rect"
+            style="--sl-skeleton-width: ${width}; --sl-skeleton-height: 1.25rem; ${extra}"></div>`
+
+    return `
+      <div data-sl-stack data-horizontal="false" style="--sl-stack-space: var(--sl-space-4)">
+        ${bar('8.75rem', 'margin-top: var(--sl-space-2)')}
+        ${bar('10rem')}
+        ${bar('7.5rem')}
+        ${bar('8.75rem')}
+        ${bar('10rem', 'margin-bottom: var(--sl-space-2)')}
+      </div>`
+  }
+
+  /* Busca sem resultado dentro de um filtro usa o EmptyState pequeno, não o
+     large da Collection: o popover tem 260px e a story do Filter fixa 15rem. */
+  const filterEmptyHtml = () => `
+    <div data-sl-empty-state data-sl-size="small" style="height: 15rem">
+      <div data-sl-empty-state-container>
+        <div data-sl-empty-state-illustration
+             style="color: var(--sl-color-gray-8)">${icon('magnifying-glass')}</div>
+        <h3 data-sl-heading>Nenhum resultado encontrado</h3>
+        <span data-sl-text data-variant="body">Tente outros termos</span>
+      </div>
+    </div>`
+
+  const filterSpinnerHtml = () => `
+    <div class="filter-list-more">
+      <div data-sl-spinner aria-live="assertive" aria-atomic="true">
+        <svg viewBox="0 0 50 50" width="16" height="16" role="img" aria-label="Carregando">
+          <circle cx="25" cy="25" r="20"></circle>
+        </svg>
+      </div>
+    </div>`
+
+  /* A página seguinte é acrescentada, nunca redesenhada: reescrever a lista
+     inteira zeraria o scroll, e quem acabou de chegar ao fim voltaria ao topo. */
+  function renderDestinationList({ append = false } = {}) {
+    const list = filterNode('destinations').querySelector('[data-sl-filter-list]')
+    const matches = destinationMatches()
+    const shown = matches.slice(0, destinationList.loaded)
+    const spinner = destinationList.loading ? filterSpinnerHtml() : ''
+
+    if (append) {
+      const onScreen = list.querySelectorAll('[data-sl-filter-item]').length
+      const more = list.querySelector('.filter-list-more')
+      if (more) more.remove()
+      list.insertAdjacentHTML('beforeend', itemsHtml(shown.slice(onScreen)) + spinner)
+      return
+    }
+
+    list.innerHTML = shown.length ? itemsHtml(shown) + spinner
+      : destinationList.loading ? filterSkeletonHtml()
+      : matches.length ? '' : filterEmptyHtml()
+  }
+
+  const itemsHtml = (options) => options
+    .map((o) => filterItemHtml(o, o, pendingSelection.destinations.has(o))).join('')
+
+  /* Simula a chamada que traz a página seguinte. O token descarta a resposta de
+     uma busca que já foi substituída por outra — sem ele, uma busca lenta
+     escreveria por cima do resultado de uma busca mais nova. */
+  function loadDestinations({ reset = false } = {}) {
+    const total = destinationMatches().length
+    if (!reset && (destinationList.loading || destinationList.loaded >= total)) return
+
+    if (reset) destinationList.loaded = 0
+    destinationList.loading = true
+    const token = ++destinationList.token
+    renderDestinationList({ append: !reset })
+
+    setTimeout(() => {
+      if (token !== destinationList.token) return
+      destinationList.loading = false
+      destinationList.loaded = Math.min(destinationList.loaded + DESTINATION_PAGE,
+        destinationMatches().length)
+      renderDestinationList({ append: !reset })
+    }, DESTINATION_DELAY)
+  }
+
+  function onDestinationScroll(event) {
+    const list = event.currentTarget
+    if (list.scrollHeight - list.scrollTop - list.clientHeight < 48) loadDestinations()
+  }
+
+  function setFilterItemSelected(item, selected) {
+    item.setAttribute('aria-selected', String(selected))
+    item.querySelector('[data-sl-filter-item-check]').innerHTML = selected
+      ? `<span data-sl-filter-item-check-indicator data-multiselect="true">${CHECK}</span>`
+      : ''
+  }
+
+  /* Abrir um filtro de lista mostra o que está aplicado. Como não existe botão
+     de cancelar, fechar sem aplicar é desistir — e uma marca pendente que ficou
+     numa página fora da tela seria pior ainda, porque ninguém a veria antes de
+     ela entrar no filtro. A busca também recomeça vazia: ela é ferramenta para
+     achar a opção, não parte do que foi filtrado. */
+  function resetListFilter(name) {
+    if (name === 'destinations') {
+      pendingSelection.destinations = new Set(state.filters.destinations)
+      filterNode('destinations').querySelector('[data-sl-search-input]').value = ''
+      destinationList.search = ''
+      loadDestinations({ reset: true })
+      return
+    }
+
+    if (name === 'statuses') {
+      pendingSelection.statuses = new Set(state.filters.statuses)
+      for (const item of filterNode('statuses').querySelectorAll('[data-sl-filter-item]')) {
+        setFilterItemSelected(item, pendingSelection.statuses.has(item.dataset.value))
+      }
+    }
+  }
+
+  /* O rótulo vira <span> quando o controle não é rotulável — o caso do
+     DatePicker, que é uma lista de divs e se liga ao rótulo por aria-labelledby. */
+  function fieldHtml(id, label, control, { labelable = true } = {}) {
+    const tag = labelable
+      ? `<label data-sl-label id="${id}-label" for="${id}">`
+      : `<span data-sl-label id="${id}-label">`
+
+    return `
+      <div data-sl-field data-space="normal">
+        ${tag}${escapeHtml(label)}${labelable ? '</label>' : '</span>'}
+        ${control}
+      </div>`
+  }
+
+  /* O Input do Shoreline é um div que envolve o campo: a moldura, a altura e o
+     anel de foco moram no data-sl-input, e o padding lateral só existe na regra
+     que mira o data-sl-input-element dentro dele. */
+  function inputHtml(id, attrs) {
+    return `
+      <div data-sl-input>
+        <input data-sl-input-element id="${id}" ${attrs}>
+      </div>`
+  }
+
+  /* ── Campo de data ───────────────────────────────────────────
+     O DatePicker do Shoreline compõe o DateField — a lista de segmentos
+     editáveis — com um IconButton que abre o Calendar num Popover. Em React,
+     quem move o cursor entre os segmentos, incrementa com as setas e monta a
+     grade do mês é o React Aria; aqui esse comportamento é reescrito, mas a
+     árvore de atributos e todo o desenho continuam sendo os do componente.
+
+     Data aqui é sempre string ISO, como no resto do arquivo. Nenhum objeto Date
+     atravessa o filtro: é o que impede o fuso de deslocar o dia.
+     ───────────────────────────────────────────────────────────── */
+
+  const SEGMENTS = [
+    { type: 'day',   size: 2, min: 1,    max: 31,   empty: 'dd',   label: 'dia' },
+    { type: 'month', size: 2, min: 1,    max: 12,   empty: 'mm',   label: 'mês' },
+    { type: 'year',  size: 4, min: 1900, max: 2100, empty: 'aaaa', label: 'ano' },
+  ]
+
+  const CALENDAR_ICON = icon('calendar-blank')
+  const CARET_LEFT = icon('caret-left')
+
+  const pad = (value, size) => String(value).padStart(size, '0')
+  const clamp = (value, min, max) => Math.min(Math.max(value, min), max)
+  const daysInMonth = (year, month) => new Date(year, month, 0).getDate()
+
+  function todayIso() {
+    const now = new Date()
+    return `${now.getFullYear()}-${pad(now.getMonth() + 1, 2)}-${pad(now.getDate(), 2)}`
+  }
+
+  const isoParts = (iso) => {
+    const [year, month, day] = iso ? iso.split('-').map(Number) : [null, null, null]
+    return { year, month, day }
+  }
+
+  /* 4 de janeiro de 2026 foi um domingo, que é onde a semana começa em pt-BR.
+     O estilo "narrow" é o padrão do useCalendarGrid, então D S T Q Q S S. */
+  const WEEKDAYS = (() => {
+    const format = new Intl.DateTimeFormat('pt-BR', { weekday: 'narrow' }).format
+    return [...Array(7).keys()].map((i) => format(new Date(2026, 0, 4 + i)))
+  })()
+
+  const monthTitle = (year, month) =>
+    new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' })
+      .format(new Date(year, month - 1, 1))
+
+  function segmentHtml(segment, value) {
+    const isEmpty = value === null
+    return `<div data-sl-date-segment data-segment="${segment.type}"
+                 data-placeholder="${isEmpty}" role="spinbutton" tabindex="0"
+                 aria-label="${segment.label}"
+            >${isEmpty ? segment.empty : pad(value, segment.size)}</div>`
+  }
+
+  /* O valor de verdade fica num input escondido, em ISO: é dele que o
+     applyFilter lê, então a leitura do filtro não muda por causa do campo. */
+  function datePickerHtml(id, role, iso) {
+    const parts = isoParts(iso)
+    const separator = '<div data-sl-date-segment aria-hidden="true">/</div>'
+
+    return `
+      <div class="date-picker" data-sl-date-picker>
+        <input type="hidden" data-role="${role}" value="${iso || ''}">
+        <div data-sl-date-picker-input>
+          <div data-sl-date-field>
+            <div data-sl-date-field-segment-list role="group" aria-labelledby="${id}-label">
+              ${SEGMENTS.map((s) => segmentHtml(s, parts[s.type])).join(separator)}
+            </div>
+          </div>
+          <div data-sl-bleed>
+            <div data-sl-bleed-content style="--sl-bleed-end: var(--sl-space-2)">
+              <button type="button" data-sl-button data-sl-icon-button data-sl-date-picker-button
+                      data-variant="tertiary" data-size="normal"
+                      aria-label="Escolher data" aria-expanded="false">
+                <span data-sl-button-content>${CALENDAR_ICON}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="calendar-popover" data-sl-popover></div>
+      </div>`
+  }
+
+  function calendarCellHtml(year, month, day, selectedIso) {
+    const iso = `${year}-${pad(month, 2)}-${pad(day, 2)}`
+    const isSelected = iso === selectedIso
+
+    /* Numa data única o próprio componente marca a célula como início e fim da
+       seleção ao mesmo tempo — é o que arredonda os dois lados. */
+    return `
+      <td data-sl-calendar-cell>
+        <button type="button" data-sl-button data-sl-icon-button data-sl-calendar-cell-button
+                data-variant="tertiary" data-size="normal" data-date="${iso}"
+                data-selected="${isSelected}"
+                data-selection-start="${isSelected}" data-selection-end="${isSelected}"
+                aria-label="${day} de ${monthTitle(year, month)}">
+          <span data-sl-button-content><span>${day}</span></span>
+        </button>
+      </td>`
+  }
+
+  function calendarHtml(monthKey, selectedIso) {
+    const [year, month] = monthKey.split('-').map(Number)
+    const firstWeekday = new Date(year, month - 1, 1).getDay()
+    const total = daysInMonth(year, month)
+    const weeks = Math.ceil((firstWeekday + total) / 7)
+
+    const cells = [...Array(weeks * 7).keys()].map((i) => {
+      const day = i - firstWeekday + 1
+      return day >= 1 && day <= total
+        ? calendarCellHtml(year, month, day, selectedIso)
+        : '<td data-sl-calendar-cell></td>'
+    })
+
+    const rows = [...Array(weeks).keys()]
+      .map((i) => `<tr>${cells.slice(i * 7, i * 7 + 7).join('')}</tr>`).join('')
+
+    const navButton = (direction, label, glyph) => `
+      <button type="button" data-sl-button data-sl-icon-button data-variant="tertiary"
+              data-size="normal" data-calendar-nav="${direction}" aria-label="${label}">
+        <span data-sl-button-content>${glyph}</span>
+      </button>`
+
+    return `
+      <div data-sl-calendar role="group" aria-label="${escapeHtml(monthTitle(year, month))}">
+        <div data-sl-calendar-header>
+          ${navButton('prev', 'Mês anterior', CARET_LEFT)}
+          <h2 data-sl-calendar-title>${escapeHtml(monthTitle(year, month))}</h2>
+          ${navButton('next', 'Próximo mês', CARET_RIGHT)}
+        </div>
+        <table data-sl-calendar-grid>
+          <thead data-sl-calendar-grid-header>
+            <tr>${WEEKDAYS.map((d) => `<th>${d}</th>`).join('')}</tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>`
+  }
+
+  const hiddenOf = (picker) => picker.querySelector('input[type="hidden"]')
+  const segmentOf = (picker, type) => picker.querySelector(`[data-segment="${type}"]`)
+  const segmentValue = (el) => (el.dataset.placeholder === 'true' ? null : Number(el.textContent))
+
+  function writeSegment(el, value) {
+    const segment = SEGMENTS.find((s) => s.type === el.dataset.segment)
+    el.dataset.placeholder = String(value === null)
+    el.textContent = value === null ? segment.empty : pad(value, segment.size)
+  }
+
+  function setPickerDate(picker, iso) {
+    const parts = isoParts(iso)
+    hiddenOf(picker).value = iso || ''
+    SEGMENTS.forEach((s) => writeSegment(segmentOf(picker, s.type), parts[s.type]))
+  }
+
+  /* Uma data pela metade não filtra nada, então o valor só existe com os três
+     segmentos preenchidos. Um 31 digitado em fevereiro recua para o último dia
+     do mês, e o segmento acompanha — o campo nunca mostra data que não existe. */
+  function syncPickerFromSegments(picker) {
+    const values = Object.fromEntries(
+      SEGMENTS.map((s) => [s.type, segmentValue(segmentOf(picker, s.type))]))
+
+    if (!values.day || !values.month || !values.year) {
+      hiddenOf(picker).value = ''
+      return
+    }
+
+    const day = Math.min(values.day, daysInMonth(values.year, values.month))
+    if (day !== values.day) writeSegment(segmentOf(picker, 'day'), day)
+
+    hiddenOf(picker).value = `${pad(values.year, 4)}-${pad(values.month, 2)}-${pad(day, 2)}`
+  }
+
+  function openCalendar(picker, isOpen) {
+    const popover = picker.querySelector('.calendar-popover')
+    const trigger = picker.querySelector('[data-sl-date-picker-button]')
+
+    if (isOpen) {
+      const iso = hiddenOf(picker).value
+      popover.dataset.month = (iso || todayIso()).slice(0, 7)
+      popover.innerHTML = calendarHtml(popover.dataset.month, iso)
+    }
+
+    picker.dataset.open = String(isOpen)
+    trigger.setAttribute('aria-expanded', String(isOpen))
+  }
+
+  const closeAllCalendars = () =>
+    document.querySelectorAll('[data-sl-date-picker][data-open="true"]')
+      .forEach((picker) => openCalendar(picker, false))
+
+  function shiftCalendarMonth(popover, delta) {
+    const [year, month] = popover.dataset.month.split('-').map(Number)
+    const moved = new Date(year, month - 1 + delta, 1)
+    popover.dataset.month = `${moved.getFullYear()}-${pad(moved.getMonth() + 1, 2)}`
+    popover.innerHTML = calendarHtml(popover.dataset.month, hiddenOf(popover.closest('[data-sl-date-picker]')).value)
+  }
+
+  /* O padding do rodapé vem do data-sl-content, como no componente real. */
+  function footerHtml() {
+    return `
+      <footer data-sl-filter-popover-footer data-sl-content data-narrow="true">
+        <button data-sl-button data-variant="tertiary" data-size="normal" data-role="clear"><span data-sl-button-content>Limpar</span></button>
+        <button data-sl-button data-variant="primary" data-size="normal" data-role="apply"><span data-sl-button-content>Aplicar</span></button>
+      </footer>`
+  }
+
+  function buildFilterBodies() {
+    const f = state.filters
+
+    const fill = (name, content) => {
+      filterNode(name).querySelector('[data-sl-container]').innerHTML = content + footerHtml()
+    }
+
+    pendingSelection.destinations = new Set(f.destinations)
+    pendingSelection.statuses = new Set(f.statuses)
+
+    /* O data-sl-combobox-list é o que tira o padding de cima da lista quando há
+       busca acima dela — sem ele sobra um vão entre a Search e o primeiro item. */
+    fill('destinations', `
+      <div data-sl-content data-narrow="true" data-sl-filter-popover-combobox>
+        <div data-sl-search>
+          <span data-sl-pre-icon>${icon('magnifying-glass-small')}</span>
+          <input data-sl-search-input data-role="destination-search"
+                 placeholder="Buscar destino" autocomplete="off">
+        </div>
+      </div>
+      <div data-sl-filter-list data-sl-combobox-list role="listbox" aria-multiselectable="true"></div>`)
+
+    destinationList.search = ''
+    destinationList.loaded = 0
+    destinationList.loading = false
+    destinationList.token += 1
+    filterNode('destinations').querySelector('[data-sl-filter-list]')
+      .addEventListener('scroll', onDestinationScroll)
+
+    /* Status tem quatro opções: abaixo dos cinco em que o Shoreline manda pôr
+       busca, e curto o bastante para não precisar de carregamento em partes. */
+    fill('statuses', optionListHtml(
+      STATUSES.map((s) => ({ value: s.id, label: s.label })), f.statuses))
+
+    fill('arrival', `
+      <div data-sl-content>
+        <div data-sl-stack data-horizontal="false" data-fluid="true">
+          ${fieldHtml('filter-arrival-start', 'De',
+            datePickerHtml('filter-arrival-start', 'start', f.arrival.start), { labelable: false })}
+          ${fieldHtml('filter-arrival-end', 'Até',
+            datePickerHtml('filter-arrival-end', 'end', f.arrival.end), { labelable: false })}
+          <span data-sl-field-error role="alert" data-role="error" hidden>A data final é anterior à inicial.</span>
+        </div>
+      </div>`)
+
+    /* Sem type="number": o Shoreline não tem campo numérico, e o Input é um
+       campo de texto que pode restringir caracteres. O inputmode chama o teclado
+       numérico no celular sem trazer o spinner do navegador. */
+    fill('quantity', `
+      <div data-sl-content>
+        <div data-sl-stack data-horizontal="false" data-fluid="true">
+          ${fieldHtml('filter-quantity-min', 'Mínima', inputHtml('filter-quantity-min',
+            `type="text" inputmode="numeric" data-role="min" value="${f.quantity.min ?? ''}"`))}
+          ${fieldHtml('filter-quantity-max', 'Máxima', inputHtml('filter-quantity-max',
+            `type="text" inputmode="numeric" data-role="max" value="${f.quantity.max ?? ''}"`))}
+        </div>
+      </div>`)
+  }
+
+  function syncFilterTriggers() {
+    const f = state.filters
+
+    /* O FilterValue mostra o rótulo do primeiro selecionado e a contagem do
+       resto, no formato ": primeiro, +n" — o componente diz para não customizar
+       esse resumo, e a contagem sozinha que havia aqui não dizia qual era. */
+    const listSummary = (labels) => labels.length
+      ? `: ${labels[0]}${labels.length > 1 ? `, +${labels.length - 1}` : ''}`
+      : ''
+
+    const summaries = {
+      destinations: listSummary(f.destinations),
+      statuses: listSummary(f.statuses.map((id) => statusById(id).label)),
+      arrival: f.arrival.start || f.arrival.end
+        ? `: ${f.arrival.start ? formatDate(f.arrival.start) : '…'} – ${f.arrival.end ? formatDate(f.arrival.end) : '…'}`
+        : '',
+      quantity: f.quantity.min !== null || f.quantity.max !== null
+        ? `: ${f.quantity.min ?? '…'} – ${f.quantity.max ?? '…'}`
+        : '',
+    }
+
+    for (const [name, summary] of Object.entries(summaries)) {
+      filterNode(name).querySelector('[data-sl-filter-value]').textContent = summary
+    }
+  }
+
+  function closeAllFilters() {
+    closeAllCalendars()
+    for (const node of document.querySelectorAll('.filter')) {
+      node.dataset.open = 'false'
+      node.querySelector('[data-sl-filter-trigger]').setAttribute('aria-expanded', 'false')
+    }
+  }
+
+  function closeHeaderHelp() {
+    for (const node of document.querySelectorAll('.header-help')) {
+      node.dataset.open = 'false'
+      node.querySelector('[data-sl-contextual-help-trigger]').setAttribute('aria-expanded', 'false')
+    }
+  }
+
+  function applyFilter(name, node) {
+    const f = state.filters
+
+    /* A seleção vem do conjunto pendente, não do DOM: na lista de destinos o que
+       está na tela é só a página carregada da busca atual. A ordem do catálogo é
+       reimposta aqui para o resumo do gatilho não depender da ordem de clique. */
+    if (name === 'destinations') {
+      f.destinations = DESTINATION_OPTIONS.filter((o) => pendingSelection.destinations.has(o))
+    }
+
+    if (name === 'statuses') {
+      f.statuses = STATUSES.filter((s) => pendingSelection.statuses.has(s.id)).map((s) => s.id)
+    }
+
+    if (name === 'arrival') {
+      const start = node.querySelector('[data-role="start"]').value || null
+      const end = node.querySelector('[data-role="end"]').value || null
+      const error = node.querySelector('[data-role="error"]')
+
+      if (!isDateRangeValid(start, end)) {
+        error.hidden = false
+        return false
+      }
+
+      error.hidden = true
+      f.arrival = { start, end }
+    }
+
+    if (name === 'quantity') {
+      const raw = (role) => node.querySelector(`[data-role="${role}"]`).value
+      const min = raw('min') === '' ? null : Number(raw('min'))
+      const max = raw('max') === '' ? null : Number(raw('max'))
+      f.quantity = { min, max }
+    }
+
+    return true
+  }
+
+  /* ── Eventos ─────────────────────────────────────────────── */
+
+  el('search').addEventListener('input', (event) => {
+    state.search = event.target.value
+    state.collapsedDuringSearch.clear()
+    resetToFirstPage()
+    render()
+  })
+
+  el('view-toggle').addEventListener('click', (event) => {
+    const button = event.target.closest('[data-view]')
+    if (button) setView(button.dataset.view)
+  })
+
+  /* A ajuda contextual é delegada no cabeçalho porque renderTableHead refaz o
+     conteúdo dele a cada troca de visão. */
+  el('thead').addEventListener('click', (event) => {
+    const trigger = event.target.closest('[data-sl-contextual-help-trigger]')
+    if (!trigger) return
+
+    const help = trigger.closest('.header-help')
+    const willOpen = help.dataset.open !== 'true'
+
+    closeAllFilters()
+    help.dataset.open = String(willOpen)
+    trigger.setAttribute('aria-expanded', String(willOpen))
+  })
+
+  el('tbody').addEventListener('click', (event) => {
+    const button = event.target.closest('[data-toggle]')
+    if (!button) return
+
+    const lotId = button.dataset.toggle
+    const wasExpanded = button.getAttribute('aria-expanded') === 'true'
+
+    if (wasExpanded) {
+      state.expanded.delete(lotId)
+      if (state.search.trim()) state.collapsedDuringSearch.add(lotId)
+    } else {
+      state.expanded.add(lotId)
+      state.collapsedDuringSearch.delete(lotId)
+    }
+
+    render()
+  })
+
+  const goToPage = (delta) => {
+    state.page += delta
+    state.expanded.clear()
+    render()
+  }
+
+  for (const id of ['pag-prev', 'pag-prev-2']) el(id).addEventListener('click', () => goToPage(-1))
+  for (const id of ['pag-next', 'pag-next-2']) el(id).addEventListener('click', () => goToPage(1))
+
+  document.getElementById('filter-row').addEventListener('click', (event) => {
+    const node = event.target.closest('.filter')
+    if (!node) return
+
+    const name = node.dataset.filter
+
+    if (event.target.closest('[data-sl-filter-trigger]')) {
+      const willOpen = node.dataset.open !== 'true'
+      closeAllFilters()
+      node.dataset.open = String(willOpen)
+      node.querySelector('[data-sl-filter-trigger]').setAttribute('aria-expanded', String(willOpen))
+
+      /* A primeira página de destinos só é buscada quando o filtro abre —
+         carregar 48 numa tela que talvez ninguém filtre é trabalho à toa. */
+      if (willOpen) resetListFilter(name)
+      return
+    }
+
+    const picker = event.target.closest('[data-sl-date-picker]')
+
+    /* Um calendário aberto se fecha ao clicar em qualquer outro lugar, inclusive
+       no campo vizinho — dois calendários nunca ficam abertos ao mesmo tempo. */
+    document.querySelectorAll('[data-sl-date-picker][data-open="true"]')
+      .forEach((other) => { if (other !== picker) openCalendar(other, false) })
+
+    if (picker) {
+      if (event.target.closest('[data-sl-date-picker-button]')) {
+        openCalendar(picker, picker.dataset.open !== 'true')
+        return
+      }
+
+      const nav = event.target.closest('[data-calendar-nav]')
+      if (nav) {
+        shiftCalendarMonth(picker.querySelector('.calendar-popover'),
+          nav.dataset.calendarNav === 'prev' ? -1 : 1)
+        return
+      }
+
+      const cell = event.target.closest('[data-sl-calendar-cell-button]')
+      if (cell) {
+        setPickerDate(picker, cell.dataset.date)
+        openCalendar(picker, false)
+        return
+      }
+
+      /* Clicar na moldura leva o cursor para o primeiro segmento, como no
+         componente: o alvo de clique é a caixa inteira, não cada pedacinho. */
+      if (!event.target.closest('[data-segment]')) {
+        segmentOf(picker, 'day').focus()
+      }
+      return
+    }
+
+    const item = event.target.closest('[data-sl-filter-item]')
+    if (item) {
+      const willSelect = item.getAttribute('aria-selected') !== 'true'
+      setFilterItemSelected(item, willSelect)
+
+      const selection = pendingSelection[name]
+      if (willSelect) selection.add(item.dataset.value)
+      else selection.delete(item.dataset.value)
+      return
+    }
+
+    const action = event.target.closest('[data-role]')
+    if (!action) return
+
+    if (action.dataset.role === 'clear') {
+      if (name === 'arrival') state.filters.arrival = { start: null, end: null }
+      else if (name === 'quantity') state.filters.quantity = { min: null, max: null }
+      else state.filters[name] = []
+
+      buildFilterBodies()
+      resetToFirstPage()
+      closeAllFilters()
+      render()
+      return
+    }
+
+    if (action.dataset.role === 'apply') {
+      if (!applyFilter(name, node)) return
+      resetToFirstPage()
+      closeAllFilters()
+      render()
+    }
+  })
+
+  /* Teclado do campo de data, reescrevendo o que o React Aria faz no componente:
+     dígitos preenchem o segmento e pulam para o próximo quando ele não cabe mais
+     nada, as setas verticais incrementam, as horizontais andam entre segmentos e
+     o backspace esvazia. O buffer guarda o que foi digitado até aqui, para que
+     "1" e depois "5" virem 15 em vez de 5. */
+  document.getElementById('filter-row').addEventListener('keydown', (event) => {
+    const el = event.target.closest('[data-segment]')
+    if (!el) return
+
+    const segment = SEGMENTS.find((s) => s.type === el.dataset.segment)
+    const picker = el.closest('[data-sl-date-picker]')
+    const list = [...picker.querySelectorAll('[data-segment]')]
+    const commit = (value) => {
+      writeSegment(el, clamp(value, segment.min, segment.max))
+      el.dataset.buffer = ''
+      syncPickerFromSegments(picker)
+    }
+
+    if (/^\d$/.test(event.key)) {
+      event.preventDefault()
+      let buffer = (el.dataset.buffer || '') + event.key
+      if (buffer.length > segment.size) buffer = event.key
+
+      const value = Number(buffer)
+      el.dataset.placeholder = 'false'
+      el.textContent = buffer.padStart(segment.size, '0')
+      el.dataset.buffer = buffer
+
+      /* Fecha o segmento quando ele já não aceita outro dígito — um 4 no dia não
+         pode virar 4x, então o cursor segue adiante sem esperar. */
+      if (buffer.length === segment.size || value * 10 > segment.max) {
+        commit(value)
+        const next = list[list.indexOf(el) + 1]
+        if (next) next.focus()
+      } else {
+        syncPickerFromSegments(picker)
+      }
+      return
+    }
+
+    if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
+      event.preventDefault()
+      const current = segmentValue(el)
+      if (current === null) {
+        commit(isoParts(todayIso())[segment.type])
+        return
+      }
+      const step = event.key === 'ArrowUp' ? 1 : -1
+      const span = segment.max - segment.min + 1
+      commit(((current - segment.min + step + span) % span) + segment.min)
+      return
+    }
+
+    if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+      event.preventDefault()
+      const neighbour = list[list.indexOf(el) + (event.key === 'ArrowLeft' ? -1 : 1)]
+      if (neighbour) neighbour.focus()
+      return
+    }
+
+    if (event.key === 'Backspace' || event.key === 'Delete') {
+      event.preventDefault()
+      writeSegment(el, null)
+      el.dataset.buffer = ''
+      syncPickerFromSegments(picker)
+    }
+  })
+
+  /* Sair do segmento encerra o que estava sendo digitado: um "3" solto no dia
+     vira 03 em vez de ficar pendurado esperando o próximo dígito. */
+  document.getElementById('filter-row').addEventListener('focusout', (event) => {
+    const el = event.target.closest('[data-segment]')
+    if (!el || !el.dataset.buffer) return
+
+    const segment = SEGMENTS.find((s) => s.type === el.dataset.segment)
+    writeSegment(el, clamp(Number(el.dataset.buffer), segment.min, segment.max))
+    el.dataset.buffer = ''
+    syncPickerFromSegments(el.closest('[data-sl-date-picker]'))
+  })
+
+  /* A restrição a dígitos é o que o Shoreline pede no lugar do type="number":
+     sem ela o campo aceitaria qualquer texto. O cursor volta para onde estava,
+     descontando o que foi recusado antes dele, senão pular para o fim atrapalha
+     quem corrige um dígito no meio. */
+  document.getElementById('filter-row').addEventListener('input', (event) => {
+    const field = event.target.closest('[data-role="min"], [data-role="max"]')
+    if (!field) return
+
+    const digits = field.value.replace(/\D/g, '')
+    if (digits === field.value) return
+
+    const caret = field.selectionStart
+    const antes = field.value.slice(0, caret)
+    const destino = caret - (antes.length - antes.replace(/\D/g, '').length)
+
+    field.value = digits
+    field.setSelectionRange(destino, destino)
+  })
+
+  /* Espera a digitação parar antes de "chamar a API": sem isso cada tecla
+     dispararia uma busca, e o esqueleto piscaria letra a letra. */
+  let destinationSearchTimer = null
+  document.getElementById('filter-row').addEventListener('input', (event) => {
+    if (!event.target.closest('[data-role="destination-search"]')) return
+
+    destinationList.search = event.target.value
+    clearTimeout(destinationSearchTimer)
+    destinationSearchTimer = setTimeout(() => loadDestinations({ reset: true }), 250)
+  })
+
+  document.addEventListener('click', (event) => {
+    if (!event.target.closest('.filter')) closeAllFilters()
+    if (!event.target.closest('.header-help')) closeHeaderHelp()
+  })
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape') return
+    closeAllFilters()
+    closeHeaderHelp()
+  })
+
+  /* ── Shell: recolher a navegação ─────────────────────────── */
+
+  const menuButton = document.getElementById('btn-menu')
+
+  menuButton.addEventListener('click', () => {
+    const isCollapsed = document.querySelector('.shell').classList.toggle('nav-collapsed')
+    menuButton.setAttribute('aria-expanded', String(!isCollapsed))
+  })
+
+  /* Skeleton é um estado real da tela; um atraso curto o torna visível na revisão. */
+  hydrateIcons()
+  buildFilterBodies()
+  renderTableHead()
+  render()
+  setTimeout(() => {
+    state.isLoading = false
+    render()
+  }, 450)
+})()
+</script>
+
+</body>
+</html>
