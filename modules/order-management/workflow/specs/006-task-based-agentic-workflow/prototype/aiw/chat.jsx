@@ -257,6 +257,11 @@ function ChatPanel({
   placeholder = "Message VTEX My Assistant...",
   agent = "VTEX My Assistant",
   onBack,
+  // Conteúdo fixo ancorado logo acima do composer (ex.: card de verificação).
+  aboveComposer,
+  // Conteúdo fixo no fim do corpo da conversa, junto às mensagens
+  // (ex.: registro da resposta da verificação, depois de confirmada).
+  bodyFooter,
   // Controlled mode:
   messages: controlledMessages,
   onSend: externalOnSend,
@@ -284,7 +289,7 @@ function ChatPanel({
 
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-  }, [messages, isTyping]);
+  }, [messages, isTyping, !!bodyFooter]);
 
   const send = (text, replyFromMsgIndex, opts) => {
     if (!text.trim()) return;
@@ -506,6 +511,8 @@ function ChatPanel({
 
         {messages.map(renderMessage)}
 
+        {bodyFooter && <div className="chat-body-card">{bodyFooter}</div>}
+
         {isTyping && (
           <div className="msg msg-assistant">
             <div className="chat-typing">
@@ -517,6 +524,7 @@ function ChatPanel({
       </div>
 
       <div className="chat-composer-wrap">
+        {aboveComposer && <div className="chat-above-composer">{aboveComposer}</div>}
         {chips.length > 0 && (
           alwaysShowChips ? (
             <div className="composer-chips">

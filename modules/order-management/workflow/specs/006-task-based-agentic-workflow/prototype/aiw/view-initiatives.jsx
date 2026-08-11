@@ -1,4 +1,4 @@
-/* global React, AIWData */
+/* global React, AIWData, Icon */
 const { useState: useStateInitiatives, useMemo: useMemoInitiatives } = React;
 
 /* ── Status indicator (v3 parity with the kanban status icon) ── */
@@ -61,8 +61,165 @@ function InitiativeRow({ initiative, onOpen }) {
   );
 }
 
+const INITIATIVE_PRIORITY_LABEL = { high: "Alta", medium: "Média", low: "Baixa" };
+const INITIATIVE_TASK_STATUS_LABEL = { completed: "Concluída", triage: "Aguardando triagem", attention: "Aguardando aprovação" };
+
+function InitiativeStatusPill({ status }) {
+  return (
+    <span className="initiative-pill" data-status={status}>
+      <InitiativeStatusIcon status={status} />
+      {INITIATIVE_STATUS_LABEL[status] || status}
+    </span>
+  );
+}
+
+function InitiativeSeverityPill({ priority }) {
+  if (!priority) return null;
+  return (
+    <span className="initiative-pill initiative-pill--severity" data-priority={priority}>
+      {INITIATIVE_PRIORITY_LABEL[priority] || priority}
+    </span>
+  );
+}
+
+function InitiativeAvatar({ initials, name, agent }) {
+  return (
+    <span className={`initiative-avatar${agent ? " initiative-avatar--agent" : ""}`} title={name}>
+      {agent ? <Icon name="sparkle" size={12} /> : initials}
+    </span>
+  );
+}
+
+/* Tarefa com status "attention" já tem uma conversa em aberto aguardando
+   aprovação — só nesse caso "Ver conversa" fica disponível. Para as demais,
+   mostramos apenas o status (o chat não é aberto sem ação do usuário). */
+function InitiativeTaskRow({ task, onOpenTask }) {
+  const canViewChat = task.status === "attention" && !!task.id;
+  return (
+    <div className="initiative-task-row">
+      <span className="initiative-task-status" data-status={task.status}>
+        <InitiativeStatusIcon status={task.status === "attention" ? "attention" : task.status === "completed" ? "completed" : "triage"} />
+      </span>
+      <span className="initiative-task-title">{task.title}</span>
+      <span className="initiative-task-trailing">
+        {canViewChat ? (
+          <button className="initiative-task-view-chat" onClick={() => onOpenTask && onOpenTask(task.id, { openChat: true })}>
+            Ver conversa
+            <Icon name="arrow-up-right" size={12} />
+          </button>
+        ) : task.status === "active" ? (
+          <span className="initiative-task-status-label">Explorando…</span>
+        ) : (
+          <span className="initiative-task-status-label initiative-task-status-label--muted">
+            {INITIATIVE_TASK_STATUS_LABEL[task.status] || task.status}
+          </span>
+        )}
+        <InitiativeAvatar initials={task.assigneeInitials} name={task.assigneeName} />
+      </span>
+    </div>
+  );
+}
+
+function InitiativeAccordionSection({ title, defaultOpen = true, children }) {
+  const [open, setOpen] = useStateInitiatives(defaultOpen);
+  return (
+    <div className="initiative-accordion-section">
+      <button className="initiative-accordion-trigger" onClick={() => setOpen((o) => !o)}>
+        <Icon name={open ? "chevron-down" : "chevron-right"} size={14} />
+        <span>{title}</span>
+      </button>
+      {open && <div className="initiative-accordion-body">{children}</div>}
+    </div>
+  );
+}
+
+/* Documento da iniciativa — é o que abre primeiro ao clicar numa linha da
+   lista (a lista continua visível por trás, o painel entra como overlay pela
+   direita). Sem chat: cada tarefa só leva ao chat quando o usuário clica
+   explicitamente em "Ver conversa". */
+function InitiativeDocumentPanel({ initiative, onClose, onOpenTask }) {
+  if (!initiative) return null;
+  return (
+    <div className="detail-panel initiative-doc-panel">
+      <div className="detail-head canvas-topbar" data-sl-canvas-tool-topbar="">
+        <button className="canvas-topbar-icon" onClick={onClose} aria-label="Fechar" title="Fechar">
+          <Icon name="x" size={18} />
+        </button>
+        <span className="canvas-topbar-title">{initiative.id} {initiative.title}</span>
+        <button className="canvas-topbar-icon" aria-label="Mais opções" title="Mais opções">
+          <Icon name="more" size={18} />
+        </button>
+      </div>
+      <div className="detail-scroll">
+        <div className="detail-body">
+          <div className="initiative-doc-header">
+            <h1 className="initiative-doc-title">{initiative.title}</h1>
+            {initiative.description && <p className="initiative-doc-summary">{initiative.description}</p>}
+          </div>
+
+          <div className="initiative-metadata">
+            <div className="initiative-metadata-row">
+              <span className="initiative-metadata-label">Status</span>
+              <InitiativeStatusPill status={initiative.status} />
+            </div>
+            {initiative.priority && (
+              <div className="initiative-metadata-row">
+                <span className="initiative-metadata-label">Severidade</span>
+                <InitiativeSeverityPill priority={initiative.priority} />
+              </div>
+            )}
+            <div className="initiative-metadata-row">
+              <span className="initiative-metadata-label">Responsável</span>
+              <span className="initiative-metadata-person">
+                <InitiativeAvatar initials={initiative.ownerInitials} name={initiative.owner} />
+                {initiative.owner}
+              </span>
+            </div>
+            {initiative.participants && initiative.participants.length > 0 && (
+              <div className="initiative-metadata-row">
+                <span className="initiative-metadata-label">Participantes</span>
+                <span className="initiative-avatar-stack">
+                  {initiative.participants.map((p, i) => (
+                    <InitiativeAvatar key={i} initials={p.initials} name={p.name} />
+                  ))}
+                </span>
+              </div>
+            )}
+            {initiative.reportedBy && (
+              <div className="initiative-metadata-row">
+                <span className="initiative-metadata-label">Reportada por</span>
+                <span className="initiative-metadata-reported">
+                  <Icon name="sparkle" size={13} />
+                  {initiative.reportedBy.label} em {initiative.reportedBy.at}
+                </span>
+              </div>
+            )}
+          </div>
+
+          {initiative.diagnosis && (
+            <InitiativeAccordionSection title="Diagnóstico">
+              <p className="initiative-diagnosis-text">{initiative.diagnosis}</p>
+            </InitiativeAccordionSection>
+          )}
+
+          {initiative.tasksList && initiative.tasksList.length > 0 && (
+            <InitiativeAccordionSection title={`Tarefas (${initiative.tasksList.length})`}>
+              <div className="initiative-tasks-list">
+                {initiative.tasksList.map((t, i) => (
+                  <InitiativeTaskRow key={t.id || i} task={t} onOpenTask={onOpenTask} />
+                ))}
+              </div>
+            </InitiativeAccordionSection>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function InitiativesView({ onOpenTask, renderTopbarActions }) {
   const [search, setSearch] = useStateInitiatives("");
+  const [openInitiativeId, setOpenInitiativeId] = useStateInitiatives(null);
   const all = AIWData.initiatives ?? [];
 
   const filtered = useMemoInitiatives(() => {
@@ -73,8 +230,10 @@ function InitiativesView({ onOpenTask, renderTopbarActions }) {
     );
   }, [all, search]);
 
+  const openInitiative = all.find((i) => i.id === openInitiativeId) || null;
+
   return (
-    <div className="main">
+    <div className="main initiatives-shell">
       <div data-sl-my-tasks-sticky-top="">
         <div data-sl-module-browser-top-bar="">
           <div data-sl-module-browser-top-bar-title="">
@@ -101,7 +260,7 @@ function InitiativesView({ onOpenTask, renderTopbarActions }) {
           <section className="aiw-section">
             <div data-sl-initiative-list="">
               {filtered.map((i) => (
-                <InitiativeRow key={i.id} initiative={i} onOpen={() => onOpenTask && onOpenTask(i.id)} />
+                <InitiativeRow key={i.id} initiative={i} onOpen={() => setOpenInitiativeId(i.id)} />
               ))}
               {filtered.length === 0 && (
                 <div data-sl-initiative-empty="">Nenhuma iniciativa encontrada.</div>
@@ -110,8 +269,17 @@ function InitiativesView({ onOpenTask, renderTopbarActions }) {
           </section>
         </div>
       </div>
+
+      {openInitiative && (
+        <InitiativeDocumentPanel
+          initiative={openInitiative}
+          onClose={() => setOpenInitiativeId(null)}
+          onOpenTask={onOpenTask}
+        />
+      )}
     </div>
   );
 }
 
 window.InitiativesView = InitiativesView;
+window.InitiativeDocumentPanel = InitiativeDocumentPanel;

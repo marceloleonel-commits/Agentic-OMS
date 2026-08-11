@@ -115,7 +115,9 @@ function App() {
   useEffect(() => { setProductView(null); }, [route.orderId]);
 
   const goHome   = () => setRoute({ name: "orders" });
-  const openTask = (id) => setRoute({ name: "task", id });
+  /* `opts.openChat` — usado por InitiativeDocumentPanel ("Ver conversa"): a
+     tarefa abre com o chat já ativo, em vez do padrão canvas-only. */
+  const openTask = (id, opts) => setRoute({ name: "task", id, openChat: !!(opts && opts.openChat) });
   const openOrder = (id) => setRoute({ name: "order-detail", orderId: id });
   const gotoResource = (id) => {
     if (id === "workflow-board") setRoute({ name: "workflow-board" });
@@ -143,7 +145,7 @@ function App() {
         <button className="dd-item" onClick={() => setRoute({ name: "workflow-board" })}>
           <span className="dd-item-icon"><Icon name="board" size={14} /></span>
           <span>
-            <span className="dd-item-label">Gerenciador de Experiências</span>
+            <span className="dd-item-label">Configurações de Workflow</span>
             <span className="dd-item-sub">{AIWData.workflows.length} workflows configurados</span>
           </span>
         </button>
@@ -226,7 +228,7 @@ function App() {
     // does not replace or affect #/home-preview or #/orders.
     view = <HomeQueueView onOpenTask={openTask} onGotoResource={gotoResource} />;
   } else if (route.name === "task") {
-    view = <TaskView taskId={route.id} onBack={goHome} onOpenOrder={openOrder} />;
+    view = <TaskView taskId={route.id} onBack={goHome} onOpenOrder={openOrder} initialChatOpen={route.openChat} />;
   } else if (route.name === "workflow-board") {
     view = <WorkflowBoardView
       key={wfBoardKey}

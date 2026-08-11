@@ -15,10 +15,20 @@ function SevPill({ level }) {
   );
 }
 
-/* ── Person / agent avatar ──────────────────────────────────────────────── */
-function PersonAvatar({ initial, agent }) {
+/* ── Person / agent avatar ──────────────────────────────────────────────────
+   `name` é o nome exibido do agente: quando ele tem retrato próprio em
+   AIWData.AGENT_AVATARS, é esse retrato que entra no lugar do sparkle. */
+function PersonAvatar({ initial, agent, name }) {
   if (agent) {
-    return <span className="agent-avatar-mini" title="Agent"><Icon name="sparkle" size={12} /></span>;
+    const portrait = name && ((window.AIWData && window.AIWData.AGENT_AVATARS) || {})[name];
+    if (portrait) {
+      return (
+        <span className="agent-avatar-mini agent-avatar-mini--img" title={name}>
+          <img src={portrait} alt="" />
+        </span>
+      );
+    }
+    return <span className="agent-avatar-mini" title={name || "Agent"}><Icon name="sparkle" size={12} /></span>;
   }
   return <span className="person-avatar">{initial}</span>;
 }

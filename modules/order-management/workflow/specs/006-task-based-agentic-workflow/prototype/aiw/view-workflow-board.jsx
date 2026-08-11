@@ -1,4 +1,4 @@
-/* global React, Icon, IconSparkleFill, IconHandFill, IconPencil, IconCursorFill, IconDragDots, IconDotsSixVertical, IconDotsThreeVertical, IconEdit, IconPlayCircleFill, IconCaretLeftSmall, IconCaretDown, IconCaretUp, IconTrash, IconCheck, IconCube, IconCurrencyCircleDollar, IconNewspaper, IconTruck, IconReorder, AIWData, ChatPanel, ResizableSplit, IconButton, SidebarTooltip */
+/* global React, Icon, IconSparkleFill, IconHandFill, IconPencil, IconCursorFill, IconDragDots, IconDotsSixVertical, IconDotsThreeVertical, IconEdit, IconPlayCircleFill, IconCaretLeftSmall, IconCaretDown, IconCaretUp, IconTrash, IconCheck, IconCube, IconCurrencyCircleDollar, IconNewspaper, IconTruck, IconReorder, AIWData, ChatPanel, ResizableSplit, IconButton, SidebarTooltip, PersonAvatar */
 const { useState, useRef, useEffect, useCallback } = React;
 
 // Usuário da sessão atual — mesmo e-mail já usado como autor/editor nos dados
@@ -1202,10 +1202,7 @@ function WfActorSpan({ who, date }) {
   const initial = who ? who[0].toUpperCase() : "?";
   return (
     <span className="reporter">
-      {isHuman
-        ? <span className="person-avatar">{initial}</span>
-        : <span className="agent-avatar-mini" title="Agent"><Icon name="sparkle" size={12} /></span>
-      }
+      <PersonAvatar initial={initial} agent={!isHuman} name={who} />
       <span><b>{who}</b> em {date}</span>
     </span>
   );

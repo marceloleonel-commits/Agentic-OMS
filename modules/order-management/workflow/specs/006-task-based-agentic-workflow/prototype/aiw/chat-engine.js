@@ -500,7 +500,7 @@
         var assignees = [];
         if (d && d.followUp) {
           d.followUp.forEach(function (t) {
-            if (t.assignee && t.assignee !== 'OMS Agent' && assignees.indexOf(t.assignee) === -1) {
+            if (t.assignee && t.assignee !== 'Order Management Agent' && assignees.indexOf(t.assignee) === -1) {
               assignees.push(t.assignee);
             }
           });

@@ -701,7 +701,7 @@
   display: flex; flex-direction: column; gap: 14px;
 }
 .chat-body > * { width: 100%; max-width: 760px; margin-left: auto; margin-right: auto; }
-.chat-intro p { margin: 0 0 16px 0; color: var(--fg-2); font-size: 13.5px; line-height: 1.55; }
+.chat-intro p { margin: 0 0 16px 0; color: var(--fg-2); font-size: 13.5px; line-height: 1.55; font-weight: 500; }
 .intro-link {
   display: flex; align-items: center; justify-content: space-between;
   width: 100%;
@@ -826,6 +826,14 @@
   height: 100%; min-width: 0;
   background: #fff;
 }
+/* Nada aqui é reordenável: a única tela com arrasto é o board de workflows,
+   que tem os próprios handlers. Travar o drag nativo evita mover seções e
+   cards sem querer — sobretudo sobre texto e ícones, que o browser arrasta
+   por padrão. */
+.detail-panel,
+.detail-panel * {
+  -webkit-user-drag: none;
+}
 .detail-head {
   display: flex; align-items: center; justify-content: space-between;
   padding: 12px 22px;
@@ -871,6 +879,20 @@
   cursor: pointer;
 }
 .canvas-topbar-icon:hover { background: var(--bg-soft); color: var(--fg); }
+.canvas-topbar-icon.active { background: var(--bg-soft); color: var(--fg-brand, var(--fg)); }
+/* Ponto de alerta — pergunta do agente esperando resposta no chat. Encosta no
+   canto superior direito do ícone, como no badge de notificação. */
+.canvas-topbar-icon--alert { position: relative; }
+.canvas-topbar-icon--alert::after {
+  content: "";
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #DE387F;
+}
 
 .detail-scroll { flex: 1; min-height: 0; overflow-y: auto; }
 .detail-body {
@@ -942,6 +964,11 @@
 }
 .reporter-emoji--img { background: none; padding: 0; overflow: hidden; }
 .reporter-emoji--img img { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 50%; }
+/* Retrato de agente (AGENT_AVATARS): ilustração de fundo transparente, então o
+   círculo vira base neutra e a figura entra inteira — mesmo tratamento do
+   .agent-avatar-mini--img. */
+.reporter-emoji--agent { background: var(--bg-soft, #F1F3F7); }
+.reporter-emoji--agent img { object-fit: contain; }
 .reporter b { color: var(--fg); font-weight: 500; }
 
 .detail-section { padding: 0; border: none; }
@@ -1079,22 +1106,33 @@
 }
 [data-sl-doc-accordion-panel] { padding-bottom: 8px; }
 
-/* ── "Ver todos" — open full list in a subview ── */
-[data-sl-doc-see-all] {
+/* ── "Ver todos" — open full list in a subview. Mesmo comportamento de
+   pill button do .wf-ver-badge-btn (fundo + hover escurecendo), em vez
+   de link sublinhado ── */
+/* .pkg-wf-see-btn (card do pacote) compartilha estas regras: é o mesmo botão
+   pequeno de "abrir o próximo nível", em outra superfície. */
+[data-sl-doc-see-all],
+.pkg-wf-see-btn {
   appearance: none;
   border: none;
-  background: none;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   gap: 4px;
   margin-top: 10px;
-  padding: 6px 0;
+  padding: 6px 6px 6px 10px;
+  border-radius: 8px;
+  background: var(--bg-soft, #f8f8f8);
+  transition: background 0.15s ease;
   font-size: 13px;
   font-weight: 500;
-  color: var(--primary, #2962FF);
+  color: var(--fg);
 }
-[data-sl-doc-see-all]:hover { text-decoration: underline; }
+[data-sl-doc-see-all]:hover,
+.pkg-wf-see-btn:hover {
+  background: var(--border, #ebebeb);
+  text-decoration: none;
+}
 
 .detail-tasks { margin-top: 8px; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
 .tasks-head {
@@ -1122,31 +1160,47 @@
 .task-title { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 /* Assignee pill + v3 dropdown — uniform proportions (initiatives canvas parity). */
 .assignee-pill-wrap { position: relative; display: inline-flex; max-width: 100%; }
+/* Mesma escala do gatilho de filtro de Atividades (.act-filter): 29px de altura,
+   texto 12.5px/500, avatar de 18px. São o mesmo controle em contextos
+   diferentes, então têm o mesmo tamanho. */
 .assignee-pill {
-  display: inline-flex; align-items: center; gap: 8px;
-  padding: 3px 10px 3px 3px;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 10px 4px 4px;
+  min-height: 29px;
   background: var(--bg-soft);
   border: 1px solid transparent;
   border-radius: 99px;
-  font-size: 15px;
+  font-size: 12.5px;
+  font-weight: 500;
   color: var(--fg);
   cursor: pointer;
-  width: fit-content;
+  /* Ocupa a coluna inteira: pills com e sem dropdown ficam do mesmo tamanho. */
+  width: 100%;
   max-width: 100%;
   transition: background .12s, border-color .12s;
 }
 .assignee-pill:hover { background: var(--bg-muted, #eef0f4); }
 .assignee-pill.open { border-color: var(--primary, #2158E8); }
+/* Responsável fixo (tarefa realizada): mesma pill, sem afordância de menu. */
+.assignee-pill--static { cursor: default; }
+.assignee-pill--static:hover { background: var(--bg-soft); }
+/* Avatar de 18px tanto no gatilho quanto nas linhas do menu. */
 .assignee-pill .person-avatar,
-.assignee-pill .agent-avatar-mini { width: 26px; height: 26px; flex-shrink: 0; }
-.assignee-pill-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.assignee-pill .agent-avatar-mini,
+.assignee-pill .team-avatar { width: 18px; height: 18px; flex-shrink: 0; }
+/* text-align explícito: a pill com dropdown é um <button>, que centraliza o
+   texto por padrão do user agent. */
+.assignee-pill-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left; font-size: 13px; }
 .assignee-pill svg { flex-shrink: 0; color: var(--fg-3); }
 
-.assignee-menu {
+/* .act-filter-menu (filtros de Atividades) compartilha estas regras de
+   propósito: são o mesmo dropdown, em contextos diferentes. */
+.assignee-menu,
+.act-filter-menu {
   position: absolute;
   top: calc(100% + 6px);
   right: 0;
-  min-width: 220px;
+  min-width: 260px;
   background: var(--bg, #fff);
   border: 1px solid var(--border, #E5E5E5);
   border-radius: 16px;
@@ -1157,21 +1211,50 @@
   transform-origin: top right;
   animation: composer-add-menu-in .15s ease-out;
 }
-.assignee-menu-item {
-  display: flex; align-items: center; gap: 8px;
+.assignee-menu-item,
+.act-filter-option {
+  display: flex; align-items: center; gap: 12px;
   width: 100%;
   border: none; background: transparent; cursor: pointer;
-  padding: 6px 8px; border-radius: 8px;
-  font-size: 13px; color: var(--fg, #171717);
+  padding: 6px 8px; border-radius: 12px;
+  font-size: 15px; color: var(--fg, #171717);
   text-align: left;
   transition: background .12s;
 }
 .assignee-menu-item:hover,
-.assignee-menu-item.selected { background: var(--bg-soft, #eeeeee); }
+.assignee-menu-item.selected,
+.act-filter-option:hover,
+.act-filter-option.selected { background: var(--bg-soft, #eeeeee); }
 .assignee-menu-item .person-avatar,
-.assignee-menu-item .agent-avatar-mini { width: 24px; height: 24px; flex-shrink: 0; }
-.assignee-menu-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.assignee-menu-item svg { flex-shrink: 0; color: var(--primary, #2158E8); }
+.assignee-menu-item .agent-avatar-mini,
+.assignee-menu-item .team-avatar { width: 18px; height: 18px; flex-shrink: 0; }
+.assignee-menu-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
+/* Contagem de membros do time — pill à direita do nome. */
+.assignee-menu-count {
+  display: inline-flex; align-items: center; gap: 4px;
+  flex-shrink: 0;
+  padding: 2px 8px;
+  border-radius: 8px;
+  background: var(--bg-muted, #eef0f4);
+  font-size: 12px;
+  color: var(--fg-2);
+  font-variant-numeric: tabular-nums;
+}
+.assignee-menu-count svg { color: var(--fg-3); }
+
+/* Avatar de time: colagem de até 3 rostos dentro de um círculo. */
+.team-avatar {
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  background: var(--bg-muted, #eef0f4);
+}
+.team-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.team-avatar img:first-child { grid-row: span 2; }
 
 /* ---------- Canvas (revenue report) ---------- */
 .canvas-body { padding: 28px 32px 60px; max-width: none; margin: 0; }
@@ -2445,6 +2528,18 @@
   background: linear-gradient(135deg, #9747FF, #FF3D6E);
   color: #fff;
 }
+/* Agente com retrato próprio (AGENT_AVATARS): a ilustração tem fundo
+   transparente, então o círculo vira uma base neutra e ela entra inteira
+   (contain) em vez de recortada. */
+.agent-avatar-mini--img {
+  background: var(--bg-soft, #F1F3F7);
+  overflow: hidden;
+}
+.agent-avatar-mini--img img {
+  width: 100%; height: 100%;
+  object-fit: contain;
+  display: block;
+}
 
 /* Canvas task list */
 .canvas-tasks {
@@ -2518,6 +2613,17 @@
 }
 .initiative-task-execute:hover { background: var(--primary-hover, #1E4EE5); }
 .initiative-task-execute svg { display: block; }
+/* Loading: mantém o círculo azul e o mesmo diâmetro, trocando o ícone por um
+   spinner branco enquanto a task é disparada. */
+.initiative-task-execute[data-loading] { cursor: default; background: var(--primary, #2962FF); }
+.initiative-task-execute-spinner {
+  display: inline-block;
+  width: 12px; height: 12px;
+  border: 1.5px solid rgba(255, 255, 255, 0.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin .9s linear infinite;
+}
 
 /* Impacted orders mini-table */
 .orders-mini {
@@ -2545,13 +2651,16 @@
 .orders-mini-row:last-child { border-bottom: none; }
 
 /* ==========================================================================
-   ACTIVITIES — v3 activity-feed / timeline port (data-sl-activity-list)
-   Vertical rail + bullseye node, actor (avatar + semibold name) · text · "em {time}"
+   ACTIVITIES — porte da Timeline do v3 (data-sl-activity-list)
+   Hora em coluna fixa à esquerda · ação (nome do ator semibold + texto) ·
+   avatar encostado à direita. Divisor entre itens; nota como blockquote
+   alinhada à coluna de texto.
    ========================================================================== */
 [data-sl-activity-list] {
-  --act-rail: 24px;
-  --act-node: 14px;
-  --act-node-center: 24px;
+  /* 11ch cabe o carimbo mais longo dos dados ("01/06 18:32") sem quebrar o
+     alinhamento das linhas. */
+  --act-time-width: 11ch;
+  --act-time-gap: 24px;
   --act-line: var(--border, #E0E5EF);
   display: flex;
   flex-direction: column;
@@ -2559,98 +2668,72 @@
   margin-top: 4px;
 }
 [data-sl-activity-list] [data-sl-timeline-item] {
-  position: relative;
-  display: grid;
-  grid-template-columns: var(--act-rail) minmax(0, 1fr);
-  column-gap: 16px;
-  align-items: start;
-  border-bottom: none;
+  display: flex;
+  flex-direction: column;
+  padding-block: 12px;
+  border-bottom: 1px solid var(--act-line);
 }
-
-/* Vertical connector rail (centered on the rail column). */
-[data-sl-activity-list] [data-sl-timeline-item]::before {
-  content: "";
-  position: absolute;
-  left: calc(var(--act-rail) / 2);
-  top: 0;
-  bottom: 0;
-  width: 1px;
-  transform: translateX(-50%);
-  background: var(--act-line);
-  pointer-events: none;
-}
-[data-sl-activity-list] [data-sl-timeline-item]:first-child::before { top: var(--act-node-center); }
-[data-sl-activity-list] [data-sl-timeline-item]:last-child::before  { bottom: calc(100% - var(--act-node-center)); }
-[data-sl-activity-list] [data-sl-timeline-item]:only-child::before  { display: none; }
-
-/* Bullseye node (hollow ring), aligned to the action line. */
-[data-sl-activity-list] [data-sl-timeline-icon] {
-  grid-column: 1;
-  grid-row: 1;
-  justify-self: center;
-  position: relative;
-  z-index: 1;
-  box-sizing: border-box;
-  width: var(--act-node);
-  height: var(--act-node);
-  margin-top: calc(var(--act-node-center) - var(--act-node) / 2);
-  border: 2px solid var(--act-line);
-  border-radius: 50%;
-  background: #fff;
-}
-[data-sl-activity-list] [data-sl-timeline-icon][data-variant="ai"] {
-  border-color: var(--sl-color-purple-8, #8B5CF6);
-}
-
-/* Action line (row 1, col 2). */
-[data-sl-activity-list] [data-sl-timeline-content] {
-  grid-column: 2;
-  grid-row: 1;
+[data-sl-activity-list] [data-sl-timeline-item]:last-child { border-bottom: none; }
+[data-sl-activity-list] [data-sl-timeline-row] {
   display: flex;
   align-items: center;
-  min-height: 48px;
+  gap: var(--act-time-gap);
+  min-width: 0;
+}
+/* Coluna de hora: largura fixa e numerais tabulares para as linhas alinharem. */
+[data-sl-activity-list] [data-sl-timeline-time] {
+  flex-shrink: 0;
+  width: var(--act-time-width);
+  min-width: var(--act-time-width);
+  max-width: var(--act-time-width);
+  font-size: 12px;
+  line-height: 1.56;
+  letter-spacing: -0.24px;
+  color: var(--fg-3);
+  white-space: nowrap;
+  font-feature-settings: "lnum" 1, "tnum" 1;
+}
+[data-sl-activity-list] [data-sl-timeline-content] {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 [data-sl-activity-list] [data-sl-timeline-action] {
   flex: 1;
   min-width: 0;
-  display: flex;
-  flex-wrap: nowrap;
-  align-items: flex-start;
-  gap: 8px;
-  font-size: 15px;
-  line-height: 1.45;
+  font-size: 14px;
+  line-height: 1.56;
+  letter-spacing: -0.28px;
   color: var(--fg);
 }
-[data-sl-activity-list] [data-sl-timeline-action-avatar] {
+[data-sl-activity-list] [data-sl-timeline-action-name] { font-weight: 600; }
+[data-sl-activity-list] [data-sl-activity-avatar] {
+  margin-left: auto;
   flex-shrink: 0;
   display: inline-flex;
   align-items: center;
-  margin-top: 1px;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  line-height: 0;
 }
-[data-sl-activity-list] [data-sl-timeline-action-avatar] .person-avatar,
-[data-sl-activity-list] [data-sl-timeline-action-avatar] .agent-avatar-mini {
+[data-sl-activity-list] [data-sl-activity-avatar] .person-avatar,
+[data-sl-activity-list] [data-sl-activity-avatar] .agent-avatar-mini {
   width: 24px;
   height: 24px;
 }
-/* Text box: name · action · time wrap within this column, never under the avatar. */
-[data-sl-activity-list] [data-sl-timeline-action-body] {
-  flex: 1;
-  min-width: 0;
-}
-[data-sl-activity-list] [data-sl-timeline-action-name] { font-weight: 600; }
-[data-sl-activity-list] [data-sl-timeline-action-text] { color: var(--fg); }
-[data-sl-activity-list] [data-sl-timeline-action-time] { font-size: 13px; color: var(--fg-3); white-space: nowrap; }
 
-/* Optional note (row 2, col 2) — blockquote-style. */
+/* Nota — blockquote deslocado pela coluna de hora. */
 [data-sl-activity-list] [data-sl-timeline-note] {
-  grid-column: 2;
-  grid-row: 2;
-  margin: -8px 0px 14px 0;
-  padding-left: 32px;
-  border-left: none;
-  border-image: none;
+  margin-top: 8px;
+  margin-left: calc(var(--act-time-width) + var(--act-time-gap));
+  padding-left: 12px;
+  border-left: 2px solid var(--act-line);
   font-size: 13px;
   line-height: 1.5;
+  letter-spacing: -0.24px;
   color: var(--fg-3);
 }
 .act-badge {
@@ -2668,28 +2751,16 @@
   border-radius: 99px;
   background: var(--bg-soft, #eef0f4);
   color: var(--fg-2, #525252);
-  font-size: 12px; font-weight: 600;
+  font-size: 12px; font-weight: 400;
   line-height: 1;
+  letter-spacing: 0.1px;
   vertical-align: middle;
 }
 
 /* Activities loading skeleton (simulates the agent querying the log). */
 [data-sl-activities-skeleton] { display: flex; flex-direction: column; gap: 16px; padding: 4px 0 8px; }
-.act-skeleton-hint {
-  display: inline-flex; align-items: center; gap: 8px;
-  font-size: 12.5px; color: var(--fg-3);
-}
-.act-skeleton-spinner {
-  width: 14px; height: 14px; border-radius: 50%;
-  border: 2px solid var(--border); border-top-color: var(--primary, #2158E8);
-  animation: act-skeleton-spin .7s linear infinite;
-  flex-shrink: 0;
-}
-@keyframes act-skeleton-spin { to { transform: rotate(360deg); } }
-.act-skeleton-row { display: flex; gap: 12px; align-items: flex-start; }
-.act-skeleton-avatar { width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0; }
-.act-skeleton-lines { flex: 1; display: flex; flex-direction: column; gap: 8px; padding-top: 3px; }
-.act-skeleton-line { height: 10px; border-radius: 6px; }
+.act-skeleton-avatar { display: block; width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0; }
+.act-skeleton-line { display: block; height: 10px; border-radius: 6px; }
 .sk-shimmer {
   background: linear-gradient(90deg, #eef0f4 25%, #e2e6ee 37%, #eef0f4 63%);
   background-size: 400% 100%;
@@ -2698,6 +2769,76 @@
 @keyframes sk-shimmer {
   0%   { background-position: 100% 0; }
   100% { background-position: 0 0; }
+}
+
+/* ── Filtros da página cheia de Atividades ──
+   O menu reusa as regras de .assignee-menu (ver seção do Responsável) para os
+   dois dropdowns não divergirem com o tempo. ── */
+.act-filters {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 4px 0 12px;
+}
+.act-filters-title {
+  font-size: 12.5px;
+  color: var(--fg-3);
+  flex-shrink: 0;
+}
+.act-filter-wrap { position: relative; display: inline-flex; }
+.act-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px 6px 12px;
+  border-radius: 99px;
+  border: 1px solid var(--border);
+  background: #fff;
+  color: var(--fg);
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background .12s, border-color .12s;
+}
+.act-filter:hover { background: var(--bg-muted); border-color: var(--border-strong, var(--fg-3)); }
+.act-filter.open { border-color: var(--primary, #2158E8); }
+.act-filter--active { background: var(--bg-soft); }
+.act-filter svg { flex-shrink: 0; color: var(--fg-3); }
+/* No gatilho o avatar acompanha o corpo do pill; no menu, avatar e texto seguem
+   a mesma medida das linhas do Responsável (.assignee-menu-item), senão os dois
+   dropdowns abrem com alturas e larguras diferentes. */
+.act-filter .person-avatar,
+.act-filter .agent-avatar-mini { width: 18px; height: 18px; flex-shrink: 0; }
+.act-filter-option .person-avatar,
+.act-filter-option .agent-avatar-mini { width: 18px; height: 18px; flex-shrink: 0; }
+.act-filter-option-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
+/* O menu herda o alinhamento à direita do Responsável; nos filtros da esquerda
+   isso o jogaria para fora da coluna do documento. */
+.act-filters > .act-filter-wrap .act-filter-menu { right: auto; left: 0; transform-origin: top left; }
+.act-empty {
+  margin: 0;
+  padding: 20px 0;
+  font-size: 13.5px;
+  color: var(--fg-3);
+}
+
+/* Tasks loading skeleton (simulates the agent generating follow-up tasks
+   based on verification answer) — mesma moldura do card final: só o título
+   e o Responsável de cada linha viram barras. */
+.canvas-tasks-skeleton-row { padding-top: 12px; padding-bottom: 12px; }
+.canvas-tasks-skeleton-dot {
+  width: 20px; height: 20px; border-radius: 50%;
+  border: 1.5px dashed var(--border-strong);
+  display: inline-block;
+  animation: canvas-tasks-skeleton-spin 1.6s linear infinite;
+}
+@keyframes canvas-tasks-skeleton-spin { to { transform: rotate(360deg); } }
+.canvas-tasks-skeleton-bar {
+  height: 26px;
+  border-radius: 8px;
+  flex: 1;
+  min-width: 0;
 }
 
 /* ---------- Workflow Board ---------- */
@@ -3248,6 +3389,24 @@
   overflow: hidden;
 }
 
+/* Ativação do chat: painel e resizer entram como uma peça só pela borda
+   esquerda, recortados pelo overflow do próprio split. A distância
+   (--chat-enter-x) vem do ResizableSplit, que conhece a largura atual — é ela
+   que mantém os dois em lockstep, sem fade competindo com o movimento. */
+.resizable-split--chat-entering > .chat-panel,
+.resizable-split--chat-entering > .split-resizer {
+  animation: chat-panel-slide-in 0.32s cubic-bezier(0.32, 0.72, 0, 1);
+  will-change: transform;
+}
+@keyframes chat-panel-slide-in {
+  from { transform: translateX(var(--chat-enter-x, -100%)); }
+  to   { transform: translateX(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .resizable-split--chat-entering > .chat-panel,
+  .resizable-split--chat-entering > .split-resizer { animation: none; }
+}
+
 /* Resizer drag handle between panels */
 .split-resizer {
   position: relative;
@@ -3369,6 +3528,9 @@ body.resizing-x .split-resizer::before { background: var(--primary); }
   background: #fff;
   overflow: hidden;
 }
+/* O menu de Responsável é absoluto dentro da linha: sem isto o card recorta
+   o dropdown. Só libera o recorte enquanto o menu está montado. */
+.canvas-tasks-card:has(.assignee-menu) { overflow: visible; }
 .canvas-tasks-head {
   display: grid;
   grid-template-columns: 1fr 220px;
@@ -3410,7 +3572,8 @@ body.resizing-x .split-resizer::before { background: var(--primary); }
 }
 .impacted-thead {
   display: grid;
-  grid-template-columns: 1.4fr 1fr 1.4fr 1.2fr;
+  grid-template-columns: 150px 1fr 1fr 1fr;
+  row-gap: 8px;
   padding: 12px 20px;
   background: var(--bg-soft);
   color: var(--fg-3);
@@ -3418,11 +3581,12 @@ body.resizing-x .split-resizer::before { background: var(--primary); }
 }
 .impacted-row {
   display: grid;
-  grid-template-columns: 1.4fr 1fr 1.4fr 1.2fr;
+  grid-template-columns: 150px 1fr 1fr 1fr;
+  row-gap: 8px;
   padding: 14px 20px;
   align-items: center;
   border-top: 1px solid var(--border);
-  font-size: 15px;
+  font-size: 13px;
   color: var(--fg);
   background: transparent;
   text-align: left;
@@ -3431,11 +3595,76 @@ body.resizing-x .split-resizer::before { background: var(--primary); }
   transition: background .12s;
 }
 .impacted-row:hover { background: var(--bg-soft); }
+/* Linha sem pedido modelado por trás: continua legível, mas não se anuncia
+   como clicável. */
+.impacted-row--static { cursor: default; }
+.impacted-row--static:hover { background: transparent; }
 .impacted-id {
   font-family: ui-monospace, "SF Mono", monospace;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 500;
+  color: var(--fg);
 }
+.impacted-col-id {
+  width: 150px;
+}
+.impacted-col-seller {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* Cabeçalho ordenável: mesma tipografia das outras colunas — só a seta e o
+   hover denunciam que é clicável. */
+.impacted-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  justify-self: start;
+}
+.impacted-sort:hover { color: var(--fg); }
+.impacted-sort--active { color: var(--fg); font-weight: 500; }
+.impacted-sort-caret {
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity .12s ease, transform .12s ease;
+}
+.impacted-sort:hover .impacted-sort-caret { opacity: .5; }
+.impacted-sort--active .impacted-sort-caret { opacity: 1; }
+.impacted-sort-caret--desc { transform: rotate(180deg); }
+
+/* Busca da página cheia de pedidos — mesmo campo da seleção de pedidos no
+   card de verificação. */
+.impacted-search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+  padding: 0 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--fg-3);
+}
+.impacted-search:focus-within { border-color: var(--primary, #2158E8); }
+.impacted-search input {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  font: inherit;
+  font-size: 13.5px;
+  color: var(--fg);
+}
+.impacted-search input::placeholder { color: var(--fg-3); }
 
 /* ---------- Order detail styling ---------- */
 
@@ -7405,35 +7634,55 @@ button.wf-ver-badge-btn:hover {
 .pkg-title-group {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 8px;
   width: 100%;
+}
+/* Rastreio e nota fiscal são referências do pacote, não ações do rodapé:
+   ficam no cabeçalho, encostados à direita. */
+.pkg-title-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+.pkg-title-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: #fff;
+  color: var(--fg);
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.pkg-title-btn:hover {
+  background: var(--bg-muted);
+  border-color: var(--border-strong, var(--fg-3));
+}
+/* Confirmação de cópia no próprio botão — some sozinha depois de 1,6s. */
+.pkg-title-btn--copied,
+.pkg-title-btn--copied:hover {
+  background: var(--sl-color-blue-2, #EAF2FF);
+  border-color: var(--primary, #2158E8);
+  color: var(--primary, #2158E8);
+}
+
+/* "Ver workflow" fecha a linha de meta do pacote: herda o botão do "Ver todos",
+   mas sem o respiro de cima que ele usa quando encerra um bloco. */
+.pkg-meta .pkg-wf-see-btn {
+  margin-top: 0;
+  flex-shrink: 0;
+  padding: 4px 6px 4px 10px;
+  font-size: 12.5px;
 }
 .pkg-header-right {
   display: flex;
   align-items: center;
   gap: 10px;
-}
-.pkg-wf-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 3px 10px;
-  border-radius: 8px;
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--fg-2);
-  background: var(--bg-muted, #F3F4F6);
-  border: 1px solid var(--border);
-  letter-spacing: 0.1px;
-}
-.pkg-stage-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 3px 10px;
-  border-radius: 8px;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.1px;
 }
 .pkg-exp-link {
   font-size: 13px;
@@ -7493,6 +7742,9 @@ button.wf-ver-badge-btn:hover {
   margin: 0 16px;
   flex-shrink: 0;
 }
+/* Linha com menos campos e rótulos mais longos (nome do workflow, task
+   corrente): o valor acompanha o texto em vez da coluna fixa de 130px. */
+.pkg-meta--wide .pkg-meta-val { width: auto; }
 
 /* ── Products table ── */
 .pkg-products-table {
@@ -7727,33 +7979,10 @@ button.wf-ver-badge-btn:hover {
 .pkg-footer {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   padding: 12px 16px;
   border-top: 1px solid var(--border);
   background: var(--bg);
-}
-.pkg-footer-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.pkg-footer-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 6px 12px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  background: #fff;
-  color: var(--fg);
-  font-size: 12.5px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
-}
-.pkg-footer-btn:hover {
-  background: var(--bg-muted);
-  border-color: var(--border-strong, var(--fg-3));
 }
 .pkg-footer-total {
   font-size: 13px;
@@ -8708,6 +8937,201 @@ button.wf-ver-badge-btn:hover {
   font-size: 13px;
 }
 
+/* ---------- Initiative document (v3 parity) — abre por cima da lista,
+   que continua visível; sem chat até o usuário clicar em "Ver conversa"
+   numa tarefa. ---------- */
+.initiatives-shell { position: relative; }
+
+/* Mesmo overlay do documento de iniciativa, reaproveitado na seção
+   "Iniciativas" do Assistant/Home overview — onde a ocorrência abre o
+   próprio TaskCanvas nesse formato de painel (ver view-assistant.jsx). */
+.assistant-shell { position: relative; }
+
+.initiative-doc-panel {
+  position: absolute;
+  top: 0; right: 0; bottom: 0;
+  width: min(640px, 58%);
+  min-width: 420px;
+  border-left: 1px solid var(--border);
+  box-shadow: 0 0 24px 4px rgba(0, 0, 0, 0.12);
+  background: var(--sl-bg-base, #fff);
+  z-index: 20;
+  animation: initiative-doc-slide-in 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+}
+@keyframes initiative-doc-slide-in {
+  from { transform: translateX(28px); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+
+.initiative-doc-header { padding: 4px 0 20px; }
+.initiative-doc-title {
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--fg);
+  margin: 0 0 8px;
+}
+.initiative-doc-summary {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--fg-2);
+  margin: 0;
+}
+
+.initiative-metadata {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 20px 0;
+  border-top: 1px solid var(--border);
+}
+.initiative-metadata-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-height: 28px;
+}
+.initiative-metadata-label {
+  flex: 0 0 140px;
+  font-size: 13px;
+  color: var(--fg-3);
+}
+
+.initiative-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 99px;
+  font-size: 12px;
+  font-weight: 500;
+  background: var(--sl-color-gray-2);
+  color: var(--sl-color-gray-9);
+}
+.initiative-pill[data-status="active"] { background: var(--sl-color-green-2); color: var(--sl-color-green-11); }
+.initiative-pill[data-status="attention"] { background: var(--sl-color-blue-2); color: var(--sl-color-blue-11); }
+.initiative-pill[data-status="completed"] { background: var(--sl-color-gray-2); color: var(--sl-color-gray-9); }
+.initiative-pill--severity[data-priority="high"] { background: var(--sl-color-red-2); color: var(--sl-color-red-10); }
+.initiative-pill--severity[data-priority="medium"] { background: var(--sl-color-orange-2); color: var(--sl-color-orange-8); }
+.initiative-pill--severity[data-priority="low"] { background: var(--sl-color-gray-2); color: var(--sl-color-gray-9); }
+
+.initiative-metadata-person {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--fg);
+}
+.initiative-metadata-reported {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--fg-2);
+}
+.initiative-avatar-stack {
+  display: inline-flex;
+  align-items: center;
+}
+.initiative-avatar-stack .initiative-avatar {
+  margin-left: -6px;
+  border: 2px solid var(--sl-bg-base, #fff);
+}
+.initiative-avatar-stack .initiative-avatar:first-child { margin-left: 0; }
+
+.initiative-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--sl-color-gray-3);
+  color: var(--sl-color-gray-9);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+.initiative-avatar--agent { background: var(--sl-color-purple-2, #F1E9FE); color: var(--sl-color-purple-9, #7B2FE0); }
+
+.initiative-accordion-section {
+  border-top: 1px solid var(--border);
+  padding: 16px 0;
+}
+.initiative-accordion-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--fg);
+}
+.initiative-accordion-body { padding: 14px 0 0 22px; }
+.initiative-diagnosis-text {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--fg-2);
+  margin: 0;
+}
+
+.initiative-tasks-list {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.initiative-task-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  background: var(--sl-bg-base, #fff);
+}
+.initiative-task-row:last-child { border-bottom: none; }
+.initiative-task-status { flex-shrink: 0; display: inline-flex; }
+.initiative-task-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 13px;
+  color: var(--fg);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.initiative-task-trailing {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+.initiative-task-view-chat {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  border-radius: 99px;
+  border: none;
+  background: var(--sl-color-blue-9, #157bf4);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.initiative-task-view-chat:hover { background: var(--sl-color-blue-10, #0366dd); }
+.initiative-task-status-label {
+  font-size: 12px;
+  color: var(--fg-2);
+}
+.initiative-task-status-label--muted { color: var(--fg-3); }
+
 /* ---------- Occurrences list (home) — mesma linha do My Initiatives,
    trocando progresso/responsável por escopo/SLA restante/severidade ---------- */
 /* Hover mais suave que o padrão de [data-sl-initiative-row] — sobrescreve
@@ -8926,22 +9350,172 @@ button.wf-ver-badge-btn:hover {
   grid-template-columns: 1fr 140px;
 }
 .canvas-tasks-card.canvas-a-suggested {
-  padding-bottom: 12px;
+  padding-bottom: 8px;
 }
 .canvas-tasks-card.canvas-a-suggested .canvas-tasks-head {
   padding-top: 16px;
 }
 
+/* ── Alerta de verificação pendente (dentro do Diagnóstico) ──
+   O canvas não hospeda mais a pergunta de múltipla escolha: ela é respondida
+   no chat. Aqui a pergunta aparece em destaque sobre o amarelo, com o botão
+   que abre o chat — só presente quando ele está fechado. ── */
+.canvas-a-verify-alert {
+  width: 100%;
+  margin-top: 16px;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-align: left;
+  border: var(--sl-border-base, 1px solid #e0e0e0);
+  border-color: var(--sl-color-yellow-4, #FADE1E);
+  border-radius: 8px;
+  background: var(--sl-color-yellow-2, #FDF5AD);
+  color: var(--fg, #1f1f1f);
+}
+.canvas-a-verify-alert-icon {
+  flex-shrink: 0;
+  display: flex;
+  align-self: flex-start;
+  /* Alinha o ícone de 20px à altura de x da primeira linha do título (24px). */
+  margin-top: 2px;
+  color: #CFA000;
+}
+.canvas-a-verify-alert-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0px;
+  flex: 1;
+  min-width: 0;
+}
+.canvas-a-verify-alert-title {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 24px;
+  letter-spacing: -0.32px;
+  overflow-wrap: anywhere;
+}
+.canvas-a-verify-alert-desc {
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--sl-fg-base-soft, #707070);
+}
+button.canvas-a-verify-alert-cta { flex-shrink: 0; white-space: nowrap; }
+/* O hover padrão do tertiary é um cinza opaco, que apaga o amarelo do alerta.
+   Aqui o realce é um escurecimento translúcido, para funcionar sobre qualquer
+   cor de fundo do container. */
+button.canvas-a-verify-alert-cta[data-sl-button][data-variant="tertiary"]:hover {
+  background: rgba(0, 0, 0, 0.08);
+  color: var(--fg);
+}
+button.canvas-a-verify-alert-cta[data-sl-button][data-variant="tertiary"]:active {
+  background: rgba(0, 0, 0, 0.16);
+}
+
 /* ── Tarefa de verificação manual · pergunta de múltipla escolha ──
    Opções em lista (badge com letra + título + descrição), separadas por
    divisores finos, dentro do mesmo card das tarefas sugeridas — mesmo
-   padrão visual das perguntas de múltipla escolha do chat. Última opção
-   é "Outro", com campo de texto livre ao ser selecionada. ── */
+   padrão visual das perguntas de múltipla escolha do chat. Depois das causas
+   diagnosticadas vem "Outro", com campo livre para descrever a causa. ── */
+/* ── Cabeçalho: natureza do bloco à esquerda, paginação das perguntas à
+   direita. Os controles ficam desabilitados enquanto houver só uma. ── */
+.canvas-a-verify-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 20px 0;
+}
+.canvas-a-verify-kind {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+  color: var(--fg-3);
+}
+.canvas-a-verify-kind svg { flex-shrink: 0; }
+.canvas-a-verify-pagination {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.canvas-a-verify-count {
+  font-size: 10.5px;
+  line-height: 15px;
+  letter-spacing: -0.105px;
+  color: var(--fg-3);
+  white-space: nowrap;
+}
+.canvas-a-verify-nav { display: inline-flex; align-items: center; }
+.canvas-a-verify-nav-btn {
+  width: 24px;
+  height: 24px;
+  transition: background .12s ease, color .12s ease;
+}
+.canvas-a-verify-nav-btn:disabled { opacity: .4; cursor: default; }
+.canvas-a-verify-nav-btn:disabled:hover {
+  background: transparent;
+  color: var(--fg-3);
+}
+
 .canvas-a-verify-intro {
-  padding: 18px 20px 4px;
+  padding: 8px 20px 4px;
   display: flex;
   flex-direction: column;
   gap: 6px;
+}
+/* Índice fora do bloco de texto, para a pergunta que quebra em duas linhas
+   manter o recuo do primeiro caractere. */
+.canvas-a-verify-intro .detail-section-body {
+  display: flex;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 24px;
+  letter-spacing: -0.32px;
+  color: var(--fg);
+}
+.canvas-a-verify-index { flex-shrink: 0; }
+
+/* ── Resposta confirmada ──
+   O card troca pergunta + opções pelo registro da resposta: título, descrição
+   e autoria, com o desfazer no canto superior direito. ── */
+.canvas-tasks-card.canvas-a-verify-answered { padding: 16px 20px 18px; }
+.canvas-a-verify-answer {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.canvas-a-verify-answer-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.canvas-a-verify-answer-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--fg);
+}
+.canvas-a-verify-answer-desc {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--fg-2);
+}
+.canvas-a-verify-answer-meta {
+  margin: 14px 0 0;
+  font-size: 13px;
+  color: var(--fg-3);
+}
+.canvas-a-verify-undo-btn {
+  flex-shrink: 0;
+  margin-top: -2px;
 }
 .canvas-a-verify-question {
   margin: 0;
@@ -8952,35 +9526,42 @@ button.wf-ver-badge-btn:hover {
 .canvas-a-verify-options {
   display: flex;
   flex-direction: column;
-  padding: 4px 20px 2px;
+  padding: 4px 12px 2px;
 }
+/* Sem divisórias: a separação entre as opções vem do respiro e o hover
+   destaca a linha inteira, não só o badge. */
 .canvas-a-verify-option {
   display: flex;
   align-items: flex-start;
-  gap: 14px;
-  padding: 14px 0;
-  border-bottom: 1px solid var(--border);
+  gap: 8px;
+  padding: 8px;
+  border-radius: 8px;
   cursor: pointer;
+  transition: background .12s ease;
 }
-.canvas-a-verify-option:last-child { border-bottom: none; }
-.canvas-a-verify-option:hover .canvas-a-verify-option-badge { border-color: var(--border-strong); }
+.canvas-a-verify-option:hover { background: var(--bg-soft); }
+.canvas-a-verify-option:hover .canvas-a-verify-option-badge {
+  border-color: var(--border-strong);
+  background: var(--border);
+}
+.canvas-a-verify-option.selected { background: var(--bg-soft); }
 .canvas-a-verify-option.selected .canvas-a-verify-option-badge {
-  border-color: var(--primary);
-  color: var(--primary);
-  background: var(--primary-soft);
+  border-color: var(--fg-2);
+  color: var(--fg);
+  background: var(--bg-muted);
 }
 .canvas-a-verify-option-badge {
   flex-shrink: 0;
-  width: 28px;
-  height: 28px;
-  margin-top: 1px;
-  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
   border: 1px solid var(--border-strong);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
   color: var(--fg-3);
   background: #fff;
   transition: border-color .12s ease, color .12s ease, background .12s ease;
@@ -8989,30 +9570,325 @@ button.wf-ver-badge-btn:hover {
   display: flex;
   flex-direction: column;
   gap: 3px;
-  padding-top: 3px;
   flex: 1;
   min-width: 0;
 }
-.canvas-a-verify-option-title { font-size: 15px; font-weight: 600; color: var(--fg); }
-.canvas-a-verify-option-desc { font-size: 13.5px; color: var(--fg-3); }
-.canvas-a-verify-option-input {
-  margin-top: 6px;
-  width: 100%;
-  max-width: 420px;
-  padding: 8px 12px;
-  font-size: 13.5px;
-  font-family: inherit;
+/* Cada opção mostra só o título, em no máximo duas linhas (o texto completo
+   fica no tooltip nativo caso ainda estoure). */
+.canvas-a-verify-option-title {
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+  letter-spacing: -0.14px;
   color: var(--fg);
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+/* Campo livre da opção "Outro" */
+.canvas-a-verify-other-input {
+  width: 100%;
+  margin-top: 2px;
+  padding: 8px 10px;
+  border: 1px solid var(--border-strong, #d4d4d4);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--fg, #171717);
+  font: inherit;
+  font-size: 13.5px;
+  line-height: 1.45;
+  resize: none;
+}
+.canvas-a-verify-other-input:focus {
+  outline: none;
+  border-color: var(--primary, #2158E8);
+}
+.canvas-a-verify-other-input::placeholder { color: var(--fg-3, #737373); }
+
+/* Campo livre de uma pergunta inteiramente aberta (tipo short_text): mesmo
+   tratamento do campo do "Outro", só que ocupando a área das opções. */
+.canvas-a-verify-free-input {
+  display: block;
+  width: auto;
+  margin: 4px 8px 6px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-strong, #d4d4d4);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--fg, #171717);
+  font: inherit;
+  font-size: 13.5px;
+  line-height: 1.45;
+  resize: none;
+}
+.canvas-a-verify-free-input:focus { outline: none; border-color: var(--primary, #2158E8); }
+.canvas-a-verify-free-input::placeholder { color: var(--fg-3, #737373); }
+
+/* ── Seleção manual vs. comprovante ──
+   Os dois caminhos concorrentes de captura da mesma informação vivem num
+   dropdown: um por vez, e só o escolhido abre o input abaixo. ── */
+.canvas-a-verify-mode {
+  position: relative;
+  padding: 4px 8px 8px;
+}
+.canvas-a-verify-mode-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  padding: 8px 10px;
   border: 1px solid var(--border-strong);
   border-radius: 8px;
   background: #fff;
+  font: inherit;
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--fg-3);
+  text-align: left;
+  cursor: pointer;
+  transition: background .12s, border-color .12s;
 }
-.canvas-a-verify-option-input:focus { outline: none; border-color: var(--primary); }
+.canvas-a-verify-mode-trigger:hover { background: var(--bg-muted); }
+.canvas-a-verify-mode-trigger.open { border-color: var(--primary, #2158E8); }
+/* Com um caminho escolhido o campo deixa de ser placeholder e assume o mesmo
+   realce das opções A/B/C da lista acima. */
+.canvas-a-verify-mode-trigger.selected {
+  background: var(--bg-soft);
+  border-color: var(--fg-2);
+  color: var(--fg);
+}
+.canvas-a-verify-mode-trigger svg { flex-shrink: 0; color: var(--fg-3); }
+.canvas-a-verify-mode-trigger.selected .canvas-a-verify-mode-icon { color: var(--fg); }
+.canvas-a-verify-mode-label { flex: 1; min-width: 0; }
+.canvas-a-verify-mode-menu {
+  position: absolute;
+  top: calc(100% - 2px);
+  left: 8px;
+  right: 8px;
+  z-index: 60;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 20px 25px -5px rgba(0,0,0,.1), 0 8px 10px -6px rgba(0,0,0,.1);
+}
+.canvas-a-verify-mode-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  font: inherit;
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--fg);
+  text-align: left;
+  cursor: pointer;
+  transition: background .12s;
+}
+.canvas-a-verify-mode-option svg { flex-shrink: 0; color: var(--fg-2); }
+.canvas-a-verify-mode-option:hover,
+.canvas-a-verify-mode-option.selected { background: var(--bg-soft); }
+
+.canvas-a-verify-orders {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 0 8px 6px;
+}
+.canvas-a-verify-orders-search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--fg-3);
+}
+.canvas-a-verify-orders-search:focus-within { border-color: var(--primary, #2158E8); }
+.canvas-a-verify-orders-search input {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  font: inherit;
+  font-size: 13.5px;
+  color: var(--fg);
+}
+.canvas-a-verify-orders-search input::placeholder { color: var(--fg-3); }
+.canvas-a-verify-orders-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.canvas-a-verify-orders-all {
+  border: none;
+  background: transparent;
+  padding: 0;
+  font: inherit;
+  font-size: 12.5px;
+  color: var(--primary, #2158E8);
+  cursor: pointer;
+}
+.canvas-a-verify-orders-all:disabled { color: var(--fg-3); cursor: default; }
+.canvas-a-verify-orders-count {
+  font-size: 12.5px;
+  color: var(--fg-3);
+  white-space: nowrap;
+}
+/* A lista rola por conta própria: o card ancorado no chat já tem altura
+   limitada e não pode crescer com os 23 pedidos. */
+.canvas-a-verify-orders-list {
+  max-height: 176px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.canvas-a-verify-orders-empty {
+  margin: 0;
+  padding: 14px 12px;
+  font-size: 13px;
+  color: var(--fg-3);
+  text-align: center;
+}
+.canvas-a-verify-order {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  cursor: pointer;
+  transition: background .12s ease;
+}
+.canvas-a-verify-order:hover { background: var(--bg-soft); }
+.canvas-a-verify-order + .canvas-a-verify-order { border-top: 1px solid var(--border); }
+.canvas-a-verify-order input { flex-shrink: 0; accent-color: var(--primary, #2158E8); }
+.canvas-a-verify-order-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.canvas-a-verify-order-id {
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--fg);
+}
+.canvas-a-verify-order-meta {
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--fg-3);
+}
+
+/* Área de soltar: a borda tracejada é o que anuncia que dá para arrastar o
+   arquivo para dentro; o botão continua sendo o caminho de sempre. */
+.canvas-a-verify-upload {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin: 0 8px 6px;
+  padding: 16px 12px;
+  border: 1px dashed var(--border-strong);
+  border-radius: 10px;
+  background: var(--bg-soft);
+  text-align: center;
+  transition: border-color .12s, background .12s;
+}
+.canvas-a-verify-upload.dragging {
+  border-color: var(--primary, #2158E8);
+  background: var(--bg-muted);
+}
+.canvas-a-verify-upload input[type="file"] { display: none; }
+.canvas-a-verify-upload .canvas-a-run-btn { font-size: 13px; padding: 6px 16px; background: #fff; }
+.canvas-a-verify-upload-name {
+  max-width: 100%;
+  font-size: 13px;
+  color: var(--fg-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.canvas-a-verify-upload-hint {
+  font-size: 12px;
+  color: var(--fg-3);
+}
+
+/* ── Resumo da árvore fechada ──
+   Cada pergunta respondida vira um par pergunta/resposta; o desfazer reabre
+   a última delas. ── */
+.canvas-a-verify-summary-kind {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin: 0 0 4px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--fg-3);
+}
+/* Cada linha é o atalho de volta para a sua pergunta — daí o alvo de clique
+   ocupar a linha inteira e o chevron aparecer no hover. */
+.canvas-a-verify-summary-item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 2px 8px;
+  /* Recuo negativo para o texto seguir alinhado ao resto do card, sem que o
+     realce do hover fique colado nas linhas. */
+  width: auto;
+  margin: 0 -8px;
+  padding: 6px 8px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background .12s ease;
+}
+.canvas-a-verify-summary-item:hover { background: var(--bg-soft); }
+.canvas-a-verify-summary-item:focus-visible {
+  outline: 2px solid var(--primary, #2158E8);
+  outline-offset: -2px;
+}
+.canvas-a-verify-summary-item > .canvas-a-verify-summary-q,
+.canvas-a-verify-summary-item > .canvas-a-verify-answer-title { grid-column: 1; }
+.canvas-a-verify-summary-edit {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  display: inline-flex;
+  color: var(--fg-3);
+  opacity: 0;
+  transition: opacity .12s ease;
+}
+.canvas-a-verify-summary-item:hover .canvas-a-verify-summary-edit,
+.canvas-a-verify-summary-item:focus-visible .canvas-a-verify-summary-edit { opacity: 1; }
+.canvas-a-verify-summary-item + .canvas-a-verify-summary-item { margin-top: 4px; }
+/* Fecho do resumo: o que a árvore produziu do outro lado da tela. Separado da
+   lista por uma régua, porque não é mais uma resposta e sim a consequência. */
+.canvas-a-verify-summary-q {
+  font-size: 12.5px;
+  line-height: 17px;
+  color: var(--fg-3);
+}
+.canvas-a-verify-summary-item .canvas-a-verify-answer-title { font-size: 14px; }
+
 .canvas-a-verify-footer {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 12px 20px 18px;
+  padding: 8px 20px;
 }
 .canvas-a-verify-sent-note {
   display: inline-flex;
@@ -9022,8 +9898,58 @@ button.wf-ver-badge-btn:hover {
   color: var(--sl-fg-success, #0E6E3A);
 }
 
+/* ── Card de verificação ancorado no chat ──
+   A pergunta é respondida no chat, não no canvas: o card fica fixo logo acima
+   do composer. Paddings e tipografia encolhem para caber na largura do painel;
+   a lista de opções rola se a pergunta for longa. ── */
+.chat-above-composer {
+  max-width: 760px;
+  margin: 0 auto;
+  padding-top: 12px;
+}
+.chat-above-composer .canvas-tasks-card {
+  max-height: 380px;
+  overflow-y: auto;
+}
+.chat-above-composer .canvas-a-verify-header { padding: 18px 18px 0; }
+.chat-above-composer .canvas-a-verify-intro { padding: 8px 18px 4px; }
+.chat-above-composer .canvas-a-verify-options { padding: 2px 10px; }
+.chat-above-composer .canvas-a-verify-footer { padding: 8px 18px; }
+
+/* ── Chegada da pergunta ──
+   O card interrompe a conversa para pedir uma decisão, então ganha destaque
+   uma vez e o devolve: o anel decai sozinho em vez de pulsar em loop, que
+   viraria ruído numa pergunta que pode ficar aberta por minutos.
+   O anel é inset porque o card recorta o próprio conteúdo (overflow-y) e
+   porque, sobre a borda, ele lê como a moldura acendendo. ── */
+@keyframes verify-card-ring {
+  from { box-shadow: inset 0 0 0 2px rgba(33, 88, 232, 0.45); }
+  to   { box-shadow: inset 0 0 0 2px rgba(33, 88, 232, 0); }
+}
+.canvas-a-verify-entering {
+  animation: verify-card-ring .8s cubic-bezier(0.22, 1, 0.36, 1) .2s both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .canvas-a-verify-entering { animation: none; }
+}
+
+/* ── Registro da resposta dentro da conversa ──
+   Respondida a pergunta, o card deixa a âncora acima do composer e entra no
+   fim do chat-body, alinhado às mensagens. Mesmo encolhimento de paddings e
+   tipografia do card ancorado, para a largura do painel. ── */
+/* O rodapé do corpo pode trazer mais de um bloco (card de resumo + fala do
+   agente) — mesmo ritmo vertical das mensagens do chat. */
+.chat-body-card { display: flex; flex-direction: column; gap: 14px; }
+.chat-body-card .canvas-tasks-card.canvas-a-verify-answered { padding: 14px 16px 16px; }
+.chat-body-card .canvas-a-verify-answer-title { font-size: 15px; }
+.chat-body-card .canvas-a-verify-answer-desc { font-size: 14px; }
+.chat-body-card .canvas-a-verify-answer-meta { margin-top: 10px; }
+
 /* ── Tarefas sugeridas · botão de ação no lugar do "Responsável" ── */
 .canvas-a-run-btn {
+  appearance: none;
+  -webkit-appearance: none;
   justify-self: start;
   font-size: 15px;
   font-weight: 500;
@@ -9060,11 +9986,6 @@ button.wf-ver-badge-btn:hover {
 /* ── Metadados no mesmo style dt/dd do canvas de pedido (.detail-fields.od-meta) —
    reseta o margin-top negativo do od-meta (pensado para o od-header) e o
    min-width do rótulo (200px é largo demais para "Status"/"Lead" sozinhos). ── */
-.canvas-d-meta {
-  grid-template-columns: 140px 1fr;
-  margin-top: 0;
-}
-
 /* ── Diagnóstico · badge "Confiança Alta" no cabeçalho do accordion + popover ── */
 .canvas-d-conf-badge-wrap {
   position: relative;
@@ -9091,7 +10012,7 @@ button.wf-ver-badge-btn:hover {
   background-color: var(--sl-color-orange-2, #FFEDCD);
   font-weight: 600;
   border: 2px solid rgba(255, 239, 224, 1);
-  padding: 4px 8px;
+  padding: 2px 8px;
   border-radius: 8px;
   margin-bottom: 4px;
 }
@@ -9192,11 +10113,24 @@ button.wf-ver-badge-btn:hover {
   color: var(--fg-3);
 }
 .canvas-a-run-btn:disabled:hover { background: transparent; }
+/* Botão "Continuar" do bloco de verificação (lacuna): mantém o style de
+   botão primário mesmo desabilitado, só com opacidade reduzida. */
+.canvas-a-run-btn.canvas-a-run-btn--primary:disabled {
+  background: #2158E8;
+  color: #fff;
+  border-color: #2158E8;
+}
+.canvas-a-run-btn.canvas-a-run-btn--primary:disabled:hover { background: #2158E8; }
 
 /* Task row clicável (tarefas com detailKey abrem o subview dedicado,
    igual ao clique numa linha da ImpactedTable abre o pedido) */
 .canvas-task-row--clickable { cursor: pointer; transition: background .12s ease; }
 .canvas-task-row--clickable:hover { background: var(--bg-soft, #f5f5f5); }
+.canvas-task-row--clickable:focus-visible {
+  outline: 2px solid var(--primary, #2962FF);
+  outline-offset: -2px;
+  border-radius: var(--radius, 8px);
+}
 
 /* ── Casos que precisam de decisão · duas tabelas (Exceções / Duplicadas) ── */
 .canvas-d-decision-group { margin-bottom: 16px; }
@@ -9260,3 +10194,373 @@ button.wf-ver-badge-btn:hover {
 .decision-card-actions .canvas-a-run-btn { padding: 5px 12px; font-size: 13px; text-align: center; }
 .canvas-d-decision-group--subview .decision-card-actions { flex-direction: row; }
 
+/* ── Canvas D · Cards de ticket de devolução (Figma 1600:4749 / 1601:5014) ──
+   Um card por ticket: o pedido vem no cabeçalho, junto do número do ticket, e
+   o produto abre o corpo. Depois de avaliado, some o que só servia para
+   decidir — SLA e caixa de recomendação — e entra a assinatura. ── */
+/* Lista horizontal: um card por vez, entrando pelo lado para onde
+   a navegação foi. */
+.tck-cards { display: block; overflow: hidden; }
+.tck-cards--fwd .tck-card { animation: tck-slide-fwd .22s cubic-bezier(.22,.61,.36,1) both; }
+.tck-cards--back .tck-card { animation: tck-slide-back .22s cubic-bezier(.22,.61,.36,1) both; }
+@keyframes tck-slide-fwd {
+  from { opacity: 0; transform: translateX(24px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes tck-slide-back {
+  from { opacity: 0; transform: translateX(-24px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tck-cards--fwd .tck-card, .tck-cards--back .tck-card { animation: none; }
+}
+
+/* ── Paginação no cabeçalho do card ── */
+.tck-pager { display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.tck-pager-count {
+  font-size: 10.5px;
+  line-height: 15px;
+  letter-spacing: -0.105px;
+  color: var(--fg-3);
+  white-space: nowrap;
+}
+.tck-pager-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--fg-2);
+  cursor: pointer;
+  transition: background .12s, color .12s;
+}
+.tck-pager-btn:hover:not(:disabled) { background: var(--bg-muted, rgba(29,29,29,.05)); }
+.tck-pager-btn:disabled { color: var(--border-strong); cursor: default; }
+.tck-card {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px 18px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+}
+.tck-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--fg-3);
+}
+.tck-card-ref { display: inline-flex; align-items: center; gap: 6px; min-width: 0; flex-wrap: wrap; }
+.tck-ref-sep { color: var(--border-strong); }
+.tck-order-link {
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  color: var(--primary, #2158E8);
+  cursor: pointer;
+}
+.tck-order-link:hover { text-decoration: underline; }
+/* Vencido tem prioridade visual sobre a ordem de chegada. */
+.tck-sla--overdue { font-weight: 600; color: var(--sl-color-red-9, #D31A15); }
+
+.tck-product { display: flex; align-items: center; gap: 8px; }
+.tck-product-thumb {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 44px;
+  align-self: stretch;
+  overflow: hidden;
+  border-radius: 4px;
+  background: var(--bg-soft);
+  color: var(--fg-3);
+}
+.tck-product-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  -webkit-user-drag: none;
+}
+.tck-product-info { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.tck-product-name {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 24px;
+  letter-spacing: -0.26px;
+  color: var(--fg);
+}
+.tck-product-sku {
+  font-size: 12px;
+  line-height: 20px;
+  letter-spacing: -0.12px;
+  color: var(--fg-2);
+}
+/* Fala do shopper: a barra à esquerda separa o que o cliente escreveu do que o
+   agente concluiu, sem precisar de rótulo. */
+.tck-message {
+  margin: 0;
+  padding-left: 12px;
+  border-left: 2px solid var(--border);
+  font-size: 14px;
+  line-height: 1.56;
+  color: var(--fg-3);
+}
+.tck-photos {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px 4px 8px;
+  border: none;
+  border-radius: 8px;
+  background: var(--bg-soft);
+  font: inherit;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--fg);
+  cursor: pointer;
+}
+.tck-photos:hover { background: var(--bg-muted); }
+.tck-photos svg { color: var(--fg-2); }
+
+/* Caixa de recomendação — só existe enquanto o ticket espera decisão. */
+.tck-rec {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--bg-soft);
+}
+.tck-rec-title {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+  letter-spacing: -0.12px;
+  color: var(--fg-2);
+}
+.tck-rec-history { font-size: 12px; line-height: 16px; color: var(--fg-2); padding-top: 4px; padding-bottom: 4px; }
+.tck-rec-why { font-size: 14px; line-height: 1.56; color: var(--fg); }
+
+/* ── Decisão inline ──
+   Decidir é o fim da leitura do card, então as ações e o que vem delas ficam num
+   rodapé próprio: separado do corpo por uma borda, com fundo mais frio e
+   sangrando até as bordas do card (daí as margens negativas, que anulam o
+   padding de 20px/18px do .tck-card). A confirmação herda o mesmo bloco. */
+.tck-decide,
+.tck-decided {
+  margin: 0 -18px -20px;
+  padding: 12px 18px 16px;
+  border-top: 1px solid var(--border);
+  border-radius: 0 0 7px 7px;
+  background: var(--bg-soft);
+}
+.tck-decide { display: flex; flex-direction: column; gap: 12px; }
+/* Três colunas iguais: a largura não sugere qual decisão tomar. */
+.tck-decide-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.tck-hint { margin: 0; font-size: 12px; line-height: 16px; color: var(--fg-3); text-align: center; }
+.tck-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 9px 8px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: #fff;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+  letter-spacing: -0.14px;
+  color: var(--fg);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background .12s, border-color .12s, color .12s;
+}
+.tck-action svg { flex-shrink: 0; }
+.tck-action[data-action="deny"]     { border-color: var(--sl-color-red-4);  color: var(--sl-fg-critical); }
+.tck-action[data-action="escalate"] { border-color: var(--sl-color-blue-4); color: var(--sl-fg-accent); }
+.tck-action:hover                        { border-color: var(--fg); }
+.tck-action[data-action="deny"]:hover     { border-color: var(--sl-color-red-9); }
+.tck-action[data-action="escalate"]:hover { border-color: var(--sl-color-blue-9); }
+/* Pressionado = formulário daquela decisão aberto. O preenchimento sólido é o
+   que mostra de qual das três o formulário abaixo é. */
+.tck-action[aria-pressed="true"] {
+  background: var(--sl-bg-inverted);
+  border-color: var(--sl-bg-inverted);
+  color: #fff;
+}
+.tck-action[aria-pressed="true"][data-action="deny"] {
+  background: var(--sl-bg-critical-strong);
+  border-color: var(--sl-bg-critical-strong);
+}
+.tck-action[aria-pressed="true"][data-action="escalate"] {
+  background: var(--sl-bg-accent-strong);
+  border-color: var(--sl-bg-accent-strong);
+}
+
+/* Branco contra o fundo do rodapé: o formulário se destaca como a etapa em que
+   o operador está. */
+.tck-form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+}
+/* A borda repete o tom do botão que abriu o formulário, para o operador não
+   perder de vista qual decisão está preenchendo. */
+.tck-form[data-panel="deny"] { border-color: var(--sl-color-red-3); }
+.tck-form[data-panel="escalate"] { border-color: var(--sl-color-blue-3); }
+.tck-form-label { font-size: 11.5px; color: var(--fg-3); }
+.tck-form-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.tck-chip {
+  padding: 5px 12px;
+  border: 1px solid var(--border);
+  border-radius: 99px;
+  /* Um tom abaixo do painel, que agora é branco — sem isso o chip só existiria
+     pela borda. */
+  background: var(--bg-soft);
+  font: inherit;
+  font-size: 12.5px;
+  color: var(--fg-2);
+  cursor: pointer;
+  transition: background .12s, border-color .12s;
+}
+.tck-chip:hover { border-color: var(--border-strong, var(--fg-3)); }
+.tck-chip.selected { border-color: var(--fg-2); background: var(--bg-muted); color: var(--fg); font-weight: 500; }
+/* Repete por escrito o chip marcado: o texto é o mesmo que vai para o título da
+   confirmação e para o Document Audit. */
+.tck-form-selected { font-size: 12px; line-height: 16px; color: var(--fg-3); }
+.tck-form-selected b { font-weight: 500; color: var(--fg-2); }
+.tck-form-input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: #fff;
+  font: inherit;
+  font-size: 13px;
+  color: var(--fg);
+  resize: vertical;
+}
+.tck-form-input:focus { outline: none; border-color: var(--primary, #2158E8); }
+.tck-form-input::placeholder { color: var(--fg-3); }
+/* Confirmar e cancelar na mesma linha: sair do formulário custa o mesmo clique
+   que entrar nele. */
+.tck-form-foot { display: flex; align-items: center; gap: 4px; margin-top: 2px; }
+.tck-cancel {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 99px;
+  background: none;
+  font: inherit;
+  font-size: 13px;
+  color: var(--fg-3);
+  cursor: pointer;
+  transition: background .12s, color .12s;
+}
+.tck-cancel:hover { background: var(--bg-muted, rgba(29,29,29,.05)); color: var(--fg-2); }
+
+/* ── Card já avaliado ── */
+.tck-decided { display: flex; flex-direction: column; gap: 8px; }
+.tck-decided-note {
+  margin: 0;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--fg-3);
+}
+
+/* Confirmação no lugar das ações — o protótipo não tem toast (mesma escolha do
+   CopyTrackingButton). O tom acompanha o desfecho e é daqui que saem as duas
+   saídas do card: desfazer ou seguir para o próximo pendente. */
+.tck-feedback {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-soft);
+  animation: tck-feedback-in .18s ease-out both;
+}
+.tck-feedback[data-outcome="accepted"]  { border-color: var(--sl-color-green-3); background: var(--sl-bg-success); }
+.tck-feedback[data-outcome="denied"]    { border-color: var(--sl-color-red-3);   background: var(--sl-bg-critical); }
+.tck-feedback[data-outcome="escalated"] { border-color: var(--sl-color-blue-3);  background: var(--sl-bg-informational); }
+.tck-feedback-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 99px;
+  background: var(--fg-2);
+  color: #fff;
+}
+.tck-feedback[data-outcome="accepted"] .tck-feedback-icon  { background: var(--sl-bg-success-strong); }
+.tck-feedback[data-outcome="denied"] .tck-feedback-icon    { background: var(--sl-bg-critical-strong); }
+.tck-feedback[data-outcome="escalated"] .tck-feedback-icon { background: var(--sl-bg-informational-strong); }
+.tck-feedback-text { display: flex; flex-direction: column; gap: 2px; flex: 1 1 180px; min-width: 0; }
+.tck-feedback-title {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+  letter-spacing: -0.14px;
+  color: var(--fg);
+}
+.tck-feedback[data-outcome="accepted"] .tck-feedback-title  { color: var(--sl-color-green-12); }
+.tck-feedback[data-outcome="denied"] .tck-feedback-title    { color: var(--sl-color-red-12); }
+.tck-feedback[data-outcome="escalated"] .tck-feedback-title { color: var(--sl-color-blue-12); }
+.tck-feedback-sub { font-size: 12px; line-height: 16px; color: var(--fg-2); }
+.tck-feedback-end { display: inline-flex; align-items: center; gap: 8px; margin-left: auto; flex-shrink: 0; }
+.tck-undo {
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: 13px;
+  color: var(--fg-2);
+  cursor: pointer;
+}
+.tck-undo:hover { text-decoration: underline; }
+.tck-next {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 8px 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 99px;
+  background: #fff;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--fg);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: border-color .12s;
+}
+.tck-next:hover { border-color: var(--border-strong, var(--fg-3)); }
+.tck-next svg { flex-shrink: 0; color: var(--fg-3); }
+@keyframes tck-feedback-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tck-feedback { animation: none; }
+}

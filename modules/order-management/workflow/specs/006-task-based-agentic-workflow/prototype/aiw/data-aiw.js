@@ -12,6 +12,16 @@ window.AIWData = (function () {
     store: "org-avatar.png"
   };
 
+  /* ── AGENT_AVATARS — retrato por agente, endereçado pelo nome exibido.
+     Agente sem entrada aqui cai no avatar genérico (sparkle) do PersonAvatar. ── */
+  const AGENT_AVATARS = {
+    "Order Management Agent":     "agent-order-management.png",
+    "Order Management Assistant": "agent-order-management-assistant.png",
+    "Carrier Agent":              "agent-carrier.png",
+    "Allocation Agent":           "agent-operations.png",
+    "Seller Agent":               "agent-fulfillment.png"
+  };
+
   /* ── Conversations (sidebar history — previously in data.js) ── */
   const conversations = [
     { id: "c1", title: "Revenue · Report",                   pinned: true,  hasCanvas: true,  preview: "Yesterday's revenue summary..." },
@@ -62,6 +72,31 @@ window.AIWData = (function () {
     { pill: "Entrega",       label: "Em trânsito", count: "736 pedidos"   }
   ];
 
+  /* Os 23 pedidos do cluster do Canvas A. Gerados aqui (e não escritos um a um)
+     porque a lista alimenta a seleção manual da árvore de decisão, onde a busca
+     por ID/cliente precisa de volume para fazer sentido. Os 14 primeiros têm
+     SLA hoje — é o recorte crítico citado no diagnóstico. */
+  function buildCanvasAOrders() {
+    const customers = [
+      "Marina Bastos", "Rodrigo Peixoto", "Camila Nogueira", "Thiago Rezende",
+      "Beatriz Vasconcelos", "Eduardo Sampaio", "Larissa Furtado", "Vinícius Prado",
+      "Helena Coutinho", "Gustavo Antunes", "Priscila Maia", "Rafael Bittencourt",
+      "Juliana Ferraz", "André Malheiros", "Tatiana Quintela", "Bruno Sarmento",
+      "Carolina Estrela", "Felipe Guedes", "Renata Vilela", "Otávio Lacerda",
+      "Amanda Cordeiro", "Leandro Pontes", "Sofia Andrade"
+    ];
+    return customers.map((customer, i) => {
+      const today = i < 14;
+      return {
+        id: `1621368619303-${String(i + 1).padStart(2, "0")}`,
+        customer,
+        sla: today ? "D+1 hoje" : "D+2 amanhã",
+        seller: "Loja Botafogo",
+        eta: today ? "14/06/2026" : "15/06/2026"
+      };
+    });
+  }
+
   const tasks = [
 
     /* ── Canvas A · Bloqueio operacional em massa (Seller não despachou no SLA) ── */
@@ -83,10 +118,10 @@ window.AIWData = (function () {
       ],
       detail: {
         title: "23 pedidos parados em Despacho - Seller Loja Botafogo",
-        reportedBy: { agent: "Tarefa gerada por agente", at: "14 jun 2026, 09:42" },
+        reportedBy: { agent: "Order Management Agent", at: "14 jun 2026, 09:42" },
         severity: "high",
         slaHours: 3,
-        assignees: ["Seller Agent", "Order Agent", "Logistics Agent"],
+        assignees: ["Seller Agent", "Order Management Agent", "Carrier Agent"],
         scope: "23 pedidos · Seller Loja Botafogo · Canal: Site + App",
         slaRisk: "14 pedidos entregariam hoje",
         diagnosis: {
@@ -98,371 +133,477 @@ window.AIWData = (function () {
           },
           gap: "Confirmação do carrier ausente"
         },
-        /* "Tarefas": só a tarefa de verificação em andamento (bloqueada até
-           resposta manual) + um placeholder indicando que as próximas
-           tarefas dependem da lacuna do diagnóstico ser preenchida. */
-        suggestedTasks: [
-          { name: "Verificar com o seller o status do despacho", status: "active",  waitingLabel: "Bloqueada" },
-          { name: "Aguardando preencher lacuna para gerar tasks", status: "pending" }
+        /* "Tarefas a fazer": só a tarefa de verificação em andamento, bloqueada
+           até a árvore de decisão fechar — as tarefas reais são declaradas nas
+           respostas de `verification.questions` e derivadas do caminho
+           percorrido. Mesmo modelo de dados (followUp/resolved) do padrão
+           genérico de tarefas (TaskCanvasMain), para reaproveitar SubTaskRow
+           com Responsável. */
+        followUp: [
+          { state: "attention", title: "Verificar com o seller o status do despacho", assignee: "Ecommerce Supervisor", initial: "E" }
         ],
-        /* Tarefa única de verificação manual (vive dentro do Diagnóstico):
-           sem ação própria — a ação real depende de qual opção for
-           confirmada abaixo (pergunta de múltipla escolha + "Outro" com
-           campo de texto livre). */
+        resolved: [],
+        /* Tarefas executadas de forma totalmente autônoma antes do operador
+           abrir a Ocorrência — já entram em "Tarefas realizadas". */
+        autoDone: [
+          { state: "done", title: "Notificar 23 clientes sobre risco de atraso", assignee: "Order Management Agent", agent: true },
+          { state: "done", title: "Tentar contato automático com seller (webhook/e-mail)", assignee: "Order Management Agent", agent: true },
+          { state: "done", title: "Verificar histórico de padrão semelhante (04/06, 28/05)", assignee: "Order Management Agent", agent: true }
+        ],
+        /* Árvore de decisão da verificação manual, como grafo de perguntas
+           endereçadas por id. Cada opção aponta `next` para a próxima pergunta
+           (ou null, quando a árvore fecha) e pode declarar as `tasks` que a
+           resposta gera. As convergências previstas na spec (A.2.2 → Branch B,
+           B.2.2 → Branch C) são só dois `next` apontando para a mesma pergunta:
+           nenhuma sub-árvore é duplicada.
+
+           Tokens aceitos nos títulos de tarefa, resolvidos contra as respostas
+           já dadas: {q:id} texto da resposta · {count:id} nº de pedidos
+           selecionados · {rest:id} total menos os selecionados. */
         verification: {
-          title: "Verificar com o seller o status do despacho",
-          options: [
-            {
-              id: "falha-integracao",
-              title: "Os pedidos foram despachados. Falhou a integração com a carrier.",
-              desc: "O seller tem comprovante de coleta mas o evento não chegou ao OMS."
+          start: "q1",
+          /* Autoria exibida no card depois da árvore fechar. */
+          answeredBy: "Adriana Guimarães",
+          answeredAt: "14 jun 2026, 09:42",
+          questions: {
+            q1: {
+              type: "single_select",
+              title: "O que aconteceu com os pedidos no seller?",
+              options: [
+                { id: "falha-integracao", title: "Os pedidos foram despachados. Falhou a integração com a carrier.", desc: "O seller tem comprovante de coleta mas o evento não chegou ao OMS.", next: "a1" },
+                { id: "despacho-parcial",  title: "Os pedidos foram despachados parcialmente.", desc: "Parte foi coletada. Os pedidos restantes ainda estão no seller.", next: "b1" },
+                { id: "sem-despacho",      title: "Os pedidos não foram despachados.", desc: "O seller confirmou que nenhum pedido saiu do estoque.", next: "c1" },
+                { id: "outro",             title: "Outro", other: true, otherPlaceholder: "Descreva o que aconteceu com os pedidos.", next: "d1" }
+              ]
             },
-            {
-              id: "despacho-parcial",
-              title: "Os pedidos foram despachados parcialmente.",
-              desc: "Parte foi coletada. Os pedidos restantes ainda estão no seller."
+
+            /* ── Branch A · Falha de integração com a carrier ── */
+            a1: {
+              type: "single_select",
+              title: "Qual carrier apresentou falha?",
+              options: [
+                { id: "correios",      title: "Correios",      next: "a2" },
+                { id: "loggi",         title: "Loggi",         next: "a2" },
+                { id: "jadlog",        title: "Jadlog",        next: "a2" },
+                { id: "total-express", title: "Total Express", next: "a2" },
+                { id: "outro",         title: "Outro", other: true, otherPlaceholder: "Nome da transportadora.", next: "a2" }
+              ]
             },
-            {
-              id: "sem-despacho",
-              title: "Os pedidos não foram despachados.",
-              desc: "O seller confirmou que nenhum pedido saiu do estoque."
+            a2: {
+              type: "single_select",
+              title: "Você tem confirmação de despacho físico (manifesto/NF) dos 23, ou de parte?",
+              options: [
+                {
+                  id: "todos", title: "Todos os 23 confirmados", next: null,
+                  tasks: [
+                    { state: "attention", title: "Corrigir integração com carrier {q:a1}", assignee: "Ecommerce Supervisor", initial: "E" },
+                    { state: "loading",   title: "Forçar atualização de evento de coleta (23 pedidos)", assignee: "Order Management Agent", agent: true }
+                  ]
+                },
+                /* Convergência A.2.2 → Branch B: o restante dos pedidos recebe
+                   exatamente o mesmo tratamento, sem sub-árvore paralela. */
+                { id: "parte", title: "Só parte confirmada", next: "b1" }
+              ]
+            },
+
+            /* ── Branch B · Despachados parcialmente ── */
+            b1: {
+              type: "select_or_upload",
+              title: "Quantos dos 23 foram despachados, e quais?",
+              selectLabel: "Selecionar pedidos",
+              uploadLabel: "Anexar comprovante",
+              next: "b1-fonte"
+            },
+            "b1-fonte": {
+              type: "source_confirmation",
+              title: "Como você confirmou essa informação?",
+              options: [
+                { id: "sistema-carrier", title: "Sistema da transportadora", next: "b2" },
+                { id: "email-seller",    title: "E-mail do seller",          next: "b2" },
+                { id: "print",           title: "Print anexado",             next: "b2" },
+                { id: "telefone",        title: "Contato telefônico",        next: "b2" },
+                { id: "outro",           title: "Outro", other: true, otherPlaceholder: "Como a informação foi confirmada.", next: "b2" }
+              ]
+            },
+            b2: {
+              type: "single_select",
+              title: "Os pedidos restantes têm previsão de despacho hoje?",
+              options: [
+                {
+                  id: "sim", title: "Sim, com horário confirmado", next: null,
+                  tasks: [
+                    { state: "loading", title: "Forçar atualização de status dos pedidos já despachados ({count:b1})", assignee: "Order Management Agent", agent: true },
+                    { state: "loading", title: "Acompanhar despacho dos {rest:b1} até novo horário", assignee: "Order Management Agent", agent: true },
+                    { state: "loading", title: "Reavaliar SLA de entrega dos restantes", assignee: "Order Management Agent", agent: true },
+                    { state: "loading", title: "Comunicar novo prazo aos clientes restantes", assignee: "Order Management Agent", agent: true }
+                  ]
+                },
+                /* Convergência B.2.2 → Branch C: sem previsão, os restantes
+                   passam a seguir o conjunto de tarefas do Branch C. */
+                {
+                  id: "nao", title: "Não / sem previsão", next: "c1",
+                  tasks: [
+                    { state: "loading", title: "Forçar atualização de status dos pedidos já despachados ({count:b1})", assignee: "Order Management Agent", agent: true }
+                  ]
+                }
+              ]
+            },
+
+            /* ── Branch C · Não despachados ── */
+            c1: {
+              type: "single_select",
+              title: "Qual o motivo?",
+              options: [
+                { id: "capacidade", title: "Sem capacidade operacional",             next: "c2" },
+                { id: "fechada",    title: "Loja fechada / feriado não previsto",    next: "c2" },
+                { id: "fiscal",     title: "Pendência de nota fiscal / documentação", next: "c2" },
+                { id: "outro",      title: "Outro motivo", other: true, otherPlaceholder: "Descreva o motivo informado pelo seller.", next: "c2" }
+              ]
+            },
+            c2: {
+              type: "single_select",
+              title: "Seller tem previsão de despacho ainda hoje?",
+              options: [
+                {
+                  id: "sim", title: "Sim", next: null,
+                  tasks: [
+                    { state: "loading", title: "Reavaliar SLA de entrega dos pedidos restantes", assignee: "Order Management Agent", agent: true },
+                    { state: "loading", title: "Comunicar novo prazo aos clientes", assignee: "Order Management Agent", agent: true }
+                  ]
+                },
+                {
+                  id: "nao", title: "Não", next: null,
+                  tasks: [
+                    { state: "attention", title: "Contatar seller para novo prazo de despacho", assignee: "Ecommerce Supervisor", initial: "E" },
+                    { state: "attention", title: "Redistribuir pedidos para seller backup (se aplicável)", assignee: "Ecommerce Supervisor", initial: "E" },
+                    { state: "loading",   title: "Comunicar atraso definitivo aos clientes", assignee: "Order Management Agent", agent: true },
+                    { state: "done",      title: "Registrar recorrência para gestão de performance do seller", assignee: "Order Management Agent", agent: true }
+                  ]
+                }
+              ]
+            },
+
+            /* ── Branch D · Outro ── */
+            d1: {
+              type: "short_text",
+              title: "Descreva o que houve",
+              placeholder: "O que o seller informou sobre os pedidos.",
+              next: null,
+              tasks: [
+                { state: "attention", title: "Investigar causa não mapeada (triagem manual)", assignee: "Ecommerce Supervisor", initial: "E" }
+              ]
             }
-          ]
+          }
         },
         affectedOrders: {
           total: 23,
-          items: [
-            { id: "v-PRD-00812", sla: "D+1 hoje · sem coleta",       seller: "Loja Botafogo", eta: "14/06/2026" },
-            { id: "v-PRD-00811", sla: "D+1 hoje · sem coleta",       seller: "Loja Botafogo", eta: "14/06/2026" },
-            { id: "v-PRD-00798", sla: "D+2 amanhã · picking parado", seller: "Loja Botafogo", eta: "15/06/2026" }
-          ]
+          items: buildCanvasAOrders()
         },
         activities: [
-          { time: "06:12", actor: "Order Agent",     agent: true, action: "registrou labeling_finished para 23 pedidos do Seller Loja Botafogo" },
-          { time: "09:12", actor: "Logistics Agent", agent: true, action: "não detectou evento carrier_collected após 3h de picking", note: "SLA de entrega D+1 entrou em risco para o cluster." },
-          { time: "09:40", actor: "Order Agent",     agent: true, action: "agrupou os 23 pedidos por causa raiz — ausência de coleta do carrier" },
+          { time: "06:12", actor: "Order Management Agent", agent: true, action: "registrou labeling_finished para 23 pedidos do Seller Loja Botafogo" },
+          { time: "09:12", actor: "Carrier Agent",          agent: true, action: "não detectou evento carrier_collected após 3h de picking", note: "SLA de entrega D+1 entrou em risco para o cluster." },
+          { time: "09:40", actor: "Order Management Agent", agent: true, action: "agrupou os 23 pedidos por causa raiz — ausência de coleta do carrier" },
           { time: "09:41", actor: "Allocation Agent",agent: true, action: "isolou os 14 pedidos com SLA hoje e preparou proposta de reatribuição", note: "Reatribuição excede a política automática — marcada como 'requer aprovação'." },
           { time: "09:42", actor: "Order Management Assistant", agent: true, action: "gerou esta tarefa com 3 ações sugeridas" }
         ],
         chat: [
           { from: "agent", text: "Identifiquei um cluster de 23 pedidos do Seller Loja Botafogo sem evento de coleta há mais de 4h — 14 deles têm SLA de entrega hoje." },
-          { from: "agent", text: "Já preparei 3 ações sugeridas no canvas. A notificação ao seller é segura para execução direta; a reatribuição dos 14 críticos precisa da sua aprovação. Quer que eu comece pela notificação?" }
+          { from: "agent", text: "Falta um dado para fechar o diagnóstico: o carrier não confirmou a coleta, então não consigo saber se o seller despachou tudo, parte ou nada. Confirme isso com o seller e responda aqui no chat — com a resposta eu calculo a ação recomendada." }
         ]
       }
     },
 
-    /* ── Canvas D · Devoluções — decisão necessária em 5 casos ── */
+    /* ── Canvas D · Devoluções fora da política — avaliação de tickets ──
+       Aqui a estrela do card é o Ticket, não o Pedido: o pedido entra como
+       contexto vinculado, dentro do ticket aberto. Os 4 motivos são diferentes
+       (prazo, motivo, categoria, limite), mas formam uma Iniciativa Operacional
+       só — mesmo lote, mesma janela, mesma fila do SAC. A autonomia é por
+       ticket: cada um pode estar num estado diferente sem conflito. ── */
     {
       id: "TA-CANVAS-D",
-      occurrenceId: "O093",
+      occurrenceId: "O104",
       priority: "high",
       status: "attention",
-      title: "Devoluções — decisão necessária em 5 casos",
+      title: "Devoluções fora da política — 4 tickets aguardando avaliação",
       tag: "Devoluções",
       source: { kind: "return", label: "Devoluções" },
       canvasPattern: "D",
       chips: [
-        { icon: "layers", label: "Ver as 4 exceções fora do prazo" },
-        { icon: "send",   label: "Resolver duplicidade"            },
-        { icon: "search", label: "Ver reasoning da tarefa"         },
+        { icon: "layers", label: "Ver os 4 tickets abertos"        },
+        { icon: "check",  label: "Aceitar as exceções recomendadas" },
+        { icon: "search", label: "Ver reasoning da triagem"         },
       ],
       detail: {
-        title: "Devoluções — decisão necessária em 5 casos",
+        title: "Devoluções fora da política — 4 tickets aguardando avaliação",
         severity: "high",
-        slaHours: null,
+        slaHours: 2,
+        category: "Return Task",
+        lead: "SAC Team",
+        /* Quem assina a decisão nos tickets fechados. */
+        decidedBy: "Adriana Guimarães",
+        /* Agregada: acompanha o menor nível entre os tickets. */
         confidence: {
-          label: "Alta",
-          pct: 93,
-          detail: "Nenhuma lacuna identificada: as 9 devoluções aprovadas automaticamente têm prazo, categoria e ausência de duplicidade validados com dados completos. As 4 exceções fora do prazo não têm regra automática aplicável — por isso dependem de decisão humana, e não reduzem a confiança do restante da triagem.",
+          label: "Média",
+          pct: 68,
+          detail: "A confiança agregada acompanha o ticket mais frágil do lote. Prazo, motivo e limite mensal são objetivos e conferem com a política cadastrada. O TCK-1044 puxa o número para baixo: a foto anexada sugere defeito de fabricação, mas a categoria (higiene pessoal) não é elegível pela política padrão — as duas leituras são defensáveis."
         },
-        lead: "SAC",
-        reportedBy: { agent: "Agente", note: "triagem de 14 devoluções do dia" },
-        diagnosisText: "Das 14 solicitações do dia, 9 estavam dentro da política e seguiram sem intervenção. Restam 4 exceções fora do prazo e 1 duplicidade — só estas dependem de decisão do operador.",
-        decisionNote: { icon: "check", text: "9 devoluções elegíveis processadas automaticamente — etiquetas reversas emitidas, clientes notificados.", action: "Ver log" },
-        suggestedTasks: [
-          { title: "Resolver duplicidade",             sub: "1 pedido com 2 solicitações abertas",           state: "triage",  action: "Resolver", primary: true, detailKey: "duplicates" },
-          { title: "Decidir exceções fora do prazo",    sub: "4 casos sem política automática aplicável",     state: "triage",  action: "Revisar",  external: true, detailKey: "exceptions" },
-          { title: "Emitir etiquetas dos aprovados",    sub: "Bloqueada pela duplicidade e exceções acima",   state: "pending", waitingLabel: "Aguardando" },
-        ],
-        resolvedTasks: [
-          { title: "9 devoluções elegíveis processadas automaticamente", sub: "Etiquetas reversas emitidas, clientes notificados", state: "done", action: "Ver log", external: true },
-        ],
-        exceptions: {
-          label: "Fora do prazo — Exceções",
-          primaryAction: "Aprovar",
-          secondaryAction: "Rejeitar",
-          rows: [
-            { id: "#SAC-8841", item: "Camiseta linho premium — P · Branco", photo: "👕", reason: "Defeito de fabricação",  reasonDetail: "Recebi a camiseta com um fio puxado e a costura da manga já abrindo. Parece defeito de fabricação, não é uso.", status: "+3 dias fora do prazo" },
-            { id: "#SAC-8853", item: "Tênis Run 42",                       photo: "👟", reason: "Arrependimento",          reasonDetail: "Acabei comprando o tamanho errado e não gostei do modelo ao provar em casa. Gostaria de devolver.",             status: "+8 dias fora do prazo" },
-            { id: "#SAC-8860", item: "Jaqueta M",                          photo: "🧥", reason: "Tamanho incompatível",    reasonDetail: "A jaqueta ficou pequena, o tamanho não bateu com a tabela de medidas do site. Preciso de um M maior ou reembolso.", status: "+2 dias fora do prazo" },
-            { id: "#SAC-8871", item: "Bolsa de couro",                     photo: "👜", reason: "Defeito de fabricação",  reasonDetail: "O zíper da bolsa travou já no segundo uso. Acho que é um defeito, a bolsa é nova.",                             status: "+5 dias fora do prazo" },
-          ],
-        },
-        duplicates: {
-          label: "Duplicadas",
-          primaryAction: "Manter",
-          secondaryAction: "Encerrar",
-          rows: [
-            { id: "#SAC-8848", item: "Relógio smart", photo: "⌚", reason: "Troca de modelo · canal Site", reasonDetail: "Comprei o relógio errado, quero trocar por outro modelo. Abri o pedido pelo site.",             status: "Duplicada — mesmo pedido, 2 solicitações" },
-            { id: "#SAC-8849", item: "Relógio smart", photo: "⌚", reason: "Troca de modelo · canal App",  reasonDetail: "Reenviei a solicitação de troca pelo app porque não vi resposta do site em 2 dias.",         status: "Duplicada — mesmo pedido, 2 solicitações" },
-          ],
-        },
-        reasoningActivities: [
-          { time: "06:02", actor: "Agente", agent: true, action: "identificou 14 solicitações de devolução recebidas hoje e iniciou a triagem automática pela política vigente" },
-          { time: "06:04", actor: "Agente", agent: true, action: "processou 9 devoluções elegíveis automaticamente", note: "Prazo, categoria e ausência de duplicidade validados — etiquetas reversas emitidas e clientes notificados." },
-          { time: "06:05", actor: "Agente", agent: true, action: "identificou 1 pedido com 2 solicitações de devolução abertas (duplicidade)", note: "Mesmo SKU e mesma quantidade — emitir as duas etiquetas criaria risco de reembolso duplo." },
-          { time: "06:06", actor: "Agente", agent: true, action: "identificou 4 solicitações fora do prazo de 7 dias da política, sem regra automática aplicável" },
-          { time: "06:07", actor: "Agente", agent: true, action: "criou este canvas de decisão", note: "Consolidou a duplicidade e as 4 exceções fora do prazo — únicos casos que dependem de decisão humana entre as 14 solicitações do dia." },
-        ],
-        chat: [
-          { from: "agent", text: "Das 14 devoluções recebidas hoje, já processei 9 automaticamente — dentro da política, com etiqueta reversa emitida e cliente notificado." },
-          { from: "agent", text: "Restam 5 casos que dependem de você: 4 exceções fora do prazo e 1 duplicidade. Quer revisar agora?" }
-        ]
-      }
-    },
-
-    /* ── TA-1 · Interromper separação — cancelamento ObraMax ── */
-    {
-      id: "TA431435",
-      priority: "high",
-      status: "attention",
-      title: "Picking ativo com sinal de cancelamento — interromper separação físicamente",
-      tag: "Cancelamento",
-      assigneeInitial: "G",
-      assigneeInitials: "GV",
-      source: { kind: "order", label: "Cancelamento" },
-      chips: [
-        { icon: "check",  label: "Confirmar parada do Picking no WMS"    },
-        { icon: "x",      label: "Iniciar estorno de estoque"             },
-        { icon: "send",   label: "Notificar cliente sobre o cancelamento" },
-        { icon: "search", label: "Ver pedido ObraMax no detalhe"          },
-      ],
-      detail: {
-        title: "Interromper separação — Cola de Instalação (ObraMax)",
-        reportedBy: { agent: "Orchestration Agent", at: "02 jun às 11:47" },
-        summary: "Cancelamento parcial recebido para o pedido 68945904 (ObraMax). A Cola de Instalação Vinílica (SKU CI-1KG-VIN) ainda está em Picking ativo no WMS. O agente bloqueou a expedição, mas a parada física da separação requer ação manual do operador.",
-        diagnosis: "Cancelamento recebido às 11:45. O workflow de Cancelamento foi acionado e o agente validou a janela — item ainda não expedido, elegível. A etapa 'Bloquear Expedição' está em andamento, mas o WMS não confirmou a interrupção do Picking. O agente sinalizou cancelSignal no step e aguarda confirmação manual. SLA do pedido expirou às 21:58 de 01/06.",
-        attributedTo: { name: "Guilherme Vecchi", initial: "G" },
-        severity: "high",
-        slaHours: -8,
-        followUp: [
-          { state: "attention", title: "Confirmar parada do Picking no WMS (Cola CI-1KG-VIN)",   assignee: "WMS Operator",        initial: "G" },
-          { state: "loading",   title: "Concluir Bloquear Expedição e acionar estorno de estoque", assignee: "Orchestration Agent", agent: true }
-        ],
-        resolved: [
-          { state: "done", title: "Receber solicitação de cancelamento parcial",        assignee: "Orchestration Agent", agent: true },
-          { state: "done", title: "Validar janela de cancelamento — item não expedido", assignee: "Orchestration Agent", agent: true },
-          { state: "done", title: "Acionar workflow de Cancelamento",                   assignee: "Orchestration Agent", agent: true }
-        ],
-        impacted: [
-          { id: "1631808945904-01", sla: "Expirado (8h desde 01/06 13:58)", seller: "ObraMax", eta: "03/06/2026" }
+        reportedBy: { agent: "Order Management Agent", note: "triagem de devoluções fora da política" },
+        diagnosisText: "Quatro solicitações de devolução não se enquadram nas políticas cadastradas pela loja: uma fora do prazo, uma por motivo não coberto, uma por categoria não elegível e uma por limite mensal excedido. Nenhuma tem regra automática aplicável, então as quatro dependem de avaliação do SAC dentro da autonomia definida para exceções.",
+        /* Nível 1 do canvas. O pedido vinculado fica de fora da tabela de
+           propósito: ele só importa quando alguém está de fato avaliando
+           aquele ticket, e aí aparece dentro dele. */
+        tickets: [
+          {
+            id: "TCK-1042",
+            shopperReason: "Não usei o produto, quero devolver",
+            recommendation: "Avaliar",
+            why: "Fora do prazo de 30 dias (34 dias desde a entrega), mas o cliente tem 12 pedidos no histórico sem ocorrência prévia.",
+            sla: "2h",
+            order: "BR-3010982",
+            item: "Luminária de mesa articulada — Preto",
+            sku: "LUM-ART-0142",
+            photo: "product-luminaria.png",
+            message: "Comprei a luminária para o home office mas acabei mudando o layout da mesa e ela nunca saiu da caixa. Está lacrada, com nota e embalagem original. Sei que passou um pouco do prazo, mas nunca precisei devolver nada de vocês antes.",
+            attachments: [],
+            history: "12 pedidos · 0 ocorrências prévias",
+            denyReason: "Solicitação aberta 34 dias após a entrega, fora do prazo de 30 dias previsto na política de devolução da loja."
+          },
+          {
+            id: "TCK-1043",
+            shopperReason: "Não gostei do produto",
+            recommendation: "Negar",
+            why: "Motivo não coberto pela política — a loja só aceita devolução por defeito ou avaria.",
+            sla: "18h",
+            order: "BR-3010983",
+            item: "Fone de ouvido over-ear — Cinza",
+            sku: "FON-OVE-8830",
+            photo: "product-fone.png",
+            message: "O fone funciona direitinho, mas o som não me agradou tanto quanto eu esperava pelo preço. Queria devolver e comprar outro modelo.",
+            attachments: [],
+            history: "2 pedidos · 1 ocorrência prévia",
+            denyReason: "A política de devolução da loja cobre apenas defeito de fabricação ou avaria no transporte. Insatisfação com o produto não é motivo elegível fora do prazo de arrependimento."
+          },
+          {
+            id: "TCK-1044",
+            shopperReason: "Chegou com a costura solta",
+            recommendation: "Escalar",
+            why: "Categoria não elegível pela política padrão (higiene pessoal), mas a evidência anexada sugere defeito de fabricação.",
+            sla: "3h",
+            overdue: true,
+            order: "BR-3010984",
+            item: "Necessaire térmica — Off-white",
+            sku: "NEC-TER-2291",
+            photo: "product-necessaire.png",
+            message: "A necessaire chegou com a costura da lateral solta, dá pra ver a linha saindo. Não cheguei a usar, tirei da embalagem e já percebi. Estou mandando as fotos.",
+            attachments: ["foto-costura-lateral.jpg", "foto-etiqueta.jpg"],
+            history: "3 pedidos · 0 ocorrências prévias",
+            denyReason: "Produtos de higiene pessoal não são elegíveis para devolução pela política padrão da loja."
+          },
+          {
+            id: "TCK-1045",
+            shopperReason: "Tamanho errado",
+            recommendation: "Negar",
+            why: "Excede o limite mensal de devoluções (5ª solicitação; limite 3) — o motivo isolado seria aceito.",
+            sla: "9h",
+            order: "BR-3010985",
+            item: "Calça alfaiataria — 42 · Areia",
+            sku: "CAL-ALF-5507",
+            photo: "product-calca.png",
+            message: "Pedi 42 mas ficou larga na cintura. Queria trocar por 40 ou devolver.",
+            attachments: [],
+            history: "9 pedidos · 4 devoluções no mês",
+            denyReason: "Quinta solicitação de devolução no mês, acima do limite de 3 previsto na política. O motivo (tamanho incompatível) seria aceito isoladamente."
+          }
         ],
         activities: [
-          { time: "11:45", actor: "Orchestration Agent", agent: true, action: "recebeu solicitação de cancelamento parcial", note: "Item: Cola de Instalação Vinílica 1kg × 2 (SKU CI-1KG-VIN)." },
-          { time: "11:46", actor: "Orchestration Agent", agent: true, action: "validou janela de cancelamento — item ainda em Picking, não expedido" },
-          { time: "11:46", actor: "Orchestration Agent", agent: true, action: "acionou workflow de Cancelamento e marcou cancelSignal no step Picking" },
-          { time: "11:47", actor: "Orchestration Agent", agent: true, action: "tentou bloquear expedição no WMS — Picking não respondeu ao sinal automático", note: "Ação manual necessária: operador WMS deve interromper a separação física." },
-          { time: "11:47", actor: "Orchestration Agent", agent: true, action: "criou esta tarefa para o operador confirmar a parada no WMS" }
+          { time: "07:12", actor: "Order Management Agent", agent: true, action: "recebeu 4 solicitações de devolução e cruzou cada uma com as políticas cadastradas pela loja" },
+          { time: "07:13", actor: "Order Management Agent", agent: true, action: "reprovou automação em TCK-1042: 34 dias desde a entrega, acima do prazo de 30 dias", note: "Histórico limpo do cliente (12 pedidos, 0 ocorrências) é atenuante, mas não há regra automática que o considere." },
+          { time: "07:13", actor: "Order Management Agent", agent: true, action: "classificou TCK-1043 como motivo não coberto — a política aceita apenas defeito ou avaria" },
+          { time: "07:14", actor: "Order Management Agent", agent: true, action: "identificou conflito em TCK-1044 entre categoria e evidência", note: "Higiene pessoal não é elegível, mas as fotos anexadas indicam defeito de fabricação. Recomendação: escalar." },
+          { time: "07:14", actor: "Order Management Agent", agent: true, action: "detectou em TCK-1045 a 5ª solicitação do mês, acima do limite de 3" },
+          { time: "07:15", actor: "Order Management Agent", agent: true, action: "abriu esta iniciativa com os 4 tickets para avaliação do SAC" }
         ],
         chat: [
-          { from: "agent", text: "Recebi o cancelamento parcial do pedido 68945904 (ObraMax). O cliente quer cancelar a Cola de Instalação, mas o item ainda está em Picking no WMS." },
-          { from: "agent", text: "Já acionei o workflow de Cancelamento e sinalizo o step, mas a separação física precisa ser interrompida manualmente. Posso continuar com estorno de estoque e financeiro após a confirmação. Confirmar parada?" }
+          { from: "agent", text: "Quatro devoluções caíram fora das políticas cadastradas: uma fora do prazo, uma por motivo não coberto, uma por categoria e uma por limite mensal. Nenhuma tinha regra automática aplicável." },
+          { from: "agent", text: "Já deixei uma recomendação em cada ticket, com o porquê. O TCK-1044 é o mais delicado — a foto sugere defeito, mas a categoria não é elegível, então recomendei escalar. Ele também é o único com SLA vencido." }
         ]
       }
     },
 
-    /* ── TA-2 · SLA em risco — DrogariaSP ── */
+    /* ── Canvas F · Pedido de marketplace bloqueado por falta de estoque ──
+       A dependência do ERP do merchant é guarda, não aviso: com o SAP como
+       fonte de verdade do estoque, nada é escrito pela plataforma — e a opção
+       de atualizar na mão nem chega a ser oferecida na árvore abaixo.
+       Ao contrário do Canvas A, a causa raiz já é conhecida: o humano decide
+       como resolver, não investiga o que houve. ── */
     {
-      id: "TA431436",
+      id: "TA-CANVAS-F",
+      occurrenceId: "O118",
       priority: "high",
       status: "attention",
-      title: "SLA em risco: Packing + NF-e virtual pendentes com ~4h restantes",
-      tag: "Risco de SLA",
-      assigneeInitial: "M",
-      assigneeInitials: "MA",
-      source: { kind: "order", label: "Risco de SLA" },
+      title: "Pedido bloqueado por falta de estoque — Amazon (SKU MOCHILA-URBAN-42P)",
+      tag: "Marketplace",
+      assigneeInitial: "E",
+      assigneeInitials: "ES",
+      assigneeName: "Ecommerce Supervisor",
+      source: { kind: "order", label: "Marketplace" },
+      canvasPattern: "F",
       chips: [
-        { icon: "clock",   label: "Priorizar pedido na fila WMS"              },
-        { icon: "sparkle", label: "Desbloquear NF-e produto virtual"           },
-        { icon: "graph",   label: "Ver estimativa de SLA"                      },
-        { icon: "send",    label: "Escalar para Supervisor"                    },
+        { icon: "bell",   label: "Alertar time para rodar atualização via ERP" },
+        { icon: "layers", label: "Ver saldo em armazéns alternativos"          },
+        { icon: "search", label: "Ver o pedido bloqueado"                      },
       ],
       detail: {
-        title: "SLA em risco — DrogariaSP (68945903)",
-        reportedBy: { agent: "SLA Monitor Agent", at: "02 jun às 10:30" },
-        summary: "Pedido 68945903 criado às 10:14 com SLA de 6h (deadline ~16:14). Packing em andamento (manual), mais Labeling, Emissão de NF e Expedição ainda pendentes. Produto virtual tem NF-e travada em 'Ativo' bloqueando o envio por e-mail. Estimativa de conclusão: 17h30 — quebra de SLA provável.",
-        diagnosis: "O pedido tem dois Order Jobs: produto virtual (NF-e em processamento → bloqueando entrega digital) e produto físico (Packing ativo, 4 etapas manuais ou dependentes à frente). O caminho crítico do físico exige Packing → Labeling → NF → Expedição antes de 16:14. O agente projeta que o tempo médio restante para concluir todas as etapas supera o SLA em ~1h15.",
-        attributedTo: { name: "Maria Santos", initial: "M" },
+        title: "Pedido #BR-2984571 bloqueado por falta de estoque — SKU MOCHILA-URBAN-42P",
+        reportedBy: { agent: "Order Management Agent", at: "14 jun 2026, 10:15" },
+        severity: "high",
+        slaHours: 6,
+        scope: "1 pedido · Amazon · SKU MOCHILA-URBAN-42P",
+        diagnosis: {
+          text: "Pedido #BR-2984571 (Amazon) falhou na simulação de estoque às 09:47. O SKU MOCHILA-URBAN-42P está sem saldo no CD Guarulhos, armazém principal. Reprocessamento automático tentado 3x entre 09:47 e 10:15, sem sucesso. O merchant tem integração ERP ativa — SAP é a fonte de verdade do estoque, então nenhuma atualização foi feita pela plataforma."
+        },
+        followUp: [
+          { state: "attention", title: "Decidir como resolver a pendência de estoque", assignee: "Ecommerce Supervisor", initial: "E" }
+        ],
+        resolved: [],
+        /* Pré-etapa autônoma: tudo isso já rodou antes de a ocorrência chegar
+           a um humano. */
+        autoDone: [
+          { state: "done", title: "Executar simulação do pedido (estoque, SLA, valores)", assignee: "Order Management Agent", agent: true },
+          { state: "done", title: "Tentar reprocessamento automático via scripts existentes (3 tentativas)", assignee: "Order Management Agent", agent: true },
+          { state: "done", title: "Verificar disponibilidade em armazéns alternativos", assignee: "Order Management Agent", agent: true },
+          { state: "done", title: "Identificar integração ERP do merchant", assignee: "Order Management Agent", agent: true }
+        ],
+        verification: {
+          start: "f1",
+          answeredBy: "Adriana Guimarães",
+          answeredAt: "14 jun 2026, 10:22",
+          questions: {
+            f1: {
+              type: "single_select",
+              title: "Como deseja resolver a pendência de estoque?",
+              /* "Atualizar estoque manualmente" não aparece: ela só vale para
+                 merchant sem ERP. A Dependência filtra a opção antes de
+                 perguntar, em vez de oferecer algo que não se aplica. */
+              options: [
+                {
+                  id: "alertar-erp",
+                  title: "Alertar para rodar atualização via ERP",
+                  desc: "Sugerido pelo agente — o SAP é a fonte de verdade, a correção precisa nascer lá.",
+                  next: null,
+                  tasks: [
+                    { state: "loading", title: "Enviar alerta ao time responsável para rodar atualização via ERP (SAP)", assignee: "Order Management Agent", agent: true },
+                    { state: "loading", title: "Reprocessar simulação do pedido #BR-2984571", assignee: "Order Management Agent", agent: true }
+                  ]
+                },
+                { id: "transferir", title: "Sugerir transferência de estoque de outro armazém", desc: "O agente encontrou saldo em 2 armazéns alternativos.", next: "f2" },
+                { id: "outro", title: "Outro", other: true, otherPlaceholder: "Descreva como pretende resolver a pendência.", next: "f3" }
+              ]
+            },
+
+            /* ── Branch C · Transferência entre armazéns ──
+               A lista já vem do agente com o saldo de cada armazém: não é
+               pergunta aberta. A transferência também respeita a Dependência —
+               nenhuma das duas opções escreve estoque no ERP do merchant. */
+            f2: {
+              type: "single_select",
+              title: "De qual armazém transferir?",
+              options: [
+                {
+                  id: "cd-extrema", title: "CD Extrema — 12 unidades disponíveis", next: null,
+                  tasks: [
+                    { state: "loading",   title: "Solicitar transferência ao CD Extrema", assignee: "Order Management Agent", agent: true },
+                    { state: "attention", title: "Confirmar chegada física no CD Guarulhos", assignee: "Ecommerce Supervisor", initial: "E" },
+                    { state: "loading",   title: "Reprocessar simulação do pedido #BR-2984571", assignee: "Order Management Agent", agent: true }
+                  ]
+                },
+                {
+                  id: "cd-cajamar", title: "CD Cajamar — 4 unidades disponíveis", next: null,
+                  tasks: [
+                    { state: "loading",   title: "Solicitar transferência ao CD Cajamar", assignee: "Order Management Agent", agent: true },
+                    { state: "attention", title: "Confirmar chegada física no CD Guarulhos", assignee: "Ecommerce Supervisor", initial: "E" },
+                    { state: "loading",   title: "Reprocessar simulação do pedido #BR-2984571", assignee: "Order Management Agent", agent: true }
+                  ]
+                }
+              ]
+            },
+
+            /* ── Branch D · Outro (ilustrativo, como no Canvas A) ── */
+            f3: {
+              type: "short_text",
+              title: "Descreva como pretende resolver",
+              placeholder: "O caminho que você vai seguir para destravar o pedido.",
+              next: null,
+              tasks: [
+                { state: "attention", title: "Investigar causa não mapeada (triagem manual)", assignee: "Ecommerce Supervisor", initial: "E" }
+              ]
+            }
+          }
+        },
+        affectedOrders: {
+          total: 1,
+          items: [
+            { id: "BR-2984571", customer: "Ricardo Salgado", sla: "Expira hoje", seller: "Amazon", eta: "15/06/2026" }
+          ]
+        },
+        activities: [
+          { time: "09:47", actor: "Order Management Agent", agent: true, action: "registrou falha na simulação do pedido #BR-2984571 — SKU MOCHILA-URBAN-42P sem saldo no CD Guarulhos" },
+          { time: "10:15", actor: "Order Management Agent", agent: true, action: "tentou reprocessamento automático 3x entre 09:47 e 10:15, sem sucesso" },
+          { time: "10:16", actor: "Order Management Agent", agent: true, action: "encontrou 12 unidades do SKU no CD Extrema e 4 no CD Cajamar" },
+          { time: "10:17", actor: "Order Management Agent", agent: true, action: "identificou integração ERP ativa no merchant (SAP)", note: "Estoque tem o ERP como fonte de verdade — nenhuma escrita automática é permitida a partir da plataforma." },
+          { time: "10:18", actor: "SAC Team", initial: "S", action: "escalou a ocorrência para o supervisor de ecommerce", note: "SAC não tem autonomia para resolver pendência de estoque." },
+          { time: "10:18", actor: "Order Management Assistant", agent: true, action: "gerou esta ocorrência com a decisão de resolução pendente" }
+        ],
+        chat: [
+          { from: "agent", text: "O pedido #BR-2984571 (Amazon) está bloqueado desde as 09:47: o SKU MOCHILA-URBAN-42P não tem saldo no CD Guarulhos e o reprocessamento automático falhou nas 3 tentativas." },
+          { from: "agent", text: "A causa já está fechada, não preciso que você investigue. O que falta é a decisão. O merchant usa SAP como fonte de verdade de estoque, então não atualizo nada por aqui — escolha no card abaixo como quer resolver." }
+        ]
+      }
+    },
+
+    /* ── TSK-302 · Tarefa da iniciativa IN6280 (Precificação dinâmica) —
+       aberta via "Ver conversa" no InitiativeDocumentPanel.
+       Não é uma Ocorrência: mora aqui só para ter canvas próprio quando alguém
+       chega por IN6280 ou pelo kanban, e por isso fica fora da fila. ── */
+    {
+      id: "TSK-302",
+      isOccurrence: false,
+      priority: "high",
+      status: "attention",
+      title: "Revisar proposta de precificação dinâmica — aguarda aprovação",
+      tag: "Precificação",
+      assigneeInitial: "Y",
+      assigneeInitials: "YO",
+      assigneeName: "You",
+      source: { kind: "initiative", label: "IN6280" },
+      chips: [
+        { icon: "graph",   label: "Ver elasticidade por categoria" },
+        { icon: "check",   label: "Aprovar novo teto de desconto"  },
+        { icon: "sparkle", label: "Escalar para Supervisor"        },
+      ],
+      detail: {
+        title: "Precificação dinâmica — IN6280",
+        reportedBy: { agent: "Pricing Agent", at: "28 mar às 09:12" },
+        summary: "13 SKUs estão sendo vendidos abaixo do custo de reposição desde o último reajuste de frete. O Pricing Agent propôs um novo teto de desconto por categoria para restaurar a margem mínima.",
+        diagnosis: "O reajuste de frete de 15/03 elevou o custo de reposição de 13 SKUs sem um ajuste correspondente no preço de venda. A mudança de teto de desconto proposta pelo agente excede a política automática (máx. 10% por ciclo) e por isso está marcada como 'requer aprovação'.",
+        attributedTo: { name: "You", initial: "Y" },
         severity: "high",
         slaHours: 4,
         followUp: [
-          { state: "attention", title: "Priorizar Packing e Labeling na fila WMS (SKU DS-VC-1000)", assignee: "WMS Operator",     initial: "G" },
-          { state: "attention", title: "Verificar e desbloquear emissão de NF-e produto virtual",    assignee: "Fiscal Service",   initial: "M" },
-          { state: "loading",   title: "Monitorar avanço e alertar se deadline se aproximar",         assignee: "SLA Monitor Agent", agent: true }
+          { state: "attention", title: "Aprovar novo teto de desconto por categoria", assignee: "You", initial: "Y" },
         ],
         resolved: [
-          { state: "done", title: "Calcular tempo estimado × deadline de SLA",               assignee: "SLA Monitor Agent", agent: true },
-          { state: "done", title: "Identificar etapas manuais no caminho crítico",            assignee: "SLA Monitor Agent", agent: true },
-          { state: "done", title: "Detectar NF-e virtual travada como bloqueio secundário",   assignee: "SLA Monitor Agent", agent: true }
+          { state: "done", title: "Validar elasticidade de preço por categoria", assignee: "Guilherme Vecchi", initial: "G" },
+          { state: "done", title: "Identificar os 13 SKUs abaixo do custo de reposição", assignee: "Pricing Agent", agent: true },
         ],
-        impacted: [
-          { id: "1631808945903-01", sla: "~4h restantes (deadline 16:14)", seller: "DrogariaSP", eta: "03/06/2026" }
-        ],
+        impacted: [],
         activities: [
-          { time: "10:14", actor: "SLA Monitor Agent", agent: true, action: "pedido criado — início do monitoramento de SLA" },
-          { time: "10:30", actor: "SLA Monitor Agent", agent: true, action: "projeção de SLA calculada: 4 etapas restantes com estimativa acima do deadline", note: "Deadline 16:14 · Estimativa de conclusão: 17:30." },
-          { time: "10:31", actor: "SLA Monitor Agent", agent: true, action: "detectou NF-e virtual em status 'ativo' sem avanço há 15 min", note: "Fiscal Service possivelmente com fila ou integração travada." },
-          { time: "10:31", actor: "Orchestration Agent", agent: true, action: "criou esta tarefa e atribuiu ao operador responsável" }
+          { time: "09:12", actor: "Pricing Agent", agent: true, action: "identificou 13 SKUs vendidos abaixo do custo de reposição" },
+          { time: "09:14", actor: "Pricing Agent", agent: true, action: "propôs novo teto de desconto por categoria", note: "Mudança excede a política automática — marcada como 'requer aprovação'." },
         ],
         chat: [
-          { from: "agent", text: "O pedido 68945903 da DrogariaSP tem SLA de 6h com deadline às 16:14. Ainda faltam Packing (ativo), Labeling, NF e Expedição no físico — mais a NF-e do produto virtual travada." },
-          { from: "agent", text: "Posso priorizar este pedido na fila do WMS e notificar o Fiscal Service para destravar a NF-e. Avanço automático após cada etapa. Confirmar?" }
-        ]
-      }
-    },
-
-    /* ── TA-3 · BOPIS C&A — cliente ainda não retirou ── */
-    {
-      id: "TA431437",
-      priority: "medium",
-      status: "active",
-      title: "Cliente notificado há 2h+ e ainda não fez check-in para retirada BOPIS",
-      tag: "BOPIS · Retirada na Loja",
-      assigneeInitial: "A",
-      assigneeInitials: "AF",
-      source: { kind: "order", label: "BOPIS · Retirada na Loja" },
-      chips: [
-        { icon: "check",   label: "Confirmar prontidão da loja C&A Botafogo"   },
-        { icon: "send",    label: "Reenviar notificação ao cliente agora"       },
-        { icon: "edit",    label: "Registrar check-in manualmente"              },
-        { icon: "search",  label: "Ver pedido C&A no detalhe"                  },
-      ],
-      detail: {
-        title: "Check-in BOPIS pendente — C&A Botafogo (68945901)",
-        reportedBy: { agent: "Orchestration Agent", at: "02 jun às 13:30" },
-        summary: "O pedido BOPIS 68945901 (C&A) teve 'Ready for Pickup' concluído às 11:22. O cliente foi notificado por e-mail e SMS, mas não realizou o check-in na loja até o momento (13:30 — 2h08 depois). Faturamento e Handover at POS seguem pendentes.",
-        diagnosis: "Fluxo BOPIS: Picking e Packing concluídos pela loja, cliente notificado às 11:22. O SLA de retirada é de 4h (deadline ~15:22). Faltam Customer Check-in → Emissão de NF → Handover at POS. A loja precisa estar ciente e preparada para atender quando o cliente chegar. Se não houver check-in até 14:45, o agente sugere reenviar a notificação ao cliente.",
-        attributedTo: { name: "Ana Pessoa", initial: "A" },
-        severity: "medium",
-        slaHours: 2,
-        followUp: [
-          { state: "attention", title: "Confirmar que loja C&A Botafogo está pronta para atendimento", assignee: "Operador Loja", initial: "A" },
-          { state: "loading",   title: "Reenviar notificação ao cliente se não houver check-in às 14:45", assignee: "Orchestration Agent", agent: true }
-        ],
-        resolved: [
-          { state: "done", title: "Confirmar Picking e Packing concluídos na loja", assignee: "Operador Loja", initial: "A" },
-          { state: "done", title: "Enviar notificação Ready for Pickup por e-mail e SMS", assignee: "Orchestration Agent", agent: true }
-        ],
-        impacted: [
-          { id: "1631808945901-01", sla: "~2h restantes (deadline 15:22)", seller: "C&A · Botafogo RJ", eta: "02/06/2026" }
-        ],
-        activities: [
-          { time: "11:22", actor: "Orchestration Agent", agent: true, action: "concluiu Ready for Pickup e disparou notificação ao cliente", note: "E-mail e SMS enviados com link de instruções de retirada." },
-          { time: "13:30", actor: "Orchestration Agent", agent: true, action: "detectou ausência de check-in após 2h08 da notificação", note: "SLA de retirada: 4h. Deadline: 15:22." },
-          { time: "13:30", actor: "Orchestration Agent", agent: true, action: "criou esta tarefa para o operador de loja verificar prontidão" }
-        ],
-        chat: [
-          { from: "agent", text: "O pedido BOPIS 68945901 está pronto na C&A Botafogo desde 11:22, mas o cliente ainda não apareceu (são 13:30 agora — 2h08 depois)." },
-          { from: "agent", text: "Posso reenviar a notificação ao cliente agora ou agendar para às 14:45 se não houver check-in. Também posso alertar a loja para estar preparada. O que prefere?" }
-        ]
-      }
-    },
-
-    /* ── TA-4 · Samsung — postagem reversa sem confirmação ── */
-    {
-      id: "TA431438",
-      priority: "low",
-      title: "Postagem reversa aguardada há +24h sem confirmação do cliente",
-      tag: "Logística Reversa",
-      status: "active",
-      assigneeInitial: "R",
-      assigneeInitials: "RC",
-      source: { kind: "order", label: "Logística Reversa" },
-      chips: [
-        { icon: "send",    label: "Reenviar etiqueta reversa ao cliente"        },
-        { icon: "chat",    label: "Sugerir texto de follow-up para CS"          },
-        { icon: "edit",    label: "Registrar postagem manualmente"              },
-        { icon: "search",  label: "Ver pedido Samsung no detalhe"               },
-      ],
-      detail: {
-        title: "Postagem reversa pendente — Samsung Galaxy (68945902)",
-        reportedBy: { agent: "Returns Agent", at: "02 jun às 09:00" },
-        summary: "A etiqueta reversa para devolução do Samsung Galaxy S24 FE foi enviada ao cliente em 01/06 às 18:36. Já se passaram mais de 24h sem confirmação de postagem. As etapas de Inspeção no CD e Estorno Financeiro estão bloqueadas até a postagem ser confirmada.",
-        diagnosis: "Fluxo de devolução iniciado em 01/06/2026 18:32. Etiqueta reversa gerada e enviada por e-mail 4 minutos depois. O passo 'Confirmar Postagem' está ativo há +24h. O cliente pode não ter visto o e-mail, ter dúvidas sobre o processo, ou estar aguardando conveniência para ir à agência. Não há SLA formal para esta etapa, mas o agente monitora para evitar que o prazo de devolução expire.",
-        attributedTo: { name: "Rafael Vianna", initial: "R" },
-        severity: "low",
-        slaHours: null,
-        followUp: [
-          { state: "attention", title: "Entrar em contato com o cliente para confirmar recebimento da etiqueta", assignee: "CS Operator", initial: "R" },
-          { state: "loading",   title: "Monitorar status de postagem via API da Carrier", assignee: "Returns Agent", agent: true }
-        ],
-        resolved: [
-          { state: "done", title: "Validar elegibilidade da solicitação de devolução",   assignee: "Returns Agent", agent: true },
-          { state: "done", title: "Classificar como devolução com estorno",               assignee: "Returns Agent", agent: true },
-          { state: "done", title: "Gerar e enviar etiqueta reversa ao cliente",           assignee: "Returns Agent", agent: true }
-        ],
-        impacted: [
-          { id: "1631808945902-01", sla: "Sem SLA formal — monitorando", seller: "Samsung", eta: "—" }
-        ],
-        activities: [
-          { time: "01/06 18:32", actor: "Returns Agent", agent: true, action: "recebeu e validou solicitação de devolução por defeito de fabricação" },
-          { time: "01/06 18:35", actor: "Returns Agent", agent: true, action: "gerou etiqueta reversa Total Express e enviou ao cliente por e-mail" },
-          { time: "02/06 09:00", actor: "Returns Agent", agent: true, action: "detectou ausência de postagem após 14h28 do envio da etiqueta", note: "Nenhuma leitura de rastreamento registrada pela Total Express." },
-          { time: "02/06 09:00", actor: "Returns Agent", agent: true, action: "criou esta tarefa para acompanhamento pelo time de CS" }
-        ],
-        chat: [
-          { from: "agent", text: "Enviei a etiqueta reversa para o Samsung Galaxy em 01/06 às 18:35, mas o cliente ainda não postou o produto — já se passaram +24h." },
-          { from: "agent", text: "Posso reenviar a etiqueta com instruções de postagem ou sugerir um texto de follow-up para o time de CS entrar em contato. O que prefere?" }
-        ]
-      }
-    },
-
-    /* ── TA-5 · Receita médica pendente — LuzÓtica ── */
-    {
-      id: "TA431439",
-      priority: "high",
-      title: "Receita médica não validada — lente especial bloqueada para fabricação",
-      tag: "Compliance",
-      status: "attention",
-      assigneeInitial: "A",
-      assigneeInitials: "AS",
-      source: { kind: "order", label: "Compliance" },
-      chips: [
-        { icon: "check",  label: "Verificar anexo enviado pelo cliente" },
-        { icon: "check",  label: "Validar dados técnicos da prescrição" },
-        { icon: "send",   label: "Aprovar receita e liberar para produção" },
-        { icon: "search", label: "Ver pedido LuzÓtica no detalhe" },
-      ],
-      detail: {
-        title: "Validar receita médica — Lente Especial Anti-Reflexo (LuzÓtica)",
-        reportedBy: { agent: "SLA Monitor Agent", at: "10 jun às 09:15" },
-        summary: "O pedido 68945905 (LuzÓtica) contém uma lente especial sob medida que exige validação de receita médica antes de entrar em produção no laboratório Essilor. A receita foi anexada pelo cliente no checkout, mas ainda não foi validada pela equipe de Atendimento. Enquanto a aprovação estiver pendente, a etapa de Produção da Lente não pode iniciar. O item de óculos de sol do mesmo pedido segue normalmente pelo workflow de Entrega em Domicílio.",
-        diagnosis: "Pedido recebido em 10/06 às 08:47. Pagamento confirmado às 08:48. O workflow de Fabricação de Lente foi acionado automaticamente. A tarefa 'Verificar anexo de receita' está ativa há +26 min sem resposta do time de Atendimento. O agente identificou risco de atraso: se a receita não for aprovada em até 2h, o prazo de fabricação (10 dias úteis) não será cumprido e o SLA de entrega expirará.",
-        attributedTo: { name: "Atendimento Óptico", initial: "A" },
-        severity: "high",
-        slaHours: 2,
-        followUp: [
-          { state: "attention", title: "Verificar anexo da receita médica no pedido",         assignee: "Atendimento Óptico", initial: "A" },
-          { state: "attention", title: "Validar grau, eixo e parâmetros técnicos da lente",   assignee: "Atendimento Óptico", initial: "A" },
-          { state: "loading",   title: "Aguardar aprovação para acionar laboratório Essilor", assignee: "SLA Monitor Agent",  agent: true  }
-        ],
-        resolved: [
-          { state: "done", title: "Confirmar pagamento aprovado",                    assignee: "SLA Monitor Agent", agent: true },
-          { state: "done", title: "Acionar workflow de Fabricação de Lente",         assignee: "SLA Monitor Agent", agent: true },
-          { state: "done", title: "Detectar ausência de validação após 20 min",      assignee: "SLA Monitor Agent", agent: true }
-        ],
-        impacted: [
-          { id: "1631808945905-01", sla: "Risco de atraso se não aprovado em 2h", seller: "LuzÓtica", eta: "23/06/2026" }
-        ],
-        activities: [
-          { time: "08:47", actor: "SLA Monitor Agent", agent: true, action: "recebeu pedido LuzÓtica com lente especial e item de óculos de sol" },
-          { time: "08:48", actor: "SLA Monitor Agent", agent: true, action: "confirmou pagamento aprovado e acionou workflows: Fabricação de Lente + Entrega em Domicílio" },
-          { time: "09:08", actor: "SLA Monitor Agent", agent: true, action: "detectou tarefa 'Verificar anexo de receita' sem resposta após 20 min", note: "Nenhuma ação do time de Atendimento registrada." },
-          { time: "09:15", actor: "SLA Monitor Agent", agent: true, action: "criou esta tarefa para priorização pelo time de Atendimento Óptico" }
-        ],
-        chat: [
-          { from: "agent", text: "O pedido de lente especial (LuzÓtica) está aguardando validação da receita médica há mais de 25 minutos. Sem aprovação, a fabricação no laboratório Essilor não pode iniciar." },
-          { from: "agent", text: "O item de óculos de sol do mesmo pedido segue normalmente — já está em Picking. Posso enviar um lembrete ao time de Atendimento ou escalar para um supervisor?" }
+          { from: "agent", text: "13 SKUs estão sendo vendidos abaixo do custo de reposição desde o reajuste de frete de 15/03. Proponho um novo teto de desconto por categoria para restaurar a margem mínima." },
+          { from: "agent", text: "Essa mudança excede a política automática de desconto (máx. 10% por ciclo), então preciso da sua aprovação para aplicar. Posso seguir?" }
         ]
       }
     }
@@ -744,7 +885,7 @@ window.AIWData = (function () {
       stages: [
         { name: "Detecção",    linkedToNext: true,  tasks: [{ id: "rp-1", name: "Detectar recusa", type: "auto", owner: "Gateway" }, { id: "rp-2", name: "Notificar cliente", type: "auto", owner: "Notif. Agent" }] },
         { name: "Retentativa", linkedToNext: false, tasks: [{ id: "rp-3", name: "Retentar cobrança", type: "auto", owner: "Gateway" }] },
-        { name: "Resolução",   tasks: [{ id: "rp-4", name: "Cancelar ou confirmar pedido", type: "auto", owner: "OMS Agent" }] }
+        { name: "Resolução",   tasks: [{ id: "rp-4", name: "Cancelar ou confirmar pedido", type: "auto", owner: "Order Management Agent" }] }
       ]},
     { id: "giftcard", name: "Gift Card", icon: "🎁", category: "servicos",
       desc: "Emissão e validação de gift cards na compra e no resgate",
@@ -795,7 +936,7 @@ window.AIWData = (function () {
     { id: "sla",            name: "SLA Monitor Agent",       emoji: "⏱", color: "#FFE3E3", tasks: 8240,  credits: 32100, sub: "Detecta pedidos travados acima do SLA" },
     { id: "returns",        name: "Returns Agent",           emoji: "↩",  color: "#E5F0FF", tasks: 4120,  credits: 19800, sub: "Logística reversa e devoluções" },
     { id: "marketplace",    name: "Marketplace Agent",       emoji: "🛒", color: "#FFF3C7", tasks: 6840,  credits: 28700, sub: "Integrações de marketplace" },
-    { id: "oms",            name: "OMS Agent",               emoji: "📦", color: "#E3F8E5", tasks: 12150, credits: 47600, sub: "Order Management & routing" }
+    { id: "oms",            name: "Order Management Agent",  emoji: "📦", color: "#E3F8E5", tasks: 12150, credits: 47600, sub: "Order Management & routing" }
   ];
 
   /* ─── helpers reutilizáveis para steps ──────────────────────────── */
@@ -825,6 +966,23 @@ window.AIWData = (function () {
       { label:"Emissão de Nota Fiscal",   icon:"🧾", status:"pending", agent:true,  time:null },
       { label:"Customer Check-in",        icon:"🏪", status:"pending", agent:false, time:null },
       { label:"Handover at POS",          icon:"🤝", status:"pending", agent:false, time:null },
+    ];
+  }
+  /* Preparação concluída pelo seller e nenhum evento de coleta a seguir — é a
+     assinatura do cluster de despacho travado do Canvas A (labeling às 06:12). */
+  function stepsSellerNoDispatch(d) {
+    return [
+      { label:"Autorização de Pagamento", icon:"💳", status:"done",    agent:true,  time:"13/06/2026 18:25" },
+      { label:"Captura de Pagamento",     icon:"💳", status:"done",    agent:true,  time:"13/06/2026 18:25" },
+      { label:"Reserva de Estoque",       icon:"📦", status:"done",    agent:true,  time:"13/06/2026 18:26" },
+      { label:"Picking",                  icon:"🔍", status:"done",    agent:false, time:d+" 05:40" },
+      { label:"Packing",                  icon:"📦", status:"done",    agent:false, time:d+" 06:02" },
+      { label:"Labeling",                 icon:"🏷️", status:"done",    agent:false, time:d+" 06:12", note:"Último evento registrado pelo seller." },
+      { label:"Emissão de Nota Fiscal",   icon:"🧾", status:"done",    agent:true,  time:d+" 06:13" },
+      { label:"Expedição",                icon:"📮", status:"active",  agent:false, time:null, note:"Sem evento de coleta há mais de 4h. Entrega prevista para hoje." },
+      { label:"First Mile",               icon:"🚚", status:"pending", agent:true,  time:null },
+      { label:"Last Mile",                icon:"🚚", status:"pending", agent:true,  time:null },
+      { label:"Proof of Delivery",        icon:"✅", status:"pending", agent:true,  time:null },
     ];
   }
 
@@ -1373,6 +1531,55 @@ window.AIWData = (function () {
       ],
     },
 
+    /* ══ Pedido 10 · Loja Botafogo · Canvas A — despacho não iniciado ══
+       Primeiro dos 23 pedidos do cluster de buildCanvasAOrders(). É o único
+       com registro completo aqui: na ocorrência TA-CANVAS-A a lista de
+       "Pedidos afetados" só abre detalhe para os IDs presentes em orders. */
+    {
+      id:"1621368619303-01", short:"68619303",
+      date:"13/06/2026 - 18:24", customer:"Marina Bastos",
+      origin:"Site", qty:3, total:"R$ 428,70",
+      status:"attention", statusLabel:"Atenção necessária",
+      sla:"D+1 hoje", seller:"Loja Botafogo", eta:"14/06/2026",
+      customerDetail:{
+        taxId:"618.204.331-77",
+        phone:"(21) 98812-4407",
+        email:"marina.bastos@email.com",
+        address:"Rua Voluntários da Pátria, 445, Apto 802 · Botafogo – Rio de Janeiro, RJ · CEP 22270-000",
+        billingAddress:"Rua Voluntários da Pátria, 445, Apto 802 · Botafogo – Rio de Janeiro, RJ · CEP 22270-000",
+        card:"Visa **** 6721",
+      },
+      note:{
+        useCase:"Seller não iniciou o despacho dentro do SLA de entrega D+1",
+        text:"Pedido preparado normalmente pelo seller Loja Botafogo: pagamento capturado, separação, embalagem, etiqueta e nota fiscal concluídos às 06:12. A partir daí nenhum evento de coleta foi registrado pelo carrier — a expedição segue parada há mais de 4h e a entrega está prevista para hoje. É um dos 23 pedidos do cluster que originou a ocorrência de despacho da Loja Botafogo.",
+      },
+      itemGroups:[
+        {
+          id:"g-delivery", workflow:"entrega-domicilio", fulfillmentType:"delivery",
+          supplier:"Loja Botafogo · Jadlog",
+          label:"Entrega em Domicílio · Jadlog",
+          projections:[
+            { name:"payment",   connector:"payment-gateway", status:"done"    },
+            { name:"warehouse", connector:"wms",             status:"done"    },
+            { name:"invoice",   connector:"fiscal-service",  status:"done"    },
+            { name:"carrier",   connector:"jadlog",          status:"error"   },
+          ],
+          stages:[
+            { icon:"💳", label:"Pagamento",   status:"done"   },
+            { icon:"📦", label:"Handling",    status:"done"   },
+            { icon:"🧾", label:"Faturamento", status:"done"   },
+            { icon:"🚚", label:"Entrega",     status:"active" },
+          ],
+          items:[
+            { name:"Tênis Running Flex Pro", emoji:"👟", sku:"LB-TN-4409", qty:1, price:"R$ 299,90",
+              steps:stepsSellerNoDispatch("14/06/2026") },
+            { name:"Meia Esportiva Cano Alto Pack 3un", emoji:"🧦", sku:"LB-ME-1180", qty:2, price:"R$ 64,40",
+              steps:stepsSellerNoDispatch("14/06/2026") },
+          ],
+        },
+      ],
+    },
+
   ];
 
   /* ── My Tasks — kanban mock (Minhas Tarefas) ── */
@@ -1402,13 +1609,123 @@ window.AIWData = (function () {
     { id: "orchestration", icon: "sparkle", label: "Agentes de Pedidos",  sub: "Ativo · 4.256 pedidos monitorados" }
   ];
 
-  /* ── My Initiatives (v3 parity) ── */
+  /* ── My Initiatives (v3 parity) ──
+     Cada iniciativa abre primeiro como um documento (ver InitiativeDocumentPanel
+     em view-initiatives.jsx): título, descrição, metadados (status, severidade,
+     responsável, participantes, reportada por), Diagnóstico e Tarefas — sem
+     chat. O chat só é aberto quando o usuário clica em "Ver conversa" numa
+     tarefa específica. IDs alinhados aos já referenciados em myTasks[].source
+     (kind: "initiative"). */
   const initiatives = [
-    { id: "INI-201", title: "Reduzir cancelamentos por ruptura de estoque", status: "active",    source: { kind: "initiative", label: "Operação" },   owner: "Guilherme Vecchi", ownerInitials: "GV", tasksTotal: 8, tasksDone: 3, updated: "há 2h" },
-    { id: "INI-202", title: "Acelerar SLA de Packing em pedidos BOPIS",      status: "attention", source: { kind: "initiative", label: "Logística" },   owner: "Marina Alves",     ownerInitials: "MA", tasksTotal: 6, tasksDone: 1, updated: "há 40min" },
-    { id: "INI-203", title: "Automatizar coleta reversa de devoluções",      status: "active",    source: { kind: "initiative", label: "Pós-venda" },   owner: "Ana Costa",        ownerInitials: "AC", tasksTotal: 5, tasksDone: 4, updated: "ontem" },
-    { id: "INI-204", title: "Migração do catálogo legado para Shoreline",    status: "active",    source: { kind: "content",    label: "Catálogo" },    owner: "Tiago Nunes",      ownerInitials: "TN", tasksTotal: 12, tasksDone: 9, updated: "há 3 dias" },
-    { id: "INI-205", title: "Campanha de reposição via WhatsApp",            status: "completed", source: { kind: "campaign",    label: "Marketing" },   owner: "Carla Fontes",     ownerInitials: "CF", tasksTotal: 4, tasksDone: 4, updated: "há 1 semana" },
+    {
+      id: "IN6281", title: "Personalização de recomendações na vitrine", status: "attention",
+      source: { kind: "initiative", label: "Catálogo" }, owner: "Pedro Alves", ownerInitials: "PA",
+      tasksTotal: 3, tasksDone: 1, updated: "há 40min",
+      description: "Ajustar as vitrines e recomendações para refletir preferências e comportamento de navegação dos visitantes.",
+      priority: "medium",
+      reportedBy: { label: "Insights de Dados", at: "27/03 às 11:30" },
+      participants: [{ initials: "PA", name: "Pedro Alves" }, { initials: "AC", name: "Ana Costa" }, { initials: "YO", name: "You" }],
+      diagnosis: "O aumento de tráfego não converteu na mesma proporção nas últimas duas semanas. Visitantes recorrentes veem as mesmas recomendações genéricas de novos visitantes, o que reduz a relevância da vitrine e a taxa de clique.",
+      tasksList: [
+        { id: "TSK-202", title: "Ajustar recomendações da vitrine para usuários recorrentes", status: "active", assigneeInitials: "PA", assigneeName: "Pedro Alves" },
+        { title: "Mapear segmentos de clientes recorrentes", status: "completed", assigneeInitials: "AC", assigneeName: "Ana Costa" },
+        { title: "Definir regra de fallback para novos visitantes", status: "triage", assigneeInitials: "YO", assigneeName: "You" },
+      ],
+    },
+    {
+      id: "IN6280", title: "Precificação dinâmica em pedidos de alto risco", status: "attention",
+      source: { kind: "initiative", label: "Precificação" }, owner: "You", ownerInitials: "YO",
+      tasksTotal: 2, tasksDone: 1, updated: "há 1h",
+      description: "Revisar e aprovar ajustes de preço sugeridos pelo agente para pedidos com risco de margem negativa.",
+      priority: "high",
+      reportedBy: { label: "Pricing Agent", at: "28/03 às 09:12" },
+      participants: [{ initials: "YO", name: "You" }, { initials: "GV", name: "Guilherme Vecchi" }],
+      diagnosis: "13 SKUs estão sendo vendidos abaixo do custo de reposição desde o último reajuste de frete. O agente de precificação propôs um novo teto de desconto por categoria, mas a mudança excede a política automática e precisa de aprovação manual.",
+      tasksList: [
+        { id: "TSK-302", title: "Revisar proposta de precificação dinâmica — aguarda aprovação", status: "attention", assigneeInitials: "YO", assigneeName: "You" },
+        { title: "Validar elasticidade de preço por categoria", status: "completed", assigneeInitials: "GV", assigneeName: "Guilherme Vecchi" },
+      ],
+    },
+    {
+      id: "IN6274", title: "Otimização do funil de checkout", status: "active",
+      source: { kind: "initiative", label: "Checkout" }, owner: "Bruno Silva", ownerInitials: "BS",
+      tasksTotal: 2, tasksDone: 0, updated: "há 3h",
+      description: "Simplificar o processo de checkout para aumentar a taxa de conversão e reduzir o abandono de carrinho.",
+      priority: "medium",
+      reportedBy: { label: "Checkout Agent", at: "25/03 às 08:00" },
+      participants: [{ initials: "BS", name: "Bruno Silva" }, { initials: "LM", name: "Lucas Moura" }],
+      diagnosis: "O checkout atual tem 4 etapas e uma taxa de abandono de 38% na etapa de endereço. Concorrentes diretos operam com 2 etapas e preenchimento automático de endereço via CEP.",
+      tasksList: [
+        { title: "Reduzir etapas do checkout de 4 para 2", status: "active", assigneeInitials: "BS", assigneeName: "Bruno Silva" },
+        { title: "Testar preenchimento automático de endereço por CEP", status: "triage", assigneeInitials: "LM", assigneeName: "Lucas Moura" },
+      ],
+    },
+    {
+      id: "IN6273", title: "Otimização de catálogo", status: "attention",
+      source: { kind: "content", label: "Catálogo" }, owner: "Tiago Nunes", ownerInitials: "TN",
+      tasksTotal: 2, tasksDone: 1, updated: "há 2h",
+      description: "Corrigir SEO, títulos e descrições dos produtos mais visitados para melhorar posicionamento e conversão.",
+      priority: "medium",
+      reportedBy: { label: "Content Agent", at: "26/03 às 14:20" },
+      participants: [{ initials: "TN", name: "Tiago Nunes" }, { initials: "YO", name: "You" }],
+      diagnosis: "Os 50 SKUs mais visitados têm títulos e descrições migrados do catálogo legado, sem otimização de busca. Isso reduz o posicionamento orgânico e a taxa de conversão desses produtos.",
+      tasksList: [
+        { id: "TSK-402", title: "Migrar catálogo legado — categorias raiz aprovadas", status: "completed", assigneeInitials: "TN", assigneeName: "Tiago Nunes" },
+        { title: "Aprovar novas descrições geradas por IA para os 50 SKUs mais visitados", status: "attention", assigneeInitials: "YO", assigneeName: "You" },
+      ],
+    },
+    {
+      id: "IN6272", title: "Oportunidade de promoção", status: "active",
+      source: { kind: "campaign", label: "Marketing" }, owner: "Carla Fontes", ownerInitials: "CF",
+      tasksTotal: 1, tasksDone: 0, updated: "ontem",
+      description: "Criar campanhas promocionais para produtos com alta margem e baixa saída no estoque.",
+      priority: "low",
+      reportedBy: { label: "Merchandising Agent", at: "24/03 às 17:45" },
+      participants: [{ initials: "CF", name: "Carla Fontes" }],
+      diagnosis: "22 SKUs com margem acima de 40% estão parados há mais de 60 dias. Não há campanha ativa direcionada a esse grupo no momento.",
+      tasksList: [
+        { title: "Selecionar SKUs elegíveis para a promoção", status: "active", assigneeInitials: "CF", assigneeName: "Carla Fontes" },
+      ],
+    },
+    {
+      id: "IN6270", title: "Otimização de busca", status: "active",
+      source: { kind: "initiative", label: "Busca" }, owner: "Ana Costa", ownerInitials: "AC",
+      tasksTotal: 1, tasksDone: 0, updated: "há 4h",
+      description: "Criar sinônimos e ajustar regras de busca para termos de alto volume sem resultado.",
+      priority: "low",
+      reportedBy: { label: "Search Agent", at: "23/03 às 10:05" },
+      participants: [{ initials: "AC", name: "Ana Costa" }],
+      diagnosis: "12 termos de busca de alto volume da coleção Verão 2026 retornam \"sem resultados\" por falta de sinônimos cadastrados.",
+      tasksList: [
+        { id: "TSK-102", title: "Sincronizar sinônimos de busca para coleção Verão 2026", status: "triage", assigneeInitials: "AC", assigneeName: "Ana Costa" },
+      ],
+    },
+    {
+      id: "IN6268", title: "Otimização de entrega", status: "active",
+      source: { kind: "initiative", label: "Logística" }, owner: "John Davis", ownerInitials: "JD",
+      tasksTotal: 1, tasksDone: 0, updated: "há 5h",
+      description: "Expandir a cobertura logística para regiões com alta demanda e prazos de entrega elevados.",
+      priority: "medium",
+      reportedBy: { label: "Carrier Agent", at: "22/03 às 09:30" },
+      participants: [{ initials: "JD", name: "John Davis" }],
+      diagnosis: "3 regiões com crescimento de pedidos acima de 30% no último trimestre ainda não têm cobertura de frete grátis, elevando o prazo médio de entrega.",
+      tasksList: [
+        { id: "TSK-101", title: "Validar regra de frete grátis para pedidos acima de R$ 299", status: "triage", assigneeInitials: "JD", assigneeName: "John Davis" },
+      ],
+    },
+    {
+      id: "IN6265", title: "Workflow de devolução express", status: "completed",
+      source: { kind: "initiative", label: "Pós-venda" }, owner: "Rita Almeida", ownerInitials: "RA",
+      tasksTotal: 1, tasksDone: 1, updated: "há 1 semana",
+      description: "Publicar workflow de devolução express para pedidos com prazo de coleta menor que 48h.",
+      priority: "low",
+      reportedBy: { label: "Returns Agent", at: "18/03 às 16:00" },
+      participants: [{ initials: "RA", name: "Rita Almeida" }],
+      diagnosis: "Devoluções com coleta expressa não tinham um workflow dedicado, aumentando o tempo de resposta ao cliente.",
+      tasksList: [
+        { id: "TSK-401", title: "Publicar workflow de devolução express (< 48h)", status: "completed", assigneeInitials: "RA", assigneeName: "Rita Almeida" },
+      ],
+    },
   ];
 
   /* ── Home (preview) — situation-room dashboard, ported from Canvas-Wireframes ──
@@ -1473,7 +1790,7 @@ window.AIWData = (function () {
     ],
   };
 
-  return { AVATARS, conversations, kpis, workflowStages, tasks, myTasks, resources, workflows, wfCategories, aiTeam, orders, libraryWfs, stageSuggestions, taskSuggestions, initiatives, opsHome, opsHomeQueue };
+  return { AVATARS, AGENT_AVATARS, conversations, kpis, workflowStages, tasks, myTasks, resources, workflows, wfCategories, aiTeam, orders, libraryWfs, stageSuggestions, taskSuggestions, initiatives, opsHome, opsHomeQueue };
 })();
 
 /* ── AppData alias — keeps sidebar.jsx and app.jsx working without changes ── */

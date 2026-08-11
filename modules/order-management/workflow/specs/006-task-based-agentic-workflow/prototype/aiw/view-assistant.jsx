@@ -1,4 +1,4 @@
-/* global React, Icon, AIWData, MessageComposer, ChatEngine, SevPill, Dropdown, StatusIcon */
+/* global React, Icon, AIWData, MessageComposer, ChatEngine, SevPill, Dropdown, StatusIcon, TaskCanvas */
 const { useState, useEffect, useRef } = React;
 
 /* ------- Overview metric sparkline (v3 port: OverviewMetricChart) ------- */
@@ -136,10 +136,11 @@ const OCCURRENCE_STATUS_LABEL = {
   completed: "Concluída",
 };
 
-// Nº de pedidos afetados — vem de detail.affectedOrders (Canvas A) ou detail.impacted (demais tarefas).
+// Nº de pedidos afetados — vem de detail.affectedOrders (canvas com árvore de
+// decisão) ou detail.impacted (demais tarefas).
 function occurrenceScopeCount(t) {
   const d = t.detail || {};
-  if (t.canvasPattern === "A") return d.affectedOrders?.total ?? (d.affectedOrders?.items?.length || 0);
+  if (d.affectedOrders) return d.affectedOrders.total ?? (d.affectedOrders.items?.length || 0);
   return (d.impacted || []).length;
 }
 
@@ -147,6 +148,10 @@ function occurrenceScopeCount(t) {
 // mas o Canvas D (triagem de devoluções em lote) escopa em "casos em decisão".
 function occurrenceScopeLabel(t) {
   const d = t.detail || {};
+  if (d.tickets) {
+    const n = d.tickets.length;
+    return `${n} ticket${n === 1 ? "" : "s"} em avaliação`;
+  }
   if (t.canvasPattern === "D") {
     const n = (d.exceptions?.rows?.length || 0) + (d.duplicates?.rows?.length || 0);
     return `${n} caso${n === 1 ? "" : "s"} em decisão`;
@@ -199,7 +204,7 @@ function OccurrenceListHead() {
   return (
     <div data-sl-occurrence-list-head="">
       <span data-sl-occurrence-head-severity="">Severidade</span>
-      <span data-sl-occurrence-head-main="">Ocorrência</span>
+      <span data-sl-occurrence-head-main="">Iniciativa</span>
       <span data-sl-occurrence-head-scope="">Escopo</span>
       <span data-sl-occurrence-head-sla="">SLA</span>
       <span data-sl-occurrence-head-status="" />
@@ -208,7 +213,10 @@ function OccurrenceListHead() {
 }
 
 function OpenTasksCard({ onOpen, onGotoTasks }) {
-  const { tasks } = AIWData;
+  /* Nem tudo em AIWData.tasks é Ocorrência: algumas entradas existem só para
+     dar canvas a uma tarefa alcançada por outra superfície (uma iniciativa, o
+     kanban). Essas ficam fora da fila. */
+  const tasks = AIWData.tasks.filter((t) => t.isOccurrence !== false);
   const visible = tasks.slice(0, OPEN_TASKS_MAX);
   const remaining = tasks.length - visible.length;
   return (
@@ -415,9 +423,12 @@ function AssistantView({ onOpenTask, onGotoResource, onOpenOrder }) {
   const [isTyping, setIsTyping] = useState(false);
   const [orderSearch, setOrderSearch] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
+  const [openOccurrenceId, setOpenOccurrenceId] = useState(null);
   const orderSearchRef = useRef(null);
   const engineRef = useRef(null);
   const chatScrollRef = useRef(null);
+
+  const openOccurrenceTask = (AIWData.tasks || []).find((t) => t.id === openOccurrenceId) || null;
 
   const TABS = [
     { id: "overview", label: "Visão geral" },
@@ -542,7 +553,7 @@ function AssistantView({ onOpenTask, onGotoResource, onOpenOrder }) {
   };
 
   return (
-    <div className="main">
+    <div className="main assistant-shell">
       {/* ── v3 module-browser header (Orders) ── */}
       <div data-sl-my-tasks-sticky-top="">
         <div data-sl-module-browser-top-bar="" data-sl-module-browser-search-open={searchOpen ? "" : undefined}>
@@ -626,10 +637,13 @@ function AssistantView({ onOpenTask, onGotoResource, onOpenOrder }) {
                 </button>
               }
             >
+              {/* SPEC CONFLICT: AGENTS.md fixa "Gerenciador de Experiências" como
+                  nome do módulo; o rótulo desta entrada do menu de configurações
+                  foi alterado a pedido. O título da tela do board segue o spec. */}
               <button className="dd-item" onClick={() => onGotoResource && onGotoResource("workflow-board")}>
                 <span className="dd-item-icon"><Icon name="board" size={14} /></span>
                 <span>
-                  <span className="dd-item-label">Gerenciador de Experiências</span>
+                  <span className="dd-item-label">Configurações de Workflow</span>
                   <span className="dd-item-sub">{AIWData.workflows.length} workflows configurados</span>
                 </span>
               </button>
@@ -648,7 +662,7 @@ function AssistantView({ onOpenTask, onGotoResource, onOpenOrder }) {
       <div className="scroll" data-screen-label="01 My Assistant">
         <div className="aiw-wrap">
           {tab === "overview" &&
-            <OpenTasksCard onOpen={onOpenTask} onGotoTasks={() => onGotoResource && onGotoResource("tasks")} />
+            <OpenTasksCard onOpen={setOpenOccurrenceId} onGotoTasks={() => onGotoResource && onGotoResource("tasks")} />
           }
           {tab === "orders" && <AllOrdersTable onOpenOrder={onOpenOrder} search={orderSearch} />}
         </div>
@@ -683,6 +697,22 @@ function AssistantView({ onOpenTask, onGotoResource, onOpenOrder }) {
           />
         </div>
       }
+
+      {/* A ocorrência abre no mesmo canvas da tarefa (TaskCanvas), só em
+          formato de painel overlay — o ícone de chat no topbar leva para a
+          tarefa completa com o chat aberto. */}
+      {tab === "overview" && openOccurrenceTask && (
+        <TaskCanvas
+          task={openOccurrenceTask}
+          panelClassName="initiative-doc-panel"
+          onBack={() => setOpenOccurrenceId(null)}
+          onToggleChat={() => {
+            const id = openOccurrenceTask.id;
+            setOpenOccurrenceId(null);
+            onOpenTask && onOpenTask(id, { openChat: true });
+          }}
+        />
+      )}
     </div>
   );
 }
