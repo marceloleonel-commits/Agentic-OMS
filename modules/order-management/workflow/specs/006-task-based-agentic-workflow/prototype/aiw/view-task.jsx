@@ -1739,33 +1739,114 @@ function TaskCanvasMain({ task, onOpenOrder, onOpenList }) {
    (wireframe: canvas_pattern_1_operational_block · hybrid style)
    Blocos: metadados · diagnóstico · tarefas sugeridas · pedidos afetados
    ══════════════════════════════════════════════════════════ */
-function CanvasAConfidence({ label, pct }) {
-  const tone = pct >= 80 ? "high" : "med";
+/* Tarefa única de verificação manual: sem ação própria — abaixo dela,
+   dentro do mesmo card, uma pergunta de múltipla escolha (mesmo padrão
+   das perguntas do chat) decide qual ação será prescrita. Inclui uma
+   opção "Outro" com campo de texto livre. */
+function CanvasAVerifyOption({ badge, title, selected, onSelect, children }) {
   return (
-    <span className="canvas-a-conf">
-      <span className={`canvas-a-conf-val canvas-a-conf-val--${tone}`}>{label} ({pct}%)</span>
-      <span className="canvas-a-conf-bar">
-        <span className={`canvas-a-conf-fill canvas-a-conf-fill--${tone}`} style={{ width: `${pct}%` }} />
+    <div
+      role="radio"
+      aria-checked={selected}
+      tabIndex={0}
+      className={`canvas-a-verify-option${selected ? " selected" : ""}`}
+      onClick={onSelect}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onSelect(); } }}
+    >
+      <span className="canvas-a-verify-option-badge">{badge}</span>
+      <span className="canvas-a-verify-option-copy">
+        <span className="canvas-a-verify-option-title">{title}</span>
+        {children}
       </span>
-    </span>
+    </div>
+  );
+}
+
+function CanvasAVerificationCard({ verification }) {
+  const [selectedId, setSelectedId] = useState(null);
+  const [otherText, setOtherText] = useState("");
+  const [sent, setSent] = useState(false);
+  const canSend = selectedId && (selectedId !== "other" || otherText.trim().length > 0);
+
+  return (
+    <div className="canvas-tasks-card canvas-a-suggested">
+      <div className="canvas-a-verify-intro">
+        <p className="detail-section-body">{verification.title}</p>
+        <p className="canvas-a-verify-question">O que aconteceu?</p>
+      </div>
+      <div className="canvas-a-verify-options">
+        {verification.options.map((o, i) => (
+          <CanvasAVerifyOption
+            key={o.id}
+            badge={String.fromCharCode(65 + i)}
+            title={o.title}
+            selected={selectedId === o.id}
+            onSelect={() => !sent && setSelectedId(o.id)}
+          >
+            <span className="canvas-a-verify-option-desc">{o.desc}</span>
+          </CanvasAVerifyOption>
+        ))}
+        <CanvasAVerifyOption
+          badge={<Icon name="plus" size={13} />}
+          title="Outro"
+          selected={selectedId === "other"}
+          onSelect={() => !sent && setSelectedId("other")}
+        >
+          {selectedId === "other" && (
+            <input
+              type="text"
+              className="canvas-a-verify-option-input"
+              placeholder="Descreva o que foi confirmado com o seller…"
+              value={otherText}
+              onChange={(e) => setOtherText(e.target.value)}
+              onClick={(e) => e.stopPropagation()}
+              disabled={sent}
+              autoFocus
+            />
+          )}
+        </CanvasAVerifyOption>
+      </div>
+      <div className="canvas-a-verify-footer">
+        <button
+          type="button"
+          className="canvas-a-run-btn canvas-a-run-btn--primary"
+          disabled={!canSend || sent}
+          onClick={() => setSent(true)}
+        >
+          Enviar
+        </button>
+        {sent && (
+          <span className="canvas-a-verify-sent-note">
+            <Icon name="check" size={13} /> Resposta enviada · calculando a ação recomendada…
+          </span>
+        )}
+      </div>
+    </div>
   );
 }
 
 /* Linha de tarefa sugerida: reaproveita o componente de tarefas
    (canvas-task-row) — status slot + título — trocando o "Responsável"
-   (AssigneePill) pelo botão de ação Run / Aprovar / Revisar. */
+   (AssigneePill) pelo botão de ação Run / Aprovar / Revisar. Suporta
+   também tarefa em andamento sem ação disponível (waitingLabel, ex.:
+   "Bloqueada") e tarefa ainda não gerada (status "pending"). */
 function SuggestedTaskRow({ t }) {
+  const isPending = t.status === "pending";
   return (
     <div className="canvas-task-row">
       <div className="canvas-task-left" data-sl-initiative-tasks-row-left="">
         <span data-sl-initiative-tasks-status-slot="">
-          <SubTaskStatusIcon status={t.status || "triage"} />
+          {isPending ? <span className="task-pending" /> : <SubTaskStatusIcon status={t.status || "triage"} />}
         </span>
         <span className="canvas-task-title">{t.name}</span>
       </div>
-      <button type="button" className={`canvas-a-run-btn${t.primary ? " canvas-a-run-btn--primary" : ""}`}>
-        {t.action}{t.primary ? " ↗" : ""}
-      </button>
+      {t.action ? (
+        <button type="button" className={`canvas-a-run-btn${t.primary ? " canvas-a-run-btn--primary" : ""}`}>
+          {t.action}{t.primary ? " ↗" : ""}
+        </button>
+      ) : t.waitingLabel ? (
+        <button type="button" className="canvas-a-run-btn" disabled>{t.waitingLabel}</button>
+      ) : null}
     </div>
   );
 }
@@ -1794,14 +1875,8 @@ function CanvasPatternA({ task, onOpenOrder, onOpenList }) {
           <DocMetaRow label="Status">
             <TaskDocStatus status={task.status} />
           </DocMetaRow>
-          <DocMetaRow label="Atribuídos">
-            <span>{(d.assignees || []).join(" · ")}</span>
-          </DocMetaRow>
           <DocMetaRow label="Escopo">
             <span>{d.scope}</span>
-          </DocMetaRow>
-          <DocMetaRow label="SLA em risco">
-            <span className="canvas-a-sla-risk">{d.slaRisk}</span>
           </DocMetaRow>
           <DocMetaRow label="Reportado por">
             <span className="reporter">
@@ -1816,25 +1891,19 @@ function CanvasPatternA({ task, onOpenOrder, onOpenList }) {
 
       {/* ── Accordion sections (reaproveitando componentes do canvas de tarefas) ── */}
       <div data-sl-initiative-document-accordion-stack="">
-        {/* Diagnóstico: texto igual às outras tarefas + Confiança/Lacuna em cards com borda */}
-        <DocAccordionSection title="Diagnóstico">
+        {/* Diagnóstico: texto igual às outras tarefas + badge de Confiança no
+            título do accordion (mesmo padrão do Canvas D) + Lacuna em card */}
+        <DocAccordionSection
+          title="Diagnóstico"
+          badge={<ConfidenceBadge label={d.diagnosis.confidence.label} pct={d.diagnosis.confidence.pct} detail={d.diagnosis.confidence.detail} />}
+        >
           <p className="detail-section-body">{d.diagnosis.text}</p>
-          <div className="canvas-a-diag-meta">
-            <div className="canvas-a-diag-meta-item">
-              <span className="canvas-a-diag-meta-label">Confiança</span>
-              <CanvasAConfidence label={d.diagnosis.confidence.label} pct={d.diagnosis.confidence.pct} />
-            </div>
-            <div className="canvas-a-diag-meta-item">
-              <span className="canvas-a-diag-meta-label">Lacuna</span>
-              <span className="canvas-a-diag-gap">{d.diagnosis.gap}</span>
-            </div>
-          </div>
+          <CanvasAVerificationCard verification={d.verification} />
         </DocAccordionSection>
 
-        {/* Tarefas sugeridas: mesmo componente das tarefas de follow-up, com botões de ação */}
-        <DocAccordionSection title="Tarefas sugeridas" count={suggested.length}>
+        {/* Tarefas: verificação em andamento (bloqueada) + placeholder aguardando a lacuna */}
+        <DocAccordionSection title="Tarefas" count={suggested.length}>
           <div className="canvas-tasks-card canvas-a-suggested">
-            <div className="canvas-tasks-head"><span>Tarefa sugerida</span><span>Ação</span></div>
             {suggested.map((t, i) => (
               <React.Fragment key={i}>
                 {i > 0 && <div className="canvas-tasks-row-divider" />}
@@ -1879,7 +1948,7 @@ function CanvasPatternA({ task, onOpenOrder, onOpenList }) {
    Blocos: metadados · diagnóstico · tarefas sugeridas ·
    casos que precisam de decisão · reasoning da tarefa.
    Reaproveita DocMetaRow, canvas-tasks-card/SubTaskStatusIcon,
-   canvas-a-run-btn e CanvasAConfidence já usados no Canvas A —
+   canvas-a-run-btn e ConfidenceBadge já usados no Canvas A —
    sem introduzir estilo próprio (cores/boxes) do wireframe.
    ══════════════════════════════════════════════════════════ */
 function CanvasDSuggestedRow({ t, onOpen }) {
@@ -2163,8 +2232,6 @@ function TaskView({ taskId, onBack, onOpenOrder }) {
     });
   }, [taskId]);
 
-  const chips = task.chips || [];
-
   const handleSend = (text) => {
     setChatMsgs((m) => [...m, { from: "user", text }]);
     engineRef.current && engineRef.current.send(text);
@@ -2177,7 +2244,6 @@ function TaskView({ taskId, onBack, onOpenOrder }) {
       <ChatPanel
         title={d.title}
         intro={intro}
-        chips={chips}
         messages={chatMsgs}
         onSend={handleSend}
         isTyping={isTyping}

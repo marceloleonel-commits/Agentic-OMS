@@ -51,10 +51,12 @@ function OverviewMetricChart({ points, comparisonPoints, trendDirection }) {
 /* ------- Overview indicators card (v3 port: OverviewCard) ------- */
 const OVERVIEW_TREND_ARROW = { up: "↑", down: "↓" };
 
+/* Renderiza só o conteúdo (sem <section> própria) — vive dentro da seção da
+   tabela de pedidos, como totalizador acima da lista. */
 function OverviewCard() {
   const { kpis } = AIWData;
   return (
-    <section className="aiw-section">
+    <>
       <div className="aiw-section-head aiw-section-head-flush">
         <div className="aiw-filters">
           <button className="filter-pill"><Icon name="grid" size={12} /> Todos os canais <Icon name="chevron-down" size={12} /></button>
@@ -96,7 +98,7 @@ function OverviewCard() {
           ))}
         </div>
       </div>
-    </section>
+    </>
   );
 }
 
@@ -317,6 +319,7 @@ function AllOrdersTable({ onOpenOrder, search = "" }) {
   if (filtered.length === 0) {
     return (
       <section className="aiw-section">
+        <OverviewCard />
         <div data-sl-orders-empty="">Nenhum pedido encontrado para “{search}”.</div>
       </section>
     );
@@ -324,6 +327,7 @@ function AllOrdersTable({ onOpenOrder, search = "" }) {
 
   return (
     <section className="aiw-section">
+      <OverviewCard />
       <div data-sl-orders-scroll="">
         <div data-sl-orders-group="">
           <div data-sl-orders-table="">
@@ -644,10 +648,7 @@ function AssistantView({ onOpenTask, onGotoResource, onOpenOrder }) {
       <div className="scroll" data-screen-label="01 My Assistant">
         <div className="aiw-wrap">
           {tab === "overview" &&
-            <>
-              <OverviewCard />
-              <OpenTasksCard onOpen={onOpenTask} onGotoTasks={() => onGotoResource && onGotoResource("tasks")} />
-            </>
+            <OpenTasksCard onOpen={onOpenTask} onGotoTasks={() => onGotoResource && onGotoResource("tasks")} />
           }
           {tab === "orders" && <AllOrdersTable onOpenOrder={onOpenOrder} search={orderSearch} />}
         </div>

@@ -1070,6 +1070,7 @@
   line-height: 1.4;
   letter-spacing: -0.025em;
   color: var(--fg);
+  vertical-align: middle;
 }
 [data-sl-doc-accordion-chevron] {
   flex-shrink: 0;
@@ -8709,6 +8710,12 @@ button.wf-ver-badge-btn:hover {
 
 /* ---------- Occurrences list (home) — mesma linha do My Initiatives,
    trocando progresso/responsável por escopo/SLA restante/severidade ---------- */
+/* Hover mais suave que o padrão de [data-sl-initiative-row] — sobrescreve
+   por ordem de cascata (mesma especificidade, declarado depois). */
+[data-sl-occurrence-row]:hover {
+  background: var(--sl-bg-base-soft);
+}
+
 [data-sl-occurrence-row] [data-sl-initiative-row-status] {
   width: 24px;
 }
@@ -8879,46 +8886,140 @@ button.wf-ver-badge-btn:hover {
    Canvas Pattern A · Bloqueio operacional em massa
    (hybrid: estrutura do wireframe · estilo do protótipo)
    ══════════════════════════════════════════════════════════ */
-.canvas-a-sla-risk { color: var(--sl-color-red-9, #EC3727); font-weight: 500; }
+/* Risco de SLA — container vermelho claro (mesmo tom de fundo usado nos
+   estados de perigo) com padding compacto, para destacar do resto dos
+   metadados sem competir com a cor de texto. */
+.canvas-a-sla-risk {
+  display: inline-block;
+  color: var(--sl-color-red-9, #EC3727);
+  font-weight: 500;
+  background: var(--sl-color-red-1, #FDF6F5);
+  padding: 4px;
+  border-radius: var(--radius-sm, 6px);
+}
 
-/* ── Diagnóstico · Confiança/Lacuna (cards com borda, texto igual ao canvas de tarefas) ── */
+/* ── Diagnóstico · Lacuna (card com fundo soft, ocupando a largura total —
+   a Confiança agora vive no badge do título do accordion) ── */
 .canvas-a-diag-meta {
   display: flex;
-  gap: 12px;
   margin-top: 14px;
-  flex-wrap: wrap;
 }
 .canvas-a-diag-meta-item {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  min-width: 180px;
+  flex: 1 1 auto;
   padding: 10px 14px;
-  border: 1px solid var(--border);
+  background: var(--sl-bg-base-soft);
   border-radius: var(--radius, 10px);
 }
 .canvas-a-diag-meta-label { font-size: 12px; font-weight: 500; color: var(--fg-3); }
 /* mesmo text style do corpo das seções (.detail-section-body · v3 body 15px) */
 .canvas-a-diag-gap { font-size: 15px; color: var(--fg-2); line-height: 1.6; }
-.canvas-a-conf { display: flex; flex-direction: column; gap: 6px; }
-.canvas-a-conf-val { font-size: 15px; font-weight: 500; }
-.canvas-a-conf-val--med  { color: var(--sl-color-orange-8, #E57001); }
-.canvas-a-conf-val--high { color: var(--sl-fg-success, #0E6E3A); }
-.canvas-a-conf-bar {
-  width: 100%;
-  height: 4px;
-  border-radius: 99px;
-  background: var(--border, #e5e5e5);
-  overflow: hidden;
-}
-.canvas-a-conf-fill { display: block; height: 100%; border-radius: 99px; }
-.canvas-a-conf-fill--med  { background: var(--sl-color-orange-8, #E57001); }
-.canvas-a-conf-fill--high { background: var(--sl-fg-success, #0E6E3A); }
+/* Card de verificação (tarefa + pergunta), quando dentro do Diagnóstico
+   (logo abaixo do texto do diagnóstico) */
+.detail-section-body + .canvas-tasks-card { margin-top: 16px; }
 
 /* ── Tarefas sugeridas · coluna "Ação" mais estreita (140px) que a de "Responsável" ── */
 .canvas-tasks-card.canvas-a-suggested .canvas-tasks-head,
 .canvas-tasks-card.canvas-a-suggested .canvas-task-row {
   grid-template-columns: 1fr 140px;
+}
+.canvas-tasks-card.canvas-a-suggested {
+  padding-bottom: 12px;
+}
+.canvas-tasks-card.canvas-a-suggested .canvas-tasks-head {
+  padding-top: 16px;
+}
+
+/* ── Tarefa de verificação manual · pergunta de múltipla escolha ──
+   Opções em lista (badge com letra + título + descrição), separadas por
+   divisores finos, dentro do mesmo card das tarefas sugeridas — mesmo
+   padrão visual das perguntas de múltipla escolha do chat. Última opção
+   é "Outro", com campo de texto livre ao ser selecionada. ── */
+.canvas-a-verify-intro {
+  padding: 18px 20px 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.canvas-a-verify-question {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--fg);
+}
+.canvas-a-verify-options {
+  display: flex;
+  flex-direction: column;
+  padding: 4px 20px 2px;
+}
+.canvas-a-verify-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+}
+.canvas-a-verify-option:last-child { border-bottom: none; }
+.canvas-a-verify-option:hover .canvas-a-verify-option-badge { border-color: var(--border-strong); }
+.canvas-a-verify-option.selected .canvas-a-verify-option-badge {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: var(--primary-soft);
+}
+.canvas-a-verify-option-badge {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  margin-top: 1px;
+  border-radius: 50%;
+  border: 1px solid var(--border-strong);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fg-3);
+  background: #fff;
+  transition: border-color .12s ease, color .12s ease, background .12s ease;
+}
+.canvas-a-verify-option-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding-top: 3px;
+  flex: 1;
+  min-width: 0;
+}
+.canvas-a-verify-option-title { font-size: 15px; font-weight: 600; color: var(--fg); }
+.canvas-a-verify-option-desc { font-size: 13.5px; color: var(--fg-3); }
+.canvas-a-verify-option-input {
+  margin-top: 6px;
+  width: 100%;
+  max-width: 420px;
+  padding: 8px 12px;
+  font-size: 13.5px;
+  font-family: inherit;
+  color: var(--fg);
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: #fff;
+}
+.canvas-a-verify-option-input:focus { outline: none; border-color: var(--primary); }
+.canvas-a-verify-footer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 20px 18px;
+}
+.canvas-a-verify-sent-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  color: var(--sl-fg-success, #0E6E3A);
 }
 
 /* ── Tarefas sugeridas · botão de ação no lugar do "Responsável" ── */
@@ -8985,9 +9086,19 @@ button.wf-ver-badge-btn:hover {
   transition: background .12s ease;
 }
 .canvas-d-conf-badge--high { color: var(--sl-fg-success, #0E6E3A); border-color: var(--sl-color-green-4, #BBF7D0); }
-.canvas-d-conf-badge--med  { color: var(--sl-color-orange-8, #E57001); border-color: var(--sl-color-orange-4, #FFDDB0); }
+.canvas-d-conf-badge--med {
+  color: rgba(255, 123, 0, 1);
+  background-color: var(--sl-color-orange-2, #FFEDCD);
+  font-weight: 600;
+  border: 2px solid rgba(255, 239, 224, 1);
+  padding: 4px 8px;
+  border-radius: 8px;
+  margin-bottom: 4px;
+}
 .canvas-d-conf-badge:hover,
 .canvas-d-conf-badge.open { background: var(--bg-soft, #f5f5f5); }
+.canvas-d-conf-badge--med:hover,
+.canvas-d-conf-badge--med.open { background-color: var(--sl-color-orange-4); }
 .canvas-d-conf-popover {
   position: absolute;
   top: calc(100% + 8px);
@@ -8995,9 +9106,9 @@ button.wf-ver-badge-btn:hover {
   width: 280px;
   background: var(--bg, #fff);
   border: 1px solid var(--border, #E5E5E5);
-  border-radius: 16px;
+  border-radius: 12px;
   box-shadow: 0 20px 25px -5px rgba(0,0,0,.1), 0 8px 10px -6px rgba(0,0,0,.1);
-  padding: 14px 16px;
+  padding: 16px 16px 8px;
   z-index: 60;
   animation: composer-add-menu-in .15s ease-out;
   cursor: default;
@@ -9010,7 +9121,7 @@ button.wf-ver-badge-btn:hover {
   margin-bottom: 6px;
 }
 .canvas-d-conf-popover-text {
-  font: 500 .75rem/1rem "Inter", sans-serif; /* --sl-text-caption-1-font */
+  font: 400 .75rem/20px "Inter", sans-serif; /* --sl-text-caption-1-font */
   color: var(--fg-2);
 }
 

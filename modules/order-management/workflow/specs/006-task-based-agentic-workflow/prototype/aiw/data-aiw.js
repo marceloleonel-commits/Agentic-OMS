@@ -69,7 +69,7 @@ window.AIWData = (function () {
       id: "TA-CANVAS-A",
       priority: "high",
       status: "attention",
-      title: "Seller não despachou no SLA — Fashion Hub (23 pedidos)",
+      title: "Seller não despachou no SLA — Loja Botafogo (23 pedidos)",
       tag: "Seller Center",
       assigneeInitial: "G",
       assigneeInitials: "GE",
@@ -82,40 +82,70 @@ window.AIWData = (function () {
         { icon: "check",  label: "Aprovar reatribuição dos 14 críticos"   },
       ],
       detail: {
-        title: "Seller Fashion Hub — falha de despacho",
+        title: "23 pedidos parados em Despacho - Seller Loja Botafogo",
         reportedBy: { agent: "Tarefa gerada por agente", at: "14 jun 2026, 09:42" },
         severity: "high",
         slaHours: 3,
         assignees: ["Seller Agent", "Order Agent", "Logistics Agent"],
-        scope: "23 pedidos · Seller Fashion Hub · Canal: Site + App",
+        scope: "23 pedidos · Seller Loja Botafogo · Canal: Site + App",
         slaRisk: "14 pedidos entregariam hoje",
         diagnosis: {
-          text: "Seller Fashion Hub não iniciou despacho para 23 pedidos com SLA de entrega em D+1. Último evento registrado: picking_started às 06:12. Nenhum evento de coleta detectado em 4h. Padrão semelhante em 2 ocorrências anteriores (04/06 e 28/05).",
-          confidence: { label: "Média", pct: 74 },
+          text: "Seller Loja Botafogo não iniciou despacho para 23 pedidos com SLA de entrega em D+1. Último evento registrado: labeling_finished às 06:12. Nenhum evento de coleta detectado em 4h. Padrão semelhante em 2 ocorrências anteriores (04/06 e 28/05).",
+          confidence: {
+            label: "Média",
+            pct: 74,
+            detail: "Padrão de falta de despacho confirmado pelo histórico (2 ocorrências semelhantes) e pela ausência de evento de coleta em 4h. Confiança não é maior porque o carrier ainda não confirmou a lacuna — sem essa confirmação, não é possível descartar erro de integração."
+          },
           gap: "Confirmação do carrier ausente"
         },
+        /* "Tarefas": só a tarefa de verificação em andamento (bloqueada até
+           resposta manual) + um placeholder indicando que as próximas
+           tarefas dependem da lacuna do diagnóstico ser preenchida. */
         suggestedTasks: [
-          { name: "Notificar seller e abrir exceção",                 action: "Run",     primary: true, status: "triage"    },
-          { name: "Reatribuir para seller alternativo (14 críticos)", action: "Aprovar",                status: "attention" },
-          { name: "Notificar clientes com D+1 em risco",              action: "Revisar",                status: "attention" }
+          { name: "Verificar com o seller o status do despacho", status: "active",  waitingLabel: "Bloqueada" },
+          { name: "Aguardando preencher lacuna para gerar tasks", status: "pending" }
         ],
+        /* Tarefa única de verificação manual (vive dentro do Diagnóstico):
+           sem ação própria — a ação real depende de qual opção for
+           confirmada abaixo (pergunta de múltipla escolha + "Outro" com
+           campo de texto livre). */
+        verification: {
+          title: "Verificar com o seller o status do despacho",
+          options: [
+            {
+              id: "falha-integracao",
+              title: "Os pedidos foram despachados. Falhou a integração com a carrier.",
+              desc: "O seller tem comprovante de coleta mas o evento não chegou ao OMS."
+            },
+            {
+              id: "despacho-parcial",
+              title: "Os pedidos foram despachados parcialmente.",
+              desc: "Parte foi coletada. Os pedidos restantes ainda estão no seller."
+            },
+            {
+              id: "sem-despacho",
+              title: "Os pedidos não foram despachados.",
+              desc: "O seller confirmou que nenhum pedido saiu do estoque."
+            }
+          ]
+        },
         affectedOrders: {
           total: 23,
           items: [
-            { id: "v-PRD-00812", sla: "D+1 hoje · sem coleta",       seller: "Fashion Hub", eta: "14/06/2026" },
-            { id: "v-PRD-00811", sla: "D+1 hoje · sem coleta",       seller: "Fashion Hub", eta: "14/06/2026" },
-            { id: "v-PRD-00798", sla: "D+2 amanhã · picking parado", seller: "Fashion Hub", eta: "15/06/2026" }
+            { id: "v-PRD-00812", sla: "D+1 hoje · sem coleta",       seller: "Loja Botafogo", eta: "14/06/2026" },
+            { id: "v-PRD-00811", sla: "D+1 hoje · sem coleta",       seller: "Loja Botafogo", eta: "14/06/2026" },
+            { id: "v-PRD-00798", sla: "D+2 amanhã · picking parado", seller: "Loja Botafogo", eta: "15/06/2026" }
           ]
         },
         activities: [
-          { time: "06:12", actor: "Order Agent",     agent: true, action: "registrou picking_started para 23 pedidos do Seller Fashion Hub" },
+          { time: "06:12", actor: "Order Agent",     agent: true, action: "registrou labeling_finished para 23 pedidos do Seller Loja Botafogo" },
           { time: "09:12", actor: "Logistics Agent", agent: true, action: "não detectou evento carrier_collected após 3h de picking", note: "SLA de entrega D+1 entrou em risco para o cluster." },
           { time: "09:40", actor: "Order Agent",     agent: true, action: "agrupou os 23 pedidos por causa raiz — ausência de coleta do carrier" },
           { time: "09:41", actor: "Allocation Agent",agent: true, action: "isolou os 14 pedidos com SLA hoje e preparou proposta de reatribuição", note: "Reatribuição excede a política automática — marcada como 'requer aprovação'." },
           { time: "09:42", actor: "Order Management Assistant", agent: true, action: "gerou esta tarefa com 3 ações sugeridas" }
         ],
         chat: [
-          { from: "agent", text: "Identifiquei um cluster de 23 pedidos do Seller Fashion Hub sem evento de coleta há mais de 4h — 14 deles têm SLA de entrega hoje." },
+          { from: "agent", text: "Identifiquei um cluster de 23 pedidos do Seller Loja Botafogo sem evento de coleta há mais de 4h — 14 deles têm SLA de entrega hoje." },
           { from: "agent", text: "Já preparei 3 ações sugeridas no canvas. A notificação ao seller é segura para execução direta; a reatribuição dos 14 críticos precisa da sua aprovação. Quer que eu comece pela notificação?" }
         ]
       }

@@ -518,7 +518,20 @@ function ChatPanel({
 
       <div className="chat-composer-wrap">
         {chips.length > 0 && (
-          <ChipRowWithMore chips={chips} onSelect={(c) => send(c.label, undefined, { fromChip: true })} />
+          alwaysShowChips ? (
+            <div className="composer-chips">
+              <div className="chip-row">
+                {chips.map((c, j) => (
+                  <button key={j} className="suggest-chip" onClick={() => send(c.label, undefined, { fromChip: true })}>
+                    {c.icon && <Icon name={c.icon} size={14} />}
+                    {c.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <ChipRowWithMore chips={chips} onSelect={(c) => send(c.label, undefined, { fromChip: true })} />
+          )
         )}
         <MessageComposer placeholder={placeholder} agent={agent} onSend={send} ref={composerRef} />
       </div>
