@@ -10,6 +10,8 @@
 **Related assets:**
 - [[BRD] Future Inventory](https://docs.google.com/document/d/1jcSbSNa8LkDsgHXeqcEk0lT--6nWuUVPmazoazyNn14) — discovery and requirements
 - [Inventory Management Vision — PR #11](https://github.com/vtex/vertical-distributed-order-management-dom/pull/11) — 3-year strategic context
+- [Navigable prototype](./prototype/inventario-futuro-listagem.html) — listagem por lote / por SKU
+- UI sub-specs: [002.1 listagem por lote](./002.1-listagem-por-lote.md) · [002.2 listagem por SKU](./002.2-listagem-por-sku.md) · `002.3` criação de lote (PR [#125](https://github.com/vtex/vertical-distributed-order-management-dom/pull/125))
 
 ---
 
@@ -87,3 +89,4 @@ Build a native Future Inventory solution that is integrated with Delivery Promis
 | Jun 2026 | Carolina Tourinho | Aligned brief with spec review: reframed Supply Lot failure (white-label seller selection compares transit-time SLA, ignoring the arrival date) without jargon; emphasized the order-payload mark for future-inventory origin. |
 | Jun 2026 | Carolina Tourinho | Added "Release Scope" section (V1 / V2 / Later), aligned with the spec's prioritization: future-inventory reference in the order and future stock availability mode promoted to V1; mixed cart split in V2; reservation behavior and pre-order payment treated as implicit/inherited. |
 | Jun 2026 | Carolina Tourinho | Requirement 5 reframed: availability mode is set **per lot** (not per SKU); the same SKU can mix Sequential and Simultaneous lots, with a layered consumption model and mode taking precedence over arrival date. |
+| Aug 2026 | Carolina Tourinho | Reorganized Future Inventory UI contracts as 002.1 / 002.2 under the MMR; kept navigable prototype under `specs/002-future-inventory/prototype/`; removed obsolete HTML prototypes. |
