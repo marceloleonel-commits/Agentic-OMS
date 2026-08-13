@@ -11,7 +11,7 @@
 - [[BRD] Future Inventory](https://docs.google.com/document/d/1jcSbSNa8LkDsgHXeqcEk0lT--6nWuUVPmazoazyNn14) — discovery and requirements
 - [Inventory Management Vision — PR #11](https://github.com/vtex/vertical-distributed-order-management-dom/pull/11) — 3-year strategic context
 - [Navigable prototype](./prototype/inventario-futuro-listagem.html) — listagem por lote / por SKU
-- UI sub-specs: [002.1 listagem por lote](./002.1-listagem-por-lote.md) · [002.2 listagem por SKU](./002.2-listagem-por-sku.md) · `002.3` criação de lote (PR [#125](https://github.com/vtex/vertical-distributed-order-management-dom/pull/125))
+- UI sub-specs: [002.1 listagem por lote](./002.1-listagem-por-lote.md) · [002.2 listagem por SKU](./002.2-listagem-por-sku.md) · [002.3 criação de lote](./002.3-criacao-de-lote.md)
 
 ---
 

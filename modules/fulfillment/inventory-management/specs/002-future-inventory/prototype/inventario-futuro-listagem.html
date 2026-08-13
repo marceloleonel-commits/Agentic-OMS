@@ -341,7 +341,8 @@
   .sku-thumb {
     display: flex; align-items: center; justify-content: center; flex-shrink: 0;
     width: 36px; height: 36px; border-radius: var(--sl-radius-2);
-    background: var(--sl-color-gray-2); color: var(--sl-color-gray-8);
+    background: var(--sl-bg-base); border: 1px solid var(--sl-border-base);
+    color: var(--sl-fg-base-soft);
   }
 
   /* O Figma desenha a imagem do produto em 44px, o que somado aos 12px de
@@ -350,8 +351,11 @@
   .product-thumb {
     display: flex; align-items: center; justify-content: center; flex-shrink: 0;
     width: 40px; height: 40px; border-radius: var(--sl-radius-2);
-    background: var(--sl-color-gray-2); color: var(--sl-color-gray-8);
+    background: var(--sl-bg-base); border: 1px solid var(--sl-border-base);
+    color: var(--sl-fg-base-soft);
   }
+  .product-thumb svg,
+  .sku-thumb svg { display: block; }
 
   .row-child [data-sl-table-cell] { background: var(--sl-bg-base-soft); }
 
@@ -365,6 +369,161 @@
 
   .row-child-last > [data-sl-table-cell]:first-child { border-bottom-left-radius: 12px; }
   .row-child-last > [data-sl-table-cell]:last-child { border-bottom-right-radius: 12px; }
+
+  /* ─────────────────────────────────────────────────────────────
+     Criação de lote
+     ───────────────────────────────────────────────────────────── */
+
+  /* O atributo hidden só vale display: none pela folha do agente, que perde para
+     qualquer regra de autor. Como as duas telas são [data-sl-page] — e o
+     Shoreline dá display: flex a elas —, esconder pelo atributo não bastaria. */
+  [hidden] { display: none !important; }
+
+  /* A tela de criação não tem navegação lateral, como o frame do Figma: é uma
+     tarefa focada, e a saída são o voltar e as duas ações do cabeçalho. */
+  .shell[data-screen="create"] .sidebar { display: none; }
+
+  .page-title-back { display: flex; align-items: center; gap: var(--sl-space-2); min-width: 0; }
+
+  /* 720px é a coluna do Figma; 64px, o vão entre as seções. */
+  .lot-form {
+    width: 720px; max-width: 100%; margin: 0 auto;
+    display: flex; flex-direction: column; gap: var(--sl-space-16);
+  }
+
+  .form-section { display: flex; flex-direction: column; gap: var(--sl-space-5); }
+  .form-section-head { display: flex; flex-direction: column; gap: var(--sl-space-1); }
+  .form-section-description { color: var(--sl-fg-base-soft); }
+
+  /* O Field é inline-flex com min-width: fit-content — sozinho ele fica do
+     tamanho do rótulo. Quem dá a largura é o arranjo, não o componente. */
+  .form-row { display: flex; gap: var(--sl-space-5); }
+  .form-row > [data-sl-field] { width: 350px; flex: 0 0 350px; }
+  .form-row[data-fluid="true"] > [data-sl-field] { width: auto; flex: 1 1 auto; min-width: 0; }
+
+  .form-actions { display: flex; }
+  #form-items { display: flex; flex-direction: column; gap: var(--sl-space-5); }
+
+  /* Esta versão do Shoreline não tem um Card, então a caixa que isola a coleção
+     de produtos é montada com os tokens do próprio sistema. */
+  .form-card {
+    padding: var(--sl-space-4);
+    border: var(--sl-border-base); border-radius: var(--sl-radius-3);
+    background: var(--sl-bg-base);
+  }
+  /* Cinco linhas e meia no visor e o resto por rolagem: a linha cortada ao meio já
+     diz que a lista continua, e com altura fixa virar a página não faz a tela
+     crescer e encolher. O cabeçalho fica preso no topo pelo
+     data-sl-table-header-sticky do próprio componente. */
+  .form-card-scroll {
+    /* Medidos no navegador: o cabeçalho fecha em 45px e a linha em 69px — o Input
+       de 44px da quantidade mais o padding da densidade default e a borda. */
+    --altura-cabecalho: 45px;
+    --altura-linha: 69px;
+    --linhas-no-visor: 5.5;
+    max-height: calc(var(--altura-cabecalho) + var(--linhas-no-visor) * var(--altura-linha));
+    overflow-y: auto;
+  }
+  /* Só quando há paginação: numa lista curta a altura fixa deixaria um vão. */
+  .form-card-scroll[data-fixed="true"] {
+    height: calc(var(--altura-cabecalho) + var(--linhas-no-visor) * var(--altura-linha));
+  }
+
+  /* O véu na borda de baixo é a outra metade da pista: aparece só enquanto há
+     conteúdo abaixo do visor e não intercepta clique nenhum. */
+  .form-card-viewport { position: relative; }
+  .form-card-viewport::after {
+    /* Da altura da meia linha, para o véu não alcançar a linha inteira acima. */
+    content: ''; position: absolute; inset: auto 0 0 0; height: 32px;
+    background: linear-gradient(to top, var(--sl-bg-base), transparent);
+    opacity: 0; transition: opacity 160ms ease; pointer-events: none;
+  }
+  .form-card-viewport[data-more="true"]::after { opacity: 1; }
+
+  /* A soma das quantidades fecha a seção de produtos, alinhada à direita como a
+     coluna que ela resume. */
+  .form-total {
+    display: flex; justify-content: space-between; align-items: center;
+    padding-top: var(--sl-space-3);
+    font: var(--sl-text-emphasis-font); letter-spacing: var(--sl-text-emphasis-letter-spacing);
+  }
+  .form-total-label { color: var(--sl-fg-base-soft); font: var(--sl-text-body-font); }
+
+  /* Quantidade editável na célula: o Input do Shoreline em 44px dentro de uma
+     linha de 64px, com a largura do maior número que a fixture produz. */
+  .qty-cell { width: 96px; margin-left: auto; }
+
+  /* ── Combobox ────────────────────────────────────────────────
+     O Combobox desta versão do Shoreline é um invólucro do Ariakit sem CSS
+     próprio: dos quatro atributos que ele emite, só [data-sl-combobox-list]
+     é estilizado, e mesmo assim junto com o Filter. Por isso a composição
+     daqui empresta as peças que têm desenho — o Input no gatilho e o popover,
+     os itens e a marca de escolhido do Select, que é o irmão de escolha única
+     e já traz item ativo, item desabilitado e a altura máxima da lista. */
+  .combobox { position: relative; }
+  .combobox-caret {
+    display: flex; align-items: center; flex-shrink: 0;
+    padding-right: var(--sl-space-4); color: var(--sl-fg-base-soft);
+    pointer-events: none;
+  }
+  .combobox [data-sl-input][data-disabled="true"] .combobox-caret { color: var(--sl-fg-base-disabled); }
+  .combobox-popover {
+    position: absolute; top: calc(100% + var(--sl-space-1)); left: 0; right: 0;
+    display: none; z-index: var(--sl-z-6);
+  }
+  .combobox[data-open="true"] .combobox-popover { display: flex; }
+  .combobox-empty {
+    padding: var(--sl-space-2) var(--sl-space-3);
+    color: var(--sl-fg-base-soft);
+  }
+  /* O popover do Select acompanha a largura do gatilho — é o sameWidth do
+     componente. Num campo estreito, nome e SKU ID lado a lado se apertavam, então
+     o SKU desce para uma segunda linha, como legenda. */
+  .combobox-item-text {
+    display: flex; flex-direction: column; min-width: 0;
+    gap: var(--sl-space-05);
+  }
+  /* Nome numa linha só, com reticências: nomes de SKU são longos e, quebrados,
+     faziam a lista crescer para o dobro da altura de um item do Select. */
+  .combobox-item-text > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* O motivo de um item desabilitado fica na própria linha: some da lista quem
+     já está no lote seria dizer que o SKU não existe. */
+  .combobox-reason {
+    margin-left: auto; padding-left: var(--sl-space-3); flex-shrink: 0;
+    font: var(--sl-text-caption-1-font); white-space: nowrap;
+  }
+
+  /* ── Drawer e modal ──────────────────────────────────────────
+     Posicionar é responsabilidade do Vaul e do Ariakit no Shoreline; em HTML
+     estático faço à mão, e o desenho continua vindo do CSS oficial. */
+  .drawer-root [data-sl-drawer-popover] { transition: translate 220ms ease; }
+  .drawer-root[data-enter="false"] [data-sl-drawer-popover] { translate: 100% 0; }
+
+  .drawer-rows { display: flex; flex-direction: column; gap: var(--sl-space-4); }
+  /* Cada par produto + quantidade é uma caixa: com várias linhas na tela, é ela
+     que diz onde um item termina e o outro começa. O fundo sozinho já demarca —
+     a borda em volta era desenho a mais. */
+  .drawer-row {
+    display: flex; align-items: flex-start; gap: var(--sl-space-3);
+    padding: var(--sl-space-4);
+    border-radius: var(--sl-radius-3);
+    background: var(--sl-bg-base-soft);
+  }
+  .drawer-row > [data-sl-field]:first-child { flex: 1 1 auto; min-width: 0; }
+  /* A quantidade cabe em três dígitos com folga; o que sobra vai para o produto,
+     onde o nome do SKU precisa de espaço. */
+  .drawer-row > [data-sl-field]:nth-child(2) { flex: 0 0 88px; min-width: 0; }
+  /* O remover alinha pela caixa do campo, não pelo rótulo acima dela. */
+  .drawer-row-remove { flex: 0 0 36px; padding-top: var(--sl-space-7); }
+  .drawer-add { padding-top: var(--sl-space-4); }
+  /* Mesma pintura do :disabled do botão primário do Shoreline, aplicada pelo
+     aria para o botão continuar recebendo o clique que revela as validações. */
+  [data-sl-button][data-variant="primary"][aria-disabled="true"] {
+    background: var(--sl-bg-base-strong-disabled);
+    cursor: not-allowed;
+  }
+
+  .modal-root [data-sl-modal-backdrop] { position: fixed; inset: 0; }
 </style>
 </head>
 
@@ -468,7 +627,7 @@
     </nav>
 
     <main class="content">
-      <div data-sl-page>
+      <div data-sl-page id="screen-listing">
 
         <!-- PageHeader do Shoreline = Container > Content (narrow) > header >
              [data-sl-page-header]. É o Content que dá o padding, por container
@@ -517,10 +676,17 @@
                 <span data-sl-pre-icon>
                   <i data-icon="magnifying-glass-small"></i>
                 </span>
-                <input data-sl-search-input id="search" placeholder="Buscar lote ou SKU" autocomplete="off">
+                <input data-sl-search-input id="search" placeholder="Buscar nome do lote, Lote ID ou SKU" autocomplete="off">
               </div>
 
               <div class="toolbar-end">
+                <button data-sl-button data-variant="secondary" data-size="normal" id="btn-export" type="button">
+                  <span data-sl-button-content>
+                    <i data-icon="download-simple"></i>
+                    Exportar
+                  </span>
+                </button>
+
                 <!-- A visão selecionada é anunciada por aria-pressed, não só
                      pela variante do botão: cor sozinha não é acessível. -->
                 <div class="segmented" id="view-toggle">
@@ -657,9 +823,143 @@
           </div>
         </div>
       </div>
+
+      <!-- Tela de criação. Mesma casca de Page da listagem: o que muda é o
+           cabeçalho (voltar + duas ações) e o conteúdo, que é um formulário de
+           largura fixa. A navegação lateral some enquanto ela está aberta. -->
+      <div data-sl-page id="screen-create" hidden>
+
+        <div data-sl-container>
+          <header data-sl-content data-narrow="true" data-sl-page-header-container>
+            <div data-sl-page-header>
+              <div data-sl-page-header-row>
+                <div class="page-title-back">
+                  <!-- O Bleed puxa o botão para a margem: o alvo de 40px do
+                       IconButton é maior que o desenho do ícone, e sem isso a
+                       seta ficaria recuada em relação ao título. -->
+                  <div data-sl-bleed>
+                    <div data-sl-bleed-content style="--sl-bleed-start: var(--sl-space-3); --sl-bleed-top: var(--sl-space-2); --sl-bleed-bottom: var(--sl-space-2)">
+                      <button data-sl-button data-sl-icon-button data-variant="tertiary" data-size="large"
+                              id="btn-back" aria-label="Voltar para a listagem">
+                        <span data-sl-button-content>
+                          <i data-icon="arrow-left"></i>
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+                  <h1 data-sl-heading data-variant="display1" data-sl-page-heading>Criar lote futuro</h1>
+                </div>
+
+                <div data-sl-stack data-horizontal="true" style="--sl-stack-space: var(--sl-space-4)">
+                  <div data-sl-bleed>
+                    <div data-sl-bleed-content style="--sl-bleed-top: var(--sl-space-2); --sl-bleed-bottom: var(--sl-space-2)">
+                      <button data-sl-button data-variant="secondary" data-size="large" id="btn-cancel">
+                        <span data-sl-button-content>Cancelar</span>
+                      </button>
+                    </div>
+                  </div>
+                  <div data-sl-bleed>
+                    <div data-sl-bleed-content style="--sl-bleed-top: var(--sl-space-2); --sl-bleed-bottom: var(--sl-space-2)">
+                      <button data-sl-button data-variant="primary" data-size="large" id="btn-save">
+                        <span data-sl-button-content>Salvar</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </header>
+        </div>
+
+        <div data-sl-page-container>
+          <div data-sl-page-content data-layout="wide">
+            <!-- As três seções são montadas pelo script: é o mesmo estado que
+                 alimenta a tabela de produtos e a validação. -->
+            <form class="lot-form" id="lot-form" novalidate autocomplete="off"></form>
+          </div>
+        </div>
+      </div>
     </main>
   </div>
 </div>
+
+<!-- Drawer de adicionar produtos. Fica fora da shell porque é montada na raiz
+     do documento, e não tem fundo escurecido: o DrawerProvider do Shoreline
+     passa modal: false ao Vaul de propósito — a drawer trata de um trabalho
+     menor e não bloqueia a página. O painel acumula os três atributos porque
+     o DrawerPopover monta Vaul.Content asChild sobre um Container. -->
+<div class="drawer-root" id="drawer" data-enter="false" hidden>
+  <div data-sl-container data-sl-drawer-popover data-size="medium" data-vaul-drawer-direction="right"
+       id="drawer-panel" role="dialog" aria-labelledby="drawer-title">
+    <header data-sl-content data-narrow="true" data-sl-drawer-header>
+      <h2 data-sl-heading data-variant="display2" data-sl-drawer-heading id="drawer-title">Adicionar produtos</h2>
+      <button data-sl-button data-sl-icon-button data-sl-modal-dismiss data-variant="tertiary" data-size="large"
+              data-role="drawer-close" aria-label="Fechar">
+        <span data-sl-button-content>
+          <i data-icon="x"></i>
+        </span>
+      </button>
+    </header>
+
+    <div data-sl-content data-narrow="true" data-sl-drawer-content>
+      <div class="drawer-rows" id="drawer-rows"></div>
+      <div class="drawer-add">
+        <button data-sl-button data-variant="tertiary" data-size="normal" id="drawer-add-row">
+          <span data-sl-button-content>
+            <i data-icon="plus"></i>
+            Adicionar outro produto
+          </span>
+        </button>
+      </div>
+    </div>
+
+    <footer data-sl-content data-narrow="true" data-sl-drawer-footer>
+      <button data-sl-button data-variant="secondary" data-size="large" data-role="drawer-close">
+        <span data-sl-button-content>Cancelar</span>
+      </button>
+      <button data-sl-button data-variant="primary" data-size="large" id="drawer-confirm">
+        <span data-sl-button-content>Adicionar</span>
+      </button>
+    </footer>
+  </div>
+</div>
+
+<!-- Confirmação de descarte. Segue o ConfirmationModal: tamanho small, título,
+     texto e as duas ações no rodapé, sendo a de confirmar crítica. -->
+<div class="modal-root" id="discard-modal" hidden>
+  <div data-sl-modal-backdrop data-role="discard-cancel"></div>
+  <div data-sl-modal data-sl-confirmation-modal data-size="small"
+       role="alertdialog" aria-modal="true" aria-labelledby="discard-title">
+    <div data-sl-container data-sl-modal-container>
+      <header data-sl-content data-narrow="true" data-sl-modal-header>
+        <div data-sl-flex style="--sl-flex-direction: row; --sl-flex-justify: space-between; --sl-flex-align: center">
+          <h2 data-sl-heading data-variant="display2" id="discard-title">Descartar o lote?</h2>
+          <button data-sl-button data-sl-icon-button data-sl-modal-dismiss data-variant="tertiary" data-size="large"
+                  data-role="discard-cancel" aria-label="Fechar">
+            <span data-sl-button-content>
+              <i data-icon="x"></i>
+            </span>
+          </button>
+        </div>
+      </header>
+
+      <div data-sl-content data-sl-modal-content>
+        <p data-sl-text data-variant="body" id="discard-body">O que você preencheu não será salvo.</p>
+      </div>
+
+      <footer data-sl-content data-narrow="true" data-sl-modal-footer data-sl-confirmation-modal-footer>
+        <button data-sl-button data-variant="secondary" data-size="large" data-role="discard-cancel">
+          <span data-sl-button-content>Continuar editando</span>
+        </button>
+        <button data-sl-button data-variant="critical" data-size="large" id="discard-confirm">
+          <span data-sl-button-content id="discard-confirm-label">Descartar</span>
+        </button>
+      </footer>
+    </div>
+  </div>
+</div>
+
+<div data-sl-toast-stack id="toast-stack"></div>
 
 <script>
 (() => {
@@ -727,6 +1027,11 @@
 
     plus: { box: 20, body: line('M3.125 10H16.875', 'M10 3.125V16.875') },
 
+    'download-simple': { box: 20, body: line(
+      'M10 2.5V12.5',
+      'M5.625 8.125L10 12.5L14.375 8.125',
+      'M3.125 15.625H16.875') },
+
     'plus-circle': { box: 20, body: line(
       'M10 17.5C14.1421 17.5 17.5 14.1421 17.5 10C17.5 5.85786 14.1421 2.5 10 2.5C5.85786 2.5 2.5 5.85786 2.5 10C2.5 14.1421 5.85786 17.5 10 17.5Z',
       'M6.875 10H13.125',
@@ -753,6 +1058,20 @@
     'caret-left': { box: 20, body: line('M12.5 16.25L6.25 10L12.5 3.75') },
     'caret-right': { box: 20, body: line('M7.5 3.75L13.75 10L7.5 16.25') },
     'caret-down': { box: 20, body: line('M16.25 7.5L10 13.75L3.75 7.5') },
+
+    'arrow-left': { box: 20, body: line('M16.875 10H3.125M3.125 10L8.75 4.375M3.125 10L8.75 15.625') },
+
+    x: { box: 20, body: line('M15.625 4.375L4.375 15.625', 'M15.625 15.625L4.375 4.375') },
+
+    trash: { box: 20, body: line(
+      'M16.8748 4.375L3.12476 4.375',
+      'M8.125 8.125V13.125',
+      'M11.875 8.125V13.125',
+      'M15.625 4.375V16.25C15.625 16.4158 15.5592 16.5747 15.4419 16.6919C15.3247 16.8092 15.1658 16.875 15 16.875H5C4.83424 16.875 4.67527 16.8092 4.55806 16.6919C4.44085 16.5747 4.375 16.4158 4.375 16.25V4.375',
+      'M13.125 4.375V3.125C13.125 2.79348 12.9933 2.47554 12.7589 2.24112C12.5245 2.0067 12.2065 1.875 11.875 1.875H8.125C7.79348 1.875 7.47554 2.0067 7.24112 2.24112C7.0067 2.47554 6.875 2.79348 6.875 3.125V4.375') },
+
+    /* Preenchido: é o que o Toast usa na variante de sucesso. */
+    'check-circle-fill': { box: 20, body: solid('M10 1.875C8.39303 1.875 6.82214 2.35152 5.486 3.24431C4.14985 4.1371 3.10844 5.40605 2.49348 6.8907C1.87852 8.37535 1.71762 10.009 2.03112 11.5851C2.34463 13.1612 3.11846 14.6089 4.25476 15.7452C5.39106 16.8815 6.8388 17.6554 8.4149 17.9689C9.99099 18.2824 11.6247 18.1215 13.1093 17.5065C14.594 16.8916 15.8629 15.8502 16.7557 14.514C17.6485 13.1779 18.125 11.607 18.125 10C18.1227 7.84581 17.266 5.78051 15.7427 4.25727C14.2195 2.73403 12.1542 1.87727 10 1.875ZM13.5672 8.56719L9.19219 12.9422C9.13415 13.0003 9.06522 13.0464 8.98934 13.0779C8.91347 13.1093 8.83214 13.1255 8.75 13.1255C8.66787 13.1255 8.58654 13.1093 8.51067 13.0779C8.43479 13.0464 8.36586 13.0003 8.30782 12.9422L6.43282 11.0672C6.31554 10.9499 6.24966 10.7909 6.24966 10.625C6.24966 10.4591 6.31554 10.3001 6.43282 10.1828C6.55009 10.0655 6.70915 9.99965 6.875 9.99965C7.04086 9.99965 7.19992 10.0655 7.31719 10.1828L8.75 11.6164L12.6828 7.68281C12.7409 7.62474 12.8098 7.57868 12.8857 7.54725C12.9616 7.51583 13.0429 7.49965 13.125 7.49965C13.2071 7.49965 13.2884 7.51583 13.3643 7.54725C13.4402 7.57868 13.5091 7.62474 13.5672 7.68281C13.6253 7.74088 13.6713 7.80982 13.7027 7.88569C13.7342 7.96156 13.7504 8.04288 13.7504 8.125C13.7504 8.20712 13.7342 8.28844 13.7027 8.36431C13.6713 8.44018 13.6253 8.50912 13.5672 8.56719Z') },
 
     'magnifying-glass-small': { box: 16, body: line(
       'M7 12C9.76142 12 12 9.76142 12 7C12 4.23858 9.76142 2 7 2C4.23858 2 2 4.23858 2 7C2 9.76142 4.23858 12 7 12Z',
@@ -796,14 +1115,60 @@
   ]
   const statusById = (id) => STATUSES.find((s) => s.id === id)
 
+  /* Recebido e cancelado são o passado do lote: a listagem abre com o que ainda
+     está por vir. Essa marcação nasce dentro do filtro de status, visível e
+     removível, em vez de virar uma regra escondida na consulta. */
+  const DEFAULT_STATUSES = ['scheduled', 'inactive']
+
   const PRODUCTS = [
-    { skuId: '#123', name: "adidas Men's Performance Polo - Blast Blue (L)" },
-    { skuId: '#204', name: 'Nike Dri-FIT Camiseta Preta (M)' },
-    { skuId: '#318', name: 'Tênis de Corrida Ultraboost 22 (42)' },
-    { skuId: '#442', name: 'Mochila Cargo 28L Cinza' },
-    { skuId: '#517', name: 'Boné Trucker Aba Curva' },
-    { skuId: '#629', name: 'Jaqueta Corta-vento Verde (G)' },
+    { skuId: '#123', name: 'Samsung Galaxy S24 128GB' },
+    { skuId: '#204', name: 'iPhone 15 256GB' },
+    { skuId: '#318', name: 'Smart TV 55" 4K UHD' },
+    { skuId: '#442', name: 'Fone Bluetooth Intra-auricular Pro' },
+    { skuId: '#517', name: 'Caixa de Som Bluetooth Portátil' },
+    { skuId: '#629', name: 'Máquina de Lavar 12kg Abertura Frontal' },
+    { skuId: '#108', name: 'Smartphone Android 64GB' },
+    { skuId: '#131', name: 'Tablet 10" Wi-Fi 128GB' },
+    { skuId: '#147', name: 'Headphone com Cancelamento de Ruído' },
+    { skuId: '#152', name: 'Carregador Rápido USB-C 45W' },
+    { skuId: '#169', name: 'Carregador Portátil 20000mAh' },
+    { skuId: '#178', name: 'Smartwatch Fitness com GPS' },
+    { skuId: '#186', name: 'Monitor Gamer 27" 144Hz' },
+    { skuId: '#195', name: 'Smart TV 65" OLED' },
+    { skuId: '#212', name: 'Soundbar Bluetooth 2.1' },
   ]
+
+  /* Catálogo do formulário: os 15 produtos dos lotes mais 25. Passa dos dez
+     itens que a busca do Combobox precisa para valer a pena, e é grande o
+     bastante para a rolagem e a paginação da drawer terem o que mostrar. */
+  const PRODUCT_CATALOG = [
+    ...PRODUCTS,
+    { skuId: '#226', name: 'Kit Teclado e Mouse sem Fio' },
+    { skuId: '#238', name: 'SSD Externo 1TB USB-C' },
+    { skuId: '#244', name: 'Câmera de Segurança Wi-Fi' },
+    { skuId: '#259', name: 'Hub de Casa Inteligente' },
+    { skuId: '#263', name: 'Media Player de Streaming 4K' },
+    { skuId: '#277', name: 'Dock Station USB-C' },
+    { skuId: '#281', name: 'Capa para Notebook 14"' },
+    { skuId: '#295', name: 'Base de Carregamento sem Fio' },
+    { skuId: '#303', name: 'Fita de LED Inteligente' },
+    { skuId: '#327', name: 'Leitor Digital 6"' },
+    { skuId: '#339', name: 'Câmera de Ação 4K' },
+    { skuId: '#348', name: 'Drone com Câmera Mini' },
+    { skuId: '#356', name: 'Óculos de Realidade Virtual' },
+    { skuId: '#364', name: 'Projetor Portátil Full HD' },
+    { skuId: '#372', name: 'Roteador Wi-Fi Mesh' },
+    { skuId: '#385', name: 'Webcam HD 1080p' },
+    { skuId: '#397', name: 'Campainha Inteligente com Câmera' },
+    { skuId: '#408', name: 'Porta-retrato Digital 10"' },
+    { skuId: '#416', name: 'Adaptador Bluetooth para Carro' },
+    { skuId: '#423', name: 'Tomada Inteligente Wi-Fi' },
+    { skuId: '#437', name: 'Capa Transparente para Celular' },
+    { skuId: '#455', name: 'Mochila para Notebook 15"' },
+    { skuId: '#468', name: 'Cabo HDMI 2m' },
+    { skuId: '#479', name: 'Cartão de Memória 128GB' },
+    { skuId: '#486', name: 'Fone de Ouvido com Microfone' },
+  ].sort((a, b) => a.name.localeCompare(b.name, 'pt-BR'))
 
   const FIGMA_DESTINATIONS = [
     { seller: 'Filial São Lucas',        warehouse: 'Estoque principal' },
@@ -830,26 +1195,48 @@
 
   const destKey = (d) => `${d.seller} — ${d.warehouse}`
 
+  const byKey = (a, b) => destKey(a).localeCompare(destKey(b), 'pt-BR')
+
   /* O filtro lista os estoques da conta, não só os que têm lote a caminho — por
      isso o catálogo é uma fonte à parte, e não mais a projeção dos lotes. São 48
      destinos: passa de cinco, que é quando o Shoreline manda pôr busca, e é
      grande o bastante para o carregamento em partes fazer diferença. */
-  const DESTINATIONS = [
+  const BASE_DESTINATIONS = [
     ...FIGMA_DESTINATIONS,
     ...BRANCHES.map((name) => ({ seller: `Filial ${name}`, warehouse: 'Estoque principal' })),
-    ...HUBS.map((name) => ({ seller: `CD ${name}`, warehouse: 'Estoque de reposição' })),
-  ].sort((a, b) => destKey(a).localeCompare(destKey(b), 'pt-BR'))
+    ...HUBS.map((name) => ({ seller: `CD ${name}`, warehouse: 'Estoque produtos novos' })),
+  ].sort(byKey)
+
+  /* Oito sellers têm um segundo estoque. É o que dá o que escolher ao campo
+     Estoque do formulário, que sozinho seria uma lista de um item só. Ficam
+     fora dos destinos dos lotes de propósito: assim a listagem não muda por
+     causa de um catálogo que só o formulário e o filtro precisam enxergar. */
+  const EXTRA_WAREHOUSES = [
+    ...FIGMA_DESTINATIONS.map((d) => ({ seller: d.seller, warehouse: 'Estoque mostruário' })),
+    { seller: 'CD São Paulo',      warehouse: 'Estoque principal' },
+    { seller: 'CD Recife',         warehouse: 'Estoque principal' },
+    { seller: 'CD Rio de Janeiro', warehouse: 'Estoque principal' },
+  ]
+
+  const DESTINATIONS = [...BASE_DESTINATIONS, ...EXTRA_WAREHOUSES].sort(byKey)
 
   /* Ordem alfabética é uma das que as boas práticas do Filter aceitam, e é a que
      faz sentido numa lista longa em que nenhum destino é mais provável. */
   const DESTINATION_OPTIONS = DESTINATIONS.map(destKey)
 
-  /* Os lotes ocupam 20 dos 48. O resto existe e aparece no filtro, mas não tem
+  const SELLERS = [...new Set(DESTINATIONS.map((d) => d.seller))]
+    .sort((a, b) => a.localeCompare(b, 'pt-BR'))
+
+  const warehousesOf = (seller) => DESTINATIONS
+    .filter((d) => d.seller === seller)
+    .map((d) => d.warehouse)
+
+  /* Os lotes ocupam 20 dos 56. O resto existe e aparece no filtro, mas não tem
      lote a caminho — filtrar por ele leva ao estado vazio, que é o que acontece
      no Admin quando o estoque escolhido não tem nada previsto. */
   const LOT_DESTINATIONS = [
     ...FIGMA_DESTINATIONS,
-    ...DESTINATIONS.filter((d) => !FIGMA_DESTINATIONS.includes(d)).slice(0, 15),
+    ...BASE_DESTINATIONS.filter((d) => !FIGMA_DESTINATIONS.includes(d)).slice(0, 15),
   ]
 
   /* As cinco primeiras linhas reproduzem o Figma, incluindo as quantidades:
@@ -857,13 +1244,13 @@
 
      Um SKU aparece no máximo uma vez por lote: na visão por SKU o par
      (lote, SKU) é a própria linha, e repetir o produto renderizaria linhas
-     idênticas. O #001 do Figma repetia o produto 0 três vezes; virou três
-     produtos distintos com as mesmas quantidades, então o total continua 15. */
+     idênticas. O #001 concentra 15 SKUs para testar um lote grande na expansão.
+     Todos os lotes têm mais de um produto para deixar a expansão útil. */
   const FIGMA_LOTS = [
-    { code: '#001', name: 'Reposição de agosto',     dest: 0, date: '2026-08-05', status: 'scheduled', items: [[0, 3], [1, 2], [2, 10]] },
+    { code: '#001', name: 'Reposição de agosto',     dest: 0, date: '2026-08-05', status: 'scheduled', items: [[0, 3], [1, 2], [2, 10], [3, 6], [4, 8], [5, 4], [6, 7], [7, 5], [8, 9], [9, 12], [10, 11], [11, 6], [12, 3], [13, 2], [14, 5]] },
     { code: '#002', name: 'Reposição natal',         dest: 1, date: '2026-08-12', status: 'received',  items: [[1, 4], [2, 6]] },
     { code: '#003', name: 'Reposição BF',            dest: 2, date: '2026-08-19', status: 'scheduled', items: [[3, 20], [4, 3]] },
-    { code: '#004', name: 'Reposição setembro',      dest: 3, date: '2026-08-26', status: 'cancelled', items: [[5, 19]] },
+    { code: '#004', name: 'Reposição setembro',      dest: 3, date: '2026-08-26', status: 'cancelled', items: [[5, 19], [0, 8]] },
     { code: '#005', name: 'Coleção primavera verão', dest: 4, date: '2026-08-31', status: 'inactive',  items: [[0, 24], [1, 18], [2, 12]] },
   ]
 
@@ -894,7 +1281,7 @@
       const name = `${EXTRA_NAMES[i % EXTRA_NAMES.length]} ${Math.floor(i / EXTRA_NAMES.length) + 1}`
       const day = ((i * 3) % 27) + 1
       const month = 8 + (i % 4)
-      const itemCount = (i % 3) + 1
+      const itemCount = (i % 3) + 2
       const items = []
 
       for (let k = 0; k < itemCount; k += 1) {
@@ -947,7 +1334,9 @@
         },
       })))
 
-  const SKU_ROWS = buildSkuRows(LOTS)
+  /* Reatribuído a cada lote salvo no formulário: a visão por SKU precisa
+     enxergar o que acabou de ser criado (INV-8). */
+  let SKU_ROWS = buildSkuRows(LOTS)
 
   const state = {
     /* 'lots' ou 'skus'. A busca, os filtros e a paginação são os mesmos nas
@@ -958,8 +1347,12 @@
       destinations: [],
       arrival: { start: null, end: null },
       quantity: { min: null, max: null },
-      statuses: [],
+      statuses: [...DEFAULT_STATUSES],
     },
+    /* Enquanto ninguém mexe no filtro de status, aquela marcação é o padrão da tela
+       e não uma escolha de quem está usando — e é por isso que a busca pode passar
+       por cima dela. Depois de mexer, é escolha, e escolha a busca respeita. */
+    statusesTouched: false,
     page: 1,
     expanded: new Set(),
     /* Um recolhimento explícito vence a expansão automática da busca. */
@@ -981,12 +1374,23 @@
     String(value).replace(/[&<>"']/g, (c) =>
       ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
 
+  /* Buscar um lote recebido não pode dar em nada: quem digita um código quer aquele
+     lote. Então, enquanto a marcação de status ainda é a padrão, a busca a suspende
+     — no gatilho, dentro do popover e na consulta, para os três dizerem o mesmo. */
+  const statusScopeActive = () => state.statusesTouched || !state.search.trim()
+
+  const effectiveStatuses = () => statusScopeActive() ? state.filters.statuses : []
+
+  const effectiveFilters = () => statusScopeActive()
+    ? state.filters
+    : { ...state.filters, statuses: [] }
+
   const hasActiveQuery = () => {
     const f = state.filters
     return Boolean(
       state.search.trim() ||
       f.destinations.length ||
-      f.statuses.length ||
+      (state.statusesTouched && f.statuses.length) ||
       f.arrival.start || f.arrival.end ||
       f.quantity.min !== null || f.quantity.max !== null
     )
@@ -1013,10 +1417,16 @@
     return true
   }
 
+  /* Quem chega primeiro fica no topo — é o que a operação precisa saber antes de
+     qualquer outra coisa. O código do lote desempata para a ordem ser total: dois
+     lotes do mesmo dia trocariam de lugar entre renders, e com eles a paginação. */
+  const byArrival = (a, b) =>
+    a.arrivalDate.localeCompare(b.arrivalDate) || a.code.localeCompare(b.code)
+
   /* Pipeline na ordem documentada: busca → destino → data → quantidade → status. */
-  function runQuery() {
+  function runQuery({ paginate = true } = {}) {
     const term = norm(state.search.trim())
-    const f = state.filters
+    const f = effectiveFilters()
     const skuMatched = []
 
     let result = LOTS.filter((lot) => {
@@ -1036,25 +1446,24 @@
       if (f.quantity.max !== null && quantity > f.quantity.max) return false
 
       return true
-    })
+    }).sort(byArrival)
 
     const total = result.length
     const start = (state.page - 1) * PAGE_SIZE
 
-    return { lots: result.slice(start, start + PAGE_SIZE), total, skuMatched }
+    return { lots: paginate ? result.slice(start, start + PAGE_SIZE) : result, total, skuMatched }
   }
 
   /* Mesma pipeline sobre as linhas achatadas, com duas diferenças: a quantidade
      limitada é a do SKU na linha — sempre o número que está na coluna visível —
      e não existe expansão automática, porque aqui o SKU que casou já é a linha.
 
-     Achatar destrói a ordem por código que buildLots produzia de graça, então
-     esta é a única consulta do arquivo que ordena: por chegada, e depois por
-     código do lote e posição do SKU dentro dele, o que torna a ordem total e a
-     paginação estável entre renders. */
-  function runSkuQuery() {
+     A ordem é a mesma da visão por lote, com a posição do SKU dentro do lote como
+     último desempate: linhas do mesmo lote ficam juntas e na ordem em que foram
+     escritas. */
+  function runSkuQuery({ paginate = true } = {}) {
     const term = norm(state.search.trim())
-    const f = state.filters
+    const f = effectiveFilters()
 
     const result = SKU_ROWS.filter((row) => {
       if (term) {
@@ -1071,23 +1480,69 @@
       if (f.quantity.max !== null && row.quantity > f.quantity.max) return false
 
       return true
-    }).sort((a, b) =>
-      a.lot.arrivalDate.localeCompare(b.lot.arrivalDate) ||
-      a.lot.code.localeCompare(b.lot.code) ||
-      a.itemIndex - b.itemIndex)
+    }).sort((a, b) => byArrival(a.lot, b.lot) || a.itemIndex - b.itemIndex)
 
     const total = result.length
     const start = (state.page - 1) * PAGE_SIZE
 
-    return { rows: result.slice(start, start + PAGE_SIZE), total }
+    return { rows: paginate ? result.slice(start, start + PAGE_SIZE) : result, total }
   }
 
-  /* Placeholder de imagem do SKU: 18px dentro do quadro de 36px. */
-  const THUMB = `<span class="sku-thumb">${icon('image-square', 18)}</span>`
+  /* Em produção a miniatura é a foto do SKU vinda do catálogo. Aqui o desenho
+     sai do nome do produto: é artifício de fixture, não regra de negócio.
 
-  /* O mesmo placeholder no quadro de 40px da visão por SKU, onde o ícone cabe
-     no tamanho de projeto. */
-  const PRODUCT_THUMB = `<span class="product-thumb">${icon('image-square')}</span>`
+     Acessório é o primeiro teste porque o nome de um acessório costuma citar o
+     aparelho a que serve: sem isso, "Capa Transparente para Celular" viraria um
+     celular e "Mochila para Notebook" um notebook. */
+  const productKind = (name) => {
+    const value = norm(name)
+
+    if (/(capa|mochila|cabo|carregador|carregamento|adaptador|dock|tomada|cartao|kit teclado|fita de led|porta-retrato|ssd)/.test(value)) return 'accessory'
+    if (/(iphone|galaxy|smartphone|celular)/.test(value)) return 'phone'
+    if (/(smart tv|oled|uhd)/.test(value)) return 'tv'
+    if (/(fone|headphone)/.test(value)) return 'audio'
+    if (/notebook/.test(value)) return 'laptop'
+    if (/(caixa de som|soundbar)/.test(value)) return 'speaker'
+    if (/maquina de lavar/.test(value)) return 'appliance'
+    if (/(tablet|leitor digital)/.test(value)) return 'tablet'
+    if (/monitor/.test(value)) return 'monitor'
+    if (/(camera|webcam|drone|campainha)/.test(value)) return 'camera'
+    if (/(smartwatch|relogio)/.test(value)) return 'watch'
+    if (/projetor/.test(value)) return 'projector'
+    if (/(roteador|mesh|hub)/.test(value)) return 'network'
+
+    return 'device'
+  }
+
+  const thumbSvg = (kind) => {
+    const stroke = 'currentColor'
+    const soft = 'var(--sl-color-gray-2)'
+    const dark = 'var(--sl-color-gray-10)'
+    const base = 'var(--sl-bg-base)'
+
+    const svg = {
+      phone: `<rect x="14" y="7" width="12" height="26" rx="3" fill="${soft}" stroke="${stroke}" stroke-width="1.5"/><line x1="18" y1="29" x2="22" y2="29" stroke="${dark}" stroke-width="1.5" stroke-linecap="round"/>`,
+      tv: `<rect x="7" y="10" width="26" height="17" rx="2.5" fill="${soft}" stroke="${stroke}" stroke-width="1.5"/><line x1="16" y1="31" x2="24" y2="31" stroke="${dark}" stroke-width="1.5" stroke-linecap="round"/><line x1="20" y1="27" x2="20" y2="31" stroke="${dark}" stroke-width="1.5"/>`,
+      audio: `<path d="M12 22v-4a8 8 0 0 1 16 0v4" fill="none" stroke="${stroke}" stroke-width="1.5" stroke-linecap="round"/><rect x="9" y="20" width="6" height="10" rx="3" fill="${soft}" stroke="${stroke}" stroke-width="1.5"/><rect x="25" y="20" width="6" height="10" rx="3" fill="${soft}" stroke="${stroke}" stroke-width="1.5"/>`,
+      laptop: `<rect x="10" y="9" width="20" height="17" rx="2" fill="${soft}" stroke="${stroke}" stroke-width="1.5"/><path d="M7 30h26l-3-4H10l-3 4Z" fill="${base}" stroke="${stroke}" stroke-width="1.5" stroke-linejoin="round"/>`,
+      speaker: `<rect x="11" y="7" width="18" height="26" rx="4" fill="${soft}" stroke="${stroke}" stroke-width="1.5"/><circle cx="20" cy="23" r="5" fill="${base}" stroke="${stroke}" stroke-width="1.5"/><circle cx="20" cy="14" r="2" fill="${dark}"/>`,
+      appliance: `<rect x="10" y="6" width="20" height="28" rx="3" fill="${soft}" stroke="${stroke}" stroke-width="1.5"/><path d="M14 11h12" stroke="${dark}" stroke-width="1.5" stroke-linecap="round"/><circle cx="20" cy="23" r="7" fill="${base}" stroke="${stroke}" stroke-width="1.5"/><circle cx="20" cy="23" r="3" fill="none" stroke="${dark}" stroke-width="1.5"/>`,
+      tablet: `<rect x="9" y="7" width="22" height="26" rx="3" fill="${soft}" stroke="${stroke}" stroke-width="1.5"/><line x1="18" y1="29" x2="22" y2="29" stroke="${dark}" stroke-width="1.5" stroke-linecap="round"/>`,
+      monitor: `<rect x="7" y="9" width="26" height="18" rx="2.5" fill="${soft}" stroke="${stroke}" stroke-width="1.5"/><path d="M17 31h6M20 27v4" stroke="${dark}" stroke-width="1.5" stroke-linecap="round"/>`,
+      camera: `<rect x="8" y="13" width="24" height="16" rx="3" fill="${soft}" stroke="${stroke}" stroke-width="1.5"/><circle cx="20" cy="21" r="5" fill="${base}" stroke="${stroke}" stroke-width="1.5"/><path d="M14 13l2-3h8l2 3" fill="${soft}" stroke="${stroke}" stroke-width="1.5" stroke-linejoin="round"/>`,
+      accessory: `<path d="M14 8h12v13a6 6 0 0 1-12 0V8Z" fill="${soft}" stroke="${stroke}" stroke-width="1.5"/><path d="M17 8V5M23 8V5M18 17h4M20 15v4" stroke="${dark}" stroke-width="1.5" stroke-linecap="round"/>`,
+      watch: `<rect x="14" y="12" width="12" height="16" rx="4" fill="${soft}" stroke="${stroke}" stroke-width="1.5"/><path d="M16 12l1-5h6l1 5M16 28l1 5h6l1-5" fill="none" stroke="${stroke}" stroke-width="1.5" stroke-linejoin="round"/>`,
+      projector: `<rect x="8" y="15" width="20" height="13" rx="3" fill="${soft}" stroke="${stroke}" stroke-width="1.5"/><circle cx="15" cy="21.5" r="4" fill="${base}" stroke="${stroke}" stroke-width="1.5"/><path d="M28 18l5-3v13l-5-3" fill="${base}" stroke="${stroke}" stroke-width="1.5" stroke-linejoin="round"/>`,
+      network: `<circle cx="20" cy="21" r="4" fill="${soft}" stroke="${stroke}" stroke-width="1.5"/><path d="M11 15a13 13 0 0 1 18 0M15 18a7 7 0 0 1 10 0M20 25v5" fill="none" stroke="${dark}" stroke-width="1.5" stroke-linecap="round"/>`,
+      device: `<rect x="9" y="10" width="22" height="20" rx="3" fill="${soft}" stroke="${stroke}" stroke-width="1.5"/><path d="M15 17h10M15 22h6" stroke="${dark}" stroke-width="1.5" stroke-linecap="round"/>`,
+    }[kind]
+
+    return `<svg width="28" height="28" viewBox="0 0 40 40" fill="none" aria-hidden="true" focusable="false">${svg}</svg>`
+  }
+
+  const productThumb = (product, size = 'product') => (
+    `<span class="${size === 'sku' ? 'sku-thumb' : 'product-thumb'}" aria-label="${escapeHtml(product.name)}">${thumbSvg(productKind(product.name))}</span>`
+  )
 
   const DOTS = icon('dots-three-vertical')
 
@@ -1112,7 +1567,10 @@
                 </button>
               </div>
             </div>
-            <span class="lot-name">${escapeHtml(lot.code)} ${escapeHtml(lot.name)}</span>
+            <div class="cell-stack">
+              <span class="lot-name">${escapeHtml(lot.name)}</span>
+              <span class="cell-soft">Lote ID ${escapeHtml(lot.code)}</span>
+            </div>
           </div>
         </div>
         <div data-sl-table-cell>
@@ -1140,7 +1598,7 @@
       <div data-sl-table-row class="row-child${isLast ? ' row-child-last' : ''}" data-selected="false">
         <div data-sl-table-cell>
           <div class="sku-cell">
-            ${THUMB}
+            ${productThumb(item, 'sku')}
             <div class="cell-stack">
               <span class="lot-name">${escapeHtml(item.name)}</span>
               <span class="cell-soft">SKU ID ${escapeHtml(item.skuId)}</span>
@@ -1165,7 +1623,7 @@
       <div data-sl-table-row data-dim-on-hover="true" data-selected="false">
         <div data-sl-table-cell>
           <div class="product-cell">
-            ${PRODUCT_THUMB}
+            ${productThumb(row)}
             <div class="cell-stack">
               <span class="lot-name" title="${escapeHtml(row.name)}">${escapeHtml(row.name)}</span>
               <span class="cell-soft">SKU ID ${escapeHtml(row.skuId)}</span>
@@ -1175,7 +1633,7 @@
         <div data-sl-table-cell>
           <div class="cell-stack">
             <span class="lot-name">${escapeHtml(row.lot.name)}</span>
-            <span class="cell-soft">${escapeHtml(row.lot.code)}</span>
+            <span class="cell-soft">Lote ID ${escapeHtml(row.lot.code)}</span>
           </div>
         </div>
         <div data-sl-table-cell>
@@ -1320,6 +1778,12 @@
     for (const id of ['pag-next', 'pag-next-2']) el(id).disabled = state.page >= lastPage
   }
 
+  function syncExportButton(total = 0, isLoading = false) {
+    const button = el('btn-export')
+    button.disabled = isLoading || total === 0
+    button.setAttribute('aria-label', `Exportar ${state.view === 'skus' ? 'SKUs' : 'lotes'} filtrados`)
+  }
+
   /* O carregamento acontece dentro da tabela, com cabeçalho visível e uma
      skeleton por célula. Assim a linha de carregamento tem a mesma geometria da
      linha com dado — inclusive os 64px — e nada salta quando o dado chega. */
@@ -1346,6 +1810,7 @@
     el('table-footer').style.display = 'none'
     el('state-slot').innerHTML = ''
     updatePagination({ total: 0, isLoading: true })
+    syncExportButton(0, true)
 
     const cells = COLUMNS[state.view].map(cell).join('')
 
@@ -1366,6 +1831,7 @@
     el('table').style.display = 'none'
     el('table-footer').style.display = 'none'
     updatePagination({ total: 0 })
+    syncExportButton(0)
 
     const filtered = hasActiveQuery()
     const noun = state.view === 'skus' ? 'SKU' : 'lote'
@@ -1378,7 +1844,7 @@
       ? `<button data-sl-button data-sl-collection-view-action data-variant="secondary" data-size="normal" type="button" id="btn-clear-all">
            <span data-sl-button-content>Limpar filtros</span>
          </button>`
-      : `<button data-sl-button data-sl-collection-view-action data-variant="primary" data-size="normal" type="button">
+      : `<button data-sl-button data-sl-collection-view-action data-variant="primary" data-size="normal" type="button" id="btn-create-empty">
            <span data-sl-button-content>${icon('plus')}Criar lote futuro</span>
          </button>`
 
@@ -1397,6 +1863,9 @@
 
     const clear = el('btn-clear-all')
     if (clear) clear.addEventListener('click', clearEverything)
+
+    const create = el('btn-create-empty')
+    if (create) create.addEventListener('click', () => goTo(ROUTES.create))
   }
 
   /* Monta o corpo da visão por lote, com a expansão e a abertura automática da
@@ -1442,7 +1911,70 @@
       : lotBodyHtml(result.lots, result.skuMatched)
 
     updatePagination({ total: result.total })
+    syncExportButton(result.total)
     syncFilterTriggers()
+  }
+
+  const csvCell = (value) => {
+    const text = String(value ?? '')
+    return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text
+  }
+
+  const csvLine = (values) => values.map(csvCell).join(',')
+
+  function exportRows() {
+    const isSkuView = state.view === 'skus'
+    const result = isSkuView ? runSkuQuery({ paginate: false }) : runQuery({ paginate: false })
+    const rows = isSkuView ? result.rows : result.lots
+
+    if (!rows.length) return
+
+    const headers = isSkuView
+      ? ['SKU ID', 'Produto', 'Lote ID', 'Nome do lote', 'Seller', 'Estoque', 'Quantidade', 'Chegada', 'Status']
+      : ['Lote ID', 'Nome do lote', 'Seller', 'Estoque', 'Quantidade', 'Chegada', 'Status']
+
+    const body = rows.map((row) => {
+      if (isSkuView) {
+        const status = statusById(row.lot.status).label
+        return [
+          row.skuId,
+          row.name,
+          row.lot.code,
+          row.lot.name,
+          row.lot.destination.seller,
+          row.lot.destination.warehouse,
+          row.quantity,
+          formatDate(row.lot.arrivalDate),
+          status,
+        ]
+      }
+
+      const status = statusById(row.status).label
+      return [
+        row.code,
+        row.name,
+        row.destination.seller,
+        row.destination.warehouse,
+        lotQuantity(row),
+        formatDate(row.arrivalDate),
+        status,
+      ]
+    })
+
+    const csv = [headers, ...body].map(csvLine).join('\n')
+    const blob = new Blob([`\ufeff${csv}`], { type: 'text/csv;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    const suffix = new Date().toISOString().slice(0, 10)
+
+    link.href = url
+    link.download = `inventario-futuro-${isSkuView ? 'por-sku' : 'por-lote'}-${suffix}.csv`
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    URL.revokeObjectURL(url)
+
+    showToast(`${rows.length} ${isSkuView ? 'SKUs' : 'lotes'} exportados`)
   }
 
   /* Trocar de visão é a mesma pergunta noutra granularidade: busca e filtros
@@ -1471,6 +2003,8 @@
     state.expanded.clear()
   }
 
+  /* "Limpar filtros" devolve a listagem como ela abre — e ela abre sem os lotes que
+     já foram recebidos ou cancelados. */
   function clearEverything() {
     state.search = ''
     el('search').value = ''
@@ -1478,8 +2012,9 @@
       destinations: [],
       arrival: { start: null, end: null },
       quantity: { min: null, max: null },
-      statuses: [],
+      statuses: [...DEFAULT_STATUSES],
     }
+    state.statusesTouched = false
     state.collapsedDuringSearch.clear()
     resetToFirstPage()
     buildFilterBodies()
@@ -1648,7 +2183,7 @@
     }
 
     if (name === 'statuses') {
-      pendingSelection.statuses = new Set(state.filters.statuses)
+      pendingSelection.statuses = new Set(effectiveStatuses())
       for (const item of filterNode('statuses').querySelectorAll('[data-sl-filter-item]')) {
         setFilterItemSelected(item, pendingSelection.statuses.has(item.dataset.value))
       }
@@ -1656,8 +2191,14 @@
   }
 
   /* O rótulo vira <span> quando o controle não é rotulável — o caso do
-     DatePicker, que é uma lista de divs e se liga ao rótulo por aria-labelledby. */
-  function fieldHtml(id, label, control, { labelable = true } = {}) {
+     DatePicker, que é uma lista de divs e se liga ao rótulo por aria-labelledby.
+
+     A linha de erro é o FieldError do componente e nasce escondida: marcar um
+     campo passa a ser trocar dois atributos, e não remontar o campo — o que
+     apagaria o que está sendo digitado. */
+  /* A ordem é a do componente: rótulo, campo, descrição e erro. A descrição é
+     onde mora a ajuda de preenchimento — placeholder não serve para isso. */
+  function fieldHtml(id, label, control, { labelable = true, error = null, description = null } = {}) {
     const tag = labelable
       ? `<label data-sl-label id="${id}-label" for="${id}">`
       : `<span data-sl-label id="${id}-label">`
@@ -1666,6 +2207,8 @@
       <div data-sl-field data-space="normal">
         ${tag}${escapeHtml(label)}${labelable ? '</label>' : '</span>'}
         ${control}
+        ${description ? `<div data-sl-field-description id="${id}-description">${escapeHtml(description)}</div>` : ''}
+        ${error ? `<span data-sl-field-error role="alert" id="${id}-error" data-error-for="${escapeHtml(error)}" hidden></span>` : ''}
       </div>`
   }
 
@@ -1734,12 +2277,12 @@
 
   /* O valor de verdade fica num input escondido, em ISO: é dele que o
      applyFilter lê, então a leitura do filtro não muda por causa do campo. */
-  function datePickerHtml(id, role, iso) {
+  function datePickerHtml(id, role, iso, min) {
     const parts = isoParts(iso)
     const separator = '<div data-sl-date-segment aria-hidden="true">/</div>'
 
     return `
-      <div class="date-picker" data-sl-date-picker>
+      <div class="date-picker" data-sl-date-picker data-min="${min || ''}">
         <input type="hidden" data-role="${role}" value="${iso || ''}">
         <div data-sl-date-picker-input>
           <div data-sl-date-field>
@@ -1761,7 +2304,7 @@
       </div>`
   }
 
-  function calendarCellHtml(year, month, day, selectedIso) {
+  function calendarCellHtml(year, month, day, selectedIso, min) {
     const iso = `${year}-${pad(month, 2)}-${pad(day, 2)}`
     const isSelected = iso === selectedIso
 
@@ -1771,6 +2314,7 @@
       <td data-sl-calendar-cell>
         <button type="button" data-sl-button data-sl-icon-button data-sl-calendar-cell-button
                 data-variant="tertiary" data-size="normal" data-date="${iso}"
+                ${min && iso < min ? 'disabled' : ''}
                 data-selected="${isSelected}"
                 data-selection-start="${isSelected}" data-selection-end="${isSelected}"
                 aria-label="${day} de ${monthTitle(year, month)}">
@@ -1779,7 +2323,9 @@
       </td>`
   }
 
-  function calendarHtml(monthKey, selectedIso) {
+  /* O mínimo vem do campo, não do calendário: a data de chegada de um lote novo
+     começa amanhã, enquanto o filtro de chegada precisa alcançar o que já chegou. */
+  function calendarHtml(monthKey, selectedIso, min) {
     const [year, month] = monthKey.split('-').map(Number)
     const firstWeekday = new Date(year, month - 1, 1).getDay()
     const total = daysInMonth(year, month)
@@ -1788,7 +2334,7 @@
     const cells = [...Array(weeks * 7).keys()].map((i) => {
       const day = i - firstWeekday + 1
       return day >= 1 && day <= total
-        ? calendarCellHtml(year, month, day, selectedIso)
+        ? calendarCellHtml(year, month, day, selectedIso, min)
         : '<td data-sl-calendar-cell></td>'
     })
 
@@ -1827,10 +2373,17 @@
     el.textContent = value === null ? segment.empty : pad(value, segment.size)
   }
 
+  /* O campo avisa quando o valor muda em vez de esperar o foco sair: quem depende
+     dele grava no mesmo instante, e o que está na tela nunca discorda do que será
+     salvo. */
+  const announceDate = (picker) =>
+    picker.dispatchEvent(new CustomEvent('sl-date-change', { bubbles: true }))
+
   function setPickerDate(picker, iso) {
     const parts = isoParts(iso)
     hiddenOf(picker).value = iso || ''
     SEGMENTS.forEach((s) => writeSegment(segmentOf(picker, s.type), parts[s.type]))
+    announceDate(picker)
   }
 
   /* Uma data pela metade não filtra nada, então o valor só existe com os três
@@ -1842,6 +2395,7 @@
 
     if (!values.day || !values.month || !values.year) {
       hiddenOf(picker).value = ''
+      announceDate(picker)
       return
     }
 
@@ -1849,6 +2403,7 @@
     if (day !== values.day) writeSegment(segmentOf(picker, 'day'), day)
 
     hiddenOf(picker).value = `${pad(values.year, 4)}-${pad(values.month, 2)}-${pad(day, 2)}`
+    announceDate(picker)
   }
 
   function openCalendar(picker, isOpen) {
@@ -1857,23 +2412,27 @@
 
     if (isOpen) {
       const iso = hiddenOf(picker).value
-      popover.dataset.month = (iso || todayIso()).slice(0, 7)
-      popover.innerHTML = calendarHtml(popover.dataset.month, iso)
+      popover.dataset.month = (iso || picker.dataset.min || todayIso()).slice(0, 7)
+      popover.innerHTML = calendarHtml(popover.dataset.month, iso, picker.dataset.min)
     }
 
     picker.dataset.open = String(isOpen)
     trigger.setAttribute('aria-expanded', String(isOpen))
   }
 
-  const closeAllCalendars = () =>
-    document.querySelectorAll('[data-sl-date-picker][data-open="true"]')
+  /* A raiz importa: fechar todo calendário da página serve para o clique que cai
+     fora de qualquer campo de data, mas quem fecha os filtros não pode alcançar o
+     campo do formulário, que vive fora deles. */
+  const closeAllCalendars = (root = document) =>
+    root.querySelectorAll('[data-sl-date-picker][data-open="true"]')
       .forEach((picker) => openCalendar(picker, false))
 
   function shiftCalendarMonth(popover, delta) {
+    const picker = popover.closest('[data-sl-date-picker]')
     const [year, month] = popover.dataset.month.split('-').map(Number)
     const moved = new Date(year, month - 1 + delta, 1)
     popover.dataset.month = `${moved.getFullYear()}-${pad(moved.getMonth() + 1, 2)}`
-    popover.innerHTML = calendarHtml(popover.dataset.month, hiddenOf(popover.closest('[data-sl-date-picker]')).value)
+    popover.innerHTML = calendarHtml(popover.dataset.month, hiddenOf(picker).value, picker.dataset.min)
   }
 
   /* O padding do rodapé vem do data-sl-content, como no componente real. */
@@ -1893,7 +2452,7 @@
     }
 
     pendingSelection.destinations = new Set(f.destinations)
-    pendingSelection.statuses = new Set(f.statuses)
+    pendingSelection.statuses = new Set(effectiveStatuses())
 
     /* O data-sl-combobox-list é o que tira o padding de cima da lista quando há
        busca acima dela — sem ele sobra um vão entre a Search e o primeiro item. */
@@ -1917,7 +2476,7 @@
     /* Status tem quatro opções: abaixo dos cinco em que o Shoreline manda pôr
        busca, e curto o bastante para não precisar de carregamento em partes. */
     fill('statuses', optionListHtml(
-      STATUSES.map((s) => ({ value: s.id, label: s.label })), f.statuses))
+      STATUSES.map((s) => ({ value: s.id, label: s.label })), effectiveStatuses()))
 
     fill('arrival', `
       <div data-sl-content>
@@ -1956,7 +2515,7 @@
 
     const summaries = {
       destinations: listSummary(f.destinations),
-      statuses: listSummary(f.statuses.map((id) => statusById(id).label)),
+      statuses: listSummary(effectiveStatuses().map((id) => statusById(id).label)),
       arrival: f.arrival.start || f.arrival.end
         ? `: ${f.arrival.start ? formatDate(f.arrival.start) : '…'} – ${f.arrival.end ? formatDate(f.arrival.end) : '…'}`
         : '',
@@ -1971,7 +2530,7 @@
   }
 
   function closeAllFilters() {
-    closeAllCalendars()
+    closeAllCalendars(el('filter-row'))
     for (const node of document.querySelectorAll('.filter')) {
       node.dataset.open = 'false'
       node.querySelector('[data-sl-filter-trigger]').setAttribute('aria-expanded', 'false')
@@ -1997,6 +2556,7 @@
 
     if (name === 'statuses') {
       f.statuses = STATUSES.filter((s) => pendingSelection.statuses.has(s.id)).map((s) => s.id)
+      state.statusesTouched = true
     }
 
     if (name === 'arrival') {
@@ -2036,6 +2596,8 @@
     const button = event.target.closest('[data-view]')
     if (button) setView(button.dataset.view)
   })
+
+  el('btn-export').addEventListener('click', exportRows)
 
   /* A ajuda contextual é delegada no cabeçalho porque renderTableHead refaz o
      conteúdo dele a cada troca de visão. */
@@ -2150,6 +2712,10 @@
       else if (name === 'quantity') state.filters.quantity = { min: null, max: null }
       else state.filters[name] = []
 
+      /* Limpar o status aqui é pedir para ver tudo, inclusive recebido e cancelado:
+         a partir daí a lista é escolha de quem está olhando, não o padrão da tela. */
+      if (name === 'statuses') state.statusesTouched = true
+
       buildFilterBodies()
       resetToFirstPage()
       closeAllFilters()
@@ -2169,8 +2735,17 @@
      dígitos preenchem o segmento e pulam para o próximo quando ele não cabe mais
      nada, as setas verticais incrementam, as horizontais andam entre segmentos e
      o backspace esvazia. O buffer guarda o que foi digitado até aqui, para que
-     "1" e depois "5" virem 15 em vez de 5. */
-  document.getElementById('filter-row').addEventListener('keydown', (event) => {
+     "1" e depois "5" virem 15 em vez de 5.
+
+     Delegado numa raiz qualquer: o filtro de chegada e a data do formulário são
+     o mesmo campo, e um comportamento de teclado que valesse só num dos dois
+     seria a mesma peça com duas personalidades. */
+  function bindDateSegments(root) {
+    root.addEventListener('keydown', onSegmentKeydown)
+    root.addEventListener('focusout', onSegmentFocusout)
+  }
+
+  function onSegmentKeydown(event) {
     const el = event.target.closest('[data-segment]')
     if (!el) return
 
@@ -2231,11 +2806,11 @@
       el.dataset.buffer = ''
       syncPickerFromSegments(picker)
     }
-  })
+  }
 
   /* Sair do segmento encerra o que estava sendo digitado: um "3" solto no dia
      vira 03 em vez de ficar pendurado esperando o próximo dígito. */
-  document.getElementById('filter-row').addEventListener('focusout', (event) => {
+  function onSegmentFocusout(event) {
     const el = event.target.closest('[data-segment]')
     if (!el || !el.dataset.buffer) return
 
@@ -2243,26 +2818,32 @@
     writeSegment(el, clamp(Number(el.dataset.buffer), segment.min, segment.max))
     el.dataset.buffer = ''
     syncPickerFromSegments(el.closest('[data-sl-date-picker]'))
-  })
+  }
+
+  bindDateSegments(document.getElementById('filter-row'))
 
   /* A restrição a dígitos é o que o Shoreline pede no lugar do type="number":
      sem ela o campo aceitaria qualquer texto. O cursor volta para onde estava,
      descontando o que foi recusado antes dele, senão pular para o fim atrapalha
      quem corrige um dígito no meio. */
-  document.getElementById('filter-row').addEventListener('input', (event) => {
-    const field = event.target.closest('[data-role="min"], [data-role="max"]')
-    if (!field) return
+  function bindDigitsOnly(root, selector) {
+    root.addEventListener('input', (event) => {
+      const field = event.target.closest(selector)
+      if (!field) return
 
-    const digits = field.value.replace(/\D/g, '')
-    if (digits === field.value) return
+      const digits = field.value.replace(/\D/g, '')
+      if (digits === field.value) return
 
-    const caret = field.selectionStart
-    const antes = field.value.slice(0, caret)
-    const destino = caret - (antes.length - antes.replace(/\D/g, '').length)
+      const caret = field.selectionStart
+      const antes = field.value.slice(0, caret)
+      const destino = caret - (antes.length - antes.replace(/\D/g, '').length)
 
-    field.value = digits
-    field.setSelectionRange(destino, destino)
-  })
+      field.value = digits
+      field.setSelectionRange(destino, destino)
+    })
+  }
+
+  bindDigitsOnly(document.getElementById('filter-row'), '[data-role="min"], [data-role="max"]')
 
   /* Espera a digitação parar antes de "chamar a API": sem isso cada tecla
      dispararia uma busca, e o esqueleto piscaria letra a letra. */
@@ -2277,6 +2858,7 @@
 
   document.addEventListener('click', (event) => {
     if (!event.target.closest('.filter')) closeAllFilters()
+    if (!event.target.closest('[data-sl-date-picker]')) closeAllCalendars()
     if (!event.target.closest('.header-help')) closeHeaderHelp()
   })
 
@@ -2284,6 +2866,1049 @@
     if (event.key !== 'Escape') return
     closeAllFilters()
     closeHeaderHelp()
+  })
+
+  /* ─────────────────────────────────────────────────────────────
+     Criação de lote
+
+     Segunda tela do arquivo, atrás de uma rota de hash. A listagem continua
+     montada e apenas escondida: é o que faz a busca, os filtros, a visão e a
+     página sobreviverem à ida e à volta sem uma linha de código para isso.
+
+     A tela é a única que escreve em LOTS. Todo o resto do arquivo lê.
+     ───────────────────────────────────────────────────────────── */
+
+  const ROUTES = { listing: '', create: '#/criar-lote' }
+
+  const shell = document.querySelector('.shell')
+
+  /* Estado do formulário. Quantidade é string porque é o conteúdo cru do campo:
+     enquanto o operador apaga para redigitar, ela é '' — e '' não é zero. */
+  const form = { name: '', code: '', arrivalDate: null, items: [], seller: null, warehouse: null }
+
+  const snapshot = () => JSON.stringify(form)
+  let formPristine = snapshot()
+  let onCreateScreen = false
+
+  const ITEMS_PAGE_SIZE = 10
+  let itemsSearch = ''
+  let itemsPage = 1
+
+  const TRASH = icon('trash')
+  const CARET_DOWN_SMALL = icon('caret-down-small')
+
+  const nextCode = () => {
+    const highest = LOTS.reduce(
+      (top, lot) => Math.max(top, Number(lot.code.replace(/\D/g, '')) || 0), 0)
+    return String(highest + 1).padStart(3, '0')
+  }
+
+  /* Um lote datado de hoje já perdeu a meia-noite em que viraria estoque
+     disponível: nasceria vencido. O mínimo é amanhã. */
+  function tomorrowIso() {
+    const date = new Date()
+    date.setDate(date.getDate() + 1)
+    return `${date.getFullYear()}-${pad(date.getMonth() + 1, 2)}-${pad(date.getDate(), 2)}`
+  }
+
+  const formTotal = () => form.items.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0)
+
+  const productBySku = (skuId) => PRODUCT_CATALOG.find((p) => p.skuId === skuId)
+
+  /* ── Roteador ────────────────────────────────────────────── */
+
+  function handleRoute() {
+    const isCreate = location.hash === ROUTES.create
+
+    /* Entrar na rota — pelo botão, por link direto ou pelo voltar do navegador
+       — sempre começa um lote novo. */
+    if (isCreate && !onCreateScreen) resetForm()
+    onCreateScreen = isCreate
+
+    el('screen-listing').hidden = isCreate
+    el('screen-create').hidden = !isCreate
+    shell.dataset.screen = isCreate ? 'create' : 'listing'
+    document.title = isCreate
+      ? 'Inventário futuro — Criar lote (protótipo)'
+      : 'Inventário futuro — Listagem (protótipo)'
+
+    if (isCreate) el('form-name').focus()
+  }
+
+  const goTo = (route) => {
+    if ((location.hash || '') === route) handleRoute()
+    else location.hash = route
+  }
+
+  window.addEventListener('hashchange', handleRoute)
+
+  /* ── Erros de campo ──────────────────────────────────────── */
+
+  /* Um erro é uma linha de FieldError já montada mais a moldura do controle
+     ficando crítica. Achar a moldura pelo Field em volta evita marcar cada
+     campo com um atributo só para isto. */
+  function paintError(field, message) {
+    const line = document.querySelector(`[data-error-for="${field}"]`)
+    if (!line) return
+
+    line.hidden = !message
+    line.textContent = message || ''
+
+    const box = line.closest('[data-sl-field]')
+      ?.querySelector('[data-sl-input], [data-sl-date-picker-input]')
+    if (box) box.dataset.error = String(Boolean(message))
+  }
+
+  const clearErrors = (root) => {
+    for (const line of root.querySelectorAll('[data-error-for]')) {
+      line.hidden = true
+      line.textContent = ''
+    }
+    for (const box of root.querySelectorAll('[data-error="true"]')) box.dataset.error = 'false'
+  }
+
+  /* O primeiro erro recebe o foco. Nem todo campo é um input: a data foca o
+     primeiro segmento, e a seção de produtos foca o botão que a resolve. */
+  function focusTarget(field) {
+    if (field === 'items') return el('btn-add-products')
+    if (field === 'form-arrival') return el('screen-create').querySelector('[data-segment="day"]')
+    if (field.startsWith('item:')) return document.querySelector(`[data-qty="${field.slice(5)}"]`)
+    return el(field)
+  }
+
+  /* ── Combobox ────────────────────────────────────────────────
+     O Combobox desta versão do Shoreline é um invólucro do Ariakit que emite
+     quatro atributos e estiliza um. A composição daqui usa as peças que têm
+     desenho: o Input no gatilho, e o popover, o item, o item ativo e a marca
+     de escolhido do Select — que é o irmão de escolha única deste campo.
+     ───────────────────────────────────────────────────────────── */
+
+  const COMBOBOX_LIMIT = 10
+  const SKU_TAKEN = 'Já está no lote'
+
+  function comboboxHtml(id, { kind, row = '', value = '', placeholder = '', disabled = false }) {
+    return `
+      <div class="combobox" data-sl-select data-combobox="${kind}" data-row="${row}" data-open="false">
+        <div data-sl-input${disabled ? ' data-disabled="true"' : ''}>
+          <input data-sl-input-element id="${id}" type="text" role="combobox" autocomplete="off"
+                 aria-expanded="false" aria-autocomplete="list" aria-controls="${id}-list"
+                 placeholder="${escapeHtml(placeholder)}" value="${escapeHtml(value)}"${disabled ? ' disabled' : ''}>
+          <span class="combobox-caret">${CARET_DOWN_SMALL}</span>
+        </div>
+        <div class="combobox-popover" data-sl-select-popover data-enter role="listbox" id="${id}-list"></div>
+      </div>`
+  }
+
+  /* A fonte de cada campo. O SKU marca o que já está no lote: o conjunto une os
+     produtos já comprometidos e os escolhidos nas outras linhas da drawer, que
+     é o que impede o mesmo SKU de entrar duas vezes no mesmo lote (INV-2). */
+  function comboboxSource(node) {
+    const kind = node.dataset.combobox
+
+    if (kind === 'seller') return SELLERS.map((seller) => ({ value: seller, label: seller }))
+
+    if (kind === 'warehouse') {
+      return warehousesOf(form.seller).map((warehouse) => ({ value: warehouse, label: warehouse }))
+    }
+
+    const taken = new Set([
+      ...form.items.map((item) => item.skuId),
+      ...drawer.rows
+        .filter((other) => other.id !== node.dataset.row && other.skuId)
+        .map((other) => other.skuId),
+    ])
+
+    return PRODUCT_CATALOG.map((product) => ({
+      value: product.skuId,
+      label: product.name,
+      hint: `SKU ID ${product.skuId}`,
+      disabled: taken.has(product.skuId),
+    }))
+  }
+
+  const comboboxSelected = (node) => {
+    const kind = node.dataset.combobox
+    if (kind === 'seller') return form.seller
+    if (kind === 'warehouse') return form.warehouse
+    const row = drawer.rows.find((r) => r.id === node.dataset.row)
+    return row ? row.skuId : null
+  }
+
+  function renderComboboxList(node) {
+    const input = node.querySelector('[data-sl-input-element]')
+    const term = norm((input.dataset.typed || '').trim())
+    const selected = comboboxSelected(node)
+
+    const all = comboboxSource(node)
+      .filter((option) => !term || norm(`${option.label} ${option.hint || ''}`).includes(term))
+
+    const shown = all.slice(0, COMBOBOX_LIMIT)
+
+    const items = shown.map((option) => `
+      <div data-sl-select-item role="option" data-value="${escapeHtml(option.value)}"
+           aria-selected="${option.value === selected}" aria-disabled="${Boolean(option.disabled)}">
+        ${option.value === selected ? `<span data-sl-select-item-check>${CHECK}</span>` : ''}
+        <span class="combobox-item-text">
+          <span>${escapeHtml(option.label)}</span>
+          ${option.hint ? `<span class="cell-soft">${escapeHtml(option.hint)}</span>` : ''}
+        </span>
+        ${option.disabled ? `<span class="combobox-reason">${SKU_TAKEN}</span>` : ''}
+      </div>`).join('')
+
+    const more = all.length > shown.length
+      ? `<div class="combobox-empty">Refine a busca para ver os outros ${all.length - shown.length}</div>`
+      : ''
+
+    node.querySelector('.combobox-popover').innerHTML =
+      items ? items + more : '<div class="combobox-empty">Nenhum resultado</div>'
+  }
+
+  function openCombobox(node, isOpen) {
+    const input = node.querySelector('[data-sl-input-element]')
+
+    if (isOpen) {
+      closeAllComboboxes(node)
+      input.dataset.typed = ''
+      renderComboboxList(node)
+    } else {
+      /* Fechar sem escolher devolve o rótulo do que estava escolhido: o campo
+         nunca fica mostrando um texto que não corresponde ao valor. */
+      input.value = comboboxLabel(node)
+      delete input.dataset.typed
+    }
+
+    node.dataset.open = String(isOpen)
+    input.setAttribute('aria-expanded', String(isOpen))
+  }
+
+  function comboboxLabel(node) {
+    const selected = comboboxSelected(node)
+    if (!selected) return ''
+    if (node.dataset.combobox !== 'sku') return selected
+    const product = productBySku(selected)
+    return product ? product.name : ''
+  }
+
+  const closeAllComboboxes = (except) => {
+    for (const node of document.querySelectorAll('.combobox[data-open="true"]')) {
+      if (node !== except) openCombobox(node, false)
+    }
+  }
+
+  function chooseComboboxValue(node, value) {
+    const kind = node.dataset.combobox
+
+    if (kind === 'seller') {
+      form.seller = value
+      form.warehouse = null
+      paintError('form-seller', '')
+      renderDestination()
+      return
+    }
+
+    if (kind === 'warehouse') {
+      form.warehouse = value
+      paintError('form-warehouse', '')
+      openCombobox(node, false)
+      return
+    }
+
+    const row = drawer.rows.find((r) => r.id === node.dataset.row)
+    row.skuId = value
+    paintError(`drawer-sku-${row.id}`, '')
+    syncDrawerConfirm()
+    openCombobox(node, false)
+  }
+
+  /* O item ativo é o do teclado. O Select do Shoreline pinta com data-active-item,
+     então mover a seta é mover esse atributo. */
+  function moveComboboxActive(node, delta) {
+    const items = [...node.querySelectorAll('[data-sl-select-item][aria-disabled="false"]')]
+    if (!items.length) return
+
+    const current = items.findIndex((item) => item.hasAttribute('data-active-item'))
+    const next = items[Math.min(Math.max(current + delta, 0), items.length - 1)] || items[0]
+
+    for (const item of items) item.removeAttribute('data-active-item')
+    next.setAttribute('data-active-item', '')
+    next.scrollIntoView({ block: 'nearest' })
+  }
+
+  /* Um único conjunto de eventos serve aos três campos: a diferença entre eles
+     está na fonte e no que fazer com o escolhido, não na interação. */
+  function bindComboboxes(root) {
+    root.addEventListener('input', (event) => {
+      const input = event.target.closest('.combobox [data-sl-input-element]')
+      if (!input) return
+
+      /* Abrir antes de guardar o termo: openCombobox zera o que foi digitado,
+         e digitar num campo fechado é o gesto mais comum de todos. */
+      const node = input.closest('.combobox')
+      if (node.dataset.open !== 'true') openCombobox(node, true)
+
+      input.dataset.typed = input.value
+      renderComboboxList(node)
+    })
+
+    root.addEventListener('click', (event) => {
+      const item = event.target.closest('[data-sl-select-item]')
+      if (item) {
+        if (item.getAttribute('aria-disabled') === 'true') return
+        chooseComboboxValue(item.closest('.combobox'), item.dataset.value)
+        return
+      }
+
+      const input = event.target.closest('.combobox [data-sl-input-element]')
+      if (input && !input.disabled) {
+        const node = input.closest('.combobox')
+        if (node.dataset.open !== 'true') openCombobox(node, true)
+      }
+    })
+
+    root.addEventListener('keydown', (event) => {
+      const input = event.target.closest('.combobox [data-sl-input-element]')
+      if (!input) return
+
+      const node = input.closest('.combobox')
+      const isOpen = node.dataset.open === 'true'
+
+      if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+        event.preventDefault()
+        if (!isOpen) openCombobox(node, true)
+        moveComboboxActive(node, event.key === 'ArrowDown' ? 1 : -1)
+        return
+      }
+
+      if (event.key === 'Enter' && isOpen) {
+        event.preventDefault()
+        const active = node.querySelector('[data-sl-select-item][data-active-item]')
+        if (active) chooseComboboxValue(node, active.dataset.value)
+        return
+      }
+
+      /* Esc fecha só a lista. Fechar a drawer junto tiraria o operador de onde
+         ele está por causa de um gesto que era para desfazer a digitação. */
+      if (event.key === 'Escape' && isOpen) {
+        event.stopPropagation()
+        openCombobox(node, false)
+      }
+    })
+  }
+
+  /* ── Formulário ──────────────────────────────────────────── */
+
+  const sectionHeadHtml = (title, description) => `
+    <div class="form-section-head">
+      <h2 data-sl-heading data-variant="display3">${escapeHtml(title)}</h2>
+      <p data-sl-text data-variant="body" class="form-section-description">${escapeHtml(description)}</p>
+    </div>`
+
+  function renderForm() {
+    el('lot-form').innerHTML = `
+      <section class="form-section">
+        ${sectionHeadHtml('Sobre o lote', 'Identifique o lote e informe quando ele chega')}
+
+        <div class="form-row" data-fluid="true">
+          ${fieldHtml('form-name', 'Nome', inputHtml('form-name',
+            `type="text" data-field="name" value="${escapeHtml(form.name)}"
+             aria-describedby="form-name-description"`),
+            { error: 'form-name', description: 'Ex.: Reposição de setembro' })}
+        </div>
+
+        <div class="form-row">
+          ${fieldHtml('form-code', 'ID', inputHtml('form-code',
+            `type="text" data-field="code" value="${escapeHtml(form.code)}"`),
+            { error: 'form-code' })}
+          ${fieldHtml('form-arrival', 'Data de chegada',
+            datePickerHtml('form-arrival', 'arrival', form.arrivalDate, tomorrowIso()),
+            { labelable: false, error: 'form-arrival' })}
+        </div>
+      </section>
+
+      <section class="form-section">
+        ${sectionHeadHtml('Produtos', 'Informe os SKUs e as quantidades que vão chegar neste lote')}
+
+        <span data-sl-field-error role="alert" data-error-for="items" hidden></span>
+        <div id="form-items"></div>
+      </section>
+
+      <section class="form-section">
+        ${sectionHeadHtml('Destino', 'Defina em qual seller e estoque esses itens vão estar disponíveis')}
+        <div class="form-row" id="form-destination"></div>
+      </section>`
+
+    renderDestination()
+    renderItems()
+  }
+
+  /* Estoque depende do seller, então os dois são remontados juntos: trocar o
+     seller limpa o estoque e repovoa a lista com os dele (FR-24). */
+  function renderDestination() {
+    el('form-destination').innerHTML = `
+      ${fieldHtml('form-seller', 'Seller', comboboxHtml('form-seller', {
+        kind: 'seller', value: form.seller || '', placeholder: 'Buscar seller',
+      }), { error: 'form-seller' })}
+      ${fieldHtml('form-warehouse', 'Estoque', comboboxHtml('form-warehouse', {
+        kind: 'warehouse', value: form.warehouse || '',
+        placeholder: form.seller ? 'Buscar estoque' : 'Escolha um seller primeiro',
+        disabled: !form.seller,
+      }), { error: 'form-warehouse' })}`
+
+    if (form.seller) el('form-warehouse').focus()
+  }
+
+  /* ── Tabela de produtos ──────────────────────────────────── */
+
+  const ITEM_COLUMNS = 'minmax(230px, 1fr) 140px 56px'
+
+  function itemRowFormHtml(item) {
+    return `
+      <div data-sl-table-row data-selected="false">
+        <div data-sl-table-cell>
+          <div class="product-cell">
+            ${productThumb(item)}
+            <div class="cell-stack">
+              <span class="lot-name" title="${escapeHtml(item.name)}">${escapeHtml(item.name)}</span>
+              <span class="cell-soft">SKU ID ${escapeHtml(item.skuId)}</span>
+            </div>
+          </div>
+        </div>
+        <div data-sl-table-cell class="num">
+          <div data-sl-field data-space="normal" class="qty-cell">
+            ${inputHtml(`qty-${item.skuId.replace('#', '')}`,
+              `type="text" inputmode="numeric" data-digits data-qty="${escapeHtml(item.skuId)}"
+               value="${escapeHtml(item.quantity)}" aria-label="Quantidade de ${escapeHtml(item.name)}"`)}
+            <span data-sl-field-error role="alert" data-error-for="item:${escapeHtml(item.skuId)}" hidden></span>
+          </div>
+        </div>
+        <div data-sl-table-cell>
+          <button type="button" data-sl-button data-sl-icon-button data-variant="tertiary" data-size="normal"
+                  data-remove-item="${escapeHtml(item.skuId)}"
+                  aria-label="Remover ${escapeHtml(item.name)} do lote">
+            <span data-sl-button-content>${TRASH}</span>
+          </button>
+        </div>
+      </div>`
+  }
+
+  /* Até dez produtos a tabela é só a tabela. Do décimo primeiro em diante ela
+     ganha a busca e a paginação da listagem: uma busca sobre três itens é
+     mobília, e o Collection genérico do Figma é o componente saído da caixa. */
+  const addProductsButtonHtml = `
+    <button type="button" data-sl-button data-variant="secondary" data-size="normal" id="btn-add-products">
+      <span data-sl-button-content>${icon('plus')}Adicionar produtos</span>
+    </button>`
+
+  function renderItems() {
+    const host = el('form-items')
+    const acao = `<div class="form-actions">${addProductsButtonHtml}</div>`
+
+    /* Sem produtos, o botão é a seção inteira — é assim no Figma. A caixa só
+       aparece quando há uma coleção para ela delimitar. */
+    if (!form.items.length) {
+      host.innerHTML = acao
+      return
+    }
+
+    const paged = form.items.length > ITEMS_PAGE_SIZE
+    const term = norm(itemsSearch.trim())
+    const matched = term
+      ? form.items.filter((item) => norm(`${item.name} ${item.skuId}`).includes(term))
+      : form.items
+
+    const pages = Math.max(1, Math.ceil(matched.length / ITEMS_PAGE_SIZE))
+    itemsPage = Math.min(itemsPage, pages)
+    const start = (itemsPage - 1) * ITEMS_PAGE_SIZE
+    const visible = paged ? matched.slice(start, start + ITEMS_PAGE_SIZE) : matched
+
+    const tools = paged ? `
+      <div data-sl-collection-row>
+        <div data-sl-search class="list-search">
+          <span data-sl-pre-icon>${icon('magnifying-glass-small')}</span>
+          <input data-sl-search-input id="items-search" placeholder="Buscar produto"
+                 autocomplete="off" value="${escapeHtml(itemsSearch)}">
+        </div>
+        <div data-sl-pagination>
+          <div data-sl-stack data-horizontal="true" style="--sl-stack-space: var(--sl-space-2)">
+            <div data-sl-pagination-label data-loading="false">${
+              matched.length <= ITEMS_PAGE_SIZE
+                ? `${matched.length} de ${matched.length}`
+                : `${start + 1} — ${Math.min(start + ITEMS_PAGE_SIZE, matched.length)} de ${matched.length}`
+            }</div>
+            <div data-sl-pagination-actions>
+              <button type="button" data-sl-button data-sl-icon-button data-variant="tertiary" data-size="normal"
+                      data-sl-pagination-action-prev data-items-page="-1" aria-label="Página anterior"
+                      ${itemsPage === 1 ? 'disabled' : ''}>
+                <span data-sl-button-content>${CARET_LEFT}</span>
+              </button>
+              <button type="button" data-sl-button data-sl-icon-button data-variant="tertiary" data-size="normal"
+                      data-sl-pagination-action-next data-items-page="1" aria-label="Próxima página"
+                      ${itemsPage >= pages ? 'disabled' : ''}>
+                <span data-sl-button-content>${CARET_RIGHT}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>` : ''
+
+    const body = visible.length
+      ? visible.map(itemRowFormHtml).join('')
+      : ''
+
+    host.innerHTML = `
+      ${acao}
+      <div class="form-card">
+        <div data-sl-collection>
+          ${tools}
+          <div class="form-card-viewport" data-more="false">
+          <div class="form-card-scroll" data-fixed="${paged}">
+            <div data-sl-table data-sl-table-density="default" data-sl-table-header-sticky="true"
+                 style="--sl-table-grid-template-columns: ${ITEM_COLUMNS}">
+              <div data-sl-table-header>
+                <div data-sl-table-row>
+                  <div data-sl-table-header-cell>Produto</div>
+                  <div data-sl-table-header-cell class="num">Quantidade</div>
+                  <div data-sl-table-header-cell></div>
+                </div>
+              </div>
+              <div data-sl-table-body>${body}</div>
+            </div>
+            ${visible.length ? '' : `
+              <div data-sl-collection-view>
+                <div data-sl-empty-state data-sl-size="large">
+                  <div data-sl-empty-state-container>
+                    <div data-sl-empty-state-illustration data-sl-collection-view-illustration
+                         style="color: var(--sl-color-gray-8)">${icon('magnifying-glass')}</div>
+                    <h3 data-sl-heading data-variant="context" data-sl-collection-view-heading>Nenhum produto encontrado</h3>
+                    <span data-sl-text data-variant="context" data-sl-collection-view-description>Tente outros termos</span>
+                  </div>
+                </div>
+              </div>`}
+          </div>
+          </div>
+          <div class="form-total">
+            <span class="form-total-label">Total do lote</span>
+            <span>${formTotal()} unidades</span>
+          </div>
+        </div>
+      </div>`
+
+    syncItemsFade()
+  }
+
+  /* O véu vive enquanto sobra conteúdo abaixo do visor; no fim da rolagem ele sai
+     de cena para não sujar a última linha. */
+  function syncItemsFade() {
+    const scroll = el('form-items').querySelector('.form-card-scroll')
+    if (!scroll) return
+
+    const restante = scroll.scrollHeight - scroll.scrollTop - scroll.clientHeight
+    scroll.closest('.form-card-viewport').dataset.more = String(restante > 1)
+  }
+
+  /* ── Drawer ──────────────────────────────────────────────── */
+
+  const drawer = { open: false, rows: [] }
+  let drawerRowSeq = 0
+  let drawerReturnFocus = null
+
+  const emptyRow = () => ({ id: `row-${(drawerRowSeq += 1)}`, skuId: null, quantity: '' })
+
+  const drawerFilled = () => drawer.rows.some((row) => row.skuId || row.quantity)
+
+  /* Toda linha aberta precisa estar completa: uma linha em branco no meio da
+     drawer é trabalho por terminar, não um convite descartável. */
+  function drawerErrors() {
+    const errors = []
+
+    for (const row of drawer.rows) {
+      if (!row.skuId) errors.push({ field: `drawer-sku-${row.id}`, message: 'Escolha um produto' })
+
+      if (row.quantity === '') {
+        errors.push({ field: `drawer-qty-${row.id}`, message: 'Informe uma quantidade' })
+      } else if (Number(row.quantity) < 1) {
+        errors.push({ field: `drawer-qty-${row.id}`, message: 'A quantidade precisa ser 1 ou mais' })
+      }
+    }
+
+    return errors
+  }
+
+  /* O botão fica desabilitado no aria, não no atributo: um botão desabilitado de
+     verdade não recebe clique, e é o clique que mostra o que falta preencher. */
+  const syncDrawerConfirm = () => {
+    el('drawer-confirm').setAttribute('aria-disabled', String(drawerErrors().length > 0))
+  }
+
+  function drawerRowHtml(row, index) {
+    const product = row.skuId ? productBySku(row.skuId) : null
+
+    return `
+      <div class="drawer-row" data-row="${row.id}">
+        ${fieldHtml(`drawer-sku-${row.id}`, 'Produto', comboboxHtml(`drawer-sku-${row.id}`, {
+          kind: 'sku', row: row.id, value: product ? product.name : '',
+          placeholder: 'Buscar por nome ou SKU ID',
+        }), { error: `drawer-sku-${row.id}` })}
+
+        ${fieldHtml(`drawer-qty-${row.id}`, 'Quantidade', inputHtml(`drawer-qty-${row.id}`,
+          `type="text" inputmode="numeric" data-digits data-drawer-qty="${row.id}"
+           value="${escapeHtml(row.quantity)}"`), { error: `drawer-qty-${row.id}` })}
+
+        ${drawer.rows.length === 1 ? '' : `
+          <div class="drawer-row-remove">
+            <button type="button" data-sl-button data-sl-icon-button data-variant="tertiary" data-size="normal"
+                    data-remove-row="${row.id}" aria-label="Remover a linha ${index + 1}">
+              <span data-sl-button-content>${TRASH}</span>
+            </button>
+          </div>`}
+      </div>`
+  }
+
+  const renderDrawerRows = () => {
+    el('drawer-rows').innerHTML = drawer.rows.map(drawerRowHtml).join('')
+    syncDrawerConfirm()
+  }
+
+  function openDrawer() {
+    drawerReturnFocus = document.activeElement
+    drawer.open = true
+    drawer.rows = [emptyRow()]
+    renderDrawerRows()
+
+    el('drawer').hidden = false
+    /* Um quadro entre montar e animar: sem isso o painel nasce já no lugar e a
+       transição não acontece. */
+    requestAnimationFrame(() => { el('drawer').dataset.enter = 'true' })
+    el('drawer').querySelector('[data-sl-input-element]').focus()
+  }
+
+  function closeDrawer({ force = false } = {}) {
+    if (!force && drawerFilled()) {
+      openConfirm({
+        title: 'Descartar os produtos?',
+        body: 'As linhas preenchidas não serão adicionadas ao lote.',
+        confirmLabel: 'Descartar',
+        onConfirm: () => closeDrawer({ force: true }),
+      })
+      return
+    }
+
+    closeAllComboboxes()
+    drawer.open = false
+    drawer.rows = []
+    el('drawer').dataset.enter = 'false'
+    el('drawer').hidden = true
+    if (drawerReturnFocus) drawerReturnFocus.focus()
+  }
+
+  function commitDrawer() {
+    clearErrors(el('drawer'))
+
+    const errors = drawerErrors()
+
+    if (errors.length) {
+      for (const error of errors) paintError(error.field, error.message)
+      el(errors[0].field).focus()
+      return
+    }
+
+    for (const row of drawer.rows) {
+      form.items.push({
+        skuId: row.skuId,
+        name: productBySku(row.skuId).name,
+        quantity: row.quantity,
+      })
+    }
+
+    closeDrawer({ force: true })
+    paintError('items', '')
+    renderItems()
+  }
+
+  /* ── Confirmação ─────────────────────────────────────────── */
+
+  let confirmAction = null
+
+  function openConfirm({ title, body, confirmLabel, onConfirm }) {
+    el('discard-title').textContent = title
+    el('discard-body').textContent = body
+    el('discard-confirm-label').textContent = confirmLabel
+    confirmAction = onConfirm
+
+    el('discard-modal').hidden = false
+    el('discard-confirm').focus()
+  }
+
+  function closeConfirm() {
+    el('discard-modal').hidden = true
+    confirmAction = null
+  }
+
+  /* ── Salvar ──────────────────────────────────────────────── */
+
+  const bareCode = (code) => norm(String(code).replace('#', '').trim())
+
+  function validateForm() {
+    const errors = []
+
+    if (!form.name.trim()) errors.push({ field: 'form-name', message: 'Informe o nome do lote' })
+
+    const code = form.code.replace('#', '').trim()
+    if (!code) errors.push({ field: 'form-code', message: 'Informe o ID do lote' })
+    else if (LOTS.some((lot) => bareCode(lot.code) === bareCode(code))) {
+      errors.push({ field: 'form-code', message: 'Já existe um lote com este ID' })
+    }
+
+    if (!form.arrivalDate) {
+      errors.push({ field: 'form-arrival', message: 'Informe a data de chegada' })
+    } else if (form.arrivalDate < tomorrowIso()) {
+      errors.push({ field: 'form-arrival', message: 'A chegada precisa ser a partir de amanhã' })
+    }
+
+    if (!form.items.length) errors.push({ field: 'items', message: 'Adicione ao menos um produto' })
+
+    for (const item of form.items) {
+      const quantity = Number(item.quantity)
+      if (item.quantity === '' || !Number.isInteger(quantity) || quantity < 1) {
+        errors.push({ field: `item:${item.skuId}`, message: 'Informe uma quantidade de 1 ou mais' })
+      }
+    }
+
+    // Sem seller, o estoque está desabilitado: cobrar os dois de uma vez marcaria
+    // de vermelho um campo que o operador ainda não pode preencher.
+    if (!form.seller) errors.push({ field: 'form-seller', message: 'Escolha o seller' })
+    else if (!form.warehouse) errors.push({ field: 'form-warehouse', message: 'Escolha o estoque' })
+
+    return errors
+  }
+
+  function saveLot() {
+    clearErrors(el('screen-create'))
+
+    const errors = validateForm()
+    if (errors.length) {
+      for (const error of errors) paintError(error.field, error.message)
+      const target = focusTarget(errors[0].field)
+      if (target) target.scrollIntoView({ block: 'center' })
+      if (target) target.focus()
+      return
+    }
+
+    const id = `lot-${LOTS.length + 1}`
+    const code = `#${form.code.replace('#', '').trim()}`
+
+    LOTS.push({
+      id,
+      code,
+      name: form.name.trim(),
+      destination: DESTINATIONS.find(
+        (d) => d.seller === form.seller && d.warehouse === form.warehouse),
+      arrivalDate: form.arrivalDate,
+      /* O formulário só produz lote agendado: recebido, cancelado e inativo são
+         transições da vida do lote, não estados de nascimento (INV-6). */
+      status: 'scheduled',
+      items: form.items.map((item, index) => ({
+        id: `${id}-item-${index + 1}`,
+        skuId: item.skuId,
+        name: item.name,
+        quantity: Number(item.quantity),
+      })),
+    })
+
+    SKU_ROWS = buildSkuRows(LOTS)
+
+    /* A listagem volta à primeira página: ordenada por chegada, o lote recém-criado
+       entra pela data dele, e quem estava numa página do meio não o veria. */
+    state.page = 1
+
+    formPristine = snapshot()
+    goTo(ROUTES.listing)
+    render()
+    showToast(`Lote ${code} criado`)
+  }
+
+  function resetForm() {
+    form.name = ''
+    form.code = nextCode()
+    form.arrivalDate = null
+    form.items = []
+    form.seller = null
+    form.warehouse = null
+    itemsSearch = ''
+    itemsPage = 1
+
+    renderForm()
+    formPristine = snapshot()
+  }
+
+  /* Sair só pergunta quando há o que perder. Um formulário intocado — o ID
+     sugerido e nada mais — sai calado. */
+  function requestLeave() {
+    if (snapshot() === formPristine) {
+      goTo(ROUTES.listing)
+      return
+    }
+
+    openConfirm({
+      title: 'Descartar o lote?',
+      body: 'O que você preencheu não será salvo.',
+      confirmLabel: 'Descartar',
+      onConfirm: () => {
+        closeConfirm()
+        formPristine = snapshot()
+        goTo(ROUTES.listing)
+      },
+    })
+  }
+
+  /* ── Toast ───────────────────────────────────────────────── */
+
+  const TOAST_MS = 6000
+  let toastTimer = null
+
+  /* Posição bottom-right, que é a padrão do ToastStack. O componente calcula o
+     deslocamento vertical de cada toast empilhado; aqui só existe um por vez. */
+  function showToast(message) {
+    const stack = el('toast-stack')
+    stack.innerHTML = `
+      <div data-sl-toast-appear data-visible="false"
+           style="bottom: 0; justify-content: flex-end; --sl-toast-index: 0">
+        <div data-sl-toast data-variant="success">
+          <div data-sl-toast-icon-container>${icon('check-circle-fill')}</div>
+          <div data-sl-toast-container>${escapeHtml(message)}</div>
+          <div data-sl-toast-actions>
+            <div data-sl-bleed>
+              <div data-sl-bleed-content style="--sl-bleed-top: var(--sl-space-2); --sl-bleed-end: var(--sl-space-2); --sl-bleed-bottom: var(--sl-space-2)">
+                <button type="button" data-sl-button data-sl-icon-button data-variant="tertiary" data-size="normal"
+                        id="toast-dismiss" aria-label="Fechar aviso">
+                  <span data-sl-button-content>${icon('x')}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>`
+
+    const node = stack.firstElementChild
+    requestAnimationFrame(() => { node.dataset.visible = 'true' })
+
+    el('toast-dismiss').addEventListener('click', hideToast)
+    clearTimeout(toastTimer)
+    toastTimer = setTimeout(hideToast, TOAST_MS)
+  }
+
+  function hideToast() {
+    const node = el('toast-stack').firstElementChild
+    if (!node) return
+    node.dataset.visible = 'false'
+    setTimeout(() => { el('toast-stack').innerHTML = '' }, 250)
+  }
+
+  /* ── Eventos da tela de criação ──────────────────────────── */
+
+  el('btn-create').addEventListener('click', () => goTo(ROUTES.create))
+  el('btn-back').addEventListener('click', requestLeave)
+  el('btn-cancel').addEventListener('click', requestLeave)
+  el('btn-save').addEventListener('click', saveLot)
+
+  bindComboboxes(el('screen-create'))
+  bindComboboxes(el('drawer'))
+  bindDateSegments(el('screen-create'))
+  bindDigitsOnly(el('screen-create'), '[data-digits]')
+  bindDigitsOnly(el('drawer'), '[data-digits]')
+
+  /* Campos de texto escrevem no estado sem remontar nada: remontar apagaria o
+     cursor de quem está digitando. Só a quantidade tem eco na tela — o total. */
+  el('lot-form').addEventListener('input', (event) => {
+    const field = event.target.closest('[data-field]')
+    if (field) {
+      form[field.dataset.field] = field.value
+      paintError(field.id, '')
+      return
+    }
+
+    const quantity = event.target.closest('[data-qty]')
+    if (quantity) {
+      const item = form.items.find((i) => i.skuId === quantity.dataset.qty)
+      item.quantity = quantity.value
+      paintError(`item:${item.skuId}`, '')
+      el('lot-form').querySelector('.form-total span:last-child').textContent =
+        `${formTotal()} unidades`
+      return
+    }
+
+    const search = event.target.closest('#items-search')
+    if (search) {
+      itemsSearch = search.value
+      itemsPage = 1
+      renderItems()
+      el('items-search').focus()
+      el('items-search').setSelectionRange(search.value.length, search.value.length)
+    }
+  })
+
+  el('lot-form').addEventListener('click', (event) => {
+    if (event.target.closest('#btn-add-products')) {
+      openDrawer()
+      return
+    }
+
+    const remove = event.target.closest('[data-remove-item]')
+    if (remove) {
+      form.items = form.items.filter((item) => item.skuId !== remove.dataset.removeItem)
+      renderItems()
+      return
+    }
+
+    const page = event.target.closest('[data-items-page]')
+    if (page) {
+      itemsPage += Number(page.dataset.itemsPage)
+      renderItems()
+      return
+    }
+
+    /* Calendário da data de chegada: mesma interação do filtro de chegada. */
+    const picker = event.target.closest('[data-sl-date-picker]')
+    if (!picker) {
+      closeAllCalendars()
+      return
+    }
+
+    if (event.target.closest('[data-sl-date-picker-button]')) {
+      openCalendar(picker, picker.dataset.open !== 'true')
+      return
+    }
+
+    const nav = event.target.closest('[data-calendar-nav]')
+    if (nav) {
+      shiftCalendarMonth(picker.querySelector('.calendar-popover'),
+        nav.dataset.calendarNav === 'prev' ? -1 : 1)
+      return
+    }
+
+    const cell = event.target.closest('[data-sl-calendar-cell-button]')
+    if (cell) {
+      setPickerDate(picker, cell.dataset.date)
+      openCalendar(picker, false)
+      return
+    }
+
+    if (!event.target.closest('[data-segment]')) segmentOf(picker, 'day').focus()
+  })
+
+  /* O valor da data vem do input escondido do DatePicker, que os segmentos
+     mantêm em ISO — é o mesmo caminho que o filtro usa para ler o campo. */
+  el('lot-form').addEventListener('sl-date-change', (event) => {
+    form.arrivalDate = hiddenOf(event.target).value || null
+    if (form.arrivalDate) paintError('form-arrival', '')
+  })
+
+  el('drawer').addEventListener('click', (event) => {
+    if (event.target.closest('[data-role="drawer-close"]')) {
+      closeDrawer()
+      return
+    }
+
+    if (event.target.closest('#drawer-add-row')) {
+      drawer.rows.push(emptyRow())
+      renderDrawerRows()
+      const rows = el('drawer-rows').querySelectorAll('.drawer-row')
+      rows[rows.length - 1].querySelector('[data-sl-input-element]').focus()
+      return
+    }
+
+    /* O botão desabilitado continua clicável de propósito: é o clique que pinta
+       as mensagens do que falta, e o commitDrawer já faz isso quando há erro. */
+    if (event.target.closest('#drawer-confirm')) {
+      commitDrawer()
+      return
+    }
+
+    const remove = event.target.closest('[data-remove-row]')
+    if (remove) {
+      drawer.rows = drawer.rows.filter((row) => row.id !== remove.dataset.removeRow)
+      renderDrawerRows()
+    }
+  })
+
+  el('drawer').addEventListener('input', (event) => {
+    const quantity = event.target.closest('[data-drawer-qty]')
+    if (!quantity) return
+
+    const row = drawer.rows.find((r) => r.id === quantity.dataset.drawerQty)
+    row.quantity = quantity.value
+    paintError(`drawer-qty-${row.id}`, '')
+    syncDrawerConfirm()
+  })
+
+  /* Foco preso enquanto a drawer está aberta: sem isso o Tab sairia para a
+     página atrás dela, que continua montada. */
+  el('drawer').addEventListener('keydown', (event) => {
+    if (event.key !== 'Tab') return
+
+    const focusable = [...el('drawer-panel').querySelectorAll(
+      'button:not([disabled]), input:not([disabled]), [tabindex="0"]')]
+      .filter((node) => node.offsetParent !== null)
+
+    if (!focusable.length) return
+
+    const first = focusable[0]
+    const last = focusable[focusable.length - 1]
+
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault()
+      last.focus()
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault()
+      first.focus()
+    }
+  })
+
+  el('discard-modal').addEventListener('click', (event) => {
+    if (event.target.closest('[data-role="discard-cancel"]')) {
+      closeConfirm()
+      return
+    }
+
+    if (event.target.closest('#discard-confirm') && confirmAction) {
+      const action = confirmAction
+      closeConfirm()
+      action()
+    }
+  })
+
+  document.addEventListener('keydown', (event) => {
+    if (event.key !== 'Escape') return
+
+    if (!el('discard-modal').hidden) {
+      closeConfirm()
+      return
+    }
+
+    if (drawer.open) {
+      closeDrawer()
+      return
+    }
+
+    closeAllComboboxes()
+  })
+
+  /* Rolagem não borbulha, então o listener é de captura. */
+  document.addEventListener('scroll', (event) => {
+    if (event.target.classList && event.target.classList.contains('form-card-scroll')) syncItemsFade()
+  }, true)
+
+  /* Clique fora fecha a lista do combobox e, se estiver aberta, a drawer — que
+     no Shoreline não tem fundo escurecido e é dispensável por clique fora. */
+  document.addEventListener('mousedown', (event) => {
+    if (!event.target.closest('.combobox')) closeAllComboboxes()
+
+    if (!drawer.open) return
+    if (!el('discard-modal').hidden) return
+    if (event.target.closest('#drawer-panel')) return
+    if (event.target.closest('#btn-add-products')) return
+
+    closeDrawer()
   })
 
   /* ── Shell: recolher a navegação ─────────────────────────── */
@@ -2300,6 +3925,7 @@
   buildFilterBodies()
   renderTableHead()
   render()
+  handleRoute()
   setTimeout(() => {
     state.isLoading = false
     render()

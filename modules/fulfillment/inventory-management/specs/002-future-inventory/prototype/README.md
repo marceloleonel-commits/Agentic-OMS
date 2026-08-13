@@ -11,13 +11,16 @@ Hierarquia sob `specs/002-future-inventory/`:
 | [`product-brief.md`](../product-brief.md) · [`product-spec.md`](../product-spec.md) | **002** — MMR / product spec |
 | [`002.1-listagem-por-lote.md`](../002.1-listagem-por-lote.md) | UI contract — visão por lote |
 | [`002.2-listagem-por-sku.md`](../002.2-listagem-por-sku.md) | UI contract — visão por SKU |
-| `002.3-criacao-de-lote.md` | UI contract — formulário de criação (em andamento na [#125](https://github.com/vtex/vertical-distributed-order-management-dom/pull/125)) |
+| [`002.3-criacao-de-lote.md`](../002.3-criacao-de-lote.md) | UI contract — formulário de criação |
+| [`002.4-exportacao.md`](../002.4-exportacao.md) | UI contract — exportação da listagem |
 
 - **Arquivo**: [`inventario-futuro-listagem.html`](./inventario-futuro-listagem.html)
 - **Design**: [Figma — Future inventory, frames `listagem por lote`](https://www.figma.com/design/xLwjBVD8h1llHt7FcW96Fv/Future-inventory?node-id=86-60142)
   e [`listagem por produto`](https://www.figma.com/design/xLwjBVD8h1llHt7FcW96Fv/Future-inventory?node-id=88-5259)
 - **Especificações**: [`002.1-listagem-por-lote.md`](../002.1-listagem-por-lote.md) ·
-  [`002.2-listagem-por-sku.md`](../002.2-listagem-por-sku.md)
+  [`002.2-listagem-por-sku.md`](../002.2-listagem-por-sku.md) ·
+  [`002.3-criacao-de-lote.md`](../002.3-criacao-de-lote.md) ·
+  [`002.4-exportacao.md`](../002.4-exportacao.md)
 
 ## Como abrir
 
@@ -38,17 +41,18 @@ de rede.
 | Buscar | Casa código e nome do lote, e também nome e ID de SKU. Na visão por lote, quando o resultado vem de um SKU, o lote abre sozinho para mostrar por que apareceu; na visão por SKU não há o que abrir, porque o SKU que casou já é a linha. |
 | Expandir lote | Só na visão por lote, e só pelo botão de expandir, nunca pelo clique na linha inteira. Revela os SKUs do lote, e um recolhimento manual vence a abertura automática da busca. |
 | Filtrar | Destino, data de chegada, quantidade e status. Cada filtro só vale ao clicar em **Aplicar**; um intervalo de datas invertido é recusado com mensagem. |
+| Exportar | Baixa um CSV com o resultado filtrado completo da visão atual. Na visão por lote, cada linha é um lote; na visão por SKU, cada linha é o par `(lote, SKU)`. |
 | Preencher uma data | Os campos de chegada são segmentados: dá para digitar dia, mês e ano direto, andar entre eles com as setas, mudar o valor com as setas para cima e para baixo, ou escolher no calendário pelo botão à direita. |
 | Quantidade nas duas visões | O filtro sempre limita **o número que está na coluna visível**: o total do lote na visão por lote, a quantidade daquele SKU naquele lote na visão por SKU. Um lote de 54 unidades feito de 24, 18 e 12 passa por um mínimo de 20 na visão por lote e contribui uma linha só na visão por SKU. |
 | Ajuda contextual | O "?" ao lado de **Destino**, na visão por SKU, explica por que várias linhas repetem o mesmo destino, a mesma data e o mesmo status. Fecha no `Esc` e no clique fora, como os filtros. |
-| Paginar | 25 linhas por página: 74 lotes em 3 páginas na visão por lote, 149 linhas em 6 páginas na visão por SKU. Trocar de página recolhe as expansões. |
+| Paginar | 25 linhas por página: 74 lotes em 3 páginas na visão por lote, 231 linhas em 10 páginas na visão por SKU. Trocar de página recolhe as expansões. |
 | Recolher a navegação | O hamburger da topbar esconde e reabre a sidebar. |
 | Estados vazios | Buscar algo inexistente mostra o estado de busca sem resultado, com ação de limpar filtros. O estado de coleção vazia — com a ação de criar lote — existe no código e só apareceria com a fixture zerada. |
 | Carregamento | O skeleton aparece por um instante ao abrir; é um estado real da tela, não enfeite, e sai com as colunas da visão em que está. |
 
-**Criar lote futuro**, a ordenação por coluna e o menu de ações de cada linha
-estão desenhados mas inertes: pertencem a outras telas. Não há seleção múltipla
-em nenhuma das duas visões.
+A ordenação por coluna e o menu de ações de cada linha estão desenhados mas
+inertes: pertencem a outras telas. Não há seleção múltipla em nenhuma das duas
+visões.
 
 ## Fidelidade visual
 
@@ -346,7 +350,8 @@ um botão de 28px de CSS próprio em vez do IconButton de 36px.
 | Colunas mais largas que no Figma | O Shoreline renderiza as células em 14px, acima do tamanho usado no arquivo de design. As larguras foram medidas a partir do conteúdo real, nas duas visões. |
 | Miniatura do produto em 40px, não 44px | Os 12px de padding da densidade default levariam uma imagem de 44px a uma linha de 68px. 40px é o maior quadro que fecha exatamente os 64px que a Table prescreve — e 64px é justamente o valor previsto para linhas com imagem. O raio de 8px do Figma é mantido, que é `--sl-radius-2`. |
 | Destino, chegada e status iguais em todas as linhas do mesmo lote | O Figma mostra trios diferentes em quatro linhas que dizem ser do mesmo lote `#001` — são as linhas dos lotes `#001` a `#004` da outra listagem, copiadas para este frame. Os três são propriedade do lote; a linha de SKU lê, não declara. |
-| Um SKU aparece no máximo uma vez por lote | O Figma repete o mesmo SKU dentro de um lote, o que aqui renderizaria linhas idênticas. A fixture do `#001` virou três produtos distintos com as mesmas quantidades, então o total continua 15. |
+| Um SKU aparece no máximo uma vez por lote | O Figma repete o mesmo SKU dentro de um lote, o que aqui renderizaria linhas idênticas. Cada produto entra uma vez só, e o `#001` concentra quinze SKUs distintos para exercitar uma expansão longa. |
+| Nome do lote acima do `Lote ID` | O Figma escreve código e nome na mesma linha. A célula empilhada repete a forma que a coluna **Lote** já tem na visão por SKU, e deixa o nome — que é o que se lê primeiro — sem competir com o código. |
 | Melhor em 1300px ou mais | Abaixo de ~1110px de janela a visão por lote rola por dentro, e abaixo de ~1293px a visão por SKU também: a nav de 280px mais os 40px de padding de cada lado deixam menos espaço do que a soma mínima das colunas — 749px com seis colunas, 933px com sete. Acima disso sobra folga nas duas. |
 | A página rola inteira, com o cabeçalho da tabela fixo | Vem do próprio componente, via `data-sl-table-header-sticky`: a tabela deixa de rolar por dentro e o cabeçalho gruda no topo. |
 
@@ -357,18 +362,27 @@ primeiros reproduzem o Figma, incluindo quantidades e destinos, e os demais
 existem para exercitar busca, filtro e paginação. A quantidade de um lote é
 sempre a soma dos seus SKUs, nunca um número guardado.
 
-Os mesmos 74 lotes achatam em **149 linhas de SKU**, uma por item de cada lote,
+Os mesmos 74 lotes achatam em **231 linhas de SKU**, uma por item de cada lote,
 calculadas uma vez na carga. Cada linha guarda uma projeção do lote — código,
 nome, destino, chegada e status — e é ordenada por data de chegada, com desempate
 por código do lote e pela posição do SKU dentro dele, o que torna a ordem total e
 a paginação estável entre aberturas. O total é propriedade da visão, não do
-módulo: 74 numa, 149 na outra.
+módulo: 74 numa, 231 na outra.
+
+Os **produtos** são um repertório de eletrônicos: quinze aparecem nos lotes e o
+catálogo do formulário chega a quarenta, grande o bastante para a busca do
+Combobox e a rolagem da drawer terem o que mostrar. No lugar da foto do SKU, que
+em produção vem do catálogo, a miniatura é desenhada a partir do nome — celular,
+TV, fone, caixa de som, câmera, acessório — só para que a coluna de produto não
+repita o mesmo quadro cinza. É artifício de fixture, não regra de negócio, e usa
+os cinzas do Shoreline para acompanhar o tema.
 
 Os **destinos** são uma fonte à parte, não mais a projeção dos lotes: um catálogo
 de 48, em ordem alfabética, do qual os lotes ocupam 20. Os 28 restantes aparecem
 no filtro e levam ao estado vazio — é o que acontece no Admin, onde o filtro lista
 os estoques da conta e nem todo estoque tem lote a caminho. O maior nome ocupa
-149px, dentro dos 166px da coluna Destino, então as larguras medidas continuam
-valendo. O status ganhou um deslocamento por volta na geração: como 4 divide 20,
+140px, dentro dos 166px da coluna Destino, então as larguras medidas continuam
+valendo — foi o que definiu "Estoque produtos novos" em vez de "Estoque de
+produtos novos", que passava dos 150px de texto e truncava. O status ganhou um deslocamento por volta na geração: como 4 divide 20,
 sem ele todo lote de um mesmo destino cairia no mesmo status, e combinar os dois
 filtros quase nunca acharia nada.

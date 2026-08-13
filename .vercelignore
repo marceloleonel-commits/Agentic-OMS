@@ -136,3 +136,12 @@ modules/order-management/workflow/specs/*
 modules/order-management/workflow/specs/006-task-based-agentic-workflow/*
 !modules/order-management/workflow/specs/006-task-based-agentic-workflow/prototype
 !modules/order-management/workflow/specs/006-task-based-agentic-workflow/prototype/**
+
+# Future Inventory prototype, moved under the 002 spec folder.
+# - modules/fulfillment/inventory-management/specs/002-future-inventory/prototype/
+!modules/fulfillment/inventory-management/specs
+modules/fulfillment/inventory-management/specs/*
+!modules/fulfillment/inventory-management/specs/002-future-inventory
+modules/fulfillment/inventory-management/specs/002-future-inventory/*
+!modules/fulfillment/inventory-management/specs/002-future-inventory/prototype
+!modules/fulfillment/inventory-management/specs/002-future-inventory/prototype/**
