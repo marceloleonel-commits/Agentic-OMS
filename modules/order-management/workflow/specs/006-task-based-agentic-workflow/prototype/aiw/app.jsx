@@ -1,4 +1,4 @@
-/* global React, ReactDOM, Sidebar, Icon, AppData, AIWData, AssistantView, TaskView, OrderDetailView, WorkflowBoardView, ChatPanel, ResizableSplit, ChatEngine, AITeamDrawer, Dropdown, MessageComposer, ChatsView, InitiativesView, HomePreviewView, HomeQueueView */
+/* global React, ReactDOM, Sidebar, Icon, AppData, AIWData, AssistantView, TaskView, OrderDetailView, WorkflowBoardView, WorkflowPoliciesView, ChatPanel, ResizableSplit, ChatEngine, AITeamDrawer, Dropdown, MessageComposer, ChatsView, InitiativesView, HomePreviewView, HomeQueueView */
 const { useState, useEffect, useRef } = React;
 
 /* ── Hash-based routing ─────────────────────────────────────────────────── */
@@ -123,6 +123,7 @@ function App() {
     if (id === "workflow-board") setRoute({ name: "workflow-board" });
     else if (id === "all-orders") setRoute({ name: "orders" });
     else if (id === "tasks") setRoute({ name: "tasks" });
+    else if (id === "workflow-policies") setRoute({ name: "workflow-policies" });
   };
   const pickAgent = (id) => {
     setAIOpen(false);
@@ -149,7 +150,7 @@ function App() {
             <span className="dd-item-sub">{AIWData.workflows.length} workflows configurados</span>
           </span>
         </button>
-        <button className="dd-item" onClick={() => setRoute({ name: "orders" })}>
+        <button className="dd-item" onClick={() => setRoute({ name: "workflow-policies" })}>
           <span className="dd-item-icon"><Icon name="cart" size={14} /></span>
           <span>
             <span className="dd-item-label">Orders Settings</span>
@@ -227,6 +228,8 @@ function App() {
     // Unified-queue variant (occurrences + tasks in one feed). Isolated route —
     // does not replace or affect #/home-preview or #/orders.
     view = <HomeQueueView onOpenTask={openTask} onGotoResource={gotoResource} />;
+  } else if (route.name === "workflow-policies") {
+    view = <WorkflowPoliciesView />;
   } else if (route.name === "task") {
     view = <TaskView taskId={route.id} onBack={goHome} onOpenOrder={openOrder} initialChatOpen={route.openChat} />;
   } else if (route.name === "workflow-board") {

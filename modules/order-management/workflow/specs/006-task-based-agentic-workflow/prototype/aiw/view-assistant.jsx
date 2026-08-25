@@ -647,7 +647,7 @@ function AssistantView({ onOpenTask, onGotoResource, onOpenOrder }) {
                   <span className="dd-item-sub">{AIWData.workflows.length} workflows configurados</span>
                 </span>
               </button>
-              <button className="dd-item" onClick={() => onGotoResource && onGotoResource("all-orders")}>
+              <button className="dd-item" onClick={() => onGotoResource && onGotoResource("workflow-policies")}>
                 <span className="dd-item-icon"><Icon name="cart" size={14} /></span>
                 <span>
                   <span className="dd-item-label">Orders Settings</span>

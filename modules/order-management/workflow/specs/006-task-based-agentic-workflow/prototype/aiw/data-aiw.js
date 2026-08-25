@@ -1790,7 +1790,206 @@ window.AIWData = (function () {
     ],
   };
 
-  return { AVATARS, AGENT_AVATARS, conversations, kpis, workflowStages, tasks, myTasks, resources, workflows, wfCategories, aiTeam, orders, libraryWfs, stageSuggestions, taskSuggestions, initiatives, opsHome, opsHomeQueue };
+  /* ── Políticas do Workflow ────────────────────────────────────────────
+     Regras agrupadas por política, e políticas agrupadas por categoria.
+     Cada regra é um cenário do OMS Agent Hub: um gatilho em linguagem
+     natural, as condições que o disparam e as tarefas que ele atribui.
+     Consumido por view-workflow-policies.jsx (#/workflow-policies). ── */
+
+  /* Tipo de ação de cada tarefa atribuída — define o rótulo do agrupamento
+     no drawer, a cor do chip e a cor do ponto no resumo da linha. */
+  const policyActionKinds = [
+    { id: "diagnose",   label: "Diagnosticar", bg: "#f1f8fd", fg: "#042db4", dot: "#0a72ee" },
+    { id: "notify",     label: "Notificar",    bg: "#f9f5fd", fg: "#5c12b6", dot: "#9c56f3" },
+    { id: "workflow",   label: "Workflow",     bg: "#e9fce3", fg: "#01540e", dot: "#019213" },
+    { id: "reprocess",  label: "Reprocessar",  bg: "#e9faf8", fg: "#0d504d", dot: "#018d88" },
+    { id: "replan",     label: "Replanejar",   bg: "#e6fafd", fg: "#014b74", dot: "#0187b5" },
+    { id: "reallocate", label: "Realocar",     bg: "#fbf7d4", fg: "#5c4401", dot: "#9c7901" },
+    { id: "refund",     label: "Reembolsar",   bg: "#fdf5f7", fg: "#8f0246", dot: "#de387f" },
+    { id: "cancel",     label: "Cancelar",     bg: "#fdf6f5", fg: "#940303", dot: "#d31a15" },
+    { id: "escalate",   label: "Escalar",      bg: "#fdf5e9", fg: "#7b3001", dot: "#cc5e01" },
+  ];
+
+  /* `rulePrefix` — família de id usada ao numerar uma regra nova criada pelo
+     assistente dentro daquela categoria. */
+  const policyCategories = [
+    { id: "exceptions",  label: "Exceções Operacionais", icon: "⚠️", color: "#ffe0ae", rulePrefix: "EXC" },
+    { id: "payment",     label: "Pagamento",             icon: "💳", color: "#eddcfe", rulePrefix: "MON" },
+    { id: "logistics",   label: "Logística",             icon: "🚚", color: "#faec6d", rulePrefix: "LOG" },
+    { id: "fulfillment", label: "Fulfillment",           icon: "📦", color: "#a5f1ff", rulePrefix: "LOG" },
+    { id: "returns",     label: "Devolução & Troca",     icon: "🔄", color: "#abf2eb", rulePrefix: "DEV" },
+  ];
+
+  const task = (label, kind) => ({ label, kind });
+
+  const workflowPolicies = [
+    { id: "pol-risk-sla", category: "exceptions", name: "Detecção de Risco & SLA", rules: [
+      { id: "MON-005", name: "Pedido com entrega em risco", active: true,
+        trigger: "Pedido ainda não atrasou, mas a projeção indica quebra de SLA.",
+        conditions: ["delivery.slaBreachProjected == true"],
+        tasks: [task("Antecipar etapa crítica", "replan"), task("Trocar transportadora", "reallocate"), task("Repriorizar picking", "replan"), task("Notificar cliente", "notify")] },
+      { id: "MON-006", name: "Aumento anormal de cancelamentos", active: true,
+        trigger: "Cancelamentos sobem acima do padrão em canal, seller, região, campanha ou categoria.",
+        conditions: ["cancellations.rateAboveBaseline == true"],
+        tasks: [task("Segmentar causa raiz", "diagnose"), task("Pausar seller ou canal", "cancel"), task("Ajustar regra de alocação", "replan")] },
+      { id: "MON-007", name: "Aumento anormal de devoluções", active: true,
+        trigger: "Volume de devoluções cresce em produto, seller, transportadora, região ou campanha.",
+        conditions: ["returns.volumeAboveBaseline == true"],
+        tasks: [task("Identificar cluster de devoluções", "diagnose"), task("Pausar seller ou canal", "cancel"), task("Revisar política", "escalate")] },
+      { id: "MON-008", name: "Histórico de pedido complexo", active: false,
+        trigger: "Pedido teve alteração de item, seller, pagamento, invoice parcial, entrega e contato de SAC.",
+        conditions: ['order.timelineComplexity == "high"'],
+        tasks: [task("Gerar resumo do pedido", "diagnose")] },
+    ]},
+    { id: "pol-order-changes", category: "exceptions", name: "Alterações & Cancelamentos", rules: [
+      { id: "EXC-001", name: "Alterar item antes da separação", active: true,
+        trigger: "Cliente pede troca de item antes do picking iniciar.",
+        conditions: ["change.requested == true", "picking.started == false"],
+        tasks: [task("Validar elegibilidade", "diagnose"), task("Recalcular pedido", "workflow"), task("Alterar item", "workflow"), task("Registrar evidência", "workflow")] },
+      { id: "EXC-002", name: "Alterar item depois do picking iniciado", active: true,
+        trigger: "Cliente pede troca de item quando o pedido já está em separação ou packing.",
+        conditions: ["change.requested == true", "picking.started == true"],
+        tasks: [task("Bloquear alteração", "cancel"), task("Cancelar item afetado", "cancel"), task("Replanejar picking", "replan"), task("Criar troca pós-entrega", "workflow")] },
+      { id: "EXC-003", name: "Alteração de endereço", active: true,
+        trigger: "Cliente quer mudar endereço após aprovação do pedido.",
+        conditions: ["address.changeRequested == true"],
+        tasks: [task("Validar janela de alteração", "diagnose"), task("Recalcular entrega", "replan"), task("Aprovar ou rejeitar com explicação", "escalate")] },
+      { id: "EXC-009", name: "Cancelar parcialmente um pedido", active: true,
+        trigger: "Um item não pode ser atendido, mas os demais podem seguir.",
+        conditions: ["order.hasUnfulfillableItem == true"],
+        tasks: [task("Cancelar item afetado", "cancel"), task("Recalcular valor, invoice e entrega", "workflow"), task("Notificar cliente", "notify")] },
+    ]},
+    { id: "pol-fraud-commercial", category: "exceptions", name: "Fraude & Exceções Comerciais", rules: [
+      { id: "EDGE-006", name: "Suspeita de fraude após aprovação", active: true,
+        trigger: "Pedido aprovado, mas sinais posteriores indicam risco.",
+        conditions: ["fraud.postApprovalSignal == true"],
+        tasks: [task("Pausar workflow do pedido", "cancel"), task("Pedir revisão antifraude", "escalate"), task("Segurar invoice e fulfillment", "cancel")] },
+      { id: "EXC-010", name: "Observações operacionais críticas", active: false,
+        trigger: "Observação manual contém acordo comercial, exceção de SAC ou promessa ao cliente.",
+        conditions: ["order.note.containsCommitment == true"],
+        tasks: [task("Converter observação em evidência", "workflow"), task("Criar política temporária", "escalate")] },
+    ]},
+    { id: "pol-payment-authorization", category: "payment", name: "Pagamentos & Autorização", rules: [
+      { id: "MON-001", name: "Pedido parado em pagamento", active: true,
+        trigger: "Pedido aprovado comercialmente, mas não avança para faturamento ou separação.",
+        conditions: ["payment.approved == true", "order.advancedToInvoicing == false"],
+        tasks: [task("Tentar nova autorização/captura", "reprocess"), task("Abrir alerta para SAC/Financeiro", "notify"), task("Solicitar novo meio de pagamento", "notify"), task("Cancelar por política", "cancel")] },
+      { id: "SUB-002", name: "Pedido de assinatura falhou por pagamento", active: true,
+        trigger: "Pedido recorrente foi criado ou tentado, mas o pagamento não foi aprovado.",
+        conditions: ["subscription.cycleOrderCreated == true", "payment.approved == false"],
+        tasks: [task("Tentar novo retry de cobrança", "reprocess"), task("Pedir atualização do método de pagamento", "notify"), task("Pausar ciclo da assinatura", "cancel"), task("Notificar cliente", "notify")] },
+      { id: "EDGE-002", name: "Pré-autorização expira antes do faturamento", active: true,
+        trigger: "Pedido de fulfillment longo perde janela de captura.",
+        conditions: ["payment.preAuthExpiresBefore(invoice.expectedAt)"],
+        tasks: [task("Reautorizar dentro da política", "reprocess"), task("Capturar de forma idempotente", "workflow")] },
+    ]},
+    { id: "pol-invoicing", category: "payment", name: "Faturamento & Invoice", rules: [
+      { id: "MON-002", name: "Pedido pendente de faturamento", active: true,
+        trigger: "Pedido pago e liberado, mas invoice total ou parcial não foi gerada.",
+        conditions: ["payment.settled == true", "invoice.issued == false"],
+        tasks: [task("Gerar invoice total/parcial", "workflow"), task("Reprocessar tentativa de faturamento", "reprocess"), task("Abrir task fiscal", "workflow"), task("Escalar integração", "escalate")] },
+      { id: "EXC-006", name: "Falha ou necessidade de invoice parcial", active: true,
+        trigger: "Parte dos itens pode faturar, mas outra parte está bloqueada.",
+        conditions: ["invoice.releasableItems > 0", "invoice.blockedItems > 0"],
+        tasks: [task("Gerar invoice parcial dos itens liberados", "workflow"), task("Abrir follow-up dos itens bloqueados", "workflow")] },
+    ]},
+    { id: "pol-charges", category: "payment", name: "Cobrança & Valores Divergentes", rules: [
+      { id: "EXC-004", name: "Valor divergente no pedido", active: true,
+        trigger: "Valor do pedido não bate com o esperado pelo cliente, SAC ou financeiro.",
+        conditions: ["order.total != order.expectedTotal"],
+        tasks: [task("Explicar composição do valor", "diagnose"), task("Identificar origem da diferença", "diagnose"), task("Sugerir ajuste ou reembolso", "refund")] },
+      { id: "EXC-005", name: "Cobrança indevida", active: true,
+        trigger: "Cliente foi cobrado a mais, duplicado ou após cancelamento parcial.",
+        conditions: ["payment.capturedAmount > order.dueAmount"],
+        tasks: [task("Comparar pedido, invoice e captura", "diagnose"), task("Disparar estorno ou reembolso", "refund"), task("Bloquear nova cobrança", "cancel")] },
+    ]},
+    { id: "pol-carrier", category: "logistics", name: "Coleta & Transporte", rules: [
+      { id: "LOG-003", name: "Transportadora não coletou no horário", active: true,
+        trigger: "Pedido está separado/embalado, mas sem coleta.",
+        conditions: ["packing.done == true", "carrier.pickedUp == false"],
+        tasks: [task("Acionar transportadora", "notify"), task("Trocar provider de frete", "reallocate"), task("Reagendar coleta", "replan"), task("Notificar cliente", "notify")] },
+      { id: "LOG-004", name: "Falha na geração de etiqueta", active: true,
+        trigger: "Pedido pronto para envio, mas etiqueta não foi gerada.",
+        conditions: ["shipping.labelGenerated == false"],
+        tasks: [task("Revalidar dados de envio", "diagnose"), task("Tentar novamente com backoff", "reprocess"), task("Trocar transportadora", "reallocate"), task("Escalar para o time logístico", "escalate")] },
+      { id: "LOG-010", name: "Carrier API indisponível", active: true,
+        trigger: "Dependência externa da transportadora está fora.",
+        conditions: ["carrier.apiAvailable == false"],
+        tasks: [task("Adiar task dependente", "replan"), task("Tentar novamente com backoff", "reprocess"), task("Bloquear avanço por evidência", "cancel")] },
+    ]},
+    { id: "pol-dispatch", category: "logistics", name: "Despacho & Entrega", rules: [
+      { id: "MON-004", name: "Seller não despachou no SLA", active: true,
+        trigger: "Pedido foi alocado ao seller, mas não foi despachado dentro do combinado.",
+        conditions: ["seller.dispatchElapsed > seller.dispatchSla"],
+        tasks: [task("Notificar seller", "notify"), task("Abrir task de exceção", "workflow"), task("Reatribuir seller", "reallocate"), task("Dividir pedido", "replan"), task("Cancelar item afetado", "cancel")] },
+      { id: "LOG-007", name: "Pedido multi-seller com um seller atrasado", active: true,
+        trigger: "Parte do pedido está pronta, parte atrasada com seller específico.",
+        conditions: ["order.isMultiSeller == true", "order.hasLateSellerItem == true"],
+        tasks: [task("Dividir envio", "replan"), task("Reatribuir item atrasado", "reallocate"), task("Cancelar item afetado", "cancel")] },
+      { id: "EDGE-004", name: "Carrier confirma entrega, cliente nega recebimento", active: true,
+        trigger: "Tracking diz entregue, mas cliente afirma não ter recebido.",
+        conditions: ['tracking.status == "delivered"', "customer.deniesReceipt == true"],
+        tasks: [task("Abrir disputa com carrier", "escalate"), task("Coletar evidências de entrega", "diagnose"), task("Segurar reembolso até decisão", "cancel")] },
+    ]},
+    { id: "pol-picking", category: "fulfillment", name: "Separação & Priorização", rules: [
+      { id: "MON-003", name: "Pedido atrasado na separação", active: true,
+        trigger: "Pedido deveria estar em picking, mas segue parado ou não iniciado.",
+        conditions: ["picking.started == false", "picking.dueAt < now()"],
+        tasks: [task("Priorizar na fila", "replan"), task("Acionar Pick and Pack", "workflow"), task("Reatribuir fulfillment point", "reallocate"), task("Notificar cliente preventivamente", "notify")] },
+      { id: "LOG-001", name: "Pedido pronto para separação, mas não priorizado", active: true,
+        trigger: "Pedido pronto fica misturado em fila grande.",
+        conditions: ["picking.readyToStart == true", "picking.queuePosition > queue.slaThreshold"],
+        tasks: [task("Reordenar fila por SLA e risco", "replan")] },
+      { id: "LOG-009", name: "Pedido BOPIS não ficou pronto", active: false,
+        trigger: "Cliente vai retirar, mas pedido não está ready for pickup.",
+        conditions: ["order.isBopis == true", "order.readyForPickup == false"],
+        tasks: [task("Repriorizar picking", "replan"), task("Avisar loja e cliente", "notify"), task("Reatribuir loja", "reallocate")] },
+    ]},
+    { id: "pol-capacity-stock", category: "fulfillment", name: "Capacidade & Estoque", rules: [
+      { id: "LOG-002", name: "Fulfillment point com capacidade esgotada", active: true,
+        trigger: "CD/loja recebeu mais pedidos do que consegue processar.",
+        conditions: ["fulfillmentPoint.assignedOrders > fulfillmentPoint.capacity"],
+        tasks: [task("Rebalancear pedidos futuros", "replan"), task("Reatribuir pedidos não iniciados", "reallocate"), task("Abrir alerta operacional", "notify")] },
+      { id: "LOG-005", name: "Estoque não encontrado no picking", active: true,
+        trigger: "Sistema indicava estoque, mas operador não encontrou o item.",
+        conditions: ["picking.itemNotFound == true"],
+        tasks: [task("Buscar outro fulfillment point ou seller", "reallocate"), task("Substituir item", "reallocate"), task("Cancelar item afetado", "cancel"), task("Escalar para o time logístico", "escalate")] },
+      { id: "EDGE-005", name: "Produto danificado antes do despacho", active: true,
+        trigger: "Item é danificado no CD durante picking/packing.",
+        conditions: ["item.damagedBeforeDispatch == true"],
+        tasks: [task("Substituir item", "reallocate"), task("Reatribuir estoque", "reallocate"), task("Cancelar item afetado", "cancel"), task("Notificar cliente", "notify")] },
+    ]},
+    { id: "pol-returns", category: "returns", name: "Devoluções & Reembolsos", rules: [
+      { id: "DEV-001", name: "Solicitação de devolução simples", active: true,
+        trigger: "Cliente solicita devolução dentro da política.",
+        conditions: ["return.requested == true", "return.withinPolicy == true"],
+        tasks: [task("Validar elegibilidade", "diagnose"), task("Aprovar devolução", "workflow"), task("Enviar instruções ao cliente", "notify"), task("Criar task de recebimento", "workflow")] },
+      { id: "DEV-002", name: "Devolução fora da política", active: true,
+        trigger: "Solicitação fora do prazo ou item não elegível.",
+        conditions: ["return.withinPolicy == false"],
+        tasks: [task("Rejeitar com explicação", "cancel"), task("Escalar exceção comercial", "escalate")] },
+      { id: "DEV-005", name: "Reembolso atrasado", active: true,
+        trigger: "Devolução aprovada, mas reembolso não foi concluído no SLA.",
+        conditions: ["return.approved == true", "refund.elapsedHours > refund.slaHours"],
+        tasks: [task("Validar evidências do reembolso", "diagnose"), task("Reprocessar reembolso", "refund"), task("Escalar para o PSP", "escalate"), task("Oferecer voucher", "refund")] },
+    ]},
+    { id: "pol-reverse-logistics", category: "returns", name: "Recebimento Reverso & Troca", rules: [
+      { id: "DEV-003", name: "Produto devolvido chegou ao CD", active: true,
+        trigger: "Item retornou fisicamente ao fulfillment point/CD.",
+        conditions: ["return.receivedAtFulfillmentPoint == true"],
+        tasks: [task("Registrar recebimento no CD", "workflow"), task("Abrir conferência do item", "workflow"), task("Atualizar timeline do pedido", "workflow")] },
+      { id: "DEV-004", name: "Produto devolvido com divergência", active: true,
+        trigger: "Item recebido não bate com o esperado ou veio danificado.",
+        conditions: ["return.inspectionMismatch == true"],
+        tasks: [task("Registrar evidência", "workflow"), task("Sugerir reembolso parcial", "refund"), task("Escalar divergência", "escalate")] },
+      { id: "DEV-007", name: "Troca por item alternativo", active: false,
+        trigger: "Cliente prefere trocar item em vez de receber reembolso.",
+        conditions: ['return.preference == "exchange"'],
+        tasks: [task("Validar estoque do item de troca", "diagnose"), task("Reservar novo item", "reallocate"), task("Gerar workflow de troca", "workflow"), task("Ajustar pagamento da diferença", "refund")] },
+    ]},
+  ];
+
+  return { AVATARS, AGENT_AVATARS, conversations, kpis, workflowStages, tasks, myTasks, resources, workflows, wfCategories, aiTeam, orders, libraryWfs, stageSuggestions, taskSuggestions, initiatives, opsHome, opsHomeQueue, policyActionKinds, policyCategories, workflowPolicies };
 })();
 
 /* ── AppData alias — keeps sidebar.jsx and app.jsx working without changes ── */
