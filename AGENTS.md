@@ -1,4 +1,4 @@
-# AGENTS.md — AIW Gerenciador de Experiências
+# AGENTS.md — AIW Gerenciador de Workflows
 
 Este arquivo é lido automaticamente por ferramentas de IA (Cursor, Claude Code, GitHub Copilot, v0, e similares) ao trabalhar neste repositório. Siga todas as instruções abaixo antes de qualquer tarefa.
 
@@ -6,7 +6,7 @@ Este arquivo é lido automaticamente por ferramentas de IA (Cursor, Claude Code,
 
 ## Fonte de verdade
 
-Antes de criar, editar ou refatorar qualquer arquivo relacionado ao Gerenciador de Experiências, ao chat do agente ou ao canvas de workflows, leia:
+Antes de criar, editar ou refatorar qualquer arquivo relacionado ao Gerenciador de Workflows, ao chat do agente ou ao canvas de workflows, leia:
 
 ```
 docs/AGENT_SPEC.md
@@ -64,8 +64,11 @@ Nunca renderize chips com texto livre avulso. Todo chip deve ter um `intent` cor
 
 ### Chips da chip-row e quick-replies compartilham o mesmo estilo visual
 `.suggest-chip` (chip-row, atalhos persistentes) e `.chat-quick-reply` (respostas contextuais vinculadas a mensagens) devem usar os mesmos tokens de design:
-`--sl-border-base`, `--sl-bg-base`, `--sl-fg-base`, `border-radius: 99px`, `box-shadow: 0px 2px 4px 0px rgba(0,0,0,0.04)`.
+`--sl-bg-muted`, `--sl-fg-base`, `border-radius: var(--sl-radius-2)`, `min-height: 32px`, `padding: 0 var(--sl-space-3)`, `font-size: var(--sl-font-size-2)`, `font-weight: var(--sl-font-weight-medium)`, sem borda e sem sombra.
 Nunca aplique estilos divergentes entre os dois. A distinção entre eles é **comportamental** (persistente vs. contextual), não visual.
+
+### Os chips da chip-row ficam sempre visíveis acima do composer
+A `chip-row` é uma fileira horizontal com `flex-wrap`, renderizada logo acima do composer, com todos os chips à mostra. Não esconda atalhos atrás de um gatilho do tipo "Como posso te ajudar?" nem atrás de um menu de overflow — quando não couberem na linha, os chips quebram para a linha seguinte.
 
 ### Canvas faz scroll até o elemento em discussão no chat
 Quando o agente estiver tratando de um elemento específico do canvas (tarefa, etapa, trigger, dependência), implemente scroll automático do canvas até esse elemento. Se o elemento for uma tarefa ou etapa, abra o card inline correspondente. Em particular: ao clicar em **"Aplicar"** num action card de criação de tarefa (Fluxo B do AGENT_SPEC), a tarefa deve aparecer no canvas com o **card já expandido** e o canvas **com scroll posicionado nela**. O chat pode acionar: abertura de tarefas, navegação até etapas, configuração de gatilhos e dependências, e publicação do workflow.
@@ -104,12 +107,13 @@ Se encontrar divergência entre o AGENT_SPEC e a implementação existente:
 
 - Não implemente fluxos de chat que não existam no AGENT_SPEC.
 - Não altere a ordem dos passos de um fluxo sem atualizar o spec antes.
-- Não use o nome "Controle de Fluxos" — o módulo se chama **Gerenciador de Experiências**.
+- Não use o nome "Controle de Fluxos" nem "Gerenciador de Experiências" — o módulo se chama **Gerenciador de Workflows**.
 - Não trate tarefas de mesmo nome em workflows diferentes como a mesma entidade — cada tarefa é local ao seu workflow.
 - Não adicione o campo `ícone` ao modelo de Workflow — ele não existe nesta versão.
 - Não bloqueie a publicação a uma única superfície — chat e canvas devem poder iniciar o Fluxo F.
 - Não use `quickReplies` nas mensagens iniciais do chat — elas duplicariam os chips da `chip-row`.
 - Não aplique estilos visuais distintos entre `.suggest-chip` e `.chat-quick-reply` — a distinção entre eles é comportamental, não visual.
+- Não esconda os chips da `chip-row` atrás de um gatilho ou menu de overflow — a fileira é sempre visível acima do composer.
 - Não use CSS para definir a largura inicial do painel de chat — use o prop `initialWidth` do `ResizableSplit`.
 - Não implemente "Aplicar" em action card de criação de tarefa sem o scroll + abertura do card correspondente no canvas.
 

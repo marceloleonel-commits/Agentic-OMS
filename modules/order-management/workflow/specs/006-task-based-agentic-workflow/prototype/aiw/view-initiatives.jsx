@@ -1,4 +1,4 @@
-/* global React, AIWData, Icon */
+/* global React, AIWData, Icon, TaskCanvas, InitiativesTable, occurrenceQueue */
 const { useState: useStateInitiatives, useMemo: useMemoInitiatives } = React;
 
 /* ── Status indicator (v3 parity with the kanban status icon) ── */
@@ -31,35 +31,6 @@ const INITIATIVE_STATUS_LABEL = {
   attention: "Aguardando ação",
   completed: "Concluída",
 };
-
-function InitiativeRow({ initiative, onOpen }) {
-  const pct = Math.round((initiative.tasksDone / initiative.tasksTotal) * 100);
-  return (
-    <button data-sl-initiative-row="" onClick={() => onOpen && onOpen(initiative)}>
-      <span data-sl-initiative-row-status="">
-        <InitiativeStatusIcon status={initiative.status} />
-      </span>
-      <span data-sl-initiative-row-main="">
-        <span data-sl-initiative-row-title="">{initiative.title}</span>
-        <span data-sl-initiative-row-meta="">
-          <span data-sl-initiative-row-source="">{initiative.source.label}</span>
-          <span data-sl-initiative-row-dot="">·</span>
-          <span>{INITIATIVE_STATUS_LABEL[initiative.status]}</span>
-        </span>
-      </span>
-      <span data-sl-initiative-row-progress="">
-        <span data-sl-initiative-row-progress-track="">
-          <span data-sl-initiative-row-progress-fill="" style={{ width: `${pct}%` }} />
-        </span>
-        <span data-sl-initiative-row-progress-label="">{initiative.tasksDone}/{initiative.tasksTotal}</span>
-      </span>
-      <span data-sl-initiative-row-owner="" title={initiative.owner}>
-        <span data-sl-initiative-row-owner-initials="">{initiative.ownerInitials}</span>
-      </span>
-      <span data-sl-initiative-row-updated="">{initiative.updated}</span>
-    </button>
-  );
-}
 
 const INITIATIVE_PRIORITY_LABEL = { high: "Alta", medium: "Média", low: "Baixa" };
 const INITIATIVE_TASK_STATUS_LABEL = { completed: "Concluída", triage: "Aguardando triagem", attention: "Aguardando aprovação" };
@@ -217,20 +188,23 @@ function InitiativeDocumentPanel({ initiative, onClose, onOpenTask }) {
   );
 }
 
+/* A tela lista exatamente a mesma fila de ocorrências do OpenTasksCard da home
+   (AIWData.tasks), sem o corte de 8 itens — aqui é a lista completa. Cada linha
+   abre o canvas da ocorrência, como na home. */
 function InitiativesView({ onOpenTask, renderTopbarActions }) {
   const [search, setSearch] = useStateInitiatives("");
-  const [openInitiativeId, setOpenInitiativeId] = useStateInitiatives(null);
-  const all = AIWData.initiatives ?? [];
+  const [openOccurrenceId, setOpenOccurrenceId] = useStateInitiatives(null);
+  const all = occurrenceQueue(AIWData.tasks);
 
   const filtered = useMemoInitiatives(() => {
     if (!search.trim()) return all;
     const q = search.toLowerCase();
     return all.filter(
-      (i) => i.title.toLowerCase().includes(q) || i.source.label.toLowerCase().includes(q)
+      (t) => t.title.toLowerCase().includes(q) || (t.tag || "").toLowerCase().includes(q)
     );
   }, [all, search]);
 
-  const openInitiative = all.find((i) => i.id === openInitiativeId) || null;
+  const openOccurrence = all.find((t) => t.id === openOccurrenceId) || null;
 
   return (
     <div className="main initiatives-shell">
@@ -258,23 +232,29 @@ function InitiativesView({ onOpenTask, renderTopbarActions }) {
       <div className="scroll">
         <div className="aiw-wrap">
           <section className="aiw-section">
-            <div data-sl-initiative-list="">
-              {filtered.map((i) => (
-                <InitiativeRow key={i.id} initiative={i} onOpen={() => setOpenInitiativeId(i.id)} />
-              ))}
-              {filtered.length === 0 && (
+            {filtered.length > 0 ? (
+              <InitiativesTable items={filtered} onOpen={setOpenOccurrenceId} />
+            ) : (
+              <div data-sl-initiative-group="">
                 <div data-sl-initiative-empty="">Nenhuma iniciativa encontrada.</div>
-              )}
-            </div>
+              </div>
+            )}
           </section>
         </div>
       </div>
 
-      {openInitiative && (
-        <InitiativeDocumentPanel
-          initiative={openInitiative}
-          onClose={() => setOpenInitiativeId(null)}
-          onOpenTask={onOpenTask}
+      {/* Mesmo comportamento da home: a ocorrência abre no canvas da tarefa em
+          formato de painel overlay, e o ícone de chat leva à tarefa completa. */}
+      {openOccurrence && (
+        <TaskCanvas
+          task={openOccurrence}
+          panelClassName="initiative-doc-panel"
+          onBack={() => setOpenOccurrenceId(null)}
+          onToggleChat={() => {
+            const id = openOccurrence.id;
+            setOpenOccurrenceId(null);
+            onOpenTask && onOpenTask(id, { openChat: true });
+          }}
         />
       )}
     </div>

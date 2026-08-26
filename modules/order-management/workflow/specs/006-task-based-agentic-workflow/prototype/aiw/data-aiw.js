@@ -64,6 +64,39 @@ window.AIWData = (function () {
     ]
   };
 
+  /* Faixa-resumo do topo da aba "Visão geral" (OverviewSummaryStrip, em
+     view-assistant.jsx): à esquerda, número grande da fila de pedidos
+     aguardando liberação com barra empilhada por faixa de idade; à direita,
+     duas linhas empilhadas — ocorrências que travam a liberação e tempo médio
+     até liberar com selo de variação. Os totais das faixas somam o valor
+     grande — não deixe divergir sem atualizar tudo junto. */
+  const overviewSummary = {
+    queue: {
+      value: 34,
+      label: "pedidos aguardando sua liberação",
+      sub: "fila agora · time com 148",
+      segments: [
+        { count: 21, label: "há menos de 4h", tone: "healthy"  },
+        { count: 9,  label: "entre 4h e 24h", tone: "warning"  },
+        { count: 4,  label: "há mais de 24h", tone: "critical" },
+      ],
+    },
+    attention: {
+      label: "Precisam da sua atenção",
+      sub:   "ocorrências travando liberação",
+      /* Valor vive fora do data-aiw porque é derivado da tabela de iniciativas
+         (initiativeAttentionTotal em occurrence-list.jsx) — a contagem aqui
+         seria uma segunda fonte de verdade. */
+    },
+    resolution: {
+      label: "Tempo até liberar",
+      sub:   "sua média · time 5h18m",
+      value: "4h12m",
+      // Queda no tempo até liberar é resultado positivo — daí o tom verde.
+      delta: { text: "-21%", tone: "positive" },
+    },
+  };
+
   const workflowStages = [
     { pill: "Pagamento",     label: "Autorização", count: "1.232 pedidos" },
     { pill: "Antifraude",    label: "Análise",     count: "412 pedidos"   },
@@ -614,6 +647,7 @@ window.AIWData = (function () {
     { id: "pagamento",        label: "Pagamento",           desc: "Captura, autorização e conciliação financeira",        color: "#2962FF" },
     { id: "fulfillment",      label: "Fulfillment Físico",  desc: "Preparação e envio de produtos físicos ao cliente",    color: "#00897B" },
     { id: "logistica-reversa",label: "Logística Reversa",   desc: "Retorno de produtos — trocas e devoluções",            color: "#D97706" },
+    { id: "cancelamento",     label: "Cancelamento",        desc: "Encerramento de pedidos com reversão de estoque e financeira", color: "#DC2626" },
     { id: "servicos",         label: "Serviços",            desc: "Workflows de valor agregado e pós-venda",              color: "#7C3AED" },
     { id: "producao",         label: "Produção sob Medida", desc: "Workflows com ciclo de fabricação externa antes da entrega", color: "#0891B2" },
   ];
@@ -641,227 +675,689 @@ window.AIWData = (function () {
     { id: "canceled",                label: "Canceled",                 desc: "Task cancelada." },
   ];
 
+  /* ── Workflows ─────────────────────────────────────────────────────────
+     Fixtures do protótipo AIW / Gerenciador de Workflows. Cada workflow
+     segue o schema documentado em docs/WORKFLOW_ENTIDADES.md — o `WORKFLOWS_FIXTURES.md`
+     é o "source of truth" desses 6 fluxos: 3 fulfillment (domicílio, loja,
+     virtual), 1 cancelamento, 1 logística reversa (troca e devolução) e
+     1 serviço sob demanda (personalização de camiseta). Os `id`s no formato
+     `wf-*` são referenciados por triggers de outros workflows (wf-completion,
+     task-completion) e por initiatives/orders no restante deste arquivo. */
   const workflows = [
-    /* ── OJ-01: Entrega em domicílio ───────────────────────────────────── */
-    { id: "entrega-domicilio", name: "Entrega em domicílio", icon: "🏠",
-      category: "fulfillment", status: "active",
+    {
+      id: "wf-entrega-domicilio",
+      name: "Entrega em domicílio",
+      icon: "🏠",
       desc: "Itens despachados por transportadora até o endereço do cliente.",
-      orders: "4.256", custom: false,
-      trigger: { type: "order-start" },
-      agentEnabled: true,
-      dependencies: [],
-      version: "2.1", wfStatus: "published",
-      lastEditedAt: "2025-06-02T14:30:00Z", lastEditedBy: "jackeline@vtex.com",
-      publishedAt:  "2025-06-02T14:30:00Z", publishedBy:  "jackeline@vtex.com",
-      versionLog: [
-        { version: "2.1", publishedAt: "2025-06-02T14:30:00Z", publishedBy: "jackeline@vtex.com",
-          description: "Adicionada tarefa Expedição à etapa Entrega",
-          appliedTo: "new_orders_only", activeOrdersAtPublish: 4256,
-          deltas: [{ entity: "task", change: "added", detail: "Expedição — Etapa: Entrega" }] },
-        { version: "2.0", publishedAt: "2025-06-01T09:00:00Z", publishedBy: "jackeline@vtex.com",
-          description: "Removido gatilho Notify Buyer da tarefa Picking",
-          appliedTo: "new_orders_only", activeOrdersAtPublish: 4102,
-          deltas: [{ entity: "trigger", change: "removed", detail: "Notify Buyer on Executed — Task: Picking" }] },
-        { version: "1.0", publishedAt: "2025-05-15T11:00:00Z", publishedBy: "ana@vtex.com",
-          description: "Versão inicial do workflow",
-          appliedTo: "new_orders_only", activeOrdersAtPublish: 0,
-          deltas: [{ entity: "general config", change: "changed", detail: "Workflow criado" }] },
-      ],
-      // Ordem de execução na visão "Tarefas" (flat) — independente do agrupamento
-      // por etapa: Captura de Pagamento só ocorre após o pedido estar pronto para
-      // envio (Labeling), mas a tarefa continua pertencendo à etapa Confirmação de
-      // Pagamento (indicador azul) para fins de classificação/gate.
-      flatOrder: ["ed-1", "ed-3", "ed-4", "ed-5", "ed-6", "ed-2", "ed-7", "ed-8", "ed-9", "ed-10", "ed-11"],
-      stages: [
-        { id: "ed-s1", name: "Pagamento", gate: "payment_settled", linkedToNext: true, category: "PAYMENT", tasks: [
-          { id: "ed-1", name: "Autorização de Pagamento", type: "auto",   owner: "Adyen",          desc: "Pré-autorização do valor junto à adquirente/gateway." },
-          { id: "ed-2", name: "Captura de Pagamento",     type: "auto",   owner: "Adyen",          desc: "Confirmação e captura definitiva do valor autorizado, após o pedido estar pronto para envio." },
-        ]},
-        { id: "ed-s2", name: "Manuseio", linkedToNext: true, category: "FULFILLMENT", tasks: [
-          { id: "ed-3", name: "Reserva de Estoque", type: "auto",   owner: "GFL Logística", desc: "Reserva dos itens no estoque para garantir disponibilidade." },
-          { id: "ed-4", name: "Picking",            type: "manual", owner: "GFL Logística", desc: "Separação dos produtos no estoque conforme o pedido." },
-          { id: "ed-5", name: "Packing",            type: "manual", owner: "GFL Logística", desc: "Embalagem dos produtos selecionados para envio ao cliente." },
-          { id: "ed-6", name: "Labeling",           type: "manual", owner: "GFL Logística", desc: "Etiquetagem da embalagem com dados do destinatário e transportadora." },
-        ]},
-        { id: "ed-s3", name: "Faturamento", gate: "deliverable_ready", linkedToNext: true, category: "FULFILLMENT", tasks: [
-          { id: "ed-7", name: "Emissão de Nota Fiscal", type: "auto", owner: "NFe.io", desc: "Geração da NF-e para o cliente final." },
-        ]},
-        { id: "ed-s4", name: "Entrega", gate: "customer_has_goods", linkedToNext: false, category: "DELIVERY", tasks: [
-          { id: "ed-8",  name: "Expedição",        type: "manual", owner: "GFL Logística", desc: "Despacho do pedido para a transportadora." },
-          { id: "ed-9",  name: "First Mile",       type: "auto",   owner: "Jadlog",        desc: "Transporte inicial do centro de distribuição até o hub." },
-          { id: "ed-10", name: "Last Mile",        type: "auto",   owner: "Jadlog",        desc: "Entrega final no endereço do cliente." },
-          { id: "ed-11", name: "Proof of Delivery",type: "auto",   owner: "Jadlog",        desc: "Confirmação da entrega com registro de recebimento." },
-        ]},
-      ]},
+      category: "fulfillment",
 
-    /* ── OJ-02: Retirada na loja (BOPIS) ───────────────────────────────── */
-    { id: "retirada-loja", name: "Retirada na loja", icon: "🏪",
-      category: "fulfillment", status: "active",
-      desc: "Itens separados no estoque da loja para pickup pelo cliente no ponto de venda.",
-      orders: "127", custom: false,
-      trigger: { type: "order-start" },
-      agentEnabled: true,
-      dependencies: [],
-      version: "1.3", wfStatus: "published",
-      lastEditedAt: "2025-05-28T10:15:00Z", lastEditedBy: "jackeline@vtex.com",
-      publishedAt:  "2025-05-28T10:15:00Z", publishedBy:  "jackeline@vtex.com",
-      versionLog: [
-        { version: "1.3", publishedAt: "2025-05-28T10:15:00Z", publishedBy: "jackeline@vtex.com",
-          description: "Fornecedor de notificação substituído por Brevo",
-          appliedTo: "all_orders", activeOrdersAtPublish: 127,
-          deltas: [{ entity: "supplier", change: "replaced", detail: "SendGrid → Brevo — Task: Ready for Pickup" }] },
-        { version: "1.2", publishedAt: "2025-05-10T16:00:00Z", publishedBy: "jackeline@vtex.com",
-          description: "Dependência de pagamento adicionada",
-          appliedTo: "new_orders_only", activeOrdersAtPublish: 98,
-          deltas: [{ entity: "dependency", change: "added", detail: "Aguardar Captura de Pagamento antes de Picking" }] },
-        { version: "1.0", publishedAt: "2025-04-10T14:00:00Z", publishedBy: "ana@vtex.com",
-          description: "Versão inicial do workflow",
-          appliedTo: "new_orders_only", activeOrdersAtPublish: 0,
-          deltas: [{ entity: "general config", change: "changed", detail: "Workflow criado" }] },
-      ],
-      stages: [
-        { id: "rl-s1", name: "Pagamento", gate: "payment_settled", linkedToNext: true, category: "PAYMENT", tasks: [
-          { id: "rl-1", name: "Autorização de Pagamento", type: "auto", owner: "Cielo", desc: "Pré-autorização do valor junto à adquirente/gateway." },
-          { id: "rl-2", name: "Captura de Pagamento",     type: "auto", owner: "Cielo", desc: "Confirmação e captura definitiva do valor autorizado." },
-        ]},
-        { id: "rl-s2", name: "Manuseio", linkedToNext: true, category: "FULFILLMENT", tasks: [
-          { id: "rl-3", name: "Reserva de Estoque", type: "auto",   owner: "Intelipost WMS", desc: "Reserva dos itens na loja designada para pickup." },
-          { id: "rl-4", name: "Picking",            type: "manual", owner: "Equipe Loja",    desc: "Separação dos produtos no estoque da loja." },
-          { id: "rl-5", name: "Packing",            type: "manual", owner: "Equipe Loja",    desc: "Embalagem dos produtos para disponibilização ao cliente." },
-          { id: "rl-6", name: "Ready for Pickup",   type: "auto",   owner: "Brevo",          desc: "Notificação ao cliente de que o pedido está pronto para retirada." },
-        ]},
-        { id: "rl-s3", name: "Faturamento", gate: "deliverable_ready", linkedToNext: true, category: "FULFILLMENT", tasks: [
-          { id: "rl-7", name: "Emissão de Nota Fiscal", type: "auto", owner: "Bling", desc: "Geração da NF-e no momento do pickup ou pré-emissão." },
-        ]},
-        { id: "rl-s4", name: "Entrega em Loja", gate: "customer_has_goods", linkedToNext: false, category: "DELIVERY", tasks: [
-          { id: "rl-8", name: "Customer Check-in",  type: "manual", owner: "Equipe Loja", desc: "Confirmação da chegada do cliente na loja." },
-          { id: "rl-9", name: "Handover at POS",    type: "manual", owner: "Equipe Loja", desc: "Entrega física do pedido ao cliente no ponto de venda." },
-        ]},
-      ]},
+      status: "active",
+      wfStatus: "published",
+      version: "2.1",
 
-    /* ── Entrega produto virtual ─────────────────────────────────────────── */
-    { id: "entrega-produto-virtual", name: "Entrega produto virtual", icon: "💻",
-      category: "servicos", status: "active",
-      desc: "Ativação e entrega de produtos digitais: licenças, vouchers, assinaturas e downloads.",
-      orders: "234", custom: false,
-      trigger: { type: "order-start" },
+      trigger: { type: "system-event", events: ["Pedido criado"] },
       agentEnabled: true,
-      dependencies: [],
-      version: "1.0", wfStatus: "published",
-      lastEditedAt: "2025-05-20T10:00:00Z", lastEditedBy: "ana@vtex.com",
-      publishedAt:  "2025-05-20T10:00:00Z", publishedBy:  "ana@vtex.com",
-      versionLog: [
-        { version: "1.0", publishedAt: "2025-05-20T10:00:00Z", publishedBy: "ana@vtex.com",
-          description: "Versão inicial do workflow de produto digital",
-          appliedTo: "new_orders_only", activeOrdersAtPublish: 0,
-          deltas: [{ entity: "general config", change: "changed", detail: "Workflow criado" }] },
+      deps: [],
+      unlocks: [
+        { wfId: "wf-troca-devolucao", wfName: "Troca e devolução", wfIcon: "↩️" },
+        { wfId: "wf-personalizacao-camiseta", wfName: "Personalização de Camiseta", wfIcon: "👕" },
       ],
-      stages: [
-        { id: "vd-s1", name: "Pagamento", gate: "payment_settled", linkedToNext: true, category: "PAYMENT", tasks: [
-          { id: "vd-1", name: "Autorização de Pagamento", type: "auto", owner: "Stripe",      desc: "Pré-autorização do valor junto à adquirente/gateway." },
-          { id: "vd-2", name: "Captura de Pagamento",     type: "auto", owner: "Stripe",      desc: "Confirmação e captura definitiva do valor autorizado." },
-        ]},
-        { id: "vd-s2", name: "Ativação Digital", gate: "deliverable_ready", linkedToNext: true, category: "FULFILLMENT", tasks: [
-          { id: "vd-3", name: "Gerar Chave / Licença",    type: "auto", owner: "AWS Lambda",  desc: "Geração automática da chave de ativação ou licença digital." },
-          { id: "vd-4", name: "Emissão de NF-e",          type: "auto", owner: "Enotas",      desc: "Emissão da nota fiscal para produto digital." },
-        ]},
-        { id: "vd-s3", name: "Entrega Digital", gate: "customer_has_goods", linkedToNext: false, category: "DELIVERY", tasks: [
-          { id: "vd-5", name: "Enviar por E-mail",         type: "auto", owner: "SendGrid",    desc: "Envio da chave / link de acesso ao e-mail do cliente." },
-          { id: "vd-6", name: "Confirmação de Acesso",     type: "auto", owner: "AWS Lambda",  desc: "Verificação de que o cliente acessou ou ativou o produto." },
-        ]},
-      ]},
 
-    /* ── Cancelamento de Pedido ──────────────────────────────────────────── */
-    { id: "cancelamento", name: "Cancelamento de Pedido", icon: "🚫",
-      category: "fulfillment", status: "active",
-      desc: "Fluxo de cancelamento iniciado por cliente ou operador, com reversão de estoque e estorno financeiro.",
-      orders: "142", custom: false,
-      trigger: { type: "manual" },
-      agentEnabled: true,
-      dependencies: [],
-      version: "1.0", wfStatus: "published",
-      lastEditedAt: "2025-05-18T09:00:00Z", lastEditedBy: "jackeline@vtex.com",
-      publishedAt:  "2025-05-18T09:00:00Z", publishedBy:  "jackeline@vtex.com",
-      versionLog: [
-        { version: "1.0", publishedAt: "2025-05-18T09:00:00Z", publishedBy: "jackeline@vtex.com",
-          description: "Versão inicial do workflow de cancelamento",
-          appliedTo: "new_orders_only", activeOrdersAtPublish: 0,
-          deltas: [{ entity: "general config", change: "changed", detail: "Workflow criado" }] },
+      stages: [
+        {
+          id: "st-pagamento",
+          name: "Pagamento",
+          category: "PAYMENT",
+          gate: "payment_settled",
+          linkedToNext: true,
+          responsible: "Gateway",
+          tasks: [
+            { id: "autorizacao-pagamento", name: "Autorização de Pagamento", type: "auto", owner: "Adyen" },
+            { id: "captura-pagamento", name: "Captura de Pagamento", type: "auto", owner: "Adyen" },
+          ],
+        },
+        {
+          id: "st-manuseio",
+          name: "Manuseio",
+          category: "FULFILLMENT",
+          gate: "deliverable_ready",
+          linkedToNext: true,
+          responsible: "WMS",
+          tasks: [
+            { id: "reserva-estoque", name: "Reserva de Estoque", type: "auto" },
+            { id: "picking", name: "Picking", type: "manual" },
+            { id: "packing", name: "Packing", type: "manual" },
+            { id: "labeling", name: "Labeling", type: "auto" },
+          ],
+        },
+        {
+          id: "st-faturamento",
+          name: "Faturamento",
+          category: "FULFILLMENT",
+          linkedToNext: true,
+          responsible: "NFe.io",
+          tasks: [
+            { id: "emissao-nf", name: "Emissão de Nota Fiscal", type: "auto", owner: "NFe.io" },
+          ],
+        },
+        {
+          id: "st-entrega",
+          name: "Entrega",
+          category: "DELIVERY",
+          gate: "customer_has_goods",
+          linkedToNext: false,
+          responsible: "Transportadora",
+          tasks: [
+            { id: "expedicao", name: "Expedição", type: "auto" },
+            { id: "first-mile", name: "First Mile", type: "auto", owner: "GFL Logística" },
+            { id: "last-mile", name: "Last Mile", type: "manual", owner: "GFL Logística" },
+            { id: "proof-of-delivery", name: "Proof of Delivery", type: "auto" },
+          ],
+        },
       ],
-      stages: [
-        { id: "ca-s1", name: "Solicitação", gate: "cancellation_requested", linkedToNext: true, category: "FULFILLMENT", tasks: [
-          { id: "ca-1", name: "Receber Solicitação",              type: "auto",   owner: "VTEX Portal",        desc: "Registro da solicitação de cancelamento." },
-          { id: "ca-2", name: "Validar Janela de Cancelamento",   type: "auto",   owner: "Intelipost Reverso", desc: "Verifica se o pedido ainda pode ser cancelado." },
-        ]},
-        { id: "ca-s2", name: "Reversão de Fulfillment", linkedToNext: true, category: "FULFILLMENT", tasks: [
-          { id: "ca-3", name: "Bloquear Expedição",               type: "auto",   owner: "GFL Logística",      desc: "Interrompe separação/expedição caso ainda em andamento." },
-          { id: "ca-4", name: "Estornar Estoque",                 type: "auto",   owner: "GFL Logística",      desc: "Devolução das unidades canceladas ao estoque disponível." },
-        ]},
-        { id: "ca-s3", name: "Estorno Financeiro", gate: "cancellation_complete", linkedToNext: false, category: "PAYMENT", tasks: [
-          { id: "ca-5", name: "Processar Estorno",                type: "auto",   owner: "Adyen",              desc: "Devolução do valor ao cliente pelo método de pagamento original." },
-          { id: "ca-6", name: "Notificar Cliente",                type: "auto",   owner: "Brevo",              desc: "Confirmação do cancelamento e prazo de estorno ao cliente." },
-        ]},
-      ]},
 
-    /* ── Troca e devolução (logística reversa) ──────────────────────────── */
-    { id: "troca-devolucao", name: "Troca e devolução", icon: "↩",
-      category: "logistica-reversa", status: "active",
-      desc: "Logística reversa para trocas e devoluções com estorno financeiro ou reenvio de produto.",
-      orders: "83", custom: false,
-      trigger: { type: "task-completion", triggerWfId: "entrega-domicilio", triggerTaskId: "ed-11" },
+      flatOrder: ["autorizacao-pagamento", "captura-pagamento", "reserva-estoque", "picking", "packing", "labeling", "emissao-nf", "expedicao", "first-mile", "last-mile", "proof-of-delivery"],
+
+      publishedAt: "2026-08-22T14:00:00Z",
+      publishedBy: "vanessa.borges@vtex.com",
+      lastEditedAt: "2026-08-22T14:00:00Z",
+      lastEditedBy: "vanessa.borges@vtex.com",
+      versionLog: [
+        {
+          version: "2.1",
+          publishedAt: "2026-08-22T14:00:00Z",
+          publishedBy: "vanessa.borges@vtex.com",
+          description: "Ajuste fino no fluxo de picking após retrospectiva do Q2.",
+          deltas: [
+            { entity: "task",           change: "renamed", detail: "'Separação' renomeada para 'Picking'" },
+            { entity: "supplier",       change: "changed", detail: "Last Mile agora operada pela GFL Logística" },
+            { entity: "general config", change: "edited",  detail: "SLA de expedição reduzido de 48h para 24h" },
+          ],
+          appliedTo: "new_orders_only",
+          activeOrdersAtPublish: 4128,
+        },
+        {
+          version: "2.0",
+          publishedAt: "2026-07-15T10:30:00Z",
+          publishedBy: "vanessa.borges@vtex.com",
+          description: "Major: adicionada etapa de Faturamento automatizado.",
+          deltas: [
+            { entity: "task",       change: "added",     detail: "'Emissão de Nota Fiscal' na etapa Faturamento" },
+            { entity: "dependency", change: "connected", detail: "Faturamento → Entrega" },
+            { entity: "supplier",   change: "added",     detail: "NFe.io conectado como emissor fiscal" },
+          ],
+          appliedTo: "new_orders_only",
+          activeOrdersAtPublish: 3970,
+        },
+        {
+          version: "1.3",
+          publishedAt: "2026-06-20T09:00:00Z",
+          publishedBy: "julia.grisi@vtex.com",
+          description: "Reforço no gate de Manuseio para reduzir divergências.",
+          deltas: [
+            { entity: "general config", change: "edited", detail: "Gate 'deliverable_ready' agora exige conferência dupla" },
+            { entity: "task",           change: "edited", detail: "'Packing' alterada para execução manual" },
+          ],
+          appliedTo: "all_orders",
+          activeOrdersAtPublish: 3512,
+        },
+        {
+          version: "1.2",
+          publishedAt: "2026-05-10T15:20:00Z",
+          publishedBy: "julia.grisi@vtex.com",
+          description: "Ativação de rastreamento na Last Mile.",
+          deltas: [
+            { entity: "task",    change: "added",  detail: "'Proof of Delivery' na etapa Entrega" },
+            { entity: "trigger", change: "edited", detail: "Evento 'Pedido criado' passa a considerar canal Marketplace" },
+          ],
+          appliedTo: "new_orders_only",
+          activeOrdersAtPublish: 2984,
+        },
+        {
+          version: "1.0",
+          publishedAt: "2026-03-01T12:00:00Z",
+          publishedBy: "vanessa.borges@vtex.com",
+          description: "Publicação inicial do workflow padrão de entrega em domicílio.",
+          deltas: [
+            { entity: "general config", change: "added", detail: "Workflow criado a partir do template padrão de fulfillment" },
+          ],
+          appliedTo: "new_orders_only",
+          activeOrdersAtPublish: 0,
+        },
+      ],
+
+      custom: false,
+      orders: "4256",
+    },
+
+    {
+      id: "wf-retirada-loja",
+      name: "Retirada na loja",
+      icon: "🏪",
+      desc: "Itens separados no estoque da loja ou CD para pickup pelo cliente no ponto de venda.",
+      category: "fulfillment",
+
+      status: "active",
+      wfStatus: "published",
+      version: "1.4",
+
+      trigger: { type: "system-event", events: ["Pedido criado"] },
       agentEnabled: false,
-      dependencies: ["entrega-domicilio", "retirada-loja"],
-      version: "1.0", wfStatus: "published",
-      lastEditedAt: "2025-05-25T11:00:00Z", lastEditedBy: "ana@vtex.com",
-      publishedAt:  "2025-05-25T11:00:00Z", publishedBy:  "ana@vtex.com",
-      versionLog: [
-        { version: "1.0", publishedAt: "2025-05-25T11:00:00Z", publishedBy: "ana@vtex.com",
-          description: "Versão inicial do workflow de troca e devolução",
-          appliedTo: "new_orders_only", activeOrdersAtPublish: 0,
-          deltas: [{ entity: "general config", change: "changed", detail: "Workflow criado" }] },
+      deps: [],
+      unlocks: [
+        { wfId: "wf-troca-devolucao", wfName: "Troca e devolução", wfIcon: "↩️" },
       ],
-      stages: [
-        { id: "td-s1", name: "Solicitação", linkedToNext: true, category: "FULFILLMENT", tasks: [
-          { id: "td-1", name: "Abertura de Solicitação",          type: "auto",   owner: "VTEX Portal",        desc: "Cliente abre solicitação de troca ou devolução no portal." },
-          { id: "td-2", name: "Validar Elegibilidade",            type: "auto",   owner: "Intelipost Reverso", desc: "Verificação de prazo, política e condição do produto." },
-          { id: "td-3", name: "Classificar (Troca / Devolução)",  type: "auto",   owner: "Intelipost Reverso", desc: "Define se o caso é troca por novo item ou devolução com estorno." },
-        ]},
-        { id: "td-s2", name: "Coleta Reversa", linkedToNext: true, category: "DELIVERY", tasks: [
-          { id: "td-4", name: "Gerar Etiqueta Reversa", type: "auto",   owner: "Correios API", desc: "Emissão da etiqueta de postagem reversa para o cliente." },
-          { id: "td-5", name: "Notificar Cliente",      type: "auto",   owner: "Zenvia",       desc: "Envio das instruções de devolução ao cliente." },
-          { id: "td-6", name: "Confirmar Postagem",     type: "auto",   owner: "Correios",     desc: "Registro da postagem do item pelo cliente." },
-        ]},
-        { id: "td-s3", name: "Inspeção no CD", linkedToNext: true, category: "FULFILLMENT", tasks: [
-          { id: "td-7", name: "Receber Produto no CD",       type: "manual", owner: "FullComm", desc: "Recebimento e entrada do produto devolvido no centro de distribuição." },
-          { id: "td-8", name: "Conferir Estado do Produto",  type: "manual", owner: "FullComm", desc: "Avaliação física do item: aprovado para reenvio ou descarte." },
-        ]},
-        { id: "td-s4", name: "Resolução", linkedToNext: false, category: "FULFILLMENT", tasks: [
-          { id: "td-9",  name: "Processar Estorno",             type: "auto",   owner: "Braspag",  desc: "Devolução do valor ao cliente via método de pagamento original." },
-          { id: "td-10", name: "Separar e Despachar Novo Item", type: "manual", owner: "FullComm", desc: "Fulfillment do item de troca para reenvio ao cliente." },
-          { id: "td-11", name: "Notificar Cliente — Concluído", type: "auto",   owner: "Zenvia",   desc: "Confirmação final do processo para o cliente." },
-        ]},
-      ]},
 
-    /* ── Fabricação de Lente ────────────────────────────────────────────── */
-    { id: "fabricacao-lente", name: "Fabricação de Lente", icon: "🔬",
-      category: "producao", status: "active",
-      desc: "Validação da receita médica e produção da lente em laboratório parceiro. Pré-requisito para entrega de óculos de grau e lentes especiais.",
-      orders: "0", custom: false,
-      trigger: { type: "order-start" },
-      agentEnabled: true,
-      dependencies: [],
       stages: [
-        { id: "fl-s1", name: "Validação de Receita", gate: "prescription_approved", linkedToNext: true, category: "COMPLIANCE", tasks: [
-          { id: "fl-1", name: "Verificar anexo de receita",   type: "manual", owner: "Atendimento", desc: "Confirmar que o cliente anexou a receita médica no momento da compra." },
-          { id: "fl-2", name: "Validar dados da prescrição",  type: "manual", owner: "Atendimento", desc: "Conferir grau, eixo, curvatura e demais parâmetros técnicos da lente." },
-          { id: "fl-3", name: "Aprovar receita",              type: "manual", owner: "Atendimento", desc: "Aprovação libera o pedido para produção. Sem aprovação, o pedido não avança." },
-        ]},
-        { id: "fl-s2", name: "Produção da Lente", linkedToNext: false, category: "PRODUCTION", tasks: [
-          { id: "fl-4", name: "Acionar laboratório",     type: "auto",   owner: "Essilor API", desc: "Agente notifica o laboratório parceiro para iniciar a fabricação." },
-          { id: "fl-5", name: "Monitorar produção",      type: "auto",   owner: "Essilor API", desc: "Agente acompanha o prazo de produção junto ao laboratório." },
-          { id: "fl-6", name: "Confirmar lente pronta",  type: "auto",   owner: "Essilor API", desc: "Laboratório confirma produto finalizado e enviado ao centro de distribuição." },
-        ]},
-      ]},
+        {
+          id: "st-pagamento",
+          name: "Pagamento",
+          category: "PAYMENT",
+          gate: "payment_settled",
+          linkedToNext: true,
+          responsible: "Gateway",
+          tasks: [
+            { id: "autorizacao-pagamento", name: "Autorização de Pagamento", type: "auto" },
+            { id: "captura-pagamento", name: "Captura de Pagamento", type: "auto" },
+          ],
+        },
+        {
+          id: "st-manuseio",
+          name: "Manuseio",
+          category: "FULFILLMENT",
+          gate: "deliverable_ready",
+          linkedToNext: true,
+          responsible: "Loja",
+          tasks: [
+            { id: "reserva-estoque", name: "Reserva de Estoque", type: "auto" },
+            { id: "picking", name: "Picking", type: "manual" },
+            { id: "packing", name: "Packing", type: "manual" },
+            { id: "ready-for-pickup", name: "Ready for Pickup", type: "manual", owner: "Loja" },
+          ],
+        },
+        {
+          id: "st-faturamento",
+          name: "Faturamento",
+          category: "FULFILLMENT",
+          linkedToNext: true,
+          tasks: [
+            { id: "emissao-nf", name: "Emissão de Nota Fiscal", type: "auto", owner: "NFe.io" },
+          ],
+        },
+        {
+          id: "st-entrega-loja",
+          name: "Entrega em Loja",
+          category: "DELIVERY",
+          gate: "customer_has_goods",
+          linkedToNext: false,
+          responsible: "Loja",
+          tasks: [
+            { id: "customer-checkin", name: "Customer Check-in", type: "manual" },
+            { id: "handover-pos", name: "Handover at POS", type: "manual" },
+          ],
+        },
+      ],
+
+      flatOrder: ["autorizacao-pagamento", "captura-pagamento", "reserva-estoque", "picking", "packing", "ready-for-pickup", "emissao-nf", "customer-checkin", "handover-pos"],
+
+      publishedAt: "2026-08-10T10:00:00Z",
+      publishedBy: "julia.grisi@vtex.com",
+      lastEditedAt: "2026-08-10T10:00:00Z",
+      lastEditedBy: "julia.grisi@vtex.com",
+      versionLog: [
+        {
+          version: "1.4",
+          publishedAt: "2026-08-10T10:00:00Z",
+          publishedBy: "julia.grisi@vtex.com",
+          description: "Ajuste no fluxo de handover para reduzir tempo no ponto de venda.",
+          deltas: [
+            { entity: "task",           change: "renamed", detail: "'Confirmar retirada' renomeada para 'Handover at POS'" },
+            { entity: "general config", change: "edited",  detail: "Prazo máximo de retenção em loja aumentado para 7 dias" },
+          ],
+          appliedTo: "new_orders_only",
+          activeOrdersAtPublish: 118,
+        },
+        {
+          version: "1.3",
+          publishedAt: "2026-07-05T14:00:00Z",
+          publishedBy: "julia.grisi@vtex.com",
+          description: "Notificação ao cliente quando o pedido chega na loja.",
+          deltas: [
+            { entity: "task", change: "added",  detail: "'Customer Check-in' antes do handover" },
+            { entity: "task", change: "edited", detail: "'Ready for Pickup' agora dispara e-mail automático" },
+          ],
+          appliedTo: "all_orders",
+          activeOrdersAtPublish: 95,
+        },
+        {
+          version: "1.2",
+          publishedAt: "2026-06-01T09:30:00Z",
+          publishedBy: "vanessa.borges@vtex.com",
+          description: "Simplificação da etapa de Manuseio.",
+          deltas: [
+            { entity: "task", change: "removed", detail: "'Conferência dupla' removida da etapa Manuseio" },
+          ],
+          appliedTo: "new_orders_only",
+          activeOrdersAtPublish: 72,
+        },
+        {
+          version: "1.0",
+          publishedAt: "2026-04-20T11:00:00Z",
+          publishedBy: "vanessa.borges@vtex.com",
+          description: "Publicação inicial do workflow de pickup em loja.",
+          deltas: [
+            { entity: "general config", change: "added", detail: "Workflow criado para operação de retirada em ponto físico" },
+          ],
+          appliedTo: "new_orders_only",
+          activeOrdersAtPublish: 0,
+        },
+      ],
+
+      custom: false,
+      orders: "127",
+    },
+
+    {
+      id: "wf-entrega-virtual",
+      name: "Entrega produto virtual",
+      icon: "📱",
+      desc: "Item virtual entregue eletronicamente após confirmação de pagamento.",
+      category: "fulfillment",
+
+      status: "active",
+      wfStatus: "published",
+      version: "1.2",
+
+      trigger: { type: "system-event", events: ["Pedido criado"] },
+      agentEnabled: true,
+      deps: [],
+      unlocks: [],
+
+      stages: [
+        {
+          id: "st-pagamento",
+          name: "Pagamento",
+          category: "PAYMENT",
+          gate: "payment_settled",
+          linkedToNext: true,
+          tasks: [
+            { id: "autorizacao-pagamento", name: "Autorização de Pagamento", type: "auto" },
+            { id: "captura-pagamento", name: "Captura de Pagamento", type: "auto" },
+          ],
+        },
+        {
+          id: "st-ativacao-digital",
+          name: "Ativação Digital",
+          category: "FULFILLMENT",
+          linkedToNext: true,
+          agentEnabled: true,
+          tasks: [
+            { id: "gerar-chave-licenca", name: "Gerar Chave / Licença", type: "auto" },
+          ],
+        },
+        {
+          id: "st-faturamento",
+          name: "Faturamento",
+          category: "FULFILLMENT",
+          linkedToNext: true,
+          tasks: [
+            { id: "emissao-nfe", name: "Emissão de NF-e", type: "auto", owner: "NFe.io" },
+          ],
+        },
+        {
+          id: "st-entrega-digital",
+          name: "Entrega Digital",
+          category: "DELIVERY",
+          gate: "customer_has_goods",
+          linkedToNext: false,
+          agentEnabled: true,
+          tasks: [
+            { id: "enviar-email", name: "Enviar por E-mail", type: "auto" },
+            { id: "confirmacao-acesso", name: "Confirmação de Acesso", type: "auto" },
+          ],
+        },
+      ],
+
+      flatOrder: ["autorizacao-pagamento", "captura-pagamento", "gerar-chave-licenca", "emissao-nfe", "enviar-email", "confirmacao-acesso"],
+
+      publishedAt: "2026-07-30T09:00:00Z",
+      publishedBy: "vanessa.borges@vtex.com",
+      lastEditedAt: "2026-07-30T09:00:00Z",
+      lastEditedBy: "vanessa.borges@vtex.com",
+      versionLog: [
+        {
+          version: "1.2",
+          publishedAt: "2026-07-30T09:00:00Z",
+          publishedBy: "vanessa.borges@vtex.com",
+          description: "Confirmação de acesso após entrega digital.",
+          deltas: [
+            { entity: "task",           change: "added",  detail: "'Confirmação de Acesso' na etapa Entrega Digital" },
+            { entity: "general config", change: "edited", detail: "Agente AI ativado para monitorar falhas de entrega" },
+          ],
+          appliedTo: "new_orders_only",
+          activeOrdersAtPublish: 201,
+        },
+        {
+          version: "1.1",
+          publishedAt: "2026-06-15T13:45:00Z",
+          publishedBy: "julia.grisi@vtex.com",
+          description: "Melhoria na geração de chaves de licença.",
+          deltas: [
+            { entity: "task",     change: "edited", detail: "'Gerar Chave de Licença' agora suporta múltiplos vendors" },
+            { entity: "supplier", change: "added",  detail: "NFe.io para emissão de NF-e digital" },
+          ],
+          appliedTo: "all_orders",
+          activeOrdersAtPublish: 168,
+        },
+        {
+          version: "1.0",
+          publishedAt: "2026-05-05T10:00:00Z",
+          publishedBy: "vanessa.borges@vtex.com",
+          description: "Publicação inicial do workflow de entrega de produto virtual.",
+          deltas: [
+            { entity: "general config", change: "added", detail: "Workflow criado para itens digitais (licenças, downloads)" },
+          ],
+          appliedTo: "new_orders_only",
+          activeOrdersAtPublish: 0,
+        },
+      ],
+
+      custom: false,
+      orders: "234",
+    },
+
+    {
+      id: "wf-cancelamento",
+      name: "Cancelamento de Pedido",
+      icon: "🚫",
+      desc: "Fluxo disparado quando o cliente ou o merchant solicita cancelamento de um pedido em andamento.",
+      category: "cancelamento",
+
+      status: "active",
+      wfStatus: "published",
+      version: "1.0",
+
+      trigger: { type: "system-event", events: ["Pedido cancelado"] },
+      agentEnabled: false,
+      deps: [],
+      unlocks: [],
+
+      stages: [
+        {
+          id: "st-solicitacao",
+          name: "Solicitação",
+          category: "CANCELLATION",
+          gate: "cancellation_requested",
+          linkedToNext: true,
+          responsible: "Operador",
+          tasks: [
+            { id: "receber-solicitacao", name: "Receber Solicitação", type: "manual" },
+            { id: "validar-janela-cancelamento", name: "Validar Janela de Cancelamento", type: "manual" },
+          ],
+        },
+        {
+          id: "st-bloqueio",
+          name: "Bloqueio",
+          category: "FULFILLMENT",
+          linkedToNext: true,
+          tasks: [
+            { id: "bloquear-expedicao", name: "Bloquear Expedição", type: "auto" },
+          ],
+        },
+        {
+          id: "st-reembolso",
+          name: "Reembolso",
+          category: "PAYMENT",
+          gate: "cancellation_complete",
+          linkedToNext: false,
+          tasks: [
+            { id: "estornar-estoque", name: "Estornar Estoque", type: "auto" },
+            { id: "processar-estorno", name: "Processar Estorno", type: "auto", owner: "Adyen" },
+            { id: "notificar-cliente", name: "Notificar Cliente", type: "auto", visibility: "user" },
+          ],
+        },
+      ],
+
+      flatOrder: ["receber-solicitacao", "validar-janela-cancelamento", "bloquear-expedicao", "estornar-estoque", "processar-estorno", "notificar-cliente"],
+
+      publishedAt: "2026-08-05T11:00:00Z",
+      publishedBy: "julia.grisi@vtex.com",
+      lastEditedAt: "2026-08-05T11:00:00Z",
+      lastEditedBy: "julia.grisi@vtex.com",
+      versionLog: [
+        {
+          version: "1.0",
+          publishedAt: "2026-08-05T11:00:00Z",
+          publishedBy: "julia.grisi@vtex.com",
+          description: "Publicação inicial do workflow de cancelamento.",
+          deltas: [
+            { entity: "general config", change: "added",     detail: "Workflow criado para tratar solicitações de cancelamento pré-envio" },
+            { entity: "trigger",        change: "connected", detail: "Evento 'Pedido cancelado' conectado como gatilho" },
+          ],
+          appliedTo: "new_orders_only",
+          activeOrdersAtPublish: 0,
+        },
+      ],
+
+      custom: false,
+      orders: "142",
+    },
+
+    {
+      id: "wf-troca-devolucao",
+      name: "Troca e devolução",
+      icon: "↩️",
+      desc: "Fluxo de logística reversa para troca ou devolução de itens já entregues.",
+      category: "logistica-reversa",
+
+      status: "active",
+      wfStatus: "published",
+      version: "1.6",
+
+      trigger: {
+        type: "wf-completion",
+        triggerWfIds: ["wf-entrega-domicilio", "wf-retirada-loja"],
+      },
+      agentEnabled: false,
+      deps: [],
+      unlocks: [],
+
+      stages: [
+        {
+          id: "st-solicitacao",
+          name: "Solicitação",
+          category: "FULFILLMENT",
+          linkedToNext: true,
+          tasks: [
+            { id: "abertura-solicitacao", name: "Abertura de Solicitação", type: "manual", visibility: "user" },
+            { id: "validar-elegibilidade", name: "Validar Elegibilidade", type: "auto" },
+          ],
+        },
+        {
+          id: "st-classificacao",
+          name: "Classificação",
+          category: "FULFILLMENT",
+          linkedToNext: true,
+          tasks: [
+            { id: "classificar-troca-devolucao", name: "Classificar (Troca / Devolução)", type: "auto" },
+          ],
+        },
+        {
+          id: "st-logistica-reversa",
+          name: "Logística Reversa",
+          category: "REVERSE_LOGISTICS",
+          gate: "product_returned",
+          linkedToNext: true,
+          responsible: "GFL Logística",
+          tasks: [
+            { id: "gerar-etiqueta-reversa", name: "Gerar Etiqueta Reversa", type: "auto" },
+            { id: "notificar-cliente-etiqueta", name: "Notificar Cliente", type: "auto", visibility: "user" },
+            { id: "confirmar-postagem", name: "Confirmar Postagem", type: "manual" },
+            { id: "receber-produto-cd", name: "Receber Produto no CD", type: "manual" },
+            { id: "conferir-estado-produto", name: "Conferir Estado do Produto", type: "manual" },
+          ],
+        },
+        {
+          id: "st-reembolso",
+          name: "Reembolso",
+          category: "PAYMENT",
+          linkedToNext: true,
+          tasks: [
+            { id: "processar-estorno", name: "Processar Estorno", type: "auto", owner: "Adyen" },
+          ],
+        },
+        {
+          id: "st-novo-envio",
+          name: "Novo Envio",
+          category: "DELIVERY",
+          gate: "customer_has_goods",
+          linkedToNext: false,
+          tasks: [
+            { id: "separar-despachar-novo-item", name: "Separar e Despachar Novo Item", type: "manual" },
+            { id: "notificar-cliente-concluido", name: "Notificar Cliente — Concluído", type: "auto", visibility: "user" },
+          ],
+        },
+      ],
+
+      flatOrder: ["abertura-solicitacao", "validar-elegibilidade", "classificar-troca-devolucao", "gerar-etiqueta-reversa", "notificar-cliente-etiqueta", "confirmar-postagem", "receber-produto-cd", "conferir-estado-produto", "processar-estorno", "separar-despachar-novo-item", "notificar-cliente-concluido"],
+
+      publishedAt: "2026-08-15T16:00:00Z",
+      publishedBy: "vanessa.borges@vtex.com",
+      lastEditedAt: "2026-08-15T16:00:00Z",
+      lastEditedBy: "vanessa.borges@vtex.com",
+      versionLog: [
+        {
+          version: "1.6",
+          publishedAt: "2026-08-15T16:00:00Z",
+          publishedBy: "vanessa.borges@vtex.com",
+          description: "Notificação ao cliente após conclusão da troca.",
+          deltas: [
+            { entity: "task",           change: "added",  detail: "'Notificar Cliente — Concluído' na etapa Novo Envio" },
+            { entity: "general config", change: "edited", detail: "Ativada visibilidade ao cliente em 3 tarefas do fluxo" },
+          ],
+          appliedTo: "new_orders_only",
+          activeOrdersAtPublish: 78,
+        },
+        {
+          version: "1.5",
+          publishedAt: "2026-07-20T10:00:00Z",
+          publishedBy: "vanessa.borges@vtex.com",
+          description: "Conferência do produto antes do reembolso.",
+          deltas: [
+            { entity: "task",       change: "added",     detail: "'Conferir Estado do Produto' na Logística Reversa" },
+            { entity: "dependency", change: "connected", detail: "Logística Reversa → Reembolso" },
+          ],
+          appliedTo: "all_orders",
+          activeOrdersAtPublish: 65,
+        },
+        {
+          version: "1.3",
+          publishedAt: "2026-06-10T15:00:00Z",
+          publishedBy: "julia.grisi@vtex.com",
+          description: "Automação da etiqueta reversa.",
+          deltas: [
+            { entity: "task",     change: "replaced", detail: "'Gerar Etiqueta' manual substituída por versão automática" },
+            { entity: "supplier", change: "changed",  detail: "GFL Logística passa a ser fornecedor de reversa" },
+          ],
+          appliedTo: "new_orders_only",
+          activeOrdersAtPublish: 41,
+        },
+        {
+          version: "1.0",
+          publishedAt: "2026-04-05T09:00:00Z",
+          publishedBy: "vanessa.borges@vtex.com",
+          description: "Publicação inicial do workflow de troca e devolução.",
+          deltas: [
+            { entity: "general config", change: "added",     detail: "Workflow criado como logística reversa padrão" },
+            { entity: "trigger",        change: "connected", detail: "Disparado ao concluir 'Entrega em domicílio' ou 'Retirada na loja'" },
+          ],
+          appliedTo: "new_orders_only",
+          activeOrdersAtPublish: 0,
+        },
+      ],
+
+      custom: false,
+      orders: "83",
+    },
+
+    {
+      id: "wf-personalizacao-camiseta",
+      name: "Personalização de Camiseta",
+      icon: "👕",
+      desc: "Execução de estampa ou bordado personalizado em camiseta, sob demanda, antes da entrega.",
+      category: "servicos",
+
+      status: "active",
+      wfStatus: "published",
+      version: "1.0",
+
+      trigger: {
+        type: "task-completion",
+        pairs: [
+          { wfId: "wf-entrega-domicilio", taskId: "captura-pagamento", status: "Service Executed" },
+        ],
+      },
+      agentEnabled: true,
+      deps: [],
+      unlocks: [
+        { wfId: "wf-entrega-domicilio", wfName: "Entrega em domicílio", wfIcon: "🏠" },
+      ],
+
+      stages: [
+        {
+          id: "st-validacao-arte",
+          name: "Validação da Arte",
+          category: "SERVICE",
+          gate: "art_approved",
+          linkedToNext: true,
+          responsible: "Designer",
+          tasks: [
+            { id: "verificar-arte-enviada", name: "Verificar Arte Enviada", type: "auto" },
+            { id: "validar-especificacao-estampa", name: "Validar Especificação de Estampa", type: "auto" },
+            { id: "aprovar-arte", name: "Aprovar Arte", type: "manual", owner: "Designer" },
+          ],
+        },
+        {
+          id: "st-producao",
+          name: "Produção",
+          category: "SERVICE",
+          gate: "deliverable_ready",
+          linkedToNext: false,
+          agentEnabled: true,
+          responsible: "Ateliê de Estamparia",
+          tasks: [
+            { id: "acionar-atelie", name: "Acionar Ateliê de Estamparia", type: "auto" },
+            { id: "monitorar-producao", name: "Monitorar Produção", type: "auto" },
+            { id: "confirmar-peca-pronta", name: "Confirmar Peça Pronta", type: "manual" },
+          ],
+        },
+      ],
+
+      flatOrder: ["verificar-arte-enviada", "validar-especificacao-estampa", "aprovar-arte", "acionar-atelie", "monitorar-producao", "confirmar-peca-pronta"],
+
+      publishedAt: "2026-08-20T13:00:00Z",
+      publishedBy: "julia.grisi@vtex.com",
+      lastEditedAt: "2026-08-20T13:00:00Z",
+      lastEditedBy: "julia.grisi@vtex.com",
+      versionLog: [
+        {
+          version: "1.0",
+          publishedAt: "2026-08-20T13:00:00Z",
+          publishedBy: "julia.grisi@vtex.com",
+          description: "Publicação inicial do workflow de personalização de camiseta.",
+          deltas: [
+            { entity: "general config", change: "added",     detail: "Workflow criado como serviço sob demanda" },
+            { entity: "trigger",        change: "connected", detail: "Disparado ao concluir 'Captura de Pagamento' em Entrega em domicílio" },
+            { entity: "supplier",       change: "added",     detail: "Ateliê de Estamparia como fornecedor de produção" },
+          ],
+          appliedTo: "new_orders_only",
+          activeOrdersAtPublish: 0,
+        },
+      ],
+
+      custom: true,
+      orders: "0",
+    },
   ];
 
   /* ── Workflow library (templates for wizard — previously in view-workflow-board.jsx) ── */
@@ -1009,7 +1505,7 @@ window.AIWData = (function () {
       },
       itemGroups:[
         {
-          id:"g-bopis", workflow:"retirada-loja", fulfillmentType:"pickup",
+          id:"g-bopis", workflow:"wf-retirada-loja", fulfillmentType:"pickup",
           supplier:"C&A · Botafogo RJ",
           label:"Retirada na Loja · C&A Botafogo – RJ",
           projections:[
@@ -1030,7 +1526,7 @@ window.AIWData = (function () {
           ],
         },
         {
-          id:"g-delivery", workflow:"entrega-domicilio", fulfillmentType:"delivery",
+          id:"g-delivery", workflow:"wf-entrega-domicilio", fulfillmentType:"delivery",
           supplier:"Jadlog",
           label:"Entrega em Domicílio · Jadlog",
           projections:[
@@ -1074,7 +1570,7 @@ window.AIWData = (function () {
       },
       itemGroups:[
         {
-          id:"g-delivery", workflow:"entrega-domicilio", fulfillmentType:"delivery",
+          id:"g-delivery", workflow:"wf-entrega-domicilio", fulfillmentType:"delivery",
           supplier:"Total Express",
           label:"Entrega em Domicílio · Total Express",
           projections:[
@@ -1094,7 +1590,7 @@ window.AIWData = (function () {
           ],
         },
         {
-          id:"g-return", workflow:"troca-devolucao", type:"return",
+          id:"g-return", workflow:"wf-troca-devolucao", type:"return",
           fulfillmentType:"return",
           supplier:"Total Express",
           label:"Troca e Devolução",
@@ -1156,7 +1652,7 @@ window.AIWData = (function () {
       },
       itemGroups:[
         {
-          id:"g-virtual", workflow:"entrega-produto-virtual", type:"virtual",
+          id:"g-virtual", workflow:"wf-entrega-virtual", type:"virtual",
           fulfillmentType:"virtual",
           supplier:"Digital Service",
           label:"Entrega Produto Virtual · Acesso Digital",
@@ -1184,7 +1680,7 @@ window.AIWData = (function () {
           ],
         },
         {
-          id:"g-physical", workflow:"entrega-domicilio", fulfillmentType:"delivery",
+          id:"g-physical", workflow:"wf-entrega-domicilio", fulfillmentType:"delivery",
           supplier:"Correios SEDEX",
           label:"Entrega em Domicílio · Correios SEDEX",
           projections:[
@@ -1241,7 +1737,7 @@ window.AIWData = (function () {
       },
       itemGroups:[
         {
-          id:"g-kit", workflow:"entrega-domicilio", type:"kit",
+          id:"g-kit", workflow:"wf-entrega-domicilio", type:"kit",
           fulfillmentType:"delivery",
           supplier:"Loggi",
           label:"Entrega em Domicílio · Loggi",
@@ -1283,7 +1779,7 @@ window.AIWData = (function () {
           ],
         },
         {
-          id:"g-individual", workflow:"entrega-domicilio", type:"canceling",
+          id:"g-individual", workflow:"wf-entrega-domicilio", type:"canceling",
           fulfillmentType:"delivery",
           supplier:"Correios",
           label:"Entrega em Domicílio · Correios",
@@ -1317,7 +1813,7 @@ window.AIWData = (function () {
             },
           ],
           cancelGroup:{
-            id:"g-cancel", workflow:"cancelamento",
+            id:"g-cancel", workflow:"wf-cancelamento",
             label:"Cancelamento em andamento",
             stages:[
               { icon:"📝", label:"Solicitação",         status:"done"    },
@@ -1419,7 +1915,7 @@ window.AIWData = (function () {
         },
         /* ── Group 2: Óculos de Sol — Retirada na Loja ── */
         {
-          id:"g-sol", workflow:"retirada-loja", fulfillmentType:"pickup",
+          id:"g-sol", workflow:"wf-retirada-loja", fulfillmentType:"pickup",
           supplier:"LuzÓtica · Loja Jardins SP",
           label:"Retirada na Loja · LuzÓtica Jardins – SP",
           projections:[
@@ -1473,7 +1969,7 @@ window.AIWData = (function () {
       },
       itemGroups:[
         {
-          id:"g-delivery", workflow:"entrega-domicilio", fulfillmentType:"delivery",
+          id:"g-delivery", workflow:"wf-entrega-domicilio", fulfillmentType:"delivery",
           supplier:"Correios SEDEX",
           label:"Entrega em Domicílio · Correios SEDEX",
           projections:[
@@ -1493,7 +1989,7 @@ window.AIWData = (function () {
           ],
         },
         {
-          id:"g-return", workflow:"troca-devolucao", type:"return",
+          id:"g-return", workflow:"wf-troca-devolucao", type:"return",
           fulfillmentType:"return",
           supplier:"Correios SEDEX",
           label:"Troca e Devolução",
@@ -1555,7 +2051,7 @@ window.AIWData = (function () {
       },
       itemGroups:[
         {
-          id:"g-delivery", workflow:"entrega-domicilio", fulfillmentType:"delivery",
+          id:"g-delivery", workflow:"wf-entrega-domicilio", fulfillmentType:"delivery",
           supplier:"Loja Botafogo · Jadlog",
           label:"Entrega em Domicílio · Jadlog",
           projections:[
@@ -1615,7 +2111,11 @@ window.AIWData = (function () {
      responsável, participantes, reportada por), Diagnóstico e Tarefas — sem
      chat. O chat só é aberto quando o usuário clica em "Ver conversa" numa
      tarefa específica. IDs alinhados aos já referenciados em myTasks[].source
-     (kind: "initiative"). */
+     (kind: "initiative").
+
+     A tela My Initiatives passou a listar a fila de ocorrências (AIWData.tasks,
+     a mesma do OpenTasksCard da home); este dataset continua alimentando o
+     InitiativeDocumentPanel e as origens de myTasks[]. */
   const initiatives = [
     {
       id: "IN6281", title: "Personalização de recomendações na vitrine", status: "attention",
@@ -1989,7 +2489,7 @@ window.AIWData = (function () {
     ]},
   ];
 
-  return { AVATARS, AGENT_AVATARS, conversations, kpis, workflowStages, tasks, myTasks, resources, workflows, wfCategories, aiTeam, orders, libraryWfs, stageSuggestions, taskSuggestions, initiatives, opsHome, opsHomeQueue, policyActionKinds, policyCategories, workflowPolicies };
+  return { AVATARS, AGENT_AVATARS, conversations, kpis, overviewSummary, workflowStages, tasks, myTasks, resources, workflows, wfCategories, aiTeam, orders, libraryWfs, stageSuggestions, taskSuggestions, initiatives, opsHome, opsHomeQueue, TASK_STATUSES, policyActionKinds, policyCategories, workflowPolicies };
 })();
 
 /* ── AppData alias — keeps sidebar.jsx and app.jsx working without changes ── */

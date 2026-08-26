@@ -205,54 +205,11 @@ function renderMd(text) {
    - { from:"agent", type:"action", title, body, onApply }  proposed change card
    - { from:"agent", type:"wf-draft", draft, onConfirm }    new-workflow summary card
 */
-function ChipRowWithMore({ chips, onSelect }) {
-  const [open, setOpen] = useState(false);
-  const wrapRef = useRef(null);
-
-  useEffect(() => {
-    if (!open) return;
-    function handleClick(e) {
-      if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false);
-    }
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, [open]);
-
-  return (
-    <div className="composer-chips" ref={wrapRef}>
-      {open && (
-        <div className="chip-more-menu">
-          {chips.map((c, j) => (
-            <button
-              key={j}
-              className="chip-more-item"
-              style={{ animationDelay: `${(chips.length - 1 - j) * 55}ms` }}
-              onClick={() => { onSelect(c); setOpen(false); }}
-            >
-              {c.label}
-            </button>
-          ))}
-        </div>
-      )}
-      <div className="chip-row">
-        <button
-          className={`suggest-chip chip-help-trigger${open ? ' open' : ''}`}
-          onClick={() => setOpen(o => !o)}
-        >
-          <Icon name={open ? 'x' : 'sparkle'} size={14} />
-          {open ? 'Fechar' : 'Como posso te ajudar?'}
-        </button>
-      </div>
-    </div>
-  );
-}
-
 function ChatPanel({
   title = "New chat",
   intro,
   contextCard,
   chips = [],
-  alwaysShowChips = false,
   initialMessages = [],
   placeholder = "Message VTEX My Assistant...",
   agent = "VTEX My Assistant",
@@ -390,7 +347,7 @@ function ChatPanel({
           <div className="chat-draft-card">
             <div className="chat-draft-header">
               <span>✨</span>
-              <span>Nova experiência</span>
+              <span>Novo workflow</span>
             </div>
             <div className="chat-draft-rows">
               <div className="chat-draft-row">
@@ -526,20 +483,16 @@ function ChatPanel({
       <div className="chat-composer-wrap">
         {aboveComposer && <div className="chat-above-composer">{aboveComposer}</div>}
         {chips.length > 0 && (
-          alwaysShowChips ? (
-            <div className="composer-chips">
-              <div className="chip-row">
-                {chips.map((c, j) => (
-                  <button key={j} className="suggest-chip" onClick={() => send(c.label, undefined, { fromChip: true })}>
-                    {c.icon && <Icon name={c.icon} size={14} />}
-                    {c.label}
-                  </button>
-                ))}
-              </div>
+          <div className="composer-chips">
+            <div className="chip-row">
+              {chips.map((c, j) => (
+                <button key={j} className="suggest-chip" onClick={() => send(c.label, undefined, { fromChip: true })}>
+                  {c.icon && <Icon name={c.icon} size={16} />}
+                  {c.label}
+                </button>
+              ))}
             </div>
-          ) : (
-            <ChipRowWithMore chips={chips} onSelect={(c) => send(c.label, undefined, { fromChip: true })} />
-          )
+          </div>
         )}
         <MessageComposer placeholder={placeholder} agent={agent} onSend={send} ref={composerRef} />
       </div>

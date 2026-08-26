@@ -659,7 +659,7 @@ function OdNote({ note, seller }) {
   );
 }
 
-/* ── Atividades executadas — colapsada por padrão, dentro da experiência ── */
+/* ── Atividades executadas — colapsada por padrão, dentro do workflow ── */
 function OdRailActivities({ group }) {
   const [open, setOpen] = useState(false);
 
@@ -968,8 +968,8 @@ function PackageCard({ group, index, order, onOpenProduct }) {
   const soldBy = order && order.seller ? order.seller : "—";
   const shippedBy = group.supplier || "—";
 
-  // Experience name: first segment of group.label (before " · ")
-  const experienceName = group.label ? group.label.split(" · ")[0] : "Experiência";
+  // Workflow name: first segment of group.label (before " · ")
+  const experienceName = group.label ? group.label.split(" · ")[0] : "Workflow";
 
   /* Status da task corrente do pacote. Um erro de conector na task em execução
      é o que a bloqueia; sem nada em execução, o que existe é uma task já
@@ -3765,8 +3765,14 @@ function TaskCanvas({ task, onBack, chatOpen, onToggleChat, panelClassName, veri
             <Icon name="x" size={18} />
           </button>
         )}
+        {/* O título da iniciativa já é o h1 do documento; o topbar carrega só
+            o chip de ID (mesmo componente da tabela de iniciativas). */}
         <span className="canvas-topbar-title">
-          {inSub ? `Voltar para ${task.id}` : (task.occurrenceId ? `${task.occurrenceId} · ${d.title}` : d.title)}
+          {inSub ? (
+            `Voltar para ${task.id}`
+          ) : (
+            <span data-sl-initiative-table-id-chip="">{task.id.replace(/^TA-/, "")}</span>
+          )}
         </span>
         {onToggleChat && (
           <button

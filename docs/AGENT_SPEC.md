@@ -1,6 +1,6 @@
-# AGENT_SPEC — Gerenciador de Experiências
+# AGENT_SPEC — Gerenciador de Workflows
 **Versão:** 0.6  
-**Produto:** AIW — Gerenciador de Experiências (anteriormente "Controle de Fluxos")  
+**Produto:** AIW — Gerenciador de Workflows (anteriormente "Controle de Fluxos" / "Gerenciador de Experiências")  
 **Superfície:** Chat (painel esquerdo) + Canvas (painel direito)  
 **Rota base:** `#/workflow-board`  
 **Audiência deste documento:** PMs, designers e ferramentas de IA (Cursor, Claude Code) que implementam ou evoluem o comportamento do agente.
@@ -14,7 +14,7 @@
 
 ## 1. Contexto do produto
 
-O agente vive dentro do **Gerenciador de Experiências**, acessado via `Settings → Gerenciador de Experiências` a partir da home de Orders do AIW.
+O agente vive dentro do **Gerenciador de Workflows**, acessado via `Settings → Gerenciador de Workflows` a partir da home de Orders do AIW.
 
 A superfície tem dois painéis permanentes a partir de `#/workflow-board`:
 - **Chat (esquerda):** sidebar persistente onde o operador conversa com o agente em linguagem natural. Presente em todas as sub-telas do Gerenciador.
@@ -27,7 +27,7 @@ O agente **não executa pedidos reais**. Ele atua somente na camada de **configu
 ```
 Sidebar AIW
   └── Orders (Home)
-        └── Settings (dropdown topbar) → Gerenciador de Experiências
+        └── Settings (dropdown topbar) → Gerenciador de Workflows
               └── Lista de Workflows          #/workflow-board
                     └── Workflow Detail        #/workflow-board/:workflowId
                           ├── Task Config      (inline no canvas — sem rota própria)
@@ -159,18 +159,18 @@ Obrigatório nos fluxos: criação de workflow, criação de tarefa, publicaçã
 
 ---
 
-### Fluxo A — Nova experiência
+### Fluxo A — Novo workflow
 
 **Intenção reconhecida quando o operador:**
-- Clica em "Nova experiência" no menu "Como posso te ajudar?"
-- Diz "criar workflow" / "nova experiência" / "novo workflow"
+- Clica em "Novo workflow" no menu "Como posso te ajudar?"
+- Diz "criar workflow" / "novo workflow"
 
 **Passos do agente:**
 
 ```
-1. CHAT: "Qual é o nome da nova experiência?"
+1. CHAT: "Qual é o nome do novo workflow?"
 
-2. CHAT: "Quer criar do zero ou usar uma experiência existente como base?"
+2. CHAT: "Quer criar do zero ou usar um workflow existente como base?"
    Chips: [Do zero] [Copiar existente]
    → Se "Copiar existente": lista os workflows existentes como chips para seleção
 
@@ -192,32 +192,32 @@ Obrigatório nos fluxos: criação de workflow, criação de tarefa, publicaçã
 5. Se "Confirmar estrutura":
    CHAT: Action card com resumo completo.
    Campos: Nome · Base · Produtos/Categorias · Etapas · Tarefas (total)
-   Chips: [Criar experiência] [Cancelar]
+   Chips: [Criar workflow] [Cancelar]
 
-6. Se "Criar experiência":
+6. Se "Criar workflow":
    CANVAS: Workflow aparece na lista com badge "Rascunho",
            com as etapas e tarefas já renderizadas no canvas.
-   CHAT: "Experiência criada. Revise os detalhes no canvas."
+   CHAT: "Workflow criado. Revise os detalhes no canvas."
    Chips: [+ Adicionar tarefa] [Publicar]
 ```
 
 **Notas:**
 - Templates não são mais oferecidos neste fluxo — criação é sempre por nome + estrutura livre ou cópia.
-- O campo "Produtos/Categorias" mapeia para o escopo de atendimento da experiência, não é filtro de busca.
+- O campo "Produtos/Categorias" mapeia para o escopo de atendimento do workflow, não é filtro de busca.
 - O mini-preview (passo 4) faz parse de texto livre: uma linha por etapa, tarefas separadas por vírgula após `:`.
 
 ---
 
-### Fluxo A2 — Editar experiência existente
+### Fluxo A2 — Editar workflow existente
 
 **Intenção reconhecida quando o operador:**
-- Clica em "Editar experiência existente" no menu "Como posso te ajudar?"
-- Diz "editar workflow" / "editar experiência"
+- Clica em "Editar workflow existente" no menu "Como posso te ajudar?"
+- Diz "editar workflow"
 
 **Passos do agente:**
 
 ```
-1. CHAT: "Qual experiência você quer editar?"
+1. CHAT: "Qual workflow você quer editar?"
    [lista os workflows existentes como chips para seleção]
 
 2. Operador seleciona um workflow:
@@ -436,31 +436,31 @@ Chips por seção:
 
 ---
 
-### Fluxo G — Editar experiências em massa
+### Fluxo G — Editar workflows em massa
 
 **Intenção reconhecida quando o operador:**
-- Clica em "Editar experiências em massa" no menu "Como posso te ajudar?"
+- Clica em "Editar workflows em massa" no menu "Como posso te ajudar?"
 
 **Passos do agente:**
 
 ```
-1. CHAT: "Quais experiências você quer editar? Selecione e confirme."
+1. CHAT: "Quais workflows você quer editar? Selecione e confirme."
    [chips de todos os workflows ativos + chip "Pronto →" desabilitado até ≥1 seleção]
    → Chips de workflows selecionados ficam com visual de estado ativo (checked)
    → "Pronto →" habilita após primeira seleção
 
 2. Operador clica "Pronto →":
-   CHAT: "[X] experiência(s) selecionada(s): Nome1, Nome2.
-          O que você quer fazer com elas?"
-   Chips: [Publicar todas] [Arquivar todas] [Ativar Agente AI] [Desativar Agente AI]
+   CHAT: "[X] workflow(s) selecionado(s): Nome1, Nome2.
+          O que você quer fazer com eles?"
+   Chips: [Publicar todos] [Arquivar todos] [Ativar Agente AI] [Desativar Agente AI]
 
 3. CHAT: Action card com resumo da operação.
-   Campos: Ação · Experiências afetadas (lista)
+   Campos: Ação · Workflows afetados (lista)
    Chips: [Confirmar] [Cancelar]
 
 4. Se confirmado:
    CANVAS: Badges atualizam em todos os cards afetados.
-   CHAT: "✓ [Ação] aplicada em [X] experiências."
+   CHAT: "✓ [Ação] aplicada em [X] workflows."
    Chips: [Selecionar mais] [Pronto]
 ```
 
@@ -555,3 +555,4 @@ Copie o template abaixo, cole como nova subseção em `## 6. Fluxos cobertos` e 
 | 0.4 | 2026-06-09 | Jackeline / Claude | Regra 8 adicionada a 4.1: "Aplicar" em action card de tarefa abre o card expandido no canvas e faz scroll automático até ele; canvas acompanha elemento em foco no chat. Regra 9 adicionada a 4.1: publicação tem dupla entrada (chat e canvas). Fluxo B passo 7 atualizado: tarefa aparece aberta (card expandido) com scroll posicionado. Tabela de sincronização (seção 8) expandida com linhas de Aplicar, scroll automático e publicação via canvas. |
 | 0.5 | 2026-06-09 | Jackeline / Claude | Fluxo B simplificado: biblioteca de tarefas removida (criação sempre personalizada); passo de Responsável removido; passo de execução agora inclui explicação de Automática vs Manual; action card passa a ter 4 campos (Nome · Etapa · Execução · Visibilidade). |
 | 0.6 | 2026-06-09 | Jackeline / Claude | Fluxo A reescrito: criação via chat com nome, base (do zero ou copiar), produtos/categorias, estrutura de etapas+tarefas como lista livre com mini-preview antes do action card. Fluxo A2 adicionado: "Editar experiência existente" (seleção via chips). Fluxo G adicionado: "Editar experiências em massa" com multi-select via chips e ações em bulk (Publicar, Arquivar, Ativar/Desativar AI). Menu "Como posso te ajudar?" atualizado para 3 entradas: Nova experiência - Editar experiência existente - Editar experiências em massa. |
+| 0.7 | 2026-08-26 | Jackeline | Renomeado de "Gerenciador de Experiências" para **"Gerenciador de Workflows"**. Todos os fluxos, chips, mensagens do chat e rótulos passam a usar "workflow" (masculino) em vez de "experiência" (feminino), com concordância ajustada (novo/existente/selecionado). Não há mais entidade "experiência" — sempre workflow. |

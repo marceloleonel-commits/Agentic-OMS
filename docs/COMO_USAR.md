@@ -13,7 +13,7 @@ Guia para designers, PMs e engenheiros que trabalham neste repositório.
     └── AGENT_SPEC.md     ← fonte de verdade do comportamento do agente
 ```
 
-O `AGENTS.md` é o "porteiro": instrui qualquer ferramenta de IA a ler o `AGENT_SPEC.md` antes de qualquer tarefa no Gerenciador de Experiências. Por ser um arquivo padrão da raiz do repositório, funciona no Cursor, Claude Code, GitHub Copilot, v0, e qualquer ferramenta que siga a convenção `AGENTS.md`. Você não precisa repetir as instruções a cada sessão ou trocar de arquivo ao trocar de ferramenta.
+O `AGENTS.md` é o "porteiro": instrui qualquer ferramenta de IA a ler o `AGENT_SPEC.md` antes de qualquer tarefa no Gerenciador de Workflows. Por ser um arquivo padrão da raiz do repositório, funciona no Cursor, Claude Code, GitHub Copilot, v0, e qualquer ferramenta que siga a convenção `AGENTS.md`. Você não precisa repetir as instruções a cada sessão ou trocar de arquivo ao trocar de ferramenta.
 
 ---
 

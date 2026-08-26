@@ -269,7 +269,6 @@ function App() {
         <ChatPanel
           title={currentOrder ? `Pedido ${currentOrder.short}` : "Detalhe do Pedido"}
           chips={orderDynamicChips.length > 0 ? orderDynamicChips : orderChips}
-          alwaysShowChips={true}
           messages={orderChatMsgs}
           onSend={handleOrderChatSend}
           isTyping={orderChatTyping}
