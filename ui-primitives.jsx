@@ -5,20 +5,33 @@
 const { useState, useEffect, useRef } = React;
 
 /* ── Severity pill ──────────────────────────────────────────────────────── */
+// Usa o mesmo CriticalityTag da tabela de iniciativas na Home
+// (`[data-sl-criticality-tag]`) para manter um único estilo de tag em todos
+// os lugares onde uma severidade é exibida.
 function SevPill({ level }) {
   const map = { high: "Alta", medium: "Média", low: "Baixa" };
   return (
-    <span className={`sev sev-${level}`}>
-      {level === "high" && <span className="dot" />}
-      {map[level]}
+    <span data-sl-criticality-tag="" data-priority={level}>
+      {level === "high" && <span data-sl-status="dot" aria-hidden />}
+      {map[level] || level}
     </span>
   );
 }
 
-/* ── Person / agent avatar ──────────────────────────────────────────────── */
-function PersonAvatar({ initial, agent }) {
+/* ── Person / agent avatar ──────────────────────────────────────────────────
+   `name` é o nome exibido do agente: quando ele tem retrato próprio em
+   AIWData.AGENT_AVATARS, é esse retrato que entra no lugar do sparkle. */
+function PersonAvatar({ initial, agent, name }) {
   if (agent) {
-    return <span className="agent-avatar-mini" title="Agent"><Icon name="sparkle" size={12} /></span>;
+    const portrait = name && ((window.AIWData && window.AIWData.AGENT_AVATARS) || {})[name];
+    if (portrait) {
+      return (
+        <span className="agent-avatar-mini agent-avatar-mini--img" title={name}>
+          <img src={portrait} alt="" />
+        </span>
+      );
+    }
+    return <span className="agent-avatar-mini" title={name || "Agent"}><Icon name="sparkle" size={12} /></span>;
   }
   return <span className="person-avatar">{initial}</span>;
 }

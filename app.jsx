@@ -1,4 +1,4 @@
-/* global React, ReactDOM, Sidebar, Icon, AppData, AIWData, AssistantView, TaskView, OrderDetailView, WorkflowBoardView, ChatPanel, ResizableSplit, ChatEngine, AITeamDrawer, Dropdown, MessageComposer, ChatsView, InitiativesView, HomePreviewView, HomeQueueView */
+/* global React, ReactDOM, Sidebar, Icon, AppData, AIWData, AssistantView, TaskView, OrderDetailView, WorkflowBoardView, WorkflowPoliciesView, ChatPanel, ResizableSplit, ChatEngine, AITeamDrawer, Dropdown, MessageComposer, ChatsView, InitiativesView, HomePreviewView, HomeQueueView */
 const { useState, useEffect, useRef } = React;
 
 /* ── Hash-based routing ─────────────────────────────────────────────────── */
@@ -50,8 +50,18 @@ function App() {
   const [orderDynamicChips, setOrderDynamicChips] = useState([]);
   const orderEngineRef = useRef(null);
 
+  /* Rota anterior à entrada de um task — usada pelo "Voltar" do chat da task
+     para retornar à última tela vista (Iniciativas, My Assistant, etc.) em
+     vez de cair no default `orders`. */
+  const prevRouteRef = useRef(null);
+
   const setRoute = (r) => {
-    setRouteState(r);
+    setRouteState((cur) => {
+      if (r.name === 'task' && cur.name !== 'task') {
+        prevRouteRef.current = cur;
+      }
+      return r;
+    });
     if (r.name === 'workflow-board') {
       const m = r.wfMode || { kind: 'list' };
       setWfMode(m);
@@ -115,12 +125,23 @@ function App() {
   useEffect(() => { setProductView(null); }, [route.orderId]);
 
   const goHome   = () => setRoute({ name: "orders" });
-  const openTask = (id) => setRoute({ name: "task", id });
+  /* Voltar do task: usa a rota anterior guardada (última tela antes da task).
+     Fallback para o home padrão se, por qualquer motivo, não houver histórico
+     (ex.: task aberto por deep link direto). */
+  const goBackFromTask = () => {
+    const prev = prevRouteRef.current;
+    prevRouteRef.current = null;
+    setRoute(prev || { name: "orders" });
+  };
+  /* `opts.openChat` — usado por InitiativeDocumentPanel ("Ver conversa"): a
+     tarefa abre com o chat já ativo, em vez do padrão canvas-only. */
+  const openTask = (id, opts) => setRoute({ name: "task", id, openChat: !!(opts && opts.openChat) });
   const openOrder = (id) => setRoute({ name: "order-detail", orderId: id });
   const gotoResource = (id) => {
     if (id === "workflow-board") setRoute({ name: "workflow-board" });
     else if (id === "all-orders") setRoute({ name: "orders" });
     else if (id === "tasks") setRoute({ name: "tasks" });
+    else if (id === "workflow-policies") setRoute({ name: "workflow-policies" });
   };
   const pickAgent = (id) => {
     setAIOpen(false);
@@ -143,11 +164,11 @@ function App() {
         <button className="dd-item" onClick={() => setRoute({ name: "workflow-board" })}>
           <span className="dd-item-icon"><Icon name="board" size={14} /></span>
           <span>
-            <span className="dd-item-label">Gerenciador de Experiências</span>
+            <span className="dd-item-label">Configurações de Workflow</span>
             <span className="dd-item-sub">{AIWData.workflows.length} workflows configurados</span>
           </span>
         </button>
-        <button className="dd-item" onClick={() => setRoute({ name: "orders" })}>
+        <button className="dd-item" onClick={() => setRoute({ name: "workflow-policies" })}>
           <span className="dd-item-icon"><Icon name="cart" size={14} /></span>
           <span>
             <span className="dd-item-label">Orders Settings</span>
@@ -225,8 +246,10 @@ function App() {
     // Unified-queue variant (occurrences + tasks in one feed). Isolated route —
     // does not replace or affect #/home-preview or #/orders.
     view = <HomeQueueView onOpenTask={openTask} onGotoResource={gotoResource} />;
+  } else if (route.name === "workflow-policies") {
+    view = <WorkflowPoliciesView />;
   } else if (route.name === "task") {
-    view = <TaskView taskId={route.id} onBack={goHome} onOpenOrder={openOrder} />;
+    view = <TaskView taskId={route.id} onBack={goBackFromTask} onOpenOrder={openOrder} initialChatOpen={route.openChat} />;
   } else if (route.name === "workflow-board") {
     view = <WorkflowBoardView
       key={wfBoardKey}
@@ -264,7 +287,6 @@ function App() {
         <ChatPanel
           title={currentOrder ? `Pedido ${currentOrder.short}` : "Detalhe do Pedido"}
           chips={orderDynamicChips.length > 0 ? orderDynamicChips : orderChips}
-          alwaysShowChips={true}
           messages={orderChatMsgs}
           onSend={handleOrderChatSend}
           isTyping={orderChatTyping}

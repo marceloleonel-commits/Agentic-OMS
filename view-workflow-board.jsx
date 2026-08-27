@@ -1,5 +1,5 @@
-/* global React, Icon, IconSparkleFill, IconHandFill, IconPencil, IconCursorFill, IconDragDots, IconDotsSixVertical, IconDotsThreeVertical, IconEdit, IconPlayCircleFill, IconCaretLeftSmall, IconCaretDown, IconCaretUp, IconTrash, IconCheck, IconCube, IconCurrencyCircleDollar, IconNewspaper, IconTruck, IconReorder, AIWData, ChatPanel, ResizableSplit, IconButton, SidebarTooltip */
-const { useState, useRef, useEffect, useCallback } = React;
+/* global React, Icon, IconSparkleFill, IconHandFill, IconPencil, IconCursorFill, IconDragDots, IconDotsSixVertical, IconDotsThreeVertical, IconEdit, IconPlayCircleFill, IconCaretLeftSmall, IconCaretDown, IconCaretUp, IconTrash, IconCheck, IconCube, IconCurrencyCircleDollar, IconNewspaper, IconTruck, IconReorder, AIWData, ChatPanel, ResizableSplit, IconButton, SidebarTooltip, PersonAvatar */
+const { useState, useRef, useEffect, useLayoutEffect, useCallback } = React;
 
 // Usuário da sessão atual — mesmo e-mail já usado como autor/editor nos dados
 // mock (data-aiw.js), usado para preencher "Publicado em" ao publicar.
@@ -1163,6 +1163,146 @@ const WF_STATUS_META = {
   archived:                { label: "Arquivado",                         color: "neutral" },
 };
 
+/* ── Helpers de exibição da list card (WfListCardV2 / renderExpanded) ─────
+   Convertem os campos do workflow (docs/WORKFLOW_ENTIDADES.md) em rótulos e
+   cores prontos para renderizar no card. Ficam no escopo do módulo para
+   permanecerem estáveis entre renders sem depender de closures do canvas. */
+function wfOrchMeta(w) {
+  if (w.agentEnabled === true) {
+    return {
+      icon: "sparkle",
+      label: "Agêntica",
+      bg: "var(--sl-color-purple-1, #f3e8ff)",
+      fg: "var(--sl-color-purple-9, #7c3aed)",
+    };
+  }
+  return {
+    icon: "user",
+    label: "Manual",
+    bg: "var(--sl-bg-muted, #f3f4f6)",
+    fg: "var(--sl-color-gray-10, #374151)",
+  };
+}
+function wfStatusPill(w) {
+  if (w.wfStatus === "published") {
+    return { label: "Ativo", bg: "#D1FAE5", fg: "#00a81c" };
+  }
+  if (w.wfStatus === "published_with_changes") {
+    return { label: "Ativo · pendente", bg: "var(--sl-color-orange-2, #ffedcd)", fg: "var(--sl-color-orange-10, #b24d01)" };
+  }
+  if (w.wfStatus === "archived") {
+    return { label: "Arquivado", bg: "var(--sl-bg-muted, #f3f4f6)", fg: "var(--sl-color-gray-10, #374151)" };
+  }
+  return { label: "Rascunho", bg: "var(--sl-bg-muted, #f3f4f6)", fg: "var(--sl-color-gray-10, #374151)" };
+}
+function wfTriggerDisplay(w) {
+  const t = w.trigger || {};
+  if (t.type === "system-event") {
+    const events = t.events || [];
+    return {
+      hasTrigger: events.length > 0,
+      typeLabel: "Evento do sistema",
+      explain: "Começa sozinho quando o evento acontece na plataforma.",
+      value: events[0] || "",
+      moreCount: Math.max(events.length - 1, 0),
+    };
+  }
+  if (t.type === "wf-completion") {
+    const ids = t.triggerWfIds || [];
+    const src = (typeof AIWData !== "undefined" && AIWData.workflows) || [];
+    const firstName = src.find(x => x.id === ids[0])?.name || ids[0] || "";
+    return {
+      hasTrigger: ids.length > 0,
+      typeLabel: "Conclusão de um workflow",
+      explain: "Começa quando outro workflow chega ao fim, levando o pedido adiante.",
+      value: firstName,
+      moreCount: Math.max(ids.length - 1, 0),
+    };
+  }
+  if (t.type === "task-completion") {
+    const pairs = t.pairs || [];
+    const first = pairs[0];
+    const src = (typeof AIWData !== "undefined" && AIWData.workflows) || [];
+    let value = "";
+    if (first) {
+      const wf = src.find(x => x.id === first.wfId);
+      const task = wf ? wf.stages.flatMap(s => s.tasks).find(x => x.id === first.taskId) : null;
+      value = wf ? `${wf.name}${task ? ` · ${task.name}` : ""}` : first.wfId;
+    }
+    return {
+      hasTrigger: pairs.length > 0,
+      typeLabel: "Conclusão de uma tarefa",
+      explain: "Começa quando uma tarefa específica de outro workflow entra num status monitorado.",
+      value,
+      moreCount: Math.max(pairs.length - 1, 0),
+    };
+  }
+  if (t.type === "order-start") {
+    return { hasTrigger: true, typeLabel: "Início do pedido", explain: "Começa automaticamente no início do ciclo do pedido.", value: "Início do pedido", moreCount: 0 };
+  }
+  return { hasTrigger: false, typeLabel: "", explain: "Sem gatilho, o workflow só começa se alguém colocar um pedido nele manualmente.", value: "", moreCount: 0 };
+}
+/* Renderiza a tag do valor do gatilho e exibe o "+N" apenas quando a tag
+   não couber na largura do container (ellipsis ativa). */
+function TriggerValueWithOverflow({ value, moreCount }) {
+  const valueRef = useRef(null);
+  const [truncated, setTruncated] = useState(false);
+
+  useLayoutEffect(() => {
+    const el = valueRef.current;
+    if (!el) return;
+    const measure = () => {
+      // scrollWidth > clientWidth indica que o text-overflow ellipsis foi acionado
+      setTruncated(el.scrollWidth - el.clientWidth > 1);
+    };
+    measure();
+    let ro;
+    if (typeof ResizeObserver !== "undefined") {
+      ro = new ResizeObserver(measure);
+      ro.observe(el);
+      if (el.parentElement) ro.observe(el.parentElement);
+    }
+    return () => { if (ro) ro.disconnect(); };
+  }, [value, moreCount]);
+
+  return (
+    <span className="wf-card-trigger-value-wrap">
+      <span className="wf-card-trigger-value" ref={valueRef} title={value}>{value}</span>
+      {moreCount > 0 && truncated && (
+        <span className="wf-card-trigger-more">+{moreCount}</span>
+      )}
+    </span>
+  );
+}
+
+function wfFootMeta(w) {
+  const dateIso = w.publishedAt || w.lastEditedAt;
+  const actor = w.publishedBy || w.lastEditedBy;
+  if (!dateIso) return "";
+  const verb = w.publishedAt ? "Publicado" : "Editado";
+  return `${verb} ${wfTimeAgo(dateIso)} por ${wfFirstName(actor)}`;
+}
+function wfTimeAgo(iso) {
+  const then = new Date(iso).getTime();
+  if (!then) return "";
+  const diff = Date.now() - then;
+  const day = 24 * 60 * 60 * 1000;
+  if (diff < day) return "hoje";
+  if (diff < 2 * day) return "ontem";
+  const days = Math.floor(diff / day);
+  if (days < 30) return `há ${days} dias`;
+  const months = Math.floor(days / 30);
+  if (months < 12) return `há ${months} ${months === 1 ? "mês" : "meses"}`;
+  const years = Math.floor(months / 12);
+  return `há ${years} ${years === 1 ? "ano" : "anos"}`;
+}
+function wfFirstName(email) {
+  if (!email) return "—";
+  const local = String(email).split("@")[0] || String(email);
+  const first = local.split(".")[0] || local;
+  return first.charAt(0).toUpperCase() + first.slice(1);
+}
+
 /* ── Editable workflow title — auto-resizing textarea styled as h1, mirrors
    the campaign title field from vtex-ads-campaign-manager-design-prototype ── */
 function WfEditableTitle({ value, onChange, className = "" }) {
@@ -1202,10 +1342,7 @@ function WfActorSpan({ who, date }) {
   const initial = who ? who[0].toUpperCase() : "?";
   return (
     <span className="reporter">
-      {isHuman
-        ? <span className="person-avatar">{initial}</span>
-        : <span className="agent-avatar-mini" title="Agent"><Icon name="sparkle" size={12} /></span>
-      }
+      <PersonAvatar initial={initial} agent={!isHuman} name={who} />
       <span><b>{who}</b> em {date}</span>
     </span>
   );
@@ -1235,16 +1372,10 @@ function WfMetaSection({ workflow, onOpenSettings }) {
 
       <dt>Versão</dt>
       <dd>
-        {log.length > 0 ? (
-          <button type="button" className="wf-ver-badge-btn" onClick={() => setHistOpen(true)} title="Histórico de versões">
-            <span className="wf-ver-badge-label">{sm.label} • versão {workflow.version}</span>
-            <Icon name="chevron-right" size={12} className="wf-ver-badge-chevron" />
-          </button>
-        ) : (
-          <span className="wf-ver-badge-btn wf-ver-badge-btn--static">
-            <span className="wf-ver-badge-label">{sm.label} • versão {workflow.version}</span>
-          </span>
-        )}
+        <button type="button" className="wf-ver-badge-btn" onClick={() => setHistOpen(true)} title="Histórico de versões">
+          <span className="wf-ver-badge-label">{sm.label} • versão {workflow.version}</span>
+          <Icon name="chevron-right" size={12} className="wf-ver-badge-chevron" />
+        </button>
         {runningVersion && (
           <span className="wf-meta-running">v{runningVersion} em produção</span>
         )}
@@ -1379,6 +1510,372 @@ function WfChoiceDrawer({ title, options, selectedKey, onSelect, onClose, childr
   );
 }
 
+/* Eventos de domínio fictícios do gatilho "Evento do sistema", agrupados por
+   domínio. Alimentam o picker do card Configuração (WfSystemEventPicker). */
+const SYSTEM_EVENT_GROUPS = [
+  { domain: "Pedidos", events: [
+    "Pedido criado", "Pagamento aprovado", "Pedido cancelado", "Pedido faturado", "Item removido do pedido",
+  ] },
+  { domain: "Devoluções", events: [
+    "Devolução solicitada", "Devolução aprovada", "Devolução rejeitada", "Produto recebido no CD", "Reembolso emitido",
+  ] },
+  { domain: "Entrega", events: [
+    "Pedido enviado", "Entrega atrasada", "Tentativa de entrega falhou", "Pedido entregue", "Endereço de entrega alterado",
+  ] },
+  { domain: "Assinaturas", events: [
+    "Assinatura criada", "Assinatura renovada", "Assinatura cancelada", "Falha na cobrança recorrente", "Plano alterado",
+  ] },
+  { domain: "Pagamentos", events: [
+    "Pagamento recusado", "Pagamento em análise antifraude", "Estorno solicitado", "Boleto vencido",
+  ] },
+  { domain: "Estoque", events: [
+    "Produto esgotado", "Estoque reabastecido", "Produto próximo do limite mínimo",
+  ] },
+  { domain: "Conta do cliente", events: [
+    "Conta criada", "Dados cadastrais atualizados", "Cliente marcado como VIP", "Solicitação de exclusão de conta (LGPD)",
+  ] },
+  { domain: "Atendimento", events: [
+    "Ticket de suporte aberto", "Ticket escalado", "Avaliação de atendimento recebida",
+  ] },
+];
+
+/* Picker de eventos do gatilho "Evento do sistema": busca no topo e eventos
+   agrupados por domínio, com seleção múltipla — o operador pode marcar vários
+   eventos, inclusive dentro do mesmo domínio. Embutido no card "Configuração"
+   do WfTriggerDrawer. */
+function WfSystemEventPicker({ selectedEvents, onToggle }) {
+  const [query, setQuery] = useState("");
+
+  const norm = (s) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  const q = norm(query.trim());
+  // Busca casa pelo nome do evento; se casar pelo nome do domínio, o grupo
+  // inteiro permanece visível.
+  const groups = SYSTEM_EVENT_GROUPS
+    .map((g) => (q && !norm(g.domain).includes(q))
+      ? { ...g, events: g.events.filter((ev) => norm(ev).includes(q)) }
+      : g)
+    .filter((g) => g.events.length > 0);
+
+  return (
+    <>
+      <div className="wf-event-search">
+        <Icon name="search" size={14} />
+        <input
+          type="search"
+          placeholder="Buscar evento"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={(e) => e.stopPropagation()}
+        />
+      </div>
+      {groups.length === 0 ? (
+        <span className="setting-help" style={{ display: "block", marginTop: 16 }}>Nenhum evento encontrado</span>
+      ) : (
+        <div className="wf-event-groups">
+          {groups.map((g) => (
+            <div key={g.domain} className="setting-field">
+              <label>{g.domain}</label>
+              <div className="wf-event-group-list">
+                {g.events.map((ev) => (
+                  <label key={ev} className="wf-check">
+                    <input
+                      type="checkbox"
+                      checked={selectedEvents.includes(ev)}
+                      onChange={() => onToggle(ev)}
+                    />
+                    <span>{ev}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </>
+  );
+}
+
+/* Dropdown customizado do tipo de gatilho — mesmo padrão .status-dropdown
+   do sistema (botão + painel listbox), em largura total, no lugar do
+   <select> nativo. */
+function WfTriggerTypeDropdown({ options, value, onSelect }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  useEffect(() => {
+    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const current = options.find(o => o.key === value);
+
+  return (
+    <div className="status-dropdown wf-trigger-type-dropdown" ref={ref}>
+      <button
+        type="button"
+        className={`status-dropdown-btn${open ? " open" : ""}`}
+        onClick={() => setOpen(o => !o)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+      >
+        <span className="status-dropdown-copy">
+          <span className={`status-dropdown-label${current ? "" : " placeholder"}`}>
+            {current ? current.label : "Selecionar tipo de gatilho"}
+          </span>
+          {current && <span className="status-dropdown-desc">{current.desc}</span>}
+        </span>
+        <svg className={`status-dropdown-chevron${open ? " open" : ""}`} viewBox="0 0 16 16" fill="none" width="12" height="12">
+          <path d="M4 6l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      </button>
+      {open && (
+        <div className="status-dropdown-panel" role="listbox">
+          {options.map(opt => (
+            <button
+              key={opt.key}
+              type="button"
+              className={`status-dropdown-item${value === opt.key ? " selected" : ""}`}
+              role="option"
+              aria-selected={value === opt.key}
+              onClick={() => { onSelect(opt.key); setOpen(false); }}
+            >
+              <span className="status-dropdown-copy">
+                <span className="status-dropdown-item-label">{opt.label}</span>
+                <span className="status-dropdown-desc">{opt.desc}</span>
+              </span>
+              {value === opt.key && <IconCheck size={16} style={{ marginLeft: "auto", flexShrink: 0, alignSelf: "center" }} />}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* Configuração do gatilho "Conclusão de uma tarefa específica" — um card por
+   workflow de origem, cada um com a tarefa que dispara e o status observado
+   da tarefa (vocabulário TASK_STATUSES do OMS). O operador adiciona mais
+   workflows pelo picker "+ Adicionar workflow". */
+function WfTaskTriggerConfig({ workflows, pairs, onAddWf, onRemovePair, onPickTask, onPickStatus }) {
+  // "t<i>"/"s<i>" = lista de tarefas/status do card i aberta; null = fechado
+  const [openList, setOpenList] = useState(null);
+  const [addOpen, setAddOpen] = useState(false);
+
+  const statuses = (AIWData && AIWData.TASK_STATUSES) || [];
+  const available = workflows.filter(w => !pairs.some(p => p.wfId === w.id));
+  const tasksOf = (wf) => wf ? wf.stages.flatMap(s => s.tasks.map(t => ({ ...t, stageName: s.name }))) : [];
+
+  return (
+    <div className="wf-task-trigger-config">
+      {pairs.map((p, i) => {
+        const wf = workflows.find(w => w.id === p.wfId);
+        const tasks = tasksOf(wf);
+        const task = tasks.find(t => t.id === p.taskId);
+        const status = statuses.find(st => st.id === p.status);
+        const taskListOpen = openList === `t${i}`;
+        const statusListOpen = openList === `s${i}`;
+        return (
+          <div key={p.wfId} className="wf-task-trigger-card">
+            <div className="wf-task-trigger-head">
+              <div className="wf-task-trigger-head-copy">
+                <span className="wf-task-trigger-overline">Workflow</span>
+                <span className="wf-task-trigger-wf-name">{wf ? `${wf.icon} ${wf.name}` : ""}</span>
+              </div>
+              <SidebarTooltip label="Remover workflow" placement="top">
+                <IconButton
+                  icon={<Icon name="x" size={14} />}
+                  label="Remover workflow"
+                  variant="tertiary"
+                  onClick={() => { onRemovePair(i); setOpenList(null); }}
+                />
+              </SidebarTooltip>
+            </div>
+            <div className="wf-task-trigger-divider" />
+
+            <span className="wf-task-trigger-overline">Tarefa que dispara</span>
+            <button
+              type="button"
+              className={`wf-task-trigger-select${taskListOpen ? " open" : ""}`}
+              aria-haspopup="listbox"
+              aria-expanded={taskListOpen}
+              onClick={() => setOpenList(taskListOpen ? null : `t${i}`)}
+            >
+              <span className="wf-task-trigger-select-copy">
+                <span className={`wf-task-trigger-select-value${task ? "" : " placeholder"}`}>
+                  {task ? task.name : "Selecionar tarefa"}
+                </span>
+                {task && <span className="wf-task-trigger-select-meta">{task.stageName}</span>}
+              </span>
+              <Icon name="chevron-down" size={14} className="wf-task-trigger-select-chevron" />
+            </button>
+            {taskListOpen && (
+              <div className="wf-task-trigger-list" role="listbox">
+                {tasks.map(t => (
+                  <button
+                    key={t.id}
+                    type="button"
+                    className={`wf-task-trigger-option${p.taskId === t.id ? " selected" : ""}`}
+                    role="option"
+                    aria-selected={p.taskId === t.id}
+                    onClick={() => { onPickTask(i, t.id); setOpenList(`s${i}`); }}
+                  >
+                    <span className="wf-task-trigger-option-dot" aria-hidden="true" />
+                    <span className="wf-task-trigger-option-name">{t.name}</span>
+                    <span className="wf-task-trigger-option-meta">{t.stageName}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            <span className="wf-task-trigger-overline" style={{ marginTop: 12 }}>Status da tarefa</span>
+            <button
+              type="button"
+              className={`wf-task-trigger-select${statusListOpen ? " open" : ""}`}
+              aria-haspopup="listbox"
+              aria-expanded={statusListOpen}
+              onClick={() => setOpenList(statusListOpen ? null : `s${i}`)}
+            >
+              <span className="wf-task-trigger-select-copy">
+                <span className={`wf-task-trigger-select-value${status ? "" : " placeholder"}`}>
+                  {status ? status.label : "Selecionar status"}
+                </span>
+              </span>
+              <Icon name="chevron-down" size={14} className="wf-task-trigger-select-chevron" />
+            </button>
+            {statusListOpen && (
+              <div className="wf-task-trigger-list" role="listbox">
+                {statuses.map(st => (
+                  <button
+                    key={st.id}
+                    type="button"
+                    className={`wf-task-trigger-option${p.status === st.id ? " selected" : ""}`}
+                    role="option"
+                    aria-selected={p.status === st.id}
+                    onClick={() => { onPickStatus(i, st.id); setOpenList(null); }}
+                  >
+                    <span className="wf-task-trigger-option-name">{st.label}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        );
+      })}
+
+      {addOpen && available.length > 0 && (
+        <div className="wf-task-trigger-picker">
+          <div className="wf-task-trigger-picker-head">Adicionar workflow de origem</div>
+          {available.map(w => (
+            <button
+              key={w.id}
+              type="button"
+              className="wf-task-trigger-picker-item"
+              onClick={() => { onAddWf(w); setAddOpen(false); setOpenList(`t${pairs.length}`); }}
+            >
+              <span className="wf-task-trigger-picker-plus"><Icon name="plus" size={13} /></span>
+              <span className="wf-task-trigger-picker-name">{w.icon} {w.name}</span>
+              <span className="wf-task-trigger-picker-count">{tasksOf(w).length} tarefas</span>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {available.length > 0 && (
+        <button type="button" className="wf-task-trigger-add" onClick={() => setAddOpen(o => !o)}>
+          <Icon name="plus" size={14} />
+          {pairs.length === 0 ? "Adicionar workflow" : "Adicionar outro workflow"}
+        </button>
+      )}
+    </div>
+  );
+}
+
+/* Drawer "Gatilho" — card único de configuração: dropdown com o tipo de
+   gatilho no topo (sem seleção inicial na primeira configuração) e, abaixo,
+   a descrição e os campos específicos do tipo selecionado. Mesmos tokens
+   visuais dos demais drawers do fluxo. */
+function WfTriggerDrawer({
+  options, trigger, onSelectTrigger,
+  systemEvents, onToggleSystemEvent,
+  workflows, triggerWfIds, onSelectTriggerWf,
+  triggerPairs, onAddTriggerWf, onRemoveTriggerPair, onPickTriggerTask, onPickTriggerStatus,
+  onClose,
+}) {
+  useEffect(() => {
+    const handler = (e) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [onClose]);
+
+  return ReactDOM.createPortal(
+    <div
+      className="wf-side-drawer-backdrop"
+      onMouseDown={e => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div className="wf-side-drawer" role="dialog" aria-modal="true" aria-label="Gatilho">
+        <div className="stage-config-modal-head">
+          <SidebarTooltip label="Voltar" placement="top">
+            <IconButton icon={<Icon name="arrow-left" size={18} />} label="Voltar" variant="tertiary" onClick={onClose} />
+          </SidebarTooltip>
+          <h2 className="stage-config-modal-title">Gatilho</h2>
+        </div>
+
+        <div className="wf-side-drawer-body">
+          <div className="wf-trigger-config-card">
+            <WfTriggerTypeDropdown options={options} value={trigger} onSelect={onSelectTrigger} />
+
+            {trigger === "system-event" && (
+              <div className="setting-field" style={{ marginTop: 14 }}>
+                <WfSystemEventPicker selectedEvents={systemEvents} onToggle={onToggleSystemEvent} />
+              </div>
+            )}
+
+            {trigger === "wf-completion" && (
+              <div className="setting-field" style={{ marginTop: 14 }}>
+                <label>Workflow de origem</label>
+                {workflows.length === 0 ? (
+                  <span className="setting-help">Nenhum outro workflow disponível</span>
+                ) : (
+                  <div className="wf-radio-group">
+                    {workflows.map(w => (
+                      <label key={w.id} className={`wf-radio-row${triggerWfIds.includes(w.id) ? " selected" : ""}`}>
+                        <input
+                          type="checkbox"
+                          checked={triggerWfIds.includes(w.id)}
+                          onChange={() => onSelectTriggerWf(w)}
+                        />
+                        <span>{w.icon} {w.name}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {trigger === "task-completion" && (
+              <div className="setting-field" style={{ marginTop: 14 }}>
+                {workflows.length === 0 ? (
+                  <span className="setting-help">Nenhum outro workflow disponível</span>
+                ) : (
+                  <WfTaskTriggerConfig
+                    workflows={workflows}
+                    pairs={triggerPairs}
+                    onAddWf={onAddTriggerWf}
+                    onRemovePair={onRemoveTriggerPair}
+                    onPickTask={onPickTriggerTask}
+                    onPickStatus={onPickTriggerStatus}
+                  />
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
 /* Drawer lateral para escolha múltipla de workflows (Dependências: "depende
    de" / "desbloqueia") — mesmo drawer do WfChoiceDrawer, mas cada item é um
    toggle (não fecha ao selecionar) em vez de uma opção única. */
@@ -1425,59 +1922,145 @@ function WfWorkflowPickerDrawer({ title, workflows, selected, onToggle, onClose 
   );
 }
 
+/* ── Regra do +N: nomes separados por vírgula limitados a 2 linhas ─────────
+   Quando a lista faria o texto passar de 2 linhas, os últimos nomes são
+   escondidos e substituídos por um contador "+N". Re-mede quando a largura
+   disponível muda (o painel de detalhe é redimensionável). */
+function WfClampNamesLabel({ names }) {
+  const ref = useRef(null);
+  const [visibleCount, setVisibleCount] = useState(names.length);
+  const namesKey = names.join("|");
+
+  // Lista mudou: tenta mostrar tudo e deixa a medição reduzir até caber
+  useLayoutEffect(() => { setVisibleCount(names.length); }, [namesKey]);
+
+  // Largura do botão mudou: refaz a medição do zero
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || !el.parentElement || typeof ResizeObserver === "undefined") return;
+    let lastWidth = null;
+    const ro = new ResizeObserver((entries) => {
+      const width = entries[0].contentRect.width;
+      if (lastWidth !== null && width !== lastWidth) setVisibleCount(names.length);
+      lastWidth = width;
+    });
+    ro.observe(el.parentElement);
+    return () => ro.disconnect();
+  }, [namesKey]);
+
+  // Reduz um nome por vez enquanto o texto ocupar mais de 2 linhas
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const lineHeight = parseFloat(getComputedStyle(el).lineHeight);
+    if (el.scrollHeight > lineHeight * 2 + 1 && visibleCount > 1) {
+      setVisibleCount((c) => c - 1);
+    }
+  });
+
+  const hiddenCount = names.length - visibleCount;
+  return (
+    <span ref={ref} className="wf-ver-badge-label wf-ver-badge-label--clamp">
+      {names.slice(0, visibleCount).join(", ")}
+      {hiddenCount > 0 && <span className="wf-ver-badge-more">+{hiddenCount}</span>}
+    </span>
+  );
+}
+
 /* ── Inline workflow settings (replaces separate settings route) ─────────── */
 function WfSettingsInline({ workflow, onDirtyChange }) {
-  const [trigger,       setTrigger]       = useState("order-start");
-  // Workflow(s) de origem do gatilho — o operador pode selecionar mais de um
-  const [triggerWfIds,  setTriggerWfIds]  = useState([]);
-  const [triggerTaskId, setTriggerTaskId] = useState("");
+  // Estados hidratados a partir do próprio workflow (fixtures em data-aiw.js seguem
+  // o schema de docs/WORKFLOW_ENTIDADES.md). Antes tudo iniciava vazio e o card
+  // ignorava os campos do prop — agora Gatilho/Deps/Unlocks refletem o valor
+  // persistido no workflow assim que a tela abre.
+  const initialTrigger = workflow.trigger || {};
+  const [trigger,       setTrigger]       = useState(initialTrigger.type || "");
+  // Workflow(s) de origem do gatilho "Conclusão de um workflow"
+  const [triggerWfIds,  setTriggerWfIds]  = useState(
+    initialTrigger.type === "wf-completion" ? (initialTrigger.triggerWfIds || []) : []
+  );
+  // Gatilho "Conclusão de uma tarefa específica": um par por workflow de
+  // origem — { wfId, taskId, status } (tarefa que dispara + status observado)
+  const [triggerPairs,  setTriggerPairs]  = useState(
+    initialTrigger.type === "task-completion" ? (initialTrigger.pairs || []) : []
+  );
+  // Eventos de domínio selecionados no gatilho "Evento do sistema" (múltiplos)
+  const [systemEvents,  setSystemEvents]  = useState(
+    initialTrigger.type === "system-event" ? (initialTrigger.events || []) : []
+  );
   // Gatilho card fica colapsado (só a opção selecionada) até o operador clicar em "Editar"
   const [editingTrigger, setEditingTrigger] = useState(false);
   // Quem avança as etapas deste workflow: o agente AI ou um operador manualmente
   const [orchMode, setOrchMode] = useState(workflow.agentEnabled === false ? "manual" : "agent");
   const [editingOrch, setEditingOrch] = useState(false);
   // Workflows que precisam concluir antes deste ativar ("depende de")
-  const [deps, setDeps]       = useState([]);
+  const [deps, setDeps]       = useState(workflow.deps || []);
   const [editingDeps, setEditingDeps] = useState(false);
   // Workflows que este, ao concluir, libera ("desbloqueia")
-  const [unlocks, setUnlocks] = useState([]);
+  const [unlocks, setUnlocks] = useState(workflow.unlocks || []);
   const [editingUnlocks, setEditingUnlocks] = useState(false);
 
   const mark = () => onDirtyChange?.(true);
 
   const allWorkflows = (AIWData && AIWData.workflows) ? AIWData.workflows.filter(w => w.id !== workflow.id) : [];
   const selectedTriggerWfs = allWorkflows.filter(w => triggerWfIds.includes(w.id));
-  // Tarefas de todos os workflows de origem selecionados, para a escolha de "tarefa específica"
-  const triggerWfTasks = selectedTriggerWfs.flatMap(w =>
-    w.stages.flatMap(s => s.tasks.map(t => ({ ...t, stageName: s.name, wfId: w.id, wfName: w.name, wfIcon: w.icon })))
-  );
 
-  function toggleTriggerWf(w) {
-    setTriggerWfIds(prev => {
-      const isSelected = prev.includes(w.id);
-      return isSelected ? prev.filter(id => id !== w.id) : [...prev, w.id];
-    });
-    // Se a tarefa selecionada pertencia ao workflow que está sendo removido, limpa a seleção
-    if (triggerTaskId && w.stages.some(s => s.tasks.some(t => t.id === triggerTaskId))) {
-      setTriggerTaskId("");
-    }
+  // Seleção múltipla (gatilho "Conclusão de um workflow")
+  function selectTriggerWf(w) {
+    setTriggerWfIds(prev =>
+      prev.includes(w.id) ? prev.filter(id => id !== w.id) : [...prev, w.id]
+    );
+    mark();
+  }
+
+  // Gatilho "Conclusão de uma tarefa específica"
+  function addTriggerPair(w) {
+    setTriggerPairs(prev => [...prev, { wfId: w.id, taskId: "", status: "" }]);
+    mark();
+  }
+  function removeTriggerPair(index) {
+    setTriggerPairs(prev => prev.filter((_, i) => i !== index));
+    mark();
+  }
+  // Trocar a tarefa reinicia o status observado
+  function pickTriggerPairTask(index, taskId) {
+    setTriggerPairs(prev => prev.map((p, i) => i === index ? { ...p, taskId, status: "" } : p));
+    mark();
+  }
+  function pickTriggerPairStatus(index, statusId) {
+    setTriggerPairs(prev => prev.map((p, i) => i === index ? { ...p, status: statusId } : p));
     mark();
   }
 
   const TRIGGER_OPTS = [
-    { key: "order-start",     label: "Início do pedido",
-      desc: "Dispara automaticamente assim que o pedido é criado, sem depender de nenhum outro workflow." },
+    { key: "system-event",    label: "Evento do sistema",
+      desc: "Dispara automaticamente quando um evento específico acontece na loja." },
     { key: "wf-completion",   label: "Conclusão de um workflow",
       desc: "Dispara quando um workflow inteiro, selecionado como origem, é concluído." },
     { key: "task-completion", label: "Conclusão de uma tarefa específica",
-      desc: "Dispara quando uma tarefa nomeada, dentro de um workflow de origem selecionado, é concluída — mais granular que esperar o workflow inteiro terminar." },
+      desc: "Dispara quando uma tarefa nomeada, dentro de um workflow de origem selecionado, é concluída." },
   ];
 
   const currentTriggerOpt = TRIGGER_OPTS.find(o => o.key === trigger);
-  const triggerTaskName = triggerWfTasks.find(t => t.id === triggerTaskId)?.name;
-  const triggerOriginLabel = selectedTriggerWfs.length > 0
-    ? `${selectedTriggerWfs.map(w => `${w.icon} ${w.name}`).join(", ")}${triggerTaskName ? ` · ${triggerTaskName}` : ""}`
-    : null;
+  const triggerPairLabels = triggerPairs.map(p => {
+    const w = allWorkflows.find(x => x.id === p.wfId);
+    if (!w) return null;
+    const t = w.stages.flatMap(s => s.tasks).find(x => x.id === p.taskId);
+    return `${w.icon} ${w.name}${t ? ` · ${t.name}` : ""}`;
+  }).filter(Boolean);
+  // Cada seleção vira uma tag própria no botão da linha "Gatilho"
+  const triggerOriginTags = trigger === "task-completion"
+    ? triggerPairLabels
+    : trigger === "wf-completion"
+      ? selectedTriggerWfs.map(w => `${w.icon} ${w.name}`)
+      : trigger === "system-event"
+        ? systemEvents
+        : [];
+
+  function toggleSystemEvent(ev) {
+    setSystemEvents(prev => prev.includes(ev) ? prev.filter(e => e !== ev) : [...prev, ev]);
+    mark();
+  }
 
   const ORCH_OPTS = [
     { key: "agent",  label: "Agente AI orquestra este workflow",
@@ -1517,10 +2100,13 @@ function WfSettingsInline({ workflow, onDirtyChange }) {
             <div className="wf-trigger-orch-row">
               <span className="wf-trigger-orch-label">Gatilho</span>
               <div className="wf-trigger-orch-value">
-                <button type="button" className="wf-ver-badge-btn" onClick={() => setEditingTrigger(true)}>
+                <button type="button" className="wf-ver-badge-btn wf-ver-badge-btn--tags" onClick={() => setEditingTrigger(true)}>
                   <span className="wf-ver-badge-label">
-                    {currentTriggerOpt?.label}{triggerOriginLabel && <> · {triggerOriginLabel}</>}
+                    {currentTriggerOpt?.label || "Selecionar gatilho"}
                   </span>
+                  {triggerOriginTags.map((tag, i) => (
+                    <span key={i} className="wf-trigger-origin-tag">{tag}</span>
+                  ))}
                   <Icon name="chevron-right" size={14} className="wf-ver-badge-chevron" />
                 </button>
               </div>
@@ -1545,72 +2131,22 @@ function WfSettingsInline({ workflow, onDirtyChange }) {
       </div>
 
       {editingTrigger && (
-        <WfChoiceDrawer
-          title="Gatilho"
+        <WfTriggerDrawer
           options={TRIGGER_OPTS}
-          selectedKey={trigger}
+          trigger={trigger}
+          onSelectTrigger={(key) => { setTrigger(key); mark(); }}
+          systemEvents={systemEvents}
+          onToggleSystemEvent={toggleSystemEvent}
+          workflows={allWorkflows}
+          triggerWfIds={triggerWfIds}
+          onSelectTriggerWf={selectTriggerWf}
+          triggerPairs={triggerPairs}
+          onAddTriggerWf={addTriggerPair}
+          onRemoveTriggerPair={removeTriggerPair}
+          onPickTriggerTask={pickTriggerPairTask}
+          onPickTriggerStatus={pickTriggerPairStatus}
           onClose={() => setEditingTrigger(false)}
-          onSelect={(key) => {
-            setTrigger(key); mark();
-            if (key === "order-start") setEditingTrigger(false);
-          }}
-        >
-          {(trigger === "wf-completion" || trigger === "task-completion") && (
-            <div className="setting-field" style={{ marginTop: 16 }}>
-              <label>Workflow de origem</label>
-              {allWorkflows.length === 0 ? (
-                <span className="setting-help">Nenhum outro workflow disponível</span>
-              ) : (
-                <div className="dep-choice-list" style={{ marginTop: 8 }}>
-                  {allWorkflows.map(w => {
-                    const isSelected = triggerWfIds.includes(w.id);
-                    return (
-                      <button
-                        key={w.id}
-                        type="button"
-                        className={`dep-choice-item${isSelected ? " selected" : ""}`}
-                        onClick={() => toggleTriggerWf(w)}
-                      >
-                        <span className="dep-choice-name">{w.name}</span>
-                        {isSelected && <IconCheck size={14} className="dep-choice-check" />}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          )}
-          {trigger === "task-completion" && triggerWfIds.length > 0 && (
-            <div className="setting-field" style={{ marginTop: 10 }}>
-              <label>Tarefa de origem</label>
-              {triggerWfTasks.length === 0 ? (
-                <span className="setting-help">Nenhuma tarefa encontrada nos workflows selecionados</span>
-              ) : (
-                <div className="dep-choice-list" style={{ marginTop: 8 }}>
-                  {triggerWfTasks.map(t => {
-                    const isSelected = triggerTaskId === t.id;
-                    return (
-                      <button
-                        key={t.id}
-                        type="button"
-                        className={`dep-choice-item${isSelected ? " selected" : ""}`}
-                        onClick={() => { setTriggerTaskId(t.id); mark(); }}
-                      >
-                        <span className="dep-choice-copy">
-                          <span className="dep-choice-name">{t.name}</span>
-                          <span className="dep-choice-meta">
-                            {t.stageName}{triggerWfIds.length > 1 ? ` · ${t.wfIcon} ${t.wfName}` : ""}
-                          </span>
-                        </span>
-                        {isSelected && <IconCheck size={14} className="dep-choice-check" />}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          )}
-        </WfChoiceDrawer>
+        />
       )}
 
       {editingOrch && (
@@ -1640,11 +2176,11 @@ function WfSettingsInline({ workflow, onDirtyChange }) {
                   disabled={allWorkflows.length === 0}
                   onClick={() => setEditingDeps(true)}
                 >
-                  <span className="wf-ver-badge-label">
-                    {allWorkflows.length === 0
-                      ? "Nenhum outro workflow disponível"
-                      : deps.length === 0 ? "Nenhum selecionado" : deps.map(d => d.wfName).join(", ")}
-                  </span>
+                  {allWorkflows.length === 0
+                    ? <span className="wf-ver-badge-label">Nenhum outro workflow disponível</span>
+                    : deps.length === 0
+                      ? <span className="wf-ver-badge-label">Nenhum selecionado</span>
+                      : <WfClampNamesLabel names={deps.map(d => d.wfName)} />}
                   <Icon name="chevron-right" size={14} className="wf-ver-badge-chevron" />
                 </button>
               </div>
@@ -1661,11 +2197,11 @@ function WfSettingsInline({ workflow, onDirtyChange }) {
                   disabled={allWorkflows.length === 0}
                   onClick={() => setEditingUnlocks(true)}
                 >
-                  <span className="wf-ver-badge-label">
-                    {allWorkflows.length === 0
-                      ? "Nenhum outro workflow disponível"
-                      : unlocks.length === 0 ? "Nenhum selecionado" : unlocks.map(d => d.wfName).join(", ")}
-                  </span>
+                  {allWorkflows.length === 0
+                    ? <span className="wf-ver-badge-label">Nenhum outro workflow disponível</span>
+                    : unlocks.length === 0
+                      ? <span className="wf-ver-badge-label">Nenhum selecionado</span>
+                      : <WfClampNamesLabel names={unlocks.map(d => d.wfName)} />}
                   <Icon name="chevron-right" size={14} className="wf-ver-badge-chevron" />
                 </button>
               </div>
@@ -3019,18 +3555,20 @@ function WorkflowBoardCanvas({
 
   const hasBack = showWizard || isDetail || isTask || isStage || isSettings;
   const headerTitle = (isDetail || isTask || isStage || isSettings)
-    ? (workflow?.name || "Gerenciador de Experiências")
-    : "Gerenciador de Experiências";
+    ? (workflow?.name || "Configurações de Workflow")
+    : "Configurações de Workflow";
 
   return (
     <div className="detail-panel">
       <div className="detail-head canvas-topbar" data-sl-canvas-tool-topbar="">
-        {hasBack && (
-          <button className="canvas-topbar-icon" onClick={back} aria-label="Voltar" title="Voltar">
-            <Icon name="chevron-left" size={18} />
+        {hasBack ? (
+          <button className="canvas-topbar-back" onClick={back} title="Voltar">
+            <Icon name="chevron-left" size={16} />
+            <span>Voltar</span>
           </button>
+        ) : (
+          <span className="canvas-topbar-title">{headerTitle}</span>
         )}
-        <span className="canvas-topbar-title">{headerTitle}</span>
         <div className="detail-head-right">
           {(isDetail || isTask || isStage || isSettings) && detailHasChanges &&
             <button data-sl-button data-variant="primary" data-size="small" data-has-label onClick={() => {
@@ -3070,48 +3608,60 @@ function WorkflowBoardCanvas({
             const wfs = AIWData.workflows;
 
             const renderExpanded = (w) => {
-              const tt = w.stages.reduce((s, st) => s + st.tasks.length, 0);
-              // Visão de tarefas do workflow inteiro (não mais agrupada por etapa) —
-              // um card por tarefa, com chevron entre os cards, igual à lista de
-              // tarefas dentro do detalhe do workflow (.wf-flat-tasks).
-              const allTasks = w.stages.flatMap(st => st.tasks);
+              // Novo layout de card v2 (Card de Workflow 7b): resumo em 4
+              // faixas — cabeçalho (nome + pill de orquestração + pill de
+              // status), explicação do gatilho em uma frase, chip com o valor
+              // do gatilho (com +N para múltiplas origens) e rodapé com
+              // Tarefas / Automação / metadata de publicação. As tarefas
+              // deixaram de ser listadas horizontalmente — o operador entra
+              // no detalhe para ver a sequência completa.
+              const total     = w.stages.reduce((s, st) => s + st.tasks.length, 0);
+              const autoCount = w.stages.reduce((s, st) => s + st.tasks.filter(t => t.type === "auto").length, 0);
+              const orch      = wfOrchMeta(w);
+              const status    = wfStatusPill(w);
+              const trig      = wfTriggerDisplay(w);
+              const foot      = wfFootMeta(w);
               return (
-                <button key={w.id} className="wf-list-card wf-list-card--expanded"
-                        onClick={() => setMode({ kind: "detail", workflowId: w.id })}>
-                  <div className="wf-list-card-head">
-                    <span className="wf-list-body">
-                      <span className="wf-list-body-text">
-                        <span className="wf-list-name">{w.name}</span>
-                        <span className="wf-list-meta">
-                          {w.orders} pedidos ativos
-                        </span>
-                      </span>
+                <button
+                  key={w.id}
+                  type="button"
+                  className="wf-list-card wf-list-card--v2"
+                  onClick={() => setMode({ kind: "detail", workflowId: w.id })}
+                >
+                  <div className="wf-card-head">
+                    <span className="wf-card-name">{w.name}</span>
+                    <span className="wf-card-orch-pill" style={{ background: orch.bg, color: orch.fg }}>
+                      {orch.label}
                     </span>
-                    <span className="wf-list-head-right">
-                      <span className={`wf-list-status ${w.archived ? "archived" : "active"}`}>
-                        {w.archived ? "Arquivado" : "Ativo"}
-                      </span>
-                      <button data-sl-button data-variant="tertiary" data-size="large"
-                              className="wf-list-edit-btn"
-                              onClick={e => { e.stopPropagation(); setMode({ kind: "detail", workflowId: w.id }); }}
-                              title="Editar workflow">
-                        <IconPencil size={16} />
-                      </button>
+                    <span className="wf-card-status-pill" style={{ background: status.bg, color: status.fg }}>
+                      {status.label}
                     </span>
                   </div>
-                  <div className="wf-list-tasks">
-                    {allTasks.map((t, ti) => (
-                      <React.Fragment key={t.id}>
-                        <div className="wf-list-task-card">
-                          <span className="wf-list-task-card-name">{t.name}</span>
-                        </div>
-                        {ti < allTasks.length - 1 && (
-                          <span className="wf-list-task-arrow">
-                            <Icon name="chevron-right" size={14} />
-                          </span>
-                        )}
-                      </React.Fragment>
-                    ))}
+
+                  {w.desc && <span className="wf-card-trigger-explain">{w.desc}</span>}
+
+                  <div className="wf-card-trigger-chip">
+                    <span className="wf-card-trigger-label">Gatilho:</span>
+                    {trig.typeLabel && (
+                      <span className="wf-card-trigger-type">{trig.typeLabel}</span>
+                    )}
+                    {trig.hasTrigger ? (
+                      <TriggerValueWithOverflow value={trig.value} moreCount={trig.moreCount} />
+                    ) : (
+                      <span className="wf-card-trigger-empty">ainda não configurado</span>
+                    )}
+                  </div>
+
+                  <div className="wf-card-foot">
+                    <span className="wf-card-foot-item">Tarefas <b>{total}</b></span>
+                    <span className="wf-card-foot-sep">·</span>
+                    <span className="wf-card-foot-item">Automação <b>{autoCount}/{total}</b></span>
+                    {foot && <>
+                      <span className="wf-card-foot-sep">·</span>
+                      <span className="wf-card-foot-meta">{foot}</span>
+                    </>}
+                    <span className="wf-card-foot-spacer" />
+                    <Icon name="chevron-right" size={20} className="wf-card-foot-chevron" />
                   </div>
                 </button>
               );
@@ -3242,16 +3792,16 @@ function WorkflowBoardCanvas({
 function chatFor(mode) {
   if (mode.kind === "list") {
     return {
-      title: "Gerenciador de Experiências",
+      title: "Gerenciador de Workflows",
       placeholder: "Criar workflow, editar, publicar...",
       chips: [
-        { icon: "plus",    label: "Nova experiência"             },
-        { icon: "edit",    label: "Editar experiência existente" },
-        { icon: "layers",  label: "Editar experiências em massa" },
+        { icon: "plus",    label: "Novo workflow"             },
+        { icon: "edit",    label: "Editar workflow existente" },
+        { icon: "layers",  label: "Editar workflows em massa" },
       ],
       messages: [
-        { from: "agent", text: "Olá! Sou o **Order Management Assistant**.\n\nPosso ajudar a criar, editar e publicar experiências no Gerenciador de Experiências." },
-        { from: "agent", text: `Há ${AIWData.workflows.length} experiências configuradas. Use os atalhos abaixo ou escreva o que precisa.` },
+        { from: "agent", text: "Olá! Sou o **Order Management Assistant**.\n\nPosso ajudar a criar, editar e publicar workflows no Gerenciador de Workflows." },
+        { from: "agent", text: `Há ${AIWData.workflows.length} workflows configurados. Use os atalhos abaixo ou escreva o que precisa.` },
       ]
     };
   }
@@ -3363,10 +3913,10 @@ function WorkflowBoardView({ onBack, wfLayout = "expanded", wfGroup = "flat", wf
   // Conversational task-creation draft (detail mode)
   const taskDraftRef = useRef(null);
 
-  // Fluxo A2 — "Editar experiência existente" draft
+  // Fluxo A2 — "Editar workflow existente" draft
   const editExistingDraftRef = useRef(null);
 
-  // Fluxo G — "Editar experiências em massa" draft
+  // Fluxo G — "Editar workflows em massa" draft
   const bulkDraftRef = useRef(null);
 
   // Pending undo for task removal
@@ -3448,26 +3998,26 @@ function WorkflowBoardView({ onBack, wfLayout = "expanded", wfGroup = "flat", wf
         handleBulkEditStep(text, lower);
       } else if (editExistingDraftRef.current) {
         handleEditExistingStep(text, lower);
-      } else if (/nova experiência|criar|novo workflow|new workflow|começar workflow|\+ novo/.test(lower)) {
+      } else if (/novo workflow|nova experiência|criar|new workflow|começar workflow|\+ novo/.test(lower)) {
         startWfDraft();
-      } else if (/editar experiência existente|editar workflow existente|editar experiência/.test(lower)) {
+      } else if (/editar workflow existente|editar experiência existente|editar workflow|editar experiência/.test(lower)) {
         startEditExisting();
-      } else if (/em massa|editar experiências em massa/.test(lower)) {
+      } else if (/em massa|editar workflows em massa|editar experiências em massa/.test(lower)) {
         startBulkEdit();
       } else if (/listar|mostrar|quais/.test(lower)) {
         const names = AIWData.workflows.map(w => `${w.icon} ${w.name}`).join(", ");
-        agentSay({ from: "agent", text: `Experiências configuradas: ${names}. Clique em qualquer uma no canvas para ver detalhes.` });
+        agentSay({ from: "agent", text: `Workflows configurados: ${names}. Clique em qualquer um no canvas para ver detalhes.` });
       } else if (/o que posso fazer|o que você faz|posso fazer|ajuda/.test(lower)) {
         agentSay({
           from: "agent",
-          text: "Posso te ajudar a:\n• Criar experiências do zero ou copiando uma existente\n• Adicionar, editar ou remover etapas e tarefas\n• Configurar execução, visibilidade e responsável de cada tarefa\n• Publicar, atualizar ou arquivar experiências\n• Editar múltiplas experiências em massa",
-          quickReplies: ["Nova experiência", "Editar experiência existente"],
+          text: "Posso te ajudar a:\n• Criar workflows do zero ou copiando um existente\n• Adicionar, editar ou remover etapas e tarefas\n• Configurar execução, visibilidade e responsável de cada tarefa\n• Publicar, atualizar ou arquivar workflows\n• Editar múltiplos workflows em massa",
+          quickReplies: ["Novo workflow", "Editar workflow existente"],
         });
       } else {
         agentSay({
           from: "agent",
           text: "Não entendi. O que você quer fazer?",
-          quickReplies: ["Nova experiência", "Editar experiência existente", "Editar experiências em massa", "O que posso fazer?"],
+          quickReplies: ["Novo workflow", "Editar workflow existente", "Editar workflows em massa", "O que posso fazer?"],
         });
       }
     } else if (mode.kind === "settings") {
@@ -3479,14 +4029,14 @@ function WorkflowBoardView({ onBack, wfLayout = "expanded", wfGroup = "flat", wf
     }
   }
 
-  // ── Fluxo A — Nova experiência ─────────────────────────────────────────────
+  // ── Fluxo A — Novo workflow ────────────────────────────────────────────────
 
   function startWfDraft() {
     const draft = { step: "name", name: "", base: "blank", products: null, parsedStages: null, sourceStages: null, sourceName: null };
     setWfDraft(draft);
     agentSay({
       from: "agent",
-      text: "Qual é o nome da nova experiência?",
+      text: "Qual é o nome do novo workflow?",
     });
   }
 
@@ -3497,7 +4047,7 @@ function WorkflowBoardView({ onBack, wfLayout = "expanded", wfGroup = "flat", wf
     // Global escape for Fluxo A
     if (/^(cancelar|sair|parar|desistir)/.test(lower)) {
       setWfDraft(null);
-      agentSay({ from: "agent", text: "Tudo bem. Quando quiser criar uma nova experiência, é só falar.", quickReplies: ["Nova experiência"] });
+      agentSay({ from: "agent", text: "Tudo bem. Quando quiser criar um novo workflow, é só falar.", quickReplies: ["Novo workflow"] });
       return;
     }
 
@@ -3506,7 +4056,7 @@ function WorkflowBoardView({ onBack, wfLayout = "expanded", wfGroup = "flat", wf
       setWfDraft(d => ({ ...d, step: "base", name }));
       agentSay({
         from: "agent",
-        text: `**"${name}"** — ótimo nome! Quer criar do zero ou usar uma experiência existente como base?`,
+        text: `**"${name}"** — ótimo nome! Quer criar do zero ou usar um workflow existente como base?`,
         quickReplies: ["Do zero", "Copiar existente"],
       });
 
@@ -3517,7 +4067,7 @@ function WorkflowBoardView({ onBack, wfLayout = "expanded", wfGroup = "flat", wf
         setWfDraft(d => ({ ...d, step: "pick-source" }));
         agentSay({
           from: "agent",
-          text: "Qual experiência você quer usar como base?",
+          text: "Qual workflow você quer usar como base?",
           quickReplies: sources,
         });
       } else {
@@ -3535,13 +4085,13 @@ function WorkflowBoardView({ onBack, wfLayout = "expanded", wfGroup = "flat", wf
         setWfDraft(d => ({ ...d, step: "products", base: "copy", sourceName: found.name, sourceStages: found.stages }));
         agentSay({
           from: "agent",
-          text: `**"${found.name}"** selecionada como base — etapas e tarefas serão copiadas.\n\nQuais produtos ou categorias este workflow atende?`,
+          text: `**"${found.name}"** selecionado como base — etapas e tarefas serão copiadas.\n\nQuais produtos ou categorias este workflow atende?`,
           quickReplies: ["Todos os produtos", "Por categoria", "Digitar"],
         });
       } else {
         agentSay({
           from: "agent",
-          text: "Não encontrei essa experiência. Qual delas você quer usar como base?",
+          text: "Não encontrei esse workflow. Qual deles você quer usar como base?",
           quickReplies: AIWData.workflows.map(w => w.name),
         });
       }
@@ -3616,7 +4166,7 @@ function WorkflowBoardView({ onBack, wfLayout = "expanded", wfGroup = "flat", wf
       agentSay({
         from: "agent",
         type: "action",
-        title: "Nova experiência",
+        title: "Novo workflow",
         heading: currentDraft.name,
         fields: [
           { label: "Base",     value: baseLabel },
@@ -3624,7 +4174,7 @@ function WorkflowBoardView({ onBack, wfLayout = "expanded", wfGroup = "flat", wf
           { label: "Etapas",   value: String(currentDraft.parsedStages.length), tag: true },
           { label: "Tarefas",  value: String(totalTasks), tag: true },
         ],
-        applyLabel: "Criar experiência",
+        applyLabel: "Criar workflow",
         onApply: () => {
           const stages = currentDraft.base === "copy" && currentDraft.sourceStages
             ? JSON.parse(JSON.stringify(currentDraft.sourceStages))
@@ -3653,26 +4203,26 @@ function WorkflowBoardView({ onBack, wfLayout = "expanded", wfGroup = "flat", wf
           setWfDraft(null);
           pendingChatMsgsRef.current = [{
             from: "agent",
-            text: `✓ Experiência **"${currentDraft.name}"** criada com ${stages.length} etapa${stages.length > 1 ? "s" : ""}. Revise os detalhes no canvas.`,
+            text: `✓ Workflow **"${currentDraft.name}"** criado com ${stages.length} etapa${stages.length > 1 ? "s" : ""}. Revise os detalhes no canvas.`,
             quickReplies: ["+ Adicionar tarefa", "Publicar"],
           }];
           setMode({ kind: "detail", workflowId: newWf.id });
         },
         onDismiss: () => {
           setWfDraft(null);
-          agentSay({ from: "agent", text: "Criação cancelada.", quickReplies: ["Nova experiência"] });
+          agentSay({ from: "agent", text: "Criação cancelada.", quickReplies: ["Novo workflow"] });
         },
       });
     }
   }
 
-  // ── Fluxo A2 — Editar experiência existente ────────────────────────────────
+  // ── Fluxo A2 — Editar workflow existente ───────────────────────────────────
 
   function startEditExisting() {
     editExistingDraftRef.current = { step: "pick" };
     agentSay({
       from: "agent",
-      text: "Qual experiência você quer editar?",
+      text: "Qual workflow você quer editar?",
       quickReplies: AIWData.workflows.map(w => w.name),
     });
   }
@@ -3683,7 +4233,7 @@ function WorkflowBoardView({ onBack, wfLayout = "expanded", wfGroup = "flat", wf
 
     if (/^(cancelar|sair|parar|desistir)/.test(lower)) {
       editExistingDraftRef.current = null;
-      agentSay({ from: "agent", text: "Tudo bem.", quickReplies: ["Nova experiência", "Editar experiência existente"] });
+      agentSay({ from: "agent", text: "Tudo bem.", quickReplies: ["Novo workflow", "Editar workflow existente"] });
       return;
     }
 
@@ -3702,21 +4252,21 @@ function WorkflowBoardView({ onBack, wfLayout = "expanded", wfGroup = "flat", wf
       } else {
         agentSay({
           from: "agent",
-          text: "Não encontrei essa experiência. Qual delas você quer editar?",
+          text: "Não encontrei esse workflow. Qual deles você quer editar?",
           quickReplies: AIWData.workflows.map(w => w.name),
         });
       }
     }
   }
 
-  // ── Fluxo G — Editar experiências em massa ─────────────────────────────────
+  // ── Fluxo G — Editar workflows em massa ────────────────────────────────────
 
   function startBulkEdit() {
     const activeWfs = AIWData.workflows.filter(w => w.status !== "archived");
     bulkDraftRef.current = { step: "select", selectedNames: [], remainingNames: activeWfs.map(w => w.name) };
     agentSay({
       from: "agent",
-      text: "Quais experiências você quer editar? Selecione uma a uma e confirme ao final.",
+      text: "Quais workflows você quer editar? Selecione um a um e confirme ao final.",
       quickReplies: [...activeWfs.map(w => w.name), "Pronto →"],
     });
   }
@@ -3727,22 +4277,22 @@ function WorkflowBoardView({ onBack, wfLayout = "expanded", wfGroup = "flat", wf
 
     if (/^(cancelar|sair|parar|desistir)/.test(lower)) {
       bulkDraftRef.current = null;
-      agentSay({ from: "agent", text: "Tudo bem.", quickReplies: ["Editar experiências em massa"] });
+      agentSay({ from: "agent", text: "Tudo bem.", quickReplies: ["Editar workflows em massa"] });
       return;
     }
 
     if (draft.step === "select") {
       if (/^pronto/.test(lower)) {
         if (draft.selectedNames.length === 0) {
-          agentSay({ from: "agent", text: "Selecione ao menos uma experiência primeiro.", quickReplies: [...draft.remainingNames, "Pronto →"] });
+          agentSay({ from: "agent", text: "Selecione ao menos um workflow primeiro.", quickReplies: [...draft.remainingNames, "Pronto →"] });
           return;
         }
         bulkDraftRef.current = { ...draft, step: "action" };
         const listText = draft.selectedNames.join(", ");
         agentSay({
           from: "agent",
-          text: `**${draft.selectedNames.length}** experiência${draft.selectedNames.length > 1 ? "s" : ""} selecionada${draft.selectedNames.length > 1 ? "s" : ""}: ${listText}.\n\nO que você quer fazer com elas?`,
-          quickReplies: ["Publicar todas", "Arquivar todas", "Ativar Agente AI", "Desativar Agente AI"],
+          text: `**${draft.selectedNames.length}** workflow${draft.selectedNames.length > 1 ? "s" : ""} selecionado${draft.selectedNames.length > 1 ? "s" : ""}: ${listText}.\n\nO que você quer fazer com eles?`,
+          quickReplies: ["Publicar todos", "Arquivar todos", "Ativar Agente AI", "Desativar Agente AI"],
         });
         return;
       }
@@ -3755,13 +4305,13 @@ function WorkflowBoardView({ onBack, wfLayout = "expanded", wfGroup = "flat", wf
         const selText = newSelected.join(", ");
         agentSay({
           from: "agent",
-          text: `**"${found.name}"** adicionada. ${newSelected.length} selecionada${newSelected.length > 1 ? "s" : ""}: ${selText}.\n\nAdicione mais ou confirme.`,
+          text: `**"${found.name}"** adicionado. ${newSelected.length} selecionado${newSelected.length > 1 ? "s" : ""}: ${selText}.\n\nAdicione mais ou confirme.`,
           quickReplies: newRemaining.length > 0 ? [...newRemaining, "Pronto →"] : ["Pronto →"],
         });
       } else if (found && draft.selectedNames.includes(found.name)) {
         agentSay({ from: "agent", text: `**"${found.name}"** já está na seleção.`, quickReplies: [...draft.remainingNames, "Pronto →"] });
       } else {
-        agentSay({ from: "agent", text: "Não encontrei essa experiência.", quickReplies: [...draft.remainingNames, "Pronto →"] });
+        agentSay({ from: "agent", text: "Não encontrei esse workflow.", quickReplies: [...draft.remainingNames, "Pronto →"] });
       }
 
     } else if (draft.step === "action") {
@@ -3772,7 +4322,7 @@ function WorkflowBoardView({ onBack, wfLayout = "expanded", wfGroup = "flat", wf
       else if (/desativar.*agente|agente.*desativar/.test(lower)) action = { label: "Desativar Agente AI", newStatus: null, aiOrch: false };
 
       if (!action) {
-        agentSay({ from: "agent", text: "Não entendi a ação. O que quer fazer com as experiências selecionadas?", quickReplies: ["Publicar todas", "Arquivar todas", "Ativar Agente AI", "Desativar Agente AI"] });
+        agentSay({ from: "agent", text: "Não entendi a ação. O que quer fazer com os workflows selecionados?", quickReplies: ["Publicar todos", "Arquivar todos", "Ativar Agente AI", "Desativar Agente AI"] });
         return;
       }
 
@@ -3785,7 +4335,7 @@ function WorkflowBoardView({ onBack, wfLayout = "expanded", wfGroup = "flat", wf
         title: "Edição em massa",
         fields: [
           { label: "Ação",         value: action.label },
-          { label: "Experiências", value: currentDraft.selectedNames.join(", ") },
+          { label: "Workflows", value: currentDraft.selectedNames.join(", ") },
           { label: "Total",        value: String(currentDraft.selectedNames.length), tag: true },
         ],
         applyLabel: "Confirmar",
@@ -3799,12 +4349,12 @@ function WorkflowBoardView({ onBack, wfLayout = "expanded", wfGroup = "flat", wf
           const count = currentDraft.selectedNames.length;
           setChatMsgs(m => [
             ...m,
-            { from: "agent", text: `✓ **${action.label}** aplicado em **${count}** experiência${count > 1 ? "s" : ""}.`, quickReplies: ["Editar experiências em massa", "Pronto"] },
+            { from: "agent", text: `✓ **${action.label}** aplicado em **${count}** workflow${count > 1 ? "s" : ""}.`, quickReplies: ["Editar workflows em massa", "Pronto"] },
           ]);
         },
         onDismiss: () => {
           bulkDraftRef.current = null;
-          agentSay({ from: "agent", text: "Operação cancelada.", quickReplies: ["Editar experiências em massa"] });
+          agentSay({ from: "agent", text: "Operação cancelada.", quickReplies: ["Editar workflows em massa"] });
         },
       });
 
@@ -4302,7 +4852,7 @@ function WorkflowBoardView({ onBack, wfLayout = "expanded", wfGroup = "flat", wf
     <ChatStartAddStageContext.Provider value={chatStartAddStageFn}>
     <AgentSayContext.Provider value={agentSay}>
     <ChatTaskRemovedContext.Provider value={notifyTaskRemovedFn}>
-      <ResizableSplit screenLabel="03 Gerenciador de Experiências" initialWidth={400}>
+      <ResizableSplit screenLabel="03 Gerenciador de Workflows" initialWidth={400}>
         <ChatPanel
           title={ctx.title}
           chips={ctx.chips}

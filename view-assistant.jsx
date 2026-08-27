@@ -1,4 +1,4 @@
-/* global React, Icon, AIWData, MessageComposer, ChatEngine, SevPill, Dropdown, StatusIcon */
+/* global React, Icon, AIWData, MessageComposer, ChatEngine, Dropdown, TaskCanvas, InitiativesTable, occurrenceQueue */
 const { useState, useEffect, useRef } = React;
 
 /* ------- Overview metric sparkline (v3 port: OverviewMetricChart) ------- */
@@ -51,10 +51,12 @@ function OverviewMetricChart({ points, comparisonPoints, trendDirection }) {
 /* ------- Overview indicators card (v3 port: OverviewCard) ------- */
 const OVERVIEW_TREND_ARROW = { up: "↑", down: "↓" };
 
+/* Renderiza só o conteúdo (sem <section> própria) — vive dentro da seção da
+   tabela de pedidos, como totalizador acima da lista. */
 function OverviewCard() {
   const { kpis } = AIWData;
   return (
-    <section className="aiw-section">
+    <>
       <div className="aiw-section-head aiw-section-head-flush">
         <div className="aiw-filters">
           <button className="filter-pill"><Icon name="grid" size={12} /> Todos os canais <Icon name="chevron-down" size={12} /></button>
@@ -96,6 +98,96 @@ function OverviewCard() {
           ))}
         </div>
       </div>
+    </>
+  );
+}
+
+/* ------- Faixa-resumo (topo da aba "Visão geral") -------
+   Duas colunas no mesmo cartão. À esquerda, número grande da fila com barra
+   empilhada por faixa de idade (< 4h, 4–24h, > 24h) e legenda. À direita,
+   duas linhas empilhadas: "Precisam da sua atenção" (contagem vinda de
+   initiativeAttentionTotal, com o glifo azul) e "Tempo até liberar" com o
+   número grande e o selo de variação — o selo é o equivalente local da Tag
+   do Shoreline (shoreline.vtex.com/components/tag). */
+
+/* Glifo azul usado ao lado do número de ocorrências (exportado do Figma). */
+function SummaryAttentionIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
+      <circle cx="8" cy="8" r="8" fill="#B6DFFF" />
+      <circle cx="8" cy="8" r="4" fill="#157BF4" />
+    </svg>
+  );
+}
+
+function OverviewSummaryStrip() {
+  const { queue, attention, resolution } = AIWData.overviewSummary;
+  const attentionCount = initiativeAttentionTotal(AIWData.tasks);
+  return (
+    <section className="aiw-section" data-sl-overview-summary-section="">
+      <div data-sl-overview-summary="">
+        {/* Coluna esquerda — fila com barra empilhada por faixa de idade. */}
+        <div data-sl-overview-summary-queue="">
+          <div data-sl-overview-summary-queue-head="">
+            <span data-sl-overview-summary-queue-value="">{queue.value}</span>
+            <div data-sl-overview-summary-copy="">
+              <span data-sl-overview-summary-queue-label="">{queue.label}</span>
+              <span data-sl-overview-summary-sub="">{queue.sub}</span>
+            </div>
+          </div>
+          <div data-sl-overview-summary-queue-bar="" aria-hidden="true">
+            {queue.segments.map((seg) => (
+              <span
+                key={seg.tone}
+                data-sl-overview-summary-queue-bar-seg=""
+                data-tone={seg.tone}
+                style={{ flexGrow: seg.count }}
+              />
+            ))}
+          </div>
+          <div data-sl-overview-summary-queue-legend="">
+            {queue.segments.map((seg) => (
+              <span
+                key={seg.tone}
+                data-sl-overview-summary-queue-legend-item=""
+              >
+                <span
+                  data-sl-overview-summary-queue-dot=""
+                  data-tone={seg.tone}
+                  aria-hidden="true"
+                />
+                {seg.count} {seg.label}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        {/* Coluna direita — duas linhas empilhadas. */}
+        <div data-sl-overview-summary-side="">
+          <div data-sl-overview-summary-side-row="">
+            <div data-sl-overview-summary-copy="">
+              <span data-sl-overview-summary-side-label="">{attention.label}</span>
+              <span data-sl-overview-summary-sub="">{attention.sub}</span>
+            </div>
+            <span data-sl-overview-summary-side-value="">
+              <span data-sl-overview-summary-side-number="">{attentionCount}</span>
+              <SummaryAttentionIcon />
+            </span>
+          </div>
+          <div data-sl-overview-summary-side-row="">
+            <div data-sl-overview-summary-copy="">
+              <span data-sl-overview-summary-side-label="">{resolution.label}</span>
+              <span data-sl-overview-summary-sub="">{resolution.sub}</span>
+            </div>
+            <span data-sl-overview-summary-resolution-value="">
+              <span data-sl-overview-summary-value="">{resolution.value}</span>
+              <span data-sl-overview-chart-delta="" data-tone={resolution.delta.tone}>
+                {resolution.delta.text}
+              </span>
+            </span>
+          </div>
+        </div>
+      </div>
     </section>
   );
 }
@@ -124,89 +216,11 @@ function WorkflowStagesCard() {
   );
 }
 
-/* ------- Occurrences list — reaproveita o padrão de linha do My Initiatives ------- */
+/* ------- Occurrences list — grade compartilhada em occurrence-list.jsx ------- */
 const OPEN_TASKS_MAX = 8;
 
-const OCCURRENCE_STATUS_LABEL = {
-  triage:    "Em aberto",
-  active:    "Em execução",
-  attention: "Requer atenção",
-  completed: "Concluída",
-};
-
-// Nº de pedidos afetados — vem de detail.affectedOrders (Canvas A) ou detail.impacted (demais tarefas).
-function occurrenceScopeCount(t) {
-  const d = t.detail || {};
-  if (t.canvasPattern === "A") return d.affectedOrders?.total ?? (d.affectedOrders?.items?.length || 0);
-  return (d.impacted || []).length;
-}
-
-// Texto completo do escopo — a maioria das tarefas escopa em "pedidos afetados",
-// mas o Canvas D (triagem de devoluções em lote) escopa em "casos em decisão".
-function occurrenceScopeLabel(t) {
-  const d = t.detail || {};
-  if (t.canvasPattern === "D") {
-    const n = (d.exceptions?.rows?.length || 0) + (d.duplicates?.rows?.length || 0);
-    return `${n} caso${n === 1 ? "" : "s"} em decisão`;
-  }
-  const scope = occurrenceScopeCount(t);
-  return `${scope} pedido${scope === 1 ? "" : "s"} afetado${scope === 1 ? "" : "s"}`;
-}
-
-// SLA restante — só horas ou dias restantes, calculado a partir de detail.slaHours
-// (positivo = horas restantes, negativo = horas em atraso, null = sem SLA formal).
-function occurrenceSlaLabel(t) {
-  const h = t.detail && t.detail.slaHours;
-  if (h == null) return "Sem SLA";
-  if (h < 0) {
-    const overdue = Math.abs(h);
-    return overdue >= 24 ? `Expirado há ${Math.round(overdue / 24)}d` : `Expirado há ${overdue}h`;
-  }
-  if (h < 24) return `${h}h restantes`;
-  return `${Math.round(h / 24)}d restantes`;
-}
-
-function OccurrenceRow({ t, onOpen }) {
-  const status = t.status || (t.priority === "high" ? "attention" : "active");
-  const scopeLabel = occurrenceScopeLabel(t);
-  const sla = occurrenceSlaLabel(t);
-  return (
-    <button data-sl-initiative-row="" data-sl-occurrence-row="" onClick={() => onOpen(t.id)}>
-      <span data-sl-occurrence-row-severity="">
-        <SevPill level={(t.detail && t.detail.severity) || "medium"} />
-      </span>
-      <span data-sl-initiative-row-main="">
-        <span data-sl-initiative-row-title="">{t.title}</span>
-        <span data-sl-initiative-row-meta="">
-          <span>{t.tag || (t.source && t.source.label) || "Orders"}</span>
-          <span data-sl-initiative-row-dot="">·</span>
-          <span>{OCCURRENCE_STATUS_LABEL[status] || status}</span>
-        </span>
-      </span>
-      <span data-sl-occurrence-row-scope="">{scopeLabel}</span>
-      <span data-sl-occurrence-row-sla="">{sla}</span>
-      <span data-sl-initiative-row-status="">
-        <StatusIcon status={status} />
-      </span>
-    </button>
-  );
-}
-
-/* Cabeçalho de colunas — mesma grade da linha, com peso visual menor. */
-function OccurrenceListHead() {
-  return (
-    <div data-sl-occurrence-list-head="">
-      <span data-sl-occurrence-head-severity="">Severidade</span>
-      <span data-sl-occurrence-head-main="">Ocorrência</span>
-      <span data-sl-occurrence-head-scope="">Escopo</span>
-      <span data-sl-occurrence-head-sla="">SLA</span>
-      <span data-sl-occurrence-head-status="" />
-    </div>
-  );
-}
-
 function OpenTasksCard({ onOpen, onGotoTasks }) {
-  const { tasks } = AIWData;
+  const tasks = occurrenceQueue(AIWData.tasks);
   const visible = tasks.slice(0, OPEN_TASKS_MAX);
   const remaining = tasks.length - visible.length;
   return (
@@ -219,12 +233,7 @@ function OpenTasksCard({ onOpen, onGotoTasks }) {
           </button>
         )}
       </div>
-      <div data-sl-initiative-list="">
-        <OccurrenceListHead />
-        {visible.map((t) => (
-          <OccurrenceRow key={t.id} t={t} onOpen={onOpen} />
-        ))}
-      </div>
+      <InitiativesTable items={visible} onOpen={onOpen} />
     </section>
   );
 }
@@ -317,6 +326,7 @@ function AllOrdersTable({ onOpenOrder, search = "" }) {
   if (filtered.length === 0) {
     return (
       <section className="aiw-section">
+        <OverviewCard />
         <div data-sl-orders-empty="">Nenhum pedido encontrado para “{search}”.</div>
       </section>
     );
@@ -324,6 +334,7 @@ function AllOrdersTable({ onOpenOrder, search = "" }) {
 
   return (
     <section className="aiw-section">
+      <OverviewCard />
       <div data-sl-orders-scroll="">
         <div data-sl-orders-group="">
           <div data-sl-orders-table="">
@@ -411,9 +422,12 @@ function AssistantView({ onOpenTask, onGotoResource, onOpenOrder }) {
   const [isTyping, setIsTyping] = useState(false);
   const [orderSearch, setOrderSearch] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
+  const [openOccurrenceId, setOpenOccurrenceId] = useState(null);
   const orderSearchRef = useRef(null);
   const engineRef = useRef(null);
   const chatScrollRef = useRef(null);
+
+  const openOccurrenceTask = (AIWData.tasks || []).find((t) => t.id === openOccurrenceId) || null;
 
   const TABS = [
     { id: "overview", label: "Visão geral" },
@@ -476,7 +490,7 @@ function AssistantView({ onOpenTask, onGotoResource, onOpenOrder }) {
 
         {m.type === "wf-draft" && m.draft && (
           <div className="chat-draft-card">
-            <div className="chat-draft-header"><span>✨</span><span>Nova Experiência</span></div>
+            <div className="chat-draft-header"><span>✨</span><span>Novo Workflow</span></div>
             <div className="chat-draft-rows">
               <div className="chat-draft-row">
                 <span className="chat-draft-label">Nome</span>
@@ -494,7 +508,7 @@ function AssistantView({ onOpenTask, onGotoResource, onOpenOrder }) {
               </div>
             </div>
             <button className="btn btn-sm btn-primary" style={{ width: "100%", marginTop: 10 }} onClick={m.onConfirm}>
-              Criar Experiência
+              Criar Workflow
             </button>
           </div>
         )}
@@ -538,7 +552,7 @@ function AssistantView({ onOpenTask, onGotoResource, onOpenOrder }) {
   };
 
   return (
-    <div className="main">
+    <div className="main assistant-shell">
       {/* ── v3 module-browser header (Orders) ── */}
       <div data-sl-my-tasks-sticky-top="">
         <div data-sl-module-browser-top-bar="" data-sl-module-browser-search-open={searchOpen ? "" : undefined}>
@@ -625,11 +639,11 @@ function AssistantView({ onOpenTask, onGotoResource, onOpenOrder }) {
               <button className="dd-item" onClick={() => onGotoResource && onGotoResource("workflow-board")}>
                 <span className="dd-item-icon"><Icon name="board" size={14} /></span>
                 <span>
-                  <span className="dd-item-label">Gerenciador de Experiências</span>
+                  <span className="dd-item-label">Configurações de Workflow</span>
                   <span className="dd-item-sub">{AIWData.workflows.length} workflows configurados</span>
                 </span>
               </button>
-              <button className="dd-item" onClick={() => onGotoResource && onGotoResource("all-orders")}>
+              <button className="dd-item" onClick={() => onGotoResource && onGotoResource("workflow-policies")}>
                 <span className="dd-item-icon"><Icon name="cart" size={14} /></span>
                 <span>
                   <span className="dd-item-label">Orders Settings</span>
@@ -643,12 +657,12 @@ function AssistantView({ onOpenTask, onGotoResource, onOpenOrder }) {
 
       <div className="scroll" data-screen-label="01 My Assistant">
         <div className="aiw-wrap">
-          {tab === "overview" &&
+          {tab === "overview" && (
             <>
-              <OverviewCard />
-              <OpenTasksCard onOpen={onOpenTask} onGotoTasks={() => onGotoResource && onGotoResource("tasks")} />
+              <OverviewSummaryStrip />
+              <OpenTasksCard onOpen={setOpenOccurrenceId} onGotoTasks={() => onGotoResource && onGotoResource("tasks")} />
             </>
-          }
+          )}
           {tab === "orders" && <AllOrdersTable onOpenOrder={onOpenOrder} search={orderSearch} />}
         </div>
       </div>
@@ -677,11 +691,27 @@ function AssistantView({ onOpenTask, onGotoResource, onOpenOrder }) {
       {tab === "overview" &&
         <div className="aiw-composer-bar">
           <MessageComposer
-            placeholder="Pergunte sobre pedidos, regras ou crie uma experiência…"
+            placeholder="Pergunte sobre pedidos, regras ou crie um workflow…"
             onSend={handleSend}
           />
         </div>
       }
+
+      {/* A ocorrência abre no mesmo canvas da tarefa (TaskCanvas), só em
+          formato de painel overlay — o ícone de chat no topbar leva para a
+          tarefa completa com o chat aberto. */}
+      {tab === "overview" && openOccurrenceTask && (
+        <TaskCanvas
+          task={openOccurrenceTask}
+          panelClassName="initiative-doc-panel"
+          onBack={() => setOpenOccurrenceId(null)}
+          onToggleChat={() => {
+            const id = openOccurrenceTask.id;
+            setOpenOccurrenceId(null);
+            onOpenTask && onOpenTask(id, { openChat: true });
+          }}
+        />
+      )}
     </div>
   );
 }

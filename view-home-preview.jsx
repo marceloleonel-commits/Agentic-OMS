@@ -41,7 +41,7 @@ function OpsHomeOccurrenceCard({ occ, onOpen }) {
           <span className="ops-occ-metric"><Icon name="list" size={13} /> {occ.tasksDone} de {occ.tasksTotal} tarefas</span>
         </div>
         <span className="ops-occ-assignee">
-          <PersonAvatar initial={occ.assignee.initial} agent={occ.assignee.agent} />
+          <PersonAvatar initial={occ.assignee.initial} agent={occ.assignee.agent} name={occ.assignee.name} />
           {occ.assignee.name}
         </span>
       </div>

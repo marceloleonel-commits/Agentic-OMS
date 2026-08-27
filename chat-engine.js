@@ -17,14 +17,14 @@
     { label: 'Entrega em domicílio', icon: '🚚', desc: 'Fulfillment com despacho e rastreamento de entrega' },
     { label: 'Retirada na loja',     icon: '🏪', desc: 'Cliente retira em ponto físico após separação'     },
     { label: 'Entrega digital',      icon: '💻', desc: 'Produtos digitais — licenças, downloads, ativação' },
-    { label: 'Do zero',              icon: '✨', desc: 'Experiência em branco para configurar livremente'  }
+    { label: 'Do zero',              icon: '✨', desc: 'Workflow em branco para configurar livremente'  }
   ];
 
   /* ─── Intent detection ──────────────────────────────────────── */
 
   var INTENT_PATTERNS = [
     { intent: 'experience.create',
-      re: /criar.*(experiên|experiencia)|nova experiên|experiência.*digital|entrega.*virtual|nova.*experiência/i },
+      re: /criar.*(workflow|experiên|experiencia)|novo workflow|nova experiên|workflow.*digital|experiência.*digital|entrega.*virtual|novo.*workflow|nova.*experiência/i },
     { intent: 'config.rule.add',
       re: /\bregra\b|considere\s|quando.*pedido.*(?:atraso|sla|despacho)|adicione?.*regra|escalar.*automaticamente|sla.*1 dia|sem despacho/i },
     { intent: 'query.orders.sla_risk',
@@ -216,9 +216,9 @@
       ]);
     }
 
-    /* ── Experience creation — 6-step state machine ── */
+    /* ── Workflow creation — 6-step state machine ── */
     function startExperienceDraft(text) {
-      var nameMatch = text.match(/experiência\s+(?:para\s+|de\s+)?["']?([^"'\.]{3,})/i);
+      var nameMatch = text.match(/(?:workflow|experiência)\s+(?:para\s+|de\s+)?["']?([^"'\.]{3,})/i);
       var preName = nameMatch ? nameMatch[1].trim() : '';
       // Discard matches that are just trigger words
       if (/^(nova|um|uma|criar|quero|para|de|um|a)$/i.test(preName)) preName = '';
@@ -226,7 +226,7 @@
       if (preName) {
         experienceDraft = { step: 'model', name: preName, model: '', icon: '', description: '' };
         agentSay([
-          { from: 'agent', text: 'Ótimo! Vou ajudar a criar a experiência "' + preName + '".' },
+          { from: 'agent', text: 'Ótimo! Vou ajudar a criar o workflow "' + preName + '".' },
           {
             from: 'agent',
             text: 'Qual modelo base você quer usar?',
@@ -235,7 +235,7 @@
         ]);
       } else {
         experienceDraft = { step: 'name', name: '', model: '', icon: '', description: '' };
-        agentSay({ from: 'agent', text: 'Vamos criar uma nova Experiência! Como ela vai se chamar?' });
+        agentSay({ from: 'agent', text: 'Vamos criar um novo Workflow! Como ele vai se chamar?' });
       }
     }
 
@@ -244,7 +244,7 @@
 
       if (/cancelar|sair|desistir/.test(lower)) {
         experienceDraft = null;
-        agentSay({ from: 'agent', text: 'Criação cancelada. 👍 Diga "criar experiência" quando quiser tentar novamente.' });
+        agentSay({ from: 'agent', text: 'Criação cancelada. 👍 Diga "criar workflow" quando quiser tentar novamente.' });
         return true;
       }
 
@@ -297,7 +297,7 @@
       if (step === 'description') {
         experienceDraft.description = /pular|skip/.test(lower) ? '' : text.trim();
         experienceDraft.step = 'preview';
-        agentSay({ from: 'agent', text: 'Perfeito! Vamos revisar o resumo da experiência antes de criar.' });
+        agentSay({ from: 'agent', text: 'Perfeito! Vamos revisar o resumo do workflow antes de criar.' });
         return true;
       }
 
@@ -314,7 +314,7 @@
         setTimeout(function () {
           if (onTyping) onTyping(false);
           if (onAgentSay) onAgentSay([
-            { from: 'agent', text: 'Resumo da nova Experiência:' },
+            { from: 'agent', text: 'Resumo do novo Workflow:' },
             {
               from: 'agent',
               type: 'wf-draft',
@@ -327,7 +327,7 @@
               onConfirm: function () {
                 if (onAgentSay) onAgentSay([{
                   from: 'agent',
-                  text: 'Experiência "' + snapshot.name + '" criada com sucesso! Acesse o Workflow Board para configurar as etapas e tarefas do workflow. ✨'
+                  text: 'Workflow "' + snapshot.name + '" criado com sucesso! Acesse o Workflow Board para configurar as etapas e tarefas. ✨'
                 }]);
                 if (onCreateExperience) onCreateExperience(snapshot);
                 experienceDraft = null;
@@ -344,8 +344,8 @@
     /* ── Help ── */
     function respondHelp(isOrchestration) {
       var helpText = isOrchestration
-        ? 'Posso ajudar com:\n\n⚙️ Regras — descreva uma condição em linguagem natural, ex: "quando pedido Marketplace não for despachado em 24h, escalar"\n📋 Pedidos — "mostre pedidos com risco de SLA"\n✨ Experiências — "criar nova experiência"\n\nQual ajuste deseja fazer?'
-        : 'Posso ajudar com:\n\n📋 Pedidos — "mostre pedidos com risco de SLA", "pedidos bloqueados"\n⚙️ Regras — "adicione uma regra para pedidos sem despacho em 24h"\n✨ Experiências — "quero criar uma experiência para Entrega Digital"\n\nO que você precisa?';
+        ? 'Posso ajudar com:\n\n⚙️ Regras — descreva uma condição em linguagem natural, ex: "quando pedido Marketplace não for despachado em 24h, escalar"\n📋 Pedidos — "mostre pedidos com risco de SLA"\n✨ Workflows — "criar novo workflow"\n\nQual ajuste deseja fazer?'
+        : 'Posso ajudar com:\n\n📋 Pedidos — "mostre pedidos com risco de SLA", "pedidos bloqueados"\n⚙️ Regras — "adicione uma regra para pedidos sem despacho em 24h"\n✨ Workflows — "quero criar um workflow para Entrega Digital"\n\nO que você precisa?';
       agentSay({ from: 'agent', text: helpText });
     }
 
@@ -361,8 +361,8 @@
       if (intent === 'general.help')             { respondHelp(false); return; }
       agentSay({
         from: 'agent',
-        text: 'Não entendi exatamente. Posso buscar pedidos, ajustar regras ou criar experiências.',
-        quickReplies: ['Ver capacidades', 'Pedidos com risco de SLA', 'Criar experiência']
+        text: 'Não entendi exatamente. Posso buscar pedidos, ajustar regras ou criar workflows.',
+        quickReplies: ['Ver capacidades', 'Pedidos com risco de SLA', 'Criar workflow']
       });
     }
 
@@ -500,7 +500,7 @@
         var assignees = [];
         if (d && d.followUp) {
           d.followUp.forEach(function (t) {
-            if (t.assignee && t.assignee !== 'OMS Agent' && assignees.indexOf(t.assignee) === -1) {
+            if (t.assignee && t.assignee !== 'Order Management Agent' && assignees.indexOf(t.assignee) === -1) {
               assignees.push(t.assignee);
             }
           });

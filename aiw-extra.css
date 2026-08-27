@@ -701,7 +701,7 @@
   display: flex; flex-direction: column; gap: 14px;
 }
 .chat-body > * { width: 100%; max-width: 760px; margin-left: auto; margin-right: auto; }
-.chat-intro p { margin: 0 0 16px 0; color: var(--fg-2); font-size: 13.5px; line-height: 1.55; }
+.chat-intro p { margin: 0 0 16px 0; color: var(--fg-2); font-size: 13.5px; line-height: 1.55; font-weight: 500; }
 .intro-link {
   display: flex; align-items: center; justify-content: space-between;
   width: 100%;
@@ -716,26 +716,30 @@
 }
 .intro-link:hover { border-color: var(--border-strong); background: var(--bg-soft); }
 .chat-sub-q { margin-top: 0; margin-bottom: 10px; font-size: 14px; font-weight: 400; font-family: Inter, sans-serif; color: var(--fg-2); }
-.chip-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip-row { display: flex; flex-wrap: wrap; gap: var(--sl-space-2); }
 .suggest-chip {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 12px 16px;
-  font: var(--sl-text-body);
+  display: inline-flex; align-items: center; gap: var(--sl-space-1);
+  min-height: 32px;
+  padding: 0 var(--sl-space-3);
+  font-family: var(--sl-font-family-sans);
+  font-size: var(--sl-font-size-2);
+  font-weight: var(--sl-font-weight-medium);
+  letter-spacing: -0.02em;
   color: var(--sl-fg-base);
-  background: var(--bg-muted);
+  background: var(--sl-bg-muted);
   border: none;
-  border-radius: 99px;
+  border-radius: var(--sl-radius-2);
   cursor: pointer;
-  transition: border .12s, background .12s;
-  line-height: 1;
-  box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, 0.04);
+  transition: background .12s;
+  line-height: 1.25;
+  box-shadow: none;
 }
 .suggest-chip:hover {
   border: none;
   background: var(--sl-bg-base-strong);
   color: var(--sl-fg-base);
 }
-.suggest-chip svg { color: var(--sl-fg-base); }
+.suggest-chip svg { color: var(--sl-fg-base); width: 16px; height: 16px; flex-shrink: 0; }
 
 .msg.msg-user { display: flex; justify-content: flex-end; }
 .msg-user .bubble {
@@ -766,58 +770,6 @@
 
 .composer-chips {
   padding: 10px 0 0;
-  position: relative;
-}
-.composer-chips .chip-row {
-  flex-wrap: nowrap;
-  align-items: center;
-  gap: 6px;
-}
-
-.chip-more-wrap {
-  position: relative;
-  flex-shrink: 0;
-}
-.chip-help-trigger {
-  gap: 6px;
-  transition: background .12s, opacity .12s;
-}
-.chip-help-trigger svg {
-  width: 16px;
-  height: 16px;
-  flex-shrink: 0;
-}
-.chip-more-menu {
-  position: absolute;
-  bottom: calc(100% + 6px);
-  left: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 6px;
-  z-index: 100;
-}
-@keyframes chip-pop-in {
-  0%   { opacity: 0; transform: translateY(10px) scale(0.92); }
-  100% { opacity: 1; transform: translateY(0)    scale(1); }
-}
-.chip-more-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 10px 16px;
-  font: var(--sl-text-body);
-  color: var(--sl-fg-base);
-  background: var(--bg-muted);
-  border: none;
-  border-radius: 100px;
-  cursor: pointer;
-  white-space: nowrap;
-  animation: chip-pop-in 240ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
-  transition: background .12s;
-}
-.chip-more-item:hover {
-  background: var(--sl-bg-base-strong);
 }
 
 /* ---------- Detail panel ---------- */
@@ -825,6 +777,14 @@
   display: flex; flex-direction: column;
   height: 100%; min-width: 0;
   background: #fff;
+}
+/* Nada aqui é reordenável: a única tela com arrasto é o board de workflows,
+   que tem os próprios handlers. Travar o drag nativo evita mover seções e
+   cards sem querer — sobretudo sobre texto e ícones, que o browser arrasta
+   por padrão. */
+.detail-panel,
+.detail-panel * {
+  -webkit-user-drag: none;
 }
 .detail-head {
   display: flex; align-items: center; justify-content: space-between;
@@ -857,7 +817,115 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
+/* Breadcrumb do topbar em subview (v3 port de [data-sl-initiative-canvas-breadcrumb]):
+   [chip do id] · [rótulo da subview]. */
+.canvas-topbar-title [data-sl-initiative-canvas-breadcrumb-sep] {
+  flex-shrink: 0;
+  color: var(--fg-2);
+  font-weight: 400;
+}
+.canvas-topbar-title [data-sl-initiative-canvas-breadcrumb-task] {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+  color: var(--fg);
+}
+/* Chip do id vira botão clicável quando o canvas está em subview — atalho
+   para voltar direto ao canvas principal, saindo de qualquer profundidade
+   da pilha. Preserva o layout do chip (largura/alinhamento). */
+.canvas-topbar-chip-btn {
+  appearance: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  cursor: pointer;
+  background: transparent;
+}
+.canvas-topbar-chip-btn:hover { filter: brightness(0.96); }
+.canvas-topbar-chip-btn:focus-visible {
+  outline: 2px solid var(--fg-3);
+  outline-offset: 2px;
+  border-radius: var(--initiative-table-pill-radius, 6px);
+}
+
+/* ── Slide-in nav (v3 port de initiative-canvas-tool.css) ─────────────────
+   Bebe do ai-workspace-shell-template@v3: navegação entre main e subview
+   anima só depois da primeira transição (data-doc-nav-animation="true"). */
+@keyframes canvas-doc-slide-in-from-right {
+  from { opacity: 0; transform: translateX(24px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes canvas-doc-slide-in-from-left {
+  from { opacity: 0; transform: translateX(-24px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+[data-sl-canvas-doc-view][data-doc-nav-animation="true"][data-view="sub"] {
+  animation: canvas-doc-slide-in-from-right 0.18s ease-out;
+}
+[data-sl-canvas-doc-view][data-doc-nav-animation="true"][data-view="main"] {
+  animation: canvas-doc-slide-in-from-left 0.18s ease-out;
+}
+
+/* Back bar sticky no topo do conteúdo da subview (v3 [data-sl-canvas-tool-back-wrap]). */
+[data-sl-canvas-tool-back-wrap] {
+  /* Distância efetiva entre o back-bar e o primeiro bloco de conteúdo abaixo.
+     `--back-bar-content-gap` controla só esse espaçamento — o gap dos demais
+     blocos vem de `.detail-body { gap: 44px }` e permanece intacto. Ajuste
+     por contexto sobrescrevendo a variável (ex.: por subview type). */
+  --back-bar-content-gap: 16px;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  margin: 0;
+  padding: var(--sl-space-4, 16px) 0 var(--sl-space-2, 8px);
+  background-color: var(--sl-bg-base, #fff);
+  border-bottom: 1px solid transparent;
+}
+/* `.detail-body` usa flex-column gap:44px; o espaço percebido entre o back-bar
+   e o próximo filho é `gap + margin-bottom`. Compensamos o gap do pai com
+   margin negativa, e o valor efetivo passa a ser `--back-bar-content-gap`. */
+[data-sl-canvas-doc-view] > [data-sl-canvas-tool-back-wrap] {
+  margin-bottom: calc(var(--back-bar-content-gap) - 44px);
+}
+[data-sl-canvas-tool-back] {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--sl-color-blue-11, var(--primary, #2158E8));
+  cursor: pointer;
+}
+[data-sl-canvas-tool-back]:hover {
+  color: var(--sl-color-blue-12, #0A3ABF);
+}
+/* Voltar do canvas-topbar — chevron + rótulo, mesmos tokens do .chat-back-btn.
+   Substitui o título quando existe navegação para trás; o nome do workflow já
+   aparece como h1 editável no corpo. */
+.canvas-topbar-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-right: auto;
+  padding: 6px 10px 6px 6px;
+  border-radius: var(--sl-radius-2);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--fg-2);
+}
+.canvas-topbar-back:hover { background: var(--bg-soft); color: var(--fg); }
 .canvas-topbar-icon {
   flex-shrink: 0;
   width: 28px;
@@ -871,10 +939,24 @@
   cursor: pointer;
 }
 .canvas-topbar-icon:hover { background: var(--bg-soft); color: var(--fg); }
+.canvas-topbar-icon.active { background: var(--bg-soft); color: var(--fg-brand, var(--fg)); }
+/* Ponto de alerta — pergunta do agente esperando resposta no chat. Encosta no
+   canto superior direito do ícone, como no badge de notificação. */
+.canvas-topbar-icon--alert { position: relative; }
+.canvas-topbar-icon--alert::after {
+  content: "";
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #DE387F;
+}
 
 .detail-scroll { flex: 1; min-height: 0; overflow-y: auto; }
 .detail-body {
-  padding: 32px 44px 80px;
+  padding: 0 44px 80px;
   max-width: 800px;
   margin: 0 auto;
   display: flex;
@@ -942,6 +1024,11 @@
 }
 .reporter-emoji--img { background: none; padding: 0; overflow: hidden; }
 .reporter-emoji--img img { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 50%; }
+/* Retrato de agente (AGENT_AVATARS): ilustração de fundo transparente, então o
+   círculo vira base neutra e a figura entra inteira — mesmo tratamento do
+   .agent-avatar-mini--img. */
+.reporter-emoji--agent { background: var(--bg-soft, #F1F3F7); }
+.reporter-emoji--agent img { object-fit: contain; }
 .reporter b { color: var(--fg); font-weight: 500; }
 
 .detail-section { padding: 0; border: none; }
@@ -1020,14 +1107,12 @@
   color: var(--fg);
 }
 
-/* ── Status (v3 4-state) ── */
+/* ── Status (v3 4-state) ──
+   O estado "attention" no painel de detalhe usa a mesma pill visual do
+   CriticalityTag da home (via [data-sl-criticality-tag][data-priority="attention"]).
+   Aqui mantemos apenas o layout base do container do status. */
 [data-sl-doc-status] { display: inline-flex; align-items: center; gap: 8px; }
-[data-sl-doc-status][data-status="attention"] {
-  background: var(--sl-color-blue-2, #EAF2FF);
-  border-radius: 99px;
-  padding: 4px 12px;
-}
-[data-sl-doc-status-label] { font-size: 14px; font-weight: 500; color: var(--fg); }
+[data-sl-doc-status-label] { font-size: 13px; font-weight: 600; color: var(--fg); letter-spacing: -0.26px; }
 [data-sl-doc-working-dots] circle { fill: var(--sl-color-gray-5, #B7C3D2); transition: fill 0.15s ease; }
 [data-sl-doc-working-dots] circle[data-on] { fill: var(--primary, #2962FF); }
 
@@ -1070,6 +1155,7 @@
   line-height: 1.4;
   letter-spacing: -0.025em;
   color: var(--fg);
+  vertical-align: middle;
 }
 [data-sl-doc-accordion-chevron] {
   flex-shrink: 0;
@@ -1078,22 +1164,57 @@
 }
 [data-sl-doc-accordion-panel] { padding-bottom: 8px; }
 
-/* ── "Ver todos" — open full list in a subview ── */
-[data-sl-doc-see-all] {
+/* ── "Ver todos" — open full list in a subview. Mesmo comportamento de
+   pill button do .wf-ver-badge-btn (fundo + hover escurecendo), em vez
+   de link sublinhado ── */
+/* .pkg-wf-see-btn (card do pacote) compartilha estas regras: é o mesmo botão
+   pequeno de "abrir o próximo nível", em outra superfície. */
+[data-sl-doc-see-all],
+.pkg-wf-see-btn {
   appearance: none;
   border: none;
-  background: none;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   gap: 4px;
   margin-top: 10px;
-  padding: 6px 0;
+  padding: 6px 6px 6px 10px;
+  border-radius: 8px;
+  background: var(--bg-soft, #f8f8f8);
+  transition: background 0.15s ease;
   font-size: 13px;
   font-weight: 500;
-  color: var(--primary, #2962FF);
+  color: var(--fg);
 }
-[data-sl-doc-see-all]:hover { text-decoration: underline; }
+[data-sl-doc-see-all]:hover,
+.pkg-wf-see-btn:hover {
+  background: var(--border, #ebebeb);
+  text-decoration: none;
+}
+
+/* Modal do "Ver workflow" do pacote — mesma linguagem visual do
+   .stage-config-modal, mas mais largo para acomodar o WorkflowSection (grid
+   de 4 etapas na view Etapas) e sem padding interno duplicado, já que a
+   própria WorkflowSection cuida do próprio espaçamento. */
+.pkg-wf-modal {
+  width: 1040px;
+  max-width: calc(100% - 32px);
+  height: auto;
+  max-height: calc(100vh - 64px);
+}
+.pkg-wf-modal-body {
+  padding: 20px 24px 24px;
+}
+/* A seção interna já traz seu próprio border-top + padding-top; dentro do
+   modal esse espaçamento vira ruído (o cabeçalho do modal já delimita). */
+.pkg-wf-modal-body > section > div:first-child {
+  border-top: none !important;
+  padding-top: 0 !important;
+}
+.pkg-wf-modal-sub {
+  color: var(--fg-3);
+  font-weight: 400;
+}
 
 .detail-tasks { margin-top: 8px; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
 .tasks-head {
@@ -1121,31 +1242,47 @@
 .task-title { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 /* Assignee pill + v3 dropdown — uniform proportions (initiatives canvas parity). */
 .assignee-pill-wrap { position: relative; display: inline-flex; max-width: 100%; }
+/* Mesma escala do gatilho de filtro de Atividades (.act-filter): 29px de altura,
+   texto 12.5px/500, avatar de 18px. São o mesmo controle em contextos
+   diferentes, então têm o mesmo tamanho. */
 .assignee-pill {
-  display: inline-flex; align-items: center; gap: 8px;
-  padding: 3px 10px 3px 3px;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 10px 4px 4px;
+  min-height: 29px;
   background: var(--bg-soft);
   border: 1px solid transparent;
   border-radius: 99px;
-  font-size: 15px;
+  font-size: 12.5px;
+  font-weight: 500;
   color: var(--fg);
   cursor: pointer;
-  width: fit-content;
+  /* Ocupa a coluna inteira: pills com e sem dropdown ficam do mesmo tamanho. */
+  width: 100%;
   max-width: 100%;
   transition: background .12s, border-color .12s;
 }
 .assignee-pill:hover { background: var(--bg-muted, #eef0f4); }
 .assignee-pill.open { border-color: var(--primary, #2158E8); }
+/* Responsável fixo (tarefa realizada): mesma pill, sem afordância de menu. */
+.assignee-pill--static { cursor: default; }
+.assignee-pill--static:hover { background: var(--bg-soft); }
+/* Avatar de 18px tanto no gatilho quanto nas linhas do menu. */
 .assignee-pill .person-avatar,
-.assignee-pill .agent-avatar-mini { width: 26px; height: 26px; flex-shrink: 0; }
-.assignee-pill-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.assignee-pill .agent-avatar-mini,
+.assignee-pill .team-avatar { width: 18px; height: 18px; flex-shrink: 0; }
+/* text-align explícito: a pill com dropdown é um <button>, que centraliza o
+   texto por padrão do user agent. */
+.assignee-pill-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left; font-size: 13px; }
 .assignee-pill svg { flex-shrink: 0; color: var(--fg-3); }
 
-.assignee-menu {
+/* .act-filter-menu (filtros de Atividades) compartilha estas regras de
+   propósito: são o mesmo dropdown, em contextos diferentes. */
+.assignee-menu,
+.act-filter-menu {
   position: absolute;
   top: calc(100% + 6px);
   right: 0;
-  min-width: 220px;
+  min-width: 260px;
   background: var(--bg, #fff);
   border: 1px solid var(--border, #E5E5E5);
   border-radius: 16px;
@@ -1156,21 +1293,50 @@
   transform-origin: top right;
   animation: composer-add-menu-in .15s ease-out;
 }
-.assignee-menu-item {
-  display: flex; align-items: center; gap: 8px;
+.assignee-menu-item,
+.act-filter-option {
+  display: flex; align-items: center; gap: 12px;
   width: 100%;
   border: none; background: transparent; cursor: pointer;
-  padding: 6px 8px; border-radius: 8px;
-  font-size: 13px; color: var(--fg, #171717);
+  padding: 6px 8px; border-radius: 12px;
+  font-size: 15px; color: var(--fg, #171717);
   text-align: left;
   transition: background .12s;
 }
 .assignee-menu-item:hover,
-.assignee-menu-item.selected { background: var(--bg-soft, #eeeeee); }
+.assignee-menu-item.selected,
+.act-filter-option:hover,
+.act-filter-option.selected { background: var(--bg-soft, #eeeeee); }
 .assignee-menu-item .person-avatar,
-.assignee-menu-item .agent-avatar-mini { width: 24px; height: 24px; flex-shrink: 0; }
-.assignee-menu-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.assignee-menu-item svg { flex-shrink: 0; color: var(--primary, #2158E8); }
+.assignee-menu-item .agent-avatar-mini,
+.assignee-menu-item .team-avatar { width: 18px; height: 18px; flex-shrink: 0; }
+.assignee-menu-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
+/* Contagem de membros do time — pill à direita do nome. */
+.assignee-menu-count {
+  display: inline-flex; align-items: center; gap: 4px;
+  flex-shrink: 0;
+  padding: 2px 8px;
+  border-radius: 8px;
+  background: var(--bg-muted, #eef0f4);
+  font-size: 12px;
+  color: var(--fg-2);
+  font-variant-numeric: tabular-nums;
+}
+.assignee-menu-count svg { color: var(--fg-3); }
+
+/* Avatar de time: colagem de até 3 rostos dentro de um círculo. */
+.team-avatar {
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  background: var(--bg-muted, #eef0f4);
+}
+.team-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.team-avatar img:first-child { grid-row: span 2; }
 
 /* ---------- Canvas (revenue report) ---------- */
 .canvas-body { padding: 28px 32px 60px; max-width: none; margin: 0; }
@@ -1686,6 +1852,241 @@
   vector-effect: non-scaling-stroke;
   opacity: 0.65;
 }
+
+/* ---------- Overview charts (topo da aba "Visão geral") ----------
+   Mesma moldura do [data-sl-overview-card] portado do v3; o que muda é o
+   conteúdo — barras em vez de sparkline. */
+/* Faixa-resumo da Visão geral: cartão branco com duas colunas separadas por
+   divisor vertical.
+   - Esquerda: número grande da fila, barra empilhada por faixa de idade
+     (< 4h, 4–24h, > 24h) e legenda abaixo da barra.
+   - Direita: duas linhas empilhadas — atenção + tempo até liberar. */
+[data-sl-overview-summary] {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+  align-items: stretch;
+  gap: 24px 32px;
+  padding: 20px 24px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--sl-bg-base, #fff);
+}
+
+/* --- Coluna esquerda: fila -------------------------------------------- */
+
+[data-sl-overview-summary-queue] {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+[data-sl-overview-summary-queue-head] {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+}
+
+[data-sl-overview-summary-queue-value] {
+  font-size: 56px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--fg);
+  flex: 0 0 auto;
+}
+
+[data-sl-overview-summary-copy] {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+[data-sl-overview-summary-queue-label] {
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 26px;
+  letter-spacing: -0.01em;
+  color: var(--fg);
+}
+
+[data-sl-overview-summary-sub] {
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 18px;
+  color: var(--fg-3, #6B7280);
+}
+
+/* Barra empilhada — flex-grow controlado pelo count de cada segmento, com
+   fatias mínimas para que nenhuma faixa desapareça quando a contagem for
+   pequena. */
+[data-sl-overview-summary-queue-bar] {
+  display: flex;
+  align-items: stretch;
+  gap: 3px;
+  width: 100%;
+  height: 6px;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+[data-sl-overview-summary-queue-bar-seg] {
+  flex: 1 1 0;
+  min-width: 8px;
+  border-radius: 999px;
+  background: var(--fg-4, #9AA0A8);
+}
+
+[data-sl-overview-summary-queue-bar-seg][data-tone="healthy"]  { background: var(--primary, #2962FF); }
+/* warning: mesmo amarelo do ícone de alert do canvas-a-verify (#CFA000).
+   critical: mesmo vermelho do dot do CriticalityTag "high" (--sl-fg-critical). */
+[data-sl-overview-summary-queue-bar-seg][data-tone="warning"]  { background: #CFA000; }
+[data-sl-overview-summary-queue-bar-seg][data-tone="critical"] { background: var(--sl-fg-critical, #C4170C); }
+
+[data-sl-overview-summary-queue-legend] {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 20px;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 18px;
+  color: var(--fg-2, #3A3F47);
+}
+
+[data-sl-overview-summary-queue-legend-item] {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+[data-sl-overview-summary-queue-dot] {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--fg-4, #9AA0A8);
+  flex: 0 0 auto;
+}
+
+[data-sl-overview-summary-queue-dot][data-tone="healthy"]  { background: var(--primary, #2962FF); }
+[data-sl-overview-summary-queue-dot][data-tone="warning"]  { background: #CFA000; }
+[data-sl-overview-summary-queue-dot][data-tone="critical"] { background: var(--sl-fg-critical, #C4170C); }
+
+/* --- Coluna direita: atenção + tempo até liberar ---------------------- */
+
+[data-sl-overview-summary-side] {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 16px;
+  padding-left: 32px;
+  border-left: 1px solid var(--border);
+  min-width: 0;
+}
+
+[data-sl-overview-summary-side-row] {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-width: 0;
+}
+
+[data-sl-overview-summary-side-label] {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 20px;
+  letter-spacing: -0.01em;
+  color: var(--fg);
+}
+
+/* Valor da linha "Precisam da sua atenção" — número médio + glifo azul num
+   chip de fundo suave, como no Figma. */
+[data-sl-overview-summary-side-value] {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: #EAF7FF;
+  flex: 0 0 auto;
+}
+
+[data-sl-overview-summary-side-number] {
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  color: var(--fg);
+}
+
+[data-sl-overview-summary-side-value svg] { flex: 0 0 auto; }
+
+/* Valor da linha "Tempo até liberar" — número grande + selo de variação. */
+[data-sl-overview-summary-resolution-value] {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex: 0 0 auto;
+}
+
+[data-sl-overview-summary-value] {
+  font-size: 36px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--fg);
+  white-space: nowrap;
+}
+
+/* --- Compactação -------------------------------------------------------
+   Quem manda é a largura do container (o painel de chat encolhe o main),
+   não a da viewport:
+   1. até 720px: as duas colunas passam a empilhar, com o divisor vertical
+      virando divisor horizontal (sem borda, para não repetir a borda do
+      cartão);
+   2. até 420px: cada linha da coluna direita quebra em duas para caber. */
+[data-sl-overview-summary-section] {
+  container-type: inline-size;
+}
+
+@container (max-width: 720px) {
+  [data-sl-overview-summary] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  [data-sl-overview-summary-side] {
+    padding-left: 0;
+    padding-top: 20px;
+    border-left: none;
+    border-top: 1px solid var(--border);
+  }
+}
+
+@container (max-width: 420px) {
+  [data-sl-overview-summary-queue-value] { font-size: 44px; }
+  [data-sl-overview-summary-queue-label] { font-size: 16px; line-height: 22px; }
+
+  [data-sl-overview-summary-side-row] {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  [data-sl-overview-summary-value] { font-size: 28px; }
+}
+
+/* Selo de variação — equivalente local da Tag do Shoreline */
+[data-sl-overview-chart-delta] {
+  padding: 2px 8px;
+  border-radius: var(--initiative-table-pill-radius, 6px);
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+[data-sl-overview-chart-delta][data-tone="positive"] { background: #E3F8E5; color: #169B61; }
+[data-sl-overview-chart-delta][data-tone="negative"] { background: var(--severity-high-soft); color: var(--severity-high); }
 
 /* ---------- KPI overview card (legacy) ---------- */
 .aiw-kpi-card {
@@ -2444,6 +2845,18 @@
   background: linear-gradient(135deg, #9747FF, #FF3D6E);
   color: #fff;
 }
+/* Agente com retrato próprio (AGENT_AVATARS): a ilustração tem fundo
+   transparente, então o círculo vira uma base neutra e ela entra inteira
+   (contain) em vez de recortada. */
+.agent-avatar-mini--img {
+  background: var(--bg-soft, #F1F3F7);
+  overflow: hidden;
+}
+.agent-avatar-mini--img img {
+  width: 100%; height: 100%;
+  object-fit: contain;
+  display: block;
+}
 
 /* Canvas task list */
 .canvas-tasks {
@@ -2517,6 +2930,17 @@
 }
 .initiative-task-execute:hover { background: var(--primary-hover, #1E4EE5); }
 .initiative-task-execute svg { display: block; }
+/* Loading: mantém o círculo azul e o mesmo diâmetro, trocando o ícone por um
+   spinner branco enquanto a task é disparada. */
+.initiative-task-execute[data-loading] { cursor: default; background: var(--primary, #2962FF); }
+.initiative-task-execute-spinner {
+  display: inline-block;
+  width: 12px; height: 12px;
+  border: 1.5px solid rgba(255, 255, 255, 0.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin .9s linear infinite;
+}
 
 /* Impacted orders mini-table */
 .orders-mini {
@@ -2544,13 +2968,16 @@
 .orders-mini-row:last-child { border-bottom: none; }
 
 /* ==========================================================================
-   ACTIVITIES — v3 activity-feed / timeline port (data-sl-activity-list)
-   Vertical rail + bullseye node, actor (avatar + semibold name) · text · "em {time}"
+   ACTIVITIES — porte da Timeline do v3 (data-sl-activity-list)
+   Hora em coluna fixa à esquerda · ação (nome do ator semibold + texto) ·
+   avatar encostado à direita. Divisor entre itens; nota como blockquote
+   alinhada à coluna de texto.
    ========================================================================== */
 [data-sl-activity-list] {
-  --act-rail: 24px;
-  --act-node: 14px;
-  --act-node-center: 24px;
+  /* 11ch cabe o carimbo mais longo dos dados ("01/06 18:32") sem quebrar o
+     alinhamento das linhas. */
+  --act-time-width: 11ch;
+  --act-time-gap: 24px;
   --act-line: var(--border, #E0E5EF);
   display: flex;
   flex-direction: column;
@@ -2558,98 +2985,72 @@
   margin-top: 4px;
 }
 [data-sl-activity-list] [data-sl-timeline-item] {
-  position: relative;
-  display: grid;
-  grid-template-columns: var(--act-rail) minmax(0, 1fr);
-  column-gap: 16px;
-  align-items: start;
-  border-bottom: none;
+  display: flex;
+  flex-direction: column;
+  padding-block: 12px;
+  border-bottom: 1px solid var(--act-line);
 }
-
-/* Vertical connector rail (centered on the rail column). */
-[data-sl-activity-list] [data-sl-timeline-item]::before {
-  content: "";
-  position: absolute;
-  left: calc(var(--act-rail) / 2);
-  top: 0;
-  bottom: 0;
-  width: 1px;
-  transform: translateX(-50%);
-  background: var(--act-line);
-  pointer-events: none;
-}
-[data-sl-activity-list] [data-sl-timeline-item]:first-child::before { top: var(--act-node-center); }
-[data-sl-activity-list] [data-sl-timeline-item]:last-child::before  { bottom: calc(100% - var(--act-node-center)); }
-[data-sl-activity-list] [data-sl-timeline-item]:only-child::before  { display: none; }
-
-/* Bullseye node (hollow ring), aligned to the action line. */
-[data-sl-activity-list] [data-sl-timeline-icon] {
-  grid-column: 1;
-  grid-row: 1;
-  justify-self: center;
-  position: relative;
-  z-index: 1;
-  box-sizing: border-box;
-  width: var(--act-node);
-  height: var(--act-node);
-  margin-top: calc(var(--act-node-center) - var(--act-node) / 2);
-  border: 2px solid var(--act-line);
-  border-radius: 50%;
-  background: #fff;
-}
-[data-sl-activity-list] [data-sl-timeline-icon][data-variant="ai"] {
-  border-color: var(--sl-color-purple-8, #8B5CF6);
-}
-
-/* Action line (row 1, col 2). */
-[data-sl-activity-list] [data-sl-timeline-content] {
-  grid-column: 2;
-  grid-row: 1;
+[data-sl-activity-list] [data-sl-timeline-item]:last-child { border-bottom: none; }
+[data-sl-activity-list] [data-sl-timeline-row] {
   display: flex;
   align-items: center;
-  min-height: 48px;
+  gap: var(--act-time-gap);
+  min-width: 0;
+}
+/* Coluna de hora: largura fixa e numerais tabulares para as linhas alinharem. */
+[data-sl-activity-list] [data-sl-timeline-time] {
+  flex-shrink: 0;
+  width: var(--act-time-width);
+  min-width: var(--act-time-width);
+  max-width: var(--act-time-width);
+  font-size: 12px;
+  line-height: 1.56;
+  letter-spacing: -0.24px;
+  color: var(--fg-3);
+  white-space: nowrap;
+  font-feature-settings: "lnum" 1, "tnum" 1;
+}
+[data-sl-activity-list] [data-sl-timeline-content] {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 [data-sl-activity-list] [data-sl-timeline-action] {
   flex: 1;
   min-width: 0;
-  display: flex;
-  flex-wrap: nowrap;
-  align-items: flex-start;
-  gap: 8px;
-  font-size: 15px;
-  line-height: 1.45;
+  font-size: 14px;
+  line-height: 1.56;
+  letter-spacing: -0.28px;
   color: var(--fg);
 }
-[data-sl-activity-list] [data-sl-timeline-action-avatar] {
+[data-sl-activity-list] [data-sl-timeline-action-name] { font-weight: 600; }
+[data-sl-activity-list] [data-sl-activity-avatar] {
+  margin-left: auto;
   flex-shrink: 0;
   display: inline-flex;
   align-items: center;
-  margin-top: 1px;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  line-height: 0;
 }
-[data-sl-activity-list] [data-sl-timeline-action-avatar] .person-avatar,
-[data-sl-activity-list] [data-sl-timeline-action-avatar] .agent-avatar-mini {
+[data-sl-activity-list] [data-sl-activity-avatar] .person-avatar,
+[data-sl-activity-list] [data-sl-activity-avatar] .agent-avatar-mini {
   width: 24px;
   height: 24px;
 }
-/* Text box: name · action · time wrap within this column, never under the avatar. */
-[data-sl-activity-list] [data-sl-timeline-action-body] {
-  flex: 1;
-  min-width: 0;
-}
-[data-sl-activity-list] [data-sl-timeline-action-name] { font-weight: 600; }
-[data-sl-activity-list] [data-sl-timeline-action-text] { color: var(--fg); }
-[data-sl-activity-list] [data-sl-timeline-action-time] { font-size: 13px; color: var(--fg-3); white-space: nowrap; }
 
-/* Optional note (row 2, col 2) — blockquote-style. */
+/* Nota — blockquote deslocado pela coluna de hora. */
 [data-sl-activity-list] [data-sl-timeline-note] {
-  grid-column: 2;
-  grid-row: 2;
-  margin: -8px 0px 14px 0;
-  padding-left: 32px;
-  border-left: none;
-  border-image: none;
+  margin-top: 8px;
+  margin-left: calc(var(--act-time-width) + var(--act-time-gap));
+  padding-left: 12px;
+  border-left: 2px solid var(--act-line);
   font-size: 13px;
   line-height: 1.5;
+  letter-spacing: -0.24px;
   color: var(--fg-3);
 }
 .act-badge {
@@ -2667,28 +3068,16 @@
   border-radius: 99px;
   background: var(--bg-soft, #eef0f4);
   color: var(--fg-2, #525252);
-  font-size: 12px; font-weight: 600;
+  font-size: 12px; font-weight: 400;
   line-height: 1;
+  letter-spacing: 0.1px;
   vertical-align: middle;
 }
 
 /* Activities loading skeleton (simulates the agent querying the log). */
 [data-sl-activities-skeleton] { display: flex; flex-direction: column; gap: 16px; padding: 4px 0 8px; }
-.act-skeleton-hint {
-  display: inline-flex; align-items: center; gap: 8px;
-  font-size: 12.5px; color: var(--fg-3);
-}
-.act-skeleton-spinner {
-  width: 14px; height: 14px; border-radius: 50%;
-  border: 2px solid var(--border); border-top-color: var(--primary, #2158E8);
-  animation: act-skeleton-spin .7s linear infinite;
-  flex-shrink: 0;
-}
-@keyframes act-skeleton-spin { to { transform: rotate(360deg); } }
-.act-skeleton-row { display: flex; gap: 12px; align-items: flex-start; }
-.act-skeleton-avatar { width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0; }
-.act-skeleton-lines { flex: 1; display: flex; flex-direction: column; gap: 8px; padding-top: 3px; }
-.act-skeleton-line { height: 10px; border-radius: 6px; }
+.act-skeleton-avatar { display: block; width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0; }
+.act-skeleton-line { display: block; height: 10px; border-radius: 6px; }
 .sk-shimmer {
   background: linear-gradient(90deg, #eef0f4 25%, #e2e6ee 37%, #eef0f4 63%);
   background-size: 400% 100%;
@@ -2697,6 +3086,76 @@
 @keyframes sk-shimmer {
   0%   { background-position: 100% 0; }
   100% { background-position: 0 0; }
+}
+
+/* ── Filtros da página cheia de Atividades ──
+   O menu reusa as regras de .assignee-menu (ver seção do Responsável) para os
+   dois dropdowns não divergirem com o tempo. ── */
+.act-filters {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 4px 0 12px;
+}
+.act-filters-title {
+  font-size: 12.5px;
+  color: var(--fg-3);
+  flex-shrink: 0;
+}
+.act-filter-wrap { position: relative; display: inline-flex; }
+.act-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px 6px 12px;
+  border-radius: 99px;
+  border: 1px solid var(--border);
+  background: #fff;
+  color: var(--fg);
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background .12s, border-color .12s;
+}
+.act-filter:hover { background: var(--bg-muted); border-color: var(--border-strong, var(--fg-3)); }
+.act-filter.open { border-color: var(--primary, #2158E8); }
+.act-filter--active { background: var(--bg-soft); }
+.act-filter svg { flex-shrink: 0; color: var(--fg-3); }
+/* No gatilho o avatar acompanha o corpo do pill; no menu, avatar e texto seguem
+   a mesma medida das linhas do Responsável (.assignee-menu-item), senão os dois
+   dropdowns abrem com alturas e larguras diferentes. */
+.act-filter .person-avatar,
+.act-filter .agent-avatar-mini { width: 18px; height: 18px; flex-shrink: 0; }
+.act-filter-option .person-avatar,
+.act-filter-option .agent-avatar-mini { width: 18px; height: 18px; flex-shrink: 0; }
+.act-filter-option-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
+/* O menu herda o alinhamento à direita do Responsável; nos filtros da esquerda
+   isso o jogaria para fora da coluna do documento. */
+.act-filters > .act-filter-wrap .act-filter-menu { right: auto; left: 0; transform-origin: top left; }
+.act-empty {
+  margin: 0;
+  padding: 20px 0;
+  font-size: 13.5px;
+  color: var(--fg-3);
+}
+
+/* Tasks loading skeleton (simulates the agent generating follow-up tasks
+   based on verification answer) — mesma moldura do card final: só o título
+   e o Responsável de cada linha viram barras. */
+.canvas-tasks-skeleton-row { padding-top: 12px; padding-bottom: 12px; }
+.canvas-tasks-skeleton-dot {
+  width: 20px; height: 20px; border-radius: 50%;
+  border: 1.5px dashed var(--border-strong);
+  display: inline-block;
+  animation: canvas-tasks-skeleton-spin 1.6s linear infinite;
+}
+@keyframes canvas-tasks-skeleton-spin { to { transform: rotate(360deg); } }
+.canvas-tasks-skeleton-bar {
+  height: 26px;
+  border-radius: 8px;
+  flex: 1;
+  min-width: 0;
 }
 
 /* ---------- Workflow Board ---------- */
@@ -3238,6 +3697,16 @@
   grid-template-columns: 399px 6px 1fr;
   height: 100%;
   overflow: hidden;
+  /* Ao abrir/fechar o chat, o canvas troca de largura via grid-template-columns.
+     Animar essa transição faz o canvas deslizar suavemente para a esquerda em
+     vez de "pular". Mesmo timing/ease do slide-in do chat (220ms cubic-bezier
+     bebido do composer v3). Durante drag do resizer a transição é desligada
+     via `body.resizing-x` para o arrasto ficar 1:1 com o cursor. */
+  transition: grid-template-columns 220ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+body.resizing-x .resizable-split { transition: none; }
+@media (prefers-reduced-motion: reduce) {
+  .resizable-split { transition: none; }
 }
 .resizable-split > .chat-panel,
 .resizable-split > .detail-panel {
@@ -3245,6 +3714,28 @@
   min-height: 0;
   height: 100%;
   overflow: hidden;
+}
+
+/* Ativação do chat: painel e resizer entram como uma peça só pela borda
+   esquerda, recortados pelo overflow do próprio split. A distância
+   (--chat-enter-x) vem do ResizableSplit, que conhece a largura atual — é ela
+   que mantém os dois em lockstep, sem fade competindo com o movimento. */
+.resizable-split--chat-entering > .chat-panel,
+.resizable-split--chat-entering > .split-resizer {
+  /* Timing/ease bebido de v3 (composer.css do ai-workspace-shell-template@v3):
+     220ms cubic-bezier(0.32, 0.72, 0, 1). Mesma curva que o composer usa nas
+     transições de shape (min-height/border-radius/padding), agora aplicada
+     à entrada do painel de chat sobre o canvas/drawer. */
+  animation: chat-panel-slide-in 220ms cubic-bezier(0.32, 0.72, 0, 1);
+  will-change: transform;
+}
+@keyframes chat-panel-slide-in {
+  from { transform: translateX(var(--chat-enter-x, -100%)); }
+  to   { transform: translateX(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .resizable-split--chat-entering > .chat-panel,
+  .resizable-split--chat-entering > .split-resizer { animation: none; }
 }
 
 /* Resizer drag handle between panels */
@@ -3368,6 +3859,9 @@ body.resizing-x .split-resizer::before { background: var(--primary); }
   background: #fff;
   overflow: hidden;
 }
+/* O menu de Responsável é absoluto dentro da linha: sem isto o card recorta
+   o dropdown. Só libera o recorte enquanto o menu está montado. */
+.canvas-tasks-card:has(.assignee-menu) { overflow: visible; }
 .canvas-tasks-head {
   display: grid;
   grid-template-columns: 1fr 220px;
@@ -3409,7 +3903,8 @@ body.resizing-x .split-resizer::before { background: var(--primary); }
 }
 .impacted-thead {
   display: grid;
-  grid-template-columns: 1.4fr 1fr 1.4fr 1.2fr;
+  grid-template-columns: 150px 1fr 1fr 1fr;
+  row-gap: 8px;
   padding: 12px 20px;
   background: var(--bg-soft);
   color: var(--fg-3);
@@ -3417,11 +3912,12 @@ body.resizing-x .split-resizer::before { background: var(--primary); }
 }
 .impacted-row {
   display: grid;
-  grid-template-columns: 1.4fr 1fr 1.4fr 1.2fr;
+  grid-template-columns: 150px 1fr 1fr 1fr;
+  row-gap: 8px;
   padding: 14px 20px;
   align-items: center;
   border-top: 1px solid var(--border);
-  font-size: 15px;
+  font-size: 13px;
   color: var(--fg);
   background: transparent;
   text-align: left;
@@ -3430,11 +3926,76 @@ body.resizing-x .split-resizer::before { background: var(--primary); }
   transition: background .12s;
 }
 .impacted-row:hover { background: var(--bg-soft); }
+/* Linha sem pedido modelado por trás: continua legível, mas não se anuncia
+   como clicável. */
+.impacted-row--static { cursor: default; }
+.impacted-row--static:hover { background: transparent; }
 .impacted-id {
   font-family: ui-monospace, "SF Mono", monospace;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 500;
+  color: var(--fg);
 }
+.impacted-col-id {
+  width: 150px;
+}
+.impacted-col-seller {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* Cabeçalho ordenável: mesma tipografia das outras colunas — só a seta e o
+   hover denunciam que é clicável. */
+.impacted-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  justify-self: start;
+}
+.impacted-sort:hover { color: var(--fg); }
+.impacted-sort--active { color: var(--fg); font-weight: 500; }
+.impacted-sort-caret {
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity .12s ease, transform .12s ease;
+}
+.impacted-sort:hover .impacted-sort-caret { opacity: .5; }
+.impacted-sort--active .impacted-sort-caret { opacity: 1; }
+.impacted-sort-caret--desc { transform: rotate(180deg); }
+
+/* Busca da página cheia de pedidos — mesmo campo da seleção de pedidos no
+   card de verificação. */
+.impacted-search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+  padding: 0 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--fg-3);
+}
+.impacted-search:focus-within { border-color: var(--primary, #2158E8); }
+.impacted-search input {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  font: inherit;
+  font-size: 13.5px;
+  color: var(--fg);
+}
+.impacted-search input::placeholder { color: var(--fg-3); }
 
 /* ---------- Order detail styling ---------- */
 
@@ -3457,6 +4018,31 @@ body.resizing-x .split-resizer::before { background: var(--primary); }
 .od-topnav {
   display: flex; align-items: center; justify-content: space-between;
   gap: 16px;
+}
+
+/* Quando o pedido está aberto como subview do TaskCanvas, o back-bar
+   ("Voltar para {ID}") e o pager ("1 de N" + prev/next) compartilham a mesma
+   linha: o back-bar segue à esquerda (fluxo normal, sticky), e o pager é
+   içado para a direita da faixa via posicionamento absoluto. A âncora é
+   [data-sl-canvas-doc-view][data-view="sub"] — que só existe no canvas do
+   task, então não afeta a Order Detail em standalone. */
+[data-sl-canvas-doc-view][data-view="sub"] { position: relative; }
+[data-sl-canvas-doc-view][data-view="sub"] .od-topnav {
+  position: absolute;
+  /* Alinha o centro vertical do pager (28px) com o centro do back-button
+     (linha ~20px). O back-bar tem padding-top 16px, então o botão fica com
+     centro em 26px; o pager começa em 16px e teria centro em 30px — o
+     translateY(-4px) puxa 4px para cima e emparelha os centros. */
+  top: var(--sl-space-4, 16px);
+  right: 0;
+  transform: translateY(-4px);
+  z-index: 3; /* acima do back-bar sticky (z-index 2) */
+  margin: 0;
+  padding: 0;
+  background: transparent;
+}
+[data-sl-canvas-doc-view][data-view="sub"] .od-topnav > :first-child {
+  display: none; /* spacer do layout antigo — sem uso quando absolute */
 }
 .od-pager {
   display: inline-flex; align-items: center; gap: 6px;
@@ -3501,14 +4087,16 @@ body.resizing-x .split-resizer::before { background: var(--primary); }
 .od-back-link:hover { text-decoration: underline; color: var(--primary-hover); }
 .od-back-link svg { color: currentColor; }
 
-/* Order metadata grid (smaller than canvas metadata) */
+/* Order metadata grid — same visual style as canvas metadata
+   ([data-sl-initiative-document-metadata]): label 15px/400 em fg-2,
+   valor 15px/500 em fg, coluna do rótulo 10rem, row-gap 12px. */
 .od-meta {
-  grid-template-columns: 200px 1fr;
-  row-gap: 14px;
+  grid-template-columns: 10rem 1fr;
+  row-gap: 12px;
   margin-top: -16px; /* tighten under title */
 }
-.od-meta dt { font-weight: 600; color: var(--fg); padding-top: 6px; font-size: 13.5px; }
-.od-meta dd { font-size: 13.5px; }
+.od-meta dt { font-size: 15px; font-weight: 400; color: var(--fg-2); padding-top: 0; }
+.od-meta dd { font-size: 15px; font-weight: 500; color: var(--fg); }
 .od-meta-link {
   color: var(--accent, #3B82F6);
   text-decoration: none;
@@ -4210,7 +4798,7 @@ sl-tag[data-color="blue"] {
   width: 100%;
   background: #fff;
   border: none;
-  border-radius: 12px;
+  border-radius: 8px;
   overflow: hidden;
   cursor: pointer;
   text-align: left;
@@ -4519,7 +5107,7 @@ sl-tag[data-color="blue"] {
 .wf-flat-tasks {
   display: flex;
   flex-direction: column;
-  border-radius: 12px;
+  border-radius: 8px;
   border: 1px solid var(--border);
 }
 .wf-flat-task-wrap {
@@ -4768,7 +5356,7 @@ sl-tag[data-color="blue"] {
   gap: 12px;
   padding: 14px 16px;
   border: 1.5px solid var(--border);
-  border-radius: var(--radius-lg);
+  border-radius: 8px;
   background: #fff;
   text-align: left;
   cursor: pointer;
@@ -4814,6 +5402,406 @@ sl-tag[data-color="blue"] {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
+}
+
+/* Drawer "Gatilho" — lista de radios de seleção única e card com a
+   configuração do tipo selecionado. Mesmos tokens dos demais drawers. */
+.wf-radio-group {
+  display: flex;
+  flex-direction: column;
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+  overflow: hidden;
+}
+.wf-radio-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  font-size: 13.5px;
+  color: var(--fg);
+  cursor: pointer;
+  border-top: 1px solid var(--border);
+}
+/* Radio rows são <label> dentro de .setting-field e herdariam o peso 600
+   de `.setting-field label`; o texto das opções é peso regular */
+label.wf-radio-row { font-weight: 400; }
+.wf-radio-row:first-child { border-top: none; }
+.wf-radio-row:hover { background: var(--bg-soft); }
+.wf-radio-row.selected {
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-weight: 500;
+}
+.wf-radio-row input[type="radio"] {
+  appearance: none; -webkit-appearance: none;
+  width: 18px; height: 18px; flex-shrink: 0;
+  margin: 0;
+  border: 1.5px solid var(--border-strong);
+  border-radius: 50%;
+  background: #fff;
+  cursor: pointer;
+}
+.wf-radio-row input[type="radio"]:hover { border-color: var(--primary); }
+.wf-radio-row input[type="radio"]:checked {
+  border-color: var(--primary);
+  background: var(--primary);
+  box-shadow: inset 0 0 0 3px #fff;
+}
+/* Variante checkbox da mesma linha (seleção múltipla de workflows de origem) */
+.wf-radio-row input[type="checkbox"] {
+  appearance: none; -webkit-appearance: none;
+  width: 18px; height: 18px; flex-shrink: 0;
+  margin: 0;
+  border: 1.5px solid var(--border-strong);
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+  transition: background .12s, border-color .12s;
+}
+.wf-radio-row input[type="checkbox"]:hover { border-color: var(--fg-3); }
+.wf-radio-row input[type="checkbox"]:checked {
+  border-color: var(--primary);
+  background: var(--primary);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 6l3 3 5-5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 12px;
+}
+/* Sem visual de card: conteúdo direto no corpo do drawer, sem borda,
+   fundo ou paddings laterais */
+.wf-trigger-config-card {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 16px 0;
+}
+.wf-trigger-config-card > .setting-row-title { font-size: 14px; }
+
+/* Dropdown do tipo de gatilho — reaproveita o padrão .status-dropdown do
+   sistema, em largura total e com os tokens do campo .input. O botão e cada
+   opção do painel exibem título + descrição empilhados (.status-dropdown-copy). */
+.wf-trigger-type-dropdown { display: block; }
+.wf-trigger-type-dropdown .status-dropdown-btn {
+  width: 100%;
+  min-height: 48px;
+  padding: 12px 16px;
+  font-size: 14px;
+  color: var(--fg-2);
+  white-space: normal;
+}
+.wf-trigger-type-dropdown .status-dropdown-chevron {
+  width: 16px;
+  height: auto;
+}
+.wf-trigger-type-dropdown .status-dropdown-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+}
+.wf-trigger-type-dropdown .status-dropdown-label {
+  text-align: left;
+  font-size: 16px;
+  font-weight: 600;
+}
+.wf-trigger-type-dropdown .status-dropdown-label.placeholder {
+  color: var(--fg-3);
+  font-weight: 400;
+}
+.wf-trigger-type-dropdown .status-dropdown-desc {
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--fg-3);
+  line-height: 1.45;
+  white-space: normal;
+}
+.wf-trigger-type-dropdown .status-dropdown-item {
+  font-size: 14px;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  white-space: normal;
+}
+.wf-trigger-type-dropdown .status-dropdown-item-label {
+  font-size: 16px;
+  font-weight: 600;
+}
+/* Item selecionado sem destaque azul: fundo e texto neutros. */
+.wf-trigger-type-dropdown .status-dropdown-item.selected {
+  background: var(--bg-soft);
+  color: var(--fg);
+}
+.wf-trigger-type-dropdown .status-dropdown-panel {
+  padding: 8px;
+  gap: 8px;
+}
+/* Hover e aberto usam borda cinza-escura neutra, não o azul do padrão base. */
+.wf-trigger-type-dropdown .status-dropdown-btn:hover {
+  border-color: var(--sl-fg-base);
+}
+.wf-trigger-type-dropdown .status-dropdown-btn.open {
+  border-color: var(--sl-fg-base);
+}
+
+/* Gatilho "Conclusão de uma tarefa específica" — um card por workflow de
+   origem, com selects de tarefa e status; picker "+ Adicionar workflow"
+   para incluir novas origens. */
+.wf-task-trigger-config {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.wf-task-trigger-card {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px;
+  background: #fff;
+}
+.wf-task-trigger-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.wf-task-trigger-head-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
+}
+.wf-task-trigger-head .icon-button,
+.wf-task-trigger-head button { flex-shrink: 0; }
+.wf-task-trigger-overline {
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.2px;
+  text-transform: lowercase;
+  color: var(--fg-3);
+  margin-bottom: 6px;
+}
+.wf-task-trigger-head-copy .wf-task-trigger-overline { margin-bottom: 0; }
+.wf-task-trigger-wf-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--fg);
+}
+.wf-task-trigger-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 12px 0;
+}
+.wf-task-trigger-select {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: #fff;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color .12s;
+}
+.wf-task-trigger-select:hover,
+.wf-task-trigger-select.open { border-color: var(--primary); }
+.wf-task-trigger-select-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+.wf-task-trigger-select-value {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fg);
+}
+.wf-task-trigger-select-value.placeholder {
+  font-weight: 400;
+  color: var(--fg-3);
+}
+.wf-task-trigger-select-meta {
+  font-size: 12px;
+  color: var(--fg-3);
+}
+.wf-task-trigger-select-chevron {
+  flex-shrink: 0;
+  color: var(--fg-3);
+}
+.wf-task-trigger-list {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-top: 6px;
+  max-height: 180px;
+  overflow: auto;
+}
+.wf-task-trigger-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 12px;
+  border: none;
+  border-bottom: 1px solid var(--bg-soft);
+  background: #fff;
+  cursor: pointer;
+  text-align: left;
+  font-size: 13px;
+  color: var(--fg);
+}
+.wf-task-trigger-option:last-child { border-bottom: none; }
+.wf-task-trigger-option:hover { background: var(--bg-soft); }
+.wf-task-trigger-option.selected { background: var(--primary-soft); }
+.wf-task-trigger-option-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  border: 1.5px solid var(--border-strong);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.wf-task-trigger-option.selected .wf-task-trigger-option-dot {
+  border-color: var(--primary);
+}
+.wf-task-trigger-option.selected .wf-task-trigger-option-dot::after {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--primary);
+}
+.wf-task-trigger-option-name { flex: 1; min-width: 0; }
+.wf-task-trigger-option-meta {
+  font-size: 12px;
+  color: var(--fg-3);
+  flex-shrink: 0;
+}
+.wf-task-trigger-picker {
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.wf-task-trigger-picker-head {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 11px 14px;
+  color: var(--fg);
+  background: var(--bg-muted);
+}
+.wf-task-trigger-picker-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 14px;
+  border: none;
+  border-top: 1px solid var(--bg-soft);
+  background: #fff;
+  cursor: pointer;
+  text-align: left;
+  font-size: 14px;
+  color: var(--fg);
+}
+.wf-task-trigger-picker-item:hover { background: var(--bg-soft); }
+.wf-task-trigger-picker-plus {
+  display: flex;
+  align-items: center;
+  color: var(--fg);
+  flex-shrink: 0;
+}
+.wf-task-trigger-picker-name { flex: 1; min-width: 0; }
+.wf-task-trigger-picker-count {
+  font-size: 12px;
+  color: var(--fg-3);
+  flex-shrink: 0;
+}
+.wf-task-trigger-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  align-self: flex-start;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--sl-fg-inverted);
+  border: 1px solid var(--sl-bg-accent-strong);
+  border-radius: 8px;
+  padding: 10px 14px;
+  background: var(--sl-bg-accent-strong);
+  cursor: pointer;
+  transition: background .12s, border-color .12s;
+}
+.wf-task-trigger-add:hover {
+  background: var(--sl-bg-accent-strong-hover);
+  border-color: var(--sl-bg-accent-strong-hover);
+}
+.wf-task-trigger-add:active {
+  background: var(--sl-bg-accent-strong-pressed);
+  border-color: var(--sl-bg-accent-strong-pressed);
+}
+
+/* Picker "Evento do sistema" (embutido no card Configuração) — busca no topo
+   e eventos agrupados por domínio; mesmos tokens do campo de busca do canvas
+   e dos checkboxes .wf-check. */
+.wf-event-search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--fg-3);
+}
+.wf-event-search:focus-within { border-color: var(--primary, #2158E8); }
+.wf-event-search input {
+  flex: 1;
+  min-width: 0;
+  height: 34px;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 13px;
+  color: var(--fg);
+}
+.wf-event-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  margin-top: 16px;
+}
+/* Cada grupo de domínio vira um card: borda própria e respiro interno */
+.wf-event-groups .setting-field {
+  margin: 0;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+/* Rótulo de domínio do grupo: separador inferior no lugar do espaçamento */
+.wf-event-groups .setting-field > label {
+  margin-bottom: 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+}
+.wf-event-group-list {
+  display: flex;
+  flex-direction: column;
+}
+.wf-event-group-list .wf-check { font-weight: 400; }
+.wf-event-group-list .wf-check input[type="checkbox"]:hover { border-color: var(--fg-3); }
+.wf-event-group-list .wf-check input[type="checkbox"]:checked {
+  background-color: var(--fg-2);
+  border-color: var(--fg-2);
 }
 
 /* Dependências — toggleable workflow list, reused for "depende de" and "desbloqueia" */
@@ -5274,7 +6262,7 @@ sl-tag[data-color="blue"] {
   position: relative;
   transition: background .12s, border-color .12s;
 }
-.wf-check input[type="checkbox"]:hover { border-color: var(--primary); }
+.wf-check input[type="checkbox"]:hover { border-color: var(--fg-3); }
 .wf-check input[type="checkbox"]:checked {
   background: var(--primary);
   border-color: var(--primary);
@@ -5941,6 +6929,7 @@ button.stage-add-task-btn[data-sl-button][data-variant="tertiary"][data-has-labe
 .stage-task-edit-btn--fixed {
   margin-left: auto;
   flex-shrink: 0;
+  color: rgba(171, 171, 171, 1);
 }
 .stage-task-edit-btn--fixed[data-sl-button]:hover {
   color: var(--fg-2);
@@ -6447,27 +7436,31 @@ button.stage-add-task-btn[data-sl-button][data-variant="tertiary"][data-has-labe
 .chat-quick-replies {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: var(--sl-space-2);
   margin-top: 8px;
 }
 .chat-quick-reply {
   display: inline-flex;
   align-items: center;
-  padding: 12px 16px;
-  border-radius: 99px;
-  border: var(--sl-border-base);
-  background: var(--sl-bg-base);
+  gap: var(--sl-space-1);
+  min-height: 32px;
+  padding: 0 var(--sl-space-3);
+  border-radius: var(--sl-radius-2);
+  border: none;
+  background: var(--sl-bg-muted);
   color: var(--sl-fg-base);
-  font: var(--sl-text-body);
-  font-size: 14px;
+  font-family: var(--sl-font-family-sans);
+  font-size: var(--sl-font-size-2);
+  font-weight: var(--sl-font-weight-medium);
+  letter-spacing: -0.02em;
   cursor: pointer;
-  transition: border .12s, background .12s;
-  line-height: 1;
-  box-shadow: 0px 2px 4px 0px rgba(0, 0, 0, 0.04);
+  transition: background .12s;
+  line-height: 1.25;
+  box-shadow: none;
 }
 .chat-quick-reply:hover {
-  border: var(--sl-border-base-strong);
-  background: var(--sl-bg-base-soft);
+  border: none;
+  background: var(--sl-bg-base-strong);
   color: var(--sl-fg-base);
 }
 
@@ -6523,10 +7516,8 @@ button.stage-add-task-btn[data-sl-button][data-variant="tertiary"][data-has-labe
 
 .chat-quick-reply.selected {
   background: var(--bg);
-  border-style: solid;
-  border-color: var(--border);
-  border-image: none;
-  box-shadow: none;
+  border: none;
+  box-shadow: inset 0 0 0 1px var(--border);
   color: var(--sl-fg-base);
   cursor: default;
 }
@@ -6535,9 +7526,9 @@ button.stage-add-task-btn[data-sl-button][data-variant="tertiary"][data-has-labe
 /* Confirm chip — "Pronto →" in Fluxo G bulk selection */
 .chat-quick-reply--confirm {
   background: var(--sl-bg-action-secondary);
-  border: 1px solid var(--sl-border-base-strong);
+  border: var(--sl-border-base-strong);
   color: var(--sl-fg-base);
-  font-weight: 500;
+  font-weight: var(--sl-font-weight-medium);
 }
 .chat-quick-reply--confirm:hover {
   background: var(--sl-fg-accent);
@@ -7153,6 +8144,37 @@ button.wf-ver-badge-btn:hover {
   font-weight: 400;
   color: var(--fg);
 }
+/* Regra do +N (WfClampNamesLabel): nomes separados por vírgula limitados a
+   2 linhas — line-height explícito para a medição em JS ser determinística */
+.wf-ver-badge-label--clamp {
+  line-height: 1.4;
+  text-align: left;
+  min-width: 0;
+}
+.wf-ver-badge-more {
+  margin-left: 4px;
+  color: var(--fg-3);
+  font-weight: 500;
+  white-space: nowrap;
+}
+/* Linha "Gatilho": as origens selecionadas quebram linha e cada uma é uma tag */
+.wf-ver-badge-btn--tags {
+  flex-wrap: wrap;
+  row-gap: 4px;
+  text-align: left;
+}
+.wf-trigger-origin-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 4px 6px;
+  font-size: 12.5px;
+  color: var(--fg-2);
+  white-space: nowrap;
+}
 .wf-ver-badge-count.wf-meta-hist-count {
   margin-left: 0;
 }
@@ -7404,35 +8426,55 @@ button.wf-ver-badge-btn:hover {
 .pkg-title-group {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 8px;
   width: 100%;
+}
+/* Rastreio e nota fiscal são referências do pacote, não ações do rodapé:
+   ficam no cabeçalho, encostados à direita. */
+.pkg-title-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+.pkg-title-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: #fff;
+  color: var(--fg);
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.pkg-title-btn:hover {
+  background: var(--bg-muted);
+  border-color: var(--border-strong, var(--fg-3));
+}
+/* Confirmação de cópia no próprio botão — some sozinha depois de 1,6s. */
+.pkg-title-btn--copied,
+.pkg-title-btn--copied:hover {
+  background: var(--bg-muted);
+  border-color: var(--border-strong, var(--fg-3));
+  color: var(--fg-2);
+}
+
+/* "Ver workflow" fecha a linha de meta do pacote: herda o botão do "Ver todos",
+   mas sem o respiro de cima que ele usa quando encerra um bloco. */
+.pkg-meta .pkg-wf-see-btn {
+  margin-top: 0;
+  flex-shrink: 0;
+  padding: 4px 6px 4px 10px;
+  font-size: 12.5px;
 }
 .pkg-header-right {
   display: flex;
   align-items: center;
   gap: 10px;
-}
-.pkg-wf-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 3px 10px;
-  border-radius: 8px;
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--fg-2);
-  background: var(--bg-muted, #F3F4F6);
-  border: 1px solid var(--border);
-  letter-spacing: 0.1px;
-}
-.pkg-stage-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 3px 10px;
-  border-radius: 8px;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.1px;
 }
 .pkg-exp-link {
   font-size: 13px;
@@ -7492,6 +8534,9 @@ button.wf-ver-badge-btn:hover {
   margin: 0 16px;
   flex-shrink: 0;
 }
+/* Linha com menos campos e rótulos mais longos (nome do workflow, task
+   corrente): o valor acompanha o texto em vez da coluna fixa de 130px. */
+.pkg-meta--wide .pkg-meta-val { width: auto; }
 
 /* ── Products table ── */
 .pkg-products-table {
@@ -7726,33 +8771,10 @@ button.wf-ver-badge-btn:hover {
 .pkg-footer {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   padding: 12px 16px;
   border-top: 1px solid var(--border);
   background: var(--bg);
-}
-.pkg-footer-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.pkg-footer-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 6px 12px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  background: #fff;
-  color: var(--fg);
-  font-size: 12.5px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
-}
-.pkg-footer-btn:hover {
-  background: var(--bg-muted);
-  border-color: var(--border-strong, var(--fg-3));
 }
 .pkg-footer-total {
   font-size: 13px;
@@ -8574,8 +9596,8 @@ button.wf-ver-badge-btn:hover {
   line-height: 1;
 }
 
-/* ---------- My Initiatives list ---------- */
-[data-sl-initiative-list],
+/* ---------- Chats list (a antiga lista de iniciativas virou a tabela
+   portada do v3, mais abaixo; o chats continua com o visual de lista) ---------- */
 [data-sl-chats-list] {
   display: flex;
   flex-direction: column;
@@ -8585,7 +9607,6 @@ button.wf-ver-badge-btn:hover {
   overflow: hidden;
 }
 
-[data-sl-initiative-row],
 [data-sl-chats-row] {
   display: flex;
   align-items: center;
@@ -8600,104 +9621,12 @@ button.wf-ver-badge-btn:hover {
   transition: background-color 0.12s ease;
 }
 
-[data-sl-initiative-row]:last-child,
 [data-sl-chats-row]:last-child {
   border-bottom: none;
 }
 
-[data-sl-initiative-row]:hover,
 [data-sl-chats-row]:hover {
   background: var(--sl-bg-muted, rgba(10, 21, 36, 0.04));
-}
-
-[data-sl-initiative-row-status] {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  flex-shrink: 0;
-}
-
-[data-sl-initiative-row-main] {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  flex: 1 1 auto;
-  min-width: 0;
-}
-
-[data-sl-initiative-row-title] {
-  font-size: 14px;
-  font-weight: 500;
-  letter-spacing: -0.01em;
-  color: var(--fg, #0F1115);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-[data-sl-initiative-row-meta] {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  color: var(--sl-color-gray-8, #707070);
-}
-
-[data-sl-initiative-row-progress] {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex: 0 0 auto;
-  width: 140px;
-}
-
-[data-sl-initiative-row-progress-track] {
-  flex: 1 1 auto;
-  height: 6px;
-  border-radius: 99px;
-  background: var(--sl-color-gray-3, #e0e0e0);
-  overflow: hidden;
-}
-
-[data-sl-initiative-row-progress-fill] {
-  display: block;
-  height: 100%;
-  border-radius: 99px;
-  background: var(--sl-color-blue-9, #0a72ee);
-}
-
-[data-sl-initiative-row-progress-label] {
-  font-size: 12px;
-  font-variant-numeric: tabular-nums;
-  color: var(--sl-color-gray-8, #707070);
-  flex-shrink: 0;
-}
-
-[data-sl-initiative-row-owner] {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: var(--sl-color-gray-3, #e0e5ef);
-  flex-shrink: 0;
-}
-
-[data-sl-initiative-row-owner-initials] {
-  font-size: 10px;
-  font-weight: 600;
-  color: var(--sl-color-gray-8, #506077);
-  text-transform: uppercase;
-}
-
-[data-sl-initiative-row-updated] {
-  font-size: 12px;
-  color: var(--sl-color-gray-7, #999);
-  flex: 0 0 auto;
-  width: 84px;
-  text-align: right;
 }
 
 [data-sl-initiative-empty] {
@@ -8707,83 +9636,672 @@ button.wf-ver-badge-btn:hover {
   font-size: 13px;
 }
 
-/* ---------- Occurrences list (home) — mesma linha do My Initiatives,
-   trocando progresso/responsável por escopo/SLA restante/severidade ---------- */
-[data-sl-occurrence-row] [data-sl-initiative-row-status] {
-  width: 24px;
+/* ==========================================================================
+   INITIATIVES TABLE — v3 port (components/features/initiatives-table:
+   initiatives-table.tsx + columns.tsx + browse/initiatives.css +
+   initiative-table-id-chip.css + initiative-table-subtasks-detail.css).
+   Card (initiative-group) + grid com subgrid; colunas Iniciativa / Métrica /
+   Severidade / Data / Líder; linha expandida com as subtarefas.
+   ========================================================================== */
+
+[data-sl-initiative-group] {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--sl-color-gray-3, #E0E5EF);
+  border-radius: 12px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  background-color: var(--sl-bg-base, #fff);
+  box-shadow: 0 1px 2px rgba(10, 21, 36, 0.04);
+  /* Tokens do v3 (browse/initiatives.css) */
+  --initiative-table-row-hover-bg: var(--bg-soft);
+  --initiative-expanded-surface: var(--sl-bg-base, #fff);
+  --initiative-expanded-surface-hover: color-mix(in srgb, var(--sl-bg-muted, rgba(10, 21, 36, 0.05)) 22%, var(--sl-bg-base, #fff));
+  --initiative-table-detail-bar-bg: var(--sl-color-gray-4, #CED7E4);
+  --initiative-table-expanded-bar-overlap: 56px;
+  --initiative-table-attention-bg: var(--sl-color-blue-1, #F1F8FD);
+  --initiative-table-pill-height: 20px;
+  --initiative-table-pill-radius: 6px;
+  --initiative-table-pill-padding-x: 6px;
+  --initiative-table-severity-pill-width: 64px;
 }
 
-[data-sl-occurrence-row-scope] {
-  flex: 0 0 auto;
-  width: 132px;
-  font-size: 12px;
-  color: var(--sl-color-gray-8, #707070);
+[data-sl-initiative-table] {
+  /* Grid estável do v3: Iniciativa flex; colunas da direita fixas
+     (Pedidos afetados · Severidade · Data). */
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 7.5rem 6.5rem 5rem;
+  min-width: 40rem;
+  width: 100%;
 }
 
-[data-sl-occurrence-row-sla] {
-  flex: 0 0 auto;
-  width: 120px;
+[data-sl-initiative-table-row] {
+  display: grid;
+  grid-template-columns: subgrid;
+  grid-column: 1 / -1;
+  align-items: center;
+}
+
+[data-sl-initiative-table-cell] {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  min-width: 0;
+  min-height: 56px;
+  padding-inline: 16px;
+  border-bottom: 1px solid var(--sl-color-gray-3, #E0E5EF);
+  background-color: var(--sl-bg-base, #fff);
+  font-size: 14px;
+  color: var(--fg, #1F1F1F);
+}
+
+[data-sl-initiative-table-cell][data-align="end"] {
+  justify-content: flex-end;
+}
+
+/* Cabeçalho: 48px, texto 12px/400 em cinza, uma linha. */
+[data-sl-initiative-table-row][data-initiative-table-head] [data-sl-initiative-table-cell] {
+  min-height: 48px;
   font-size: 12px;
-  color: var(--sl-color-gray-7, #999);
+  font-weight: 400;
+  letter-spacing: 0;
+  color: var(--sl-color-gray-6, #7F8C9E);
+  white-space: nowrap;
+}
+
+[data-sl-initiative-table-row][data-initiative-table-body] {
+  cursor: pointer;
+}
+
+[data-sl-initiative-table] > [data-initiative-table-body]:last-child > [data-sl-initiative-table-cell] {
+  border-bottom: none;
+}
+
+/* Hover — linha inteira. */
+[data-sl-initiative-table-row][data-initiative-table-body]:hover > [data-sl-initiative-table-cell] {
+  background-color: var(--initiative-table-row-hover-bg);
+  transition: background-color 0.12s ease;
+}
+
+/* Linhas fechadas ficam brancas mesmo com fila de atenção — o azul de
+   atenção aparece só nas subtarefas do detalhe expandido. */
+
+/* Linha expandida: superfície própria, sem borda (o detalhe fecha o bloco). */
+[data-sl-initiative-table-row][data-initiative-table-body][data-expanded="true"] > [data-sl-initiative-table-cell] {
+  background-color: var(--initiative-expanded-surface);
+  border-bottom: none;
+}
+
+[data-sl-initiative-table-row][data-initiative-table-body][data-expanded="true"]:hover > [data-sl-initiative-table-cell] {
+  background-color: var(--initiative-expanded-surface-hover);
+}
+
+/* ── Coluna Iniciativa: expandir + status + chip ID + contador + título ── */
+[data-sl-initiative-table-initiative-main] {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+}
+
+[data-sl-initiative-table-expand-button] {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  min-height: 20px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+[data-sl-initiative-table-expand-button]:hover {
+  background: var(--sl-bg-muted, rgba(10, 21, 36, 0.05));
+}
+
+[data-sl-initiative-table-expand-chevron] {
+  display: flex;
+  line-height: 0;
+  transition: transform 0.15s ease;
+}
+
+[data-sl-initiative-table-expand-placeholder] {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+[data-sl-initiative-table-status-icon] {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  line-height: 0;
+}
+
+/* Chip do ID — initiative-table-id-chip.css. Largura fixa (regra do v3, via
+   --initiative-table-id-pill-width) para que todos os chips da coluna fiquem
+   alinhados; ajustada aos IDs CANVAS-x do protótipo. Fallbacks nas variáveis
+   de pill permitem reusar o chip fora do card da tabela (ex.: topbar). */
+[data-sl-initiative-table-id-chip] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: var(--initiative-table-id-pill-width, 80px);
+  height: var(--initiative-table-pill-height, 20px);
+  padding: 0 var(--initiative-table-pill-padding-x, 6px);
+  border-radius: var(--initiative-table-pill-radius, 6px);
+  background-color: var(--sl-color-gray-3, #E0E5EF);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: var(--initiative-table-pill-height, 20px);
+  letter-spacing: -0.26px;
+  color: var(--fg, #1F1F1F);
+  flex-shrink: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Contador de atenção — pill azul com o ícone de status + nº de tarefas em
+   attention, ao lado do chip de ID (initiatives.css do v3). */
+[data-sl-initiative-table-attention-counter-box] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: var(--initiative-table-pill-height, 20px);
+  min-height: var(--initiative-table-pill-height, 20px);
+  padding: 0 var(--initiative-table-pill-padding-x, 6px);
+  border-radius: var(--initiative-table-pill-radius, 6px);
+  background-color: var(--sl-color-blue-2, #DBEDFD);
+  flex-shrink: 0;
+}
+
+[data-sl-initiative-table-attention-counter-number] {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: var(--initiative-table-pill-height, 20px);
+  letter-spacing: -0.26px;
+  color: var(--fg, #1F1F1F);
+  margin: 0;
+}
+
+/* Título + descrição numa linha única: título semibold, descrição preenche o
+   resto em tom secundário com ellipsis. */
+[data-sl-initiative-table-title-link] {
+  display: inline-flex;
+  align-items: baseline;
+  flex-wrap: nowrap;
+  gap: 8px;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+}
+
+[data-sl-initiative-table-initiative-title] {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 21px;
+  letter-spacing: -0.15px;
+  color: var(--fg, #1F1F1F);
+}
+
+/* ── Coluna Pedidos afetados ── */
+[data-sl-initiative-table-scope-cell] {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  letter-spacing: -0.14px;
+  font-variant-numeric: tabular-nums;
+  color: var(--fg, #1F1F1F);
+  white-space: nowrap;
+}
+
+/* ── Coluna Severidade — CriticalityTag do v3 ── */
+[data-sl-initiative-table-severity-inline] {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--initiative-table-pill-height);
+  width: var(--initiative-table-severity-pill-width);
+  line-height: 0;
+}
+
+/* CriticalityTag — visual base compartilhada entre a Home (tabela de
+   iniciativas) e o painel de detalhe da iniciativa. O wrapper
+   `[data-sl-initiative-table-severity-inline]` mantém a largura fixa de 64px
+   apenas dentro da tabela; fora dela, a tag se ajusta ao conteúdo. */
+[data-sl-criticality-tag] {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--initiative-table-pill-height, 20px);
+  padding: 0 var(--initiative-table-pill-padding-x, 6px);
+  border-radius: var(--initiative-table-pill-radius, 6px);
+  gap: 4px;
+  overflow: hidden;
+  font-size: 13px;
+  line-height: var(--initiative-table-pill-height, 20px);
+  letter-spacing: -0.26px;
+  white-space: nowrap;
+}
+
+[data-sl-initiative-table-severity-inline] [data-sl-criticality-tag] {
+  width: 100%;
+  min-width: 0;
+}
+
+[data-sl-criticality-tag][data-priority="high"] {
+  background-color: var(--sl-bg-critical, #FDEEEE);
+  font-weight: 700;
+  color: var(--sl-fg-critical, #C4170C);
+}
+
+[data-sl-criticality-tag][data-priority="high"] [data-sl-status="dot"] {
+  width: 8px;
+  height: 8px;
+  min-width: 8px;
+  min-height: 8px;
+  border-radius: var(--sl-radius-full, 9999px);
+  background-color: var(--sl-fg-critical, #C4170C);
+}
+
+[data-sl-criticality-tag][data-priority="medium"] {
+  background-color: var(--sl-color-orange-2, #FFEDCD);
+  font-weight: 600;
+  color: var(--sl-color-orange-8, #E57001);
+}
+
+[data-sl-criticality-tag][data-priority="low"] {
+  background-color: var(--sl-color-gray-0, #fff);
+  border: 1px solid var(--sl-color-gray-3, #E0E5EF);
+  font-weight: 600;
+  color: var(--fg-3, #707070);
+}
+
+/* Variante "attention": mesma pill visual usada no contador de atenção da
+   tabela da home; aplicada em [data-sl-doc-status][data-status="attention"]
+   no painel de detalhe da tarefa. */
+[data-sl-criticality-tag][data-priority="attention"] {
+  background-color: var(--sl-color-blue-2, #DBEDFD);
+  font-weight: 600;
+  color: var(--fg, #1F1F1F);
+}
+
+/* Variante "completed" — v3 port do TaskRowStatusTag (teal-3 fundo, teal-9
+   texto, com check à esquerda). Usada em [data-sl-doc-status][data-status="completed"]. */
+[data-sl-criticality-tag][data-priority="completed"] {
+  background-color: color-mix(in srgb, var(--sl-color-teal-3, #B8E5DA) 88%, var(--sl-bg-base, #fff));
+  font-weight: 600;
+  color: var(--sl-color-teal-9, #0B5C4B);
+}
+[data-sl-criticality-tag][data-priority="completed"] svg { color: var(--sl-color-teal-9, #0B5C4B); }
+
+/* ── Pill scope: document metadata (v3 port de initiative-metadata.css) ──
+   Dentro do cabeçalho do doc (SevPill/TaskDocStatus na coluna Severidade/
+   Status), o pill fica maior: 28px de altura, raio full (999px), padding-x 8px,
+   texto 14px/20px. Fora do documento (tabela/topbar), permanece o pill compacto
+   de 20px definido acima. */
+[data-sl-initiative-document-metadata] [data-sl-criticality-tag] {
+  height: 28px;
+  padding: 0 8px;
+  border-radius: var(--sl-radius-full, 9999px);
+  gap: 4px;
+  font-size: 14px;
+  line-height: 20px;
+  letter-spacing: -0.14px;
+}
+
+/* ── Coluna Data ── */
+[data-sl-initiative-table-date-cell] {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  letter-spacing: -0.14px;
+  color: var(--fg, #1F1F1F);
+  white-space: nowrap;
+}
+
+/* ── Detalhe expandido — subtarefas alinhadas às colunas via subgrid ── */
+[data-sl-initiative-table-detail-row] {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: subgrid;
+  position: relative;
+  background-color: var(--initiative-expanded-surface);
+  border-bottom: 1px solid var(--sl-color-gray-3, #E0E5EF);
+}
+
+[data-sl-initiative-table] > [data-sl-initiative-table-detail-row]:last-child {
+  border-bottom: none;
+}
+
+/* Barra lateral cinza: cobre linha principal expandida + bloco de subtarefas. */
+[data-sl-initiative-table-detail-row]::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: calc(-1 * var(--initiative-table-expanded-bar-overlap));
+  bottom: 0;
+  width: 4px;
+  background-color: var(--initiative-table-detail-bar-bg);
+  pointer-events: none;
+  z-index: 1;
+}
+
+[data-sl-initiative-table-subtask-row][data-sl-initiative-table-subtask-subgrid] {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: subgrid;
+  min-height: 36px;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+[data-sl-initiative-table-subtask-cell] {
+  display: flex;
+  align-items: center;
+  align-self: stretch;
+  box-sizing: border-box;
+  min-width: 0;
+  background-color: transparent;
+}
+
+[data-sl-initiative-table-subtask-row]:hover [data-sl-initiative-table-subtask-cell] {
+  background-color: var(--initiative-expanded-surface-hover);
+  transition: background-color 0.12s ease;
+}
+
+/* Só a subtarefa em atenção: fundo blue-1 (não o bloco expandido inteiro). */
+[data-sl-initiative-table-subtask-row][data-sl-initiative-table-subtask-attention] [data-sl-initiative-table-subtask-cell],
+[data-sl-initiative-table-subtask-row][data-sl-initiative-table-subtask-attention]:hover [data-sl-initiative-table-subtask-cell] {
+  background-color: var(--initiative-table-attention-bg);
+}
+
+/* Alinha o status das subtasks com o da linha principal: 16 (padding) + 20 (expand) + 6 (gap). */
+[data-sl-initiative-table-subtask-cell][data-sl-grid-col="1"] {
+  padding-left: calc(16px + 20px + 6px);
+  padding-right: 16px;
+}
+
+[data-sl-initiative-table-subtask-cell][data-sl-grid-col="4"] {
+  padding-inline: 16px;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+[data-sl-initiative-table-subtask-after-list-spacer] {
+  grid-column: 1 / -1;
+  min-height: 16px;
+  box-sizing: border-box;
+  background-color: var(--initiative-expanded-surface);
+}
+
+[data-sl-initiative-table-subtask-left] {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+[data-sl-initiative-table-subtask-leading] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  min-width: 16px;
+  min-height: 16px;
+}
+
+[data-sl-initiative-table-subtask-dot] {
+  display: block;
+  width: 8px;
+  height: 8px;
+  flex-shrink: 0;
+  border-radius: var(--sl-radius-full, 9999px);
+  background-color: var(--sl-color-green-9, #28BC37);
+}
+
+[data-sl-initiative-table-subtask-title] {
+  flex: 0 1 auto;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  letter-spacing: -0.14px;
+  color: var(--fg, #1F1F1F);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-[data-sl-occurrence-row-severity] {
-  flex: 0 0 auto;
-  width: 100px;
-}
-
-/* Cabeçalho de colunas — mesma grade da linha, com o estilo do header
-   da tabela de Pedidos (data-sl-orders-row[data-orders-head]): 48px,
-   fundo branco, borda inferior, texto 12px/400 em cinza — sem bold/uppercase. */
-[data-sl-occurrence-list-head] {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  width: 100%;
-  min-height: 48px;
-  padding: 0 16px;
-  border-bottom: 1px solid var(--sl-color-gray-3, #E0E5EF);
-  background: var(--sl-bg-base, #fff);
-}
-
-[data-sl-occurrence-head-status] {
-  width: 24px;
+[data-sl-initiative-table-subtask-working] {
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 18px;
+  letter-spacing: -0.13px;
+  color: var(--fg-3, #707070);
+  white-space: nowrap;
   flex-shrink: 0;
 }
 
-[data-sl-occurrence-head-main],
-[data-sl-occurrence-head-scope],
-[data-sl-occurrence-head-sla],
-[data-sl-occurrence-head-severity] {
-  font-size: 12px;
-  font-weight: 400;
-  letter-spacing: 0;
-  text-transform: none;
-  color: var(--sl-color-gray-6, #7F8C9E);
+/* ---------- Initiative document (v3 parity) — abre por cima da lista,
+   que continua visível; sem chat até o usuário clicar em "Ver conversa"
+   numa tarefa. ---------- */
+.initiatives-shell { position: relative; }
+
+/* Mesmo overlay do documento de iniciativa, reaproveitado na seção
+   "Iniciativas" do Assistant/Home overview — onde a ocorrência abre o
+   próprio TaskCanvas nesse formato de painel (ver view-assistant.jsx). */
+.assistant-shell { position: relative; }
+
+.initiative-doc-panel {
+  position: absolute;
+  top: 0; right: 0; bottom: 0;
+  width: min(640px, 58%);
+  min-width: 420px;
+  border-left: 1px solid var(--border);
+  box-shadow: 0 0 24px 4px rgba(0, 0, 0, 0.12);
+  background: var(--sl-bg-base, #fff);
+  z-index: 20;
+  animation: initiative-doc-slide-in 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+}
+@keyframes initiative-doc-slide-in {
+  from { transform: translateX(28px); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
 }
 
-[data-sl-occurrence-head-main] {
+.initiative-doc-header { padding: 4px 0 20px; }
+.initiative-doc-title {
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--fg);
+  margin: 0 0 8px;
+}
+.initiative-doc-summary {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--fg-2);
+  margin: 0;
+}
+
+.initiative-metadata {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 20px 0;
+  border-top: 1px solid var(--border);
+}
+.initiative-metadata-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-height: 28px;
+}
+.initiative-metadata-label {
+  flex: 0 0 140px;
+  font-size: 13px;
+  color: var(--fg-3);
+}
+
+.initiative-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 99px;
+  font-size: 12px;
+  font-weight: 500;
+  background: var(--sl-color-gray-2);
+  color: var(--sl-color-gray-9);
+}
+.initiative-pill[data-status="active"] { background: var(--sl-color-green-2); color: var(--sl-color-green-11); }
+.initiative-pill[data-status="attention"] { background: var(--sl-color-blue-2); color: var(--sl-color-blue-11); }
+.initiative-pill[data-status="completed"] { background: var(--sl-color-gray-2); color: var(--sl-color-gray-9); }
+.initiative-pill--severity[data-priority="high"] { background: var(--sl-color-red-2); color: var(--sl-color-red-10); }
+.initiative-pill--severity[data-priority="medium"] { background: var(--sl-color-orange-2); color: var(--sl-color-orange-8); }
+.initiative-pill--severity[data-priority="low"] { background: var(--sl-color-gray-2); color: var(--sl-color-gray-9); }
+
+.initiative-metadata-person {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--fg);
+}
+.initiative-metadata-reported {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--fg-2);
+}
+.initiative-avatar-stack {
+  display: inline-flex;
+  align-items: center;
+}
+.initiative-avatar-stack .initiative-avatar {
+  margin-left: -6px;
+  border: 2px solid var(--sl-bg-base, #fff);
+}
+.initiative-avatar-stack .initiative-avatar:first-child { margin-left: 0; }
+
+.initiative-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--sl-color-gray-3);
+  color: var(--sl-color-gray-9);
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+.initiative-avatar--agent { background: var(--sl-color-purple-2, #F1E9FE); color: var(--sl-color-purple-9, #7B2FE0); }
+
+.initiative-accordion-section {
+  border-top: 1px solid var(--border);
+  padding: 16px 0;
+}
+.initiative-accordion-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--fg);
+}
+.initiative-accordion-body { padding: 14px 0 0 22px; }
+.initiative-diagnosis-text {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--fg-2);
+  margin: 0;
+}
+
+.initiative-tasks-list {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.initiative-task-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  background: var(--sl-bg-base, #fff);
+}
+.initiative-task-row:last-child { border-bottom: none; }
+.initiative-task-status { flex-shrink: 0; display: inline-flex; }
+.initiative-task-title {
   flex: 1 1 auto;
   min-width: 0;
+  font-size: 13px;
+  color: var(--fg);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
-
-[data-sl-occurrence-head-scope] {
+.initiative-task-trailing {
   flex: 0 0 auto;
-  width: 132px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
 }
-
-[data-sl-occurrence-head-sla] {
-  flex: 0 0 auto;
-  width: 120px;
+.initiative-task-view-chat {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  border-radius: 99px;
+  border: none;
+  background: var(--sl-color-blue-9, #157bf4);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
 }
-
-[data-sl-occurrence-head-severity] {
-  flex: 0 0 auto;
-  width: 100px;
+.initiative-task-view-chat:hover { background: var(--sl-color-blue-10, #0366dd); }
+.initiative-task-status-label {
+  font-size: 12px;
+  color: var(--fg-2);
 }
+.initiative-task-status-label--muted { color: var(--fg-3); }
 
 /* ---------- Chats list ---------- */
 [data-sl-chats-row-icon] {
@@ -8879,50 +10397,739 @@ button.wf-ver-badge-btn:hover {
    Canvas Pattern A · Bloqueio operacional em massa
    (hybrid: estrutura do wireframe · estilo do protótipo)
    ══════════════════════════════════════════════════════════ */
-.canvas-a-sla-risk { color: var(--sl-color-red-9, #EC3727); font-weight: 500; }
+/* Risco de SLA — container vermelho claro (mesmo tom de fundo usado nos
+   estados de perigo) com padding compacto, para destacar do resto dos
+   metadados sem competir com a cor de texto. */
+.canvas-a-sla-risk {
+  display: inline-block;
+  color: var(--sl-color-red-9, #EC3727);
+  font-weight: 500;
+  background: var(--sl-color-red-1, #FDF6F5);
+  padding: 4px;
+  border-radius: var(--radius-sm, 6px);
+}
 
-/* ── Diagnóstico · Confiança/Lacuna (cards com borda, texto igual ao canvas de tarefas) ── */
+/* ── Diagnóstico · Lacuna (card com fundo soft, ocupando a largura total —
+   a Confiança agora vive no badge do título do accordion) ── */
 .canvas-a-diag-meta {
   display: flex;
-  gap: 12px;
   margin-top: 14px;
-  flex-wrap: wrap;
 }
 .canvas-a-diag-meta-item {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  min-width: 180px;
+  flex: 1 1 auto;
   padding: 10px 14px;
-  border: 1px solid var(--border);
+  background: var(--sl-bg-base-soft);
   border-radius: var(--radius, 10px);
 }
 .canvas-a-diag-meta-label { font-size: 12px; font-weight: 500; color: var(--fg-3); }
 /* mesmo text style do corpo das seções (.detail-section-body · v3 body 15px) */
 .canvas-a-diag-gap { font-size: 15px; color: var(--fg-2); line-height: 1.6; }
-.canvas-a-conf { display: flex; flex-direction: column; gap: 6px; }
-.canvas-a-conf-val { font-size: 15px; font-weight: 500; }
-.canvas-a-conf-val--med  { color: var(--sl-color-orange-8, #E57001); }
-.canvas-a-conf-val--high { color: var(--sl-fg-success, #0E6E3A); }
-.canvas-a-conf-bar {
-  width: 100%;
-  height: 4px;
-  border-radius: 99px;
-  background: var(--border, #e5e5e5);
-  overflow: hidden;
-}
-.canvas-a-conf-fill { display: block; height: 100%; border-radius: 99px; }
-.canvas-a-conf-fill--med  { background: var(--sl-color-orange-8, #E57001); }
-.canvas-a-conf-fill--high { background: var(--sl-fg-success, #0E6E3A); }
+/* Card de verificação (tarefa + pergunta), quando dentro do Diagnóstico
+   (logo abaixo do texto do diagnóstico) */
+.detail-section-body + .canvas-tasks-card { margin-top: 16px; }
 
 /* ── Tarefas sugeridas · coluna "Ação" mais estreita (140px) que a de "Responsável" ── */
 .canvas-tasks-card.canvas-a-suggested .canvas-tasks-head,
 .canvas-tasks-card.canvas-a-suggested .canvas-task-row {
   grid-template-columns: 1fr 140px;
 }
+.canvas-tasks-card.canvas-a-suggested {
+  padding-bottom: 8px;
+}
+.canvas-tasks-card.canvas-a-suggested .canvas-tasks-head {
+  padding-top: 16px;
+}
+
+/* ── Alerta de verificação pendente (dentro do Diagnóstico) ──
+   O canvas não hospeda mais a pergunta de múltipla escolha: ela é respondida
+   no chat. Aqui a pergunta aparece em destaque sobre o amarelo, com o botão
+   que abre o chat — só presente quando ele está fechado. ── */
+.canvas-a-verify-alert {
+  width: 100%;
+  margin-top: 16px;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-align: left;
+  border: var(--sl-border-base, 1px solid #e0e0e0);
+  border-color: var(--sl-color-yellow-4, #FADE1E);
+  border-radius: 8px;
+  background: var(--sl-color-yellow-2, #FDF5AD);
+  color: var(--fg, #1f1f1f);
+}
+.canvas-a-verify-alert-icon {
+  flex-shrink: 0;
+  display: flex;
+  align-self: flex-start;
+  /* Alinha o ícone de 20px à altura de x da primeira linha do título (24px). */
+  margin-top: 2px;
+  color: #CFA000;
+}
+.canvas-a-verify-alert-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0px;
+  flex: 1;
+  min-width: 0;
+}
+.canvas-a-verify-alert-title {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 24px;
+  letter-spacing: -0.32px;
+  overflow-wrap: anywhere;
+}
+.canvas-a-verify-alert-desc {
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--sl-fg-base-soft, #707070);
+}
+button.canvas-a-verify-alert-cta { flex-shrink: 0; white-space: nowrap; }
+/* O hover padrão do tertiary é um cinza opaco, que apaga o amarelo do alerta.
+   Aqui o realce é um escurecimento translúcido, para funcionar sobre qualquer
+   cor de fundo do container. */
+button.canvas-a-verify-alert-cta[data-sl-button][data-variant="tertiary"]:hover {
+  background: rgba(0, 0, 0, 0.08);
+  color: var(--fg);
+}
+button.canvas-a-verify-alert-cta[data-sl-button][data-variant="tertiary"]:active {
+  background: rgba(0, 0, 0, 0.16);
+}
+
+/* ── Tarefa de verificação manual · pergunta de múltipla escolha ──
+   Opções em lista (badge com letra + título + descrição), separadas por
+   divisores finos, dentro do mesmo card das tarefas sugeridas — mesmo
+   padrão visual das perguntas de múltipla escolha do chat. Depois das causas
+   diagnosticadas vem "Outro", com campo livre para descrever a causa. ── */
+/* ── Cabeçalho: natureza do bloco à esquerda, paginação das perguntas à
+   direita. Os controles ficam desabilitados enquanto houver só uma. ── */
+.canvas-a-verify-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 20px 0;
+}
+.canvas-a-verify-kind {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+  color: var(--fg-3);
+}
+.canvas-a-verify-kind svg { flex-shrink: 0; }
+.canvas-a-verify-pagination {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.canvas-a-verify-count {
+  font-size: 10.5px;
+  line-height: 15px;
+  letter-spacing: -0.105px;
+  color: var(--fg-3);
+  white-space: nowrap;
+}
+.canvas-a-verify-nav { display: inline-flex; align-items: center; }
+.canvas-a-verify-nav-btn {
+  width: 24px;
+  height: 24px;
+  transition: background .12s ease, color .12s ease;
+}
+.canvas-a-verify-nav-btn:disabled { opacity: .4; cursor: default; }
+.canvas-a-verify-nav-btn:disabled:hover {
+  background: transparent;
+  color: var(--fg-3);
+}
+
+.canvas-a-verify-intro {
+  padding: 8px 20px 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+/* Índice fora do bloco de texto, para a pergunta que quebra em duas linhas
+   manter o recuo do primeiro caractere. */
+.canvas-a-verify-intro .detail-section-body {
+  display: flex;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 24px;
+  letter-spacing: -0.32px;
+  color: var(--fg);
+}
+.canvas-a-verify-index { flex-shrink: 0; }
+
+/* ── Resposta confirmada ──
+   O card troca pergunta + opções pelo registro da resposta: título, descrição
+   e autoria, com o desfazer no canto superior direito. ── */
+.canvas-tasks-card.canvas-a-verify-answered { padding: 16px 20px 18px; }
+.canvas-a-verify-answer {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.canvas-a-verify-answer-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.canvas-a-verify-answer-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--fg);
+}
+.canvas-a-verify-answer-desc {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--fg-2);
+}
+.canvas-a-verify-answer-meta {
+  margin: 14px 0 0;
+  font-size: 13px;
+  color: var(--fg-3);
+}
+.canvas-a-verify-undo-btn {
+  flex-shrink: 0;
+  margin-top: -2px;
+}
+/* Etapa final: item read-only substitui o <button> depois que o operador
+   confirmou. Sem hover, sem chevron, sem cursor de clique e sem o recuo
+   negativo usado para o realce de hover — nada mais responde ao ponteiro. */
+.canvas-a-verify-summary-item--static {
+  cursor: default;
+  margin: 0;
+  padding: 6px 0;
+  border-radius: 0;
+  transition: none;
+}
+.canvas-a-verify-summary-item--static:hover,
+.canvas-a-verify-summary-item--static:focus,
+.canvas-a-verify-summary-item--static:focus-visible {
+  background: transparent;
+  outline: none;
+}
+/* Rodapé de confirmação: hint + botão primário empilhados e alinhados à
+   esquerda, no mesmo eixo visual dos itens do resumo. O `margin: 0 -8px`
+   espelha o dos itens (que usam recuo negativo para o realce de hover), então
+   a "caixa" do footer termina exatamente na mesma largura das linhas acima.
+   Sem divisória — o bg-soft do card em revisão já separa o bloco. */
+.canvas-a-verify-confirm-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 8px -8px 0;
+  padding: 12px 8px 0;
+}
+.canvas-a-verify-confirm-hint {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--fg);
+}
+/* Rótulo em caixa baixa na etapa de revisão (só a inicial maiúscula).
+   Precisa de dupla classe pra vencer o `.canvas-a-verify-summary-kind`
+   base, que é declarado depois neste arquivo. Mesmo alinhamento
+   tipográfico do header "Pergunta" (`.canvas-a-verify-kind`): peso
+   médio e cor cheia, mas 13px para dar mais presença que o rótulo
+   final em uppercase. */
+.canvas-a-verify-summary-kind.canvas-a-verify-summary-kind--lower {
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--fg);
+}
+/* Card em modo revisão: fundo azul claro e borda azul suave — o tom azulado
+   sinaliza que ainda é um passo intermediário (revisão) antes do fecho, e
+   diferencia do card final (que fica sobre o bg do chat). */
+.canvas-tasks-card.canvas-a-verify-answered--review {
+  background: var(--bg-soft);
+  border: 1px solid rgba(255, 255, 255, 1);
+  padding-bottom: 12px;
+}
+/* Transição do "Revise antes de enviar" → "Perguntas respondidas".
+   O card de revisão vive acima do composer e some ao confirmar; o card
+   final aparece no corpo do chat, junto com a mensagem de fecho. Sem
+   animação, a troca fica seca. Um fade-in + slide leve, com pequeno
+   stagger na mensagem que vem em seguida, dá ritmo à conclusão. */
+@keyframes canvas-a-verify-summary-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.canvas-tasks-card.canvas-a-verify-answered:not(.canvas-a-verify-answered--review) {
+  animation: canvas-a-verify-summary-in .32s ease-out both;
+}
+.canvas-tasks-card.canvas-a-verify-answered:not(.canvas-a-verify-answered--review)
+  + .msg.msg-assistant {
+  animation: canvas-a-verify-summary-in .32s ease-out both;
+  animation-delay: .16s;
+}
+@media (prefers-reduced-motion: reduce) {
+  .canvas-tasks-card.canvas-a-verify-answered:not(.canvas-a-verify-answered--review),
+  .canvas-tasks-card.canvas-a-verify-answered:not(.canvas-a-verify-answered--review)
+    + .msg.msg-assistant {
+    animation: none;
+  }
+}
+.canvas-a-verify-question {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--fg);
+}
+.canvas-a-verify-options {
+  display: flex;
+  flex-direction: column;
+  padding: 4px 12px 2px;
+}
+/* Sem divisórias: a separação entre as opções vem do respiro e o hover
+   destaca a linha inteira, não só o badge. */
+.canvas-a-verify-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background .12s ease;
+}
+.canvas-a-verify-option:hover { background: var(--bg-soft); }
+.canvas-a-verify-option:hover .canvas-a-verify-option-badge {
+  border-color: var(--border-strong);
+  background: var(--border);
+}
+.canvas-a-verify-option.selected { background: var(--bg-soft); }
+.canvas-a-verify-option.selected .canvas-a-verify-option-badge {
+  border-color: var(--fg-2);
+  color: var(--fg);
+  background: var(--bg-muted);
+}
+.canvas-a-verify-option-badge {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  border: 1px solid var(--border-strong);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+  color: var(--fg-3);
+  background: #fff;
+  transition: border-color .12s ease, color .12s ease, background .12s ease;
+}
+.canvas-a-verify-option-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
+}
+/* Cada opção mostra só o título, em no máximo duas linhas (o texto completo
+   fica no tooltip nativo caso ainda estoure). */
+.canvas-a-verify-option-title {
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+  letter-spacing: -0.14px;
+  color: var(--fg);
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+/* Campo livre da opção "Outro" */
+.canvas-a-verify-other-input {
+  width: 100%;
+  margin-top: 2px;
+  padding: 8px 10px;
+  border: 1px solid var(--border-strong, #d4d4d4);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--fg, #171717);
+  font: inherit;
+  font-size: 13.5px;
+  line-height: 1.45;
+  resize: none;
+}
+.canvas-a-verify-other-input:focus {
+  outline: none;
+  border-color: var(--primary, #2158E8);
+}
+.canvas-a-verify-other-input::placeholder { color: var(--fg-3, #737373); }
+
+/* Campo livre de uma pergunta inteiramente aberta (tipo short_text): mesmo
+   tratamento do campo do "Outro", só que ocupando a área das opções. */
+.canvas-a-verify-free-input {
+  display: block;
+  width: auto;
+  margin: 4px 8px 6px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-strong, #d4d4d4);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--fg, #171717);
+  font: inherit;
+  font-size: 13.5px;
+  line-height: 1.45;
+  resize: none;
+}
+.canvas-a-verify-free-input:focus { outline: none; border-color: var(--primary, #2158E8); }
+.canvas-a-verify-free-input::placeholder { color: var(--fg-3, #737373); }
+
+/* ── Seleção manual vs. comprovante ──
+   Os dois caminhos concorrentes de captura da mesma informação vivem num
+   dropdown: um por vez, e só o escolhido abre o input abaixo. ── */
+.canvas-a-verify-mode {
+  position: relative;
+  padding: 4px 8px 8px;
+}
+.canvas-a-verify-mode-trigger {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: #fff;
+  font: inherit;
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--fg-3);
+  text-align: left;
+  cursor: pointer;
+  transition: background .12s, border-color .12s;
+}
+.canvas-a-verify-mode-trigger:hover { background: var(--bg-muted); }
+.canvas-a-verify-mode-trigger.open { border-color: var(--primary, #2158E8); }
+/* Com um caminho escolhido o campo deixa de ser placeholder e assume o mesmo
+   realce das opções A/B/C da lista acima. */
+.canvas-a-verify-mode-trigger.selected {
+  background: var(--bg-soft);
+  border-color: var(--fg-2);
+  color: var(--fg);
+}
+.canvas-a-verify-mode-trigger svg { flex-shrink: 0; color: var(--fg-3); }
+.canvas-a-verify-mode-trigger.selected .canvas-a-verify-mode-icon { color: var(--fg); }
+.canvas-a-verify-mode-label { flex: 1; min-width: 0; }
+.canvas-a-verify-mode-menu {
+  position: absolute;
+  top: calc(100% - 2px);
+  left: 8px;
+  right: 8px;
+  z-index: 60;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 20px 25px -5px rgba(0,0,0,.1), 0 8px 10px -6px rgba(0,0,0,.1);
+}
+.canvas-a-verify-mode-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  font: inherit;
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--fg);
+  text-align: left;
+  cursor: pointer;
+  transition: background .12s;
+}
+.canvas-a-verify-mode-option svg { flex-shrink: 0; color: var(--fg-2); }
+.canvas-a-verify-mode-option:hover,
+.canvas-a-verify-mode-option.selected { background: var(--bg-soft); }
+
+.canvas-a-verify-orders {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 0 8px 6px;
+}
+.canvas-a-verify-orders-search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--fg-3);
+}
+.canvas-a-verify-orders-search:focus-within { border-color: var(--primary, #2158E8); }
+.canvas-a-verify-orders-search input {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  font: inherit;
+  font-size: 13.5px;
+  color: var(--fg);
+}
+.canvas-a-verify-orders-search input::placeholder { color: var(--fg-3); }
+.canvas-a-verify-orders-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.canvas-a-verify-orders-all {
+  border: none;
+  background: transparent;
+  padding: 0;
+  font: inherit;
+  font-size: 12.5px;
+  color: var(--primary, #2158E8);
+  cursor: pointer;
+}
+.canvas-a-verify-orders-all:disabled { color: var(--fg-3); cursor: default; }
+.canvas-a-verify-orders-count {
+  font-size: 12.5px;
+  color: var(--fg-3);
+  white-space: nowrap;
+}
+/* A lista rola por conta própria: o card ancorado no chat já tem altura
+   limitada e não pode crescer com os 23 pedidos. */
+.canvas-a-verify-orders-list {
+  max-height: 176px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.canvas-a-verify-orders-empty {
+  margin: 0;
+  padding: 14px 12px;
+  font-size: 13px;
+  color: var(--fg-3);
+  text-align: center;
+}
+.canvas-a-verify-order {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  cursor: pointer;
+  transition: background .12s ease;
+}
+.canvas-a-verify-order:hover { background: var(--bg-soft); }
+.canvas-a-verify-order + .canvas-a-verify-order { border-top: 1px solid var(--border); }
+.canvas-a-verify-order input { flex-shrink: 0; accent-color: var(--primary, #2158E8); }
+.canvas-a-verify-order-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.canvas-a-verify-order-id {
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--fg);
+}
+.canvas-a-verify-order-meta {
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--fg-3);
+}
+
+/* Área de soltar: a borda tracejada é o que anuncia que dá para arrastar o
+   arquivo para dentro; o botão continua sendo o caminho de sempre. */
+.canvas-a-verify-upload {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin: 0 8px 6px;
+  padding: 16px 12px;
+  border: 1px dashed var(--border-strong);
+  border-radius: 10px;
+  background: var(--bg-soft);
+  text-align: center;
+  transition: border-color .12s, background .12s;
+}
+.canvas-a-verify-upload.dragging {
+  border-color: var(--primary, #2158E8);
+  background: var(--bg-muted);
+}
+.canvas-a-verify-upload input[type="file"] { display: none; }
+.canvas-a-verify-upload .canvas-a-run-btn { font-size: 13px; padding: 6px 16px; background: #fff; }
+.canvas-a-verify-upload-name {
+  max-width: 100%;
+  font-size: 13px;
+  color: var(--fg-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.canvas-a-verify-upload-hint {
+  font-size: 12px;
+  color: var(--fg-3);
+}
+
+/* ── Resumo da árvore fechada ──
+   Cada pergunta respondida vira um par pergunta/resposta; o desfazer reabre
+   a última delas. ── */
+.canvas-a-verify-summary-kind {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin: 0 0 4px;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: normal;
+  text-transform: none;
+  color: var(--fg);
+}
+/* Cada linha é o atalho de volta para a sua pergunta — daí o alvo de clique
+   ocupar a linha inteira e o chevron aparecer no hover. */
+.canvas-a-verify-summary-item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 2px 8px;
+  /* Recuo negativo para o texto seguir alinhado ao resto do card, sem que o
+     realce do hover fique colado nas linhas. */
+  width: auto;
+  margin: 0 -8px;
+  padding: 6px 8px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background .12s ease;
+}
+.canvas-a-verify-summary-item:hover { background: color-mix(in srgb, var(--bg-muted) 30%, transparent); }
+.canvas-a-verify-summary-item:focus-visible {
+  outline: 2px solid var(--primary, #2158E8);
+  outline-offset: -2px;
+}
+.canvas-a-verify-summary-item > .canvas-a-verify-summary-q,
+.canvas-a-verify-summary-item > .canvas-a-verify-answer-title { grid-column: 1; }
+.canvas-a-verify-summary-edit {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  display: inline-flex;
+  color: var(--fg-3);
+  opacity: 0;
+  transition: opacity .12s ease;
+}
+.canvas-a-verify-summary-item:hover .canvas-a-verify-summary-edit,
+.canvas-a-verify-summary-item:focus-visible .canvas-a-verify-summary-edit { opacity: 1; }
+.canvas-a-verify-summary-item + .canvas-a-verify-summary-item { margin-top: 4px; }
+/* Fecho do resumo: o que a árvore produziu do outro lado da tela. Separado da
+   lista por uma régua, porque não é mais uma resposta e sim a consequência. */
+.canvas-a-verify-summary-q {
+  font-size: 12.5px;
+  line-height: 17px;
+  color: var(--fg);
+}
+.canvas-a-verify-summary-item .canvas-a-verify-answer-title { font-size: 14px; }
+
+.canvas-a-verify-footer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 20px;
+}
+.canvas-a-verify-sent-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  color: var(--sl-fg-success, #0E6E3A);
+}
+
+/* ── Card de verificação ancorado no chat ──
+   A pergunta é respondida no chat, não no canvas: o card fica fixo logo acima
+   do composer. Paddings e tipografia encolhem para caber na largura do painel;
+   a lista de opções rola se a pergunta for longa. ── */
+.chat-above-composer {
+  max-width: 760px;
+  margin: 0 auto;
+  padding-top: 12px;
+}
+.chat-above-composer .canvas-tasks-card {
+  max-height: 380px;
+  overflow-y: auto;
+}
+.chat-above-composer .canvas-a-verify-header { padding: 18px 18px 0; }
+.chat-above-composer .canvas-a-verify-intro { padding: 8px 18px 4px; }
+.chat-above-composer .canvas-a-verify-options { padding: 2px 10px; }
+.chat-above-composer .canvas-a-verify-footer { padding: 8px 18px; }
+/* Rodapé de confirmação alinha hint + botão à esquerda, com respiro horizontal
+   menor que o padrão do rodapé — o conteúdo fica no mesmo eixo dos itens do
+   resumo (que já usam margem negativa de 8px). */
+.canvas-a-verify-footer.canvas-a-verify-confirm-footer {
+  justify-content: flex-start;
+  align-items: flex-start;
+  padding-left: 8px;
+  padding-right: 8px;
+}
+.chat-above-composer .canvas-a-verify-footer.canvas-a-verify-confirm-footer {
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
+/* ── Chegada da pergunta ──
+   O card interrompe a conversa para pedir uma decisão, então ganha destaque
+   uma vez e o devolve: o anel decai sozinho em vez de pulsar em loop, que
+   viraria ruído numa pergunta que pode ficar aberta por minutos.
+   O anel é inset porque o card recorta o próprio conteúdo (overflow-y) e
+   porque, sobre a borda, ele lê como a moldura acendendo. ── */
+@keyframes verify-card-ring {
+  from { box-shadow: inset 0 0 0 2px rgba(33, 88, 232, 0.45); }
+  to   { box-shadow: inset 0 0 0 2px rgba(33, 88, 232, 0); }
+}
+.canvas-a-verify-entering {
+  animation: verify-card-ring .8s cubic-bezier(0.22, 1, 0.36, 1) .2s both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .canvas-a-verify-entering { animation: none; }
+}
+
+/* ── Registro da resposta dentro da conversa ──
+   Respondida a pergunta, o card deixa a âncora acima do composer e entra no
+   fim do chat-body, alinhado às mensagens. Mesmo encolhimento de paddings e
+   tipografia do card ancorado, para a largura do painel. ── */
+/* O rodapé do corpo pode trazer mais de um bloco (card de resumo + fala do
+   agente) — mesmo ritmo vertical das mensagens do chat. */
+.chat-body-card { display: flex; flex-direction: column; gap: 14px; }
+.chat-body-card .canvas-tasks-card.canvas-a-verify-answered { padding: 14px 16px 16px; }
+.chat-body-card .canvas-a-verify-answer-title { font-size: 15px; }
+.chat-body-card .canvas-a-verify-answer-desc { font-size: 14px; }
+.chat-body-card .canvas-a-verify-answer-meta { margin-top: 10px; }
 
 /* ── Tarefas sugeridas · botão de ação no lugar do "Responsável" ── */
 .canvas-a-run-btn {
+  appearance: none;
+  -webkit-appearance: none;
   justify-self: start;
   font-size: 15px;
   font-weight: 500;
@@ -8959,11 +11166,6 @@ button.wf-ver-badge-btn:hover {
 /* ── Metadados no mesmo style dt/dd do canvas de pedido (.detail-fields.od-meta) —
    reseta o margin-top negativo do od-meta (pensado para o od-header) e o
    min-width do rótulo (200px é largo demais para "Status"/"Lead" sozinhos). ── */
-.canvas-d-meta {
-  grid-template-columns: 140px 1fr;
-  margin-top: 0;
-}
-
 /* ── Diagnóstico · badge "Confiança Alta" no cabeçalho do accordion + popover ── */
 .canvas-d-conf-badge-wrap {
   position: relative;
@@ -8985,9 +11187,19 @@ button.wf-ver-badge-btn:hover {
   transition: background .12s ease;
 }
 .canvas-d-conf-badge--high { color: var(--sl-fg-success, #0E6E3A); border-color: var(--sl-color-green-4, #BBF7D0); }
-.canvas-d-conf-badge--med  { color: var(--sl-color-orange-8, #E57001); border-color: var(--sl-color-orange-4, #FFDDB0); }
+.canvas-d-conf-badge--med {
+  color: rgba(255, 123, 0, 1);
+  background-color: var(--sl-color-orange-2, #FFEDCD);
+  font-weight: 600;
+  border: 2px solid rgba(255, 239, 224, 1);
+  padding: 2px 8px;
+  border-radius: 8px;
+  margin-bottom: 4px;
+}
 .canvas-d-conf-badge:hover,
 .canvas-d-conf-badge.open { background: var(--bg-soft, #f5f5f5); }
+.canvas-d-conf-badge--med:hover,
+.canvas-d-conf-badge--med.open { background-color: var(--sl-color-orange-4); }
 .canvas-d-conf-popover {
   position: absolute;
   top: calc(100% + 8px);
@@ -8995,9 +11207,9 @@ button.wf-ver-badge-btn:hover {
   width: 280px;
   background: var(--bg, #fff);
   border: 1px solid var(--border, #E5E5E5);
-  border-radius: 16px;
+  border-radius: 12px;
   box-shadow: 0 20px 25px -5px rgba(0,0,0,.1), 0 8px 10px -6px rgba(0,0,0,.1);
-  padding: 14px 16px;
+  padding: 16px 16px 8px;
   z-index: 60;
   animation: composer-add-menu-in .15s ease-out;
   cursor: default;
@@ -9010,7 +11222,7 @@ button.wf-ver-badge-btn:hover {
   margin-bottom: 6px;
 }
 .canvas-d-conf-popover-text {
-  font: 500 .75rem/1rem "Inter", sans-serif; /* --sl-text-caption-1-font */
+  font: 400 .75rem/20px "Inter", sans-serif; /* --sl-text-caption-1-font */
   color: var(--fg-2);
 }
 
@@ -9081,11 +11293,24 @@ button.wf-ver-badge-btn:hover {
   color: var(--fg-3);
 }
 .canvas-a-run-btn:disabled:hover { background: transparent; }
+/* Botão "Continuar" do bloco de verificação (lacuna): mantém o style de
+   botão primário mesmo desabilitado, só com opacidade reduzida. */
+.canvas-a-run-btn.canvas-a-run-btn--primary:disabled {
+  background: #2158E8;
+  color: #fff;
+  border-color: #2158E8;
+}
+.canvas-a-run-btn.canvas-a-run-btn--primary:disabled:hover { background: #2158E8; }
 
 /* Task row clicável (tarefas com detailKey abrem o subview dedicado,
    igual ao clique numa linha da ImpactedTable abre o pedido) */
 .canvas-task-row--clickable { cursor: pointer; transition: background .12s ease; }
 .canvas-task-row--clickable:hover { background: var(--bg-soft, #f5f5f5); }
+.canvas-task-row--clickable:focus-visible {
+  outline: 2px solid var(--primary, #2962FF);
+  outline-offset: -2px;
+  border-radius: var(--radius, 8px);
+}
 
 /* ── Casos que precisam de decisão · duas tabelas (Exceções / Duplicadas) ── */
 .canvas-d-decision-group { margin-bottom: 16px; }
@@ -9149,3 +11374,1121 @@ button.wf-ver-badge-btn:hover {
 .decision-card-actions .canvas-a-run-btn { padding: 5px 12px; font-size: 13px; text-align: center; }
 .canvas-d-decision-group--subview .decision-card-actions { flex-direction: row; }
 
+/* ── Canvas D · Cards de ticket de devolução (design_handoff_tickets_abertos v2) ──
+   Um <article> branco, seccionado por hairlines internos, sem sombra. O painel
+   de decisão fica sempre aberto na aba recomendada pelo agente. Depois de
+   decidido, um bloco de confirmação substitui a faixa de recomendação, o painel
+   e o rodapé — e a lista pode terminar num "resumo da fila" que substitui
+   inteiramente o card quando todos os tickets são resolvidos.
+   Todos os valores (cores, tipografia, espaçamento) saem do design system
+   Shoreline (tema sunrise). ── */
+
+/* Lista horizontal: um card por vez, entrando pelo lado para onde a navegação
+   foi (feature herdada — a navegação continua sendo comandada pelos botões do
+   header do card). */
+.tck-cards { display: block; overflow: hidden; }
+.tck-cards--fwd .tck-card { animation: tck-slide-fwd .22s cubic-bezier(.22,.61,.36,1) both; }
+.tck-cards--back .tck-card { animation: tck-slide-back .22s cubic-bezier(.22,.61,.36,1) both; }
+@keyframes tck-slide-fwd {
+  from { opacity: 0; transform: translateX(24px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes tck-slide-back {
+  from { opacity: 0; transform: translateX(-24px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes tck-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tck-cards--fwd .tck-card,
+  .tck-cards--back .tck-card,
+  .tck-decided,
+  .tck-summary { animation: none; }
+}
+
+/* ── Card container ──
+   Seções são irmãs diretas dentro do article; a hairline entre elas vem do
+   padding-lateral fixo (16px 20px por seção) e da borda inferior/superior
+   local, não de dividers externos. */
+.tck-card {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #e3e6ef;
+  border-radius: 12px;
+  background: #fff;
+  overflow: hidden;
+}
+
+/* ── 1. Cabeçalho ── */
+.tck-head {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0 20px;
+  padding: 16px 0;
+}
+.tck-head-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.tck-id {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 24px;
+  letter-spacing: -0.16px;
+  color: #171717;
+}
+.tck-pager { display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0; }
+.tck-pager-count {
+  padding-right: 4px;
+  font-size: 12px;
+  line-height: 18px;
+  color: #4e607a;
+  white-space: nowrap;
+}
+.tck-pager-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid #e3e6ef;
+  border-radius: 8px;
+  background: #fff;
+  color: #2a3f5e;
+  cursor: pointer;
+  transition: background .12s;
+}
+.tck-pager-btn:hover:not(:disabled) { background: #f7f9fc; }
+.tck-pager-btn:disabled { color: #d0d6e3; cursor: default; }
+
+/* Linha 2 do cabeçalho: pares label/valor (Status · SLA · Pedido). */
+.tck-metrics { display: flex; gap: 40px; flex-wrap: wrap; }
+.tck-metric { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.tck-metric-label {
+  font-size: 12px;
+  line-height: 18px;
+  color: #4e607a;
+}
+.tck-metric-value {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  color: #171717;
+}
+.tck-metric-value--overdue { color: #d31a15; }
+.tck-metric-value svg { flex-shrink: 0; }
+/* Pill de status (Pendente / Aceita / Negada / Escalada) — assume o tom do
+   desfecho depois de decidido. */
+.tck-status-pill {
+  align-self: flex-start;
+  padding: 2px 8px;
+  border: none;
+  border-radius: 999px;
+  background: var(--sl-bg-muted, #f3f4f6);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 18px;
+  color: var(--sl-color-gray-11, #374151);
+  white-space: nowrap;
+}
+.tck-status-pill[data-outcome="accepted"]  { background: var(--sl-color-green-1, #E9FCE3); color: var(--sl-color-green-12, #01540E); }
+.tck-status-pill[data-outcome="denied"]    { background: var(--sl-color-red-1,   #FDF6F5); color: var(--sl-color-red-12,   #940303); }
+.tck-status-pill[data-outcome="escalated"] { background: var(--sl-color-blue-1,  #F1F8FD); color: var(--sl-color-blue-12,  #014592); }
+/* Link para o pedido — segue o tom accent do design system. */
+.tck-order-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  color: #1e4ee5;
+  cursor: pointer;
+}
+.tck-order-link:hover { color: #0131c5; text-decoration: underline; }
+.tck-order-link[disabled] { color: #171717; cursor: default; }
+.tck-order-link[disabled]:hover { text-decoration: none; }
+.tck-order-link svg { flex-shrink: 0; }
+
+/* ── 2. Produto (single item) e bloco multi-item ── */
+.tck-product-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0 20px;
+  padding: 16px 0;
+}
+.tck-product {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.tck-thumb {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  overflow: hidden;
+  border: 1px solid #e3e6ef;
+  border-radius: 4px;
+  background: #f7f9fc;
+  color: #4e607a;
+}
+.tck-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  -webkit-user-drag: none;
+}
+.tck-product-info { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.tck-product-name {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  letter-spacing: -0.14px;
+  color: #171717;
+}
+.tck-product-sku {
+  font-size: 12px;
+  line-height: 18px;
+  color: #2a3f5e;
+}
+.tck-item-reason {
+  padding-top: 2px;
+  font-size: 12px;
+  line-height: 18px;
+  color: #4e607a;
+}
+/* Botão "Ver fotos (N)" — só aparece com anexos. */
+.tck-photos {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid #e3e6ef;
+  border-radius: 8px;
+  background: #fff;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  color: #2a3f5e;
+  cursor: pointer;
+  transition: background .12s;
+}
+.tck-photos:hover { background: #f7f9fc; }
+.tck-photos svg { color: #2a3f5e; flex-shrink: 0; }
+
+/* Bloco multi-item: fechado por padrão. Fechado, mostra miniaturas empilhadas,
+   contagem e resumo por motivo. Aberto, cabeçalho persiste no topo e cada
+   linha entra dividida por hairline. */
+.tck-items {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #e3e6ef;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.tck-items-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  background: #f7f9fc;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background .12s;
+}
+.tck-items-header:hover { background: #eff1f7; }
+.tck-items-header[data-open="true"] { border-bottom: 1px solid #e3e6ef; }
+.tck-items-stack { display: inline-flex; flex-shrink: 0; }
+.tck-items-stack-thumb {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  overflow: hidden;
+  border: 1px solid #e3e6ef;
+  border-radius: 4px;
+  background: #f7f9fc;
+  background-size: cover;
+  background-position: center;
+  color: #4e607a;
+}
+.tck-items-stack-thumb + .tck-items-stack-thumb { margin-left: -8px; }
+.tck-items-title { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.tck-items-label {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  letter-spacing: -0.14px;
+  color: #171717;
+}
+.tck-items-summary {
+  font-size: 12px;
+  line-height: 18px;
+  color: #4e607a;
+}
+.tck-items-chevron {
+  display: inline-flex;
+  color: #4e607a;
+  transition: transform .12s;
+}
+.tck-items-chevron[data-open="true"] { transform: rotate(180deg); }
+.tck-items-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: #fff;
+  border-bottom: 1px solid #e3e6ef;
+}
+.tck-items-row:last-child { border-bottom: none; }
+
+/* ── 3. Solicitação do cliente (sempre) ── */
+.tck-request {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0 20px;
+  padding: 16px 0;
+  border-bottom: 1px solid #e3e6ef;
+}
+.tck-request-label {
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 18px;
+  color: #4e607a;
+}
+.tck-request-body {
+  margin: 0;
+  font-size: 14px;
+  line-height: 22px;
+  color: #171717;
+  text-wrap: pretty;
+}
+
+/* ── 4. Faixa de recomendação — só enquanto pendente ── */
+.tck-rec {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: -1px;
+  padding: 16px 20px;
+  border-top: 1px solid #cbe9ff;
+  border-bottom: 1px solid #cbe9ff;
+  background: #f1f8fd;
+}
+.tck-rec-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+  letter-spacing: -0.14px;
+  color: #171717;
+}
+.tck-rec-title svg { color: #0a72ee; flex-shrink: 0; }
+.tck-rec-why {
+  font-size: 14px;
+  line-height: 22px;
+  color: #171717;
+  text-wrap: pretty;
+}
+.tck-rec-history {
+  font-size: 12px;
+  line-height: 18px;
+  color: #2a3f5e;
+}
+
+/* ── 5. Painel de decisão (sempre aberto enquanto pendente) ── */
+.tck-panel-header {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 20px 8px;
+  background: #f7f9fc;
+}
+/* Segmented control. A aba ativa ganha fundo #fff + borda no tom da ação; a
+   aba recomendada leva um ponto azul depois do label. */
+.tck-tabs {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 8px;
+  background: #eff1f7;
+  align-self: flex-start;
+}
+.tck-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 12px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  color: #2a3f5e;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color .12s;
+}
+.tck-tab svg { flex-shrink: 0; }
+.tck-tab:hover { color: #171717; }
+.tck-tab[aria-pressed="true"] { background: #fff; border-color: #e3e6ef; color: #171717; }
+.tck-tab[aria-pressed="true"][data-mode="deny"]     { border-color: #ffd0c7; color: #d31a15; }
+.tck-tab[aria-pressed="true"][data-mode="escalate"] { border-color: #b6dfff; color: #1e4ee5; }
+.tck-tab-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: #0a72ee;
+  flex-shrink: 0;
+}
+
+/* Corpo do painel (padrão: cards internos brancos com borda no tom da ação). */
+.tck-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0 20px 16px;
+  border-bottom: 1px solid #e3e6ef;
+  background: #f7f9fc;
+}
+.tck-panel-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+  border: 1px solid #e3e6ef;
+  border-radius: 8px;
+  background: #fff;
+}
+.tck-panel-card[data-tone="accept"] { border-color: #aff79e; }
+.tck-panel-card[data-tone="deny"]   { border-color: #ffdfd9; }
+.tck-panel-card[data-tone="escalate"] {
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  border-color: #cbe9ff;
+}
+.tck-panel-card-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 18px;
+  color: #4e607a;
+}
+.tck-panel-card-label svg { flex-shrink: 0; }
+.tck-panel-card-label[data-tone="accept"] { color: #01540e; }
+.tck-panel-card-label[data-tone="deny"]   { color: #940303; }
+.tck-panel-card-title {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+  letter-spacing: -0.14px;
+  color: #171717;
+}
+.tck-panel-card-body {
+  font-size: 14px;
+  line-height: 22px;
+  color: #2a3f5e;
+  text-wrap: pretty;
+}
+.tck-panel-card-body--strong { color: #171717; }
+/* Toggle da mensagem ao cliente (colapsável dentro do card). */
+.tck-message-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 18px;
+  color: #4e607a;
+  text-align: left;
+  cursor: pointer;
+}
+.tck-message-toggle svg { flex-shrink: 0; }
+.tck-message-toggle .tck-message-toggle-star { color: #0a72ee; }
+.tck-message-toggle-chevron {
+  margin-left: auto;
+  color: #4e607a;
+  transition: transform .12s;
+}
+.tck-message-toggle[aria-expanded="true"] .tck-message-toggle-chevron { transform: rotate(180deg); }
+.tck-message-body {
+  margin: 0;
+  font-size: 14px;
+  line-height: 22px;
+  color: #171717;
+  text-wrap: pretty;
+}
+
+/* Cartão do destino do escalonamento (ícone + Ecommerce Supervisor). */
+.tck-escalate-to { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.tck-escalate-to-title {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+  letter-spacing: -0.14px;
+  color: #171717;
+}
+.tck-escalate-to-sub {
+  font-size: 12px;
+  line-height: 18px;
+  color: #4e607a;
+}
+.tck-panel-card[data-tone="escalate"] > svg { color: #0a72ee; flex-shrink: 0; }
+
+/* Bloco do textarea "O que o supervisor precisa decidir". */
+.tck-escalate-field { display: flex; flex-direction: column; gap: 6px; }
+.tck-escalate-field label {
+  font-size: 12px;
+  line-height: 18px;
+  color: #4e607a;
+}
+.tck-escalate-note {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #d0d6e3;
+  border-radius: 8px;
+  background: #fff;
+  font: inherit;
+  font-size: 14px;
+  line-height: 22px;
+  color: #171717;
+  resize: vertical;
+  box-sizing: border-box;
+}
+.tck-escalate-note:focus { outline: none; border-color: #1e4ee5; }
+.tck-escalate-note::placeholder { color: #4e607a; }
+
+/* Nota "info" (rodapé de cada painel: consequência ou aviso). */
+.tck-note {
+  display: flex;
+  gap: 6px;
+  font-size: 12px;
+  line-height: 18px;
+  color: #4e607a;
+}
+.tck-note svg { flex-shrink: 0; color: #4e607a; }
+
+/* ── 6. Rodapé — com painel aberto, mostra consequência + Confirmar ── */
+.tck-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 12px 20px;
+  flex-wrap: wrap;
+}
+.tck-actions-meta {
+  margin-right: auto;
+  font-size: 12px;
+  line-height: 18px;
+  color: #4e607a;
+}
+.tck-confirm {
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 8px;
+  border: 1px solid #1e4ee5;
+  background: #1e4ee5;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: -0.14px;
+  color: #fff;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background .12s, border-color .12s;
+}
+.tck-confirm:hover { background: #0131c5; border-color: #0131c5; }
+.tck-confirm[data-tone="deny"]  { background: #d31a15; border-color: #d31a15; }
+.tck-confirm[data-tone="deny"]:hover { background: #a80f0a; border-color: #a80f0a; }
+
+/* ── 7. Estado decidido ──
+   Substitui a faixa de recomendação, o painel e o rodapé. */
+.tck-decided {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: -1px;
+  padding: 16px 20px;
+  border-top: 1px solid #e3e6ef;
+  background: #f7f9fc;
+  animation: tck-in .18s ease-out both;
+}
+.tck-decided-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.tck-decided-glyph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  color: #fff;
+}
+.tck-decided-glyph[data-outcome="accepted"]  { background: #019213; }
+.tck-decided-glyph[data-outcome="denied"]    { background: #d31a15; }
+.tck-decided-glyph[data-outcome="escalated"] { background: #0a72ee; }
+.tck-decided-text { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.tck-decided-title {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+  letter-spacing: -0.14px;
+}
+.tck-decided-title[data-outcome="accepted"]  { color: #01540e; }
+.tck-decided-title[data-outcome="denied"]    { color: #940303; }
+.tck-decided-title[data-outcome="escalated"] { color: #042db4; }
+.tck-decided-sub {
+  font-size: 12px;
+  line-height: 18px;
+  color: #2a3f5e;
+}
+.tck-decided-note {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  border: 1px solid #e3e6ef;
+  border-radius: 8px;
+  background: #fff;
+}
+.tck-decided-note-label {
+  font-size: 12px;
+  line-height: 18px;
+  color: #4e607a;
+}
+.tck-decided-note-body {
+  font-size: 14px;
+  line-height: 22px;
+  color: #171717;
+  text-wrap: pretty;
+}
+.tck-decided-foot {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.tck-undo {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 32px;
+  margin-right: auto;
+  padding: 0 10px 0 8px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  color: #2a3f5e;
+  cursor: pointer;
+  transition: background .12s;
+}
+.tck-undo:hover { background: #eff1f7; }
+.tck-undo svg { flex-shrink: 0; }
+.tck-next {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 36px;
+  padding: 0 10px 0 14px;
+  border: 1px solid #d0d6e3;
+  border-radius: 8px;
+  background: #fff;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: -0.14px;
+  color: #171717;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: border-color .12s;
+}
+.tck-next:hover { border-color: #b6c2d5; }
+.tck-next svg { flex-shrink: 0; color: #4e607a; }
+
+/* ── Resumo da fila (substitui o card quando todos os tickets forem resolvidos) ── */
+.tck-summary {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #e3e6ef;
+  border-radius: 12px;
+  background: #fff;
+  overflow: hidden;
+  animation: tck-in .18s ease-out both;
+}
+.tck-summary-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin: 0 20px;
+  padding: 20px 0;
+}
+.tck-summary-glyph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  background: #019213;
+  color: #fff;
+}
+.tck-summary-title { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.tck-summary-title-text {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 24px;
+  letter-spacing: -0.16px;
+  color: #171717;
+}
+.tck-summary-subtitle {
+  font-size: 14px;
+  line-height: 22px;
+  color: #2a3f5e;
+}
+.tck-summary-counts {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  margin: 0 20px;
+  padding: 0 0 16px;
+  border-top: 1px solid #e3e6ef;
+}
+.tck-summary-stat { display: flex; flex-direction: column; gap: 2px; padding: 16px 0 0; }
+.tck-summary-stat-label { font-size: 12px; line-height: 18px; color: #4e607a; }
+.tck-summary-stat-value {
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 28px;
+  letter-spacing: -0.4px;
+  color: #b6c2d5;
+}
+.tck-summary-stat-value[data-outcome="accepted"]  { color: #01540e; }
+.tck-summary-stat-value[data-outcome="denied"]    { color: #940303; }
+.tck-summary-stat-value[data-outcome="escalated"] { color: #042db4; }
+.tck-summary-list { display: flex; flex-direction: column; margin: 0 20px; border-top: 1px solid #e3e6ef; }
+.tck-summary-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 0;
+  border: none;
+  border-bottom: 1px solid #e3e6ef;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background .12s;
+}
+.tck-summary-row:last-child { border-bottom: none; }
+.tck-summary-row:hover { background: #f7f9fc; }
+.tck-summary-row-dot {
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #b6c2d5;
+}
+.tck-summary-row-dot[data-outcome="accepted"]  { background: #019213; }
+.tck-summary-row-dot[data-outcome="denied"]    { background: #d31a15; }
+.tck-summary-row-dot[data-outcome="escalated"] { background: #0a72ee; }
+.tck-summary-row-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.tck-summary-row-title {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  letter-spacing: -0.14px;
+  color: #171717;
+}
+.tck-summary-row-detail {
+  font-size: 12px;
+  line-height: 18px;
+  color: #4e607a;
+}
+.tck-summary-row-at {
+  flex-shrink: 0;
+  font-size: 12px;
+  line-height: 18px;
+  color: #4e607a;
+}
+.tck-summary-row svg { flex-shrink: 0; color: #4e607a; }
+.tck-summary-foot {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 20px;
+  border-top: 1px solid #e3e6ef;
+}
+.tck-summary-foot-note {
+  margin-right: auto;
+  font-size: 12px;
+  line-height: 18px;
+  color: #4e607a;
+}
+
+/* ═══ Políticas de pedido (view-workflow-policies.jsx) ═════════════════════
+   Canvas de lista dentro do padrão .detail-panel: header do canvas (mesma
+   .detail-head.canvas-topbar de 64px do WorkflowBoardCanvas — padding 0 20px,
+   sem borda inferior), toolbar densa e tabela agrupada por política. Toda a
+   página segue o mesmo padding horizontal do canvas-topbar (20px) para o
+   ritmo bater com o board de workflows. Reaproveita o search pill do module
+   browser, o gatilho .filter-dropdown-btn do Dropdown, os tabs pill do module
+   browser e o Toggle de ui-primitives — aqui só o que é específico desta
+   tela. */
+.wfp-toolbar {
+  display: flex; align-items: center; gap: 8px;
+  flex-shrink: 0;
+  padding: 12px 20px;
+}
+.wfp-toolbar-fill { flex: 1; }
+/* Search pill do module browser na densidade do canvas (36px, como os demais
+   controles da toolbar) — só medida, sem mexer na identidade do componente. */
+.wfp-toolbar .wfp-search {
+  flex: 0 1 280px;
+  height: 36px; min-height: 36px; max-height: 36px;
+  padding: 0 8px 0 12px;
+}
+.wfp-toolbar .wfp-search [data-sl-module-browser-search-pre-icon] svg { width: 16px; height: 16px; }
+.wfp-toolbar .wfp-search [data-sl-module-browser-search-input] { font-size: 13px; }
+.wfp-toolbar .dd-wrap { display: inline-flex; align-items: center; }
+.wfp-toolbar .dd-wrap > span { display: inline-flex; }
+.wfp-toolbar .wfp-cat-btn {
+  width: auto; height: 36px;
+  padding: 0 12px;
+  white-space: nowrap;
+}
+.wfp-cat-option { gap: 8px; }
+.wfp-cat-check {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 16px; flex-shrink: 0;
+  color: var(--primary);
+}
+.wfp-cat-option-label { flex: 1; min-width: 0; white-space: nowrap; }
+.wfp-cat-count { font-size: 12px; color: var(--fg-3); flex-shrink: 0; }
+
+/* Lista de cards de política — cada política é um card independente, sem
+   estrutura de tabela: cabeçalho com título h3 + meta à esquerda e tag de
+   categoria à direita, seguido de linhas de regra em flex. */
+.wfp-list {
+  padding: 0 20px 24px;
+  display: flex; flex-direction: column;
+  gap: 16px;
+}
+.wfp-card {
+  border: 1px solid var(--border);
+  border-radius: var(--sl-radius-3);
+  background: #fff;
+  overflow: hidden;
+}
+.wfp-card-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.wfp-card-title { display: flex; align-items: baseline; gap: 12px; min-width: 0; }
+.wfp-card-name {
+  margin: 0;
+  font-size: 16px; font-weight: 700; color: var(--fg);
+  letter-spacing: -0.02em;
+  line-height: 1.35;
+}
+.wfp-card-meta { font-size: 12.5px; color: var(--fg-3); flex-shrink: 0; }
+
+.wfp-row {
+  display: flex; align-items: center; gap: 16px;
+  padding: 10px 20px;
+  background: #fff;
+  border-bottom: 1px solid var(--bg-soft);
+}
+.wfp-row.is-selected { background: var(--primary-soft); }
+/* Regra recém-criada pelo chat: pisca no lugar onde o canvas parou o scroll. */
+.wfp-row.is-new { animation: wfp-row-in 1.4s ease-out; }
+@keyframes wfp-row-in {
+  0%, 40% { box-shadow: inset 0 0 0 2px var(--primary); }
+  100%    { box-shadow: inset 0 0 0 2px transparent; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wfp-row.is-new { animation: none; }
+}
+/* Última linha do card não leva hairline — quem separa as políticas é o gap
+   entre os cards. */
+.wfp-card-rules > .wfp-row:last-child { border-bottom: none; }
+
+.wfp-cat-tag {
+  display: inline-flex; align-items: center; gap: 4px;
+  flex-shrink: 0;
+  padding: 2px 8px;
+  border-radius: var(--sl-radius-1);
+  font-size: 11px; font-weight: 500; line-height: 16px;
+  letter-spacing: .04em; text-transform: uppercase;
+  color: var(--fg);
+  white-space: nowrap;
+}
+
+/* Linha de regra em três faixas: nome cresce, "N tarefas" ocupa uma coluna
+   de largura fixa e o toggle fica sempre encostado à direita — assim as três
+   posições batem entre todas as linhas de todos os cards. */
+.wfp-row-main { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; text-align: left; }
+.wfp-sid {
+  flex-shrink: 0;
+  padding: 2px 6px;
+  border-radius: var(--sl-radius-1);
+  background: var(--bg-muted);
+  color: var(--fg-3);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px; letter-spacing: .02em;
+}
+.wfp-row-name {
+  min-width: 0;
+  font-size: 14px; font-weight: 500; color: var(--fg);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.wfp-row-main:hover .wfp-row-name { color: var(--primary); }
+.wfp-row-tasks {
+  flex: none;
+  width: 140px;
+  display: flex; align-items: center; gap: 8px;
+}
+.wfp-row-tasks-label { font-size: 12.5px; color: var(--fg-3); white-space: nowrap; }
+.wfp-dots { display: flex; align-items: center; gap: 3px; }
+.wfp-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.wfp-dot--lg { width: 10px; height: 10px; }
+.wfp-col-status {
+  flex: none;
+  width: 40px;
+  display: flex; align-items: center; justify-content: flex-end;
+}
+.wfp-empty { padding: 40px 20px; text-align: center; font-size: 13px; color: var(--fg-3); }
+
+/* Drawer de detalhe — corpo dentro do .wf-side-drawer já existente. */
+.wfp-drawer-ident {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 12px 0 4px;
+}
+.wfp-drawer-breadcrumb { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.wfp-drawer-policy { font-size: 12.5px; color: var(--fg-3); }
+.wfp-drawer-status {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  margin-top: 8px;
+  padding: 12px 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.wfp-drawer-trigger { margin: 16px 0 0; }
+.wfp-drawer-block { display: flex; flex-direction: column; gap: 10px; margin-top: 24px; }
+.wfp-block-label {
+  font-size: 11.5px;
+  letter-spacing: .04em; text-transform: uppercase;
+  color: var(--fg-3);
+}
+.wfp-cond-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.wfp-cond {
+  padding: 4px 8px;
+  border-radius: var(--sl-radius-1);
+  background: var(--bg-soft);
+  color: var(--fg);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12.5px;
+}
+.wfp-kind-group {
+  display: flex; flex-direction: column; gap: 8px;
+  padding-top: 10px;
+  border-top: 1px solid var(--bg-soft);
+}
+.wfp-kind-head { display: flex; align-items: center; gap: 8px; }
+.wfp-kind-label { font-size: 12.5px; font-weight: 500; color: var(--fg-2); }
+.wfp-task-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.wfp-task-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 10px;
+  border-radius: var(--sl-radius-1);
+  font-size: 12.5px; font-weight: 500;
+  white-space: nowrap;
+}
+
+/* ═══ WfListCardV2 — Card de Workflow 7b ══════════════════════════════════
+   Card resumo do workflow na listagem: nome + pill de orquestração + pill
+   de status no topo, frase explicativa do gatilho, chip do gatilho com
+   suporte a "+N" para múltiplas origens, e rodapé com Tarefas / Automação
+   / metadata de publicação e chevron. Substitui o antigo `.wf-list-card--expanded`
+   quando renderizado por `renderExpanded` em view-workflow-board.jsx. */
+.wf-list-card--v2 {
+  display: flex;
+  flex-direction: column;
+  /* Neutraliza o `align-items: center` herdado do `.wf-list-card` base,
+     que estava colapsando o nome/explain/chip pro meio horizontal. */
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 12px;
+  padding: 16px;
+  background: var(--sl-color-gray-0, #ffffff);
+  border: 1px solid var(--sl-color-gray-3, #e3e6ef);
+  border-radius: var(--sl-radius-3, 8px);
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  width: 100%;
+}
+.wf-list-card--v2:hover {
+  border-color: var(--sl-color-gray-5, #b6c2d5);
+  background: var(--sl-color-gray-0, #ffffff);
+}
+/* Container: quando a lista/grupo contém cards v2, aplica o gap de 12px
+   do mockup e neutraliza a hairline compartilhada do layout antigo (cada
+   v2 é um card independente com sua própria borda arredondada). */
+.wf-list:has(.wf-list-card--v2),
+.wf-category-cards:has(.wf-list-card--v2) {
+  gap: 12px;
+}
+.wf-list > .wf-list-card--v2 + .wf-list-card--v2 {
+  border-top: 1px solid var(--sl-color-gray-3, #e3e6ef);
+}
+/* Solta o `.detail-body` do max-width padrão (800px) quando renderiza a
+   lista v2 — os cards devem ocupar a largura total do canvas, com padding
+   lateral batendo com o `.canvas-topbar` (20px) para o título "Workflows"
+   ficar alinhado à esquerda dos cards. */
+.detail-body:has(.wf-list-card--v2) {
+  max-width: none;
+  padding-left: 80px;
+  padding-right: 80px;
+}
+
+.wf-card-head { display: flex; align-items: center; gap: 10px; }
+.wf-card-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 20px; font-weight: 600;
+  color: var(--sl-color-gray-12, #171717);
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.wf-card-orch-pill {
+  flex: none;
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 2px 8px 2px 8px;
+  border-radius: 100px;
+  font-size: 12px;
+  height: 24px;
+  white-space: nowrap;
+}
+.wf-card-status-pill {
+  flex: none;
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 2px 8px;
+  border-radius: 100px;
+  font-size: 12px; font-weight: 600;
+  height: 24px;
+  white-space: nowrap;
+}
+
+.wf-card-trigger-explain {
+  font-size: 13px; line-height: 19px;
+  color: var(--sl-color-gray-11, #142032);
+  text-wrap: pretty;
+  margin-top: -6px;
+}
+
+.wf-card-trigger-chip {
+  display: flex; align-items: center; gap: 6px;
+  min-width: 0;
+  padding: 6px 8px;
+  background: var(--bg-soft, #f8f8f8);
+  border-radius: var(--sl-radius-2, 6px);
+  font-size: 12.5px;
+}
+.wf-card-trigger-label { flex: none; color: var(--sl-color-gray-9, #2a3f5e); }
+.wf-card-trigger-type { flex: none; color: var(--sl-color-gray-12, #171717); font-weight: 500; }
+.wf-card-trigger-value-wrap { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.wf-card-trigger-value {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 2px 6px;
+  font-size: 12.5px;
+  color: var(--fg-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.wf-card-trigger-more { flex: none; color: var(--sl-color-gray-9, #2a3f5e); }
+.wf-card-trigger-empty { color: var(--sl-color-gray-8, #3d516e); }
+
+.wf-card-foot {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 12.5px;
+  color: var(--sl-color-gray-9, #2a3f5e);
+  min-width: 0;
+}
+.wf-card-foot-item {
+  display: inline-flex; align-items: baseline; gap: 4px;
+  white-space: nowrap;
+}
+.wf-card-foot-item b {
+  font-weight: 600;
+  color: var(--sl-color-gray-12, #171717);
+  font-variant-numeric: tabular-nums;
+}
+.wf-card-foot-sep { color: var(--sl-color-gray-6, #5d6c83); }
+.wf-card-foot-meta {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.wf-card-foot-spacer { flex: 1; }
+.wf-card-foot-chevron { flex: none; color: var(--sl-color-gray-9, #2a3f5e); }

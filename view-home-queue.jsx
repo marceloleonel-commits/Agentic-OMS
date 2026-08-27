@@ -24,7 +24,7 @@ function OpsQueueRow({ item, onOpen }) {
       </div>
       {item.assignee && (
         <span className="ops-queue-aside">
-          <PersonAvatar initial={item.assignee.initial} agent={item.assignee.agent} />
+          <PersonAvatar initial={item.assignee.initial} agent={item.assignee.agent} name={item.assignee.name} />
         </span>
       )}
     </div>
