@@ -44,16 +44,42 @@ Canvas (Iniciativa Operacional)
 
 Diferente de outros padrões (ex: Canvas A), aqui a decisão é direta e não exige desdobramento em perguntas sequenciais — é um fluxo inline dentro do próprio canvas/ticket, não uma sequência de perguntas em chat.
 
-Dentro de cada ticket (nível 2), a decisão acontece via botões inline:
+Modelo agêntico (`design_handoff_tickets_abertos v2`, substitui a versão anterior desta seção): o agente já chega com a **recomendação** e, quando ela é uma das três ações, o **painel daquela ação já vem aberto**. As três abas ficam sempre visíveis num segmented control e podem ser trocadas sem fechar o painel.
 
 ```
-[ Aceitar exceção ]     [ Negar ]     [ Escalar ]
+Abas: [ Aceitar ]  [ Negar ]  [ Escalar ]
+      (a aba recomendada leva um ponto azul; abre selecionada)
 
-   ↳ Aceitar → expande inline: tipo de resolução (estorno total/parcial, troca, vale-compra)
-               + valor (se parcial) + justificativa (obrigatória, vai para Document Audit)
-   ↳ Negar   → expande inline: motivo da negativa (pré-preenchido com a sugestão do agente, editável)
-   ↳ Escalar → sem expansão — muda o Lead da Tarefa para Ecommerce Supervisor
+   ↳ Aceitar (leitura)  → o agente apresenta a "Resolução dentro da política"
+                          (por padrão: Estorno total no meio de pagamento original)
+                          + o rascunho da mensagem ao cliente (colapsável).
+                          O SAC não escreve nada — só Confirmar ou trocar de aba.
+   ↳ Negar (leitura)    → o agente apresenta a "Regra aplicada" (verbatim do
+                          `denyReason` do ticket) + o rascunho da mensagem ao
+                          cliente (colapsável). Também é read-only.
+   ↳ Escalar (editável) → destino fixo em `Ecommerce Supervisor` (sem escolha)
+                          + textarea opcional "O que o supervisor precisa decidir".
+                          Muda o Lead da Tarefa correspondente para Ecommerce
+                          Supervisor.
 ```
+
+### Regra de autonomia
+
+Qualquer decisão fora do que o agente apresenta em Aceitar/Negar — troca, vale-compra, estorno parcial, negar com outra justificativa, abrir exceção contra a regra — **sai da autonomia do SAC** e só existe via **Escalar**. Por isso Aceitar e Negar não têm campos para preencher: se o operador precisa desviar do que está lá, o caminho correto é o escalonamento.
+
+### Consequências de cada decisão
+
+- **Aceitar** — mensagem é enviada ao cliente; aceite vai para o Document Audit; Tarefa correspondente é concluída como "Aceita por [nome] às [hora]".
+- **Negar** — mensagem é enviada ao cliente; cliente tem 7 dias para contestar; Tarefa correspondente é concluída como "Negada por [nome] às [hora]".
+- **Escalar** — ticket sai da fila do SAC; Tarefa correspondente é concluída para o SAC e o Lead passa a `Ecommerce Supervisor`; o escalonamento pode ser **desfeito** (aceite e negativa não, porque já dispararam mensagem ao cliente).
+
+### Fechamento da fila
+
+Ao confirmar o último ticket pendente, o agente publica no chat uma mensagem informando que as Tarefas foram concluídas, com o resumo (total avaliados, quantos aceitos/negados/escalados, para onde os escalonamentos foram), e a Iniciativa muda para **Concluída**. No card, um resumo da fila entra sozinho no lugar do último ticket — cada linha do resumo volta ao ticket correspondente ("Revisar tickets" reabre o card). Os escalonamentos não impedem o fechamento: eles seguem como tickets do supervisor, fora desta Iniciativa.
+
+### Divergência histórica
+
+A versão anterior desta seção previa outro fluxo: Aceitar expandia em "tipo de resolução (estorno total/parcial, troca, vale-compra) + valor (se parcial) + justificativa (obrigatória)" e Negar tinha o motivo editável. Este design substitui aquele modelo deliberadamente — a resolução em política é apresentada pelo agente e qualquer desvio passa por escalonamento. Escalar preserva o destino fixo já previsto (Ecommerce Supervisor), com a adição de uma observação opcional ao supervisor.
 
 ---
 

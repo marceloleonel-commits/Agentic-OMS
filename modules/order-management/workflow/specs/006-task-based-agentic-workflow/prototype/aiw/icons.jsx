@@ -110,6 +110,18 @@ const Icon = ({ name, size = 16, ...rest }) => {
     /* Material Symbols "undo" (FILL0, wght300) — traço fino, não a versão sólida. */
     case "undo":
       return (<svg width={s} height={s} viewBox="0 -960 960 960" fill="currentColor" stroke="none" xmlns="http://www.w3.org/2000/svg" {...rest}><path d="M285-235q-8 0-14-6t-6-14.5q0-8.5 6-14.5t14-6h283q65 0 111-42t46-102q0-60-46-102t-111-42H301l114 114q6 6 6 14t-6 14q-6 6-14 6t-14-6L246-568q-9-9-9-21t9-21l141-141q6-6 14-6t14 6q6 6 6 14t-6 14L301-609h283q83 0 141 54.5T783-420q0 77-58 131t-141 54H285Z"/></svg>);
+    /* ── Material Symbols usados nos cards de ticket v2 (design_handoff_tickets_abertos).
+       Mesma família dos casos acima: viewBox 0 -960 960 960, wght300, cor herdada. ── */
+    case "verified":
+      return (<svg width={s} height={s} viewBox="0 -960 960 960" fill="currentColor" stroke="none" xmlns="http://www.w3.org/2000/svg" {...rest}><path d="m344-60-76-128-144-32 14-148-98-112 98-112-14-148 144-32 76-128 136 58 136-58 76 128 144 32-14 148 98 112-98 112 14 148-144 32-76 128-136-58-136 58Zm94-278 226-226-56-58-170 170-86-84-56 56 142 142Z"/></svg>);
+    case "gavel":
+      return (<svg width={s} height={s} viewBox="0 -960 960 960" fill="currentColor" stroke="none" xmlns="http://www.w3.org/2000/svg" {...rest}><path d="M160-120v-80h480v80H160Zm226-194L160-540l84-86 228 226-86 86Zm254-254L414-796l86-84 226 226-86 86Zm184 408L302-644l56-56 522 522-56 56Z"/></svg>);
+    case "supervisor-account":
+      return (<svg width={s} height={s} viewBox="0 -960 960 960" fill="currentColor" stroke="none" xmlns="http://www.w3.org/2000/svg" {...rest}><path d="M40-160v-112q0-33 17-62t47-44q51-26 115-44t141-18h14q6 0 12 2-8 18-13.5 37.5T364-360h-4q-71 0-127.5 18T140-306q-9 5-14.5 14t-5.5 20v32h252q6 21 16 41.5t22 38.5H40Zm540 40-12-60q-12-5-22.5-10.5T524-204l-58 18-40-68 46-40q-2-14-2-26t2-26l-46-40 40-68 58 18q11-8 21.5-13.5T568-460l12-60h80l12 60q12 5 22.5 11t21.5 15l58-20 40 70-46 40q2 12 2 25t-2 25l46 40-40 68-58-18q-11 8-21.5 13.5T672-180l-12 60h-80Zm40-120q33 0 56.5-23.5T700-320q0-33-23.5-56.5T620-400q-33 0-56.5 23.5T540-320q0 33 23.5 56.5T620-240ZM360-480q-66 0-113-47t-47-113q0-66 47-113t113-47q66 0 113 47t47 113q0 66-47 113t-113 47Zm0-80q33 0 56.5-23.5T440-640q0-33-23.5-56.5T360-720q-33 0-56.5 23.5T280-640q0 33 23.5 56.5T360-560Zm0-80Zm12 400Z"/></svg>);
+    case "info":
+      return (<svg width={s} height={s} viewBox="0 -960 960 960" fill="currentColor" stroke="none" xmlns="http://www.w3.org/2000/svg" {...rest}><path d="M440-280h80v-240h-80v240Zm40-320q17 0 28.5-11.5T520-640q0-17-11.5-28.5T480-680q-17 0-28.5 11.5T440-640q0 17 11.5 28.5T480-600Zm0 520q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z"/></svg>);
+    case "photo-library":
+      return (<svg width={s} height={s} viewBox="0 -960 960 960" fill="currentColor" stroke="none" xmlns="http://www.w3.org/2000/svg" {...rest}><path d="M360-360h480L678-580 558-420l-90-120-108 180Zm-80 160q-33 0-56.5-23.5T200-280v-560q0-33 23.5-56.5T280-920h560q33 0 56.5 23.5T920-840v560q0 33-23.5 56.5T840-200H280Zm0-80h560v-560H280v560ZM120-40q-33 0-56.5-23.5T40-120v-600h80v600h600v80H120Zm160-800v560-560Z"/></svg>);
     default:
       return null;
   }

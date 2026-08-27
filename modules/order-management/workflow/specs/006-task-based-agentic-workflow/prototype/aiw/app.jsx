@@ -50,8 +50,18 @@ function App() {
   const [orderDynamicChips, setOrderDynamicChips] = useState([]);
   const orderEngineRef = useRef(null);
 
+  /* Rota anterior à entrada de um task — usada pelo "Voltar" do chat da task
+     para retornar à última tela vista (Iniciativas, My Assistant, etc.) em
+     vez de cair no default `orders`. */
+  const prevRouteRef = useRef(null);
+
   const setRoute = (r) => {
-    setRouteState(r);
+    setRouteState((cur) => {
+      if (r.name === 'task' && cur.name !== 'task') {
+        prevRouteRef.current = cur;
+      }
+      return r;
+    });
     if (r.name === 'workflow-board') {
       const m = r.wfMode || { kind: 'list' };
       setWfMode(m);
@@ -115,6 +125,14 @@ function App() {
   useEffect(() => { setProductView(null); }, [route.orderId]);
 
   const goHome   = () => setRoute({ name: "orders" });
+  /* Voltar do task: usa a rota anterior guardada (última tela antes da task).
+     Fallback para o home padrão se, por qualquer motivo, não houver histórico
+     (ex.: task aberto por deep link direto). */
+  const goBackFromTask = () => {
+    const prev = prevRouteRef.current;
+    prevRouteRef.current = null;
+    setRoute(prev || { name: "orders" });
+  };
   /* `opts.openChat` — usado por InitiativeDocumentPanel ("Ver conversa"): a
      tarefa abre com o chat já ativo, em vez do padrão canvas-only. */
   const openTask = (id, opts) => setRoute({ name: "task", id, openChat: !!(opts && opts.openChat) });
@@ -231,7 +249,7 @@ function App() {
   } else if (route.name === "workflow-policies") {
     view = <WorkflowPoliciesView />;
   } else if (route.name === "task") {
-    view = <TaskView taskId={route.id} onBack={goHome} onOpenOrder={openOrder} initialChatOpen={route.openChat} />;
+    view = <TaskView taskId={route.id} onBack={goBackFromTask} onOpenOrder={openOrder} initialChatOpen={route.openChat} />;
   } else if (route.name === "workflow-board") {
     view = <WorkflowBoardView
       key={wfBoardKey}

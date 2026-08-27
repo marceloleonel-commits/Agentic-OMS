@@ -817,6 +817,99 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+/* Breadcrumb do topbar em subview (v3 port de [data-sl-initiative-canvas-breadcrumb]):
+   [chip do id] · [rótulo da subview]. */
+.canvas-topbar-title [data-sl-initiative-canvas-breadcrumb-sep] {
+  flex-shrink: 0;
+  color: var(--fg-2);
+  font-weight: 400;
+}
+.canvas-topbar-title [data-sl-initiative-canvas-breadcrumb-task] {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+  color: var(--fg);
+}
+/* Chip do id vira botão clicável quando o canvas está em subview — atalho
+   para voltar direto ao canvas principal, saindo de qualquer profundidade
+   da pilha. Preserva o layout do chip (largura/alinhamento). */
+.canvas-topbar-chip-btn {
+  appearance: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  cursor: pointer;
+  background: transparent;
+}
+.canvas-topbar-chip-btn:hover { filter: brightness(0.96); }
+.canvas-topbar-chip-btn:focus-visible {
+  outline: 2px solid var(--fg-3);
+  outline-offset: 2px;
+  border-radius: var(--initiative-table-pill-radius, 6px);
+}
+
+/* ── Slide-in nav (v3 port de initiative-canvas-tool.css) ─────────────────
+   Bebe do ai-workspace-shell-template@v3: navegação entre main e subview
+   anima só depois da primeira transição (data-doc-nav-animation="true"). */
+@keyframes canvas-doc-slide-in-from-right {
+  from { opacity: 0; transform: translateX(24px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@keyframes canvas-doc-slide-in-from-left {
+  from { opacity: 0; transform: translateX(-24px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+[data-sl-canvas-doc-view][data-doc-nav-animation="true"][data-view="sub"] {
+  animation: canvas-doc-slide-in-from-right 0.18s ease-out;
+}
+[data-sl-canvas-doc-view][data-doc-nav-animation="true"][data-view="main"] {
+  animation: canvas-doc-slide-in-from-left 0.18s ease-out;
+}
+
+/* Back bar sticky no topo do conteúdo da subview (v3 [data-sl-canvas-tool-back-wrap]). */
+[data-sl-canvas-tool-back-wrap] {
+  /* Distância efetiva entre o back-bar e o primeiro bloco de conteúdo abaixo.
+     `--back-bar-content-gap` controla só esse espaçamento — o gap dos demais
+     blocos vem de `.detail-body { gap: 44px }` e permanece intacto. Ajuste
+     por contexto sobrescrevendo a variável (ex.: por subview type). */
+  --back-bar-content-gap: 16px;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  margin: 0;
+  padding: var(--sl-space-4, 16px) 0 var(--sl-space-2, 8px);
+  background-color: var(--sl-bg-base, #fff);
+  border-bottom: 1px solid transparent;
+}
+/* `.detail-body` usa flex-column gap:44px; o espaço percebido entre o back-bar
+   e o próximo filho é `gap + margin-bottom`. Compensamos o gap do pai com
+   margin negativa, e o valor efetivo passa a ser `--back-bar-content-gap`. */
+[data-sl-canvas-doc-view] > [data-sl-canvas-tool-back-wrap] {
+  margin-bottom: calc(var(--back-bar-content-gap) - 44px);
+}
+[data-sl-canvas-tool-back] {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--sl-color-blue-11, var(--primary, #2158E8));
+  cursor: pointer;
+}
+[data-sl-canvas-tool-back]:hover {
+  color: var(--sl-color-blue-12, #0A3ABF);
 }
 /* Voltar do canvas-topbar — chevron + rótulo, mesmos tokens do .chat-back-btn.
    Substitui o título quando existe navegação para trás; o nome do workflow já
@@ -1014,14 +1107,12 @@
   color: var(--fg);
 }
 
-/* ── Status (v3 4-state) ── */
+/* ── Status (v3 4-state) ──
+   O estado "attention" no painel de detalhe usa a mesma pill visual do
+   CriticalityTag da home (via [data-sl-criticality-tag][data-priority="attention"]).
+   Aqui mantemos apenas o layout base do container do status. */
 [data-sl-doc-status] { display: inline-flex; align-items: center; gap: 8px; }
-[data-sl-doc-status][data-status="attention"] {
-  background: var(--sl-color-blue-2, #EAF2FF);
-  border-radius: 99px;
-  padding: 4px 12px;
-}
-[data-sl-doc-status-label] { font-size: 14px; font-weight: 500; color: var(--fg); }
+[data-sl-doc-status-label] { font-size: 13px; font-weight: 600; color: var(--fg); letter-spacing: -0.26px; }
 [data-sl-doc-working-dots] circle { fill: var(--sl-color-gray-5, #B7C3D2); transition: fill 0.15s ease; }
 [data-sl-doc-working-dots] circle[data-on] { fill: var(--primary, #2962FF); }
 
@@ -1099,6 +1190,30 @@
 .pkg-wf-see-btn:hover {
   background: var(--border, #ebebeb);
   text-decoration: none;
+}
+
+/* Modal do "Ver workflow" do pacote — mesma linguagem visual do
+   .stage-config-modal, mas mais largo para acomodar o WorkflowSection (grid
+   de 4 etapas na view Etapas) e sem padding interno duplicado, já que a
+   própria WorkflowSection cuida do próprio espaçamento. */
+.pkg-wf-modal {
+  width: 1040px;
+  max-width: calc(100% - 32px);
+  height: auto;
+  max-height: calc(100vh - 64px);
+}
+.pkg-wf-modal-body {
+  padding: 20px 24px 24px;
+}
+/* A seção interna já traz seu próprio border-top + padding-top; dentro do
+   modal esse espaçamento vira ruído (o cabeçalho do modal já delimita). */
+.pkg-wf-modal-body > section > div:first-child {
+  border-top: none !important;
+  padding-top: 0 !important;
+}
+.pkg-wf-modal-sub {
+  color: var(--fg-3);
+  font-weight: 400;
 }
 
 .detail-tasks { margin-top: 8px; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
@@ -1825,8 +1940,10 @@
 }
 
 [data-sl-overview-summary-queue-bar-seg][data-tone="healthy"]  { background: var(--primary, #2962FF); }
-[data-sl-overview-summary-queue-bar-seg][data-tone="warning"]  { background: var(--severity-medium, #F5A524); }
-[data-sl-overview-summary-queue-bar-seg][data-tone="critical"] { background: var(--severity-high, #FF4D4F); }
+/* warning: mesmo amarelo do ícone de alert do canvas-a-verify (#CFA000).
+   critical: mesmo vermelho do dot do CriticalityTag "high" (--sl-fg-critical). */
+[data-sl-overview-summary-queue-bar-seg][data-tone="warning"]  { background: #CFA000; }
+[data-sl-overview-summary-queue-bar-seg][data-tone="critical"] { background: var(--sl-fg-critical, #C4170C); }
 
 [data-sl-overview-summary-queue-legend] {
   display: flex;
@@ -1853,8 +1970,8 @@
 }
 
 [data-sl-overview-summary-queue-dot][data-tone="healthy"]  { background: var(--primary, #2962FF); }
-[data-sl-overview-summary-queue-dot][data-tone="warning"]  { background: var(--severity-medium, #F5A524); }
-[data-sl-overview-summary-queue-dot][data-tone="critical"] { background: var(--severity-high, #FF4D4F); }
+[data-sl-overview-summary-queue-dot][data-tone="warning"]  { background: #CFA000; }
+[data-sl-overview-summary-queue-dot][data-tone="critical"] { background: var(--sl-fg-critical, #C4170C); }
 
 /* --- Coluna direita: atenção + tempo até liberar ---------------------- */
 
@@ -1891,7 +2008,7 @@
   align-items: center;
   gap: 8px;
   padding: 6px 12px;
-  border-radius: 999px;
+  border-radius: 8px;
   background: #EAF7FF;
   flex: 0 0 auto;
 }
@@ -1963,9 +2080,9 @@
 /* Selo de variação — equivalente local da Tag do Shoreline */
 [data-sl-overview-chart-delta] {
   padding: 2px 8px;
-  border-radius: var(--sl-radius-full, 9999px);
+  border-radius: var(--initiative-table-pill-radius, 6px);
   font-size: 12.5px;
-  font-weight: 500;
+  font-weight: 700;
 }
 
 [data-sl-overview-chart-delta][data-tone="positive"] { background: #E3F8E5; color: #169B61; }
@@ -3580,6 +3697,16 @@
   grid-template-columns: 399px 6px 1fr;
   height: 100%;
   overflow: hidden;
+  /* Ao abrir/fechar o chat, o canvas troca de largura via grid-template-columns.
+     Animar essa transição faz o canvas deslizar suavemente para a esquerda em
+     vez de "pular". Mesmo timing/ease do slide-in do chat (220ms cubic-bezier
+     bebido do composer v3). Durante drag do resizer a transição é desligada
+     via `body.resizing-x` para o arrasto ficar 1:1 com o cursor. */
+  transition: grid-template-columns 220ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+body.resizing-x .resizable-split { transition: none; }
+@media (prefers-reduced-motion: reduce) {
+  .resizable-split { transition: none; }
 }
 .resizable-split > .chat-panel,
 .resizable-split > .detail-panel {
@@ -3595,7 +3722,11 @@
    que mantém os dois em lockstep, sem fade competindo com o movimento. */
 .resizable-split--chat-entering > .chat-panel,
 .resizable-split--chat-entering > .split-resizer {
-  animation: chat-panel-slide-in 0.32s cubic-bezier(0.32, 0.72, 0, 1);
+  /* Timing/ease bebido de v3 (composer.css do ai-workspace-shell-template@v3):
+     220ms cubic-bezier(0.32, 0.72, 0, 1). Mesma curva que o composer usa nas
+     transições de shape (min-height/border-radius/padding), agora aplicada
+     à entrada do painel de chat sobre o canvas/drawer. */
+  animation: chat-panel-slide-in 220ms cubic-bezier(0.32, 0.72, 0, 1);
   will-change: transform;
 }
 @keyframes chat-panel-slide-in {
@@ -3888,6 +4019,31 @@ body.resizing-x .split-resizer::before { background: var(--primary); }
   display: flex; align-items: center; justify-content: space-between;
   gap: 16px;
 }
+
+/* Quando o pedido está aberto como subview do TaskCanvas, o back-bar
+   ("Voltar para {ID}") e o pager ("1 de N" + prev/next) compartilham a mesma
+   linha: o back-bar segue à esquerda (fluxo normal, sticky), e o pager é
+   içado para a direita da faixa via posicionamento absoluto. A âncora é
+   [data-sl-canvas-doc-view][data-view="sub"] — que só existe no canvas do
+   task, então não afeta a Order Detail em standalone. */
+[data-sl-canvas-doc-view][data-view="sub"] { position: relative; }
+[data-sl-canvas-doc-view][data-view="sub"] .od-topnav {
+  position: absolute;
+  /* Alinha o centro vertical do pager (28px) com o centro do back-button
+     (linha ~20px). O back-bar tem padding-top 16px, então o botão fica com
+     centro em 26px; o pager começa em 16px e teria centro em 30px — o
+     translateY(-4px) puxa 4px para cima e emparelha os centros. */
+  top: var(--sl-space-4, 16px);
+  right: 0;
+  transform: translateY(-4px);
+  z-index: 3; /* acima do back-bar sticky (z-index 2) */
+  margin: 0;
+  padding: 0;
+  background: transparent;
+}
+[data-sl-canvas-doc-view][data-view="sub"] .od-topnav > :first-child {
+  display: none; /* spacer do layout antigo — sem uso quando absolute */
+}
 .od-pager {
   display: inline-flex; align-items: center; gap: 6px;
   font-size: 12.5px;
@@ -3931,14 +4087,16 @@ body.resizing-x .split-resizer::before { background: var(--primary); }
 .od-back-link:hover { text-decoration: underline; color: var(--primary-hover); }
 .od-back-link svg { color: currentColor; }
 
-/* Order metadata grid (smaller than canvas metadata) */
+/* Order metadata grid — same visual style as canvas metadata
+   ([data-sl-initiative-document-metadata]): label 15px/400 em fg-2,
+   valor 15px/500 em fg, coluna do rótulo 10rem, row-gap 12px. */
 .od-meta {
-  grid-template-columns: 200px 1fr;
-  row-gap: 14px;
+  grid-template-columns: 10rem 1fr;
+  row-gap: 12px;
   margin-top: -16px; /* tighten under title */
 }
-.od-meta dt { font-weight: 600; color: var(--fg); padding-top: 6px; font-size: 13.5px; }
-.od-meta dd { font-size: 13.5px; }
+.od-meta dt { font-size: 15px; font-weight: 400; color: var(--fg-2); padding-top: 0; }
+.od-meta dd { font-size: 15px; font-weight: 500; color: var(--fg); }
 .od-meta-link {
   color: var(--accent, #3B82F6);
   text-decoration: none;
@@ -8300,9 +8458,9 @@ button.wf-ver-badge-btn:hover {
 /* Confirmação de cópia no próprio botão — some sozinha depois de 1,6s. */
 .pkg-title-btn--copied,
 .pkg-title-btn--copied:hover {
-  background: var(--sl-color-blue-2, #EAF2FF);
-  border-color: var(--primary, #2158E8);
-  color: var(--primary, #2158E8);
+  background: var(--bg-muted);
+  border-color: var(--border-strong, var(--fg-3));
+  color: var(--fg-2);
 }
 
 /* "Ver workflow" fecha a linha de meta do pacote: herda o botão do "Ver todos",
@@ -9497,7 +9655,7 @@ button.wf-ver-badge-btn:hover {
   background-color: var(--sl-bg-base, #fff);
   box-shadow: 0 1px 2px rgba(10, 21, 36, 0.04);
   /* Tokens do v3 (browse/initiatives.css) */
-  --initiative-table-row-hover-bg: color-mix(in srgb, var(--sl-bg-muted, rgba(10, 21, 36, 0.05)) 68%, var(--sl-bg-base, #fff));
+  --initiative-table-row-hover-bg: var(--bg-soft);
   --initiative-expanded-surface: var(--sl-bg-base, #fff);
   --initiative-expanded-surface-hover: color-mix(in srgb, var(--sl-bg-muted, rgba(10, 21, 36, 0.05)) 22%, var(--sl-bg-base, #fff));
   --initiative-table-detail-bar-bg: var(--sl-color-gray-4, #CED7E4);
@@ -9728,31 +9886,38 @@ button.wf-ver-badge-btn:hover {
   line-height: 0;
 }
 
-[data-sl-initiative-table-severity-inline] [data-sl-criticality-tag] {
+/* CriticalityTag — visual base compartilhada entre a Home (tabela de
+   iniciativas) e o painel de detalhe da iniciativa. O wrapper
+   `[data-sl-initiative-table-severity-inline]` mantém a largura fixa de 64px
+   apenas dentro da tabela; fora dela, a tag se ajusta ao conteúdo. */
+[data-sl-criticality-tag] {
   box-sizing: border-box;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 100%;
-  min-width: 0;
-  height: var(--initiative-table-pill-height);
-  padding: 0 var(--initiative-table-pill-padding-x);
-  border-radius: var(--initiative-table-pill-radius);
+  height: var(--initiative-table-pill-height, 20px);
+  padding: 0 var(--initiative-table-pill-padding-x, 6px);
+  border-radius: var(--initiative-table-pill-radius, 6px);
   gap: 4px;
   overflow: hidden;
   font-size: 13px;
-  line-height: var(--initiative-table-pill-height);
+  line-height: var(--initiative-table-pill-height, 20px);
   letter-spacing: -0.26px;
   white-space: nowrap;
 }
 
-[data-sl-initiative-table-severity-inline] [data-sl-criticality-tag][data-priority="high"] {
+[data-sl-initiative-table-severity-inline] [data-sl-criticality-tag] {
+  width: 100%;
+  min-width: 0;
+}
+
+[data-sl-criticality-tag][data-priority="high"] {
   background-color: var(--sl-bg-critical, #FDEEEE);
   font-weight: 700;
   color: var(--sl-fg-critical, #C4170C);
 }
 
-[data-sl-initiative-table-severity-inline] [data-sl-criticality-tag][data-priority="high"] [data-sl-status="dot"] {
+[data-sl-criticality-tag][data-priority="high"] [data-sl-status="dot"] {
   width: 8px;
   height: 8px;
   min-width: 8px;
@@ -9761,17 +9926,50 @@ button.wf-ver-badge-btn:hover {
   background-color: var(--sl-fg-critical, #C4170C);
 }
 
-[data-sl-initiative-table-severity-inline] [data-sl-criticality-tag][data-priority="medium"] {
+[data-sl-criticality-tag][data-priority="medium"] {
   background-color: var(--sl-color-orange-2, #FFEDCD);
   font-weight: 600;
   color: var(--sl-color-orange-8, #E57001);
 }
 
-[data-sl-initiative-table-severity-inline] [data-sl-criticality-tag][data-priority="low"] {
+[data-sl-criticality-tag][data-priority="low"] {
   background-color: var(--sl-color-gray-0, #fff);
   border: 1px solid var(--sl-color-gray-3, #E0E5EF);
   font-weight: 600;
   color: var(--fg-3, #707070);
+}
+
+/* Variante "attention": mesma pill visual usada no contador de atenção da
+   tabela da home; aplicada em [data-sl-doc-status][data-status="attention"]
+   no painel de detalhe da tarefa. */
+[data-sl-criticality-tag][data-priority="attention"] {
+  background-color: var(--sl-color-blue-2, #DBEDFD);
+  font-weight: 600;
+  color: var(--fg, #1F1F1F);
+}
+
+/* Variante "completed" — v3 port do TaskRowStatusTag (teal-3 fundo, teal-9
+   texto, com check à esquerda). Usada em [data-sl-doc-status][data-status="completed"]. */
+[data-sl-criticality-tag][data-priority="completed"] {
+  background-color: color-mix(in srgb, var(--sl-color-teal-3, #B8E5DA) 88%, var(--sl-bg-base, #fff));
+  font-weight: 600;
+  color: var(--sl-color-teal-9, #0B5C4B);
+}
+[data-sl-criticality-tag][data-priority="completed"] svg { color: var(--sl-color-teal-9, #0B5C4B); }
+
+/* ── Pill scope: document metadata (v3 port de initiative-metadata.css) ──
+   Dentro do cabeçalho do doc (SevPill/TaskDocStatus na coluna Severidade/
+   Status), o pill fica maior: 28px de altura, raio full (999px), padding-x 8px,
+   texto 14px/20px. Fora do documento (tabela/topbar), permanece o pill compacto
+   de 20px definido acima. */
+[data-sl-initiative-document-metadata] [data-sl-criticality-tag] {
+  height: 28px;
+  padding: 0 8px;
+  border-radius: var(--sl-radius-full, 9999px);
+  gap: 4px;
+  font-size: 14px;
+  line-height: 20px;
+  letter-spacing: -0.14px;
 }
 
 /* ── Coluna Data ── */
@@ -10406,6 +10604,86 @@ button.canvas-a-verify-alert-cta[data-sl-button][data-variant="tertiary"]:active
   flex-shrink: 0;
   margin-top: -2px;
 }
+/* Etapa final: item read-only substitui o <button> depois que o operador
+   confirmou. Sem hover, sem chevron, sem cursor de clique e sem o recuo
+   negativo usado para o realce de hover — nada mais responde ao ponteiro. */
+.canvas-a-verify-summary-item--static {
+  cursor: default;
+  margin: 0;
+  padding: 6px 0;
+  border-radius: 0;
+  transition: none;
+}
+.canvas-a-verify-summary-item--static:hover,
+.canvas-a-verify-summary-item--static:focus,
+.canvas-a-verify-summary-item--static:focus-visible {
+  background: transparent;
+  outline: none;
+}
+/* Rodapé de confirmação: hint + botão primário empilhados e alinhados à
+   esquerda, no mesmo eixo visual dos itens do resumo. O `margin: 0 -8px`
+   espelha o dos itens (que usam recuo negativo para o realce de hover), então
+   a "caixa" do footer termina exatamente na mesma largura das linhas acima.
+   Sem divisória — o bg-soft do card em revisão já separa o bloco. */
+.canvas-a-verify-confirm-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 8px -8px 0;
+  padding: 12px 8px 0;
+}
+.canvas-a-verify-confirm-hint {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--fg);
+}
+/* Rótulo em caixa baixa na etapa de revisão (só a inicial maiúscula).
+   Precisa de dupla classe pra vencer o `.canvas-a-verify-summary-kind`
+   base, que é declarado depois neste arquivo. Mesmo alinhamento
+   tipográfico do header "Pergunta" (`.canvas-a-verify-kind`): peso
+   médio e cor cheia, mas 13px para dar mais presença que o rótulo
+   final em uppercase. */
+.canvas-a-verify-summary-kind.canvas-a-verify-summary-kind--lower {
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--fg);
+}
+/* Card em modo revisão: fundo azul claro e borda azul suave — o tom azulado
+   sinaliza que ainda é um passo intermediário (revisão) antes do fecho, e
+   diferencia do card final (que fica sobre o bg do chat). */
+.canvas-tasks-card.canvas-a-verify-answered--review {
+  background: var(--bg-soft);
+  border: 1px solid rgba(255, 255, 255, 1);
+  padding-bottom: 12px;
+}
+/* Transição do "Revise antes de enviar" → "Perguntas respondidas".
+   O card de revisão vive acima do composer e some ao confirmar; o card
+   final aparece no corpo do chat, junto com a mensagem de fecho. Sem
+   animação, a troca fica seca. Um fade-in + slide leve, com pequeno
+   stagger na mensagem que vem em seguida, dá ritmo à conclusão. */
+@keyframes canvas-a-verify-summary-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.canvas-tasks-card.canvas-a-verify-answered:not(.canvas-a-verify-answered--review) {
+  animation: canvas-a-verify-summary-in .32s ease-out both;
+}
+.canvas-tasks-card.canvas-a-verify-answered:not(.canvas-a-verify-answered--review)
+  + .msg.msg-assistant {
+  animation: canvas-a-verify-summary-in .32s ease-out both;
+  animation-delay: .16s;
+}
+@media (prefers-reduced-motion: reduce) {
+  .canvas-tasks-card.canvas-a-verify-answered:not(.canvas-a-verify-answered--review),
+  .canvas-tasks-card.canvas-a-verify-answered:not(.canvas-a-verify-answered--review)
+    + .msg.msg-assistant {
+    animation: none;
+  }
+}
 .canvas-a-verify-question {
   margin: 0;
   font-size: 15px;
@@ -10720,11 +10998,11 @@ button.canvas-a-verify-alert-cta[data-sl-button][data-variant="tertiary"]:active
   align-items: center;
   gap: 5px;
   margin: 0 0 4px;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: .04em;
-  text-transform: uppercase;
-  color: var(--fg-3);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: normal;
+  text-transform: none;
+  color: var(--fg);
 }
 /* Cada linha é o atalho de volta para a sua pergunta — daí o alvo de clique
    ocupar a linha inteira e o chevron aparecer no hover. */
@@ -10746,7 +11024,7 @@ button.canvas-a-verify-alert-cta[data-sl-button][data-variant="tertiary"]:active
   cursor: pointer;
   transition: background .12s ease;
 }
-.canvas-a-verify-summary-item:hover { background: var(--bg-soft); }
+.canvas-a-verify-summary-item:hover { background: color-mix(in srgb, var(--bg-muted) 30%, transparent); }
 .canvas-a-verify-summary-item:focus-visible {
   outline: 2px solid var(--primary, #2158E8);
   outline-offset: -2px;
@@ -10769,7 +11047,7 @@ button.canvas-a-verify-alert-cta[data-sl-button][data-variant="tertiary"]:active
 .canvas-a-verify-summary-q {
   font-size: 12.5px;
   line-height: 17px;
-  color: var(--fg-3);
+  color: var(--fg);
 }
 .canvas-a-verify-summary-item .canvas-a-verify-answer-title { font-size: 14px; }
 
@@ -10804,6 +11082,19 @@ button.canvas-a-verify-alert-cta[data-sl-button][data-variant="tertiary"]:active
 .chat-above-composer .canvas-a-verify-intro { padding: 8px 18px 4px; }
 .chat-above-composer .canvas-a-verify-options { padding: 2px 10px; }
 .chat-above-composer .canvas-a-verify-footer { padding: 8px 18px; }
+/* Rodapé de confirmação alinha hint + botão à esquerda, com respiro horizontal
+   menor que o padrão do rodapé — o conteúdo fica no mesmo eixo dos itens do
+   resumo (que já usam margem negativa de 8px). */
+.canvas-a-verify-footer.canvas-a-verify-confirm-footer {
+  justify-content: flex-start;
+  align-items: flex-start;
+  padding-left: 8px;
+  padding-right: 8px;
+}
+.chat-above-composer .canvas-a-verify-footer.canvas-a-verify-confirm-footer {
+  padding-left: 8px;
+  padding-right: 8px;
+}
 
 /* ── Chegada da pergunta ──
    O card interrompe a conversa para pedir uma decisão, então ganha destaque
@@ -11083,12 +11374,18 @@ button.canvas-a-verify-alert-cta[data-sl-button][data-variant="tertiary"]:active
 .decision-card-actions .canvas-a-run-btn { padding: 5px 12px; font-size: 13px; text-align: center; }
 .canvas-d-decision-group--subview .decision-card-actions { flex-direction: row; }
 
-/* ── Canvas D · Cards de ticket de devolução (Figma 1600:4749 / 1601:5014) ──
-   Um card por ticket: o pedido vem no cabeçalho, junto do número do ticket, e
-   o produto abre o corpo. Depois de avaliado, some o que só servia para
-   decidir — SLA e caixa de recomendação — e entra a assinatura. ── */
-/* Lista horizontal: um card por vez, entrando pelo lado para onde
-   a navegação foi. */
+/* ── Canvas D · Cards de ticket de devolução (design_handoff_tickets_abertos v2) ──
+   Um <article> branco, seccionado por hairlines internos, sem sombra. O painel
+   de decisão fica sempre aberto na aba recomendada pelo agente. Depois de
+   decidido, um bloco de confirmação substitui a faixa de recomendação, o painel
+   e o rodapé — e a lista pode terminar num "resumo da fila" que substitui
+   inteiramente o card quando todos os tickets são resolvidos.
+   Todos os valores (cores, tipografia, espaçamento) saem do design system
+   Shoreline (tema sunrise). ── */
+
+/* Lista horizontal: um card por vez, entrando pelo lado para onde a navegação
+   foi (feature herdada — a navegação continua sendo comandada pelos botões do
+   header do card). */
 .tck-cards { display: block; overflow: hidden; }
 .tck-cards--fwd .tck-card { animation: tck-slide-fwd .22s cubic-bezier(.22,.61,.36,1) both; }
 .tck-cards--back .tck-card { animation: tck-slide-back .22s cubic-bezier(.22,.61,.36,1) both; }
@@ -11100,358 +11397,782 @@ button.canvas-a-verify-alert-cta[data-sl-button][data-variant="tertiary"]:active
   from { opacity: 0; transform: translateX(-24px); }
   to   { opacity: 1; transform: translateX(0); }
 }
+@keyframes tck-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
 @media (prefers-reduced-motion: reduce) {
-  .tck-cards--fwd .tck-card, .tck-cards--back .tck-card { animation: none; }
+  .tck-cards--fwd .tck-card,
+  .tck-cards--back .tck-card,
+  .tck-decided,
+  .tck-summary { animation: none; }
 }
 
-/* ── Paginação no cabeçalho do card ── */
-.tck-pager { display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0; }
+/* ── Card container ──
+   Seções são irmãs diretas dentro do article; a hairline entre elas vem do
+   padding-lateral fixo (16px 20px por seção) e da borda inferior/superior
+   local, não de dividers externos. */
+.tck-card {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #e3e6ef;
+  border-radius: 12px;
+  background: #fff;
+  overflow: hidden;
+}
+
+/* ── 1. Cabeçalho ── */
+.tck-head {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0 20px;
+  padding: 16px 0;
+}
+.tck-head-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.tck-id {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 24px;
+  letter-spacing: -0.16px;
+  color: #171717;
+}
+.tck-pager { display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0; }
 .tck-pager-count {
-  font-size: 10.5px;
-  line-height: 15px;
-  letter-spacing: -0.105px;
-  color: var(--fg-3);
+  padding-right: 4px;
+  font-size: 12px;
+  line-height: 18px;
+  color: #4e607a;
   white-space: nowrap;
 }
 .tck-pager-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 20px;
-  height: 20px;
+  width: 28px;
+  height: 28px;
   padding: 0;
-  border: none;
-  border-radius: 4px;
-  background: transparent;
-  color: var(--fg-2);
-  cursor: pointer;
-  transition: background .12s, color .12s;
-}
-.tck-pager-btn:hover:not(:disabled) { background: var(--bg-muted, rgba(29,29,29,.05)); }
-.tck-pager-btn:disabled { color: var(--border-strong); cursor: default; }
-.tck-card {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  padding: 20px 18px;
-  border: 1px solid var(--border);
+  border: 1px solid #e3e6ef;
   border-radius: 8px;
   background: #fff;
+  color: #2a3f5e;
+  cursor: pointer;
+  transition: background .12s;
 }
-.tck-card-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+.tck-pager-btn:hover:not(:disabled) { background: #f7f9fc; }
+.tck-pager-btn:disabled { color: #d0d6e3; cursor: default; }
+
+/* Linha 2 do cabeçalho: pares label/valor (Status · SLA · Pedido). */
+.tck-metrics { display: flex; gap: 40px; flex-wrap: wrap; }
+.tck-metric { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.tck-metric-label {
   font-size: 12px;
-  line-height: 16px;
-  color: var(--fg-3);
+  line-height: 18px;
+  color: #4e607a;
 }
-.tck-card-ref { display: inline-flex; align-items: center; gap: 6px; min-width: 0; flex-wrap: wrap; }
-.tck-ref-sep { color: var(--border-strong); }
+.tck-metric-value {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  color: #171717;
+}
+.tck-metric-value--overdue { color: #d31a15; }
+.tck-metric-value svg { flex-shrink: 0; }
+/* Pill de status (Pendente / Aceita / Negada / Escalada) — assume o tom do
+   desfecho depois de decidido. */
+.tck-status-pill {
+  align-self: flex-start;
+  padding: 2px 8px;
+  border: none;
+  border-radius: 999px;
+  background: var(--sl-bg-muted, #f3f4f6);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 18px;
+  color: var(--sl-color-gray-11, #374151);
+  white-space: nowrap;
+}
+.tck-status-pill[data-outcome="accepted"]  { background: var(--sl-color-green-1, #E9FCE3); color: var(--sl-color-green-12, #01540E); }
+.tck-status-pill[data-outcome="denied"]    { background: var(--sl-color-red-1,   #FDF6F5); color: var(--sl-color-red-12,   #940303); }
+.tck-status-pill[data-outcome="escalated"] { background: var(--sl-color-blue-1,  #F1F8FD); color: var(--sl-color-blue-12,  #014592); }
+/* Link para o pedido — segue o tom accent do design system. */
 .tck-order-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0;
   border: none;
   background: none;
-  padding: 0;
   font: inherit;
-  color: var(--primary, #2158E8);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  color: #1e4ee5;
   cursor: pointer;
 }
-.tck-order-link:hover { text-decoration: underline; }
-/* Vencido tem prioridade visual sobre a ordem de chegada. */
-.tck-sla--overdue { font-weight: 600; color: var(--sl-color-red-9, #D31A15); }
+.tck-order-link:hover { color: #0131c5; text-decoration: underline; }
+.tck-order-link[disabled] { color: #171717; cursor: default; }
+.tck-order-link[disabled]:hover { text-decoration: none; }
+.tck-order-link svg { flex-shrink: 0; }
 
-.tck-product { display: flex; align-items: center; gap: 8px; }
-.tck-product-thumb {
+/* ── 2. Produto (single item) e bloco multi-item ── */
+.tck-product-section {
   display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0 20px;
+  padding: 16px 0;
+}
+.tck-product {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.tck-thumb {
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  width: 44px;
-  align-self: stretch;
+  width: 40px;
+  height: 40px;
   overflow: hidden;
+  border: 1px solid #e3e6ef;
   border-radius: 4px;
-  background: var(--bg-soft);
-  color: var(--fg-3);
+  background: #f7f9fc;
+  color: #4e607a;
 }
-.tck-product-thumb img {
+.tck-thumb img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   -webkit-user-drag: none;
 }
-.tck-product-info { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+.tck-product-info { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
 .tck-product-name {
-  font-size: 13px;
-  font-weight: 600;
-  line-height: 24px;
-  letter-spacing: -0.26px;
-  color: var(--fg);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  letter-spacing: -0.14px;
+  color: #171717;
 }
 .tck-product-sku {
   font-size: 12px;
-  line-height: 20px;
-  letter-spacing: -0.12px;
-  color: var(--fg-2);
+  line-height: 18px;
+  color: #2a3f5e;
 }
-/* Fala do shopper: a barra à esquerda separa o que o cliente escreveu do que o
-   agente concluiu, sem precisar de rótulo. */
-.tck-message {
-  margin: 0;
-  padding-left: 12px;
-  border-left: 2px solid var(--border);
-  font-size: 14px;
-  line-height: 1.56;
-  color: var(--fg-3);
+.tck-item-reason {
+  padding-top: 2px;
+  font-size: 12px;
+  line-height: 18px;
+  color: #4e607a;
 }
+/* Botão "Ver fotos (N)" — só aparece com anexos. */
 .tck-photos {
-  flex-shrink: 0;
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 4px 6px 4px 8px;
-  border: none;
-  border-radius: 8px;
-  background: var(--bg-soft);
-  font: inherit;
-  font-size: 12px;
-  line-height: 16px;
-  color: var(--fg);
-  cursor: pointer;
-}
-.tck-photos:hover { background: var(--bg-muted); }
-.tck-photos svg { color: var(--fg-2); }
-
-/* Caixa de recomendação — só existe enquanto o ticket espera decisão. */
-.tck-rec {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 8px 12px;
-  border-radius: 8px;
-  background: var(--bg-soft);
-}
-.tck-rec-title {
-  font-size: 14px;
-  font-weight: 600;
-  line-height: 20px;
-  letter-spacing: -0.12px;
-  color: var(--fg-2);
-}
-.tck-rec-history { font-size: 12px; line-height: 16px; color: var(--fg-2); padding-top: 4px; padding-bottom: 4px; }
-.tck-rec-why { font-size: 14px; line-height: 1.56; color: var(--fg); }
-
-/* ── Decisão inline ──
-   Decidir é o fim da leitura do card, então as ações e o que vem delas ficam num
-   rodapé próprio: separado do corpo por uma borda, com fundo mais frio e
-   sangrando até as bordas do card (daí as margens negativas, que anulam o
-   padding de 20px/18px do .tck-card). A confirmação herda o mesmo bloco. */
-.tck-decide,
-.tck-decided {
-  margin: 0 -18px -20px;
-  padding: 12px 18px 16px;
-  border-top: 1px solid var(--border);
-  border-radius: 0 0 7px 7px;
-  background: var(--bg-soft);
-}
-.tck-decide { display: flex; flex-direction: column; gap: 12px; }
-/* Três colunas iguais: a largura não sugere qual decisão tomar. */
-.tck-decide-actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-.tck-hint { margin: 0; font-size: 12px; line-height: 16px; color: var(--fg-3); text-align: center; }
-.tck-action {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  min-width: 0;
-  padding: 9px 8px;
-  border: 1px solid var(--border-strong);
-  border-radius: 8px;
-  background: #fff;
-  font: inherit;
-  font-size: 14px;
-  font-weight: 600;
-  line-height: 20px;
-  letter-spacing: -0.14px;
-  color: var(--fg);
-  white-space: nowrap;
-  cursor: pointer;
-  transition: background .12s, border-color .12s, color .12s;
-}
-.tck-action svg { flex-shrink: 0; }
-.tck-action[data-action="deny"]     { border-color: var(--sl-color-red-4);  color: var(--sl-fg-critical); }
-.tck-action[data-action="escalate"] { border-color: var(--sl-color-blue-4); color: var(--sl-fg-accent); }
-.tck-action:hover                        { border-color: var(--fg); }
-.tck-action[data-action="deny"]:hover     { border-color: var(--sl-color-red-9); }
-.tck-action[data-action="escalate"]:hover { border-color: var(--sl-color-blue-9); }
-/* Pressionado = formulário daquela decisão aberto. O preenchimento sólido é o
-   que mostra de qual das três o formulário abaixo é. */
-.tck-action[aria-pressed="true"] {
-  background: var(--sl-bg-inverted);
-  border-color: var(--sl-bg-inverted);
-  color: #fff;
-}
-.tck-action[aria-pressed="true"][data-action="deny"] {
-  background: var(--sl-bg-critical-strong);
-  border-color: var(--sl-bg-critical-strong);
-}
-.tck-action[aria-pressed="true"][data-action="escalate"] {
-  background: var(--sl-bg-accent-strong);
-  border-color: var(--sl-bg-accent-strong);
-}
-
-/* Branco contra o fundo do rodapé: o formulário se destaca como a etapa em que
-   o operador está. */
-.tck-form {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 12px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: #fff;
-}
-/* A borda repete o tom do botão que abriu o formulário, para o operador não
-   perder de vista qual decisão está preenchendo. */
-.tck-form[data-panel="deny"] { border-color: var(--sl-color-red-3); }
-.tck-form[data-panel="escalate"] { border-color: var(--sl-color-blue-3); }
-.tck-form-label { font-size: 11.5px; color: var(--fg-3); }
-.tck-form-chips { display: flex; gap: 6px; flex-wrap: wrap; }
-.tck-chip {
-  padding: 5px 12px;
-  border: 1px solid var(--border);
-  border-radius: 99px;
-  /* Um tom abaixo do painel, que agora é branco — sem isso o chip só existiria
-     pela borda. */
-  background: var(--bg-soft);
-  font: inherit;
-  font-size: 12.5px;
-  color: var(--fg-2);
-  cursor: pointer;
-  transition: background .12s, border-color .12s;
-}
-.tck-chip:hover { border-color: var(--border-strong, var(--fg-3)); }
-.tck-chip.selected { border-color: var(--fg-2); background: var(--bg-muted); color: var(--fg); font-weight: 500; }
-/* Repete por escrito o chip marcado: o texto é o mesmo que vai para o título da
-   confirmação e para o Document Audit. */
-.tck-form-selected { font-size: 12px; line-height: 16px; color: var(--fg-3); }
-.tck-form-selected b { font-weight: 500; color: var(--fg-2); }
-.tck-form-input {
-  width: 100%;
-  padding: 8px 10px;
-  border: 1px solid var(--border-strong);
-  border-radius: 8px;
-  background: #fff;
-  font: inherit;
-  font-size: 13px;
-  color: var(--fg);
-  resize: vertical;
-}
-.tck-form-input:focus { outline: none; border-color: var(--primary, #2158E8); }
-.tck-form-input::placeholder { color: var(--fg-3); }
-/* Confirmar e cancelar na mesma linha: sair do formulário custa o mesmo clique
-   que entrar nele. */
-.tck-form-foot { display: flex; align-items: center; gap: 4px; margin-top: 2px; }
-.tck-cancel {
-  padding: 6px 12px;
-  border: none;
-  border-radius: 99px;
-  background: none;
-  font: inherit;
-  font-size: 13px;
-  color: var(--fg-3);
-  cursor: pointer;
-  transition: background .12s, color .12s;
-}
-.tck-cancel:hover { background: var(--bg-muted, rgba(29,29,29,.05)); color: var(--fg-2); }
-
-/* ── Card já avaliado ── */
-.tck-decided { display: flex; flex-direction: column; gap: 8px; }
-.tck-decided-note {
-  margin: 0;
-  font-size: 12px;
-  line-height: 16px;
-  color: var(--fg-3);
-}
-
-/* Confirmação no lugar das ações — o protótipo não tem toast (mesma escolha do
-   CopyTrackingButton). O tom acompanha o desfecho e é daqui que saem as duas
-   saídas do card: desfazer ou seguir para o próximo pendente. */
-.tck-feedback {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  padding: 10px 12px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--bg-soft);
-  animation: tck-feedback-in .18s ease-out both;
-}
-.tck-feedback[data-outcome="accepted"]  { border-color: var(--sl-color-green-3); background: var(--sl-bg-success); }
-.tck-feedback[data-outcome="denied"]    { border-color: var(--sl-color-red-3);   background: var(--sl-bg-critical); }
-.tck-feedback[data-outcome="escalated"] { border-color: var(--sl-color-blue-3);  background: var(--sl-bg-informational); }
-.tck-feedback-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
   flex-shrink: 0;
-  width: 22px;
-  height: 22px;
-  border-radius: 99px;
-  background: var(--fg-2);
-  color: #fff;
-}
-.tck-feedback[data-outcome="accepted"] .tck-feedback-icon  { background: var(--sl-bg-success-strong); }
-.tck-feedback[data-outcome="denied"] .tck-feedback-icon    { background: var(--sl-bg-critical-strong); }
-.tck-feedback[data-outcome="escalated"] .tck-feedback-icon { background: var(--sl-bg-informational-strong); }
-.tck-feedback-text { display: flex; flex-direction: column; gap: 2px; flex: 1 1 180px; min-width: 0; }
-.tck-feedback-title {
-  font-size: 14px;
-  font-weight: 600;
-  line-height: 20px;
-  letter-spacing: -0.14px;
-  color: var(--fg);
-}
-.tck-feedback[data-outcome="accepted"] .tck-feedback-title  { color: var(--sl-color-green-12); }
-.tck-feedback[data-outcome="denied"] .tck-feedback-title    { color: var(--sl-color-red-12); }
-.tck-feedback[data-outcome="escalated"] .tck-feedback-title { color: var(--sl-color-blue-12); }
-.tck-feedback-sub { font-size: 12px; line-height: 16px; color: var(--fg-2); }
-.tck-feedback-end { display: inline-flex; align-items: center; gap: 8px; margin-left: auto; flex-shrink: 0; }
-.tck-undo {
-  padding: 0;
-  border: none;
-  background: none;
-  font: inherit;
-  font-size: 13px;
-  color: var(--fg-2);
-  cursor: pointer;
-}
-.tck-undo:hover { text-decoration: underline; }
-.tck-next {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  padding: 6px 8px 6px 12px;
-  border: 1px solid var(--border);
-  border-radius: 99px;
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid #e3e6ef;
+  border-radius: 8px;
   background: #fff;
   font: inherit;
   font-size: 13px;
   font-weight: 500;
-  color: var(--fg);
+  color: #2a3f5e;
+  cursor: pointer;
+  transition: background .12s;
+}
+.tck-photos:hover { background: #f7f9fc; }
+.tck-photos svg { color: #2a3f5e; flex-shrink: 0; }
+
+/* Bloco multi-item: fechado por padrão. Fechado, mostra miniaturas empilhadas,
+   contagem e resumo por motivo. Aberto, cabeçalho persiste no topo e cada
+   linha entra dividida por hairline. */
+.tck-items {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #e3e6ef;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.tck-items-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  background: #f7f9fc;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background .12s;
+}
+.tck-items-header:hover { background: #eff1f7; }
+.tck-items-header[data-open="true"] { border-bottom: 1px solid #e3e6ef; }
+.tck-items-stack { display: inline-flex; flex-shrink: 0; }
+.tck-items-stack-thumb {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  overflow: hidden;
+  border: 1px solid #e3e6ef;
+  border-radius: 4px;
+  background: #f7f9fc;
+  background-size: cover;
+  background-position: center;
+  color: #4e607a;
+}
+.tck-items-stack-thumb + .tck-items-stack-thumb { margin-left: -8px; }
+.tck-items-title { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.tck-items-label {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  letter-spacing: -0.14px;
+  color: #171717;
+}
+.tck-items-summary {
+  font-size: 12px;
+  line-height: 18px;
+  color: #4e607a;
+}
+.tck-items-chevron {
+  display: inline-flex;
+  color: #4e607a;
+  transition: transform .12s;
+}
+.tck-items-chevron[data-open="true"] { transform: rotate(180deg); }
+.tck-items-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: #fff;
+  border-bottom: 1px solid #e3e6ef;
+}
+.tck-items-row:last-child { border-bottom: none; }
+
+/* ── 3. Solicitação do cliente (sempre) ── */
+.tck-request {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0 20px;
+  padding: 16px 0;
+  border-bottom: 1px solid #e3e6ef;
+}
+.tck-request-label {
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 18px;
+  color: #4e607a;
+}
+.tck-request-body {
+  margin: 0;
+  font-size: 14px;
+  line-height: 22px;
+  color: #171717;
+  text-wrap: pretty;
+}
+
+/* ── 4. Faixa de recomendação — só enquanto pendente ── */
+.tck-rec {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: -1px;
+  padding: 16px 20px;
+  border-top: 1px solid #cbe9ff;
+  border-bottom: 1px solid #cbe9ff;
+  background: #f1f8fd;
+}
+.tck-rec-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+  letter-spacing: -0.14px;
+  color: #171717;
+}
+.tck-rec-title svg { color: #0a72ee; flex-shrink: 0; }
+.tck-rec-why {
+  font-size: 14px;
+  line-height: 22px;
+  color: #171717;
+  text-wrap: pretty;
+}
+.tck-rec-history {
+  font-size: 12px;
+  line-height: 18px;
+  color: #2a3f5e;
+}
+
+/* ── 5. Painel de decisão (sempre aberto enquanto pendente) ── */
+.tck-panel-header {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 20px 8px;
+  background: #f7f9fc;
+}
+/* Segmented control. A aba ativa ganha fundo #fff + borda no tom da ação; a
+   aba recomendada leva um ponto azul depois do label. */
+.tck-tabs {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 8px;
+  background: #eff1f7;
+  align-self: flex-start;
+}
+.tck-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 12px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  color: #2a3f5e;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color .12s;
+}
+.tck-tab svg { flex-shrink: 0; }
+.tck-tab:hover { color: #171717; }
+.tck-tab[aria-pressed="true"] { background: #fff; border-color: #e3e6ef; color: #171717; }
+.tck-tab[aria-pressed="true"][data-mode="deny"]     { border-color: #ffd0c7; color: #d31a15; }
+.tck-tab[aria-pressed="true"][data-mode="escalate"] { border-color: #b6dfff; color: #1e4ee5; }
+.tck-tab-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: #0a72ee;
+  flex-shrink: 0;
+}
+
+/* Corpo do painel (padrão: cards internos brancos com borda no tom da ação). */
+.tck-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0 20px 16px;
+  border-bottom: 1px solid #e3e6ef;
+  background: #f7f9fc;
+}
+.tck-panel-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+  border: 1px solid #e3e6ef;
+  border-radius: 8px;
+  background: #fff;
+}
+.tck-panel-card[data-tone="accept"] { border-color: #aff79e; }
+.tck-panel-card[data-tone="deny"]   { border-color: #ffdfd9; }
+.tck-panel-card[data-tone="escalate"] {
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  border-color: #cbe9ff;
+}
+.tck-panel-card-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 18px;
+  color: #4e607a;
+}
+.tck-panel-card-label svg { flex-shrink: 0; }
+.tck-panel-card-label[data-tone="accept"] { color: #01540e; }
+.tck-panel-card-label[data-tone="deny"]   { color: #940303; }
+.tck-panel-card-title {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+  letter-spacing: -0.14px;
+  color: #171717;
+}
+.tck-panel-card-body {
+  font-size: 14px;
+  line-height: 22px;
+  color: #2a3f5e;
+  text-wrap: pretty;
+}
+.tck-panel-card-body--strong { color: #171717; }
+/* Toggle da mensagem ao cliente (colapsável dentro do card). */
+.tck-message-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 18px;
+  color: #4e607a;
+  text-align: left;
+  cursor: pointer;
+}
+.tck-message-toggle svg { flex-shrink: 0; }
+.tck-message-toggle .tck-message-toggle-star { color: #0a72ee; }
+.tck-message-toggle-chevron {
+  margin-left: auto;
+  color: #4e607a;
+  transition: transform .12s;
+}
+.tck-message-toggle[aria-expanded="true"] .tck-message-toggle-chevron { transform: rotate(180deg); }
+.tck-message-body {
+  margin: 0;
+  font-size: 14px;
+  line-height: 22px;
+  color: #171717;
+  text-wrap: pretty;
+}
+
+/* Cartão do destino do escalonamento (ícone + Ecommerce Supervisor). */
+.tck-escalate-to { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.tck-escalate-to-title {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+  letter-spacing: -0.14px;
+  color: #171717;
+}
+.tck-escalate-to-sub {
+  font-size: 12px;
+  line-height: 18px;
+  color: #4e607a;
+}
+.tck-panel-card[data-tone="escalate"] > svg { color: #0a72ee; flex-shrink: 0; }
+
+/* Bloco do textarea "O que o supervisor precisa decidir". */
+.tck-escalate-field { display: flex; flex-direction: column; gap: 6px; }
+.tck-escalate-field label {
+  font-size: 12px;
+  line-height: 18px;
+  color: #4e607a;
+}
+.tck-escalate-note {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #d0d6e3;
+  border-radius: 8px;
+  background: #fff;
+  font: inherit;
+  font-size: 14px;
+  line-height: 22px;
+  color: #171717;
+  resize: vertical;
+  box-sizing: border-box;
+}
+.tck-escalate-note:focus { outline: none; border-color: #1e4ee5; }
+.tck-escalate-note::placeholder { color: #4e607a; }
+
+/* Nota "info" (rodapé de cada painel: consequência ou aviso). */
+.tck-note {
+  display: flex;
+  gap: 6px;
+  font-size: 12px;
+  line-height: 18px;
+  color: #4e607a;
+}
+.tck-note svg { flex-shrink: 0; color: #4e607a; }
+
+/* ── 6. Rodapé — com painel aberto, mostra consequência + Confirmar ── */
+.tck-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 12px 20px;
+  flex-wrap: wrap;
+}
+.tck-actions-meta {
+  margin-right: auto;
+  font-size: 12px;
+  line-height: 18px;
+  color: #4e607a;
+}
+.tck-confirm {
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 8px;
+  border: 1px solid #1e4ee5;
+  background: #1e4ee5;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: -0.14px;
+  color: #fff;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background .12s, border-color .12s;
+}
+.tck-confirm:hover { background: #0131c5; border-color: #0131c5; }
+.tck-confirm[data-tone="deny"]  { background: #d31a15; border-color: #d31a15; }
+.tck-confirm[data-tone="deny"]:hover { background: #a80f0a; border-color: #a80f0a; }
+
+/* ── 7. Estado decidido ──
+   Substitui a faixa de recomendação, o painel e o rodapé. */
+.tck-decided {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: -1px;
+  padding: 16px 20px;
+  border-top: 1px solid #e3e6ef;
+  background: #f7f9fc;
+  animation: tck-in .18s ease-out both;
+}
+.tck-decided-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.tck-decided-glyph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  color: #fff;
+}
+.tck-decided-glyph[data-outcome="accepted"]  { background: #019213; }
+.tck-decided-glyph[data-outcome="denied"]    { background: #d31a15; }
+.tck-decided-glyph[data-outcome="escalated"] { background: #0a72ee; }
+.tck-decided-text { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.tck-decided-title {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+  letter-spacing: -0.14px;
+}
+.tck-decided-title[data-outcome="accepted"]  { color: #01540e; }
+.tck-decided-title[data-outcome="denied"]    { color: #940303; }
+.tck-decided-title[data-outcome="escalated"] { color: #042db4; }
+.tck-decided-sub {
+  font-size: 12px;
+  line-height: 18px;
+  color: #2a3f5e;
+}
+.tck-decided-note {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  border: 1px solid #e3e6ef;
+  border-radius: 8px;
+  background: #fff;
+}
+.tck-decided-note-label {
+  font-size: 12px;
+  line-height: 18px;
+  color: #4e607a;
+}
+.tck-decided-note-body {
+  font-size: 14px;
+  line-height: 22px;
+  color: #171717;
+  text-wrap: pretty;
+}
+.tck-decided-foot {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.tck-undo {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 32px;
+  margin-right: auto;
+  padding: 0 10px 0 8px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  color: #2a3f5e;
+  cursor: pointer;
+  transition: background .12s;
+}
+.tck-undo:hover { background: #eff1f7; }
+.tck-undo svg { flex-shrink: 0; }
+.tck-next {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 36px;
+  padding: 0 10px 0 14px;
+  border: 1px solid #d0d6e3;
+  border-radius: 8px;
+  background: #fff;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: -0.14px;
+  color: #171717;
   white-space: nowrap;
   cursor: pointer;
   transition: border-color .12s;
 }
-.tck-next:hover { border-color: var(--border-strong, var(--fg-3)); }
-.tck-next svg { flex-shrink: 0; color: var(--fg-3); }
-@keyframes tck-feedback-in {
-  from { opacity: 0; transform: translateY(-4px); }
-  to   { opacity: 1; transform: translateY(0); }
+.tck-next:hover { border-color: #b6c2d5; }
+.tck-next svg { flex-shrink: 0; color: #4e607a; }
+
+/* ── Resumo da fila (substitui o card quando todos os tickets forem resolvidos) ── */
+.tck-summary {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #e3e6ef;
+  border-radius: 12px;
+  background: #fff;
+  overflow: hidden;
+  animation: tck-in .18s ease-out both;
 }
-@media (prefers-reduced-motion: reduce) {
-  .tck-feedback { animation: none; }
+.tck-summary-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin: 0 20px;
+  padding: 20px 0;
+}
+.tck-summary-glyph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  background: #019213;
+  color: #fff;
+}
+.tck-summary-title { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.tck-summary-title-text {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 24px;
+  letter-spacing: -0.16px;
+  color: #171717;
+}
+.tck-summary-subtitle {
+  font-size: 14px;
+  line-height: 22px;
+  color: #2a3f5e;
+}
+.tck-summary-counts {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  margin: 0 20px;
+  padding: 0 0 16px;
+  border-top: 1px solid #e3e6ef;
+}
+.tck-summary-stat { display: flex; flex-direction: column; gap: 2px; padding: 16px 0 0; }
+.tck-summary-stat-label { font-size: 12px; line-height: 18px; color: #4e607a; }
+.tck-summary-stat-value {
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 28px;
+  letter-spacing: -0.4px;
+  color: #b6c2d5;
+}
+.tck-summary-stat-value[data-outcome="accepted"]  { color: #01540e; }
+.tck-summary-stat-value[data-outcome="denied"]    { color: #940303; }
+.tck-summary-stat-value[data-outcome="escalated"] { color: #042db4; }
+.tck-summary-list { display: flex; flex-direction: column; margin: 0 20px; border-top: 1px solid #e3e6ef; }
+.tck-summary-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 0;
+  border: none;
+  border-bottom: 1px solid #e3e6ef;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background .12s;
+}
+.tck-summary-row:last-child { border-bottom: none; }
+.tck-summary-row:hover { background: #f7f9fc; }
+.tck-summary-row-dot {
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #b6c2d5;
+}
+.tck-summary-row-dot[data-outcome="accepted"]  { background: #019213; }
+.tck-summary-row-dot[data-outcome="denied"]    { background: #d31a15; }
+.tck-summary-row-dot[data-outcome="escalated"] { background: #0a72ee; }
+.tck-summary-row-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.tck-summary-row-title {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  letter-spacing: -0.14px;
+  color: #171717;
+}
+.tck-summary-row-detail {
+  font-size: 12px;
+  line-height: 18px;
+  color: #4e607a;
+}
+.tck-summary-row-at {
+  flex-shrink: 0;
+  font-size: 12px;
+  line-height: 18px;
+  color: #4e607a;
+}
+.tck-summary-row svg { flex-shrink: 0; color: #4e607a; }
+.tck-summary-foot {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 20px;
+  border-top: 1px solid #e3e6ef;
+}
+.tck-summary-foot-note {
+  margin-right: auto;
+  font-size: 12px;
+  line-height: 18px;
+  color: #4e607a;
 }
 
 /* ═══ Políticas de pedido (view-workflow-policies.jsx) ═════════════════════

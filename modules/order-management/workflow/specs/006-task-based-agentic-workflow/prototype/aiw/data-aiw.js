@@ -385,10 +385,18 @@ window.AIWData = (function () {
         /* Nível 1 do canvas. O pedido vinculado fica de fora da tabela de
            propósito: ele só importa quando alguém está de fato avaliando
            aquele ticket, e aí aparece dentro dele. */
+        /* ── Copy de exemplo ── Os campos `policyResolution`, `policyResolutionDetail`,
+           `acceptMessage` e `denyMessage` são placeholders para o protótipo. Prazo
+           de estorno, etiqueta de postagem e janela de contestação são compromissos
+           operacionais que precisam validação de produto/jurídico antes de virar
+           padrão em produção. */
         tickets: [
           {
             id: "TCK-1042",
-            shopperReason: "Não usei o produto, quero devolver",
+            /* Vínculo explícito com a Tarefa correspondente no bloco de Tarefas.
+               Confirmar uma decisão neste ticket resolve esta Tarefa. */
+            taskId: "TCK-1042",
+            shopperReason: "Arrependimento",
             recommendation: "Avaliar",
             why: "Fora do prazo de 30 dias (34 dias desde a entrega), mas o cliente tem 12 pedidos no histórico sem ocorrência prévia.",
             sla: "2h",
@@ -399,11 +407,16 @@ window.AIWData = (function () {
             message: "Comprei a luminária para o home office mas acabei mudando o layout da mesa e ela nunca saiu da caixa. Está lacrada, com nota e embalagem original. Sei que passou um pouco do prazo, mas nunca precisei devolver nada de vocês antes.",
             attachments: [],
             history: "12 pedidos · 0 ocorrências prévias",
-            denyReason: "Solicitação aberta 34 dias após a entrega, fora do prazo de 30 dias previsto na política de devolução da loja."
+            denyReason: "Solicitação aberta 34 dias após a entrega, fora do prazo de 30 dias previsto na política de devolução da loja.",
+            policyResolution: "Estorno total no meio de pagamento original",
+            policyResolutionDetail: "O cliente recebe a etiqueta de postagem por e-mail e o estorno é feito em até 7 dias úteis após a coleta do item.",
+            acceptMessage: "Olá! Analisamos sua solicitação de devolução do pedido #BR-3010982 e ela foi aprovada como exceção à política da loja. Você vai receber por e-mail a etiqueta de postagem para envio do item. O valor pago é estornado no meio de pagamento original em até 7 dias úteis após a coleta.",
+            denyMessage: "Olá! Analisamos sua solicitação de devolução do pedido #BR-3010982 e ela não pode ser aprovada. Solicitação aberta 34 dias após a entrega, fora do prazo de 30 dias previsto na política de devolução da loja. Se você tiver novas informações sobre o caso, pode contestar esta decisão em até 7 dias."
           },
           {
             id: "TCK-1043",
-            shopperReason: "Não gostei do produto",
+            taskId: "TCK-1043",
+            shopperReason: "Insatisfação com o produto",
             recommendation: "Negar",
             why: "Motivo não coberto pela política — a loja só aceita devolução por defeito ou avaria.",
             sla: "18h",
@@ -414,27 +427,41 @@ window.AIWData = (function () {
             message: "O fone funciona direitinho, mas o som não me agradou tanto quanto eu esperava pelo preço. Queria devolver e comprar outro modelo.",
             attachments: [],
             history: "2 pedidos · 1 ocorrência prévia",
-            denyReason: "A política de devolução da loja cobre apenas defeito de fabricação ou avaria no transporte. Insatisfação com o produto não é motivo elegível fora do prazo de arrependimento."
+            denyReason: "A política de devolução da loja cobre apenas defeito de fabricação ou avaria no transporte. Insatisfação com o produto não é motivo elegível fora do prazo de arrependimento.",
+            policyResolution: "Estorno total no meio de pagamento original",
+            policyResolutionDetail: "O cliente recebe a etiqueta de postagem por e-mail e o estorno é feito em até 7 dias úteis após a coleta do item.",
+            acceptMessage: "Olá! Analisamos sua solicitação de devolução do pedido #BR-3010983 e ela foi aprovada como exceção à política da loja. Você vai receber por e-mail a etiqueta de postagem para envio do item. O valor pago é estornado no meio de pagamento original em até 7 dias úteis após a coleta.",
+            denyMessage: "Olá! Analisamos sua solicitação de devolução do pedido #BR-3010983 e ela não pode ser aprovada. A política de devolução da loja cobre apenas defeito de fabricação ou avaria no transporte. Insatisfação com o produto não é motivo elegível fora do prazo de arrependimento. Se você tiver novas informações sobre o caso, pode contestar esta decisão em até 7 dias."
           },
           {
             id: "TCK-1044",
+            taskId: "TCK-1044",
             shopperReason: "Chegou com a costura solta",
             recommendation: "Escalar",
             why: "Categoria não elegível pela política padrão (higiene pessoal), mas a evidência anexada sugere defeito de fabricação.",
             sla: "3h",
             overdue: true,
             order: "BR-3010984",
-            item: "Necessaire térmica — Off-white",
-            sku: "NEC-TER-2291",
-            photo: "product-necessaire.png",
-            message: "A necessaire chegou com a costura da lateral solta, dá pra ver a linha saindo. Não cheguei a usar, tirei da embalagem e já percebi. Estou mandando as fotos.",
-            attachments: ["foto-costura-lateral.jpg", "foto-etiqueta.jpg"],
+            /* Devolução com mais de um item: o motivo é declarado por item, e o
+               bloco no card aparece contido e colapsado, com miniaturas + contagem
+               + resumo por motivo. Aberto, cada linha entra dividida por hairline. */
+            items: [
+              { item: "Necessaire térmica — Off-white", sku: "NEC-TER-2291", reason: "Defeito de fabricação", photo: "product-necessaire.png", attachments: ["foto-costura-lateral.jpg", "foto-etiqueta.jpg"] },
+              { item: "Necessaire térmica — Areia",     sku: "NEC-TER-2288", reason: "Defeito de fabricação", photo: "product-necessaire.png", attachments: ["foto-costura-areia.jpg"] },
+              { item: "Toalha de rosto — Off-white",    sku: "TOA-ROS-1140", reason: "Arrependimento",       photo: null,                     attachments: [] }
+            ],
+            message: "As duas necessaires chegaram com a costura da lateral solta, dá pra ver a linha saindo. Não cheguei a usar nenhuma, tirei da embalagem e já percebi. A toalha veio no mesmo pedido e quero devolver junto. Estou mandando as fotos.",
             history: "3 pedidos · 0 ocorrências prévias",
-            denyReason: "Produtos de higiene pessoal não são elegíveis para devolução pela política padrão da loja."
+            denyReason: "Produtos de higiene pessoal não são elegíveis para devolução pela política padrão da loja.",
+            policyResolution: "Estorno total no meio de pagamento original",
+            policyResolutionDetail: "O cliente recebe a etiqueta de postagem por e-mail e o estorno é feito em até 7 dias úteis após a coleta do item.",
+            acceptMessage: "Olá! Analisamos sua solicitação de devolução do pedido #BR-3010984 e ela foi aprovada como exceção à política da loja. Você vai receber por e-mail a etiqueta de postagem para envio do item. O valor pago é estornado no meio de pagamento original em até 7 dias úteis após a coleta.",
+            denyMessage: "Olá! Analisamos sua solicitação de devolução do pedido #BR-3010984 e ela não pode ser aprovada. Produtos de higiene pessoal não são elegíveis para devolução pela política padrão da loja. Se você tiver novas informações sobre o caso, pode contestar esta decisão em até 7 dias."
           },
           {
             id: "TCK-1045",
-            shopperReason: "Tamanho errado",
+            taskId: "TCK-1045",
+            shopperReason: "Tamanho incompatível",
             recommendation: "Negar",
             why: "Excede o limite mensal de devoluções (5ª solicitação; limite 3) — o motivo isolado seria aceito.",
             sla: "9h",
@@ -445,7 +472,11 @@ window.AIWData = (function () {
             message: "Pedi 42 mas ficou larga na cintura. Queria trocar por 40 ou devolver.",
             attachments: [],
             history: "9 pedidos · 4 devoluções no mês",
-            denyReason: "Quinta solicitação de devolução no mês, acima do limite de 3 previsto na política. O motivo (tamanho incompatível) seria aceito isoladamente."
+            denyReason: "Quinta solicitação de devolução no mês, acima do limite de 3 previsto na política. O motivo (tamanho incompatível) seria aceito isoladamente.",
+            policyResolution: "Estorno total no meio de pagamento original",
+            policyResolutionDetail: "O cliente recebe a etiqueta de postagem por e-mail e o estorno é feito em até 7 dias úteis após a coleta do item.",
+            acceptMessage: "Olá! Analisamos sua solicitação de devolução do pedido #BR-3010985 e ela foi aprovada como exceção à política da loja. Você vai receber por e-mail a etiqueta de postagem para envio do item. O valor pago é estornado no meio de pagamento original em até 7 dias úteis após a coleta.",
+            denyMessage: "Olá! Analisamos sua solicitação de devolução do pedido #BR-3010985 e ela não pode ser aprovada. Quinta solicitação de devolução no mês, acima do limite de 3 previsto na política. O motivo (tamanho incompatível) seria aceito isoladamente. Se você tiver novas informações sobre o caso, pode contestar esta decisão em até 7 dias."
           }
         ],
         activities: [

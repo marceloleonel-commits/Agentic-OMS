@@ -5,12 +5,15 @@
 const { useState, useEffect, useRef } = React;
 
 /* ── Severity pill ──────────────────────────────────────────────────────── */
+// Usa o mesmo CriticalityTag da tabela de iniciativas na Home
+// (`[data-sl-criticality-tag]`) para manter um único estilo de tag em todos
+// os lugares onde uma severidade é exibida.
 function SevPill({ level }) {
   const map = { high: "Alta", medium: "Média", low: "Baixa" };
   return (
-    <span className={`sev sev-${level}`}>
-      {level === "high" && <span className="dot" />}
-      {map[level]}
+    <span data-sl-criticality-tag="" data-priority={level}>
+      {level === "high" && <span data-sl-status="dot" aria-hidden />}
+      {map[level] || level}
     </span>
   );
 }

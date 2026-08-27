@@ -434,9 +434,9 @@ function ChatPanel({
       <div className="chat-head">
         <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
           {onBack ? (
-            <button className="chat-back-btn" onClick={onBack} title="Voltar">
+            <button className="chat-back-btn" onClick={onBack} title="Esconder chat">
               <Icon name="chevron-left" size={16} />
-              <span>Voltar</span>
+              <span>Esconder chat</span>
             </button>
           ) : (
             <button className="chat-title">
