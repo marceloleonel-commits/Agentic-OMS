@@ -227,6 +227,21 @@
   .toolbar-end { display: flex; align-items: center; gap: var(--sl-space-5); flex-shrink: 0; }
   .list-search { flex: 1 1 300px; min-width: 200px; max-width: 340px; }
 
+  /* O rótulo fica à esquerda das setas dentro de uma toolbar alinhada à direita,
+     então cada dígito que entra no total empurrava os botões de visão. A largura
+     do pior caso é reservada por script, na fonte real; o texto segue encostado
+     nas setas e a folga aparece antes dele.
+
+     O valor de partida, 7.5rem, cobre o intervalo enquanto a Inter não chegou:
+     medir antes dela daria uma reserva 3px menor, e o rótulo daria um pulinho
+     ao trocar de fonte. */
+  #pag-label { min-width: var(--pag-label-min, 7.5rem); text-align: right; }
+
+  /* Carregando, o Shoreline dá 4.125rem ao rótulo. A reserva é maior que isso,
+     então a barra do skeleton é presa no tamanho dela e alinhada à direita, no
+     lugar onde o texto vai nascer. */
+  #pag-label[data-loading="true"] [data-sl-skeleton] { width: 4.125rem; margin-left: auto; }
+
   /* Dois botões, não Tab: Tab pressupõe um painel montado por aba e estado
      próprio de cada painel, e as duas visões compartilham de propósito a mesma
      busca, os mesmos filtros e a mesma paginação. */
@@ -258,6 +273,38 @@
     display: none; white-space: normal;
   }
   .header-help[data-open="true"] .header-help-popover { display: block; }
+
+  /* Ancoragem à mão do popover do Menu. No Shoreline ele sai por portal com
+     placement bottom-end e gutter de 4px; aqui nasce dentro do [data-sl-menu],
+     que já é position: relative pelo CSS oficial. O alinhamento à direita é o
+     "end" do placement: o menu fica sob a borda direita do gatilho, que é o
+     último elemento da linha do cabeçalho. */
+  /* width: max-content porque o bloco de contenção é o gatilho, de 44px: sem
+     isso o popover encolhe até o min-width de 9.5rem do componente e esmaga os
+     ícones dos itens, que são o primeiro flex item a ceder. No Shoreline o
+     portal tira o popover dessa restrição. */
+  .actions-menu-popover {
+    position: absolute; top: calc(100% + 4px); right: 0; display: none;
+    width: max-content; white-space: nowrap;
+  }
+  .actions-menu[data-open="true"] .actions-menu-popover { display: flex; }
+
+  /* O menu da linha é posicionado por script e vive fora da tabela, por isso
+     position: fixed. O mesmo motivo do width: max-content vale aqui. */
+  .row-menu-popover {
+    position: fixed; display: none; width: max-content; white-space: nowrap;
+  }
+  .row-menu-popover[data-open="true"] { display: flex; }
+
+  /* O MenuItem do Shoreline é um div com role="menuitem"; aqui é <button> para
+     herdar o Enter, o espaço e o foco de graça. O reset do Shoreline não zera
+     borda nem alinhamento de botão, então isso fica por conta destas linhas. */
+  .actions-menu-popover [data-sl-menu-item],
+  .row-menu-popover [data-sl-menu-item] {
+    border: none; align-items: center; text-align: left; width: 100%;
+    font-family: var(--sl-font-family-sans);
+  }
+  .actions-menu-popover [data-sl-menu-item][data-disabled="true"] { cursor: not-allowed; }
 
   /* Intervalo de data e de quantidade não são FilterItem: o Filter do Shoreline
      não tem primitiva para intervalo. Nosso aqui é só o arranjo em par — cada
@@ -324,7 +371,11 @@
     padding-right: var(--sl-space-3);
   }
 
-  .lot-cell { display: flex; align-items: center; gap: var(--sl-space-2); min-width: 0; }
+  /* 24px de gap para 12px de espaço entre a célula de expandir e o nome, como no
+     Figma. O Bleed do botão come 8px de cada lado, então a célula de 44px do
+     Figma aparece aqui como um slot de 20px, e os 12px pedidos viram 24px de
+     gap: o nome começa nos mesmos 56px da borda da linha. */
+  .lot-cell { display: flex; align-items: center; gap: var(--sl-space-6); min-width: 0; }
   .lot-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
   /* O botão de expandir é o IconButton do Shoreline, sem CSS próprio: os estados
@@ -334,10 +385,10 @@
      lote e na linha da visão por SKU. */
   .sku-cell, .product-cell { display: flex; align-items: center; gap: var(--sl-space-3); min-width: 0; }
 
-  /* Só a linha filha recua: 28px levam o SKU até depois do botão de expandir do
-     lote, que tem 36px e, com o Bleed de -8px de cada lado, deixa 20px na
-     célula, mais o gap de 8px. A visão por SKU não tem botão de expandir. */
-  .sku-cell { padding-left: 28px; }
+  /* Só a linha filha recua: 44px levam a miniatura até o nome do lote — os 20px
+     que o botão de expandir ocupa depois do Bleed, mais os 24px de gap da
+     .lot-cell. A visão por SKU não tem botão de expandir. */
+  .sku-cell { padding-left: 44px; }
   .sku-thumb {
     display: flex; align-items: center; justify-content: center; flex-shrink: 0;
     width: 36px; height: 36px; border-radius: var(--sl-radius-2);
@@ -460,6 +511,19 @@
      daqui empresta as peças que têm desenho — o Input no gatilho e o popover,
      os itens e a marca de escolhido do Select, que é o irmão de escolha única
      e já traz item ativo, item desabilitado e a altura máxima da lista. */
+  /* O Select do Shoreline é botão com o caret dentro e popover de itens. O
+     popover é portal no componente; aqui é absoluto, como no combobox.
+     --min-width é a alavanca do próprio botão, que nasce com 20rem: em 100% ele
+     ocupa a coluna inteira e alinha com o campo Nome ao lado. */
+  .select { position: relative; }
+  .select [data-sl-select-button] { --min-width: 100%; cursor: pointer; }
+  .select [data-sl-select-button] [data-sl-icon] { flex-shrink: 0; }
+  .select-popover {
+    position: absolute; top: calc(100% + var(--sl-space-1)); left: 0; right: 0;
+    display: none; z-index: var(--sl-z-6);
+  }
+  .select[data-open="true"] .select-popover { display: flex; }
+
   .combobox { position: relative; }
   .combobox-caret {
     display: flex; align-items: center; flex-shrink: 0;
@@ -653,11 +717,41 @@
                   </div>
                   <div data-sl-bleed>
                     <div data-sl-bleed-content style="--sl-bleed-top: var(--sl-space-2); --sl-bleed-bottom: var(--sl-space-2)">
-                      <button data-sl-button data-sl-icon-button data-variant="tertiary" data-size="large" aria-label="Mais ações">
-                        <span data-sl-button-content>
-                          <i data-icon="dots-three-vertical"></i>
-                        </span>
-                      </button>
+                      <!-- Menu type="actions" iconOnly do Shoreline: o gatilho é o
+                           IconButton dos três pontos, e o popover empilha os itens
+                           com o separador entre grupos. -->
+                      <div data-sl-menu class="actions-menu" data-open="false">
+                        <button data-sl-button data-sl-icon-button data-sl-menu-trigger
+                                data-variant="tertiary" data-size="large" data-active="false"
+                                id="btn-actions" type="button" aria-haspopup="menu"
+                                aria-expanded="false" aria-controls="actions-menu"
+                                aria-label="Mais ações">
+                          <span data-sl-button-content>
+                            <i data-icon="dots-three-vertical"></i>
+                          </span>
+                        </button>
+                        <!-- Sem data-sl-popover aqui: o MenuPopover do Shoreline não
+                             estende o Popover base, ao contrário do FilterPopover e do
+                             ContextualHelp. Os dois juntos empilhavam padding — o do
+                             Popover, de 24px, vem depois na folha e vencia os 12px/16px
+                             do menu, além de deixar o separador sem sangrar. -->
+                        <div class="actions-menu-popover" data-sl-menu-popover
+                             id="actions-menu" role="menu" aria-label="Mais ações">
+                          <button data-sl-menu-item role="menuitem" type="button" tabindex="-1" data-action="import">
+                            <i data-icon="arrow-line-up"></i>
+                            Importar lotes via planilha
+                          </button>
+                          <button data-sl-menu-item role="menuitem" type="button" tabindex="-1" data-action="export">
+                            <i data-icon="arrow-line-down"></i>
+                            Exportar inventário futuro
+                          </button>
+                          <hr data-sl-menu-separator>
+                          <button data-sl-menu-item role="menuitem" type="button" tabindex="-1" data-action="history">
+                            <i data-icon="arrow-up-right"></i>
+                            Histórico de alterações
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -680,13 +774,6 @@
               </div>
 
               <div class="toolbar-end">
-                <button data-sl-button data-variant="secondary" data-size="normal" id="btn-export" type="button">
-                  <span data-sl-button-content>
-                    <i data-icon="download-simple"></i>
-                    Exportar
-                  </span>
-                </button>
-
                 <!-- A visão selecionada é anunciada por aria-pressed, não só
                      pela variante do botão: cor sozinha não é acessível. -->
                 <div class="segmented" id="view-toggle">
@@ -959,6 +1046,13 @@
   </div>
 </div>
 
+<!-- Menu de ações da linha. Fica fora da tabela e é posicionado por script, como
+     o portal que o MenuPopover do Shoreline usa: dentro da célula ele seria
+     cortado pela rolagem da tabela e ficaria sob as linhas seguintes. É um só
+     para a listagem inteira — o conteúdo é remontado a cada abertura, com o
+     lote da linha. -->
+<div class="row-menu-popover" data-sl-menu-popover id="row-menu" role="menu" data-open="false"></div>
+
 <div data-sl-toast-stack id="toast-stack"></div>
 
 <script>
@@ -1027,10 +1121,32 @@
 
     plus: { box: 20, body: line('M3.125 10H16.875', 'M10 3.125V16.875') },
 
-    'download-simple': { box: 20, body: line(
-      'M10 2.5V12.5',
-      'M5.625 8.125L10 12.5L14.375 8.125',
-      'M3.125 15.625H16.875') },
+    'arrow-line-up': { box: 20, body: line(
+      'M10 17.5V5.625',
+      'M4.375 11.25L10 5.625L15.625 11.25',
+      'M3.125 3.125H16.875') },
+
+    'arrow-line-down': { box: 20, body: line(
+      'M10 2.5V14.375',
+      'M4.375 8.75L10 14.375L15.625 8.75',
+      'M3.125 16.875H16.875') },
+
+    'arrow-up-right': { box: 20, body: line(
+      'M5 15L15 5',
+      'M6.875 5H15V13.125') },
+
+    pencil: { box: 20, body: line(
+      'M7.24141 16.8751H3.75C3.58424 16.8751 3.42527 16.8093 3.30806 16.692C3.19085 16.5748 3.125 16.4159 3.125 16.2501V12.7587C3.12508 12.5932 3.19082 12.4344 3.30781 12.3173L12.9422 2.68291C13.0594 2.56579 13.2183 2.5 13.384 2.5C13.5497 2.5 13.7086 2.56579 13.8258 2.68291L17.3172 6.17198C17.4343 6.28917 17.5001 6.44808 17.5001 6.61377C17.5001 6.77946 17.4343 6.93837 17.3172 7.05557L7.68281 16.6923C7.56569 16.8093 7.40695 16.875 7.24141 16.8751Z',
+      'M10.625 5L15 9.375') },
+
+    check: { box: 20, body: line('M3.125 11.25L7.5 15.625L17.5 5.625') },
+
+    trash: { box: 20, body: line(
+      'M16.8748 4.375L3.12476 4.375',
+      'M8.125 8.125V13.125',
+      'M11.875 8.125V13.125',
+      'M15.625 4.375V16.25C15.625 16.4158 15.5592 16.5747 15.4419 16.6919C15.3247 16.8092 15.1658 16.875 15 16.875H5C4.83424 16.875 4.67527 16.8092 4.55806 16.6919C4.44085 16.5747 4.375 16.4158 4.375 16.25V4.375',
+      'M13.125 4.375V3.125C13.125 2.79348 12.9933 2.47554 12.7589 2.24112C12.5245 2.0067 12.2065 1.875 11.875 1.875H8.125C7.79348 1.875 7.47554 2.0067 7.24112 2.24112C7.0067 2.47554 6.875 2.79348 6.875 3.125V4.375') },
 
     'plus-circle': { box: 20, body: line(
       'M10 17.5C14.1421 17.5 17.5 14.1421 17.5 10C17.5 5.85786 14.1421 2.5 10 2.5C5.85786 2.5 2.5 5.85786 2.5 10C2.5 14.1421 5.85786 17.5 10 17.5Z',
@@ -1083,6 +1199,10 @@
     'caret-up-small': { box: 16, body: line('M3 10L8 5L13 10') },
     'caret-right-small': { box: 16, body: line('M6 3L11 8L6 13') },
     'check-small': { box: 16, body: line('M2.3999 8.5L5.8999 12L13.8999 4') },
+
+    /* O gatilho do Select não leva um caret comum, e sim o par para cima e para
+       baixo — é o SelectArrow do componente. */
+    'caret-up-down-small': { box: 16, body: line('M5 11L8 14L11 11', 'M5 5L8 2L11 5') },
   }
 
   /* As variantes Small carregam data-sl-icon-small; as normais, data-sl-icon.
@@ -1260,6 +1380,12 @@
     'Reposição marketplace', 'Coleção verão',
   ]
 
+  /* Reserva é unidade já vendida de um lote que ainda não chegou: nunca passa da
+     quantidade do SKU. O resto por quantidade + 1 faz a série alcançar os dois
+     extremos — nada reservado e lote inteiro vendido —, e ela não consulta o
+     status: um lote cancelado também carrega o que já havia sido vendido. */
+  const reservedFor = (seed, quantity) => (seed * 7) % (quantity + 1)
+
   /* Fixture determinística: o arquivo renderiza igual em qualquer abertura. */
   function buildLots() {
     const lots = FIGMA_LOTS.map((raw, index) => ({
@@ -1273,6 +1399,7 @@
         id: `lot-${index + 1}-item-${itemIndex + 1}`,
         ...PRODUCTS[productIndex],
         quantity,
+        reserved: reservedFor(index * 31 + itemIndex, quantity),
       })),
     }))
 
@@ -1286,10 +1413,12 @@
 
       for (let k = 0; k < itemCount; k += 1) {
         const product = PRODUCTS[(i + k) % PRODUCTS.length]
+        const quantity = ((i + k * 7) % 40) + 2
         items.push({
           id: `lot-${i + 1}-item-${k + 1}`,
           ...product,
-          quantity: ((i + k * 7) % 40) + 2,
+          quantity,
+          reserved: reservedFor(i * 17 + k * 5, quantity),
         })
       }
 
@@ -1323,6 +1452,7 @@
         skuId: item.skuId,
         name: item.name,
         quantity: item.quantity,
+        reserved: item.reserved,
         itemIndex,
         lot: {
           id: lot.id,
@@ -1364,6 +1494,9 @@
     String(value).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
 
   const lotQuantity = (lot) => lot.items.reduce((total, item) => total + item.quantity, 0)
+
+  /* Como a quantidade, o total reservado do lote é sempre a soma dos SKUs. */
+  const lotReserved = (lot) => lot.items.reduce((total, item) => total + item.reserved, 0)
 
   const formatDate = (iso) => {
     const [year, month, day] = iso.split('-')
@@ -1580,12 +1713,16 @@
           </div>
         </div>
         <div data-sl-table-cell class="num">${lotQuantity(lot)}</div>
+        <div data-sl-table-cell class="num">${lotReserved(lot)}</div>
         <div data-sl-table-cell>${formatDate(lot.arrivalDate)}</div>
         <div data-sl-table-cell>
           <span data-sl-tag data-color="${status.color}" data-size="normal" data-variant="secondary">${status.label}</span>
         </div>
         <div data-sl-table-cell>
-          <button data-sl-button data-sl-icon-button data-variant="tertiary" data-size="normal" aria-label="Ações do lote ${escapeHtml(lot.code)}">
+          <button data-sl-button data-sl-icon-button data-sl-menu-trigger data-variant="tertiary" data-size="normal"
+                  data-row-menu="${lot.id}" data-active="false" type="button"
+                  aria-haspopup="menu" aria-expanded="false" aria-controls="row-menu"
+                  aria-label="Ações do lote ${escapeHtml(lot.code)}">
             <span data-sl-button-content>${DOTS}</span>
           </button>
         </div>
@@ -1607,6 +1744,7 @@
         </div>
         <div data-sl-table-cell class="muted">—</div>
         <div data-sl-table-cell class="num">${item.quantity}</div>
+        <div data-sl-table-cell class="num">${item.reserved}</div>
         <div data-sl-table-cell class="muted">—</div>
         <div data-sl-table-cell class="muted">—</div>
         <div data-sl-table-cell></div>
@@ -1643,6 +1781,7 @@
           </div>
         </div>
         <div data-sl-table-cell class="num">${row.quantity}</div>
+        <div data-sl-table-cell class="num">${row.reserved}</div>
         <div data-sl-table-cell>${formatDate(row.lot.arrivalDate)}</div>
         <div data-sl-table-cell>
           <span data-sl-tag data-color="${status.color}" data-size="normal" data-variant="secondary">${status.label}</span>
@@ -1674,14 +1813,20 @@
      vale o nome mais longo da fixture, 168px em "Reposição marketplace 4", mais
      os 16px; Produto fica com a coluna flexível e repete o piso de 230px que o
      Lote tem na outra visão — o bastante para a miniatura, a linha do SKU ID e
-     um pedaço legível do nome, que trunca com reticências. */
+     um pedaço legível do nome, que trunca com reticências.
+
+     Reservas é medida pelo cabeçalho, como Quantidade, e o cabeçalho dela leva a
+     ajuda contextual: 62px de "Reservas", 4px de intervalo e o gatilho de 24px
+     dão 90px, mais os 16px. */
   const DESTINO_HELP = 'Seller e estoque que receberão o lote'
+  const RESERVAS_HELP = 'Unidades já vendidas em pedidos e reservadas neste lote'
 
   const COLUMNS = {
     lots: [
       { label: 'Lote',       width: 'minmax(230px, 1fr)', bars: ['70%'] },
       { label: 'Destino',    width: '166px',              bars: ['90%', '60%'] },
       { label: 'Quantidade', width: '94px',  cell: 'num', bars: ['60%'] },
+      { label: 'Reservas',   width: '106px', cell: 'num', help: RESERVAS_HELP, bars: ['60%'] },
       { label: 'Chegada',    width: '97px',               bars: ['80%'] },
       { label: 'Status',     width: '106px',              bars: ['72%'] },
       { label: '',           width: '56px',               bars: [] },
@@ -1691,6 +1836,7 @@
       { label: 'Lote',       width: '184px',              bars: ['90%', '60%'] },
       { label: 'Destino',    width: '166px', help: DESTINO_HELP, bars: ['90%', '60%'] },
       { label: 'Quantidade', width: '94px',  cell: 'num', bars: ['60%'] },
+      { label: 'Reservas',   width: '106px', cell: 'num', help: RESERVAS_HELP, bars: ['60%'] },
       { label: 'Chegada',    width: '97px',               bars: ['80%'] },
       { label: 'Status',     width: '106px',              bars: ['72%'] },
       { label: '',           width: '56px',               bars: [] },
@@ -1744,11 +1890,58 @@
       </div>`
   }
 
+  /* Numa única página o Shoreline omite o intervalo: "6 de 6", não "1 — 6 de 6". */
+  const paginationLabel = (page, total) => {
+    const first = (page - 1) * PAGE_SIZE + 1
+    const last = Math.min(page * PAGE_SIZE, total)
+    return total <= PAGE_SIZE ? `${last} de ${total}` : `${first} — ${last} de ${total}`
+  }
+
+  /* A largura do rótulo é reservada pelo pior caso das duas visões — a última
+     página, que é onde os números têm mais dígitos. Sem isso, "1 — 25 de 38" e
+     "226 — 231 de 231" davam 61px de diferença, e os botões de visão andavam a
+     cada troca de visão, a cada página e a cada busca. A medida é feita na fonte
+     real do rótulo, e refeita quando a fixture cresce. */
+  let reservedFixture = null
+
+  function reservePaginationLabel() {
+    /* Antes da Inter carregar vale a reserva declarada no CSS: medir na fonte de
+       sistema daria um valor menor, e a troca de fonte moveria tudo de novo. */
+    if (document.fonts && document.fonts.status !== 'loaded') return
+
+    const key = `${LOTS.length}|${SKU_ROWS.length}`
+    if (reservedFixture === key) return
+    reservedFixture = key
+
+    const label = el('pag-label')
+    const ruler = document.createElement('span')
+    ruler.style.cssText = 'position: absolute; visibility: hidden; white-space: pre'
+    label.appendChild(ruler)
+
+    let widest = 0
+    for (const total of [LOTS.length, SKU_ROWS.length]) {
+      ruler.textContent = paginationLabel(Math.max(1, Math.ceil(total / PAGE_SIZE)), total)
+      widest = Math.max(widest, ruler.getBoundingClientRect().width)
+    }
+
+    ruler.remove()
+    label.style.setProperty('--pag-label-min', `${Math.ceil(widest)}px`)
+  }
+
+  /* A Inter chega por CDN: medir antes dela deixaria a reserva no tamanho da
+     fonte de sistema. */
+  document.fonts?.ready.then(() => {
+    reservedFixture = null
+    reservePaginationLabel()
+  })
+
   /* Rótulo e setas mudam sempre juntos, inclusive nos estados sem lista: com o
      resultado vazio a paginação precisa dizer "0 de 0", não o total anterior.
      Carregando, o Shoreline troca o rótulo por um Skeleton e desabilita as duas
      setas — é o que data-loading="true" dimensiona no CSS. */
   function updatePagination({ total, isLoading = false }) {
+    reservePaginationLabel()
+
     const labels = ['pag-label', 'pag-label-2'].map(el)
     const buttons = ['pag-prev', 'pag-prev-2', 'pag-next', 'pag-next-2'].map(el)
 
@@ -1761,14 +1954,8 @@
       return
     }
 
-    const first = (state.page - 1) * PAGE_SIZE + 1
-    const last = Math.min(state.page * PAGE_SIZE, total)
     const lastPage = Math.ceil(total / PAGE_SIZE)
-
-    /* Numa única página o Shoreline omite o intervalo: "6 de 6", não "1 — 6 de 6". */
-    const text = total <= PAGE_SIZE
-      ? `${last} de ${total}`
-      : `${first} — ${last} de ${total}`
+    const text = paginationLabel(state.page, total)
 
     for (const label of labels) {
       label.dataset.loading = 'false'
@@ -1778,10 +1965,15 @@
     for (const id of ['pag-next', 'pag-next-2']) el(id).disabled = state.page >= lastPage
   }
 
-  function syncExportButton(total = 0, isLoading = false) {
-    const button = el('btn-export')
-    button.disabled = isLoading || total === 0
-    button.setAttribute('aria-label', `Exportar ${state.view === 'skus' ? 'SKUs' : 'lotes'} filtrados`)
+  /* Sem nenhuma linha no resultado não há CSV para gerar, e o item que exporta
+     fica indisponível. O Menu do Shoreline marca isso por data-disabled, e não
+     pelo disabled do elemento: é o atributo que o CSS oficial estiliza. */
+  function syncExportItem(total = 0, isLoading = false) {
+    const item = document.querySelector('[data-action="export"]')
+    const isOff = isLoading || total === 0
+
+    item.dataset.disabled = String(isOff)
+    item.setAttribute('aria-disabled', String(isOff))
   }
 
   /* O carregamento acontece dentro da tabela, com cabeçalho visível e uma
@@ -1810,7 +2002,7 @@
     el('table-footer').style.display = 'none'
     el('state-slot').innerHTML = ''
     updatePagination({ total: 0, isLoading: true })
-    syncExportButton(0, true)
+    syncExportItem(0, true)
 
     const cells = COLUMNS[state.view].map(cell).join('')
 
@@ -1831,7 +2023,7 @@
     el('table').style.display = 'none'
     el('table-footer').style.display = 'none'
     updatePagination({ total: 0 })
-    syncExportButton(0)
+    syncExportItem(0)
 
     const filtered = hasActiveQuery()
     const noun = state.view === 'skus' ? 'SKU' : 'lote'
@@ -1888,6 +2080,10 @@
   }
 
   function render() {
+    /* As linhas são refeitas do zero, então o gatilho que abriu o menu deixa de
+       existir. Fechar antes evita um popover órfão flutuando sobre a tabela. */
+    closeRowMenu()
+
     if (state.isLoading) {
       renderSkeleton()
       return
@@ -1911,7 +2107,7 @@
       : lotBodyHtml(result.lots, result.skuMatched)
 
     updatePagination({ total: result.total })
-    syncExportButton(result.total)
+    syncExportItem(result.total)
     syncFilterTriggers()
   }
 
@@ -1930,8 +2126,8 @@
     if (!rows.length) return
 
     const headers = isSkuView
-      ? ['SKU ID', 'Produto', 'Lote ID', 'Nome do lote', 'Seller', 'Estoque', 'Quantidade', 'Chegada', 'Status']
-      : ['Lote ID', 'Nome do lote', 'Seller', 'Estoque', 'Quantidade', 'Chegada', 'Status']
+      ? ['SKU ID', 'Produto', 'Lote ID', 'Nome do lote', 'Seller', 'Estoque', 'Quantidade', 'Reservas', 'Chegada', 'Status']
+      : ['Lote ID', 'Nome do lote', 'Seller', 'Estoque', 'Quantidade', 'Reservas', 'Chegada', 'Status']
 
     const body = rows.map((row) => {
       if (isSkuView) {
@@ -1944,6 +2140,7 @@
           row.lot.destination.seller,
           row.lot.destination.warehouse,
           row.quantity,
+          row.reserved,
           formatDate(row.lot.arrivalDate),
           status,
         ]
@@ -1956,6 +2153,7 @@
         row.destination.seller,
         row.destination.warehouse,
         lotQuantity(row),
+        lotReserved(row),
         formatDate(row.arrivalDate),
         status,
       ]
@@ -2597,7 +2795,205 @@
     if (button) setView(button.dataset.view)
   })
 
-  el('btn-export').addEventListener('click', exportRows)
+  /* ── Menu de ações do cabeçalho ───────────────────────────── */
+
+  /* O Menu do Shoreline é o Ariakit por baixo: o gatilho abre e fecha, seta
+     percorre os itens, Escape fecha devolvendo o foco ao gatilho e clicar num
+     item fecha o menu. Aqui isso é feito à mão, como nos outros popovers.
+
+     Só "Exportar inventário futuro" age: importar planilha e histórico de
+     alterações não têm tela no protótipo, e o item que não tem para onde levar
+     fecha o menu e não faz mais nada — não inventamos fluxo fora da spec. */
+  const actionsMenu = document.querySelector('.actions-menu')
+
+  const menuItems = () => [...actionsMenu.querySelectorAll('[data-sl-menu-item]')]
+    .filter((item) => item.dataset.disabled !== 'true')
+
+  function openActionsMenu({ focusFirst = false } = {}) {
+    closeAllFilters()
+    closeHeaderHelp()
+
+    actionsMenu.dataset.open = 'true'
+    el('btn-actions').dataset.active = 'true'
+    el('btn-actions').setAttribute('aria-expanded', 'true')
+
+    if (focusFirst) menuItems()[0]?.focus()
+  }
+
+  function closeActionsMenu({ restoreFocus = false } = {}) {
+    if (actionsMenu.dataset.open !== 'true') return
+
+    actionsMenu.dataset.open = 'false'
+    el('btn-actions').dataset.active = 'false'
+    el('btn-actions').setAttribute('aria-expanded', 'false')
+
+    if (restoreFocus) el('btn-actions').focus()
+  }
+
+  actionsMenu.addEventListener('click', (event) => {
+    if (event.target.closest('[data-sl-menu-trigger]')) {
+      if (actionsMenu.dataset.open === 'true') closeActionsMenu()
+      else openActionsMenu()
+      return
+    }
+
+    const item = event.target.closest('[data-sl-menu-item]')
+    if (!item || item.dataset.disabled === 'true') return
+
+    if (item.dataset.action === 'export') exportRows()
+    closeActionsMenu({ restoreFocus: true })
+  })
+
+  actionsMenu.addEventListener('keydown', (event) => {
+    const isTrigger = Boolean(event.target.closest('[data-sl-menu-trigger]'))
+
+    /* Seta para baixo no gatilho abre já com o primeiro item no foco, como o
+       Ariakit faz — é o que permite usar o menu sem mouse. */
+    if (isTrigger && (event.key === 'ArrowDown' || event.key === 'ArrowUp')) {
+      event.preventDefault()
+      openActionsMenu({ focusFirst: true })
+      return
+    }
+
+    if (isTrigger) return
+
+    const items = menuItems()
+    const current = items.indexOf(event.target.closest('[data-sl-menu-item]'))
+
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      event.preventDefault()
+      const step = event.key === 'ArrowDown' ? 1 : -1
+      items[(current + step + items.length) % items.length].focus()
+      return
+    }
+
+    if (event.key === 'Home' || event.key === 'End') {
+      event.preventDefault()
+      items[event.key === 'Home' ? 0 : items.length - 1].focus()
+    }
+  })
+
+  /* ─────────────────────────────────────────────────────────────
+     Menu de ações da linha
+
+     Um popover só para a listagem inteira, remontado a cada abertura com o lote
+     da linha e posicionado à mão — é o que o portal do MenuPopover faz. Dentro
+     da célula ele seria cortado pela rolagem da tabela.
+
+     Os quatro itens são inertes: nenhum deles tem tela no protótipo, e item sem
+     para onde levar fecha o menu e não faz mais nada. "Marcar como recebido"
+     nem entra na lista de um lote já recebido ou cancelado — o passado do lote
+     não se marca de novo.
+     ───────────────────────────────────────────────────────────── */
+  const rowMenu = el('row-menu')
+  let rowMenuTrigger = null
+
+  const rowMenuItems = (lot) => [
+    { action: 'edit', label: 'Editar', icon: 'pencil' },
+    ...(lot.status === 'received' || lot.status === 'cancelled'
+      ? []
+      : [{ action: 'receive', label: 'Marcar como recebido', icon: 'check' }]),
+    { action: 'history', label: 'Histórico de atualizações', icon: 'arrow-up-right' },
+    { separator: true },
+    { action: 'delete', label: 'Excluir lote', icon: 'trash', critical: true },
+  ]
+
+  const rowMenuItemHtml = (item) => (item.separator
+    ? '<hr data-sl-menu-separator>'
+    : `<button data-sl-menu-item role="menuitem" type="button" tabindex="-1"
+               data-action="${item.action}"${item.critical ? ' data-critical="true"' : ''}>
+         ${icon(item.icon)}${item.label}
+       </button>`)
+
+  /* bottom-end com gutter de 4px, o placement do MenuPopover. Perto do rodapé
+     da janela o menu vira para cima, como o Ariakit faz. */
+  function positionRowMenu() {
+    if (!rowMenuTrigger) return
+
+    const gutter = 4
+    const margem = 8
+    const gatilho = rowMenuTrigger.getBoundingClientRect()
+    const menu = rowMenu.getBoundingClientRect()
+
+    const abaixo = gatilho.bottom + gutter
+    const acima = gatilho.top - gutter - menu.height
+    const top = abaixo + menu.height > window.innerHeight - margem && acima > margem ? acima : abaixo
+
+    rowMenu.style.top = `${top}px`
+    rowMenu.style.left = `${Math.max(margem, gatilho.right - menu.width)}px`
+  }
+
+  function openRowMenu(trigger) {
+    const lot = LOTS.find((item) => item.id === trigger.dataset.rowMenu)
+    if (!lot) return
+
+    closeAllFilters()
+    closeHeaderHelp()
+    closeActionsMenu()
+    closeRowMenu()
+
+    rowMenu.innerHTML = rowMenuItems(lot).map(rowMenuItemHtml).join('')
+    rowMenu.setAttribute('aria-label', `Ações do lote ${lot.code}`)
+    rowMenu.dataset.open = 'true'
+
+    rowMenuTrigger = trigger
+    trigger.dataset.active = 'true'
+    trigger.setAttribute('aria-expanded', 'true')
+
+    positionRowMenu()
+  }
+
+  function closeRowMenu({ restoreFocus = false } = {}) {
+    if (rowMenu.dataset.open !== 'true') return
+
+    rowMenu.dataset.open = 'false'
+
+    if (rowMenuTrigger) {
+      rowMenuTrigger.dataset.active = 'false'
+      rowMenuTrigger.setAttribute('aria-expanded', 'false')
+      if (restoreFocus) rowMenuTrigger.focus()
+    }
+
+    rowMenuTrigger = null
+  }
+
+  const rowMenuOptions = () => [...rowMenu.querySelectorAll('[data-sl-menu-item]')]
+
+  rowMenu.addEventListener('click', (event) => {
+    if (!event.target.closest('[data-sl-menu-item]')) return
+    closeRowMenu({ restoreFocus: true })
+  })
+
+  rowMenu.addEventListener('keydown', (event) => {
+    const items = rowMenuOptions()
+    const current = items.indexOf(event.target.closest('[data-sl-menu-item]'))
+
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      event.preventDefault()
+      const step = event.key === 'ArrowDown' ? 1 : -1
+      items[(current + step + items.length) % items.length].focus()
+      return
+    }
+
+    if (event.key === 'Home' || event.key === 'End') {
+      event.preventDefault()
+      items[event.key === 'Home' ? 0 : items.length - 1].focus()
+    }
+  })
+
+  el('tbody').addEventListener('keydown', (event) => {
+    const trigger = event.target.closest('[data-row-menu]')
+    if (!trigger || (event.key !== 'ArrowDown' && event.key !== 'ArrowUp')) return
+
+    event.preventDefault()
+    openRowMenu(trigger)
+    rowMenuOptions()[0]?.focus()
+  })
+
+  /* O popover acompanha a linha enquanto a página rola, em vez de fechar: é o
+     comportamento do menu ancorado do design system. */
+  document.querySelector('.content').addEventListener('scroll', positionRowMenu)
+  window.addEventListener('resize', positionRowMenu)
 
   /* A ajuda contextual é delegada no cabeçalho porque renderTableHead refaz o
      conteúdo dele a cada troca de visão. */
@@ -2614,6 +3010,13 @@
   })
 
   el('tbody').addEventListener('click', (event) => {
+    const trigger = event.target.closest('[data-row-menu]')
+    if (trigger) {
+      if (trigger === rowMenuTrigger) closeRowMenu()
+      else openRowMenu(trigger)
+      return
+    }
+
     const button = event.target.closest('[data-toggle]')
     if (!button) return
 
@@ -2860,12 +3263,16 @@
     if (!event.target.closest('.filter')) closeAllFilters()
     if (!event.target.closest('[data-sl-date-picker]')) closeAllCalendars()
     if (!event.target.closest('.header-help')) closeHeaderHelp()
+    if (!event.target.closest('.actions-menu')) closeActionsMenu()
+    if (!event.target.closest('[data-row-menu]') && !event.target.closest('#row-menu')) closeRowMenu()
   })
 
   document.addEventListener('keydown', (event) => {
     if (event.key !== 'Escape') return
     closeAllFilters()
     closeHeaderHelp()
+    closeActionsMenu({ restoreFocus: true })
+    closeRowMenu({ restoreFocus: true })
   })
 
   /* ─────────────────────────────────────────────────────────────
@@ -2884,7 +3291,10 @@
 
   /* Estado do formulário. Quantidade é string porque é o conteúdo cru do campo:
      enquanto o operador apaga para redigitar, ela é '' — e '' não é zero. */
-  const form = { name: '', code: '', arrivalDate: null, items: [], seller: null, warehouse: null }
+  const form = {
+    name: '', code: '', status: 'scheduled', arrivalDate: null,
+    items: [], seller: null, warehouse: null,
+  }
 
   const snapshot = () => JSON.stringify(form)
   let formPristine = snapshot()
@@ -2896,6 +3306,7 @@
 
   const TRASH = icon('trash')
   const CARET_DOWN_SMALL = icon('caret-down-small')
+  const CARET_UP_DOWN_SMALL = icon('caret-up-down-small')
 
   const nextCode = () => {
     const highest = LOTS.reduce(
@@ -2919,6 +3330,10 @@
 
   function handleRoute() {
     const isCreate = location.hash === ROUTES.create
+
+    /* O menu da linha vive no fim do documento, fora da tela que o abriu: sem
+       isso ele ficaria flutuando sobre o formulário. */
+    closeRowMenu()
 
     /* Entrar na rota — pelo botão, por link direto ou pelo voltar do navegador
        — sempre começa um lote novo. */
@@ -3068,6 +3483,7 @@
 
     if (isOpen) {
       closeAllComboboxes(node)
+      closeStatusSelect()
       input.dataset.typed = ''
       renderComboboxList(node)
     } else {
@@ -3121,8 +3537,9 @@
   }
 
   /* O item ativo é o do teclado. O Select do Shoreline pinta com data-active-item,
-     então mover a seta é mover esse atributo. */
-  function moveComboboxActive(node, delta) {
+     então mover a seta é mover esse atributo. Serve ao combobox e ao select de
+     status: os dois montam a lista com as peças do Select. */
+  function moveActiveItem(node, delta) {
     const items = [...node.querySelectorAll('[data-sl-select-item][aria-disabled="false"]')]
     if (!items.length) return
 
@@ -3151,7 +3568,9 @@
     })
 
     root.addEventListener('click', (event) => {
-      const item = event.target.closest('[data-sl-select-item]')
+      /* O item é procurado dentro do combobox, não solto: o select de status
+         mora na mesma raiz e monta os itens dele com o mesmo atributo. */
+      const item = event.target.closest('.combobox [data-sl-select-item]')
       if (item) {
         if (item.getAttribute('aria-disabled') === 'true') return
         chooseComboboxValue(item.closest('.combobox'), item.dataset.value)
@@ -3175,7 +3594,7 @@
       if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
         event.preventDefault()
         if (!isOpen) openCombobox(node, true)
-        moveComboboxActive(node, event.key === 'ArrowDown' ? 1 : -1)
+        moveActiveItem(node, event.key === 'ArrowDown' ? 1 : -1)
         return
       }
 
@@ -3195,6 +3614,130 @@
     })
   }
 
+  /* ─────────────────────────────────────────────────────────────
+     Select de status
+
+     Escolha única com desenho próprio no Shoreline: botão de gatilho, o caret
+     duplo do SelectArrow e o popover de itens na largura do gatilho. As opções
+     são as mesmas tags da coluna Status da listagem, então o campo já mostra o
+     que a linha vai mostrar depois de salvar.
+
+     Só agendado e inativo: recebido e cancelado são transições da vida do lote,
+     não estados de nascimento (INV-6).
+     ───────────────────────────────────────────────────────────── */
+
+  const CREATE_STATUSES = ['scheduled', 'inactive']
+
+  const statusTagHtml = (id) => {
+    const status = statusById(id)
+    return `<span data-sl-tag data-color="${status.color}" data-size="normal" data-variant="secondary">${status.label}</span>`
+  }
+
+  const statusCheckHtml = `<span data-sl-select-item-check>${CHECK}</span>`
+
+  function statusSelectHtml() {
+    const items = CREATE_STATUSES.map((id) => `
+      <div data-sl-select-item role="option" data-value="${id}"
+           aria-selected="${id === form.status}" aria-disabled="false">
+        ${id === form.status ? statusCheckHtml : ''}
+        <span>${statusTagHtml(id)}</span>
+      </div>`).join('')
+
+    return `
+      <div class="select" data-sl-select data-select="status" data-open="false">
+        <button data-sl-select-button type="button" id="form-status" data-selected="true"
+                aria-haspopup="listbox" aria-expanded="false" aria-controls="form-status-list">
+          <span data-sl-select-value>${statusTagHtml(form.status)}</span>
+          ${CARET_UP_DOWN_SMALL}
+        </button>
+        <div class="select-popover" data-sl-select-popover data-enter
+             role="listbox" id="form-status-list" aria-label="Status do lote">${items}</div>
+      </div>`
+  }
+
+  const statusSelectNode = () => el('screen-create').querySelector('[data-select="status"]')
+
+  /* Trocar o status mexe em duas coisas — a tag do gatilho e a marca de
+     escolhido —, então não vale refazer o formulário inteiro por causa disso. */
+  function paintStatusSelect() {
+    const node = statusSelectNode()
+    if (!node) return
+
+    node.querySelector('[data-sl-select-value]').innerHTML = statusTagHtml(form.status)
+
+    for (const item of node.querySelectorAll('[data-sl-select-item]')) {
+      const chosen = item.dataset.value === form.status
+      item.setAttribute('aria-selected', String(chosen))
+      item.querySelector('[data-sl-select-item-check]')?.remove()
+      if (chosen) item.insertAdjacentHTML('afterbegin', statusCheckHtml)
+    }
+  }
+
+  function openStatusSelect(isOpen) {
+    const node = statusSelectNode()
+    if (!node) return
+
+    if (isOpen) closeAllComboboxes()
+
+    node.dataset.open = String(isOpen)
+    node.querySelector('[data-sl-select-button]').setAttribute('aria-expanded', String(isOpen))
+
+    /* O item ativo do teclado nasce no escolhido, como no Ariakit. */
+    for (const item of node.querySelectorAll('[data-sl-select-item]')) {
+      item.removeAttribute('data-active-item')
+      if (isOpen && item.dataset.value === form.status) item.setAttribute('data-active-item', '')
+    }
+  }
+
+  const closeStatusSelect = () => {
+    const node = statusSelectNode()
+    if (node && node.dataset.open === 'true') openStatusSelect(false)
+  }
+
+  function chooseStatus(value) {
+    form.status = value
+    paintStatusSelect()
+    openStatusSelect(false)
+    statusSelectNode().querySelector('[data-sl-select-button]').focus()
+  }
+
+  el('screen-create').addEventListener('click', (event) => {
+    const item = event.target.closest('[data-select="status"] [data-sl-select-item]')
+    if (item) {
+      chooseStatus(item.dataset.value)
+      return
+    }
+
+    const trigger = event.target.closest('[data-select="status"] [data-sl-select-button]')
+    if (trigger) openStatusSelect(statusSelectNode().dataset.open !== 'true')
+  })
+
+  el('screen-create').addEventListener('keydown', (event) => {
+    if (!event.target.closest('[data-select="status"] [data-sl-select-button]')) return
+
+    const node = statusSelectNode()
+    const isOpen = node.dataset.open === 'true'
+
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      event.preventDefault()
+      if (!isOpen) openStatusSelect(true)
+      else moveActiveItem(node, event.key === 'ArrowDown' ? 1 : -1)
+      return
+    }
+
+    if ((event.key === 'Enter' || event.key === ' ') && isOpen) {
+      event.preventDefault()
+      const active = node.querySelector('[data-sl-select-item][data-active-item]')
+      if (active) chooseStatus(active.dataset.value)
+      return
+    }
+
+    if (event.key === 'Escape' && isOpen) {
+      event.stopPropagation()
+      openStatusSelect(false)
+    }
+  })
+
   /* ── Formulário ──────────────────────────────────────────── */
 
   const sectionHeadHtml = (title, description) => `
@@ -3208,11 +3751,12 @@
       <section class="form-section">
         ${sectionHeadHtml('Sobre o lote', 'Identifique o lote e informe quando ele chega')}
 
-        <div class="form-row" data-fluid="true">
+        <div class="form-row">
           ${fieldHtml('form-name', 'Nome', inputHtml('form-name',
             `type="text" data-field="name" value="${escapeHtml(form.name)}"
              aria-describedby="form-name-description"`),
             { error: 'form-name', description: 'Ex.: Reposição de setembro' })}
+          ${fieldHtml('form-status', 'Status', statusSelectHtml())}
         </div>
 
         <div class="form-row">
@@ -3604,14 +4148,17 @@
       destination: DESTINATIONS.find(
         (d) => d.seller === form.seller && d.warehouse === form.warehouse),
       arrivalDate: form.arrivalDate,
-      /* O formulário só produz lote agendado: recebido, cancelado e inativo são
-         transições da vida do lote, não estados de nascimento (INV-6). */
-      status: 'scheduled',
+      /* Agendado ou inativo, o que o campo Status oferece: recebido e cancelado
+         são transições da vida do lote, não estados de nascimento (INV-6). */
+      status: form.status,
       items: form.items.map((item, index) => ({
         id: `${id}-item-${index + 1}`,
         skuId: item.skuId,
         name: item.name,
         quantity: Number(item.quantity),
+        /* Lote que acaba de ser criado não tem venda: reserva nasce em zero e só
+           cresce quando um pedido consome unidade dele. */
+        reserved: 0,
       })),
     })
 
@@ -3630,6 +4177,7 @@
   function resetForm() {
     form.name = ''
     form.code = nextCode()
+    form.status = 'scheduled'
     form.arrivalDate = null
     form.items = []
     form.seller = null
@@ -3891,6 +4439,7 @@
     }
 
     closeAllComboboxes()
+    closeStatusSelect()
   })
 
   /* Rolagem não borbulha, então o listener é de captura. */
@@ -3902,6 +4451,13 @@
      no Shoreline não tem fundo escurecido e é dispensável por clique fora. */
   document.addEventListener('mousedown', (event) => {
     if (!event.target.closest('.combobox')) closeAllComboboxes()
+
+    /* O campo todo conta como dentro, rótulo incluído: o label aponta para o
+       gatilho, então clicar nele é abrir o select — e fechar aqui só para o
+       clique reabrir em seguida faria o rótulo nunca fechar a lista. */
+    const noCampoDoSelect = event.target.closest('.select')
+      || event.target.closest('[data-sl-field]')?.querySelector('.select')
+    if (!noCampoDoSelect) closeStatusSelect()
 
     if (!drawer.open) return
     if (!el('discard-modal').hidden) return
