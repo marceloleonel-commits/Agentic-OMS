@@ -7574,50 +7574,193 @@ button.stage-add-task-btn[data-sl-button][data-variant="tertiary"][data-has-labe
   white-space: nowrap;
 }
 
-/* ── Structured action card (Figma: node 1524-966) ─────────────────── */
+/* ── Structured action card 3c — "Como chegamos aqui" ──────────────────
+   Container, header e footer da família do card de pergunta (§verify-card).
+   Heading em uma frase, dois grupos expansíveis, footer em linha com dois
+   botões pill. Sem hover no container (não é clicável), sem "Cancelar"
+   (fechar a conversa faz o papel de "não"). ── */
 .chat-action-card--structured {
   flex-direction: column;
   align-items: stretch;
   gap: 0;
-  padding: 14px 16px 16px;
-  border-radius: 8px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #fff;
+  overflow: hidden;
 }
-.chat-action-card-label {
+.chat-action-card--structured:hover { border-color: var(--border); }
+
+/* Header — igual ao .canvas-a-verify-header. */
+.chat-action-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px 0;
+}
+.chat-action-card-kind {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-size: 12px;
   font-weight: 500;
   line-height: 16px;
-  color: var(--sl-fg-base-soft, #707070);
-  margin-bottom: 2px;
+  color: var(--fg-3);
 }
+.chat-action-card-kind svg { flex-shrink: 0; }
+.chat-action-card-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 99px;
+  background: var(--sl-color-blue-3, #cbe9ff);
+  color: var(--sl-fg-accent, #0366dd);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+  white-space: nowrap;
+}
+
+/* Título + resumo. */
+.chat-action-card-intro { padding: 10px 16px 6px; }
 .chat-action-card-heading {
-  font-size: 16px;
+  margin: 0;
+  font-size: 15px;
   font-weight: 600;
-  line-height: 24px;
-  letter-spacing: -0.02em;
+  line-height: 22px;
+  letter-spacing: -0.2px;
   color: var(--fg);
-  margin-bottom: 10px;
 }
-.chat-action-card-fields {
+.chat-action-card-summary {
+  margin: 6px 0 0;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+  color: var(--fg-2);
+}
+
+/* Grupos expansíveis. */
+.chat-action-card-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 8px 4px;
+}
+.chat-action-card-group-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  padding: 9px 8px;
+  border: none;
+  border-radius: 8px;
+  background: var(--bg-soft);
+  color: var(--fg);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  text-align: left;
+  cursor: pointer;
+  transition: background .12s ease;
+}
+.chat-action-card-group-head[aria-expanded="false"] {
+  background: transparent;
+  font-weight: 400;
+}
+.chat-action-card-group-head[aria-expanded="false"]:hover { background: var(--bg-soft); }
+.chat-action-card-group-head:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 1px #fff, 0 0 0 4px rgba(33,88,232,.28);
+}
+.chat-action-card-group-text {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+.chat-action-card-group-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.chat-action-card-group-title svg { color: var(--fg-3); flex-shrink: 0; }
+.chat-action-card-group-meta {
+  display: inline-block;
+  padding-left: 24px;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 16px;
+  color: var(--fg-3);
+  white-space: nowrap;
+}
+.chat-action-card-group-chevron {
+  color: var(--fg-3);
+  flex-shrink: 0;
+  align-self: center;
+}
+.chat-action-card-group-body {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  margin-bottom: 14px;
+  padding: 8px 8px 12px 32px;
 }
+.chat-action-card-group + .chat-action-card-group::before {
+  content: "";
+  display: block;
+  height: 1px;
+  margin: 0 8px 2px;
+  background: var(--bg-muted);
+}
+
+/* Par rótulo/valor: rótulo ACIMA do valor. */
 .chat-action-card-field {
   display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.chat-action-field-label {
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 16px;
+  color: var(--fg-3);
+}
+.chat-action-field-value {
+  display: inline-flex;
   align-items: center;
   gap: 6px;
   font-size: 14px;
+  font-weight: 400;
   line-height: 20px;
-  letter-spacing: -0.01em;
-}
-.chat-action-field-label {
-  color: var(--sl-fg-base-soft, #707070);
-  flex-shrink: 0;
-}
-.chat-action-field-value {
   color: var(--fg);
 }
+.chat-action-field-value svg { color: var(--fg-3); flex-shrink: 0; }
+.chat-action-field-value--exceptions svg { color: var(--sl-color-yellow-7, #c5a001); }
+
+/* Lista de ações do "Então": uma linha por ação, com seta. */
+.chat-action-field-actions { display: flex; flex-direction: column; gap: 4px; }
+.chat-action-field-actions > span {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+  color: var(--fg);
+}
+.chat-action-field-actions svg {
+  color: var(--fg-3);
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+/* Tag (mantida para valores marcados como tag). */
 .chat-action-field-tag {
   display: inline-flex;
   align-items: center;
@@ -7630,21 +7773,40 @@ button.stage-add-task-btn[data-sl-button][data-variant="tertiary"][data-has-labe
   font-weight: 500;
   line-height: 1;
 }
-.chat-action-card-btns {
+
+/* Footer — em linha, com hairline. Botões usando .canvas-a-run-btn. */
+.chat-action-card--structured .chat-action-card-btns {
   display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  margin-top: 8px;
+  border-top: 1px solid var(--bg-muted);
+}
+.chat-action-card--structured .chat-action-card-btns .canvas-a-run-btn--primary { flex: 1; }
+.chat-action-card--structured .chat-action-card-btns .canvas-a-run-btn {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  padding: 8px 18px;
+  white-space: nowrap;
+}
+
+/* Variação de opções (card de conflito) — sem heading grande, sem grupos.
+   Reaproveita o container, mas o footer volta a stack coluna. */
+.chat-action-card--options .chat-action-card-groups {
+  padding: 0 16px 8px;
+  gap: 8px;
+}
+.chat-action-card--options .chat-action-card-groups .chat-action-card-field {
+  padding: 4px 0;
+}
+.chat-action-card--options .chat-action-card-btns {
   flex-direction: column;
-  gap: 6px;
+  align-items: stretch;
 }
-.chat-action-apply-full {
-  width: 100%;
-  justify-content: center;
-  padding-top: 8px;
-  padding-bottom: 8px;
-}
-.chat-action-dismiss {
-  width: 100%;
-  justify-content: center;
-}
+.chat-action-card--options .chat-action-card-btns .canvas-a-run-btn { flex: 1 1 auto; width: 100%; }
 
 /* New workflow draft/summary card */
 .chat-draft-card {
@@ -10436,68 +10598,86 @@ button.wf-ver-badge-btn:hover {
 .canvas-tasks-card.canvas-a-suggested .canvas-task-row {
   grid-template-columns: 1fr 140px;
 }
-.canvas-tasks-card.canvas-a-suggested {
-  padding-bottom: 8px;
+/* ── Família do card de verificação: um único container para os três papéis
+   (Pergunta, Revisão, Registro). O que distingue é o header e o corpo,
+   nunca o wrapper — bordas, raio e padding são idênticos. ── */
+.canvas-tasks-card.canvas-a-suggested,
+.canvas-tasks-card.canvas-a-verify-answered {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #fff;
+  padding: 0;
+  overflow: hidden;
 }
 .canvas-tasks-card.canvas-a-suggested .canvas-tasks-head {
   padding-top: 16px;
 }
 
-/* ── Alerta de verificação pendente (dentro do Diagnóstico) ──
-   O canvas não hospeda mais a pergunta de múltipla escolha: ela é respondida
-   no chat. Aqui a pergunta aparece em destaque sobre o amarelo, com o botão
-   que abre o chat — só presente quando ele está fechado. ── */
+/* ── Alerta de pergunta pendente no canvas ──
+   Faz parte da família do card do chat: mesmo container branco, mesmo header
+   e footer. O amarelo do "aguardando" vive apenas no chip, não no fundo. As
+   três fases (nenhuma, parcial, revisão pendente) trocam só o rótulo, o chip,
+   o título e o CTA — nunca o layout. ── */
 .canvas-a-verify-alert {
+  display: block;
   width: 100%;
   margin-top: 16px;
-  padding: 12px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #fff;
+  color: var(--fg);
+  overflow: hidden;
+}
+.canvas-a-verify-alert-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 99px;
+  background: var(--sl-color-yellow-2, #fdf5ad);
+  color: var(--sl-color-yellow-11, #715401);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+  white-space: nowrap;
+}
+.canvas-a-verify-alert-recap {
   display: flex;
   align-items: center;
   gap: 8px;
-  text-align: left;
-  border: var(--sl-border-base, 1px solid #e0e0e0);
-  border-color: var(--sl-color-yellow-4, #FADE1E);
+  margin: 12px 20px 0;
+  padding: 8px 12px;
   border-radius: 8px;
-  background: var(--sl-color-yellow-2, #FDF5AD);
-  color: var(--fg, #1f1f1f);
+  background: var(--bg-soft);
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--fg-2);
 }
-.canvas-a-verify-alert-icon {
-  flex-shrink: 0;
-  display: flex;
-  align-self: flex-start;
-  /* Alinha o ícone de 20px à altura de x da primeira linha do título (24px). */
-  margin-top: 2px;
-  color: #CFA000;
-}
-.canvas-a-verify-alert-copy {
-  display: flex;
-  flex-direction: column;
-  gap: 0px;
-  flex: 1;
-  min-width: 0;
+.canvas-a-verify-alert-recap svg { color: var(--sl-color-green-11, #016810); flex-shrink: 0; }
+.canvas-a-verify-alert-recap-q { color: var(--fg-3); }
+.canvas-a-verify-alert-recap-a { color: var(--fg); font-weight: 600; }
+.canvas-a-verify-alert-body {
+  padding: 12px 20px 4px;
 }
 .canvas-a-verify-alert-title {
-  font-size: 14px;
+  margin: 0;
+  font-size: 16px;
   font-weight: 600;
   line-height: 24px;
   letter-spacing: -0.32px;
+  color: var(--fg);
   overflow-wrap: anywhere;
 }
 .canvas-a-verify-alert-desc {
-  font-size: 12px;
-  line-height: 16px;
-  color: var(--sl-fg-base-soft, #707070);
+  margin: 6px 0 0;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--fg-2);
 }
-button.canvas-a-verify-alert-cta { flex-shrink: 0; white-space: nowrap; }
-/* O hover padrão do tertiary é um cinza opaco, que apaga o amarelo do alerta.
-   Aqui o realce é um escurecimento translúcido, para funcionar sobre qualquer
-   cor de fundo do container. */
-button.canvas-a-verify-alert-cta[data-sl-button][data-variant="tertiary"]:hover {
-  background: rgba(0, 0, 0, 0.08);
-  color: var(--fg);
-}
-button.canvas-a-verify-alert-cta[data-sl-button][data-variant="tertiary"]:active {
-  background: rgba(0, 0, 0, 0.16);
+.canvas-a-verify-alert .canvas-a-verify-footer {
+  margin-top: 12px;
+  padding: 14px 20px;
 }
 
 /* ── Tarefa de verificação manual · pergunta de múltipla escolha ──
@@ -10512,12 +10692,12 @@ button.canvas-a-verify-alert-cta[data-sl-button][data-variant="tertiary"]:active
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 18px 20px 0;
+  padding: 14px 16px 0;
 }
 .canvas-a-verify-kind {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   font-size: 12px;
   font-weight: 500;
   line-height: 16px;
@@ -10527,29 +10707,65 @@ button.canvas-a-verify-alert-cta[data-sl-button][data-variant="tertiary"]:active
 .canvas-a-verify-pagination {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
 }
 .canvas-a-verify-count {
-  font-size: 10.5px;
-  line-height: 15px;
-  letter-spacing: -0.105px;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 16px;
   color: var(--fg-3);
   white-space: nowrap;
 }
+/* Medidor de etapas: um segmento por pergunta do path.
+   done = respondida · current = em cena · future = ainda por vir. */
+.canvas-a-verify-meter { display: inline-flex; gap: 3px; }
+.canvas-a-verify-meter i {
+  width: 14px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--border);
+  display: block;
+}
+.canvas-a-verify-meter i[data-state="current"] { background: #2158E8; }
+.canvas-a-verify-meter i[data-state="done"]    { background: var(--sl-color-green-11, #016810); }
 .canvas-a-verify-nav { display: inline-flex; align-items: center; }
 .canvas-a-verify-nav-btn {
   width: 24px;
   height: 24px;
   transition: background .12s ease, color .12s ease;
 }
-.canvas-a-verify-nav-btn:disabled { opacity: .4; cursor: default; }
+.canvas-a-verify-nav-btn:disabled { opacity: .35; cursor: default; }
 .canvas-a-verify-nav-btn:disabled:hover {
   background: transparent;
   color: var(--fg-3);
 }
+/* 3-dots pulsando no header do estado "Enviando respostas". */
+.canvas-a-verify-dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 4px;
+}
+.canvas-a-verify-dots i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #2158E8;
+  display: block;
+  animation: canvas-a-verify-dot-bounce 1.2s infinite ease-in-out both;
+}
+.canvas-a-verify-dots i:nth-child(1) { animation-delay: -.32s; }
+.canvas-a-verify-dots i:nth-child(2) { animation-delay: -.16s; }
+@keyframes canvas-a-verify-dot-bounce {
+  0%, 80%, 100% { transform: scale(0.5); opacity: .55; }
+  40%           { transform: scale(1);   opacity: 1;   }
+}
+@media (prefers-reduced-motion: reduce) {
+  .canvas-a-verify-dots i { animation: none; opacity: .8; transform: none; }
+}
 
 .canvas-a-verify-intro {
-  padding: 8px 20px 4px;
+  padding: 10px 16px 6px;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -10558,107 +10774,151 @@ button.canvas-a-verify-alert-cta[data-sl-button][data-variant="tertiary"]:active
    manter o recuo do primeiro caractere. */
 .canvas-a-verify-intro .detail-section-body {
   display: flex;
-  gap: 8px;
-  font-size: 16px;
+  gap: 6px;
+  margin: 0;
+  font-size: 15px;
   font-weight: 600;
-  line-height: 24px;
-  letter-spacing: -0.32px;
+  line-height: 22px;
+  letter-spacing: -0.2px;
   color: var(--fg);
 }
-.canvas-a-verify-index { flex-shrink: 0; }
+.canvas-a-verify-index { flex-shrink: 0; color: var(--fg-3); }
 
 /* ── Resposta confirmada ──
-   O card troca pergunta + opções pelo registro da resposta: título, descrição
-   e autoria, com o desfazer no canto superior direito. ── */
-.canvas-tasks-card.canvas-a-verify-answered { padding: 16px 20px 18px; }
+   Container é o mesmo dos outros papéis (§ container base acima). Aqui só
+   entram os blocos internos: lista de respostas, meta, e overrides por papel
+   (review / sending / error / final). ── */
 .canvas-a-verify-answer {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
+  padding: 4px 16px 8px;
 }
 .canvas-a-verify-answer-copy {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px;
   min-width: 0;
+  flex: 1;
 }
 .canvas-a-verify-answer-title {
   margin: 0;
-  font-size: 16px;
-  font-weight: 600;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
   color: var(--fg);
 }
 .canvas-a-verify-answer-desc {
   margin: 0;
-  font-size: 15px;
-  line-height: 1.5;
+  font-size: 14px;
+  line-height: 20px;
   color: var(--fg-2);
 }
 .canvas-a-verify-answer-meta {
-  margin: 14px 0 0;
-  font-size: 13px;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 16px;
   color: var(--fg-3);
 }
 .canvas-a-verify-undo-btn {
   flex-shrink: 0;
   margin-top: -2px;
 }
-/* Etapa final: item read-only substitui o <button> depois que o operador
-   confirmou. Sem hover, sem chevron, sem cursor de clique e sem o recuo
-   negativo usado para o realce de hover — nada mais responde ao ponteiro. */
-.canvas-a-verify-summary-item--static {
+/* Estado "Enviando…": lista fica lida-só e esmaecida. */
+.canvas-a-verify-answered--sending .canvas-a-verify-answer-copy { opacity: .5; }
+.canvas-a-verify-answered--sending .canvas-a-verify-summary-item { pointer-events: none; }
+/* Estado de erro: alerta acima da lista com escala vermelha do Shoreline. */
+.canvas-a-verify-error-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 6px 16px 4px;
+  padding: 10px 12px;
+  border: 1px solid var(--sl-color-red-4, #FFD0C7);
+  border-radius: 8px;
+  background: var(--sl-color-red-1, #FDF6F5);
+}
+.canvas-a-verify-error-notice > svg {
+  flex-shrink: 0;
+  color: var(--sl-color-red-9, #EC3727);
+  margin-top: 1px;
+}
+.canvas-a-verify-error-copy { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.canvas-a-verify-error-title {
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 18px;
+  color: var(--fg);
+}
+.canvas-a-verify-error-desc {
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 16px;
+  color: var(--fg-3);
+}
+.canvas-a-verify-error-footer { padding: 12px 16px; gap: 8px; }
+.canvas-a-verify-error-footer .canvas-a-run-btn.canvas-a-run-btn--primary { flex: 1; }
+/* Registro final: único papel com fundo colorido, na escala verde. */
+.canvas-tasks-card.canvas-a-verify-answered[data-verify-summary-mode="final"] {
+  background: var(--sl-color-green-1, #e9fce3);
+  border-color: var(--sl-color-green-4, #97ef86);
+}
+[data-verify-summary-mode="final"] .canvas-a-verify-summary-kind,
+[data-verify-summary-mode="final"] .canvas-a-verify-summary-kind svg,
+[data-verify-summary-mode="final"] .canvas-a-verify-count {
+  color: var(--sl-color-green-11, #016810);
+}
+.canvas-a-verify-final-footer {
+  border-top: 1px solid rgba(1, 104, 16, .12);
+  padding: 12px 16px;
+}
+/* Item read-only: mesmo layout do editável, sem chevron, sem hover, sem
+   foco visível — dupla classe para vencer o `.canvas-a-verify-summary-item`
+   base declarado depois neste arquivo. */
+.canvas-a-verify-summary-item.canvas-a-verify-summary-item--static {
   cursor: default;
   margin: 0;
   padding: 6px 0;
   border-radius: 0;
   transition: none;
 }
-.canvas-a-verify-summary-item--static:hover,
-.canvas-a-verify-summary-item--static:focus,
-.canvas-a-verify-summary-item--static:focus-visible {
+.canvas-a-verify-summary-item.canvas-a-verify-summary-item--static:hover,
+.canvas-a-verify-summary-item.canvas-a-verify-summary-item--static:focus,
+.canvas-a-verify-summary-item.canvas-a-verify-summary-item--static:focus-visible {
   background: transparent;
   outline: none;
+  box-shadow: none;
 }
-/* Rodapé de confirmação: hint + botão primário empilhados e alinhados à
-   esquerda, no mesmo eixo visual dos itens do resumo. O `margin: 0 -8px`
-   espelha o dos itens (que usam recuo negativo para o realce de hover), então
-   a "caixa" do footer termina exatamente na mesma largura das linhas acima.
-   Sem divisória — o bg-soft do card em revisão já separa o bloco. */
+/* Rodapé de confirmação: hint (com ícone lock 14px) empilhado sobre o
+   botão primário largura total, separado do corpo por hairline. */
 .canvas-a-verify-confirm-footer {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 8px;
-  margin: 8px -8px 0;
-  padding: 12px 8px 0;
+  align-items: stretch;
+  gap: 10px;
+  margin: 0;
+  padding: 12px 16px;
+  border-top: 1px solid var(--bg-muted);
 }
 .canvas-a-verify-confirm-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   margin: 0;
-  font-size: 11px;
-  line-height: 1.45;
-  color: var(--fg);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 16px;
+  color: var(--fg-3);
 }
-/* Rótulo em caixa baixa na etapa de revisão (só a inicial maiúscula).
-   Precisa de dupla classe pra vencer o `.canvas-a-verify-summary-kind`
-   base, que é declarado depois neste arquivo. Mesmo alinhamento
-   tipográfico do header "Pergunta" (`.canvas-a-verify-kind`): peso
-   médio e cor cheia, mas 13px para dar mais presença que o rótulo
-   final em uppercase. */
-.canvas-a-verify-summary-kind.canvas-a-verify-summary-kind--lower {
-  text-transform: none;
-  letter-spacing: normal;
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--fg);
-}
-/* Card em modo revisão: fundo azul claro e borda azul suave — o tom azulado
-   sinaliza que ainda é um passo intermediário (revisão) antes do fecho, e
-   diferencia do card final (que fica sobre o bg do chat). */
+.canvas-a-verify-confirm-hint svg { color: var(--fg-4); flex-shrink: 0; }
+.canvas-a-verify-confirm-btn { width: 100%; }
+.canvas-a-verify-confirm-btn:disabled { opacity: .6; cursor: wait; }
+/* Modo revisão vira branco também — o único card com fundo colorido é o
+   registro final (verde). */
 .canvas-tasks-card.canvas-a-verify-answered--review {
-  background: var(--bg-soft);
-  border: 1px solid rgba(255, 255, 255, 1);
-  padding-bottom: 12px;
+  background: #fff;
+  border: 1px solid var(--border);
 }
 /* Transição do "Revise antes de enviar" → "Perguntas respondidas".
    O card de revisão vive acima do composer e some ao confirmar; o card
@@ -10693,29 +10953,38 @@ button.canvas-a-verify-alert-cta[data-sl-button][data-variant="tertiary"]:active
 .canvas-a-verify-options {
   display: flex;
   flex-direction: column;
-  padding: 4px 12px 2px;
+  gap: 2px;
+  padding: 2px 8px 4px;
 }
-/* Sem divisórias: a separação entre as opções vem do respiro e o hover
-   destaca a linha inteira, não só o badge. */
+/* Sem divisórias: o hover destaca a linha inteira, não o badge. */
 .canvas-a-verify-option {
   display: flex;
   align-items: flex-start;
-  gap: 8px;
-  padding: 8px;
+  gap: 10px;
+  padding: 9px 8px;
   border-radius: 8px;
   cursor: pointer;
-  transition: background .12s ease;
+  transition: background .12s ease, box-shadow .12s ease;
 }
 .canvas-a-verify-option:hover { background: var(--bg-soft); }
-.canvas-a-verify-option:hover .canvas-a-verify-option-badge {
-  border-color: var(--border-strong);
-  background: var(--border);
+.canvas-a-verify-option.selected {
+  background: var(--primary-soft);
+  box-shadow: inset 0 0 0 1px #2158E8;
 }
-.canvas-a-verify-option.selected { background: var(--bg-soft); }
+.canvas-a-verify-option.selected .canvas-a-verify-option-title { font-weight: 500; }
 .canvas-a-verify-option.selected .canvas-a-verify-option-badge {
-  border-color: var(--fg-2);
-  color: var(--fg);
-  background: var(--bg-muted);
+  border-color: #2158E8;
+  background: #2158E8;
+  color: #fff;
+  font-weight: 600;
+}
+/* Anel de foco em duas paradas — padrão Shoreline. */
+.canvas-a-verify-option:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 1px #fff, 0 0 0 4px rgba(33,88,232,.28);
+}
+.canvas-a-verify-option.selected:focus-visible {
+  box-shadow: inset 0 0 0 1px #2158E8, 0 0 0 1px #fff, 0 0 0 4px rgba(33,88,232,.28);
 }
 .canvas-a-verify-option-badge {
   flex-shrink: 0;
@@ -10726,7 +10995,7 @@ button.canvas-a-verify-alert-cta[data-sl-button][data-variant="tertiary"]:active
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
+  font-size: 11px;
   line-height: 16px;
   font-weight: 500;
   color: var(--fg-3);
@@ -10740,13 +11009,10 @@ button.canvas-a-verify-alert-cta[data-sl-button][data-variant="tertiary"]:active
   flex: 1;
   min-width: 0;
 }
-/* Cada opção mostra só o título, em no máximo duas linhas (o texto completo
-   fica no tooltip nativo caso ainda estoure). */
 .canvas-a-verify-option-title {
   font-size: 14px;
   font-weight: 400;
   line-height: 20px;
-  letter-spacing: -0.14px;
   color: var(--fg);
   display: -webkit-box;
   -webkit-box-orient: vertical;
@@ -10764,8 +11030,8 @@ button.canvas-a-verify-alert-cta[data-sl-button][data-variant="tertiary"]:active
   background: #fff;
   color: var(--fg, #171717);
   font: inherit;
-  font-size: 13.5px;
-  line-height: 1.45;
+  font-size: 14px;
+  line-height: 20px;
   resize: none;
 }
 .canvas-a-verify-other-input:focus {
@@ -10786,82 +11052,57 @@ button.canvas-a-verify-alert-cta[data-sl-button][data-variant="tertiary"]:active
   background: #fff;
   color: var(--fg, #171717);
   font: inherit;
-  font-size: 13.5px;
-  line-height: 1.45;
+  font-size: 14px;
+  line-height: 20px;
   resize: none;
 }
 .canvas-a-verify-free-input:focus { outline: none; border-color: var(--primary, #2158E8); }
 .canvas-a-verify-free-input::placeholder { color: var(--fg-3, #737373); }
 
 /* ── Seleção manual vs. comprovante ──
-   Os dois caminhos concorrentes de captura da mesma informação vivem num
-   dropdown: um por vez, e só o escolhido abre o input abaixo. ── */
+   Segmented control com os dois caminhos sempre visíveis: dropdown de dois
+   itens esconderia metade da resposta. ── */
 .canvas-a-verify-mode {
-  position: relative;
-  padding: 4px 8px 8px;
-}
-.canvas-a-verify-mode-trigger {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  min-width: 0;
-  padding: 8px 10px;
-  border: 1px solid var(--border-strong);
-  border-radius: 8px;
-  background: #fff;
-  font: inherit;
-  font-size: 14px;
-  line-height: 20px;
-  color: var(--fg-3);
-  text-align: left;
-  cursor: pointer;
-  transition: background .12s, border-color .12s;
-}
-.canvas-a-verify-mode-trigger:hover { background: var(--bg-muted); }
-.canvas-a-verify-mode-trigger.open { border-color: var(--primary, #2158E8); }
-/* Com um caminho escolhido o campo deixa de ser placeholder e assume o mesmo
-   realce das opções A/B/C da lista acima. */
-.canvas-a-verify-mode-trigger.selected {
-  background: var(--bg-soft);
-  border-color: var(--fg-2);
-  color: var(--fg);
-}
-.canvas-a-verify-mode-trigger svg { flex-shrink: 0; color: var(--fg-3); }
-.canvas-a-verify-mode-trigger.selected .canvas-a-verify-mode-icon { color: var(--fg); }
-.canvas-a-verify-mode-label { flex: 1; min-width: 0; }
-.canvas-a-verify-mode-menu {
-  position: absolute;
-  top: calc(100% - 2px);
-  left: 8px;
-  right: 8px;
-  z-index: 60;
-  padding: 6px;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  background: #fff;
-  box-shadow: 0 20px 25px -5px rgba(0,0,0,.1), 0 8px 10px -6px rgba(0,0,0,.1);
+  gap: 4px;
+  margin: 4px 8px 8px;
+  padding: 3px;
+  border-radius: 99px;
+  background: var(--bg-muted);
 }
 .canvas-a-verify-mode-option {
-  display: flex;
+  flex: 1;
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
-  width: 100%;
-  padding: 8px 10px;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 10px;
   border: none;
-  border-radius: 8px;
+  border-radius: 99px;
   background: transparent;
   font: inherit;
-  font-size: 14px;
+  font-size: 13px;
+  font-weight: 500;
   line-height: 20px;
-  color: var(--fg);
-  text-align: left;
+  color: var(--fg-3);
+  text-align: center;
   cursor: pointer;
-  transition: background .12s;
+  transition: background .12s, color .12s, box-shadow .12s;
 }
-.canvas-a-verify-mode-option svg { flex-shrink: 0; color: var(--fg-2); }
-.canvas-a-verify-mode-option:hover,
-.canvas-a-verify-mode-option.selected { background: var(--bg-soft); }
+.canvas-a-verify-mode-option svg { flex-shrink: 0; color: currentColor; }
+.canvas-a-verify-mode-option:hover { color: var(--fg-2); }
+.canvas-a-verify-mode-option.selected {
+  background: #fff;
+  box-shadow: var(--shadow-sm);
+  color: var(--fg);
+}
+.canvas-a-verify-mode-option:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(33,88,232,.28);
+}
+.canvas-a-verify-mode-option.selected:focus-visible {
+  box-shadow: var(--shadow-sm), 0 0 0 2px rgba(33,88,232,.28);
+}
 
 .canvas-a-verify-orders {
   display: flex;
@@ -10888,7 +11129,8 @@ button.canvas-a-verify-alert-cta[data-sl-button][data-variant="tertiary"]:active
   outline: none;
   background: transparent;
   font: inherit;
-  font-size: 13.5px;
+  font-size: 14px;
+  line-height: 20px;
   color: var(--fg);
 }
 .canvas-a-verify-orders-search input::placeholder { color: var(--fg-3); }
@@ -10903,15 +11145,28 @@ button.canvas-a-verify-alert-cta[data-sl-button][data-variant="tertiary"]:active
   background: transparent;
   padding: 0;
   font: inherit;
-  font-size: 12.5px;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
   color: var(--primary, #2158E8);
   cursor: pointer;
 }
 .canvas-a-verify-orders-all:disabled { color: var(--fg-3); cursor: default; }
 .canvas-a-verify-orders-count {
-  font-size: 12.5px;
+  font-size: 12px;
+  line-height: 16px;
   color: var(--fg-3);
   white-space: nowrap;
+}
+.canvas-a-verify-orders-footer {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 2px 0;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 16px;
+  color: var(--fg-3);
 }
 /* A lista rola por conta própria: o card ancorado no chat já tem altura
    limitada e não pode crescer com os 23 pedidos. */
@@ -10937,6 +11192,8 @@ button.canvas-a-verify-alert-cta[data-sl-button][data-variant="tertiary"]:active
   transition: background .12s ease;
 }
 .canvas-a-verify-order:hover { background: var(--bg-soft); }
+.canvas-a-verify-order.selected { background: var(--primary-soft); }
+.canvas-a-verify-order.selected .canvas-a-verify-order-id { font-weight: 500; }
 .canvas-a-verify-order + .canvas-a-verify-order { border-top: 1px solid var(--border); }
 .canvas-a-verify-order input { flex-shrink: 0; accent-color: var(--primary, #2158E8); }
 .canvas-a-verify-order-copy {
@@ -10956,31 +11213,35 @@ button.canvas-a-verify-alert-cta[data-sl-button][data-variant="tertiary"]:active
   color: var(--fg-3);
 }
 
-/* Área de soltar: a borda tracejada é o que anuncia que dá para arrastar o
-   arquivo para dentro; o botão continua sendo o caminho de sempre. */
+/* Área de soltar: borda tracejada anuncia que dá para arrastar; ícone e
+   descrição substituem a etiqueta placeholder do dropdown anterior. */
 .canvas-a-verify-upload {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   margin: 0 8px 6px;
-  padding: 16px 12px;
+  padding: 20px 12px 16px;
   border: 1px dashed var(--border-strong);
   border-radius: 10px;
-  background: var(--bg-soft);
+  background: #fff;
   text-align: center;
   transition: border-color .12s, background .12s;
 }
 .canvas-a-verify-upload.dragging {
-  border-color: var(--primary, #2158E8);
-  background: var(--bg-muted);
+  border-color: #2158E8;
+  background: var(--primary-soft);
 }
 .canvas-a-verify-upload input[type="file"] { display: none; }
-.canvas-a-verify-upload .canvas-a-run-btn { font-size: 13px; padding: 6px 16px; background: #fff; }
+.canvas-a-verify-upload-icon { color: var(--fg-3); }
+.canvas-a-verify-upload.dragging .canvas-a-verify-upload-icon { color: #2158E8; }
+.canvas-a-verify-upload .canvas-a-run-btn { margin-top: 4px; font-size: 13px; padding: 6px 16px; background: #fff; }
 .canvas-a-verify-upload-name {
   max-width: 100%;
-  font-size: 13px;
-  color: var(--fg-2);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  color: var(--fg);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -10990,32 +11251,33 @@ button.canvas-a-verify-alert-cta[data-sl-button][data-variant="tertiary"]:active
   color: var(--fg-3);
 }
 
-/* ── Resumo da árvore fechada ──
-   Cada pergunta respondida vira um par pergunta/resposta; o desfazer reabre
-   a última delas. ── */
+/* ── Header do card de resumo ──
+   Mesmo pesos do `.canvas-a-verify-kind` da pergunta — a distinção entre os
+   papéis vem do ícone e do rótulo, não da tipografia. ── */
 .canvas-a-verify-summary-kind {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  margin: 0 0 4px;
-  font-size: 13px;
+  gap: 6px;
+  margin: 0;
+  font-size: 12px;
   font-weight: 500;
+  line-height: 16px;
   letter-spacing: normal;
   text-transform: none;
-  color: var(--fg);
+  color: var(--fg-3);
 }
-/* Cada linha é o atalho de volta para a sua pergunta — daí o alvo de clique
-   ocupar a linha inteira e o chevron aparecer no hover. */
+.canvas-a-verify-summary-kind svg { flex-shrink: 0; }
+/* Item da lista de respostas: pergunta acima (caption) e resposta abaixo
+   (corpo em 500 — a resposta foi ajustada de 600 para 500 porque 600 pesava
+   mais que o título do próprio card). */
 .canvas-a-verify-summary-item {
   display: grid;
   grid-template-columns: 1fr auto;
   align-items: center;
   gap: 2px 8px;
-  /* Recuo negativo para o texto seguir alinhado ao resto do card, sem que o
-     realce do hover fique colado nas linhas. */
   width: auto;
-  margin: 0 -8px;
-  padding: 6px 8px;
+  margin: 0;
+  padding: 8px 8px;
   border: none;
   border-radius: 8px;
   background: transparent;
@@ -11024,10 +11286,10 @@ button.canvas-a-verify-alert-cta[data-sl-button][data-variant="tertiary"]:active
   cursor: pointer;
   transition: background .12s ease;
 }
-.canvas-a-verify-summary-item:hover { background: color-mix(in srgb, var(--bg-muted) 30%, transparent); }
+.canvas-a-verify-summary-item:hover { background: var(--bg-soft); }
 .canvas-a-verify-summary-item:focus-visible {
-  outline: 2px solid var(--primary, #2158E8);
-  outline-offset: -2px;
+  outline: none;
+  box-shadow: 0 0 0 1px #fff, 0 0 0 4px rgba(33,88,232,.28);
 }
 .canvas-a-verify-summary-item > .canvas-a-verify-summary-q,
 .canvas-a-verify-summary-item > .canvas-a-verify-answer-title { grid-column: 1; }
@@ -11041,21 +11303,41 @@ button.canvas-a-verify-alert-cta[data-sl-button][data-variant="tertiary"]:active
 }
 .canvas-a-verify-summary-item:hover .canvas-a-verify-summary-edit,
 .canvas-a-verify-summary-item:focus-visible .canvas-a-verify-summary-edit { opacity: 1; }
-.canvas-a-verify-summary-item + .canvas-a-verify-summary-item { margin-top: 4px; }
-/* Fecho do resumo: o que a árvore produziu do outro lado da tela. Separado da
-   lista por uma régua, porque não é mais uma resposta e sim a consequência. */
+.canvas-a-verify-summary-item + .canvas-a-verify-summary-item { margin-top: 2px; }
+/* Caption da pergunta acima da resposta. */
 .canvas-a-verify-summary-q {
-  font-size: 12.5px;
-  line-height: 17px;
-  color: var(--fg);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 16px;
+  color: var(--fg-3);
 }
-.canvas-a-verify-summary-item .canvas-a-verify-answer-title { font-size: 14px; }
+.canvas-a-verify-summary-item .canvas-a-verify-answer-title { font-size: 14px; font-weight: 500; line-height: 20px; }
 
 .canvas-a-verify-footer {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 8px 20px;
+  padding: 12px 16px;
+  border-top: 1px solid var(--bg-muted);
+}
+.canvas-a-verify-footer .canvas-a-run-btn {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  padding: 8px 18px;
+}
+.canvas-a-run-btn.canvas-a-run-btn--primary:disabled {
+  background: var(--bg-soft);
+  border-color: var(--border);
+  color: var(--fg-4);
+}
+/* Hint textual do footer — sobrevive só no alerta do canvas, onde carrega o
+   progresso da árvore ("N de M respondidas"). */
+.canvas-a-verify-footer-hint {
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 16px;
+  color: var(--fg-3);
 }
 .canvas-a-verify-sent-note {
   display: inline-flex;
@@ -11078,23 +11360,10 @@ button.canvas-a-verify-alert-cta[data-sl-button][data-variant="tertiary"]:active
   max-height: 380px;
   overflow-y: auto;
 }
-.chat-above-composer .canvas-a-verify-header { padding: 18px 18px 0; }
-.chat-above-composer .canvas-a-verify-intro { padding: 8px 18px 4px; }
-.chat-above-composer .canvas-a-verify-options { padding: 2px 10px; }
-.chat-above-composer .canvas-a-verify-footer { padding: 8px 18px; }
-/* Rodapé de confirmação alinha hint + botão à esquerda, com respiro horizontal
-   menor que o padrão do rodapé — o conteúdo fica no mesmo eixo dos itens do
-   resumo (que já usam margem negativa de 8px). */
-.canvas-a-verify-footer.canvas-a-verify-confirm-footer {
-  justify-content: flex-start;
-  align-items: flex-start;
-  padding-left: 8px;
-  padding-right: 8px;
-}
-.chat-above-composer .canvas-a-verify-footer.canvas-a-verify-confirm-footer {
-  padding-left: 8px;
-  padding-right: 8px;
-}
+.chat-above-composer .canvas-a-verify-header { padding: 14px 16px 0; }
+.chat-above-composer .canvas-a-verify-intro { padding: 10px 16px 6px; }
+.chat-above-composer .canvas-a-verify-options { padding: 2px 8px 4px; }
+.chat-above-composer .canvas-a-verify-footer { padding: 12px 16px; }
 
 /* ── Chegada da pergunta ──
    O card interrompe a conversa para pedir uma decisão, então ganha destaque
@@ -11121,16 +11390,16 @@ button.canvas-a-verify-alert-cta[data-sl-button][data-variant="tertiary"]:active
 /* O rodapé do corpo pode trazer mais de um bloco (card de resumo + fala do
    agente) — mesmo ritmo vertical das mensagens do chat. */
 .chat-body-card { display: flex; flex-direction: column; gap: 14px; }
-.chat-body-card .canvas-tasks-card.canvas-a-verify-answered { padding: 14px 16px 16px; }
-.chat-body-card .canvas-a-verify-answer-title { font-size: 15px; }
-.chat-body-card .canvas-a-verify-answer-desc { font-size: 14px; }
-.chat-body-card .canvas-a-verify-answer-meta { margin-top: 10px; }
 
 /* ── Tarefas sugeridas · botão de ação no lugar do "Responsável" ── */
 .canvas-a-run-btn {
   appearance: none;
   -webkit-appearance: none;
   justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   font-size: 15px;
   font-weight: 500;
   padding: 6px 14px;
@@ -11142,6 +11411,7 @@ button.canvas-a-verify-alert-cta[data-sl-button][data-variant="tertiary"]:active
   white-space: nowrap;
   transition: background .12s ease, opacity .12s ease;
 }
+.canvas-a-run-btn svg { flex-shrink: 0; }
 .canvas-a-run-btn:hover { background: var(--bg-soft, #f5f5f5); }
 .canvas-a-run-btn--primary {
   background: #2158E8;
@@ -12354,6 +12624,57 @@ button.canvas-a-verify-alert-cta[data-sl-button][data-variant="tertiary"]:active
   font-size: 12.5px; font-weight: 500;
   white-space: nowrap;
 }
+
+/* ═══ PolicyRuleDrawer — apresentação da regra (revisão) ═════════════════
+   Origem em linguagem natural com legenda de código; condições em pares
+   natural+technical; ações numeradas na ordem real. */
+.wfp-event-label { margin: 0; font-weight: 500; }
+.wfp-event-code {
+  display: inline-block;
+  margin-top: 4px;
+  padding: 2px 6px;
+  border-radius: var(--sl-radius-1);
+  background: var(--bg-soft);
+  color: var(--fg-3);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11.5px;
+}
+.wfp-priority-note {
+  margin: 12px 0 0;
+  font-size: 12.5px; color: var(--fg-2);
+}
+.wfp-cond-pair {
+  display: flex; flex-direction: column; gap: 4px;
+  padding: 8px 10px;
+  background: var(--bg-soft);
+  border-radius: var(--sl-radius-1);
+}
+.wfp-cond-natural { margin: 0; font-size: 13px; color: var(--fg); }
+.wfp-cond-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11.5px; color: var(--fg-3);
+}
+.wfp-cond-pending {
+  font-size: 11.5px; font-style: italic; color: var(--fg-3);
+}
+.wfp-task-row {
+  display: grid;
+  grid-template-columns: 24px 12px auto 1fr;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-top: 1px solid var(--bg-soft);
+}
+.wfp-task-row:first-of-type { border-top: 0; }
+.wfp-task-num {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px;
+  border-radius: 999px;
+  background: var(--bg-soft); color: var(--fg-2);
+  font-size: 11.5px; font-weight: 500;
+}
+.wfp-kind-label-inline { font-size: 12px; color: var(--fg-2); font-weight: 500; }
+.wfp-task-label { font-size: 13px; color: var(--fg); }
 
 /* ═══ WfListCardV2 — Card de Workflow 7b ══════════════════════════════════
    Card resumo do workflow na listagem: nome + pill de orquestração + pill

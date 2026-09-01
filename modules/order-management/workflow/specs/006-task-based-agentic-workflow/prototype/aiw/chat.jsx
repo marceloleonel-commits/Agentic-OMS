@@ -194,6 +194,207 @@ function renderMd(text) {
   return nodes;
 }
 
+/* Categoria de política → ícone Material Symbols Outlined. Mapa completo
+   das 5 categorias — mesmo conjunto que `PolicyCategoryTag` no canvas usa. */
+const POLICY_CATEGORY_ICON = {
+  exceptions:  "warning-amber",
+  payment:     "credit-card",
+  logistics:   "local-shipping",
+  fulfillment: "inventory-2",
+  returns:     "swap-horiz",
+};
+
+/* Grupo colapsável do card "Como chegamos aqui" — cabeçalho com chevron e
+   corpo indentado 32px para o texto alinhar com o rótulo. Ambos os grupos
+   nascem abertos por decisão do handoff (§2). */
+function ActionCardGroup({ icon, label, meta, defaultOpen = true, children }) {
+  /* Handoff §2: "Ambos os grupos nascem abertos". `defaultOpen` fica
+     opcional mas o default explícito é true — o boolean shorthand do JSX
+     no Babel standalone às vezes chegava aqui como undefined. */
+  const [open, setOpen] = useState(defaultOpen !== false);
+  return (
+    <div className="chat-action-card-group">
+      <button
+        type="button"
+        className="chat-action-card-group-head"
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
+      >
+        <span className="chat-action-card-group-text">
+          <span className="chat-action-card-group-title">
+            {icon && <Icon name={icon} size={16} />}
+            {label}
+          </span>
+          {meta && <span className="chat-action-card-group-meta">{meta}</span>}
+        </span>
+        <Icon
+          name={open ? "expand-less" : "expand-more"}
+          size={16}
+          className="chat-action-card-group-chevron"
+        />
+      </button>
+      {open && <div className="chat-action-card-group-body">{children}</div>}
+    </div>
+  );
+}
+
+/* Card "Como chegamos aqui" — variação 3c (HANDOFF-action-card-3c.md).
+   Header comum da família (mesmo padrão de `.canvas-a-verify-header`),
+   heading + resumo em uma frase, e dois grupos expansíveis. Sem botão
+   "Cancelar" — fechar a conversa faz o papel de "não". */
+function StructuredActionCard({ m }) {
+  /* Card com múltiplas opções (verificação de conflito) segue no branch
+     antigo — este layout é só para o recap "Como chegamos aqui". */
+  if (m.options && m.options.length > 0) {
+    return (
+      <div className="chat-action-card chat-action-card--structured chat-action-card--options">
+        <div className="chat-action-card-head">
+          <span className="chat-action-card-kind">
+            <Icon name="account-tree" size={16} />
+            {m.title}
+          </span>
+        </div>
+        {m.heading && (
+          <div className="chat-action-card-intro">
+            <p className="chat-action-card-heading">{m.heading}</p>
+          </div>
+        )}
+        {m.fields && m.fields.length > 0 && (
+          <div className="chat-action-card-groups">
+            {m.fields.map((f, fi) => (
+              <div key={fi} className="chat-action-card-field">
+                <span className="chat-action-field-label">{f.label}</span>
+                <span className="chat-action-field-value">{f.value}</span>
+              </div>
+            ))}
+          </div>
+        )}
+        <div className="chat-action-card-btns">
+          {m.options.map((opt, oi) => (
+            <button
+              key={oi}
+              className={oi === 0 ? "canvas-a-run-btn canvas-a-run-btn--primary" : "canvas-a-run-btn"}
+              onClick={opt.action}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  const trail = Array.isArray(m.trail) ? m.trail : [];
+  const policyFields = (m.fields || []).filter((f) => f.group === "policy" || !f.group);
+  const conditionField = policyFields.find((f) => f.label === "Se");
+  const actionsField = policyFields.find((f) => f.label === "Então");
+  const conditionsCount = conditionField
+    ? (Array.isArray(conditionField.values)
+        ? conditionField.values.length
+        : String(conditionField.value || "").split("·").filter((s) => s.trim()).length || 1)
+    : 0;
+  const actionsCount = actionsField
+    ? (Array.isArray(actionsField.values) ? actionsField.values.length : 1)
+    : 0;
+
+  /* Regra existente já é cobertura conhecida — não há decisão pendente,
+     só confirmação. Os dois grupos nascem colapsados para o card ficar
+     compacto e o CTA ("Abrir no canvas") aparecer sem scroll. Rascunhos
+     novos (sister/new) continuam abrindo por padrão. */
+  const isExisting = m.badge === "Regra existente";
+
+  return (
+    <div className="chat-action-card chat-action-card--structured">
+      <div className="chat-action-card-head">
+        <span className="chat-action-card-kind">
+          <Icon name="account-tree" size={16} />
+          {m.title}
+        </span>
+        {m.badge && <span className="chat-action-card-badge">{m.badge}</span>}
+      </div>
+
+      <div className="chat-action-card-intro">
+        {m.heading && <p className="chat-action-card-heading">{m.heading}</p>}
+        {m.summary && <p className="chat-action-card-summary">{m.summary}</p>}
+      </div>
+
+      <div className="chat-action-card-groups">
+        {trail.length > 0 && (
+          <ActionCardGroup
+            icon="route"
+            label="Trilha da conversa"
+            meta={`${trail.length} ${trail.length === 1 ? "resposta" : "respostas"}`}
+            defaultOpen={!isExisting}
+          >
+            {trail.map((a, i) => (
+              <div key={i} className="chat-action-card-field">
+                <span className="chat-action-field-label">{a.question}</span>
+                <span className="chat-action-field-value">{a.answer}</span>
+              </div>
+            ))}
+          </ActionCardGroup>
+        )}
+
+        {policyFields.length > 0 && (
+          <ActionCardGroup
+            icon="rule"
+            label="Detalhes da política"
+            meta={`${conditionsCount} ${conditionsCount === 1 ? "condição" : "condições"} · ${actionsCount} ${actionsCount === 1 ? "ação" : "ações"}`}
+            defaultOpen={!isExisting}
+          >
+            {policyFields.map((f, fi) => {
+              /* "Então" vira lista, uma ação por linha com arrow_forward. */
+              if (f.label === "Então" && Array.isArray(f.values)) {
+                return (
+                  <div key={fi} className="chat-action-card-field">
+                    <span className="chat-action-field-label">{f.label}</span>
+                    <div className="chat-action-field-actions">
+                      {f.values.map((v, vi) => (
+                        <span key={vi}>
+                          <Icon name="arrow-forward" size={14} />
+                          {v}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                );
+              }
+              /* Categoria: ícone mapeado por categoryId; Política ganha "policy". */
+              let iconName = null;
+              if (f.label === "Categoria" && f.categoryId) iconName = POLICY_CATEGORY_ICON[f.categoryId] || null;
+              else if (f.label === "Política") iconName = "policy";
+              return (
+                <div key={fi} className="chat-action-card-field">
+                  <span className="chat-action-field-label">{f.label}</span>
+                  {f.tag ? (
+                    <span className="chat-action-field-tag">{f.value}</span>
+                  ) : (
+                    <span className={`chat-action-field-value${f.label === "Categoria" && f.categoryId === "exceptions" ? " chat-action-field-value--exceptions" : ""}`}>
+                      {iconName && <Icon name={iconName} size={14} />}
+                      {f.value}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+          </ActionCardGroup>
+        )}
+      </div>
+
+      <div className="chat-action-card-btns">
+        <button className="canvas-a-run-btn canvas-a-run-btn--primary" onClick={m.onApply}>
+          {m.applyLabel || "Abrir no canvas"}
+        </button>
+        {m.onEdit && (
+          <button className="canvas-a-run-btn" onClick={m.onEdit}>
+            Editar regra
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 /* Reusable Chat panel.
    Supports two modes:
    - Uncontrolled: uses local state (initialMessages prop)
@@ -290,31 +491,7 @@ function ChatPanel({
         )}
 
         {m.type === "action" && m.fields && (
-          <div className="chat-action-card chat-action-card--structured">
-            <div className="chat-action-card-label">{m.title}</div>
-            {m.heading && <div className="chat-action-card-heading">{m.heading}</div>}
-            <div className="chat-action-card-fields">
-              {m.fields.map((f, fi) => (
-                <div key={fi} className="chat-action-card-field">
-                  <span className="chat-action-field-label">{f.label}:</span>
-                  {f.tag
-                    ? <span className="chat-action-field-tag">{f.value}</span>
-                    : <span className="chat-action-field-value">{f.value}</span>
-                  }
-                </div>
-              ))}
-            </div>
-            <div className="chat-action-card-btns">
-              <button className="btn btn-sm btn-primary chat-action-apply-full" onClick={m.onApply}>
-                {m.applyLabel || "Aplicar"}
-              </button>
-              {m.onDismiss && (
-                <button className="btn btn-sm btn-tertiary chat-action-dismiss" onClick={m.onDismiss}>
-                  Cancelar
-                </button>
-              )}
-            </div>
-          </div>
+          <StructuredActionCard m={m} />
         )}
 
         {m.type === "order-list" && m.orders && m.orders.length > 0 && (
