@@ -122,6 +122,59 @@ const Icon = ({ name, size = 16, ...rest }) => {
       return (<svg width={s} height={s} viewBox="0 -960 960 960" fill="currentColor" stroke="none" xmlns="http://www.w3.org/2000/svg" {...rest}><path d="M440-280h80v-240h-80v240Zm40-320q17 0 28.5-11.5T520-640q0-17-11.5-28.5T480-680q-17 0-28.5 11.5T440-640q0 17 11.5 28.5T480-600Zm0 520q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z"/></svg>);
     case "photo-library":
       return (<svg width={s} height={s} viewBox="0 -960 960 960" fill="currentColor" stroke="none" xmlns="http://www.w3.org/2000/svg" {...rest}><path d="M360-360h480L678-580 558-420l-90-120-108 180Zm-80 160q-33 0-56.5-23.5T200-280v-560q0-33 23.5-56.5T280-920h560q33 0 56.5 23.5T920-840v560q0 33-23.5 56.5T840-200H280Zm0-80h560v-560H280v560ZM120-40q-33 0-56.5-23.5T40-120v-600h80v600h600v80H120Zm160-800v560-560Z"/></svg>);
+    /* Material Symbols "fact_check" — prancheta com check, revisão. */
+    case "fact-check":
+      return (<svg width={s} height={s} viewBox="0 -960 960 960" fill="currentColor" stroke="none" xmlns="http://www.w3.org/2000/svg" {...rest}><path d="M212.31-140q-30.31 0-51.31-21t-21-51.31v-535.38q0-30.31 21-51.31t51.31-21h535.38q30.31 0 51.31 21t21 51.31v535.38q0 30.31-21 51.31t-51.31 21H212.31Zm0-40h535.38q13.85 0 23.08-9.23T780-212.31v-535.38q0-13.85-9.23-23.08T747.69-780H212.31q-13.85 0-23.08 9.23T180-747.69v535.38q0 13.85 9.23 23.08T212.31-180Zm42.15-83.08 141.85-141.84-28.85-28.85-113 113L197.69-377l-28.84 28.85 85.61 85.07Zm395.85-38.46v-40H510.77v40h139.54Zm-395.85-236.31 141.85-141.84-28.85-28.85-113 113L197.69-597.7l-28.84 28.85 85.61 84.99Zm395.85-38.46v-40H510.77v40h139.54ZM180-180v-600 600Z"/></svg>);
+    /* Material Symbols "error_outline" — alerta de erro. */
+    case "error-outline":
+      return (<svg width={s} height={s} viewBox="0 -960 960 960" fill="currentColor" stroke="none" xmlns="http://www.w3.org/2000/svg" {...rest}><path d="M480-280q17 0 28.5-11.5T520-320q0-17-11.5-28.5T480-360q-17 0-28.5 11.5T440-320q0 17 11.5 28.5T480-280Zm-40-160h80v-240h-80v240Zm40 360q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z"/></svg>);
+    /* Material Symbols "lock" — cadeado, aviso de ação irreversível. */
+    case "lock":
+      return (<svg width={s} height={s} viewBox="0 -960 960 960" fill="currentColor" stroke="none" xmlns="http://www.w3.org/2000/svg" {...rest}><path d="M240-80q-33 0-56.5-23.5T160-160v-400q0-33 23.5-56.5T240-640h40v-80q0-83 58.5-141.5T480-920q83 0 141.5 58.5T680-720v80h40q33 0 56.5 23.5T800-560v400q0 33-23.5 56.5T720-80H240Zm0-80h480v-400H240v400Zm240-120q33 0 56.5-23.5T560-360q0-33-23.5-56.5T480-440q-33 0-56.5 23.5T400-360q0 33 23.5 56.5T480-280ZM360-640h240v-80q0-50-35-85t-85-35q-50 0-85 35t-35 85v80ZM240-160v-400 400Z"/></svg>);
+    /* Material Symbols "upload_file" — arquivo com seta, dropzone. */
+    case "upload-file":
+      return (<svg width={s} height={s} viewBox="0 -960 960 960" fill="currentColor" stroke="none" xmlns="http://www.w3.org/2000/svg" {...rest}><path d="M440-320v-326L336-542l-56-58 200-200 200 200-56 58-104-104v326h-80ZM240-160q-33 0-56.5-23.5T160-240v-120h80v120h480v-120h80v120q0 33-23.5 56.5T720-160H240Z"/></svg>);
+    /* Material Symbols "chat_bubble_outline" — balão de conversa vazio. */
+    case "chat-bubble-outline":
+      return (<svg width={s} height={s} viewBox="0 -960 960 960" fill="currentColor" stroke="none" xmlns="http://www.w3.org/2000/svg" {...rest}><path d="M240-400h320v-80H240v80Zm0-120h480v-80H240v80Zm0-120h480v-80H240v80ZM80-80v-720q0-33 23.5-56.5T160-880h640q33 0 56.5 23.5T880-800v480q0 33-23.5 56.5T800-240H240L80-80Zm126-240h594v-480H160v525l46-45Zm-46 0v-480 480Z"/></svg>);
+    /* Material Symbols "checklist" — lista com marcações, seleção de pedidos. */
+    case "checklist":
+      return (<svg width={s} height={s} viewBox="0 -960 960 960" fill="currentColor" stroke="none" xmlns="http://www.w3.org/2000/svg" {...rest}><path d="m235-435-97-97 43-43 54 54 122-122 43 43-165 165Zm0 280-97-97 43-43 54 54 122-122 43 43-165 165Zm240-100v-60h360v60H475Zm0-280v-60h360v60H475Z"/></svg>);
+    /* Material Symbols "account_tree" — árvore de decisão, header do recap. */
+    case "account-tree":
+      return (<svg width={s} height={s} viewBox="0 -960 960 960" fill="currentColor" stroke="none" xmlns="http://www.w3.org/2000/svg" {...rest}><path d="M600-120v-120H440v-400h-80v120H80v-320h280v120h240v-120h280v320H600v-120h-80v320h80v-120h280v320H600ZM160-760v160-160Zm520 400v160-160Zm0-400v160-160Zm0 160h120v-160H680v160Zm0 400h120v-160H680v160ZM160-600h120v-160H160v160Z"/></svg>);
+    /* Material Symbols "route" — trilha de conversa. */
+    case "route":
+      return (<svg width={s} height={s} viewBox="0 -960 960 960" fill="currentColor" stroke="none" xmlns="http://www.w3.org/2000/svg" {...rest}><path d="M247-167q-47-47-47-113v-327q-35-13-57.5-43.5T120-720q0-50 35-85t85-35q50 0 85 35t35 85q0 39-22.5 69.5T280-607v327q0 33 23.5 56.5T360-200q33 0 56.5-23.5T440-280v-400q0-66 47-113t113-47q66 0 113 47t47 113v327q35 13 57.5 43.5T840-240q0 50-35 85t-85 35q-50 0-85-35t-35-85q0-39 22.5-70t57.5-43v-327q0-33-23.5-56.5T600-760q-33 0-56.5 23.5T520-680v400q0 66-47 113t-113 47q-66 0-113-47Zm-7-513q17 0 28.5-11.5T280-720q0-17-11.5-28.5T240-760q-17 0-28.5 11.5T200-720q0 17 11.5 28.5T240-680Zm480 480q17 0 28.5-11.5T760-240q0-17-11.5-28.5T720-280q-17 0-28.5 11.5T680-240q0 17 11.5 28.5T720-200ZM240-720Zm480 480Z"/></svg>);
+    /* Material Symbols "rule" — regras da política. */
+    case "rule":
+      return (<svg width={s} height={s} viewBox="0 -960 960 960" fill="currentColor" stroke="none" xmlns="http://www.w3.org/2000/svg" {...rest}><path d="m576-160-56-56 104-104-104-104 56-56 104 104 104-104 56 56-104 104 104 104-56 56-104-104-104 104Zm79-360L513-662l56-56 85 85 170-170 56 57-225 226ZM80-280v-80h360v80H80Zm0-320v-80h360v80H80Z"/></svg>);
+    /* Material Symbols "policy" — política, escudo com marca. */
+    case "policy":
+      return (<svg width={s} height={s} viewBox="0 -960 960 960" fill="currentColor" stroke="none" xmlns="http://www.w3.org/2000/svg" {...rest}><path d="M480-80q-139-35-229.5-159.5T160-516v-244l320-120 320 120v244q0 85-29 163.5T688-214L560-342q-18 11-38.5 16.5T480-320q-66 0-113-47t-47-113q0-66 47-113t113-47q66 0 113 47t47 113q0 22-5.5 42.5T618-398l60 60q20-41 31-86t11-92v-189l-240-90-240 90v189q0 121 68 220t172 132q26-8 49.5-20.5T576-214l56 56q-33 27-71.5 47T480-80Zm56.5-343.5Q560-447 560-480t-23.5-56.5Q513-560 480-560t-56.5 23.5Q400-513 400-480t23.5 56.5Q447-400 480-400t56.5-23.5ZM488-477Z"/></svg>);
+    /* Material Symbols "arrow_forward" — ação encadeada no "Então". */
+    case "arrow-forward":
+      return (<svg width={s} height={s} viewBox="0 -960 960 960" fill="currentColor" stroke="none" xmlns="http://www.w3.org/2000/svg" {...rest}><path d="M647-440H160v-80h487L423-744l57-56 320 320-320 320-57-56 224-224Z"/></svg>);
+    /* Material Symbols "warning_amber" — ícone da categoria Exceções. */
+    case "warning-amber":
+      return (<svg width={s} height={s} viewBox="0 -960 960 960" fill="currentColor" stroke="none" xmlns="http://www.w3.org/2000/svg" {...rest}><path d="m40-120 440-760 440 760H40Zm138-80h604L480-720 178-200Zm330.5-51.5Q520-263 520-280t-11.5-28.5Q497-320 480-320t-28.5 11.5Q440-297 440-280t11.5 28.5Q463-240 480-240t28.5-11.5ZM440-360h80v-200h-80v200Zm40-100Z"/></svg>);
+    /* Material Symbols "expand_more" / "expand_less" — chevrons do grupo colapsável. */
+    case "expand-more":
+      return (<svg width={s} height={s} viewBox="0 -960 960 960" fill="currentColor" stroke="none" xmlns="http://www.w3.org/2000/svg" {...rest}><path d="M480-345 240-585l56-56 184 184 184-184 56 56-240 240Z"/></svg>);
+    case "expand-less":
+      return (<svg width={s} height={s} viewBox="0 -960 960 960" fill="currentColor" stroke="none" xmlns="http://www.w3.org/2000/svg" {...rest}><path d="m296-345-56-56 240-240 240 240-56 56-184-184-184 184Z"/></svg>);
+    /* Material Symbols "credit_card" — categoria Pagamento. */
+    case "credit-card":
+      return (<svg width={s} height={s} viewBox="0 -960 960 960" fill="currentColor" stroke="none" xmlns="http://www.w3.org/2000/svg" {...rest}><path d="M880-720v480q0 33-23.5 56.5T800-160H160q-33 0-56.5-23.5T80-240v-480q0-33 23.5-56.5T160-800h640q33 0 56.5 23.5T880-720Zm-720 80h640v-80H160v80Zm0 160v240h640v-240H160Zm0 240v-480 480Z"/></svg>);
+    /* Material Symbols "local_shipping" — categoria Logística. */
+    case "local-shipping":
+      return (<svg width={s} height={s} viewBox="0 -960 960 960" fill="currentColor" stroke="none" xmlns="http://www.w3.org/2000/svg" {...rest}><path d="M155-195q-35-35-35-85H40v-440q0-33 23.5-56.5T120-800h560v160h120l120 160v200h-80q0 50-35 85t-85 35q-50 0-85-35t-35-85H360q0 50-35 85t-85 35q-50 0-85-35Zm113.5-56.5Q280-263 280-280t-11.5-28.5Q257-320 240-320t-28.5 11.5Q200-297 200-280t11.5 28.5Q223-240 240-240t28.5-11.5ZM120-360h32q17-18 39-29t49-11q27 0 49 11t39 29h272v-360H120v360Zm628.5 108.5Q760-263 760-280t-11.5-28.5Q737-320 720-320t-28.5 11.5Q680-297 680-280t11.5 28.5Q703-240 720-240t28.5-11.5ZM680-440h170l-90-120h-80v120ZM360-540Z"/></svg>);
+    /* Material Symbols "inventory_2" — categoria Fulfillment. */
+    case "inventory-2":
+      return (<svg width={s} height={s} viewBox="0 -960 960 960" fill="currentColor" stroke="none" xmlns="http://www.w3.org/2000/svg" {...rest}><path d="M200-80q-33 0-56.5-23.5T120-160v-451q-18-11-29-28.5T80-680v-120q0-33 23.5-56.5T160-880h640q33 0 56.5 23.5T880-800v120q0 23-11 40.5T840-611v451q0 33-23.5 56.5T760-80H200Zm0-520v440h560v-440H200Zm-40-80h640v-120H160v120Zm200 280h240v-80H360v80Zm120 20Z"/></svg>);
+    /* Material Symbols "swap_horiz" — categoria Devolução & Troca. */
+    case "swap-horiz":
+      return (<svg width={s} height={s} viewBox="0 -960 960 960" fill="currentColor" stroke="none" xmlns="http://www.w3.org/2000/svg" {...rest}><path d="M280-160 80-360l200-200 56 57-103 103h287v80H233l103 103-56 57Zm400-240-56-57 103-103H440v-80h287L624-743l56-57 200 200-200 200Z"/></svg>);
     default:
       return null;
   }

@@ -2341,28 +2341,99 @@ function CanvasAVerifyOption({ badge, title, selected, onSelect, children }) {
 /* A pergunta de verificação é respondida somente no chat. No canvas, o
    Diagnóstico exibe apenas este alerta com a pergunta pendente; o botão
    "Responder" abre o chat e só aparece quando ele está fechado. */
-function CanvasAVerifyAlert({ question, onOpenChat }) {
+/* Medidor de etapas do header — um segmento por pergunta do path percorrido.
+   O da posição `index` é a pergunta atual; anteriores estão respondidas. */
+function CanvasAVerifyMeter({ path, answers, index }) {
+  if (!path || path.length === 0) return null;
+  return (
+    <span className="canvas-a-verify-meter" aria-hidden="true">
+      {path.map((qid, i) => {
+        const state = i < index || (answers && answers[qid]) ? "done" : i === index ? "current" : "future";
+        return <i key={qid} data-state={state} />;
+      })}
+    </span>
+  );
+}
+
+/* Loader de 3 dots pulsando — mesmo padrão do admin-ai. Usado no header do
+   card de revisão durante o estado `sending`. */
+function CanvasAVerifyDots() {
+  return (
+    <span className="canvas-a-verify-dots" aria-hidden="true">
+      <i /><i /><i />
+    </span>
+  );
+}
+
+/* Alerta de pergunta pendente no canvas (bloco "Diagnóstico"). Deixou de ser
+   uma faixa amarela e passou a ser um card da mesma família visual do chat.
+   O amarelo fica só no chip "Aguardando você". O bloco tem três fases,
+   todas derivadas do mesmo `ctl`:
+   - nenhuma resposta / parcial → mostra a pergunta atual em aberto
+   - `closed && !confirmed`     → mostra "As N perguntas foram respondidas"
+   - `confirmed`                → o alerta é desmontado antes de chegar aqui */
+function CanvasAVerifyAlert({ ctl, onOpenChat, orders = [] }) {
+  const { path, answers, question, closed, confirmed } = ctl;
+  if (confirmed) return null;
+  const total = (ctl.verification && Object.keys(ctl.verification.questions || {}).length) || path.length;
+  const answered = path.filter((qid) => !!answers[qid]).length;
+
+  const inReview = closed && !confirmed;
+  const currentTitle = (question || {}).title || "";
+  const lastAnsweredId = [...path].reverse().find((qid) => !!answers[qid]);
+  const recap = !inReview && answered > 0 && lastAnsweredId
+    ? { qTitle: (ctl.verification.questions[lastAnsweredId] || {}).title, aLabel: canvasAAnswerLabel(ctl.verification, lastAnsweredId, answers[lastAnsweredId], orders) }
+    : null;
+
+  const headerLabel = inReview ? "Revisão pendente" : "Pergunta pendente";
+  const chipLabel = inReview ? "Aguardando envio" : "Aguardando você";
+  const title = inReview ? `As ${total} perguntas foram respondidas` : currentTitle;
+  const cta = inReview ? "Revisar no chat" : "Responder no chat";
+  const hint = inReview
+    ? `${answered} de ${total} respondidas`
+    : answered === 0
+      ? `Nenhuma das ${total} perguntas respondida`
+      : `${answered} de ${total} respondidas · ${total - answered === 1 ? "falta 1" : `faltam ${total - answered}`}`;
+
   return (
     <div className="canvas-a-verify-alert">
-      <span className="canvas-a-verify-alert-icon"><Icon name="quiz-stacked" size={20} /></span>
-      <span className="canvas-a-verify-alert-copy">
-        {question && <span className="canvas-a-verify-alert-title">{question}</span>}
-        <span className="canvas-a-verify-alert-desc">Responda sua pergunta no chat</span>
-      </span>
-      {onOpenChat && (
+      <div className="canvas-a-verify-header">
+        <span className="canvas-a-verify-kind">
+          <Icon name="quiz" size={16} />
+          {headerLabel}
+        </span>
+        <div className="canvas-a-verify-pagination">
+          {answered > 0 && <CanvasAVerifyMeter path={path} answers={answers} index={inReview ? path.length : path.length - 1} />}
+          <span className="canvas-a-verify-alert-chip">
+            <Icon name="clock" size={14} />
+            {chipLabel}
+          </span>
+        </div>
+      </div>
+      {recap && (
+        <div className="canvas-a-verify-alert-recap">
+          <Icon name="check-circle" size={16} />
+          <span className="canvas-a-verify-alert-recap-q">{recap.qTitle}</span>
+          <span className="canvas-a-verify-alert-recap-a">{recap.aLabel}</span>
+        </div>
+      )}
+      <div className="canvas-a-verify-alert-body">
+        <p className="canvas-a-verify-alert-title">{title}</p>
+        {!inReview && (
+          <p className="canvas-a-verify-alert-desc">Responda no chat para o agente continuar montando as tarefas.</p>
+        )}
+      </div>
+      <div className="canvas-a-verify-footer">
         <button
           type="button"
-          className="canvas-a-verify-alert-cta"
-          data-sl-button
-          data-variant="tertiary"
-          data-size="large"
-          data-has-label
+          className="canvas-a-run-btn canvas-a-run-btn--primary"
           onClick={onOpenChat}
         >
-          <Icon name="chevron-left" size={16} />
-          Responder
+          <Icon name="chat-bubble-outline" size={18} />
+          {cta}
         </button>
-      )}
+        <span className="canvas-a-verify-footer-hint">{hint}</span>
+      </div>
     </div>
   );
 }
@@ -2395,6 +2466,14 @@ function useCanvasAVerification(verification) {
      respostas viram tarefas em execução. */
   const [confirmed, setConfirmed] = useState(false);
   const [confirmedAt, setConfirmedAt] = useState(null);
+  /* `sending` cobre o intervalo entre o clique em "Enviar respostas" e o
+     fecho definitivo (confirmed=true). É o que troca o header do card de
+     revisão para "Enviando respostas" com os dots pulsando. `error` fica
+     disponível para telas de tentativa falha — nesta iteração o caminho
+     feliz é o único simulado, o campo existe para o componente reagir a
+     ele quando algum outro ponto do sistema decidir setá-lo. */
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState(false);
   const timerRef = useRef(null);
 
   const questions = (verification && verification.questions) || {};
@@ -2429,6 +2508,8 @@ function useCanvasAVerification(verification) {
     confirmedAt,
     /* Enquanto o agente "processa" a confirmação, o canvas mostra skeleton. */
     settling,
+    sending,
+    error,
     questionId: currentId,
     question: questions[currentId],
     index,
@@ -2474,16 +2555,26 @@ function useCanvasAVerification(verification) {
       if (!answer.next) setClosedAt(new Date());
     },
     /* Confirmação final: encerra a etapa de revisão, dispara o skeleton do
-       canvas e libera as tarefas prescritas. Sem esta chamada as respostas
-       ficam no chat como resumo revisável, mas nada é enviado. */
+       canvas e libera as tarefas prescritas. Primeiro entra em `sending`
+       (dots pulsando no header do card de revisão), e só depois carimba
+       confirmed. Sem esta chamada as respostas ficam no chat como resumo
+       revisável, mas nada é enviado. */
     confirm: () => {
-      if (!closed || confirmed) return;
-      setConfirmedAt(new Date());
-      setConfirmed(true);
-      setSettling(true);
+      if (!closed || confirmed || sending) return;
+      setError(false);
+      setSending(true);
       if (timerRef.current) clearTimeout(timerRef.current);
-      timerRef.current = setTimeout(() => setSettling(false), 1400);
+      timerRef.current = setTimeout(() => {
+        setSending(false);
+        setConfirmedAt(new Date());
+        setConfirmed(true);
+        setSettling(true);
+        timerRef.current = setTimeout(() => setSettling(false), 1400);
+      }, 900);
     },
+    /* Sai do estado de erro sem apagar as respostas — usado pelo botão
+       "Tentar novamente" do card de revisão em falha. */
+    retryConfirm: () => setError(false),
   };
 }
 
@@ -2566,14 +2657,25 @@ function canvasASummaryOutcome(tasks) {
    • mode="final" — o operador confirmou. As linhas viram texto estático, sem
      interação, porque as respostas já foram traduzidas em tarefas em execução
      no canvas — não faz sentido voltar. */
+/* Registra revisão / envio / erro / registro final na mesma família visual
+   do card de pergunta. O que muda entre os papéis é o header (rótulo + lado
+   direito), o corpo (título opcional + lista de respostas) e o rodapé
+   (botões). Container, escala tipográfica e paddings são idênticos. */
 function CanvasAVerifySummaryCard({ ctl, orders, mode = "final" }) {
-  const { verification, answers, path } = ctl;
+  const { verification, answers, path, sending, error } = ctl;
   const isReview = mode === "review";
+  const inSending = isReview && sending;
+  const inError = isReview && error && !sending;
+  const isFinal = mode === "final";
+
+  const total = path.length;
+  const respostasLabel = `${total} ${total === 1 ? "resposta" : "respostas"}`;
 
   const renderItem = (id, i) => {
     const label = canvasAAnswerLabel(verification, id, answers[id], orders);
     const qTitle = (verification.questions[id] || {}).title;
-    if (isReview) {
+    const editable = isReview && !inSending;
+    if (editable) {
       return (
         <button
           key={id}
@@ -2598,41 +2700,103 @@ function CanvasAVerifySummaryCard({ ctl, orders, mode = "final" }) {
     );
   };
 
+  /* Header: rótulo + ícone à esquerda; à direita, contagem de respostas
+     ou os dots do estado de envio. */
+  const headerIcon = isFinal ? "check-circle" : "fact-check";
+  const headerLabel = inSending ? "Enviando respostas" : isFinal ? "Respostas enviadas" : "Revisão";
+
+  /* Título do bloco: some no registro final; muda para uma frase de
+     progresso durante o envio. */
+  const bodyTitle = inSending
+    ? "Criando as tarefas no canvas"
+    : inError
+      ? "Não foi possível enviar"
+      : isReview
+        ? "Revise antes de enviar"
+        : null;
+
   return (
     <div
-      className={`canvas-tasks-card canvas-a-verify-answered${isReview ? " canvas-a-verify-answered--review" : ""}`}
+      className={`canvas-tasks-card canvas-a-verify-answered${isReview ? " canvas-a-verify-answered--review" : ""}${inSending ? " canvas-a-verify-answered--sending" : ""}${inError ? " canvas-a-verify-answered--error" : ""}`}
       data-verify-summary-mode={mode}
     >
+      <div className="canvas-a-verify-header">
+        <span className="canvas-a-verify-summary-kind">
+          <Icon name={headerIcon} size={16} />
+          {headerLabel}
+        </span>
+        <div className="canvas-a-verify-pagination">
+          {inSending
+            ? <CanvasAVerifyDots />
+            : <span className="canvas-a-verify-count">{respostasLabel}</span>}
+        </div>
+      </div>
+
+      {bodyTitle && (
+        <div className="canvas-a-verify-intro">
+          <p className="detail-section-body">{bodyTitle}</p>
+        </div>
+      )}
+
+      {inError && (
+        <div className="canvas-a-verify-error-notice">
+          <Icon name="error-outline" size={18} />
+          <span className="canvas-a-verify-error-copy">
+            <span className="canvas-a-verify-error-title">Não foi possível enviar</span>
+            <span className="canvas-a-verify-error-desc">Confira suas respostas e tente novamente. Nada foi criado no canvas.</span>
+          </span>
+        </div>
+      )}
+
       <div className="canvas-a-verify-answer">
         <div className="canvas-a-verify-answer-copy">
-          {/* Revisão usa o modificador `--kind-lower`: caixa baixa (só a
-              inicial maiúscula), destoando da tarja em uppercase da versão
-              final para reforçar que aqui a etapa ainda é ação, não registro. */}
-          <p className={`canvas-a-verify-summary-kind${isReview ? " canvas-a-verify-summary-kind--lower" : ""}`}>
-            <Icon name={isReview ? "quiz" : "check"} size={14} />
-            {isReview ? "Revise antes de enviar" : "Perguntas respondidas"}
-          </p>
           {path.map((id, i) => renderItem(id, i))}
         </div>
       </div>
-      {isReview ? (
+
+      {isReview && !inError && (
         <div className="canvas-a-verify-footer canvas-a-verify-confirm-footer">
           <p className="canvas-a-verify-confirm-hint">
+            <Icon name="lock" size={14} />
             Ao enviar, as respostas viram tarefas e não podem mais ser editadas.
           </p>
           <button
             type="button"
-            className="canvas-a-run-btn canvas-a-run-btn--primary"
+            className="canvas-a-run-btn canvas-a-run-btn--primary canvas-a-verify-confirm-btn"
+            disabled={inSending}
             onClick={() => ctl.confirm && ctl.confirm()}
           >
-            Enviar respostas
+            {inSending ? "Enviando…" : "Enviar respostas"}
           </button>
         </div>
-      ) : verification.answeredBy && (
-        <p className="canvas-a-verify-answer-meta">
-          Feito por {verification.answeredBy}
-          {verification.answeredAt ? ` em ${verification.answeredAt}` : ""}
-        </p>
+      )}
+
+      {inError && (
+        <div className="canvas-a-verify-footer canvas-a-verify-error-footer">
+          <button
+            type="button"
+            className="canvas-a-run-btn canvas-a-run-btn--primary"
+            onClick={() => { ctl.retryConfirm && ctl.retryConfirm(); ctl.confirm && ctl.confirm(); }}
+          >
+            Tentar novamente
+          </button>
+          <button
+            type="button"
+            className="canvas-a-run-btn"
+            onClick={() => ctl.retryConfirm && ctl.retryConfirm()}
+          >
+            Revisar
+          </button>
+        </div>
+      )}
+
+      {isFinal && verification.answeredBy && (
+        <div className="canvas-a-verify-footer canvas-a-verify-final-footer">
+          <span className="canvas-a-verify-answer-meta">
+            {verification.answeredBy}
+            {verification.answeredAt ? ` · ${verification.answeredAt}` : ""}
+          </span>
+        </div>
       )}
     </div>
   );
@@ -2688,86 +2852,63 @@ function CanvasAVerifyOrderList({ orders, selected, onChange }) {
         <button type="button" className="canvas-a-verify-orders-all" onClick={toggleAll} disabled={rows.length === 0}>
           {allShown ? "Limpar seleção" : "Selecionar todos"}
         </button>
-        <span className="canvas-a-verify-orders-count">{selected.length} de {orders.length}</span>
+        <span className="canvas-a-verify-orders-count">
+          {selected.length} de {orders.length} selecionados
+        </span>
       </div>
       <div className="canvas-a-verify-orders-list">
         {rows.length === 0 && <p className="canvas-a-verify-orders-empty">Nenhum pedido encontrado.</p>}
-        {rows.map((o) => (
-          <label key={o.id} className="canvas-a-verify-order">
-            <input type="checkbox" checked={selected.includes(o.id)} onChange={() => toggle(o.id)} />
-            <span className="canvas-a-verify-order-copy">
-              <span className="canvas-a-verify-order-id">{o.id}</span>
-              <span className="canvas-a-verify-order-meta">{o.customer} · {o.sla}</span>
-            </span>
-          </label>
-        ))}
+        {rows.map((o) => {
+          const isSelected = selected.includes(o.id);
+          return (
+            <label key={o.id} className={`canvas-a-verify-order${isSelected ? " selected" : ""}`}>
+              <input type="checkbox" checked={isSelected} onChange={() => toggle(o.id)} />
+              <span className="canvas-a-verify-order-copy">
+                <span className="canvas-a-verify-order-id">{o.id}</span>
+                <span className="canvas-a-verify-order-meta">{o.customer} · {o.sla}</span>
+              </span>
+            </label>
+          );
+        })}
+      </div>
+      <div className="canvas-a-verify-orders-footer">
+        <span>{selected.length} {selected.length === 1 ? "pedido" : "pedidos"}</span>
+        <span>·</span>
+        <span>{orders.length - selected.length} restantes</span>
       </div>
     </div>
   );
 }
 
-/* Selecionar pedidos e anexar comprovante respondem à mesma pergunta por
-   caminhos diferentes. Num dropdown só um campo fica aberto por vez, e o card
-   não cresce com os dois ao mesmo tempo dentro do chat. */
+/* Segmented control de dois botões: ambos sempre visíveis. Como só existem
+   dois caminhos (selecionar pedidos ou anexar comprovante), esconder um deles
+   dentro de um dropdown esconde metade da resposta. */
 const CANVAS_A_VERIFY_MODES = [
-  { value: "select", icon: "select-search" },
+  { value: "select", icon: "checklist" },
   { value: "upload", icon: "attach" }
 ];
 
 function CanvasAVerifyModePicker({ mode, selectLabel, uploadLabel, onChange }) {
-  const [open, setOpen] = useState(false);
-  const wrapRef = useRef(null);
-
-  useEffect(() => {
-    if (!open) return;
-    /* O card rola dentro do chat e recorta o próprio conteúdo, então o campo
-       sobe para o topo antes de abrir — senão o menu nasceria cortado. */
-    if (wrapRef.current) wrapRef.current.scrollIntoView({ block: "start" });
-    const onDocDown = (e) => {
-      if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false);
-    };
-    document.addEventListener("mousedown", onDocDown);
-    return () => document.removeEventListener("mousedown", onDocDown);
-  }, [open]);
-
   const options = CANVAS_A_VERIFY_MODES.map((o) => ({
     ...o,
     label: o.value === "select" ? selectLabel : uploadLabel
   }));
-  const current = options.find((o) => o.value === mode);
 
   return (
-    <div className="canvas-a-verify-mode" ref={wrapRef}>
-      <button
-        type="button"
-        className={`canvas-a-verify-mode-trigger${open ? " open" : ""}${current ? " selected" : ""}`}
-        aria-haspopup="menu"
-        aria-expanded={open}
-        onClick={() => setOpen((o) => !o)}
-      >
-        {current && <Icon name={current.icon} size={16} className="canvas-a-verify-mode-icon" />}
-        <span className="canvas-a-verify-mode-label">
-          {current ? current.label : "Escolher como responder"}
-        </span>
-        <Icon name="chevron-down" size={14} />
-      </button>
-      {open && (
-        <div className="canvas-a-verify-mode-menu" role="menu">
-          {options.map((o) => (
-            <button
-              key={o.value}
-              type="button"
-              role="menuitem"
-              aria-current={o.value === mode}
-              className={`canvas-a-verify-mode-option${o.value === mode ? " selected" : ""}`}
-              onClick={() => { onChange(o.value); setOpen(false); }}
-            >
-              <Icon name={o.icon} size={16} className="canvas-a-verify-mode-icon" />
-              <span>{o.label}</span>
-            </button>
-          ))}
-        </div>
-      )}
+    <div className="canvas-a-verify-mode" role="tablist" aria-label="Como responder">
+      {options.map((o) => (
+        <button
+          key={o.value}
+          type="button"
+          role="tab"
+          aria-selected={o.value === mode}
+          className={`canvas-a-verify-mode-option${o.value === mode ? " selected" : ""}`}
+          onClick={() => onChange(o.value)}
+        >
+          <Icon name={o.icon} size={16} className="canvas-a-verify-mode-icon" />
+          <span>{o.label}</span>
+        </button>
+      ))}
     </div>
   );
 }
@@ -2783,7 +2924,7 @@ function CanvasAVerifyUpload({ fileName, onFile }) {
 
   return (
     <div
-      className={`canvas-a-verify-upload${dragging ? " dragging" : ""}`}
+      className={`canvas-a-verify-upload${dragging ? " dragging" : ""}${fileName ? " has-file" : ""}`}
       onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
       onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setDragging(false); }}
       onDrop={(e) => {
@@ -2798,13 +2939,14 @@ function CanvasAVerifyUpload({ fileName, onFile }) {
         accept="image/*,.pdf,.eml,.msg"
         onChange={(e) => take(e.target.files && e.target.files[0])}
       />
+      <Icon name="upload-file" size={24} className="canvas-a-verify-upload-icon" />
       <span className="canvas-a-verify-upload-name">
-        {fileName || "Arraste o comprovante aqui"}
+        {fileName || "Solte o comprovante aqui"}
       </span>
+      <span className="canvas-a-verify-upload-hint">Imagem, e-mail ou PDF · sem leitura automática</span>
       <button type="button" className="canvas-a-run-btn" onClick={() => inputRef.current && inputRef.current.click()}>
         {fileName ? "Trocar" : "Escolher"}
       </button>
-      <span className="canvas-a-verify-upload-hint">Imagem, e-mail ou PDF</span>
     </div>
   );
 }
@@ -2872,7 +3014,8 @@ function CanvasAVerificationCard({ ctl, orders }) {
           Pergunta
         </span>
         <div className="canvas-a-verify-pagination">
-          <span className="canvas-a-verify-count">{index + 1} — {total}</span>
+          <CanvasAVerifyMeter path={ctl.path} answers={ctl.answers} index={index} />
+          <span className="canvas-a-verify-count">{index + 1} de {total}</span>
           <div className="canvas-a-verify-nav">
             <button
               type="button"
@@ -3064,13 +3207,16 @@ function CanvasPatternA({ task, onOpenOrder, onOpenList, onOpenTask, verificatio
             de verificação não é respondida aqui: ela vive no chat. */}
         <DocAccordionSection title="Diagnóstico">
           <p className="detail-section-body">{d.diagnosis.text}</p>
-          {/* Alerta some assim que a árvore fecha — na etapa de revisão o foco
-              já é o card "Revise antes de enviar" no chat, não mais uma
-              pergunta pendente. */}
-          {d.verification && !verification.closed && (
+          {/* Alerta acompanha as três fases da árvore (nenhuma resposta,
+              parcial, revisão pendente) e só é desmontado quando as respostas
+              são enviadas (confirmed). No estado `confirmed` a tarefa de
+              verificação desce para "Tarefas realizadas" e o registro fica
+              no chat, no card verde final. */}
+          {d.verification && !verification.confirmed && (
             <CanvasAVerifyAlert
-              question={(verification.question || {}).title}
+              ctl={verification}
               onOpenChat={onOpenChat}
+              orders={orders.items}
             />
           )}
         </DocAccordionSection>
