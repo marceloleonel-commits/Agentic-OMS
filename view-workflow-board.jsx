@@ -126,7 +126,7 @@ function WorkflowSettingsView({ workflow, onBack, actionsRef, initialSection, on
     mark();
   }
 
-  const ICONS = ["📦", "↩", "💳", "📋", "🛒", "🔄", "⚡", "🏪"];
+  const ICONS = ["inventory_2", "assignment_return", "credit_card", "assignment", "shopping_cart", "swap_horiz", "bolt", "storefront"];
 
   if (viewMode) {
     const currentTrigger = TRIGGER_OPTS.find(o => o.key === trigger);
@@ -136,7 +136,7 @@ function WorkflowSettingsView({ workflow, onBack, actionsRef, initialSection, on
     return (
       <div className="wf-settings-view">
         <div className="wf-settings-view-header">
-          <span className="wf-settings-view-icon">{ICONS[iconIdx]}</span>
+          <span className="wf-settings-view-icon"><MSIcon name={ICONS[iconIdx]} size={20} /></span>
           <h2 className="wf-settings-view-name">{name}</h2>
           <button className="wf-settings-edit-btn" data-sl-button data-variant="secondary" onClick={() => setViewMode(false)}>
             <IconPencil size={13} /> Editar
@@ -152,7 +152,7 @@ function WorkflowSettingsView({ workflow, onBack, actionsRef, initialSection, on
             </div>
             <div className="wf-settings-dl-row">
               <dt>Ícone</dt>
-              <dd><span style={{ fontSize: 18 }}>{ICONS[iconIdx]}</span></dd>
+              <dd><MSIcon name={ICONS[iconIdx]} size={18} /></dd>
             </div>
             <div className="wf-settings-dl-row">
               <dt>Descrição</dt>
@@ -195,7 +195,7 @@ function WorkflowSettingsView({ workflow, onBack, actionsRef, initialSection, on
                 {deps.length > 0
                   ? <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                       {deps.map((dep, i) => (
-                        <span key={i} className="wf-settings-dep-chip">{dep.wfIcon} {dep.wfName}</span>
+                        <span key={i} className="wf-settings-dep-chip"><MSIcon name={dep.wfIcon} size={14} /> {dep.wfName}</span>
                       ))}
                     </div>
                   : <span className="setting-row-desc">Nenhuma dependência configurada</span>}
@@ -207,7 +207,7 @@ function WorkflowSettingsView({ workflow, onBack, actionsRef, initialSection, on
                 {unlockedBy.length > 0
                   ? <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                       {unlockedBy.map((w, i) => (
-                        <span key={i} className="wf-settings-dep-chip">{w.icon} {w.name}</span>
+                        <span key={i} className="wf-settings-dep-chip"><MSIcon name={w.icon} size={14} /> {w.name}</span>
                       ))}
                     </div>
                   : <span className="setting-row-desc">Calculado automaticamente</span>}
@@ -238,7 +238,7 @@ function WorkflowSettingsView({ workflow, onBack, actionsRef, initialSection, on
             <label>Ícone</label>
             <div className="wf-icon-grid">
               {ICONS.map((ic, i) =>
-                <button key={i} className={`wf-icon-pick ${iconIdx === i ? "active" : ""}`} onClick={() => { setIconIdx(i); mark(); }}>{ic}</button>
+                <button key={i} className={`wf-icon-pick ${iconIdx === i ? "active" : ""}`} onClick={() => { setIconIdx(i); mark(); }}><MSIcon name={ic} size={18} /></button>
               )}
             </div>
           </div>
@@ -269,7 +269,7 @@ function WorkflowSettingsView({ workflow, onBack, actionsRef, initialSection, on
               <label>Workflow de origem</label>
               <select className="input" value={triggerWfId} onChange={e => { setTriggerWfId(e.target.value); setTriggerTaskId(""); mark(); }}>
                 <option value="">Selecionar workflow...</option>
-                {allWorkflows.map(w => <option key={w.id} value={w.id}>{w.icon} {w.name}</option>)}
+                {allWorkflows.map(w => <option key={w.id} value={w.id}>{w.name}</option>)}
               </select>
             </div>
           )}
@@ -301,7 +301,7 @@ function WorkflowSettingsView({ workflow, onBack, actionsRef, initialSection, on
             <div className="dep-list">
               {deps.map((dep, i) => (
                 <div key={i} className="dep-row">
-                  <span>{dep.wfIcon} {dep.wfName}</span>
+                  <span><MSIcon name={dep.wfIcon} size={14} /> {dep.wfName}</span>
                   <button className="dep-row-remove" onClick={() => { setDeps(d => d.filter((_, j) => j !== i)); mark(); }}>
                     <Icon name="x" size={12} />
                   </button>
@@ -329,7 +329,7 @@ function WorkflowSettingsView({ workflow, onBack, actionsRef, initialSection, on
                     <button key={w.id}
                       className={`dep-wf-item${depSelWf === w.id ? " selected" : ""}`}
                       onClick={() => setDepSelWf(w.id)}>
-                      {w.icon} {w.name}
+                      <MSIcon name={w.icon} size={14} /> {w.name}
                     </button>
                   ))}
                 </div>
@@ -794,7 +794,7 @@ function StageTaskRow({ task, stage, workflow, idx, dragging, dragOver, onDragSt
           <div className="trigger-dropdown stage-task-dropdown" onClick={e => e.stopPropagation()}>
             <div className="trigger-dropdown-section" style={{ paddingBottom: 0 }}>
               <div className="trigger-dropdown-label">Status</div>
-              <div className="trigger-orch-row" style={{ borderTop: "none", padding: 0 }}>
+              <div className="trigger-orch-row">
                 <button className={`trigger-orch-btn${active ? " selected" : ""}`} onClick={() => { setActive(true); mark(); }}>Ativo</button>
                 <button className={`trigger-orch-btn${!active ? " selected" : ""}`} onClick={() => { setActive(false); mark(); }}>Inativo</button>
               </div>
@@ -802,7 +802,7 @@ function StageTaskRow({ task, stage, workflow, idx, dragging, dragOver, onDragSt
 
             <div className="trigger-dropdown-section" style={{ borderTop: "none", paddingTop: 10, paddingBottom: 0 }}>
               <div className="trigger-dropdown-label">Como executa</div>
-              <div className="trigger-orch-row" style={{ borderTop: "none", padding: 0 }}>
+              <div className="trigger-orch-row">
                 <button className={`trigger-orch-btn${execType !== "auto" ? " selected" : ""}`} onClick={() => { setExecType("manual"); mark(); }}>Manual</button>
                 <button className={`trigger-orch-btn${execType === "auto" ? " selected" : ""}`} onClick={() => { setExecType("auto"); mark(); }}>Automático</button>
               </div>
@@ -810,7 +810,7 @@ function StageTaskRow({ task, stage, workflow, idx, dragging, dragOver, onDragSt
 
             <div className="trigger-dropdown-section" style={{ borderTop: "none", paddingTop: 10, paddingBottom: 16 }}>
               <div className="trigger-dropdown-label">Visibilidade</div>
-              <div className="trigger-orch-row" style={{ borderTop: "none", padding: 0 }}>
+              <div className="trigger-orch-row">
                 <button className={`trigger-orch-btn${visibility === "internal" ? " selected" : ""}`} onClick={() => { setVisibility("internal"); mark(); }}>Interna</button>
                 <button className={`trigger-orch-btn${visibility === "user" ? " selected" : ""}`} onClick={() => { setVisibility("user"); mark(); }}>Externa</button>
               </div>
@@ -821,7 +821,7 @@ function StageTaskRow({ task, stage, workflow, idx, dragging, dragOver, onDragSt
                 className="stage-task-remove-btn"
                 onClick={e => { e.stopPropagation(); onToggle?.(); setConfirmRemove(true); }}
               >
-                <IconTrash size={14} /> Remover tarefa
+                <IconTrash size={18} /> Remover tarefa
               </button>
             </div>
           </div>
@@ -1185,7 +1185,7 @@ function wfOrchMeta(w) {
 }
 function wfStatusPill(w) {
   if (w.wfStatus === "published") {
-    return { label: "Ativo", bg: "#D1FAE5", fg: "#00a81c" };
+    return { label: "Ativo", bg: "#E9FCE3", fg: "#017D10" };
   }
   if (w.wfStatus === "published_with_changes") {
     return { label: "Ativo · pendente", bg: "var(--sl-color-orange-2, #ffedcd)", fg: "var(--sl-color-orange-10, #b24d01)" };
@@ -1416,8 +1416,8 @@ function WfVersionHistoryModal({ workflow, onClose }) {
     >
       <div className="wf-side-drawer" role="dialog" aria-modal="true" aria-label="Histórico de versões">
         <div className="stage-config-modal-head">
-          <SidebarTooltip label="Voltar" placement="top">
-            <IconButton icon={<Icon name="arrow-left" size={18} />} label="Voltar" variant="tertiary" onClick={onClose} />
+          <SidebarTooltip label="Fechar" placement="top">
+            <IconButton icon={<Icon name="x" size={18} />} label="Fechar" variant="tertiary" onClick={onClose} />
           </SidebarTooltip>
           <h2 className="stage-config-modal-title">
             Histórico de versões
@@ -1481,8 +1481,8 @@ function WfChoiceDrawer({ title, options, selectedKey, onSelect, onClose, childr
     >
       <div className="wf-side-drawer" role="dialog" aria-modal="true" aria-label={title}>
         <div className="stage-config-modal-head">
-          <SidebarTooltip label="Voltar" placement="top">
-            <IconButton icon={<Icon name="arrow-left" size={18} />} label="Voltar" variant="tertiary" onClick={onClose} />
+          <SidebarTooltip label="Fechar" placement="top">
+            <IconButton icon={<Icon name="x" size={18} />} label="Fechar" variant="tertiary" onClick={onClose} />
           </SidebarTooltip>
           <h2 className="stage-config-modal-title">{title}</h2>
         </div>
@@ -1679,7 +1679,7 @@ function WfTaskTriggerConfig({ workflows, pairs, onAddWf, onRemovePair, onPickTa
             <div className="wf-task-trigger-head">
               <div className="wf-task-trigger-head-copy">
                 <span className="wf-task-trigger-overline">Workflow</span>
-                <span className="wf-task-trigger-wf-name">{wf ? `${wf.icon} ${wf.name}` : ""}</span>
+                <span className="wf-task-trigger-wf-name">{wf ? <><MSIcon name={wf.icon} size={14} /> {wf.name}</> : ""}</span>
               </div>
               <SidebarTooltip label="Remover workflow" placement="top">
                 <IconButton
@@ -1773,7 +1773,7 @@ function WfTaskTriggerConfig({ workflows, pairs, onAddWf, onRemovePair, onPickTa
               onClick={() => { onAddWf(w); setAddOpen(false); setOpenList(`t${pairs.length}`); }}
             >
               <span className="wf-task-trigger-picker-plus"><Icon name="plus" size={13} /></span>
-              <span className="wf-task-trigger-picker-name">{w.icon} {w.name}</span>
+              <span className="wf-task-trigger-picker-name"><MSIcon name={w.icon} size={14} /> {w.name}</span>
               <span className="wf-task-trigger-picker-count">{tasksOf(w).length} tarefas</span>
             </button>
           ))}
@@ -1814,8 +1814,8 @@ function WfTriggerDrawer({
     >
       <div className="wf-side-drawer" role="dialog" aria-modal="true" aria-label="Gatilho">
         <div className="stage-config-modal-head">
-          <SidebarTooltip label="Voltar" placement="top">
-            <IconButton icon={<Icon name="arrow-left" size={18} />} label="Voltar" variant="tertiary" onClick={onClose} />
+          <SidebarTooltip label="Fechar" placement="top">
+            <IconButton icon={<Icon name="x" size={18} />} label="Fechar" variant="tertiary" onClick={onClose} />
           </SidebarTooltip>
           <h2 className="stage-config-modal-title">Gatilho</h2>
         </div>
@@ -1844,7 +1844,7 @@ function WfTriggerDrawer({
                           checked={triggerWfIds.includes(w.id)}
                           onChange={() => onSelectTriggerWf(w)}
                         />
-                        <span>{w.icon} {w.name}</span>
+                        <span><MSIcon name={w.icon} size={14} /> {w.name}</span>
                       </label>
                     ))}
                   </div>
@@ -1893,8 +1893,8 @@ function WfWorkflowPickerDrawer({ title, workflows, selected, onToggle, onClose 
     >
       <div className="wf-side-drawer" role="dialog" aria-modal="true" aria-label={title}>
         <div className="stage-config-modal-head">
-          <SidebarTooltip label="Voltar" placement="top">
-            <IconButton icon={<Icon name="arrow-left" size={18} />} label="Voltar" variant="tertiary" onClick={onClose} />
+          <SidebarTooltip label="Fechar" placement="top">
+            <IconButton icon={<Icon name="x" size={18} />} label="Fechar" variant="tertiary" onClick={onClose} />
           </SidebarTooltip>
           <h2 className="stage-config-modal-title">{title}</h2>
         </div>
@@ -2046,13 +2046,13 @@ function WfSettingsInline({ workflow, onDirtyChange }) {
     const w = allWorkflows.find(x => x.id === p.wfId);
     if (!w) return null;
     const t = w.stages.flatMap(s => s.tasks).find(x => x.id === p.taskId);
-    return `${w.icon} ${w.name}${t ? ` · ${t.name}` : ""}`;
+    return `${w.name}${t ? ` · ${t.name}` : ""}`;
   }).filter(Boolean);
   // Cada seleção vira uma tag própria no botão da linha "Gatilho"
   const triggerOriginTags = trigger === "task-completion"
     ? triggerPairLabels
     : trigger === "wf-completion"
-      ? selectedTriggerWfs.map(w => `${w.icon} ${w.name}`)
+      ? selectedTriggerWfs.map(w => w.name)
       : trigger === "system-event"
         ? systemEvents
         : [];
@@ -2569,7 +2569,7 @@ function WorkflowDetailView2Passos({ workflow, onOpenTask, onOpenStage, onOpenSe
 }
 
 // ── Flat view: stage colors ───────────────────────────────────────────────────
-const STAGE_COLORS = ["#2962FF", "#7C5CFF", "#F71963", "#22C55E", "#F59E0B", "#06B6D4", "#EF4444", "#8B5CF6"];
+const STAGE_COLORS = ["#1E4EE5", "#7C5CFF", "#F71963", "#22C55E", "#F59E0B", "#06B6D4", "#EF4444", "#8B5CF6"];
 
 // Tabs of the stage config modal, in display order.
 const STAGE_CONFIG_TABS = [
@@ -2798,13 +2798,15 @@ function StageConfigModal({ stages, activeStageId, activeTab, onTabChange, onSel
                   </section>
 
                   {/* ── Remover etapa ── */}
-                  <button
-                    type="button"
-                    className="stage-task-remove-btn"
-                    onClick={() => setConfirmRemove(true)}
-                  >
-                    <IconTrash size={14} /> Remover etapa
-                  </button>
+                  <div className="stage-task-remove-row">
+                    <button
+                      type="button"
+                      className="stage-task-remove-btn"
+                      onClick={() => setConfirmRemove(true)}
+                    >
+                      <IconTrash size={18} /> Remover etapa
+                    </button>
+                  </div>
                 </div>
               )}
 
@@ -2920,8 +2922,8 @@ function StageConfigModal({ stages, activeStageId, activeTab, onTabChange, onSel
           </div>
         ) : (
           <div className="stage-config-modal-footer">
-            <button className="btn btn-sm btn-ghost" onClick={onClose}>Cancelar</button>
-            <button className="btn btn-sm btn-primary" onClick={() => { mark(); onClose(); }}>Salvar</button>
+            <button data-sl-button data-variant="secondary" data-has-label onClick={onClose}>Cancelar</button>
+            <button data-sl-button data-variant="primary" data-has-label onClick={() => { mark(); onClose(); }}>Salvar</button>
           </div>
         )}
       </div>
@@ -3281,7 +3283,7 @@ function stagesFromPreFill(preFill) {
 }
 
 function NewWorkflowWizard({ existingWorkflows, categories, onClose, preFill }) {
-  const ICONS = ["📦", "↩", "💳", "📋", "🛒", "🔄", "⚡", "🏪", "🎁", "🔁", "📊", "🚫"];
+  const ICONS = ["inventory_2", "assignment_return", "credit_card", "assignment", "shopping_cart", "swap_horiz", "bolt", "storefront", "redeem", "sync", "bar_chart", "block"];
   const [step, setStep]               = useState(preFill ? 2 : 1);
   const [expandOrigin, setExpandOrigin] = useState(null);
   const [name, setName]               = useState(preFill?.name || "");
@@ -3357,14 +3359,14 @@ function NewWorkflowWizard({ existingWorkflows, categories, onClose, preFill }) 
           <div className="wizard-origin-grid">
 
             <button className="wizard-origin-card" onClick={() => { setStages(stagesFromPreFill(null)); setStep(2); }}>
-              <span className="wizard-origin-icon">✨</span>
+              <span className="wizard-origin-icon"><MSIcon name="auto_awesome" size={20} /></span>
               <strong>Do zero</strong>
               <span>Workflow em branco para configurar livremente</span>
             </button>
 
             <div className={`wizard-origin-card expandable${expandOrigin === "existing" ? " expanded" : ""}`}>
               <button className="wizard-origin-card-inner" onClick={() => setExpandOrigin(e => e === "existing" ? null : "existing")}>
-                <span className="wizard-origin-icon">📋</span>
+                <span className="wizard-origin-icon"><MSIcon name="assignment" size={20} /></span>
                 <strong>Copiar existente</strong>
                 <span>Partir de um dos seus workflows atuais</span>
                 <Icon name="chevron-down" size={13} />
@@ -3373,7 +3375,7 @@ function NewWorkflowWizard({ existingWorkflows, categories, onClose, preFill }) 
                 <div className="wizard-pick-list">
                   {existingWorkflows.map(w => (
                     <button key={w.id} className="wizard-pick-item" onClick={() => prefillFrom(w, true)}>
-                      <span>{w.icon}</span>
+                      <MSIcon name={w.icon} size={18} />
                       <span className="wizard-pick-name">{w.name}</span>
                       <span className="wizard-pick-cat">{catLabel(w.category)}</span>
                       <Icon name="chevron-right" size={12} />
@@ -3385,7 +3387,7 @@ function NewWorkflowWizard({ existingWorkflows, categories, onClose, preFill }) 
 
             <div className={`wizard-origin-card expandable${expandOrigin === "library" ? " expanded" : ""}`}>
               <button className="wizard-origin-card-inner" onClick={() => setExpandOrigin(e => e === "library" ? null : "library")}>
-                <span className="wizard-origin-icon">📚</span>
+                <span className="wizard-origin-icon"><MSIcon name="menu_book" size={20} /></span>
                 <strong>Da biblioteca</strong>
                 <span>Workflows pré-configurados prontos para usar</span>
                 <Icon name="chevron-down" size={13} />
@@ -3394,7 +3396,7 @@ function NewWorkflowWizard({ existingWorkflows, categories, onClose, preFill }) 
                 <div className="wizard-pick-list">
                   {libraryWfs.map(w => (
                     <button key={w.id} className="wizard-pick-item" onClick={() => prefillFrom(w, false)}>
-                      <span>{w.icon}</span>
+                      <MSIcon name={w.icon} size={18} />
                       <span className="wizard-pick-name">{w.name}</span>
                       <span className="wizard-pick-cat">{catLabel(w.category)}</span>
                       <Icon name="chevron-right" size={12} />
@@ -3421,7 +3423,7 @@ function NewWorkflowWizard({ existingWorkflows, categories, onClose, preFill }) 
               <label>Ícone</label>
               <div className="wf-icon-grid">
                 {ICONS.map((ic, i) =>
-                  <button key={i} className={`wf-icon-pick${iconIdx === i ? " active" : ""}`} onClick={() => setIconIdx(i)}>{ic}</button>
+                  <button key={i} className={`wf-icon-pick${iconIdx === i ? " active" : ""}`} onClick={() => setIconIdx(i)}><MSIcon name={ic} size={18} /></button>
                 )}
               </div>
             </div>
@@ -3585,7 +3587,7 @@ function WorkflowBoardCanvas({
               const wfName = workflow?.name ?? "workflow";
               agentSay?.({
                 from: "agent",
-                text: `✅ **${wfName}** publicado com sucesso! As alterações já estão ativas para novos pedidos.`,
+                text: `**${wfName}** publicado com sucesso! As alterações já estão ativas para novos pedidos.`,
                 quickReplies: ["Ver histórico de versões", "+ Adicionar tarefa", "O que posso fazer?"],
               });
             }}>
@@ -3969,8 +3971,8 @@ function WorkflowBoardView({ onBack, wfLayout = "expanded", wfGroup = "flat", wf
     pendingUndoRef.current = undoFn;
     agentSay({
       from: "agent",
-      text: `🗑️ Tarefa **${taskName}** removida da etapa **${stageName}**.`,
-      quickReplies: ["↩ Desfazer"],
+      text: `Tarefa **${taskName}** removida da etapa **${stageName}**.`,
+      quickReplies: ["Desfazer"],
     }, 300);
   }, []);
 
@@ -3984,7 +3986,7 @@ function WorkflowBoardView({ onBack, wfLayout = "expanded", wfGroup = "flat", wf
       const undo = pendingUndoRef.current;
       pendingUndoRef.current = null;
       undo();
-      agentSay({ from: "agent", text: "↩ Tarefa restaurada com sucesso." });
+      agentSay({ from: "agent", text: "Tarefa restaurada com sucesso." });
       return;
     }
     if (lower === "ok" && pendingUndoRef.current) {
@@ -4005,7 +4007,7 @@ function WorkflowBoardView({ onBack, wfLayout = "expanded", wfGroup = "flat", wf
       } else if (/em massa|editar workflows em massa|editar experiências em massa/.test(lower)) {
         startBulkEdit();
       } else if (/listar|mostrar|quais/.test(lower)) {
-        const names = AIWData.workflows.map(w => `${w.icon} ${w.name}`).join(", ");
+        const names = AIWData.workflows.map(w => w.name).join(", ");
         agentSay({ from: "agent", text: `Workflows configurados: ${names}. Clique em qualquer um no canvas para ver detalhes.` });
       } else if (/o que posso fazer|o que você faz|posso fazer|ajuda/.test(lower)) {
         agentSay({
@@ -4197,7 +4199,7 @@ function WorkflowBoardView({ onBack, wfLayout = "expanded", wfGroup = "flat", wf
             stages,
             orders: 0,
             category: "fulfillment",
-            icon: "📦",
+            icon: "inventory_2",
           };
           AIWData.workflows.push(newWf);
           setWfDraft(null);
@@ -4701,7 +4703,7 @@ function WorkflowBoardView({ onBack, wfLayout = "expanded", wfGroup = "flat", wf
       agentSay({
         from: "agent",
         type: "action",
-        title: "⚠ Arquivar workflow",
+        title: "Arquivar workflow",
         body: `**${wfData?.name || "este workflow"}** será desativado. Pedidos em andamento não são afetados.`,
         onApply: () => {
           setChatMsgs(m => [...m, {

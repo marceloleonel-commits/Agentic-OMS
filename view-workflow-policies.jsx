@@ -48,7 +48,7 @@ function PolicyCategoryTag({ categoryId }) {
      ícone usam o mesmo fg pra manter contraste dentro da paleta. */
   return (
     <span className="wfp-cat-tag" style={{ background: cat.color, color: cat.fg }}>
-      {iconName && <Icon name={iconName} size={12} />}
+      {iconName && <Icon name={iconName} size={14} />}
       {cat.label}
     </span>
   );
@@ -83,7 +83,7 @@ function PolicyRuleDrawer({ rule, policy, onToggle, onClose }) {
     >
       <div className="wf-side-drawer" role="dialog" aria-modal="true" aria-label={rule.name}>
         <div className="stage-config-modal-head">
-          <IconButton icon={<Icon name="arrow-left" size={18} />} label="Voltar" variant="tertiary" onClick={onClose} />
+          <IconButton icon={<Icon name="x" size={18} />} label="Fechar" variant="tertiary" onClick={onClose} />
           <h2 className="stage-config-modal-title">{rule.name}</h2>
         </div>
 
@@ -237,16 +237,16 @@ function WorkflowPoliciesCanvas({
             <button className="filter-dropdown-btn wfp-cat-btn">
               <span className="filter-dropdown-label-text">Categoria:</span>
               <span className="filter-dropdown-summary">{categoryLabel}</span>
-              <span className="filter-dropdown-chevron"><Icon name="chevron-down" size={12} /></span>
+              <span className="filter-dropdown-chevron"><Icon name="chevron-down" size={16} /></span>
             </button>
           }
         >
           {[{ id: "all", label: "Todas as categorias" }].concat(
-            AIWData.policyCategories.map((c) => ({ id: c.id, label: `${c.icon} ${c.label}` }))
+            AIWData.policyCategories.map((c) => ({ id: c.id, label: c.label }))
           ).map((opt) => (
-            <button key={opt.id} className="dd-item wfp-cat-option" onClick={() => onCategory(opt.id)}>
+            <button key={opt.id} className={`dd-item wfp-cat-option${category === opt.id ? " selected" : ""}`} onClick={() => onCategory(opt.id)}>
               <span className="wfp-cat-check">
-                {category === opt.id && <Icon name="check" size={14} />}
+                {category === opt.id && <Icon name="check" size={18} />}
               </span>
               <span className="dd-item-label wfp-cat-option-label">{opt.label}</span>
               <span className="wfp-cat-count">{countFor(opt.id)}</span>
@@ -263,14 +263,14 @@ function WorkflowPoliciesCanvas({
             <button className="filter-dropdown-btn wfp-cat-btn">
               <span className="filter-dropdown-label-text">Status:</span>
               <span className="filter-dropdown-summary">{statusLabel}</span>
-              <span className="filter-dropdown-chevron"><Icon name="chevron-down" size={12} /></span>
+              <span className="filter-dropdown-chevron"><Icon name="chevron-down" size={16} /></span>
             </button>
           }
         >
           {statusOptions.map((opt) => (
-            <button key={opt.id} className="dd-item wfp-cat-option" onClick={() => onStatus(opt.id)}>
+            <button key={opt.id} className={`dd-item wfp-cat-option${status === opt.id ? " selected" : ""}`} onClick={() => onStatus(opt.id)}>
               <span className="wfp-cat-check">
-                {status === opt.id && <Icon name="check" size={14} />}
+                {status === opt.id && <Icon name="check" size={18} />}
               </span>
               <span className="dd-item-label wfp-cat-option-label">{opt.label}</span>
             </button>
@@ -2056,7 +2056,7 @@ function WorkflowPoliciesView() {
 
     if (/como as politicas se organizam|taxonomia|organizam/.test(n)) {
       const summary = AIWData.policyCategories
-        .map((c) => `${c.icon} **${c.label}** — ${plural(policies.filter((p) => p.category === c.id).length, "política", "políticas")}`)
+        .map((c) => `**${c.label}** — ${plural(policies.filter((p) => p.category === c.id).length, "política", "políticas")}`)
         .join("\n");
       agentSay({
         from: "agent",

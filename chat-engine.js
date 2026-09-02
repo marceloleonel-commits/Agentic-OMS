@@ -14,10 +14,10 @@
   var SLA_MAP = { '6h': 6, '8h': 8, '12h': 12, '24h': 24, '48h': 48 };
 
   var EXPERIENCE_MODELS = [
-    { label: 'Entrega em domicílio', icon: '🚚', desc: 'Fulfillment com despacho e rastreamento de entrega' },
-    { label: 'Retirada na loja',     icon: '🏪', desc: 'Cliente retira em ponto físico após separação'     },
-    { label: 'Entrega digital',      icon: '💻', desc: 'Produtos digitais — licenças, downloads, ativação' },
-    { label: 'Do zero',              icon: '✨', desc: 'Workflow em branco para configurar livremente'  }
+    { label: 'Entrega em domicílio', icon: 'local_shipping', desc: 'Fulfillment com despacho e rastreamento de entrega' },
+    { label: 'Retirada na loja',     icon: 'storefront',     desc: 'Cliente retira em ponto físico após separação'     },
+    { label: 'Entrega digital',      icon: 'devices',        desc: 'Produtos digitais — licenças, downloads, ativação' },
+    { label: 'Do zero',              icon: 'auto_awesome',   desc: 'Workflow em branco para configurar livremente'  }
   ];
 
   /* ─── Intent detection ──────────────────────────────────────── */
@@ -128,7 +128,7 @@
       if (intent === 'query.orders.sla_risk') {
         filtered = orders.filter(isAtSlaRisk);
         if (filtered.length === 0) {
-          agentSay({ from: 'agent', text: 'Ótima notícia — nenhum pedido está com risco de atraso de SLA no momento. ✅' });
+          agentSay({ from: 'agent', text: 'Ótima notícia — nenhum pedido está com risco de atraso de SLA no momento.' });
           return;
         }
         agentSay([
@@ -280,7 +280,7 @@
         agentSay({
           from: 'agent',
           text: 'Modelo "' + found.label + '" selecionado. Escolha um ícone:',
-          quickReplies: ['🚚', '🏪', '💻', '📦', '🎁', '🛍️']
+          quickReplies: ['local_shipping', 'storefront', 'devices', 'inventory_2', 'redeem', 'shopping_bag']
         });
         return true;
       }
@@ -319,7 +319,7 @@
               from: 'agent',
               type: 'wf-draft',
               draft: {
-                name: snapshot.icon + ' ' + snapshot.name,
+                name: snapshot.name,
                 category: snapshot.model,
                 trigger: 'auto',
                 aiOrch: true
@@ -327,7 +327,7 @@
               onConfirm: function () {
                 if (onAgentSay) onAgentSay([{
                   from: 'agent',
-                  text: 'Workflow "' + snapshot.name + '" criado com sucesso! Acesse o Workflow Board para configurar as etapas e tarefas. ✨'
+                  text: 'Workflow "' + snapshot.name + '" criado com sucesso! Acesse o Workflow Board para configurar as etapas e tarefas.'
                 }]);
                 if (onCreateExperience) onCreateExperience(snapshot);
                 experienceDraft = null;
@@ -344,8 +344,8 @@
     /* ── Help ── */
     function respondHelp(isOrchestration) {
       var helpText = isOrchestration
-        ? 'Posso ajudar com:\n\n⚙️ Regras — descreva uma condição em linguagem natural, ex: "quando pedido Marketplace não for despachado em 24h, escalar"\n📋 Pedidos — "mostre pedidos com risco de SLA"\n✨ Workflows — "criar novo workflow"\n\nQual ajuste deseja fazer?'
-        : 'Posso ajudar com:\n\n📋 Pedidos — "mostre pedidos com risco de SLA", "pedidos bloqueados"\n⚙️ Regras — "adicione uma regra para pedidos sem despacho em 24h"\n✨ Workflows — "quero criar um workflow para Entrega Digital"\n\nO que você precisa?';
+        ? 'Posso ajudar com:\n\n• Regras — descreva uma condição em linguagem natural, ex: "quando pedido Marketplace não for despachado em 24h, escalar"\n• Pedidos — "mostre pedidos com risco de SLA"\n• Workflows — "criar novo workflow"\n\nQual ajuste deseja fazer?'
+        : 'Posso ajudar com:\n\n• Pedidos — "mostre pedidos com risco de SLA", "pedidos bloqueados"\n• Regras — "adicione uma regra para pedidos sem despacho em 24h"\n• Workflows — "quero criar um workflow para Entrega Digital"\n\nO que você precisa?';
       agentSay({ from: 'agent', text: helpText });
     }
 
@@ -392,7 +392,7 @@
 
       /* ── Meta-option responses ── */
       if (/executar sempre que entrar no pedido/i.test(lower)) {
-        agentSay({ from: 'agent', text: '✅ Feito. Esta ação será executada automaticamente sempre que você entrar neste pedido.' });
+        agentSay({ from: 'agent', text: 'Feito. Esta ação será executada automaticamente sempre que você entrar neste pedido.' });
         return;
       }
 
@@ -401,8 +401,8 @@
           onAddChip({ icon: 'play', label: lastFreeAction });
         }
         agentSay({ from: 'agent', text: lastFreeAction
-          ? '✅ Botão "' + lastFreeAction + '" adicionado ao chat. Ele ficará disponível para uso rápido.'
-          : '✅ Botão de ação adicionado ao chat.' });
+          ? 'Botão "' + lastFreeAction + '" adicionado ao chat. Ele ficará disponível para uso rápido.'
+          : 'Botão de ação adicionado ao chat.' });
         lastFreeAction = null;
         return;
       }
@@ -416,7 +416,7 @@
       if (/alterar.*item|modificar.*item|change.*item|trocar.*item/i.test(lower)) {
         agentSay([
           { from: 'agent', text: 'Para alterar um item, preciso identificar qual item e o tipo de alteração (quantidade, endereço ou substituição de produto).' },
-          { from: 'agent', text: '⚠️ Alterações de item exigem confirmação do seller e podem impactar o SLA. Deseja prosseguir?',
+          { from: 'agent', text: 'Atenção: alterações de item exigem confirmação do seller e podem impactar o SLA. Deseja prosseguir?',
             quickReplies: ['Sim, prosseguir', 'Cancelar'] }
         ], undefined, !isFromButton);
         return;
@@ -425,7 +425,7 @@
       /* ── Cancelar pedido ── */
       if (/cancelar.*pedido|cancelamento.*pedido|quero cancelar|cancel.*order/i.test(lower)) {
         agentSay([
-          { from: 'agent', text: '⚠️ O cancelamento do pedido ' + orderId + ' é uma ação irreversível e requer autorização.' },
+          { from: 'agent', text: 'Atenção: o cancelamento do pedido ' + orderId + ' é uma ação irreversível e requer autorização.' },
           { from: 'agent', text: 'Posso escalar esta solicitação para um Supervisor para análise e aprovação.',
             quickReplies: ['Escalar para Supervisor', 'Não, manter pedido'] }
         ], undefined, !isFromButton);
@@ -444,7 +444,7 @@
             onApply: function () {
               if (onAgentSay) onAgentSay([{
                 from: 'agent',
-                text: '✅ Solicitação escalada com sucesso. Um Supervisor irá analisar e retornar em breve.'
+                text: 'Solicitação escalada com sucesso. Um Supervisor irá analisar e retornar em breve.'
               }]);
             }
           }
@@ -462,7 +462,7 @@
           var hoursLeft = Math.round((etaDate - PROTOTYPE_DATE) / 3600000);
           var risk = isAtSlaRisk(currentOrder);
           agentSay({ from: 'agent',
-            text: (risk ? '⚠️ ' : '✅ ') + 'SLA: ' + currentOrder.sla + ' · Tempo restante: ' + (hoursLeft > 0 ? hoursLeft + 'h' : 'VENCIDO') + ' · ETA: ' + currentOrder.eta,
+            text: (risk ? 'Atenção — ' : '') + 'SLA: ' + currentOrder.sla + ' · Tempo restante: ' + (hoursLeft > 0 ? hoursLeft + 'h' : 'VENCIDO') + ' · ETA: ' + currentOrder.eta,
             quickReplies: risk ? ['Escalar para Supervisor', 'Alterar item do pedido'] : ['Alterar item do pedido', 'Cancelar o pedido']
           }, undefined, !isFromButton);
         }
@@ -529,7 +529,7 @@
             body: 'Responsável: ' + snap.assignee + '\nEstado: Pendente',
             onApply: function () {
               if (onAddFollowUp) onAddFollowUp({ state: 'attention', title: snap.title, assignee: snap.assignee });
-              if (onAgentSay) onAgentSay([{ from: 'agent', text: 'Tarefa "' + snap.title + '" adicionada aos follow-ups. ✅' }]);
+              if (onAgentSay) onAgentSay([{ from: 'agent', text: 'Tarefa "' + snap.title + '" adicionada aos follow-ups.' }]);
             }
           }
         ]);
@@ -554,7 +554,7 @@
         agentSay([
           {
             from: 'agent',
-            text: '📋 ' + d.title + '\n\nReportada por: ' + d.reportedBy.agent + ' · ' + d.reportedBy.at
+            text: d.title + '\n\nReportada por: ' + d.reportedBy.agent + ' · ' + d.reportedBy.at
           },
           {
             from: 'agent',
@@ -562,7 +562,7 @@
           },
           {
             from: 'agent',
-            text: '📊 ' + impactCount + ' pedido(s) impactado(s) · ' + pendingCount + ' tarefa(s) pendente(s) · ' + resolvedCount + ' concluída(s)',
+            text: impactCount + ' pedido(s) impactado(s) · ' + pendingCount + ' tarefa(s) pendente(s) · ' + resolvedCount + ' concluída(s)',
             quickReplies: ['Analize impacted orders and sugest actions', 'Suggest next steps']
           }
         ]);
@@ -573,7 +573,7 @@
       if (/suggest next|próximas etapas|próximos passos|next steps|sugerir|suggest/i.test(lower)) {
         if (!d) { agentSay({ from: 'agent', text: 'Nenhuma iniciativa carregada.' }); return; }
         var msgs = [];
-        var stateLabel = { attention: '⚠️ Atenção necessária', loading: '⏳ Em progresso', done: '✅ Concluído' };
+        var stateLabel = { attention: 'Atenção necessária', loading: 'Em progresso', done: 'Concluído' };
 
         // Pending tasks
         if (d.followUp && d.followUp.length > 0) {
@@ -589,7 +589,7 @@
         if (attentionTask) {
           msgs.push({
             from: 'agent',
-            text: '🎯 Próximo passo prioritário: "' + attentionTask.title + '" está aguardando ação de ' + attentionTask.assignee + '. Deseja criar uma task de acompanhamento?',
+            text: 'Próximo passo prioritário: "' + attentionTask.title + '" está aguardando ação de ' + attentionTask.assignee + '. Deseja criar uma task de acompanhamento?',
             quickReplies: ['+ create new task', 'Analize impacted orders and sugest actions']
           });
         } else if (d.impacted && d.impacted.length > 0) {
@@ -652,7 +652,7 @@
         if (urgentOrders.length > 0) {
           orderMsgs.push({
             from: 'agent',
-            text: '⚠️ ' + urgentOrders.length + ' pedido(s) com SLA ≤ 6h requerem ação imediata. Recomendo reatribuição para CD alternativo ou contato direto com o seller.',
+            text: 'Atenção: ' + urgentOrders.length + ' pedido(s) com SLA ≤ 6h requerem ação imediata. Recomendo reatribuição para CD alternativo ou contato direto com o seller.',
             quickReplies: ['+ create new task', 'Suggest next steps']
           });
         } else {
@@ -671,7 +671,7 @@
       if (/ajuda|help|capacidade/i.test(lower)) {
         agentSay({
           from: 'agent',
-          text: 'Posso ajudar com esta iniciativa:\n\n📋 Summarize the initiative\n🎯 Suggest next steps\n📦 Analize impacted orders and sugest actions\n➕ + create new task\n\nSó clicar nos chips ou digitar sua pergunta.',
+          text: 'Posso ajudar com esta iniciativa:\n\n• Summarize the initiative\n• Suggest next steps\n• Analize impacted orders and sugest actions\n• Create new task\n\nSó clicar nos chips ou digitar sua pergunta.',
         });
         return;
       }

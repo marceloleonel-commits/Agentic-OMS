@@ -244,7 +244,7 @@ window.AIWData = (function () {
               type: "select_or_upload",
               title: "Quantos dos 23 foram despachados, e quais?",
               selectLabel: "Selecionar pedidos",
-              uploadLabel: "Anexar comprovante",
+              uploadLabel: "Ou anexar comprovante",
               next: "b1-fonte"
             },
             "b1-fonte": {
@@ -675,7 +675,7 @@ window.AIWData = (function () {
   ];
 
   const wfCategories = [
-    { id: "pagamento",        label: "Pagamento",           desc: "Captura, autorização e conciliação financeira",        color: "#2962FF" },
+    { id: "pagamento",        label: "Pagamento",           desc: "Captura, autorização e conciliação financeira",        color: "#1E4EE5" },
     { id: "fulfillment",      label: "Fulfillment Físico",  desc: "Preparação e envio de produtos físicos ao cliente",    color: "#00897B" },
     { id: "logistica-reversa",label: "Logística Reversa",   desc: "Retorno de produtos — trocas e devoluções",            color: "#D97706" },
     { id: "cancelamento",     label: "Cancelamento",        desc: "Encerramento de pedidos com reversão de estoque e financeira", color: "#DC2626" },
@@ -718,7 +718,7 @@ window.AIWData = (function () {
     {
       id: "wf-entrega-domicilio",
       name: "Entrega em domicílio",
-      icon: "🏠",
+      icon: "local_shipping",
       desc: "Itens despachados por transportadora até o endereço do cliente.",
       category: "fulfillment",
 
@@ -730,8 +730,8 @@ window.AIWData = (function () {
       agentEnabled: true,
       deps: [],
       unlocks: [
-        { wfId: "wf-troca-devolucao", wfName: "Troca e devolução", wfIcon: "↩️" },
-        { wfId: "wf-personalizacao-camiseta", wfName: "Personalização de Camiseta", wfIcon: "👕" },
+        { wfId: "wf-troca-devolucao", wfName: "Troca e devolução", wfIcon: "assignment_return" },
+        { wfId: "wf-personalizacao-camiseta", wfName: "Personalização de Camiseta", wfIcon: "checkroom" },
       ],
 
       stages: [
@@ -864,7 +864,7 @@ window.AIWData = (function () {
     {
       id: "wf-retirada-loja",
       name: "Retirada na loja",
-      icon: "🏪",
+      icon: "storefront",
       desc: "Itens separados no estoque da loja ou CD para pickup pelo cliente no ponto de venda.",
       category: "fulfillment",
 
@@ -876,7 +876,7 @@ window.AIWData = (function () {
       agentEnabled: false,
       deps: [],
       unlocks: [
-        { wfId: "wf-troca-devolucao", wfName: "Troca e devolução", wfIcon: "↩️" },
+        { wfId: "wf-troca-devolucao", wfName: "Troca e devolução", wfIcon: "assignment_return" },
       ],
 
       stages: [
@@ -991,7 +991,7 @@ window.AIWData = (function () {
     {
       id: "wf-entrega-virtual",
       name: "Entrega produto virtual",
-      icon: "📱",
+      icon: "smartphone",
       desc: "Item virtual entregue eletronicamente após confirmação de pagamento.",
       category: "fulfillment",
 
@@ -1100,7 +1100,7 @@ window.AIWData = (function () {
     {
       id: "wf-cancelamento",
       name: "Cancelamento de Pedido",
-      icon: "🚫",
+      icon: "block",
       desc: "Fluxo disparado quando o cliente ou o merchant solicita cancelamento de um pedido em andamento.",
       category: "cancelamento",
 
@@ -1177,7 +1177,7 @@ window.AIWData = (function () {
     {
       id: "wf-troca-devolucao",
       name: "Troca e devolução",
-      icon: "↩️",
+      icon: "assignment_return",
       desc: "Fluxo de logística reversa para troca ou devolução de itens já entregues.",
       category: "logistica-reversa",
 
@@ -1314,7 +1314,7 @@ window.AIWData = (function () {
     {
       id: "wf-personalizacao-camiseta",
       name: "Personalização de Camiseta",
-      icon: "👕",
+      icon: "checkroom",
       desc: "Execução de estampa ou bordado personalizado em camiseta, sob demanda, antes da entrega.",
       category: "servicos",
 
@@ -1331,7 +1331,7 @@ window.AIWData = (function () {
       agentEnabled: true,
       deps: [],
       unlocks: [
-        { wfId: "wf-entrega-domicilio", wfName: "Entrega em domicílio", wfIcon: "🏠" },
+        { wfId: "wf-entrega-domicilio", wfName: "Entrega em domicílio", wfIcon: "local_shipping" },
       ],
 
       stages: [
@@ -1393,41 +1393,41 @@ window.AIWData = (function () {
 
   /* ── Workflow library (templates for wizard — previously in view-workflow-board.jsx) ── */
   const libraryWfs = [
-    { id: "boleto", name: "Boleto Bancário", icon: "📋", category: "pagamento",
+    { id: "boleto", name: "Boleto Bancário", icon: "assignment", category: "pagamento",
       desc: "Geração, envio e confirmação de pagamento via boleto bancário",
       stages: [
         { name: "Emissão",       linkedToNext: true,  tasks: [{ id: "bl-1", name: "Gerar boleto", type: "auto", owner: "Gateway" }, { id: "bl-2", name: "Enviar por e-mail", type: "auto", owner: "Notif. Agent" }] },
         { name: "Monitoramento", linkedToNext: true,  tasks: [{ id: "bl-3", name: "Aguardar pagamento", type: "auto", owner: "Gateway" }] },
         { name: "Confirmação",   tasks: [{ id: "bl-4", name: "Confirmar e liberar pedido", type: "auto", owner: "OMS" }] }
       ]},
-    { id: "entrega-agendada", name: "Entrega Agendada", icon: "🗓️", category: "fulfillment",
+    { id: "entrega-agendada", name: "Entrega Agendada", icon: "event", category: "fulfillment",
       desc: "Pedidos com janela de entrega agendada pelo cliente",
       stages: [
         { name: "Agendamento", linkedToNext: true, tasks: [{ id: "ea-1", name: "Confirmar janela com cliente", type: "auto", owner: "Notif. Agent" }] },
         { name: "Preparação",  linkedToNext: true, tasks: [{ id: "ea-2", name: "Separar produto no dia", type: "manual", owner: "WMS Operator" }] },
         { name: "Entrega",     tasks: [{ id: "ea-3", name: "Cumprir janela agendada", type: "manual", owner: "Carrier" }] }
       ]},
-    { id: "recusa-pgto", name: "Recusa de Pagamento", icon: "🚫", category: "pagamento",
+    { id: "recusa-pgto", name: "Recusa de Pagamento", icon: "block", category: "pagamento",
       desc: "Retentativa e resolução de pagamentos recusados pela operadora",
       stages: [
         { name: "Detecção",    linkedToNext: true,  tasks: [{ id: "rp-1", name: "Detectar recusa", type: "auto", owner: "Gateway" }, { id: "rp-2", name: "Notificar cliente", type: "auto", owner: "Notif. Agent" }] },
         { name: "Retentativa", linkedToNext: false, tasks: [{ id: "rp-3", name: "Retentar cobrança", type: "auto", owner: "Gateway" }] },
         { name: "Resolução",   tasks: [{ id: "rp-4", name: "Cancelar ou confirmar pedido", type: "auto", owner: "Order Management Agent" }] }
       ]},
-    { id: "giftcard", name: "Gift Card", icon: "🎁", category: "servicos",
+    { id: "giftcard", name: "Gift Card", icon: "redeem", category: "servicos",
       desc: "Emissão e validação de gift cards na compra e no resgate",
       stages: [
         { name: "Emissão",   linkedToNext: true, tasks: [{ id: "gc-1", name: "Gerar código", type: "auto", owner: "Platform" }, { id: "gc-2", name: "Enviar ao presenteado", type: "auto", owner: "Notif. Agent" }] },
         { name: "Validação", tasks: [{ id: "gc-3", name: "Validar resgate", type: "auto", owner: "Platform" }] }
       ]},
-    { id: "assinatura", name: "Assinatura", icon: "🔁", category: "servicos",
+    { id: "assinatura", name: "Assinatura", icon: "sync", category: "servicos",
       desc: "Gestão de cobranças recorrentes e renovações automáticas de assinatura",
       stages: [
         { name: "Cobrança",    linkedToNext: true, tasks: [{ id: "as-1", name: "Cobrar recorrência", type: "auto", owner: "Gateway" }] },
         { name: "Fulfillment", linkedToNext: true, tasks: [{ id: "as-2", name: "Gerar pedido automático", type: "auto", owner: "OMS" }] },
         { name: "Entrega",     tasks: [{ id: "as-3", name: "Despachar pedido", type: "auto", owner: "Carrier" }] }
       ]},
-    { id: "b2b-faturamento", name: "Faturamento B2B", icon: "📊", category: "pagamento",
+    { id: "b2b-faturamento", name: "Faturamento B2B", icon: "bar_chart", category: "pagamento",
       desc: "Faturamento com prazo e análise de crédito para clientes B2B",
       stages: [
         { name: "Crédito",     linkedToNext: true, tasks: [{ id: "b2-1", name: "Verificar limite de crédito", type: "auto", owner: "Finance Agent" }] },
@@ -1458,40 +1458,40 @@ window.AIWData = (function () {
 
   // My AI Team — replaces existing AppData.aiTeam with order-related agents
   const aiTeam = [
-    { id: "assistant",      name: "Meu Assistente",          emoji: "✨", color: "linear-gradient(135deg,#FF3D6E,#9747FF)", tasks: 28430, credits: 142500, sub: "Visão geral · pedidos · workflows" },
-    { id: "orchestration",  name: "Agentes de Pedidos",      emoji: "🛠", color: "linear-gradient(135deg,#9747FF,#2962FF)", tasks: 18620, credits: 98400,  sub: "Ativo · 4.256 pedidos monitorados" },
-    { id: "sla",            name: "SLA Monitor Agent",       emoji: "⏱", color: "#FFE3E3", tasks: 8240,  credits: 32100, sub: "Detecta pedidos travados acima do SLA" },
-    { id: "returns",        name: "Returns Agent",           emoji: "↩",  color: "#E5F0FF", tasks: 4120,  credits: 19800, sub: "Logística reversa e devoluções" },
-    { id: "marketplace",    name: "Marketplace Agent",       emoji: "🛒", color: "#FFF3C7", tasks: 6840,  credits: 28700, sub: "Integrações de marketplace" },
-    { id: "oms",            name: "Order Management Agent",  emoji: "📦", color: "#E3F8E5", tasks: 12150, credits: 47600, sub: "Order Management & routing" }
+    { id: "assistant",      name: "Meu Assistente",          emoji: "auto_awesome", color: "linear-gradient(135deg,#FF3D6E,#9747FF)", tasks: 28430, credits: 142500, sub: "Visão geral · pedidos · workflows" },
+    { id: "orchestration",  name: "Agentes de Pedidos",      emoji: "build", color: "linear-gradient(135deg,#9747FF,#1E4EE5)", tasks: 18620, credits: 98400,  sub: "Ativo · 4.256 pedidos monitorados" },
+    { id: "sla",            name: "SLA Monitor Agent",       emoji: "schedule", color: "#FFE3E3", tasks: 8240,  credits: 32100, sub: "Detecta pedidos travados acima do SLA" },
+    { id: "returns",        name: "Returns Agent",           emoji: "assignment_return",  color: "#E5F0FF", tasks: 4120,  credits: 19800, sub: "Logística reversa e devoluções" },
+    { id: "marketplace",    name: "Marketplace Agent",       emoji: "shopping_cart", color: "#FFF3C7", tasks: 6840,  credits: 28700, sub: "Integrações de marketplace" },
+    { id: "oms",            name: "Order Management Agent",  emoji: "inventory_2", color: "#E9FCE3", tasks: 12150, credits: 47600, sub: "Order Management & routing" }
   ];
 
   /* ─── helpers reutilizáveis para steps ──────────────────────────── */
   function stepsDeliveryAllDone(d) {
     return [
-      { label:"Autorização de Pagamento", icon:"💳", status:"done", agent:true,  time:d+" 09:43" },
-      { label:"Captura de Pagamento",     icon:"💳", status:"done", agent:true,  time:d+" 09:43" },
-      { label:"Reserva de Estoque",       icon:"📦", status:"done", agent:true,  time:d+" 09:44" },
+      { label:"Autorização de Pagamento", icon:"credit_card", status:"done", agent:true,  time:d+" 09:43" },
+      { label:"Captura de Pagamento",     icon:"credit_card", status:"done", agent:true,  time:d+" 09:43" },
+      { label:"Reserva de Estoque",       icon:"inventory_2", status:"done", agent:true,  time:d+" 09:44" },
       { label:"Picking",                  icon:"🔍", status:"done", agent:false, time:d+" 10:30" },
-      { label:"Packing",                  icon:"📦", status:"done", agent:false, time:d+" 10:50" },
-      { label:"Labeling",                 icon:"🏷️", status:"done", agent:false, time:d+" 11:00" },
+      { label:"Packing",                  icon:"inventory_2", status:"done", agent:false, time:d+" 10:50" },
+      { label:"Labeling",                 icon:"sell", status:"done", agent:false, time:d+" 11:00" },
       { label:"Emissão de Nota Fiscal",   icon:"🧾", status:"done", agent:true,  time:d+" 11:01" },
       { label:"Expedição",                icon:"📮", status:"done", agent:false, time:d+" 11:30" },
-      { label:"First Mile",               icon:"🚚", status:"done", agent:true,  time:d+" 13:00" },
-      { label:"Last Mile",                icon:"🚚", status:"done", agent:true,  time:d+" 16:00" },
-      { label:"Proof of Delivery",        icon:"✅", status:"done", agent:true,  time:d+" 17:30" },
+      { label:"First Mile",               icon:"local_shipping", status:"done", agent:true,  time:d+" 13:00" },
+      { label:"Last Mile",                icon:"local_shipping", status:"done", agent:true,  time:d+" 16:00" },
+      { label:"Proof of Delivery",        icon:"check_circle", status:"done", agent:true,  time:d+" 17:30" },
     ];
   }
   function stepsBOPISNotified(d) {
     return [
-      { label:"Autorização de Pagamento", icon:"💳", status:"done",    agent:true,  time:d+" 09:43" },
-      { label:"Captura de Pagamento",     icon:"💳", status:"done",    agent:true,  time:d+" 09:43" },
-      { label:"Reserva de Estoque",       icon:"📦", status:"done",    agent:true,  time:d+" 09:44" },
+      { label:"Autorização de Pagamento", icon:"credit_card", status:"done",    agent:true,  time:d+" 09:43" },
+      { label:"Captura de Pagamento",     icon:"credit_card", status:"done",    agent:true,  time:d+" 09:43" },
+      { label:"Reserva de Estoque",       icon:"inventory_2", status:"done",    agent:true,  time:d+" 09:44" },
       { label:"Picking",                  icon:"🔍", status:"done",    agent:false, time:d+" 11:00" },
-      { label:"Packing",                  icon:"📦", status:"done",    agent:false, time:d+" 11:20" },
+      { label:"Packing",                  icon:"inventory_2", status:"done",    agent:false, time:d+" 11:20" },
       { label:"Ready for Pickup",         icon:"🔔", status:"done",    agent:true,  time:d+" 11:22", note:"Cliente notificado por e-mail e SMS." },
       { label:"Emissão de Nota Fiscal",   icon:"🧾", status:"pending", agent:true,  time:null },
-      { label:"Customer Check-in",        icon:"🏪", status:"pending", agent:false, time:null },
+      { label:"Customer Check-in",        icon:"storefront", status:"pending", agent:false, time:null },
       { label:"Handover at POS",          icon:"🤝", status:"pending", agent:false, time:null },
     ];
   }
@@ -1499,17 +1499,17 @@ window.AIWData = (function () {
      assinatura do cluster de despacho travado do Canvas A (labeling às 06:12). */
   function stepsSellerNoDispatch(d) {
     return [
-      { label:"Autorização de Pagamento", icon:"💳", status:"done",    agent:true,  time:"13/06/2026 18:25" },
-      { label:"Captura de Pagamento",     icon:"💳", status:"done",    agent:true,  time:"13/06/2026 18:25" },
-      { label:"Reserva de Estoque",       icon:"📦", status:"done",    agent:true,  time:"13/06/2026 18:26" },
+      { label:"Autorização de Pagamento", icon:"credit_card", status:"done",    agent:true,  time:"13/06/2026 18:25" },
+      { label:"Captura de Pagamento",     icon:"credit_card", status:"done",    agent:true,  time:"13/06/2026 18:25" },
+      { label:"Reserva de Estoque",       icon:"inventory_2", status:"done",    agent:true,  time:"13/06/2026 18:26" },
       { label:"Picking",                  icon:"🔍", status:"done",    agent:false, time:d+" 05:40" },
-      { label:"Packing",                  icon:"📦", status:"done",    agent:false, time:d+" 06:02" },
-      { label:"Labeling",                 icon:"🏷️", status:"done",    agent:false, time:d+" 06:12", note:"Último evento registrado pelo seller." },
+      { label:"Packing",                  icon:"inventory_2", status:"done",    agent:false, time:d+" 06:02" },
+      { label:"Labeling",                 icon:"sell", status:"done",    agent:false, time:d+" 06:12", note:"Último evento registrado pelo seller." },
       { label:"Emissão de Nota Fiscal",   icon:"🧾", status:"done",    agent:true,  time:d+" 06:13" },
       { label:"Expedição",                icon:"📮", status:"active",  agent:false, time:null, note:"Sem evento de coleta há mais de 4h. Entrega prevista para hoje." },
-      { label:"First Mile",               icon:"🚚", status:"pending", agent:true,  time:null },
-      { label:"Last Mile",                icon:"🚚", status:"pending", agent:true,  time:null },
-      { label:"Proof of Delivery",        icon:"✅", status:"pending", agent:true,  time:null },
+      { label:"First Mile",               icon:"local_shipping", status:"pending", agent:true,  time:null },
+      { label:"Last Mile",                icon:"local_shipping", status:"pending", agent:true,  time:null },
+      { label:"Proof of Delivery",        icon:"check_circle", status:"pending", agent:true,  time:null },
     ];
   }
 
@@ -1545,8 +1545,8 @@ window.AIWData = (function () {
             { name:"invoice",        connector:"fiscal-service",   status:"pending" },
           ],
           stages:[
-            { icon:"💳", label:"Pagamento", status:"done" },
-            { icon:"🏪", label:"Handling na Loja",          status:"done" },
+            { icon:"credit_card", label:"Pagamento", status:"done" },
+            { icon:"storefront", label:"Handling na Loja",          status:"done" },
             { icon:"🧾", label:"Faturamento",               status:"pending" },
             { icon:"🤝", label:"Entrega em Loja",           status:"pending" },
           ],
@@ -1567,13 +1567,13 @@ window.AIWData = (function () {
             { name:"invoice",        connector:"fiscal-service",   status:"done" },
           ],
           stages:[
-            { icon:"💳", label:"Pagamento", status:"done" },
-            { icon:"📦", label:"Handling",                 status:"done" },
+            { icon:"credit_card", label:"Pagamento", status:"done" },
+            { icon:"inventory_2", label:"Handling",                 status:"done" },
             { icon:"🧾", label:"Faturamento",              status:"done" },
-            { icon:"🚚", label:"Entrega",                  status:"done" },
+            { icon:"local_shipping", label:"Entrega",                  status:"done" },
           ],
           items:[
-            { name:"Camiseta Básica Pack 2un", emoji:"👕", sku:"CA-CB-0991", qty:1, price:"R$ 89,90",  steps:stepsDeliveryAllDone("02/06/2026") },
+            { name:"Camiseta Básica Pack 2un", emoji:"checkroom", sku:"CA-CB-0991", qty:1, price:"R$ 89,90",  steps:stepsDeliveryAllDone("02/06/2026") },
             { name:"Bermuda Cargo",            emoji:"🩳", sku:"CA-BC-1773", qty:2, price:"R$ 149,90", steps:stepsDeliveryAllDone("02/06/2026") },
           ],
         },
@@ -1611,13 +1611,13 @@ window.AIWData = (function () {
             { name:"invoice",        connector:"fiscal-service",   status:"done" },
           ],
           stages:[
-            { icon:"💳", label:"Pagamento", status:"done" },
-            { icon:"📦", label:"Handling",                 status:"done" },
+            { icon:"credit_card", label:"Pagamento", status:"done" },
+            { icon:"inventory_2", label:"Handling",                 status:"done" },
             { icon:"🧾", label:"Faturamento",              status:"done" },
-            { icon:"🚚", label:"Entrega",                  status:"done" },
+            { icon:"local_shipping", label:"Entrega",                  status:"done" },
           ],
           items:[
-            { name:"Samsung Galaxy S24 FE 128GB", emoji:"📱", sku:"SM-S724B", qty:1, price:"R$ 3.499,00", steps:stepsDeliveryAllDone("30/05/2026") },
+            { name:"Samsung Galaxy S24 FE 128GB", emoji:"smartphone", sku:"SM-S724B", qty:1, price:"R$ 3.499,00", steps:stepsDeliveryAllDone("30/05/2026") },
           ],
         },
         {
@@ -1638,23 +1638,23 @@ window.AIWData = (function () {
           },
           stages:[
             { icon:"📝", label:"Solicitação",    status:"done"    },
-            { icon:"📦", label:"Coleta Reversa", status:"active"  },
+            { icon:"inventory_2", label:"Coleta Reversa", status:"active"  },
             { icon:"🔍", label:"Inspeção no CD", status:"pending" },
-            { icon:"✅", label:"Resolução",       status:"pending" },
+            { icon:"check_circle", label:"Resolução",       status:"pending" },
           ],
           items:[
-            { name:"Samsung Galaxy S24 FE 128GB", emoji:"📱", sku:"SM-S724B", qty:1, price:"R$ 3.499,00",
+            { name:"Samsung Galaxy S24 FE 128GB", emoji:"smartphone", sku:"SM-S724B", qty:1, price:"R$ 3.499,00",
               steps:[
                 { label:"Abertura de Solicitação",          icon:"📝", status:"done",    agent:true,  time:"01/06/2026 18:32" },
                 { label:"Validar Elegibilidade",            icon:"🔍", status:"done",    agent:true,  time:"01/06/2026 18:33" },
-                { label:"Classificar (Troca / Devolução)",  icon:"📋", status:"done",    agent:true,  time:"01/06/2026 18:33", note:"Classificado como: Devolução com estorno." },
-                { label:"Gerar Etiqueta Reversa",           icon:"🏷️", status:"done",    agent:true,  time:"01/06/2026 18:35" },
+                { label:"Classificar (Troca / Devolução)",  icon:"assignment", status:"done",    agent:true,  time:"01/06/2026 18:33", note:"Classificado como: Devolução com estorno." },
+                { label:"Gerar Etiqueta Reversa",           icon:"sell", status:"done",    agent:true,  time:"01/06/2026 18:35" },
                 { label:"Notificar Cliente",                icon:"🔔", status:"done",    agent:true,  time:"01/06/2026 18:36" },
                 { label:"Confirmar Postagem",               icon:"📮", status:"active",  agent:true,  time:null, note:"Aguardando postagem pelo cliente." },
-                { label:"Receber Produto no CD",            icon:"📦", status:"pending", agent:false, time:null },
+                { label:"Receber Produto no CD",            icon:"inventory_2", status:"pending", agent:false, time:null },
                 { label:"Conferir Estado do Produto",       icon:"🔎", status:"pending", agent:false, time:null },
                 { label:"Processar Estorno",                icon:"💰", status:"pending", agent:true,  time:null },
-                { label:"Notificar Cliente — Concluído",    icon:"✅", status:"pending", agent:true,  time:null },
+                { label:"Notificar Cliente — Concluído",    icon:"check_circle", status:"pending", agent:true,  time:null },
               ],
             },
           ],
@@ -1693,19 +1693,19 @@ window.AIWData = (function () {
             { name:"invoice",        connector:"fiscal-service",    status:"error"   },
           ],
           stages:[
-            { icon:"💳", label:"Pagamento", status:"done"    },
-            { icon:"💻", label:"Ativação Digital",          status:"active"  },
+            { icon:"credit_card", label:"Pagamento", status:"done"    },
+            { icon:"devices", label:"Ativação Digital",          status:"active"  },
             { icon:"📧", label:"Entrega Digital",           status:"pending" },
           ],
           items:[
-            { name:"Consulta Online — Assinatura 3 meses", emoji:"💻", sku:"DS-CO-3M", qty:1, price:"R$ 149,90",
+            { name:"Consulta Online — Assinatura 3 meses", emoji:"devices", sku:"DS-CO-3M", qty:1, price:"R$ 149,90",
               steps:[
-                { label:"Autorização de Pagamento", icon:"💳", status:"done",    agent:true,  time:"02/06/2026 10:15" },
-                { label:"Captura de Pagamento",     icon:"💳", status:"done",    agent:true,  time:"02/06/2026 10:15" },
+                { label:"Autorização de Pagamento", icon:"credit_card", status:"done",    agent:true,  time:"02/06/2026 10:15" },
+                { label:"Captura de Pagamento",     icon:"credit_card", status:"done",    agent:true,  time:"02/06/2026 10:15" },
                 { label:"Gerar Chave / Licença",    icon:"🔑", status:"done",    agent:true,  time:"02/06/2026 10:16" },
                 { label:"Emissão de NF-e",          icon:"🧾", status:"active",  agent:true,  time:null, connectorStatus:"api_error", connectorNote:"Fiscal Service retornou 503 — retry em andamento" },
                 { label:"Enviar por E-mail",        icon:"📧", status:"pending", agent:true,  time:null },
-                { label:"Confirmação de Acesso",    icon:"✅", status:"pending", agent:true,  time:null },
+                { label:"Confirmação de Acesso",    icon:"check_circle", status:"pending", agent:true,  time:null },
               ],
             },
           ],
@@ -1721,25 +1721,25 @@ window.AIWData = (function () {
             { name:"invoice",        connector:"fiscal-service",    status:"pending" },
           ],
           stages:[
-            { icon:"💳", label:"Pagamento", status:"done"    },
-            { icon:"📦", label:"Handling",                 status:"active"  },
+            { icon:"credit_card", label:"Pagamento", status:"done"    },
+            { icon:"inventory_2", label:"Handling",                 status:"active"  },
             { icon:"🧾", label:"Faturamento",              status:"pending" },
-            { icon:"🚚", label:"Entrega",                  status:"pending" },
+            { icon:"local_shipping", label:"Entrega",                  status:"pending" },
           ],
           items:[
             { name:"Vitamina C 1000mg — 60 comprimidos", emoji:"💊", sku:"DS-VC-1000", qty:5, price:"R$ 33,90",
               steps:[
-                { label:"Autorização de Pagamento", icon:"💳", status:"done",    agent:true,  time:"02/06/2026 10:15" },
-                { label:"Captura de Pagamento",     icon:"💳", status:"done",    agent:true,  time:"02/06/2026 10:15" },
-                { label:"Reserva de Estoque",       icon:"📦", status:"done",    agent:true,  time:"02/06/2026 10:16" },
+                { label:"Autorização de Pagamento", icon:"credit_card", status:"done",    agent:true,  time:"02/06/2026 10:15" },
+                { label:"Captura de Pagamento",     icon:"credit_card", status:"done",    agent:true,  time:"02/06/2026 10:15" },
+                { label:"Reserva de Estoque",       icon:"inventory_2", status:"done",    agent:true,  time:"02/06/2026 10:16" },
                 { label:"Picking",                  icon:"🔍", status:"done",    agent:false, time:"02/06/2026 11:00" },
-                { label:"Packing",                  icon:"📦", status:"active",  agent:false, time:null },
-                { label:"Labeling",                 icon:"🏷️", status:"pending", agent:false, time:null },
+                { label:"Packing",                  icon:"inventory_2", status:"active",  agent:false, time:null },
+                { label:"Labeling",                 icon:"sell", status:"pending", agent:false, time:null },
                 { label:"Emissão de Nota Fiscal",   icon:"🧾", status:"pending", agent:true,  time:null },
                 { label:"Expedição",                icon:"📮", status:"pending", agent:false, time:null },
-                { label:"First Mile",               icon:"🚚", status:"pending", agent:true,  time:null },
-                { label:"Last Mile",                icon:"🚚", status:"pending", agent:true,  time:null },
-                { label:"Proof of Delivery",        icon:"✅", status:"pending", agent:true,  time:null },
+                { label:"First Mile",               icon:"local_shipping", status:"pending", agent:true,  time:null },
+                { label:"Last Mile",                icon:"local_shipping", status:"pending", agent:true,  time:null },
+                { label:"Proof of Delivery",        icon:"check_circle", status:"pending", agent:true,  time:null },
               ],
             },
           ],
@@ -1779,10 +1779,10 @@ window.AIWData = (function () {
             { name:"invoice",        connector:"fiscal-service",    status:"done"   },
           ],
           stages:[
-            { icon:"💳", label:"Pagamento", status:"done"   },
-            { icon:"📦", label:"Handling",                 status:"done"   },
+            { icon:"credit_card", label:"Pagamento", status:"done"   },
+            { icon:"inventory_2", label:"Handling",                 status:"done"   },
             { icon:"🧾", label:"Faturamento",              status:"done"   },
-            { icon:"🚚", label:"Entrega",                  status:"active" },
+            { icon:"local_shipping", label:"Entrega",                  status:"active" },
           ],
           items:[
             {
@@ -1794,17 +1794,17 @@ window.AIWData = (function () {
                 { name:"Rodapé Vinílico 6cm × 3m",   sku:"RV-6CM-02",  qty:2, unit:"unidades" },
               ],
               steps:[
-                { label:"Autorização de Pagamento", icon:"💳", status:"done",    agent:true,  time:"01/06/2026 14:00" },
-                { label:"Captura de Pagamento",     icon:"💳", status:"done",    agent:true,  time:"01/06/2026 14:00" },
-                { label:"Reserva de Estoque",       icon:"📦", status:"done",    agent:true,  time:"01/06/2026 14:01" },
+                { label:"Autorização de Pagamento", icon:"credit_card", status:"done",    agent:true,  time:"01/06/2026 14:00" },
+                { label:"Captura de Pagamento",     icon:"credit_card", status:"done",    agent:true,  time:"01/06/2026 14:00" },
+                { label:"Reserva de Estoque",       icon:"inventory_2", status:"done",    agent:true,  time:"01/06/2026 14:01" },
                 { label:"Picking",                  icon:"🔍", status:"done",    agent:false, time:"01/06/2026 15:30" },
-                { label:"Packing",                  icon:"📦", status:"done",    agent:false, time:"01/06/2026 16:00" },
-                { label:"Labeling",                 icon:"🏷️", status:"done",    agent:false, time:"01/06/2026 16:15" },
+                { label:"Packing",                  icon:"inventory_2", status:"done",    agent:false, time:"01/06/2026 16:00" },
+                { label:"Labeling",                 icon:"sell", status:"done",    agent:false, time:"01/06/2026 16:15" },
                 { label:"Emissão de Nota Fiscal",   icon:"🧾", status:"done",    agent:true,  time:"01/06/2026 16:16" },
                 { label:"Expedição",                icon:"📮", status:"done",    agent:false, time:"01/06/2026 17:00" },
-                { label:"First Mile",               icon:"🚚", status:"done",    agent:true,  time:"01/06/2026 19:00" },
-                { label:"Last Mile",                icon:"🚚", status:"active",  agent:true,  time:null },
-                { label:"Proof of Delivery",        icon:"✅", status:"pending", agent:true,  time:null },
+                { label:"First Mile",               icon:"local_shipping", status:"done",    agent:true,  time:"01/06/2026 19:00" },
+                { label:"Last Mile",                icon:"local_shipping", status:"active",  agent:true,  time:null },
+                { label:"Proof of Delivery",        icon:"check_circle", status:"pending", agent:true,  time:null },
               ],
             },
           ],
@@ -1821,25 +1821,25 @@ window.AIWData = (function () {
             { name:"invoice",        connector:"fiscal-service",    status:"pending" },
           ],
           stages:[
-            { icon:"💳", label:"Pagamento", status:"done"    },
-            { icon:"📦", label:"Handling",                 status:"active"  },
+            { icon:"credit_card", label:"Pagamento", status:"done"    },
+            { icon:"inventory_2", label:"Handling",                 status:"active"  },
             { icon:"🧾", label:"Faturamento",              status:"pending" },
-            { icon:"🚚", label:"Entrega",                  status:"pending" },
+            { icon:"local_shipping", label:"Entrega",                  status:"pending" },
           ],
           items:[
             { name:"Cola de Instalação Vinílica 1kg", emoji:"🔧", sku:"CI-1KG-VIN", qty:2, price:"R$ 45,90",
               steps:[
-                { label:"Autorização de Pagamento", icon:"💳", status:"done",    agent:true,  time:"01/06/2026 14:00" },
-                { label:"Captura de Pagamento",     icon:"💳", status:"done",    agent:true,  time:"01/06/2026 14:00" },
-                { label:"Reserva de Estoque",       icon:"📦", status:"done",    agent:true,  time:"01/06/2026 14:01" },
+                { label:"Autorização de Pagamento", icon:"credit_card", status:"done",    agent:true,  time:"01/06/2026 14:00" },
+                { label:"Captura de Pagamento",     icon:"credit_card", status:"done",    agent:true,  time:"01/06/2026 14:00" },
+                { label:"Reserva de Estoque",       icon:"inventory_2", status:"done",    agent:true,  time:"01/06/2026 14:01" },
                 { label:"Picking",                  icon:"🔍", status:"active",  agent:false, time:null, cancelSignal:true },
-                { label:"Packing",                  icon:"📦", status:"pending", agent:false, time:null },
-                { label:"Labeling",                 icon:"🏷️", status:"pending", agent:false, time:null },
+                { label:"Packing",                  icon:"inventory_2", status:"pending", agent:false, time:null },
+                { label:"Labeling",                 icon:"sell", status:"pending", agent:false, time:null },
                 { label:"Emissão de Nota Fiscal",   icon:"🧾", status:"pending", agent:true,  time:null },
                 { label:"Expedição",                icon:"📮", status:"pending", agent:false, time:null },
-                { label:"First Mile",               icon:"🚚", status:"pending", agent:true,  time:null },
-                { label:"Last Mile",                icon:"🚚", status:"pending", agent:true,  time:null },
-                { label:"Proof of Delivery",        icon:"✅", status:"pending", agent:true,  time:null },
+                { label:"First Mile",               icon:"local_shipping", status:"pending", agent:true,  time:null },
+                { label:"Last Mile",                icon:"local_shipping", status:"pending", agent:true,  time:null },
+                { label:"Proof of Delivery",        icon:"check_circle", status:"pending", agent:true,  time:null },
               ],
             },
           ],
@@ -1848,14 +1848,14 @@ window.AIWData = (function () {
             label:"Cancelamento em andamento",
             stages:[
               { icon:"📝", label:"Solicitação",         status:"done"    },
-              { icon:"🔄", label:"Reversão Fulfillment", status:"active"  },
+              { icon:"swap_horiz", label:"Reversão Fulfillment", status:"active"  },
               { icon:"💰", label:"Estorno Financeiro",   status:"pending" },
             ],
             steps:[
               { label:"Receber Solicitação",              icon:"📝", status:"done",    agent:true,  time:"02/06/2026 11:45" },
               { label:"Validar Janela de Cancelamento",   icon:"🔍", status:"done",    agent:true,  time:"02/06/2026 11:46" },
-              { label:"Bloquear Expedição",               icon:"🚫", status:"active",  agent:true,  time:null },
-              { label:"Estornar Estoque",                 icon:"📦", status:"pending", agent:true,  time:null },
+              { label:"Bloquear Expedição",               icon:"block", status:"active",  agent:true,  time:null },
+              { label:"Estornar Estoque",                 icon:"inventory_2", status:"pending", agent:true,  time:null },
               { label:"Processar Estorno",                icon:"💰", status:"pending", agent:true,  time:null },
               { label:"Notificar Cliente",                icon:"🔔", status:"pending", agent:true,  time:null },
             ],
@@ -1897,49 +1897,49 @@ window.AIWData = (function () {
             { name:"carrier",    connector:"jadlog",          status:"pending" },
           ],
           stages:[
-            { icon:"💳", label:"Pagamento", status:"done"    },
-            { icon:"📋", label:"Validação de Receita",     status:"active"  },
+            { icon:"credit_card", label:"Pagamento", status:"done"    },
+            { icon:"assignment", label:"Validação de Receita",     status:"active"  },
             { icon:"🔬", label:"Produção da Lente",        status:"pending" },
-            { icon:"📦", label:"Montagem e Manuseio",      status:"pending" },
+            { icon:"inventory_2", label:"Montagem e Manuseio",      status:"pending" },
             { icon:"🧾", label:"Faturamento",              status:"pending" },
-            { icon:"🚚", label:"Entrega em Domicílio",     status:"pending" },
+            { icon:"local_shipping", label:"Entrega em Domicílio",     status:"pending" },
           ],
           items:[
             /* ── Armação: pronta-entrega, reservada no CD, aguardando lente ── */
             { name:"Armação Oakley Holbrook RX 54mm", emoji:"👓", sku:"LO-OAK-HOLB-54-PRETO", qty:1, price:"R$ 590,00",
               steps:[
-                { label:"Autorização de Pagamento", icon:"💳", status:"done",    agent:true,  time:"10/06/2026 08:48" },
-                { label:"Captura de Pagamento",     icon:"💳", status:"done",    agent:true,  time:"10/06/2026 08:48" },
-                { label:"Reserva de Estoque",       icon:"📦", status:"done",    agent:true,  time:"10/06/2026 08:49" },
+                { label:"Autorização de Pagamento", icon:"credit_card", status:"done",    agent:true,  time:"10/06/2026 08:48" },
+                { label:"Captura de Pagamento",     icon:"credit_card", status:"done",    agent:true,  time:"10/06/2026 08:48" },
+                { label:"Reserva de Estoque",       icon:"inventory_2", status:"done",    agent:true,  time:"10/06/2026 08:49" },
                 { label:"Picking",                  icon:"🔍", status:"done",    agent:false, time:"10/06/2026 09:15" },
-                { label:"Aguardando lente",         icon:"⏱️", status:"active",  agent:true,  time:null, waitingForFab:true, note:"Armação separada e retida no CD. Será embalada junto com a lente após fabricação." },
-                { label:"Packing (armação + lente)",icon:"📦", status:"pending", agent:false, time:null },
-                { label:"Labeling",                 icon:"🏷️", status:"pending", agent:false, time:null },
+                { label:"Aguardando lente",         icon:"schedule", status:"active",  agent:true,  time:null, waitingForFab:true, note:"Armação separada e retida no CD. Será embalada junto com a lente após fabricação." },
+                { label:"Packing (armação + lente)",icon:"inventory_2", status:"pending", agent:false, time:null },
+                { label:"Labeling",                 icon:"sell", status:"pending", agent:false, time:null },
                 { label:"Emissão de Nota Fiscal",   icon:"🧾", status:"pending", agent:true,  time:null },
                 { label:"Expedição",                icon:"📮", status:"pending", agent:false, time:null },
-                { label:"First Mile",               icon:"🚚", status:"pending", agent:true,  time:null },
-                { label:"Last Mile",                icon:"🚚", status:"pending", agent:true,  time:null },
-                { label:"Proof of Delivery",        icon:"✅", status:"pending", agent:true,  time:null },
+                { label:"First Mile",               icon:"local_shipping", status:"pending", agent:true,  time:null },
+                { label:"Last Mile",                icon:"local_shipping", status:"pending", agent:true,  time:null },
+                { label:"Proof of Delivery",        icon:"check_circle", status:"pending", agent:true,  time:null },
               ],
             },
             /* ── Lente: fabricação externa, bloqueia entrega do grupo inteiro ── */
             { name:"Lente Especial Anti-Reflexo +2.50/-0.75", emoji:"🔬", sku:"LO-LENTE-AR-250", qty:1, price:"R$ 1.290,00",
               steps:[
-                { label:"Autorização de Pagamento",    icon:"💳", status:"done",    agent:true,  time:"10/06/2026 08:48" },
-                { label:"Captura de Pagamento",        icon:"💳", status:"done",    agent:true,  time:"10/06/2026 08:48" },
-                { label:"Verificar anexo de receita",  icon:"📋", status:"active",  agent:false, time:null, note:"Aguardando verificação pelo Atendimento Óptico." },
+                { label:"Autorização de Pagamento",    icon:"credit_card", status:"done",    agent:true,  time:"10/06/2026 08:48" },
+                { label:"Captura de Pagamento",        icon:"credit_card", status:"done",    agent:true,  time:"10/06/2026 08:48" },
+                { label:"Verificar anexo de receita",  icon:"assignment", status:"active",  agent:false, time:null, note:"Aguardando verificação pelo Atendimento Óptico." },
                 { label:"Validar dados da prescrição", icon:"🔍", status:"pending", agent:false, time:null },
-                { label:"Aprovar receita",             icon:"✅", status:"pending", agent:false, time:null },
+                { label:"Aprovar receita",             icon:"check_circle", status:"pending", agent:false, time:null },
                 { label:"Acionar laboratório",         icon:"🔬", status:"pending", agent:true,  time:null },
-                { label:"Monitorar produção",          icon:"⏱️", status:"pending", agent:true,  time:null },
-                { label:"Confirmar lente pronta",      icon:"📦", status:"pending", agent:true,  time:null, note:"Lente pronta libera Packing conjunto com a armação." },
-                { label:"Packing (armação + lente)",   icon:"📦", status:"pending", agent:false, time:null },
-                { label:"Labeling",                    icon:"🏷️", status:"pending", agent:false, time:null },
+                { label:"Monitorar produção",          icon:"schedule", status:"pending", agent:true,  time:null },
+                { label:"Confirmar lente pronta",      icon:"inventory_2", status:"pending", agent:true,  time:null, note:"Lente pronta libera Packing conjunto com a armação." },
+                { label:"Packing (armação + lente)",   icon:"inventory_2", status:"pending", agent:false, time:null },
+                { label:"Labeling",                    icon:"sell", status:"pending", agent:false, time:null },
                 { label:"Emissão de Nota Fiscal",      icon:"🧾", status:"pending", agent:true,  time:null },
                 { label:"Expedição",                   icon:"📮", status:"pending", agent:false, time:null },
-                { label:"First Mile",                  icon:"🚚", status:"pending", agent:true,  time:null },
-                { label:"Last Mile",                   icon:"🚚", status:"pending", agent:true,  time:null },
-                { label:"Proof of Delivery",           icon:"✅", status:"pending", agent:true,  time:null },
+                { label:"First Mile",                  icon:"local_shipping", status:"pending", agent:true,  time:null },
+                { label:"Last Mile",                   icon:"local_shipping", status:"pending", agent:true,  time:null },
+                { label:"Proof of Delivery",           icon:"check_circle", status:"pending", agent:true,  time:null },
               ],
             },
           ],
@@ -1955,22 +1955,22 @@ window.AIWData = (function () {
             { name:"invoice",   connector:"fiscal-service",  status:"pending" },
           ],
           stages:[
-            { icon:"💳", label:"Pagamento", status:"done"    },
-            { icon:"🏪", label:"Handling na Loja",          status:"done"    },
+            { icon:"credit_card", label:"Pagamento", status:"done"    },
+            { icon:"storefront", label:"Handling na Loja",          status:"done"    },
             { icon:"🧾", label:"Faturamento",               status:"pending" },
             { icon:"🤝", label:"Entrega em Loja",           status:"pending" },
           ],
           items:[
-            { name:"Óculos de Sol Ray-Ban Aviador RB3025", emoji:"🕶️", sku:"LO-RB-3025-G15", qty:1, price:"R$ 557,00",
+            { name:"Óculos de Sol Ray-Ban Aviador RB3025", emoji:"visibility", sku:"LO-RB-3025-G15", qty:1, price:"R$ 557,00",
               steps:[
-                { label:"Autorização de Pagamento", icon:"💳", status:"done",    agent:true,  time:"10/06/2026 08:48" },
-                { label:"Captura de Pagamento",     icon:"💳", status:"done",    agent:true,  time:"10/06/2026 08:48" },
-                { label:"Reserva de Estoque",       icon:"📦", status:"done",    agent:true,  time:"10/06/2026 08:49" },
+                { label:"Autorização de Pagamento", icon:"credit_card", status:"done",    agent:true,  time:"10/06/2026 08:48" },
+                { label:"Captura de Pagamento",     icon:"credit_card", status:"done",    agent:true,  time:"10/06/2026 08:48" },
+                { label:"Reserva de Estoque",       icon:"inventory_2", status:"done",    agent:true,  time:"10/06/2026 08:49" },
                 { label:"Picking",                  icon:"🔍", status:"done",    agent:false, time:"10/06/2026 09:10" },
-                { label:"Packing",                  icon:"📦", status:"done",    agent:false, time:"10/06/2026 09:20" },
+                { label:"Packing",                  icon:"inventory_2", status:"done",    agent:false, time:"10/06/2026 09:20" },
                 { label:"Ready for Pickup",         icon:"🔔", status:"done",    agent:true,  time:"10/06/2026 09:22", note:"Cliente notificado por e-mail e SMS." },
                 { label:"Emissão de Nota Fiscal",   icon:"🧾", status:"pending", agent:true,  time:null },
-                { label:"Customer Check-in",        icon:"🏪", status:"pending", agent:false, time:null },
+                { label:"Customer Check-in",        icon:"storefront", status:"pending", agent:false, time:null },
                 { label:"Handover at POS",          icon:"🤝", status:"pending", agent:false, time:null },
               ],
             },
@@ -2010,13 +2010,13 @@ window.AIWData = (function () {
             { name:"invoice",   connector:"fiscal-service",  status:"done" },
           ],
           stages:[
-            { icon:"💳", label:"Pagamento", status:"done" },
-            { icon:"📦", label:"Handling",                 status:"done" },
+            { icon:"credit_card", label:"Pagamento", status:"done" },
+            { icon:"inventory_2", label:"Handling",                 status:"done" },
             { icon:"🧾", label:"Faturamento",              status:"done" },
-            { icon:"🚚", label:"Entrega",                  status:"done" },
+            { icon:"local_shipping", label:"Entrega",                  status:"done" },
           ],
           items:[
-            { name:"Camiseta Linho Premium — P · Branco", emoji:"👕", sku:"CMB-LIN-001-P-WH", qty:1, price:"R$ 289,00", steps:stepsDeliveryAllDone("07/06/2026") },
+            { name:"Camiseta Linho Premium — P · Branco", emoji:"checkroom", sku:"CMB-LIN-001-P-WH", qty:1, price:"R$ 289,00", steps:stepsDeliveryAllDone("07/06/2026") },
           ],
         },
         {
@@ -2037,20 +2037,20 @@ window.AIWData = (function () {
           },
           stages:[
             { icon:"📝", label:"Solicitação",         status:"done"    },
-            { icon:"📦", label:"Coleta Reversa",       status:"done"    },
+            { icon:"inventory_2", label:"Coleta Reversa",       status:"done"    },
             { icon:"🔍", label:"Inspeção no CD",       status:"done"    },
-            { icon:"✅", label:"Resolução",             status:"active"  },
+            { icon:"check_circle", label:"Resolução",             status:"active"  },
           ],
           items:[
-            { name:"Camiseta Linho Premium — P · Branco", emoji:"👕", sku:"CMB-LIN-001-P-WH", qty:1, price:"R$ 289,00",
+            { name:"Camiseta Linho Premium — P · Branco", emoji:"checkroom", sku:"CMB-LIN-001-P-WH", qty:1, price:"R$ 289,00",
               steps:[
                 { label:"Abertura de Solicitação",         icon:"📝", status:"done",    agent:true,  time:"13/06/2026 14:22", note:"Ticket #SAC-8841 · canal WhatsApp SAC." },
                 { label:"Validar Elegibilidade",           icon:"🔍", status:"done",    agent:true,  time:"13/06/2026 09:15" },
-                { label:"Receber Produto no CD",           icon:"📦", status:"done",    agent:false, time:"13/06/2026 09:15" },
+                { label:"Receber Produto no CD",           icon:"inventory_2", status:"done",    agent:false, time:"13/06/2026 09:15" },
                 { label:"Conferir Estado do Produto",      icon:"🔎", status:"done",    agent:false, time:"13/06/2026 09:45", note:"Defeito de fabricação confirmado na costura lateral. Reintegração ao estoque descartada." },
                 { label:"Definir Tipo de Resolução",       icon:"🔀", status:"active",  agent:false, time:null, note:"Decisão humana do SAC: reembolso integral, troca, reembolso parcial ou voucher." },
                 { label:"Processar Resolução Financeira",  icon:"💰", status:"pending", agent:true,  time:null },
-                { label:"Notificar Cliente — Concluído",   icon:"✅", status:"pending", agent:true,  time:null },
+                { label:"Notificar Cliente — Concluído",   icon:"check_circle", status:"pending", agent:true,  time:null },
               ],
             },
           ],
@@ -2092,10 +2092,10 @@ window.AIWData = (function () {
             { name:"carrier",   connector:"jadlog",          status:"error"   },
           ],
           stages:[
-            { icon:"💳", label:"Pagamento",   status:"done"   },
-            { icon:"📦", label:"Handling",    status:"done"   },
+            { icon:"credit_card", label:"Pagamento",   status:"done"   },
+            { icon:"inventory_2", label:"Handling",    status:"done"   },
             { icon:"🧾", label:"Faturamento", status:"done"   },
-            { icon:"🚚", label:"Entrega",     status:"active" },
+            { icon:"local_shipping", label:"Entrega",     status:"active" },
           ],
           items:[
             { name:"Tênis Running Flex Pro", emoji:"👟", sku:"LB-TN-4409", qty:1, price:"R$ 299,90",
@@ -2347,11 +2347,11 @@ window.AIWData = (function () {
      mesma matriz de cor, usado no texto e no ícone da tag pra garantir
      contraste sem sair da paleta da categoria. */
   const policyCategories = [
-    { id: "exceptions",  label: "Exceções Operacionais", icon: "⚠️", color: "#ffe0ae", fg: "#6b3d00", rulePrefix: "EXC" },
-    { id: "payment",     label: "Pagamento",             icon: "💳", color: "#eddcfe", fg: "#4a1e8a", rulePrefix: "MON" },
-    { id: "logistics",   label: "Logística",             icon: "🚚", color: "#faec6d", fg: "#5c4a00", rulePrefix: "LOG" },
-    { id: "fulfillment", label: "Fulfillment",           icon: "📦", color: "#a5f1ff", fg: "#004b6b", rulePrefix: "LOG" },
-    { id: "returns",     label: "Devolução & Troca",     icon: "🔄", color: "#abf2eb", fg: "#004a45", rulePrefix: "DEV" },
+    { id: "exceptions",  label: "Exceções Operacionais", icon: "warning_amber", color: "#ffe0ae", fg: "#6b3d00", rulePrefix: "EXC" },
+    { id: "payment",     label: "Pagamento",             icon: "credit_card",   color: "#eddcfe", fg: "#4a1e8a", rulePrefix: "MON" },
+    { id: "logistics",   label: "Logística",             icon: "local_shipping",color: "#faec6d", fg: "#5c4a00", rulePrefix: "LOG" },
+    { id: "fulfillment", label: "Fulfillment",           icon: "inventory_2",   color: "#a5f1ff", fg: "#004b6b", rulePrefix: "LOG" },
+    { id: "returns",     label: "Devolução & Troca",     icon: "swap_horiz",    color: "#abf2eb", fg: "#004a45", rulePrefix: "DEV" },
   ];
 
   const task = (label, kind) => ({ label, kind });

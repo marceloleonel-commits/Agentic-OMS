@@ -476,41 +476,13 @@ function AssistantView({ onOpenTask, onGotoResource, onOpenOrder }) {
       <div key={i} className="msg msg-assistant">
         {m.text && <div className="msg-text" style={{ whiteSpace: "pre-line" }}>{m.text}</div>}
 
+        {/* §4.2 — mesmo container da §4.1, vindo de chat.jsx. */}
         {m.type === "action" && (
-          <div className="chat-action-card">
-            <div className="chat-action-card-body">
-              <span className="chat-action-card-title">{m.title}</span>
-              {m.body && <span className="chat-action-card-desc" style={{ whiteSpace: "pre-line" }}>{m.body}</span>}
-            </div>
-            <button className="btn btn-sm btn-primary chat-action-apply" onClick={m.onApply}>
-              Aplicar
-            </button>
-          </div>
+          <StructuredActionCard m={m} />
         )}
 
         {m.type === "wf-draft" && m.draft && (
-          <div className="chat-draft-card">
-            <div className="chat-draft-header"><span>✨</span><span>Novo Workflow</span></div>
-            <div className="chat-draft-rows">
-              <div className="chat-draft-row">
-                <span className="chat-draft-label">Nome</span>
-                <strong>{m.draft.name}</strong>
-              </div>
-              {m.draft.category && (
-                <div className="chat-draft-row">
-                  <span className="chat-draft-label">Modelo</span>
-                  <strong>{m.draft.category}</strong>
-                </div>
-              )}
-              <div className="chat-draft-row">
-                <span className="chat-draft-label">Agente AI</span>
-                <strong>{m.draft.aiOrch ? "Ativo" : "Desativado"}</strong>
-              </div>
-            </div>
-            <button className="btn btn-sm btn-primary" style={{ width: "100%", marginTop: 10 }} onClick={m.onConfirm}>
-              Criar Workflow
-            </button>
-          </div>
+          <StructuredActionCard m={wfDraftCard(m, "Criar workflow")} />
         )}
 
         {m.type === "order-list" && m.orders && m.orders.length > 0 && (
@@ -637,14 +609,14 @@ function AssistantView({ onOpenTask, onGotoResource, onOpenOrder }) {
               }
             >
               <button className="dd-item" onClick={() => onGotoResource && onGotoResource("workflow-board")}>
-                <span className="dd-item-icon"><Icon name="board" size={14} /></span>
+                <span className="dd-item-icon"><Icon name="board" size={18} /></span>
                 <span>
                   <span className="dd-item-label">Configurações de Workflow</span>
                   <span className="dd-item-sub">{AIWData.workflows.length} workflows configurados</span>
                 </span>
               </button>
               <button className="dd-item" onClick={() => onGotoResource && onGotoResource("workflow-policies")}>
-                <span className="dd-item-icon"><Icon name="cart" size={14} /></span>
+                <span className="dd-item-icon"><Icon name="cart" size={18} /></span>
                 <span>
                   <span className="dd-item-label">Orders Settings</span>
                   <span className="dd-item-sub">Preferências da operação</span>
@@ -674,7 +646,7 @@ function AssistantView({ onOpenTask, onGotoResource, onOpenOrder }) {
           style={{
             maxHeight: 320,
             overflowY: "auto",
-            borderTop: "1px solid var(--border, #e5e7eb)",
+            borderTop: "1px solid var(--border, #E3E6EF)",
             background: "var(--bg, #fff)",
             padding: "12px 16px 4px",
           }}

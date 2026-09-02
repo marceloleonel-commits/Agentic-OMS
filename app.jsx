@@ -162,14 +162,14 @@ function App() {
           </button>
         }>
         <button className="dd-item" onClick={() => setRoute({ name: "workflow-board" })}>
-          <span className="dd-item-icon"><Icon name="board" size={14} /></span>
+          <span className="dd-item-icon"><Icon name="board" size={18} /></span>
           <span>
             <span className="dd-item-label">Configurações de Workflow</span>
             <span className="dd-item-sub">{AIWData.workflows.length} workflows configurados</span>
           </span>
         </button>
         <button className="dd-item" onClick={() => setRoute({ name: "workflow-policies" })}>
-          <span className="dd-item-icon"><Icon name="cart" size={14} /></span>
+          <span className="dd-item-icon"><Icon name="cart" size={18} /></span>
           <span>
             <span className="dd-item-label">Orders Settings</span>
             <span className="dd-item-sub">Preferências da operação</span>
@@ -184,7 +184,7 @@ function App() {
           </button>
         }>
         <button className="dd-item" onClick={() => setAIOpen(true)}>
-          <span className="dd-item-icon ai"><Icon name="grid" size={14} /></span>
+          <span className="dd-item-icon ai"><Icon name="grid" size={18} /></span>
           <span>
             <span className="dd-item-label">Ver todos os agentes</span>
             <span className="dd-item-sub">Drawer com {AIWData.aiTeam.length} agentes</span>

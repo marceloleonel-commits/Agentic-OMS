@@ -313,7 +313,31 @@ const IconTruck = ({ size = 16, ...rest }) => (
   </svg>
 );
 
+/* MSIcon — renderiza um Material Symbols Outlined por nome (font icon).
+   Uso: <MSIcon name="local_shipping" size={20} />.
+   Aceita `fill` (0/1) e `weight` (100..700) via font-variation-settings.
+   O CSS/CDN da Material Symbols é carregado em AIW Shell.html.
+   Handoff §5: substitui emojis; o set proprietário (Icon) continua nos
+   ícones de header e navegação. */
+const MSIcon = ({ name, size = 20, fill = 0, weight = 400, className, style, ...rest }) => (
+  <span
+    className={"material-symbols-outlined" + (className ? " " + className : "")}
+    style={{
+      fontSize: size,
+      lineHeight: 1,
+      verticalAlign: "middle",
+      fontVariationSettings: `'FILL' ${fill}, 'wght' ${weight}, 'GRAD' 0, 'opsz' ${Math.max(20, Math.min(48, size))}`,
+      color: "currentColor",
+      ...style,
+    }}
+    {...rest}
+  >
+    {name}
+  </span>
+);
+
 window.Icon = Icon;
+window.MSIcon = MSIcon;
 window.IconSparkleFill = IconSparkleFill;
 window.IconHandFill = IconHandFill;
 window.IconPencil = IconPencil;
