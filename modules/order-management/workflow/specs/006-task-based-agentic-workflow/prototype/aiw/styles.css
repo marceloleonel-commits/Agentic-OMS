@@ -45,24 +45,35 @@
   --sl-space-10: 40px;
   /* gray scale (v3) */
   --sl-color-gray-4: #CED7E4;
-  --sl-color-gray-5: #B7C3D2;
+  --sl-color-gray-5: #B6C2D5;
   /* general colors used by sidebar CSS */
   --sl-color-blue-8: #3993f4;
 
   --bg: #FFFFFF;
-  --bg-soft: #F7F8FA;
-  --bg-muted: #F0F2F5;
-  --border: #E5E7EB;
-  --border-strong: #D1D5DB;
+  /* Handoff v2 §1.2 — cinza interativo é gray-12 alpha (5% / 10%). */
+  --bg-soft: rgba(29, 44, 67, 0.05);
+  --bg-muted: rgba(29, 44, 67, 0.10);
+  /* Divisor único (handoff §1.3): gray-3. gray-5 fica só para borda de input/trigger. */
+  --border: var(--sl-color-gray-3, #E3E6EF);
+  --border-strong: var(--sl-color-gray-5, #B6C2D5);
 
-  --fg: #0F1115;
-  --fg-2: #3A3F47;
-  --fg-3: #6B7280;
-  --fg-4: #9AA0A8;
+  /* Handoff v2 §1 "cinzas estruturais": a escala Shoreline é azulada, então os
+     cinzas neutros anteriores (#3A3F47, #6B7280, #9AA0A8) ficavam fora dela.
+     Corpo em gray-12, secundário em gray-9, auxiliar em gray-7 e o auxiliar
+     mais fraco em gray-6. */
+  --fg: #171717;
+  --fg-2: #2A3F5E;
+  --fg-3: #4E607A;
+  --fg-4: #5D6C83;
 
-  --primary: #2962FF;
-  --primary-hover: #1E54E8;
-  --primary-soft: #EAF0FF;
+  /* Azul primário único (handoff §1.1): blue-10 / blue-11 (hover) / blue-12 (pressed). */
+  --primary: #1E4EE5;
+  --primary-hover: #0131C5;
+  --primary-pressed: #001EA5;
+  /* Handoff v2 §1 "seleção é sempre azul": o fundo de seleção e o anel de foco
+     são blue-2 (#E1F3FF). O #EAF0FF anterior não existe na escala e deixava a
+     seleção quase imperceptível. */
+  --primary-soft: #E1F3FF;
 
   --ai-purple: #7C5CFF;
   --ai-purple-soft: #F2EEFF;
@@ -71,12 +82,12 @@
   --severity-high-soft: #FFEBEC;
   --severity-medium: #F5A524;
   --severity-medium-soft: #FFF4DC;
-  --severity-low: #6B7280;
-  --severity-low-soft: #F0F2F5;
+  --severity-low: #4E607A;
+  --severity-low-soft: rgba(29, 44, 67, 0.05);
 
   --status-active: #22C55E;
-  --status-attention: #2962FF;
-  --status-triage: #9AA0A8;
+  --status-attention: var(--primary);
+  --status-triage: #5D6C83;
   --status-completed: #22C55E;
 
   --radius-sm: 6px;
@@ -573,26 +584,46 @@ a { color: inherit; text-decoration: none; }
   position: relative;
 }
 
-/* ---------- Buttons ---------- */
+/* ---------- Buttons ----------
+   Handoff §2 — sistema único de botão. As classes legadas .btn/.btn-primary/
+   .btn-secondary/.btn-ghost/.btn-sm ficam como aliases visuais das variantes
+   [data-sl-button] equivalentes: mesma altura (36px), radius (8px), gap (4px)
+   e tokens de cor. Isso mantém os call sites em JSX intactos e converge o
+   visual num único sistema. */
+/* Handoff v2 §2 — sistema único: 36px, raio 12px, 600 14/20, padding 16px. */
 .btn {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 8px 14px; border-radius: 8px;
-  font-size: 13px; font-weight: 500;
-  transition: background .15s, transform .05s;
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: 6px;
+  padding: 0 16px;
+  height: 36px;
+  border-radius: 12px;
+  border: none;
+  font-size: 14px; font-weight: 600; line-height: 20px; letter-spacing: -0.14px;
+  cursor: pointer;
+  transition: background .15s;
 }
-.btn:active { transform: translateY(1px); }
+.btn:active { transform: none; }
 .btn-primary {
-  background: var(--primary); color: #fff;
+  background: var(--sl-bg-accent-strong, var(--primary));
+  color: #fff;
 }
-.btn-primary:hover { background: var(--primary-hover); }
-.btn-ghost { color: var(--fg-2); }
-.btn-ghost:hover { background: var(--bg-soft); }
-.btn-sm { padding: 5px 12px; font-size: 13px; }
+.btn-primary:hover { background: var(--sl-bg-accent-strong-hover, var(--primary-hover)); }
+.btn-primary:active { background: var(--sl-bg-accent-strong-pressed, var(--primary-pressed)); }
 .btn-secondary {
-  background: var(--bg-soft); color: var(--fg);
-  border: 1px solid var(--border);
+  background: var(--sl-bg-muted);
+  color: var(--sl-fg-muted);
+  border: none;
 }
-.btn-secondary:hover { background: var(--bg-muted); }
+.btn-secondary:hover { background: var(--sl-bg-muted-hover); color: var(--sl-fg-muted-hover); }
+.btn-secondary:active { background: var(--sl-bg-muted-pressed); color: var(--sl-fg-muted-pressed); }
+.btn-ghost {
+  background: transparent;
+  color: var(--fg-2);
+}
+.btn-ghost:hover { background: var(--sl-bg-muted); color: var(--fg); }
+.btn-ghost:active { background: var(--sl-bg-muted-hover); }
+/* Handoff v2 §2 — .btn-sm herda o sistema único (sem override de altura/fonte). */
+.btn-sm { /* deprecated: use .btn */ }
 .kbd {
   display: inline-flex; align-items: center;
   font-size: 11px; opacity: .85;
@@ -603,17 +634,20 @@ a { color: inherit; text-decoration: none; }
   margin-left: 6px;
 }
 
-/* ---------- Pills, tags, severity ---------- */
+/* ---------- Pills, tags, severity ----------
+   Handoff §3 — tag única: h24, radius full, 12/600, padding 0 8px. */
 .sev {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 4px 10px;
-  border-radius: 99px;
-  font-size: 14px; font-weight: 500;
+  display: inline-flex; align-items: center; gap: 4px;
+  height: 24px;
+  padding: 0 8px;
+  border-radius: 9999px;
+  font-size: 12px; font-weight: 600;
 }
-.sev-high   { background: var(--severity-high-soft);   color: var(--severity-high); }
-.sev-medium { background: var(--severity-medium-soft); color: #B66800; }
-.sev-low    { background: var(--severity-low-soft);    color: var(--severity-low); }
-.sev .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.sev-high   { background: var(--sl-color-red-2);    color: var(--sl-color-red-10); }
+.sev-medium { background: var(--sl-color-orange-2); color: var(--sl-color-orange-10); }
+.sev-low    { background: var(--sl-color-gray-2);   color: var(--sl-color-gray-9); }
+.sev .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+.sev-medium .dot, .sev-low .dot { display: none; }
 
 .status-dot {
   width: 8px; height: 8px; border-radius: 50%;
@@ -628,25 +662,29 @@ a { color: inherit; text-decoration: none; }
 }
 .status-dot.completed { background: var(--status-completed); }
 
+/* .id-chip — mantém identidade mono/compacta.
+   Handoff §3: gray-1 / gray-3 / gray-9. */
 .id-chip {
   font-family: ui-monospace, "SF Mono", monospace;
   font-size: 11.5px;
-  background: var(--bg-soft);
-  color: var(--fg-2);
+  background: var(--sl-color-gray-1);
+  color: var(--sl-color-gray-9);
   padding: 2px 7px;
   border-radius: 5px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--sl-color-gray-3);
 }
 
+/* .tag — variante AI da tag única (handoff §3): purple-2 / purple-11. */
 .tag {
   display: inline-flex; align-items: center; gap: 4px;
-  padding: 1px 7px;
-  font-size: 11px; font-weight: 500;
-  border-radius: 4px;
-  background: var(--ai-purple-soft);
-  color: var(--ai-purple);
+  height: 24px;
+  padding: 0 8px;
+  font-size: 12px; font-weight: 600;
+  border-radius: 9999px;
+  background: var(--sl-color-purple-2);
+  color: var(--sl-color-purple-11);
 }
-.tag .sparkle { width: 10px; height: 10px; }
+.tag .sparkle { width: 12px; height: 12px; }
 
 .metric-link {
   color: var(--ai-purple);
@@ -691,12 +729,20 @@ a { color: inherit; text-decoration: none; }
   margin-bottom: 16px;
 }
 .modal-head h2 { margin: 0; font-size: 17px; font-weight: 600; }
+/* Handoff v2 §2 — icon-button: 36px redondo, transparente em repouso,
+   hover .05 e pressionado .10. */
 .icon-btn {
-  width: 28px; height: 28px; border-radius: 6px;
+  width: 36px; height: 36px; border-radius: 50%;
   display: grid; place-items: center;
   color: var(--fg-3);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: background .15s;
+  flex-shrink: 0;
 }
-.icon-btn:hover { background: var(--bg-soft); color: var(--fg); }
+.icon-btn:hover { background: rgba(29, 44, 67, 0.05); color: var(--fg); }
+.icon-btn:active { background: rgba(29, 44, 67, 0.10); }
 
 .field { margin-bottom: 12px; }
 .field label {
@@ -717,7 +763,7 @@ a { color: inherit; text-decoration: none; }
 }
 .field input:focus, .field textarea:focus, .field select:focus, .input:focus {
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(41,98,255,.12);
+  box-shadow: 0 0 0 3px var(--primary-soft);
 }
 .field textarea { resize: vertical; min-height: 70px; }
 .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }

@@ -3,10 +3,10 @@ const { useState, useEffect, useRef } = React;
 
 function ActBadge({ kind }) {
   const map = {
-    success:  { bg: "#E3F8E5", color: "#169B61", icon: "check"  },
+    success:  { bg: "#E9FCE3", color: "#017D10", icon: "check"  },
     warning:  { bg: "#FFF4DC", color: "#B66800", icon: "clock"  },
     critical: { bg: "#FFEBEC", color: "#D43436", icon: "x"      },
-    info:     { bg: "#EAF0FF", color: "#2962FF", icon: "loader" }
+    info:     { bg: "#E1F3FF", color: "#1E4EE5", icon: "loader" }
   };
   const m = map[kind] || map.info;
   return (
@@ -21,7 +21,7 @@ function AgentCard({ emoji, title, subtitle, children }) {
   return (
     <div className="agent-card">
       <div className="agent-card-head" onClick={() => setOpen(o => !o)}>
-        <span className="agent-card-emoji">{emoji}</span>
+        <span className="agent-card-emoji"><MSIcon name={emoji} size={20} /></span>
         <div className="agent-card-info">
           <div className="agent-card-title">{title}</div>
           <div className="agent-card-subtitle">{subtitle}</div>
@@ -106,7 +106,7 @@ function OrchestrationCanvas({ customRules }) {
             </AgentCard>
 
             {/* Orquestração de Workflow */}
-            <AgentCard emoji="⚙️" title="Orquestração de Workflow" subtitle="Acompanha o andamento de cada etapa e sabe exatamente o que pode acontecer a seguir">
+            <AgentCard emoji="settings" title="Orquestração de Workflow" subtitle="Acompanha o andamento de cada etapa e sabe exatamente o que pode acontecer a seguir">
               <div className="skills-section-label">Skills</div>
               <div className="skills-list">
                 <SkillRow label="Verificador de Próximos Passos"  desc="Confere o que já foi concluído no pedido e libera automaticamente a etapa seguinte quando todas as condições foram atendidas" />

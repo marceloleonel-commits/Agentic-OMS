@@ -376,7 +376,7 @@ function OdStageCard({ stage }) {
   const s = map[stage.status] || map.pending;
   return (
     <div className="od-stage-card" style={{ background: s.bg }}>
-      <span className="od-stage-card-icon">{stage.icon}</span>
+      <span className="od-stage-card-icon"><MSIcon name={stage.icon} size={20} /></span>
       <span className="od-stage-card-label">{stage.label}</span>
       <span className="od-stage-card-status">
         <span className="od-stage-card-dot" style={{ background: s.dot }} />
@@ -429,7 +429,7 @@ function OdStepRow({ step, stageLabel, stageIcon }) {
                 <span className="od-step-label" style={{ color: lc }}>{step.label}</span>
                 {step.cancelSignal && (
                   <span style={{ fontSize: 10, fontWeight: 700, background: "#FEF2F2", color: "#EF4444", border: "1px solid #FECACA", borderRadius: 6, padding: "1px 7px" }}>
-                    ⚠ Cancelamento sinalizado
+                    Cancelamento sinalizado
                   </span>
                 )}
               </div>
@@ -566,7 +566,7 @@ function OdItemRow({ item, group }) {
     <div className="od-item-row">
       <div className="od-item-head">
         <div className="od-item-thumb">
-          {item.emoji && <span>{item.emoji}</span>}
+          {item.emoji && <MSIcon name={item.emoji} size={20} />}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div className="od-item-name">
@@ -601,7 +601,7 @@ function OdReturnCard({ detail }) {
   return (
     <div style={{ margin: "12px 16px", padding: "14px 16px", background: "#FFF7ED", border: "1px solid #FED7AA", borderRadius: 10 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-        <span style={{ fontSize: 15 }}>↩</span>
+        <MSIcon name="assignment_return" size={18} style={{ color: "#C2410C" }} />
         <div>
           <div style={{ fontSize: 12.5, fontWeight: 700, color: "#C2410C" }}>{detail.reason}</div>
           <div style={{ fontSize: 11, color: "#92400E", marginTop: 1 }}>
@@ -625,7 +625,7 @@ function OdCancelSection({ cancelGroup }) {
   return (
     <div style={{ margin: "8px 0 0", borderTop: "2px dashed #FECACA" }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "10px 16px 8px", background: "#FEF2F2" }}>
-        <span style={{ fontSize: 14 }}>🚫</span>
+        <MSIcon name="block" size={16} style={{ color: "#EF4444" }} />
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 12.5, fontWeight: 700, color: "#EF4444" }}>{cancelGroup.label}</div>
           <div style={{ fontSize: 11, color: "#B91C1C", marginTop: 1 }}>{done}/{total} etapas concluídas · Workflow: Cancelamento de Pedido</div>
@@ -637,7 +637,7 @@ function OdCancelSection({ cancelGroup }) {
           const bg       = st.status === "done" ? "#F0FDF4" : st.status === "active" ? "#FEF2F2" : "#F9FAFB";
           return (
             <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, padding: "12px 8px", textAlign: "center", background: bg, borderRight: i < cancelGroup.stages.length - 1 ? "1px solid #FECACA" : "none" }}>
-              <span style={{ fontSize: 18 }}>{st.icon}</span>
+              <MSIcon name={st.icon} size={18} />
               <span style={{ fontSize: 11, fontWeight: 500 }}>{st.label}</span>
               <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 10.5, color: dotColor }}>
                 <span style={{ width: 6, height: 6, borderRadius: "50%", background: dotColor, display: "inline-block" }} />
@@ -658,7 +658,7 @@ function OdCancelSection({ cancelGroup }) {
 function OdNote({ note, seller }) {
   if (!note) return null;
   return (
-    <div style={{ padding: "14px 16px", background: "var(--primary-soft)", border: "1px solid rgba(41,98,255,.15)", borderRadius: 10, marginTop: 4 }}>
+    <div style={{ padding: "14px 16px", background: "var(--primary-soft)", border: "1px solid rgba(30, 78, 229,.15)", borderRadius: 10, marginTop: 4 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
         <Icon name="sparkle" size={12} />
         <span style={{ fontSize: 10.5, fontWeight: 700, color: "var(--primary)", textTransform: "uppercase", letterSpacing: ".6px" }}>
@@ -770,7 +770,7 @@ function OdRailActivities({ group }) {
                       fontSize: 10, fontWeight: 700, padding: "1px 7px", borderRadius: 6,
                       background: isAuto ? "var(--primary-soft)" : "#F3F4F6",
                       color: isAuto ? "var(--primary)" : "var(--fg-2)",
-                      border: isAuto ? "1px solid rgba(41,98,255,.2)" : "1px solid var(--border)",
+                      border: isAuto ? "1px solid rgba(30, 78, 229,.2)" : "1px solid var(--border)",
                     }}>
                       {isAuto ? "Automático" : "Manual"}
                     </span>
@@ -831,7 +831,7 @@ function OdRail({ group }) {
             </div>
             <div className="od-rail-meta">
               {group.supplier && (
-                <span style={{ display: "inline-flex", alignItems: "center", fontSize: 10, fontWeight: 600, color: "#2962FF", background: "#EFF6FF", border: "1px solid #BFDBFE", borderRadius: 5, padding: "1px 8px", marginRight: 7 }}>
+                <span style={{ display: "inline-flex", alignItems: "center", fontSize: 10, fontWeight: 600, color: "#1E4EE5", background: "#EFF6FF", border: "1px solid #BFDBFE", borderRadius: 5, padding: "1px 8px", marginRight: 7 }}>
                   {group.supplier}
                 </span>
               )}
@@ -1006,7 +1006,7 @@ function PackageCard({ group, index, order, onOpenProduct }) {
   const isVirtual   = group.type === "virtual";
 
   const packageLabel = isReturn ? "Devolução" : isCanceling ? "Cancelamento" : isVirtual ? "Virtual" : null;
-  const title = packageLabel ? `${packageLabel} #${index + 1}` : `Package #${index + 1}`;
+  const title = packageLabel ? `${packageLabel} #${index + 1}` : `Pacote #${index + 1}`;
 
   const stageLabel = allDone ? "Entregue" : currentStage ? currentStage.label : "—";
 
@@ -1090,29 +1090,29 @@ function PackageCard({ group, index, order, onOpenProduct }) {
         <>
           <div className="pkg-meta">
             <div className="pkg-meta-field">
-              <span className="pkg-meta-key">Delivery</span>
+              <span className="pkg-meta-key">Entrega</span>
               <span className="pkg-meta-val">{deliveryDate}</span>
             </div>
             <div className="pkg-meta-sep" />
             <div className="pkg-meta-field">
-              <span className="pkg-meta-key">Sold by</span>
+              <span className="pkg-meta-key">Vendido por</span>
               <span className="pkg-meta-val">{soldBy}</span>
             </div>
             <div className="pkg-meta-sep" />
             <div className="pkg-meta-field">
-              <span className="pkg-meta-key">Delivered by</span>
+              <span className="pkg-meta-key">Entregue por</span>
               <span className="pkg-meta-val">{shippedBy}</span>
             </div>
           </div>
 
           <div className="pkg-meta pkg-meta--wide">
             <div className="pkg-meta-field">
-              <span className="pkg-meta-key">Workflow Instance</span>
+              <span className="pkg-meta-key">Instância do workflow</span>
               <span className="pkg-meta-val">{experienceName}</span>
             </div>
             <div className="pkg-meta-sep" />
             <div className="pkg-meta-field">
-              <span className="pkg-meta-key">Current Task</span>
+              <span className="pkg-meta-key">Tarefa atual</span>
               <span className="pkg-meta-val">
                 {currentTaskStatus ? `${stageLabel} · ${currentTaskStatus}` : stageLabel}
               </span>
@@ -1139,10 +1139,10 @@ function PackageCard({ group, index, order, onOpenProduct }) {
           <div className="pkg-products-table">
             <div className="pkg-products-body">
             <div className="pkg-thead">
-              <span>Products</span>
-              <span>Units</span>
-              <span>Taxes</span>
-              <span>Price</span>
+              <span>Produtos</span>
+              <span>Unidades</span>
+              <span>Impostos</span>
+              <span>Preço</span>
             </div>
             {(group.items || []).map((item, i) => {
               const itemTotal = parseBRL(item.price) * (item.qty || 1);
@@ -1159,7 +1159,7 @@ function PackageCard({ group, index, order, onOpenProduct }) {
                 <div key={i} className="pkg-product-block">
                   <div className={`pkg-product-row${onOpenProduct ? " pkg-product-row--clickable" : ""}`} onClick={() => onOpenProduct && onOpenProduct(i)}>
                     <div className="pkg-product-info">
-                      <div className="pkg-product-thumb">{item.emoji || "📦"}</div>
+                      <div className="pkg-product-thumb"><MSIcon name={item.emoji || "inventory_2"} size={20} /></div>
                       <div className="pkg-product-details">
                         <span className="pkg-product-name">{item.name}</span>
                         <span className="pkg-product-sub">{item.price}/Un.</span>
@@ -1265,7 +1265,7 @@ function ProductDetailView({ allProducts, productIdx, order, onNavigate, initiat
   const acquired = Math.max(itemTotal - promoTotal, 0);
   const allDone   = (group.stages || []).every(s => s.status === "done");
   const currentStage = (group.stages || []).find(s => s.status !== "done");
-  const stageBg    = allDone ? "#F0FDF4" : "#D1FAE5";
+  const stageBg    = allDone ? "#F0FDF4" : "#E9FCE3";
   const stageColor = "#059669";
   const stageLabel = allDone ? "Entregue" : currentStage ? currentStage.label : "—";
 
@@ -1289,28 +1289,28 @@ function ProductDetailView({ allProducts, productIdx, order, onNavigate, initiat
 
       {/* Metadata */}
       <dl className="detail-fields od-meta">
-        <dt>Workflow Task</dt>
+        <dt>Tarefa do workflow</dt>
         <dd>{taskLabel}</dd>
-        <dt>Package</dt>
-        <dd>Package #{groupIdx + 1}</dd>
-        <dt>Sold by</dt>
+        <dt>Pacote</dt>
+        <dd>Pacote #{groupIdx + 1}</dd>
+        <dt>Vendido por</dt>
         <dd>{order && order.seller ? order.seller : "—"}</dd>
-        <dt>Delivery by</dt>
+        <dt>Entregue por</dt>
         <dd>{group.supplier || "—"}</dd>
-        <dt>Delivery</dt>
+        <dt>Entrega</dt>
         <dd>{order && order.eta ? order.eta : "—"}</dd>
       </dl>
 
       {/* Product section */}
       <section className="detail-section flush">
-        <div className="detail-section-head"><h3>Product</h3></div>
+        <div className="detail-section-head"><h3>Produto</h3></div>
         <div className="prod-detail-cards">
           {/* Infos card */}
           <div className="prod-detail-card">
-            <div className="prod-detail-card-title">Infos</div>
+            <div className="prod-detail-card-title">Informações</div>
             <div className="prod-detail-card-rows">
               <div className="prod-detail-card-row">
-                <span className="prod-detail-card-label">Product URL</span>
+                <span className="prod-detail-card-label">URL do produto</span>
                 <a
                   href={`https://www.cea.com.br/p/${item.sku}`}
                   target="_blank"
@@ -1325,7 +1325,7 @@ function ProductDetailView({ allProducts, productIdx, order, onNavigate, initiat
                 <span className="prod-detail-card-value">#{item.sku}</span>
               </div>
               <div className="prod-detail-card-row">
-                <span className="prod-detail-card-label">Units</span>
+                <span className="prod-detail-card-label">Unidades</span>
                 <span className="prod-detail-card-value">{item.qty || 1}</span>
               </div>
             </div>
@@ -1527,25 +1527,25 @@ function OrderDetailView({ task, orderId, onBack, onOpenOrder, standalone = fals
         <dt>Status</dt>
         <dd><TaskDocStatus status="attention" /></dd>
 
-        <dt>Sold by</dt>
+        <dt>Vendido por</dt>
         <dd>{order.seller}</dd>
 
-        <dt>Order Placed at</dt>
-        <dd>Jan 25, 2026 at 1:35 PM</dd>
+        <dt>Criado em</dt>
+        <dd>25 jan 2026 às 13:35</dd>
 
-        <dt>Last Update</dt>
-        <dd>2 minutes ago</dd>
+        <dt>Última atualização</dt>
+        <dd>há 2 minutos</dd>
       </dl>
 
       {/* Customer + Valores — side by side */}
       <div className="od-two-col">
         <section className="detail-section flush">
-          <div className="detail-section-head detail-section-head--no-border"><h3>Customer</h3></div>
+          <div className="detail-section-head detail-section-head--no-border"><h3>Cliente</h3></div>
           <div className="od-fields">
-            <Field label="Customer" value={d.customer.name} />
-            <Field label="Tax ID" value={d.customer.taxId} />
-            <Field label="Phone" value={d.customer.phone} />
-            <Field label="Email" value={d.customer.email} />
+            <Field label="Cliente" value={d.customer.name} />
+            <Field label="CPF/CNPJ" value={d.customer.taxId} />
+            <Field label="Telefone" value={d.customer.phone} />
+            <Field label="E-mail" value={d.customer.email} />
           </div>
         </section>
 
@@ -2497,6 +2497,16 @@ function useCanvasAVerification(verification) {
   const setDraft = (patch) =>
     setDrafts((d) => ({ ...d, [currentId]: { ...(d[currentId] || {}), ...patch } }));
 
+  /* Draft inicial: se a pergunta é select_or_upload e não há rascunho nem
+     resposta anterior, inicia com mode="select" para que o segmented control
+     chegue com uma opção já escolhida em vez de vazio. */
+  const baseDraft = drafts[currentId] || answers[currentId] || {};
+  const q = questions[currentId];
+  const finalDraft =
+    q && q.type === "select_or_upload" && !baseDraft.mode
+      ? { ...baseDraft, mode: "select" }
+      : baseDraft;
+
   return {
     verification,
     answers,
@@ -2511,10 +2521,10 @@ function useCanvasAVerification(verification) {
     sending,
     error,
     questionId: currentId,
-    question: questions[currentId],
+    question: q,
     index,
     total: path.length,
-    draft: drafts[currentId] || answers[currentId] || {},
+    draft: finalDraft,
     setDraft,
     prev: index > 0 ? () => setCursor(index - 1) : null,
     next: index < path.length - 1 ? () => setCursor(index + 1) : null,
@@ -3064,7 +3074,7 @@ function CanvasAVerificationCard({ ctl, orders }) {
           <CanvasAVerifyModePicker
             mode={draft.mode}
             selectLabel={question.selectLabel || "Selecionar pedidos"}
-            uploadLabel={question.uploadLabel || "Anexar comprovante"}
+            uploadLabel={question.uploadLabel || "Ou anexar comprovante"}
             onChange={(m) =>
               setDraft(m === "select" ? { mode: "select", fileName: null } : { mode: "upload", orderIds: [] })
             }

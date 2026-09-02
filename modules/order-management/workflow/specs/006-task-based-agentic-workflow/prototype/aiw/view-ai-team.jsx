@@ -44,7 +44,7 @@ function AITeamDrawer({ open, onClose, onPick }) {
         <div className="aiteam-list">
           {team.filter((a) => a.id !== "assistant" && a.id !== "orchestration").sort((a, b) => a.name.localeCompare(b.name)).map((a) =>
             <div key={a.id} className="aiteam-row">
-              <div className="aiteam-avatar" style={{ background: a.color }}>{a.emoji}</div>
+              <div className="aiteam-avatar" style={{ background: a.color }}><MSIcon name={a.emoji} size={20} /></div>
               <div className="aiteam-body">
                 <div className="aiteam-name">{a.name}</div>
                 <div className="aiteam-sub">{a.sub}</div>

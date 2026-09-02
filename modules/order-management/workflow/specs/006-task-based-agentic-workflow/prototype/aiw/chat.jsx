@@ -24,11 +24,11 @@ function ComposerAddButton() {
         <div className="composer-add-menu" role="menu">
           <button className="composer-add-menu-item" role="menuitem" onClick={() => setOpen(false)}>
             <Icon name="doc" size={16} />
-            <span>Add files</span>
+            <span>Adicionar arquivos</span>
           </button>
           <button className="composer-add-menu-item" role="menuitem" onClick={() => setOpen(false)}>
             <Icon name="at" size={16} />
-            <span>Add context</span>
+            <span>Adicionar contexto</span>
           </button>
         </div>
       )}
@@ -238,11 +238,49 @@ function ActionCardGroup({ icon, label, meta, defaultOpen = true, children }) {
   );
 }
 
+/* Handoff v2 §4.2 — cada momento traz o próprio ícone e rótulo no header.
+   Nada herda o ícone nem o grupo "Detalhes da política" do branch de
+   política: esse grupo só aparece quando o card realmente descreve uma
+   regra (tem "Se"/"Então" ou trilha de conversa). */
+const CARD_MOMENT = {
+  "Novo workflow":             { icon: "account_tree" },
+  "Adicionar tarefa":          { icon: "add_task" },
+  "Renomear workflow":         { icon: "edit" },
+  "Atualizar descrição":       { icon: "edit" },
+  "Alterar acionamento":       { icon: "edit" },
+  "Alterar tipo de execução":  { icon: "edit" },
+  "Alterar SLA":               { icon: "schedule" },
+  "Publicar workflow":         { icon: "check_circle" },
+  "Arquivar workflow":         { icon: "archive", destructive: true },
+  "Edição em massa":           { icon: "checklist" },
+  "Como chegamos aqui":        { icon: "policy" },
+};
+
+function cardMoment(m) {
+  const hit = CARD_MOMENT[m.title];
+  if (hit) return hit;
+  if (/Agente AI/.test(m.title || "")) return { icon: "auto_awesome" };
+  /* §4.1: `merge_type` identifica o card de conflito. */
+  if (m.options && m.options.length > 0) return { icon: "merge_type" };
+  return { icon: "policy" };
+}
+
 /* Card "Como chegamos aqui" — variação 3c (HANDOFF-action-card-3c.md).
    Header comum da família (mesmo padrão de `.canvas-a-verify-header`),
-   heading + resumo em uma frase, e dois grupos expansíveis. Sem botão
-   "Cancelar" — fechar a conversa faz o papel de "não". */
+   heading + resumo em uma frase, e dois grupos expansíveis.
+
+   Handoff v2 §4.2: é também o container único dos cards do canvas do
+   workflow (novo workflow, adicionar tarefa, renomear, arquivar…) e do
+   card simples sem `fields`. */
 function StructuredActionCard({ m }) {
+  const moment = cardMoment(m);
+  const momentIcon = (
+    <MSIcon
+      name={moment.icon}
+      size={16}
+      style={moment.destructive ? { color: "#D31A15" } : undefined}
+    />
+  );
   /* Card com múltiplas opções (verificação de conflito) segue no branch
      antigo — este layout é só para o recap "Como chegamos aqui". */
   if (m.options && m.options.length > 0) {
@@ -250,7 +288,7 @@ function StructuredActionCard({ m }) {
       <div className="chat-action-card chat-action-card--structured chat-action-card--options">
         <div className="chat-action-card-head">
           <span className="chat-action-card-kind">
-            <Icon name="account-tree" size={16} />
+            {momentIcon}
             {m.title}
           </span>
         </div>
@@ -303,20 +341,31 @@ function StructuredActionCard({ m }) {
      novos (sister/new) continuam abrindo por padrão. */
   const isExisting = m.badge === "Regra existente";
 
+  /* §4.2 — só card de política ganha os grupos colapsáveis. Momentos do
+     canvas do workflow listam os campos direto, sem "Detalhes da política". */
+  const isPolicyCard = !!(trail.length || conditionField || actionsField);
+  const summary = m.summary || m.body;
+
   return (
     <div className="chat-action-card chat-action-card--structured">
       <div className="chat-action-card-head">
         <span className="chat-action-card-kind">
-          <Icon name="account-tree" size={16} />
+          {momentIcon}
           {m.title}
         </span>
         {m.badge && <span className="chat-action-card-badge">{m.badge}</span>}
       </div>
 
-      <div className="chat-action-card-intro">
-        {m.heading && <p className="chat-action-card-heading">{m.heading}</p>}
-        {m.summary && <p className="chat-action-card-summary">{m.summary}</p>}
-      </div>
+      {(m.heading || summary) && (
+        <div className="chat-action-card-intro">
+          {m.heading && <p className="chat-action-card-heading">{m.heading}</p>}
+          {summary && (
+            <p className="chat-action-card-summary" style={{ whiteSpace: "pre-line" }}>
+              {renderMd(summary)}
+            </p>
+          )}
+        </div>
+      )}
 
       <div className="chat-action-card-groups">
         {trail.length > 0 && (
@@ -336,61 +385,101 @@ function StructuredActionCard({ m }) {
         )}
 
         {policyFields.length > 0 && (
-          <ActionCardGroup
-            icon="rule"
-            label="Detalhes da política"
-            meta={`${conditionsCount} ${conditionsCount === 1 ? "condição" : "condições"} · ${actionsCount} ${actionsCount === 1 ? "ação" : "ações"}`}
-            defaultOpen={!isExisting}
-          >
-            {policyFields.map((f, fi) => {
-              /* "Então" vira lista, uma ação por linha com arrow_forward. */
-              if (f.label === "Então" && Array.isArray(f.values)) {
-                return (
-                  <div key={fi} className="chat-action-card-field">
-                    <span className="chat-action-field-label">{f.label}</span>
-                    <div className="chat-action-field-actions">
-                      {f.values.map((v, vi) => (
-                        <span key={vi}>
-                          <Icon name="arrow-forward" size={14} />
-                          {v}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                );
-              }
-              /* Categoria: ícone mapeado por categoryId; Política ganha "policy". */
-              let iconName = null;
-              if (f.label === "Categoria" && f.categoryId) iconName = POLICY_CATEGORY_ICON[f.categoryId] || null;
-              else if (f.label === "Política") iconName = "policy";
-              return (
-                <div key={fi} className="chat-action-card-field">
-                  <span className="chat-action-field-label">{f.label}</span>
-                  {f.tag ? (
-                    <span className="chat-action-field-tag">{f.value}</span>
-                  ) : (
-                    <span className={`chat-action-field-value${f.label === "Categoria" && f.categoryId === "exceptions" ? " chat-action-field-value--exceptions" : ""}`}>
-                      {iconName && <Icon name={iconName} size={14} />}
-                      {f.value}
-                    </span>
-                  )}
-                </div>
-              );
-            })}
-          </ActionCardGroup>
+          isPolicyCard ? (
+            <ActionCardGroup
+              icon="rule"
+              label="Detalhes da política"
+              meta={`${conditionsCount} ${conditionsCount === 1 ? "condição" : "condições"} · ${actionsCount} ${actionsCount === 1 ? "ação" : "ações"}`}
+              defaultOpen={!isExisting}
+            >
+              {policyFields.map(renderCardField)}
+            </ActionCardGroup>
+          ) : (
+            policyFields.map(renderCardField)
+          )
         )}
       </div>
 
       <div className="chat-action-card-btns">
-        <button className="canvas-a-run-btn canvas-a-run-btn--primary" onClick={m.onApply}>
-          {m.applyLabel || "Abrir no canvas"}
+        <button
+          className={`canvas-a-run-btn ${moment.destructive ? "canvas-a-run-btn--danger" : "canvas-a-run-btn--primary"}`}
+          onClick={m.onApply}
+        >
+          {m.applyLabel || (isPolicyCard ? "Abrir no canvas" : "Aplicar")}
         </button>
         {m.onEdit && (
           <button className="canvas-a-run-btn" onClick={m.onEdit}>
             Editar regra
           </button>
         )}
+        {/* §7 — onDismiss chegava aos cards e nunca era renderizado. */}
+        {m.onDismiss && (
+          <button className="canvas-a-run-btn" onClick={m.onDismiss}>
+            Cancelar
+          </button>
+        )}
       </div>
+    </div>
+  );
+}
+
+const WF_TRIGGER_LABEL = {
+  auto: "Automático — novos pedidos",
+  manual: "Manual pelo operador",
+  client: "Por solicitação do cliente",
+};
+
+/* Traduz uma mensagem `wf-draft` para o formato do card da §4.1, para que o
+   rascunho de workflow e o resto da família usem um componente só. */
+function wfDraftCard(m, applyLabel) {
+  const d = m.draft;
+  const fields = [];
+  if (d.origin) fields.push({ label: "Origem", value: d.origin });
+  if (d.category) fields.push({ label: "Modelo", value: d.category });
+  if (d.trigger) fields.push({ label: "Acionamento", value: WF_TRIGGER_LABEL[d.trigger] || d.trigger });
+  fields.push({ label: "Agente AI", value: d.aiOrch ? "Ativo" : "Desativado", tag: true });
+  return {
+    title: "Novo workflow",
+    heading: d.name,
+    fields,
+    applyLabel,
+    onApply: m.onConfirm,
+  };
+}
+
+/* Linha rótulo/valor do card (§4.1): rótulo 12/400 acima do valor 14/400. */
+function renderCardField(f, fi) {
+  /* "Então" vira lista, uma ação por linha com arrow_forward. */
+  if (f.label === "Então" && Array.isArray(f.values)) {
+    return (
+      <div key={fi} className="chat-action-card-field">
+        <span className="chat-action-field-label">{f.label}</span>
+        <div className="chat-action-field-actions">
+          {f.values.map((v, vi) => (
+            <span key={vi}>
+              <Icon name="arrow-forward" size={14} />
+              {v}
+            </span>
+          ))}
+        </div>
+      </div>
+    );
+  }
+  /* Categoria: ícone mapeado por categoryId; Política ganha "policy". */
+  let iconName = null;
+  if (f.label === "Categoria" && f.categoryId) iconName = POLICY_CATEGORY_ICON[f.categoryId] || null;
+  else if (f.label === "Política") iconName = "policy";
+  return (
+    <div key={fi} className="chat-action-card-field">
+      <span className="chat-action-field-label">{f.label}</span>
+      {f.tag ? (
+        <span className="chat-action-field-tag">{f.value}</span>
+      ) : (
+        <span className={`chat-action-field-value${f.label === "Categoria" && f.categoryId === "exceptions" ? " chat-action-field-value--exceptions" : ""}`}>
+          {iconName && <Icon name={iconName} size={14} />}
+          {f.value}
+        </span>
+      )}
     </div>
   );
 }
@@ -478,19 +567,8 @@ function ChatPanel({
       <div key={i} className="msg msg-assistant">
         {m.text && <div className="msg-text">{renderMd(m.text)}</div>}
 
-        {m.type === "action" && !m.fields && (
-          <div className="chat-action-card">
-            <div className="chat-action-card-body">
-              <span className="chat-action-card-title">{m.title}</span>
-              {m.body && <span className="chat-action-card-desc" style={{ whiteSpace: "pre-line" }}>{renderMd(m.body)}</span>}
-            </div>
-            <button className="btn btn-sm btn-primary chat-action-apply" onClick={m.onApply}>
-              Aplicar
-            </button>
-          </div>
-        )}
-
-        {m.type === "action" && m.fields && (
+        {/* §4.2 — card simples e card com campos usam o mesmo container. */}
+        {m.type === "action" && (
           <StructuredActionCard m={m} />
         )}
 
@@ -520,46 +598,9 @@ function ChatPanel({
           </div>
         )}
 
+        {/* §4.2 — .chat-draft-card sai; o rascunho usa o container da §4.1. */}
         {m.type === "wf-draft" && m.draft && (
-          <div className="chat-draft-card">
-            <div className="chat-draft-header">
-              <span>✨</span>
-              <span>Novo workflow</span>
-            </div>
-            <div className="chat-draft-rows">
-              <div className="chat-draft-row">
-                <span className="chat-draft-label">Nome</span>
-                <strong>{m.draft.name}</strong>
-              </div>
-              {m.draft.origin && (
-                <div className="chat-draft-row">
-                  <span className="chat-draft-label">Origem</span>
-                  <strong>{m.draft.origin}</strong>
-                </div>
-              )}
-              {m.draft.category && (
-                <div className="chat-draft-row">
-                  <span className="chat-draft-label">Categoria</span>
-                  <strong>{m.draft.category}</strong>
-                </div>
-              )}
-              <div className="chat-draft-row">
-                <span className="chat-draft-label">Acionamento</span>
-                <strong>{{ auto: "Automático — novos pedidos", manual: "Manual pelo operador", client: "Por solicitação do cliente" }[m.draft.trigger] || m.draft.trigger}</strong>
-              </div>
-              <div className="chat-draft-row">
-                <span className="chat-draft-label">Agente AI</span>
-                <strong>{m.draft.aiOrch ? "Ativo" : "Desativado"}</strong>
-              </div>
-            </div>
-            <button
-              className="btn btn-sm btn-primary"
-              style={{ width: "100%", marginTop: 10 }}
-              onClick={m.onConfirm}
-            >
-              Criar e adicionar etapas no canvas
-            </button>
-          </div>
+          <StructuredActionCard m={wfDraftCard(m, "Criar e adicionar etapas no canvas")} />
         )}
 
         {m.quickReplies && m.quickReplies.length > 0 && (() => {
@@ -577,7 +618,7 @@ function ChatPanel({
                       onClick={() => !answered && send(label, i, { fromReply: true })}
                       disabled={!!answered && !isSelected}
                     >
-                      {r.icon && <span className="chat-origin-card-icon">{r.icon}</span>}
+                      {r.icon && <span className="chat-origin-card-icon"><MSIcon name={r.icon} size={18} /></span>}
                       <strong className="chat-origin-card-title">{label}</strong>
                       <span className="chat-origin-card-desc">{r.desc}</span>
                     </button>
@@ -679,3 +720,6 @@ function ChatPanel({
 
 window.MessageComposer = MessageComposer;
 window.ChatPanel = ChatPanel;
+/* §4.2 — view-assistant.jsx reusa o mesmo card em vez de duplicá-lo. */
+window.StructuredActionCard = StructuredActionCard;
+window.wfDraftCard = wfDraftCard;

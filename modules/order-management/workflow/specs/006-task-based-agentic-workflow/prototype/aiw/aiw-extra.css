@@ -9,11 +9,14 @@
   --sl-color-gray-0:  #ffffff;
   --sl-color-gray-1:  #F5F8FC;
   --sl-color-gray-2:  #ECF0F7;
-  --sl-color-gray-3:  #E0E5EF;
+  /* Handoff v2 §1 — gray-3 é o divisor único e gray-5 a borda forte. */
+  --sl-color-gray-3:  #E3E6EF;
   --sl-color-gray-4:  #CED7E4;
-  --sl-color-gray-5:  #B7C3D2;
-  --sl-color-gray-6:  #7F8C9E;
-  --sl-color-gray-7:  #5F6D82;
+  --sl-color-gray-5:  #B6C2D5;
+  /* Handoff v2 §1 nomeia gray-6 como #5D6C83 (o #7F8C9E anterior não existe na
+     escala e vazava pelos fallbacks de var()). */
+  --sl-color-gray-6:  #5D6C83;
+  --sl-color-gray-7:  #4E607A;
   --sl-color-gray-8:  #506077;
   --sl-color-gray-9:  #425269;
   --sl-color-gray-10: #212D3F;
@@ -176,9 +179,10 @@
   --sl-bg-accent-plain:            color-mix(in srgb, var(--sl-color-blue-10) 0%, transparent);
   --sl-bg-accent-plain-hover:      color-mix(in srgb, var(--sl-color-blue-10) 5%, transparent);
   --sl-bg-accent-plain-pressed:    color-mix(in srgb, var(--sl-color-blue-10) 10%, transparent);
-  --sl-bg-accent-strong:           #0C6CF2;
-  --sl-bg-accent-strong-hover:     #0A5ED6;
-  --sl-bg-accent-strong-pressed:   #0952BE;
+  /* Handoff §1.1 — azul primário único: blue-10 / blue-11 (hover) / blue-12 (pressed). */
+  --sl-bg-accent-strong:           #1E4EE5;
+  --sl-bg-accent-strong-hover:     #0131C5;
+  --sl-bg-accent-strong-pressed:   #001EA5;
 
   --sl-bg-warning:                 var(--sl-color-yellow-1);
   --sl-bg-warning-strong:          var(--sl-color-yellow-9);
@@ -256,6 +260,33 @@
   --sl-space-2:  0.5rem;
   --sl-space-3:  0.75rem;
   --sl-space-4:  1rem;
+
+  /* Shadows (handoff §4 usa shadow-1 para item ativo do segmented; §7 usa
+     shadow-3 para dropdowns/menus). */
+  --sl-shadow-1: 0 1px 2px rgba(15, 17, 21, 0.06), 0 1px 1px rgba(15, 17, 21, 0.04);
+  --sl-shadow-2: 0 4px 12px rgba(15, 17, 21, 0.08);
+  --sl-shadow-3: 0 12px 32px rgba(15, 17, 21, 0.12), 0 4px 12px rgba(15, 17, 21, 0.06);
+
+  /* Overlay (scrim) — handoff §6 (drawers) e §8 (modais). */
+  --sl-overlay-bg: rgba(15, 17, 21, 0.5);
+}
+
+/* Handoff §5 — Material Symbols Outlined é o único conjunto de ícones no
+   lugar de emojis. O icons.jsx (Icon) permanece nos headers e navegação. */
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined';
+  font-weight: normal;
+  font-style: normal;
+  display: inline-block;
+  line-height: 1;
+  text-transform: none;
+  letter-spacing: normal;
+  word-wrap: normal;
+  white-space: nowrap;
+  direction: ltr;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
 }
 
 /* ============================================================
@@ -373,7 +404,7 @@
   transition: border-color .15s;
 }
 .composer-pill:focus-within {
-  border-color: var(--primary, #142B99);
+  border-color: var(--primary, #1E4EE5);
 }
 .composer-pill textarea {
   flex: 1;
@@ -406,13 +437,13 @@
   bottom: calc(100% + 8px);
   left: 0;
   min-width: 200px;
-  background: var(--bg, #fff);
-  border: 1px solid var(--border, #E5E5E5);
-  border-radius: 16px;
-  box-shadow: 0 20px 25px -5px rgba(0,0,0,.1), 0 8px 10px -6px rgba(0,0,0,.1);
-  padding: 12px;
+  background: #fff;
+  border: 1px solid var(--sl-color-gray-3, #E3E6EF);
+  border-radius: 12px;
+  box-shadow: var(--sl-shadow-3);
+  padding: 4px;
   z-index: 50;
-  display: flex; flex-direction: column; gap: 2px;
+  display: flex; flex-direction: column; gap: 0;
   transform-origin: bottom left;
   animation: composer-add-menu-in .15s ease-out;
 }
@@ -423,27 +454,28 @@
 .composer-add-menu-item {
   display: flex; align-items: center; gap: 8px;
   width: 100%;
+  min-height: 36px;
   border: none; background: transparent; cursor: pointer;
-  padding: 6px 8px; border-radius: 8px;
+  padding: 0 8px; border-radius: 8px;
   font-size: 13px; color: var(--fg, #171717);
   text-align: left;
   transition: background .12s;
 }
-.composer-add-menu-item:hover { background: var(--bg-soft, #eeeeee); }
-.composer-add-menu-item svg { color: var(--fg-2, #525252); flex-shrink: 0; }
+.composer-add-menu-item:hover { background: var(--sl-bg-muted); }
+.composer-add-menu-item svg { color: var(--fg-2, #2A3F5E); flex-shrink: 0; width: 18px; height: 18px; }
 
 .send-btn {
   width: 36px; height: 36px; border-radius: 50%;
   display: grid; place-items: center;
   color: #fff;
-  background: #2158E8;
+  background: var(--primary);
   border: none; cursor: pointer;
   flex-shrink: 0;
   transition: background .15s, color .15s;
 }
-.send-btn:hover { background: #1b4bd1; color: #fff; }
-.send-btn.active { background: #2158E8; color: #fff; }
-.send-btn.active:hover { background: #1b4bd1; color: #fff; }
+.send-btn:hover { background: var(--primary-hover); color: #fff; }
+.send-btn.active { background: var(--primary); color: #fff; }
+.send-btn.active:hover { background: var(--primary-hover); color: #fff; }
 
 /* ── Stacked composer layout (v3 port) ── */
 .composer--stacked { padding: 4px 0 12px; }
@@ -451,13 +483,13 @@
   display: flex;
   flex-direction: column;
   background: var(--bg, #fff);
-  border: 1px solid var(--border, #E5E7EB);
+  border: 1px solid var(--border, #E3E6EF);
   border-radius: 14px;
   box-shadow: 0 1px 4px rgba(0,0,0,.06);
   overflow: hidden;
   transition: border-color .15s;
 }
-.composer-stacked-shell:focus-within { border-color: var(--primary, #142B99); }
+.composer-stacked-shell:focus-within { border-color: var(--primary, #1E4EE5); }
 .composer-stacked-input { padding: 12px 14px 8px; }
 .composer-stacked-input textarea {
   width: 100%; border: none; outline: none; resize: none;
@@ -467,13 +499,13 @@
   line-height: 1.5;
   font-family: inherit;
 }
-.composer-stacked-input textarea::placeholder { color: #9AA0A8; }
+.composer-stacked-input textarea::placeholder { color: var(--fg-3, #4E607A); }
 .composer-stacked-toolbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 4px 8px 8px;
-  border-top: 1px solid var(--border, #E5E7EB);
+  border-top: 1px solid var(--border, #E3E6EF);
 }
 .composer-stacked-toolbar-left {
   display: flex;
@@ -488,7 +520,7 @@
   padding: 3px 10px 3px 8px;
   border-radius: 999px;
   background: var(--bg-muted, #F3F4F6);
-  border: 1px solid var(--border, #E5E7EB);
+  border: 1px solid var(--border, #E3E6EF);
   font-size: 12.5px;
   font-weight: 500;
   color: var(--fg-2);
@@ -502,11 +534,14 @@
   white-space: nowrap;
 }
 
-/* ---------- Drawer (AI team) ---------- */
+/* ---------- Drawer (handoff §6 — padrão único) ----------
+   Largura 420px, header 64px com título esquerda + icon-button X à direita
+   (nunca seta-voltar), corpo com padding 20px, scrim --sl-overlay-bg,
+   footer só quando houver decisão. */
 .drawer {
   position: absolute;
   top: 0; right: 0;
-  width: 540px; max-width: 90%;
+  width: 420px; max-width: 90%;
   height: 100%;
   background: #fff;
   box-shadow: -16px 0 40px rgba(15,17,21,.08);
@@ -518,11 +553,19 @@
 .drawer.open { transform: translateX(0); }
 .drawer-head {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 14px 18px;
+  height: 64px;
+  padding: 0 16px 0 20px;
   border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
 }
-.drawer-title { font-size: 14px; font-weight: 600; }
-.drawer-body { padding: 18px; overflow-y: auto; }
+.drawer-title { font-size: 15px; font-weight: 600; color: var(--fg); }
+.drawer-body { padding: 20px; overflow-y: auto; flex: 1; }
+.drawer-footer {
+  display: flex; align-items: center; justify-content: flex-end; gap: 8px;
+  padding: 12px 20px;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
 .agent-search {
   display: flex; align-items: center; gap: 8px;
   border: 1px solid var(--border); border-radius: 10px;
@@ -905,11 +948,11 @@
   background: none;
   font-size: 14px;
   font-weight: 500;
-  color: var(--sl-color-blue-11, var(--primary, #2158E8));
+  color: var(--primary, #1E4EE5);
   cursor: pointer;
 }
 [data-sl-canvas-tool-back]:hover {
-  color: var(--sl-color-blue-12, #0A3ABF);
+  color: var(--primary-hover, #0131C5);
 }
 /* Voltar do canvas-topbar — chevron + rótulo, mesmos tokens do .chat-back-btn.
    Substitui o título quando existe navegação para trás; o nome do workflow já
@@ -926,28 +969,32 @@
   color: var(--fg-2);
 }
 .canvas-topbar-back:hover { background: var(--bg-soft); color: var(--fg); }
+/* Handoff v2 §2 — icon-button: 36px redondo (era 28px em radius-2),
+   transparente em repouso, hover .05 e pressionado .10. */
 .canvas-topbar-icon {
   flex-shrink: 0;
-  width: 28px;
-  height: 28px;
-  border-radius: var(--sl-radius-2);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
   display: grid;
   place-items: center;
   color: var(--fg-2);
   background: none;
   border: none;
   cursor: pointer;
+  transition: background .12s ease, color .12s ease;
 }
-.canvas-topbar-icon:hover { background: var(--bg-soft); color: var(--fg); }
-.canvas-topbar-icon.active { background: var(--bg-soft); color: var(--fg-brand, var(--fg)); }
+.canvas-topbar-icon:hover { background: rgba(29, 44, 67, 0.05); color: var(--fg); }
+.canvas-topbar-icon:active { background: rgba(29, 44, 67, 0.10); }
+.canvas-topbar-icon.active { background: rgba(29, 44, 67, 0.10); color: var(--fg-brand, var(--fg)); }
 /* Ponto de alerta — pergunta do agente esperando resposta no chat. Encosta no
    canto superior direito do ícone, como no badge de notificação. */
 .canvas-topbar-icon--alert { position: relative; }
 .canvas-topbar-icon--alert::after {
   content: "";
   position: absolute;
-  top: 4px;
-  right: 4px;
+  top: 6px;
+  right: 6px;
   width: 8px;
   height: 8px;
   border-radius: 50%;
@@ -1113,8 +1160,8 @@
    Aqui mantemos apenas o layout base do container do status. */
 [data-sl-doc-status] { display: inline-flex; align-items: center; gap: 8px; }
 [data-sl-doc-status-label] { font-size: 13px; font-weight: 600; color: var(--fg); letter-spacing: -0.26px; }
-[data-sl-doc-working-dots] circle { fill: var(--sl-color-gray-5, #B7C3D2); transition: fill 0.15s ease; }
-[data-sl-doc-working-dots] circle[data-on] { fill: var(--primary, #2962FF); }
+[data-sl-doc-working-dots] circle { fill: var(--sl-color-gray-5, #B6C2D5); transition: fill 0.15s ease; }
+[data-sl-doc-working-dots] circle[data-on] { fill: var(--primary, #1E4EE5); }
 
 [data-sl-doc-execute-task] {
   appearance: none;
@@ -1123,7 +1170,7 @@
   height: 28px;
   padding: 0 12px;
   border-radius: 8px;
-  background: var(--primary, #2962FF);
+  background: var(--primary, #1E4EE5);
   color: #fff;
   font-size: 13px;
   font-weight: 600;
@@ -1262,7 +1309,7 @@
   transition: background .12s, border-color .12s;
 }
 .assignee-pill:hover { background: var(--bg-muted, #eef0f4); }
-.assignee-pill.open { border-color: var(--primary, #2158E8); }
+.assignee-pill.open { border-color: var(--primary, #1E4EE5); }
 /* Responsável fixo (tarefa realizada): mesma pill, sem afordância de menu. */
 .assignee-pill--static { cursor: default; }
 .assignee-pill--static:hover { background: var(--bg-soft); }
@@ -1471,11 +1518,12 @@
   cursor: not-allowed;
 }
 
-/* ── IconButton — square icon-only button (all variants) ────────────────── */
+/* ── IconButton — square icon-only button (all variants).
+   Handoff §2: default 36px (2.25rem), radius 8. ────────────────── */
 [data-sl-button][data-icon-button] {
   min-width: unset;
-  width: 2rem;
-  height: 2rem;
+  width: 2.25rem;
+  height: 2.25rem;
   padding: 0;
   flex-shrink: 0;
 }
@@ -1488,20 +1536,20 @@
 [data-sl-button][data-variant="tertiary"] {
   background: transparent;
   color: var(--fg-2);
-  width: 2rem; min-width: 2rem; max-width: 2rem;
-  height: 2rem;
+  width: 2.25rem; min-width: 2.25rem; max-width: 2.25rem;
+  height: 2.25rem;
   padding: 0;
   flex-shrink: 0;
   border-radius: var(--sl-radius-2);
   border: none;
 }
 [data-sl-button][data-variant="tertiary"][data-size="large"] {
-  width: 2rem; min-width: 2rem; max-width: 2rem;
-  height: 2rem;
+  width: 2.25rem; min-width: 2.25rem; max-width: 2.25rem;
+  height: 2.25rem;
   padding: 0;
 }
-[data-sl-button][data-variant="tertiary"]:hover { background: var(--bg-soft); color: var(--fg); }
-[data-sl-button][data-variant="tertiary"]:active { background: var(--border); }
+[data-sl-button][data-variant="tertiary"]:hover { background: var(--sl-bg-muted); color: var(--fg); }
+[data-sl-button][data-variant="tertiary"]:active { background: var(--sl-bg-muted-hover); }
 /* Tertiary button with text label — overrides fixed icon-only sizing */
 [data-sl-button][data-variant="tertiary"][data-has-label] {
   width: auto; min-width: auto; max-width: none;
@@ -1520,6 +1568,25 @@
 [data-sl-button][data-variant="tertiary"][data-tone="critical"]:active {
   background: var(--sl-bg-critical);
   color: var(--sl-fg-critical-pressed);
+}
+
+/* Critical filled — só para confirmação destrutiva (handoff §2 + regra do
+   sistema em §10: em menu, ação destrutiva é texto vermelho, botão cheio
+   red-10 só em confirmações). */
+[data-sl-button][data-variant="critical"] {
+  background: var(--sl-bg-critical-strong);
+  color: var(--sl-fg-inverted);
+}
+[data-sl-button][data-variant="critical"]:hover {
+  background: var(--sl-bg-critical-strong-hover);
+}
+[data-sl-button][data-variant="critical"]:active {
+  background: var(--sl-bg-critical-strong-pressed);
+}
+[data-sl-button][data-variant="critical"]:disabled {
+  background: var(--sl-bg-base-strong-disabled);
+  color: var(--sl-fg-base-disabled);
+  cursor: not-allowed;
 }
 .stage-task-open-btns {
   margin-left: auto;
@@ -1565,43 +1632,63 @@
 }
 .topbar-action.icon-only:hover { color: var(--fg); }
 
-/* ---------- Dropdown ---------- */
+/* ---------- Dropdown (handoff §7 — padrão único) ----------
+   Container: branco, border gray-3, radius 12, shadow-3, padding 4.
+   Item: radius 8, altura 36px (ou padding 8 vertical quando há sublinha),
+   fonte 13, ícone 18px currentColor SEM tile. Hover --sl-bg-muted;
+   selecionado -hover + check filled à direita. */
 .dd-wrap { position: relative; display: inline-block; }
 .dd-menu {
   position: absolute;
   top: calc(100% + 6px); right: 0;
-  min-width: 280px;
+  min-width: 240px;
   background: #fff;
-  border: 1px solid var(--border);
+  border: 1px solid var(--sl-color-gray-3, #E3E6EF);
   border-radius: 12px;
-  box-shadow: var(--shadow-lg);
-  padding: 6px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, .08);
+  padding: 4px;
   z-index: 100;
-  display: flex; flex-direction: column; gap: 2px;
+  display: flex; flex-direction: column; gap: 0;
 }
 .dd-menu.left { right: auto; left: 0; }
 .dd-item {
-  display: flex; align-items: center; gap: 10px;
-  padding: 8px 10px;
-  border-radius: 8px;
+  display: flex; align-items: center; gap: 8px;
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: 12px;
   width: 100%; text-align: left;
   cursor: pointer;
   font-size: 13px; color: var(--fg);
+  background: transparent; border: none;
+  transition: background .12s;
 }
-.dd-item:hover { background: var(--bg-soft); }
+/* Item de duas linhas: ganha respiro vertical, mas o padding lateral continua
+   sendo o de 1f, para o texto alinhar com os itens de uma linha. */
+.dd-item:has(.dd-item-sub) { padding: 8px 14px; min-height: 0; }
+/* Handoff v2 §3 (1f) — hover .05, selecionado .10 da escada de cinza. */
+.dd-item:hover { background: rgba(29, 44, 67, 0.05); }
+.dd-item.selected,
+.dd-item[aria-selected="true"] { background: rgba(29, 44, 67, 0.10); }
+.dd-item.selected::after,
+.dd-item[aria-selected="true"]::after {
+  content: "check";
+  font-family: "Material Symbols Outlined";
+  font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 20;
+  font-size: 18px;
+  color: var(--fg-2);
+  margin-left: auto;
+}
 .dd-item-icon {
-  width: 28px; height: 28px; border-radius: 6px;
-  background: var(--bg-muted); color: var(--fg-2);
-  display: grid; place-items: center;
+  color: var(--fg-2);
+  display: inline-flex; align-items: center; justify-content: center;
   flex-shrink: 0;
+  width: 18px; height: 18px;
+  background: transparent;
 }
-.dd-item-icon.ai {
-  background: linear-gradient(135deg,#9747FF,#FF3D6E);
-  color: #fff;
-}
+.dd-item-icon.ai { color: var(--sl-color-purple-11, #7225D2); background: transparent; }
 .dd-item-label { display: block; font-weight: 500; font-size: 13px; color: var(--fg); }
-.dd-item-sub { display: block; font-size: 11.5px; color: var(--fg-3); margin-top: 1px; }
-.dd-sep { height: 1px; background: var(--border); margin: 4px 0; }
+.dd-item-sub { display: block; font-size: 12px; color: var(--fg-3); margin-top: 1px; }
+.dd-sep { height: 1px; background: var(--sl-color-gray-3, #E3E6EF); margin: 4px 0; }
 
 /* ---------- Tabs in topbar ---------- */
 .topbar-tabs {
@@ -1756,7 +1843,7 @@
   font-weight: 500;
   line-height: 1.2;
   letter-spacing: -0.045em;
-  color: var(--sl-fg-base, #0F1115);
+  color: var(--sl-fg-base, #171717);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1768,7 +1855,7 @@
   gap: 4px;
   font-size: 18px;
   font-weight: 500;
-  color: var(--sl-fg-base, #0F1115);
+  color: var(--sl-fg-base, #171717);
 }
 
 [data-sl-overview-trend][data-trend-direction="up"] {
@@ -1844,7 +1931,7 @@
 }
 
 [data-sl-overview-metric-chart-comparison-line] {
-  stroke: var(--sl-color-gray-6, #adadad);
+  stroke: var(--sl-color-gray-6, #5D6C83);
   stroke-width: 1.25;
   stroke-linecap: round;
   stroke-linejoin: round;
@@ -1916,7 +2003,7 @@
   font-size: 13px;
   font-weight: 500;
   line-height: 18px;
-  color: var(--fg-3, #6B7280);
+  color: var(--fg-3, #4E607A);
 }
 
 /* Barra empilhada — flex-grow controlado pelo count de cada segmento, com
@@ -1936,10 +2023,10 @@
   flex: 1 1 0;
   min-width: 8px;
   border-radius: 999px;
-  background: var(--fg-4, #9AA0A8);
+  background: var(--fg-4, #5D6C83);
 }
 
-[data-sl-overview-summary-queue-bar-seg][data-tone="healthy"]  { background: var(--primary, #2962FF); }
+[data-sl-overview-summary-queue-bar-seg][data-tone="healthy"]  { background: var(--primary, #1E4EE5); }
 /* warning: mesmo amarelo do ícone de alert do canvas-a-verify (#CFA000).
    critical: mesmo vermelho do dot do CriticalityTag "high" (--sl-fg-critical). */
 [data-sl-overview-summary-queue-bar-seg][data-tone="warning"]  { background: #CFA000; }
@@ -1952,7 +2039,7 @@
   font-size: 13px;
   font-weight: 500;
   line-height: 18px;
-  color: var(--fg-2, #3A3F47);
+  color: var(--fg-2, #2A3F5E);
 }
 
 [data-sl-overview-summary-queue-legend-item] {
@@ -1965,11 +2052,11 @@
   width: 8px;
   height: 8px;
   border-radius: 999px;
-  background: var(--fg-4, #9AA0A8);
+  background: var(--fg-4, #5D6C83);
   flex: 0 0 auto;
 }
 
-[data-sl-overview-summary-queue-dot][data-tone="healthy"]  { background: var(--primary, #2962FF); }
+[data-sl-overview-summary-queue-dot][data-tone="healthy"]  { background: var(--primary, #1E4EE5); }
 [data-sl-overview-summary-queue-dot][data-tone="warning"]  { background: #CFA000; }
 [data-sl-overview-summary-queue-dot][data-tone="critical"] { background: var(--sl-fg-critical, #C4170C); }
 
@@ -2085,7 +2172,7 @@
   font-weight: 700;
 }
 
-[data-sl-overview-chart-delta][data-tone="positive"] { background: #E3F8E5; color: #169B61; }
+[data-sl-overview-chart-delta][data-tone="positive"] { background: var(--sl-color-green-1); color: var(--sl-color-green-10); }
 [data-sl-overview-chart-delta][data-tone="negative"] { background: var(--severity-high-soft); color: var(--severity-high); }
 
 /* ---------- KPI overview card (legacy) ---------- */
@@ -2478,7 +2565,7 @@
 }
 .orders-stage-done {
   font-size: 12px;
-  color: var(--sl-fg-success, #0E6E3A);
+  color: var(--sl-fg-success, #017D10);
   font-weight: 500;
 }
 .amex-badge {
@@ -2489,16 +2576,18 @@
   border-radius: 3px;
   font-size: 9px; font-weight: 700; letter-spacing: .04em;
 }
+/* Handoff §3 — tag única. */
 .orders-status {
-  display: inline-flex; align-items: center;
-  padding: 3px 10px;
-  border-radius: 999px;
-  font-size: 12px; font-weight: 500;
+  display: inline-flex; align-items: center; gap: 4px;
+  height: 24px;
+  padding: 0 8px;
+  border-radius: 9999px;
+  font-size: 12px; font-weight: 600;
 }
-.orders-status-processing { background: var(--bg-muted); color: var(--fg); }
-.orders-status-invoiced   { background: #E3F8E5; color: #0E6E3A; }
-.orders-status-canceled   { background: #FFEBEC; color: #B42121; }
-.orders-status-approved   { background: #E3F8E5; color: #0E6E3A; }
+.orders-status-processing { background: var(--sl-color-gray-2); color: var(--sl-color-gray-9); }
+.orders-status-invoiced   { background: var(--sl-color-green-1); color: var(--sl-color-green-10); }
+.orders-status-canceled   { background: var(--sl-color-red-2); color: var(--sl-color-red-10); }
+.orders-status-approved   { background: var(--sl-color-green-1); color: var(--sl-color-green-10); }
 
 /* ==========================================================================
    ORDERS TABLE — v3 port (orders-table.css + orders-columns.tsx)
@@ -2515,7 +2604,7 @@
   box-sizing: border-box;
   width: 100%;
   min-width: 56rem;
-  border: 1px solid var(--sl-color-gray-3, #E0E5EF);
+  border: 1px solid var(--sl-color-gray-3, #E3E6EF);
   border-radius: 12px;
   overflow: hidden;
   background-color: var(--sl-bg-base, #fff);
@@ -2550,12 +2639,12 @@
 
 [data-sl-orders-row][data-orders-head] [data-sl-orders-cell] {
   min-height: 48px;
-  border-bottom: 1px solid var(--sl-color-gray-3, #E0E5EF);
+  border-bottom: 1px solid var(--sl-color-gray-3, #E3E6EF);
   font-family: inherit;
   font-size: 12px;
   font-weight: 400;
   letter-spacing: 0;
-  color: var(--sl-color-gray-6, #7F8C9E);
+  color: var(--sl-color-gray-6, #5D6C83);
 }
 
 [data-sl-orders-row][data-orders-body] {
@@ -2580,7 +2669,7 @@
   min-height: 56px;
   min-width: 0;
   padding-inline: 16px;
-  border-bottom: 1px solid var(--sl-color-gray-3, #E0E5EF);
+  border-bottom: 1px solid var(--sl-color-gray-3, #E3E6EF);
   font-size: 14px;
   color: var(--sl-color-gray-11, #0A1524);
   background-color: var(--sl-bg-base, #fff);
@@ -2607,7 +2696,7 @@
 }
 
 [data-sl-orders-cell] [data-sl-orders-muted] {
-  color: var(--sl-color-gray-7, #5F6D82);
+  color: var(--sl-color-gray-7, #4E607A);
 }
 
 /* Total — tabular nums + muted currency */
@@ -2624,7 +2713,7 @@
 
 [data-sl-orders-total-currency] {
   font-size: 14px;
-  color: var(--sl-color-gray-7, #5F6D82);
+  color: var(--sl-color-gray-7, #4E607A);
 }
 
 /* Items count */
@@ -2688,8 +2777,8 @@
 
 [data-sl-order-status-tag][data-status="canceled"] {
   background-color: var(--sl-color-gray-0, #fff);
-  border: 1px solid var(--sl-color-gray-3, #E0E5EF);
-  color: var(--sl-color-gray-7, #5F6D82);
+  border: 1px solid var(--sl-color-gray-3, #E3E6EF);
+  color: var(--sl-color-gray-7, #4E607A);
 }
 
 /* ── Payment method (brand chip) ── */
@@ -2708,7 +2797,7 @@
   height: 20px;
   padding: 0 6px;
   border-radius: 4px;
-  border: 1px solid var(--sl-color-gray-3, #E0E5EF);
+  border: 1px solid var(--sl-color-gray-3, #E3E6EF);
   background: var(--sl-color-gray-0, #fff);
   font-size: 10px;
   font-weight: 700;
@@ -2719,7 +2808,7 @@
 
 [data-sl-order-payment-last4] {
   font-variant-numeric: tabular-nums;
-  color: var(--sl-color-gray-7, #5F6D82);
+  color: var(--sl-color-gray-7, #4E607A);
   font-size: 13px;
 }
 
@@ -2730,7 +2819,7 @@
   gap: 8px;
   margin-bottom: 16px;
   font-size: 13px;
-  color: var(--sl-color-gray-7, #5F6D82);
+  color: var(--sl-color-gray-7, #4E607A);
 }
 
 [data-sl-orders-list-toolbar] strong {
@@ -2742,7 +2831,7 @@
 [data-sl-orders-empty] {
   padding: 40px 0;
   text-align: center;
-  color: var(--sl-color-gray-6, #7F8C9E);
+  color: var(--sl-color-gray-6, #5D6C83);
   font-size: 14px;
 }
 
@@ -2752,14 +2841,18 @@
   position: relative;
   display: inline-block;
 }
+/* Handoff v2 §1/§3 — mesmo trigger do filtro: 36px em raio 12px, borda gray-5
+   de 1px (a escala reserva gray-5 para borda de trigger), hover neutro em
+   gray-6 e azul só no foco/aberto. */
 .status-dropdown-btn {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  padding: 5px 10px 5px 9px;
+  min-height: 36px;
+  padding: 0 12px;
   background: #fff;
-  border: 1.5px solid var(--border-strong, #d1d5db);
-  border-radius: 8px;
+  border: 1px solid var(--sl-color-gray-5, #B6C2D5);
+  border-radius: 12px;
   font-size: 13px;
   color: var(--fg);
   cursor: pointer;
@@ -2767,11 +2860,13 @@
   white-space: nowrap;
 }
 .status-dropdown-btn:hover {
-  border-color: var(--primary);
+  border-color: #5D6C83;
 }
-.status-dropdown-btn.open {
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(41, 98, 255, .10);
+.status-dropdown-btn.open,
+.status-dropdown-btn:focus-visible {
+  border-color: #1E4EE5;
+  box-shadow: 0 0 0 3px #E1F3FF;
+  outline: none;
 }
 .status-dropdown-dot {
   width: 8px;
@@ -2787,6 +2882,9 @@
   color: var(--fg-3);
   transition: transform .15s;
   flex-shrink: 0;
+  /* Chevron do sistema é 16px; o SVG vem com atributos de 12px no JSX. */
+  width: 16px;
+  height: 16px;
 }
 .status-dropdown-chevron.open {
   transform: rotate(180deg);
@@ -2798,36 +2896,43 @@
   min-width: 100%;
   z-index: 300;
   background: #fff;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, .10), 0 1px 4px rgba(0, 0, 0, .06);
+  border: 1px solid var(--sl-color-gray-3, #E3E6EF);
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, .08);
   padding: 4px;
   display: flex;
   flex-direction: column;
-  gap: 1px;
+  gap: 0;
 }
 .status-dropdown-item {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 7px 10px;
-  border-radius: 7px;
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: 12px;
   background: transparent;
   border: none;
   font-size: 13px;
   color: var(--fg);
   cursor: pointer;
   text-align: left;
-  transition: background .1s;
+  transition: background .12s;
   width: 100%;
 }
-.status-dropdown-item:hover {
-  background: var(--bg-soft, #f5f5f5);
-}
+.status-dropdown-item:hover { background: rgba(29, 44, 67, 0.05); }
 .status-dropdown-item.selected {
-  background: var(--primary-soft, #eff3ff);
-  color: var(--primary);
+  background: rgba(29, 44, 67, 0.10);
+  color: var(--fg);
   font-weight: 500;
+}
+.status-dropdown-item.selected::after {
+  content: "check";
+  font-family: "Material Symbols Outlined";
+  font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 20;
+  font-size: 18px;
+  color: var(--fg-2);
+  margin-left: auto;
 }
 
 .person-avatar {
@@ -2923,7 +3028,7 @@
   height: 24px;
   border: none;
   border-radius: 50%;
-  background: var(--primary, #2962FF);
+  background: var(--primary, #1E4EE5);
   color: #fff;
   cursor: pointer;
   flex-shrink: 0;
@@ -2932,7 +3037,7 @@
 .initiative-task-execute svg { display: block; }
 /* Loading: mantém o círculo azul e o mesmo diâmetro, trocando o ícone por um
    spinner branco enquanto a task é disparada. */
-.initiative-task-execute[data-loading] { cursor: default; background: var(--primary, #2962FF); }
+.initiative-task-execute[data-loading] { cursor: default; background: var(--primary, #1E4EE5); }
 .initiative-task-execute-spinner {
   display: inline-block;
   width: 12px; height: 12px;
@@ -2978,7 +3083,7 @@
      alinhamento das linhas. */
   --act-time-width: 11ch;
   --act-time-gap: 24px;
-  --act-line: var(--border, #E0E5EF);
+  --act-line: var(--border, #E3E6EF);
   display: flex;
   flex-direction: column;
   width: 100%;
@@ -3067,7 +3172,7 @@
   margin-left: 10px;
   border-radius: 99px;
   background: var(--bg-soft, #eef0f4);
-  color: var(--fg-2, #525252);
+  color: var(--fg-2, #2A3F5E);
   font-size: 12px; font-weight: 400;
   line-height: 1;
   letter-spacing: 0.1px;
@@ -3119,7 +3224,7 @@
   transition: background .12s, border-color .12s;
 }
 .act-filter:hover { background: var(--bg-muted); border-color: var(--border-strong, var(--fg-3)); }
-.act-filter.open { border-color: var(--primary, #2158E8); }
+.act-filter.open { border-color: var(--primary, #1E4EE5); }
 .act-filter--active { background: var(--bg-soft); }
 .act-filter svg { flex-shrink: 0; color: var(--fg-3); }
 /* No gatilho o avatar acompanha o corpo do pill; no menu, avatar e texto seguem
@@ -3229,7 +3334,7 @@
   transition: opacity .15s;
 }
 .wf-list-agent-btn.agent-on  { background: #ede9fe; color: #985cff; }
-.wf-list-agent-btn.agent-off { background: var(--bg-soft); color: var(--fg-4, #9ca3af); }
+.wf-list-agent-btn.agent-off { background: var(--bg-soft); color: var(--fg-4, #5D6C83); }
 .wf-list-agent-btn:hover { opacity: .8; }
 
 /* Stage summary section */
@@ -3266,7 +3371,7 @@
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: 4px;
   flex-shrink: 0;
-  color: var(--fg-4, #d1d5db);
+  color: var(--fg-4, #5D6C83);
   padding: 4px;
   align-self: flex-start;
   background-color: var(--bg-muted);
@@ -3302,7 +3407,7 @@
 .wf-list-task-arrow {
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
-  color: var(--fg-4, #d1d5db);
+  color: var(--fg-4, #5D6C83);
   padding: 4px;
   background-color: var(--bg-muted);
   border-radius: 4px;
@@ -3426,7 +3531,7 @@
   padding: 2px 8px; border-radius: 99px;
 }
 .wf-table-agent-badge.agent-on  { background: #ede9fe; color: #7c3aed; }
-.wf-table-agent-badge.agent-off { background: var(--bg-soft); color: var(--fg-4, #9ca3af); }
+.wf-table-agent-badge.agent-off { background: var(--bg-soft); color: var(--fg-4, #5D6C83); }
 
 /* Config metadata row */
 .wf-list-meta-row {
@@ -3447,10 +3552,10 @@
 .wf-list-meta-chip-label { font-weight: 600; color: var(--fg-2); margin-right: 1px; }
 .chip-agent-on  { color: var(--fg-2); }
 .chip-agent-on .wf-list-meta-chip-label { color: var(--fg-2); }
-.chip-agent-off { color: var(--fg-4, #9ca3af); }
+.chip-agent-off { color: var(--fg-4, #5D6C83); }
 .chip-deps      { color: var(--fg-2); }
 .chip-deps .wf-list-meta-chip-label { color: var(--fg-2); }
-.chip-no-deps   { color: var(--fg-4, #9ca3af); }
+.chip-no-deps   { color: var(--fg-4, #5D6C83); }
 
 .wf-list-icon {
   width: 44px; height: 44px; border-radius: 6px;
@@ -3463,11 +3568,12 @@
 .wf-list-body-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .wf-list-name { font-size: 20px; font-weight: 600; color: var(--fg); }
 .wf-list-meta { font-size: 12px; color: var(--fg-3); }
-.wf-list-status { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 500; padding: 2px 8px; border-radius: 100px; height: 24px; }
-.wf-list-status.active { background: #D1FAE5; color: #00a81c; font-weight: 600; }
-.wf-list-status.archived { background: #F3F4F6; color: #6B7280; border: 1px solid var(--border); }
-.wf-list-status--purple { background: #ede9fe; color: #7c3aed; font-weight: 600; }
-.wf-list-status--neutral { background: #F3F4F6; color: #6B7280; border: 1px solid var(--border); }
+/* Handoff §3 — tag única (h24, radius full, 12/600, padding 0 8px, gap 4). */
+.wf-list-status { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; padding: 0 8px; border-radius: 9999px; height: 24px; }
+.wf-list-status.active { background: var(--sl-color-green-1); color: var(--sl-color-green-10); }
+.wf-list-status.archived { background: var(--sl-color-gray-2); color: var(--sl-color-gray-9); border: none; }
+.wf-list-status--purple { background: var(--sl-color-purple-2); color: var(--sl-color-purple-11); }
+.wf-list-status--neutral { background: var(--sl-color-gray-2); color: var(--sl-color-gray-9); border: none; }
 .wf-custom-badge {
   display: inline-flex; align-items: center; gap: 4px;
   margin-left: 8px;
@@ -3577,7 +3683,7 @@
   font-size: 10px; font-weight: 700; border-radius: 4px;
   padding: 1px 6px; flex-shrink: 0; margin-top: 1px;
 }
-.custom-rule-keyword.se     { background: #eff6ff; color: #2962ff; border: 1px solid #bfdbfe; }
+.custom-rule-keyword.se     { background: #eff6ff; color: var(--primary, #1E4EE5); border: 1px solid #bfdbfe; }
 .custom-rule-keyword.entao  { background: #f0fdf4; color: #059669; border: 1px solid #bbf7d0; }
 .custom-rule-text { font-size: 11.5px; color: var(--fg-2); }
 .custom-rule-meta { font-size: 10.5px; color: var(--fg-3); margin-top: 6px; }
@@ -3983,7 +4089,7 @@ body.resizing-x .split-resizer::before { background: var(--primary); }
   background: #fff;
   color: var(--fg-3);
 }
-.impacted-search:focus-within { border-color: var(--primary, #2158E8); }
+.impacted-search:focus-within { border-color: var(--primary, #1E4EE5); }
 .impacted-search input {
   flex: 1;
   min-width: 0;
@@ -4124,8 +4230,8 @@ body.resizing-x .split-resizer::before { background: var(--primary); }
   display: inline-flex; align-items: center;
   padding: 3px 10px;
   border-radius: 8px;
-  background: #E3F8E5;
-  color: #0E6E3A;
+  background: var(--sl-color-green-1);
+  color: var(--sl-color-green-10);
   font-size: 12.5px;
   font-weight: 500;
 }
@@ -4548,17 +4654,20 @@ sl-tag[data-color="blue"] {
 .stage-card-reorder {
   display: inline-flex; gap: 8px;
 }
+/* Handoff v2 §1/§2 — icon-button redondo na escada neutra; #0064C3 e #ccc
+   estavam fora da escala. */
 .stage-reorder-btn {
   width: 24px; height: 24px;
   display: inline-grid; place-items: center;
   background: transparent;
   border: none;
-  color: #0064C3;
-  border-radius: 4px;
+  color: var(--fg-2);
+  border-radius: 50%;
   cursor: pointer;
 }
-.stage-reorder-btn:hover:not(:disabled) { background: rgba(0,100,195,0.08); }
-.stage-reorder-btn:disabled { color: #ccc; cursor: default; }
+.stage-reorder-btn:hover:not(:disabled) { background: rgba(29, 44, 67, 0.05); }
+.stage-reorder-btn:active:not(:disabled) { background: rgba(29, 44, 67, 0.10); }
+.stage-reorder-btn:disabled { color: #5D6C83; cursor: not-allowed; }
 
 .stage-task {
   position: relative;
@@ -4582,7 +4691,13 @@ sl-tag[data-color="blue"] {
   transition: background .12s;
 }
 .wf-flat-task-wrap:last-child .stage-task { border-bottom: none; }
-.stage-task:hover { background: rgba(255, 255, 255, 1); }
+/* Handoff §10 — hover de LINHA usa --sl-bg-base-soft (gray-1), não o cinza
+   de interação. Exceção à regra de --sl-bg-muted (§1). */
+/* Handoff v2 §3 (2g) — "hover da linha inteira em rgba(29,44,67,.05), não
+   #F5F8FC": a linha é transparente em repouso, então sobe para o primeiro
+   degrau da escada. O gray-1 vinha da versão anterior do handoff, que o v2
+   corrige nominalmente. */
+.stage-task:hover { background: rgba(29, 44, 67, 0.05); }
 /* Estado "editar ordem" tem padding-left/padding-right independentes do
    estado padrão (não-editável), para que um não sobrescreva o outro. */
 .stage-task--reorder {
@@ -4651,8 +4766,8 @@ sl-tag[data-color="blue"] {
   border-radius: 999px;
   flex-shrink: 0;
 }
-.stage-task-tag.auto   { background: #DBEAFE; color: #0064C3; }
-.stage-task-tag.manual { background: #E5E7EB; color: #1F1F1F; }
+.stage-task-tag.auto   { background: var(--sl-color-blue-2); color: var(--sl-color-blue-10); }
+.stage-task-tag.manual { background: var(--sl-color-gray-2); color: var(--sl-color-gray-9); }
 
 /* Execução · Visibilidade — resumo sempre visível na linha, como texto simples
    alinhado à direita (o detalhe editável fica no trigger-dropdown, aberto
@@ -4872,11 +4987,13 @@ sl-tag[data-color="blue"] {
   border-top: none;
 }
 
-/* ── Stage config modal (replaces the old inline expand/collapse) ────────── */
+/* ── Stage config modal (handoff §8 — contêiner único para etapa e tarefa)
+   Head 56px com título + icon-button X; tabs logo abaixo; corpo em
+   field-rows; footer com [data-sl-button] secondary + primary. */
 .stage-config-modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(15, 17, 21, .5);
+  background: var(--sl-overlay-bg, rgba(15, 17, 21, .5));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -4900,8 +5017,9 @@ sl-tag[data-color="blue"] {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 16px;
-  border-bottom: 1px solid var(--border);
+  height: 56px;
+  padding: 0 12px 0 20px;
+  border-bottom: 1px solid var(--sl-color-gray-3, #E3E6EF);
   flex-shrink: 0;
 }
 .stage-config-modal-title {
@@ -5047,8 +5165,8 @@ sl-tag[data-color="blue"] {
   margin: 0;
 }
 /* "Remover etapa" é uma ação simples (mesmo padrão do "Remover tarefa"),
-   não precisa do destaque de um card de perigo */
-.stage-task-config > .stage-task-remove-btn { margin-top: 16px; }
+   não precisa do destaque de um card de perigo. Espaçamento e divisor vêm de
+   .stage-task-remove-row. */
 .field-value-text {
   flex: 1;
   min-width: 0;
@@ -5150,7 +5268,7 @@ sl-tag[data-color="blue"] {
   font-size: 11.5px;
   font-weight: 500;
 }
-.op-type-pill.auto   { background: #E3F8E5; color: #0E6E3A; }
+.op-type-pill.auto   { background: var(--sl-color-green-1); color: var(--sl-color-green-10); }
 .op-type-pill.manual { background: var(--bg-muted); color: var(--fg-2); }
 
 /* Task config — conditions row */
@@ -5350,20 +5468,42 @@ sl-tag[data-color="blue"] {
   flex-direction: column;
   gap: 10px;
 }
+/* Handoff §9 — Cards selecionáveis em drawers:
+   repouso border gray-3 radius 12 bg branco; hover border gray-5 +
+   --sl-bg-muted (sem grayscale nem anel de sombra); selecionado border 1px
+   gray-12 + --sl-bg-muted + check filled à direita. */
 .trigger-choice-card {
+  position: relative;
   display: flex;
   align-items: flex-start;
   gap: 12px;
   padding: 14px 16px;
-  border: 1.5px solid var(--border);
-  border-radius: 8px;
+  border: 1px solid var(--sl-color-gray-3, #E3E6EF);
+  border-radius: 12px;
   background: #fff;
   text-align: left;
   cursor: pointer;
-  transition: border-color .15s, box-shadow .15s, background .15s, filter .15s;
+  transition: border-color .15s, background .15s;
 }
-.trigger-choice-card:hover { border-color: var(--border-strong); box-shadow: 0 0 0 3px var(--bg-muted); filter: grayscale(1); }
-.trigger-choice-card.selected { border-color: var(--fg); background: var(--bg-muted); }
+.trigger-choice-card:hover {
+  border-color: var(--sl-color-gray-5, #B6C2D5);
+  background: var(--sl-bg-muted);
+}
+/* Handoff v2 §1 — seleção sempre azul (blue-10 + blue-2), nunca preta. */
+.trigger-choice-card.selected {
+  border-color: #1E4EE5;
+  background: #E1F3FF;
+}
+.trigger-choice-card.selected::after {
+  content: "check";
+  font-family: "Material Symbols Outlined";
+  font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 20;
+  font-size: 18px;
+  color: #1E4EE5;
+  margin-left: auto;
+  align-self: center;
+  flex-shrink: 0;
+}
 .trigger-choice-copy {
   display: flex;
   flex-direction: column;
@@ -5438,12 +5578,12 @@ label.wf-radio-row { font-weight: 400; }
   appearance: none; -webkit-appearance: none;
   width: 18px; height: 18px; flex-shrink: 0;
   margin: 0;
-  border: 1.5px solid var(--border-strong);
+  border: 1.5px solid var(--sl-color-gray-5, #B6C2D5);
   border-radius: 50%;
   background: #fff;
   cursor: pointer;
 }
-.wf-radio-row input[type="radio"]:hover { border-color: var(--primary); }
+.wf-radio-row input[type="radio"]:hover { border-color: var(--sl-color-gray-6, #5D6C83); }
 .wf-radio-row input[type="radio"]:checked {
   border-color: var(--primary);
   background: var(--primary);
@@ -5454,13 +5594,13 @@ label.wf-radio-row { font-weight: 400; }
   appearance: none; -webkit-appearance: none;
   width: 18px; height: 18px; flex-shrink: 0;
   margin: 0;
-  border: 1.5px solid var(--border-strong);
+  border: 1.5px solid var(--sl-color-gray-5, #B6C2D5);
   border-radius: 4px;
   background: #fff;
   cursor: pointer;
   transition: background .12s, border-color .12s;
 }
-.wf-radio-row input[type="checkbox"]:hover { border-color: var(--fg-3); }
+.wf-radio-row input[type="checkbox"]:hover { border-color: var(--sl-color-gray-6, #5D6C83); }
 .wf-radio-row input[type="checkbox"]:checked {
   border-color: var(--primary);
   background: var(--primary);
@@ -5531,22 +5671,18 @@ label.wf-radio-row { font-weight: 400; }
   font-size: 16px;
   font-weight: 600;
 }
-/* Item selecionado sem destaque azul: fundo e texto neutros. */
-.wf-trigger-type-dropdown .status-dropdown-item.selected {
-  background: var(--bg-soft);
-  color: var(--fg);
-}
 .wf-trigger-type-dropdown .status-dropdown-panel {
   padding: 8px;
   gap: 8px;
 }
-/* Hover e aberto usam borda cinza-escura neutra, não o azul do padrão base. */
-.wf-trigger-type-dropdown .status-dropdown-btn:hover {
-  border-color: var(--sl-fg-base);
-}
-.wf-trigger-type-dropdown .status-dropdown-btn.open {
-  border-color: var(--sl-fg-base);
-}
+/* SPEC CONFLICT: este dropdown forçava borda preta (--sl-fg-base) no hover e
+   no aberto, e fundo neutro no item selecionado, para fugir do azul do padrão
+   base. O handoff v2 §1 proíbe seleção preta e manda o realce ser sempre
+   blue-10, e a §3 (1f) exige um só estilo de menu — então os overrides saem e
+   o componente herda o trigger e o item do padrão. */
+/* Aqui o check do item selecionado vem do JSX (IconCheck), então o glifo do
+   pseudo-elemento do padrão sairia dobrado. */
+.wf-trigger-type-dropdown .status-dropdown-item.selected::after { content: none; }
 
 /* Gatilho "Conclusão de uma tarefa específica" — um card por workflow de
    origem, com selects de tarefa e status; picker "+ Adicionar workflow"
@@ -5602,16 +5738,22 @@ label.wf-radio-row { font-weight: 400; }
   align-items: center;
   gap: 10px;
   width: 100%;
-  border: 1px solid var(--border-strong);
-  border-radius: 8px;
+  border: 1px solid var(--sl-color-gray-5, #B6C2D5);
+  border-radius: 12px;
   padding: 10px 12px;
   background: #fff;
   cursor: pointer;
   text-align: left;
-  transition: border-color .12s;
+  transition: border-color .12s, box-shadow .12s;
 }
-.wf-task-trigger-select:hover,
-.wf-task-trigger-select.open { border-color: var(--primary); }
+/* Mesma escada do trigger de dropdown: hover neutro, azul só no aberto/foco. */
+.wf-task-trigger-select:hover { border-color: #5D6C83; }
+.wf-task-trigger-select.open,
+.wf-task-trigger-select:focus-visible {
+  border-color: #1E4EE5;
+  box-shadow: 0 0 0 3px #E1F3FF;
+  outline: none;
+}
 .wf-task-trigger-select-copy {
   display: flex;
   flex-direction: column;
@@ -5687,9 +5829,11 @@ label.wf-radio-row { font-weight: 400; }
   color: var(--fg-3);
   flex-shrink: 0;
 }
+/* Handoff v2 §3 — container de lista: raio 12px e borda gray-3 (gray-5 fica
+   para borda de trigger). O header apoia na base .05 da escada, não no .10. */
 .wf-task-trigger-picker {
-  border: 1px solid var(--border-strong);
-  border-radius: 10px;
+  border: 1px solid var(--sl-color-gray-3, #E3E6EF);
+  border-radius: 12px;
   overflow: hidden;
 }
 .wf-task-trigger-picker-head {
@@ -5697,7 +5841,7 @@ label.wf-radio-row { font-weight: 400; }
   font-weight: 600;
   padding: 11px 14px;
   color: var(--fg);
-  background: var(--bg-muted);
+  background: rgba(29, 44, 67, 0.05);
 }
 .wf-task-trigger-picker-item {
   display: flex;
@@ -5706,14 +5850,14 @@ label.wf-radio-row { font-weight: 400; }
   width: 100%;
   padding: 12px 14px;
   border: none;
-  border-top: 1px solid var(--bg-soft);
+  border-top: 1px solid #E3E6EF;
   background: #fff;
   cursor: pointer;
   text-align: left;
   font-size: 14px;
   color: var(--fg);
 }
-.wf-task-trigger-picker-item:hover { background: var(--bg-soft); }
+.wf-task-trigger-picker-item:hover { background: rgba(29, 44, 67, 0.05); }
 .wf-task-trigger-picker-plus {
   display: flex;
   align-items: center;
@@ -5763,7 +5907,7 @@ label.wf-radio-row { font-weight: 400; }
   background: #fff;
   color: var(--fg-3);
 }
-.wf-event-search:focus-within { border-color: var(--primary, #2158E8); }
+.wf-event-search:focus-within { border-color: var(--primary, #1E4EE5); }
 .wf-event-search input {
   flex: 1;
   min-width: 0;
@@ -5798,11 +5942,8 @@ label.wf-radio-row { font-weight: 400; }
   flex-direction: column;
 }
 .wf-event-group-list .wf-check { font-weight: 400; }
-.wf-event-group-list .wf-check input[type="checkbox"]:hover { border-color: var(--fg-3); }
-.wf-event-group-list .wf-check input[type="checkbox"]:checked {
-  background-color: var(--fg-2);
-  border-color: var(--fg-2);
-}
+/* Handoff §11 — removida a variante de marcado CINZA (--fg-2) da lista
+   de eventos; segue o padrão único blue-10. */
 
 /* Dependências — toggleable workflow list, reused for "depende de" and "desbloqueia" */
 .dep-choice-list {
@@ -5817,14 +5958,16 @@ label.wf-radio-row { font-weight: 400; }
   gap: 10px;
   padding: 10px 12px;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 12px;
   background: #fff;
   text-align: left;
   cursor: pointer;
   transition: border-color .15s, background .15s, color .15s;
 }
+/* Handoff v2 §3 (2c) — card selecionável: raio 12px, hover em gray-5 + .05 e
+   seleção em blue-10 sobre blue-2, com o texto no cinza de corpo. */
 .dep-choice-item:hover { border-color: var(--border-strong); background: var(--bg-soft); }
-.dep-choice-item.selected { border-color: var(--primary); background: var(--primary-soft); color: var(--primary); font-weight: 500; }
+.dep-choice-item.selected { border-color: var(--primary); background: var(--primary-soft); color: var(--fg); font-weight: 500; }
 /* Mesmo tamanho de fonte do meta da linha de tarefa (.stage-task-meta-text) */
 .dep-choice-name { flex: 1; min-width: 0; font-size: 12px; }
 .dep-choice-check { flex-shrink: 0; color: var(--primary); }
@@ -5832,7 +5975,7 @@ label.wf-radio-row { font-weight: 400; }
    onde a etapa/workflow de origem aparece como legenda abaixo do nome) */
 .dep-choice-copy { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .dep-choice-meta { font-size: 11px; color: var(--fg-3); }
-.dep-choice-item.selected .dep-choice-meta { color: var(--primary); }
+.dep-choice-item.selected .dep-choice-meta { color: var(--fg-3); }
 
 /* Dropdown flutuante do "Editar" do Gatilho/Dependências — ancorado ao
    .trigger-summary-row (position:relative), mesmo padrão do menu rápido da
@@ -5941,7 +6084,7 @@ label.wf-radio-row { font-weight: 400; }
   margin-left: auto;
 }
 .wf-settings-inline .field-value-pill:hover {
-  background: #e4e6ea;
+  background: var(--sl-bg-muted-hover);
 }
 .wf-settings-inline select.field-value-pill {
   appearance: none;
@@ -5955,7 +6098,7 @@ label.wf-radio-row { font-weight: 400; }
   transition: background .12s, border-color .12s;
 }
 .wf-settings-inline select.field-value-pill:hover {
-  background: #e4e6ea;
+  background: var(--sl-bg-muted-hover);
 }
 .wf-settings-inline select.field-value-pill:focus {
   background: #fff;
@@ -6132,7 +6275,8 @@ label.wf-radio-row { font-weight: 400; }
   justify-content: space-between;
   gap: 16px;
   padding: 12px 0;
-  border-bottom: 1px solid var(--border);
+  /* Handoff §12/§1.3 — divisor de field-row é sempre gray-3. */
+  border-bottom: 1px solid var(--sl-color-gray-3, #E3E6EF);
 }
 .field-rows .field-row:last-child {
   border-bottom: none;
@@ -6156,7 +6300,7 @@ label.wf-radio-row { font-weight: 400; }
   align-items: center;
   padding: 4px 12px;
   border-radius: 20px;
-  background: #f0f1f3;
+  background: var(--sl-bg-muted);
   border: 1px solid transparent;
   font-size: 14px;
   font-weight: 500;
@@ -6169,23 +6313,26 @@ label.wf-radio-row { font-weight: 400; }
   white-space: nowrap;
 }
 .field-value-pill:hover {
-  background: #e4e6ea;
+  background: var(--sl-bg-muted-hover);
   border-color: var(--border);
 }
+/* Handoff §12 — vazia usa mesmo fundo; texto "Adicionar valor" em gray-7.
+   Substitui o "—" cinza claro de 12px anterior. */
 .field-value-pill.empty {
-  background: #f0f1f3;
+  background: var(--sl-bg-muted);
   border: 1px solid transparent;
-  color: var(--fg-4);
+  color: var(--sl-color-gray-7, var(--fg-3));
+  font-size: 14px;
 }
 .field-value-pill.empty:hover {
-  background: #e4e6ea;
-  border-color: var(--border);
+  background: var(--sl-bg-muted-hover);
+  border-color: transparent;
 }
 .field-value-pill.disabled {
   cursor: default;
   pointer-events: none;
   color: var(--fg-3);
-  background: #f7f8fa;
+  background: rgba(29, 44, 67, 0.05);
 }
 .field-empty {
   font-style: normal;
@@ -6207,7 +6354,7 @@ label.wf-radio-row { font-weight: 400; }
   align-items: center;
   padding: 4px 12px;
   border-radius: 4px;
-  background: #f0f1f3;
+  background: var(--sl-bg-muted);
   border: 1px solid transparent;
   font-size: 14px;
   font-weight: 500;
@@ -6217,13 +6364,14 @@ label.wf-radio-row { font-weight: 400; }
   transition: background .12s, border-color .12s, color .12s;
 }
 .field-option-pill:hover {
-  background: #e4e6ea;
+  background: var(--sl-bg-muted-hover);
   color: var(--fg);
 }
+/* Handoff v2 §1 — seleção sempre azul (blue-10 + blue-2). */
 .field-option-pill.selected {
-  background: var(--fg);
-  color: #fff;
-  border-color: var(--fg);
+  background: #E1F3FF;
+  color: #171717;
+  border-color: #1E4EE5;
 }
 .wf-icon-pick {
   width: 34px; height: 34px;
@@ -6251,10 +6399,13 @@ label.wf-radio-row { font-weight: 400; }
   font-size: 13px; color: var(--fg);
   cursor: pointer;
 }
+/* Handoff §11 — Checkbox e radio: padrão único de 18px, marcado em blue-10
+   (--primary corrigido). Borda repouso gray-5, hover gray-6. Remove-se a
+   variante de 20px e o marcado cinza da lista de eventos. */
 .wf-check input[type="checkbox"] {
   appearance: none; -webkit-appearance: none;
-  width: 20px; height: 20px; flex-shrink: 0;
-  border: 1.5px solid var(--border-strong);
+  width: 18px; height: 18px; flex-shrink: 0;
+  border: 1.5px solid var(--sl-color-gray-5, #B6C2D5);
   border-radius: 4px;
   background: #fff;
   cursor: pointer;
@@ -6262,7 +6413,7 @@ label.wf-radio-row { font-weight: 400; }
   position: relative;
   transition: background .12s, border-color .12s;
 }
-.wf-check input[type="checkbox"]:hover { border-color: var(--fg-3); }
+.wf-check input[type="checkbox"]:hover { border-color: var(--sl-color-gray-6, #5D6C83); }
 .wf-check input[type="checkbox"]:checked {
   background: var(--primary);
   border-color: var(--primary);
@@ -6275,78 +6426,109 @@ label.wf-radio-row { font-weight: 400; }
 /* Filter dropdowns (rules section) */
 .wf-rules-dropdowns { display: flex; flex-direction: column; gap: 10px; }
 .filter-dropdown { position: relative; }
+/* Handoff v2 §1/§3 — trigger de dropdown: borda gray-5 de 1px (a escala só
+   reserva gray-5 para borda de input/trigger), raio 12px do sistema. Hover é
+   neutro; azul fica para foco/aberto, com o anel de blue-2 da §6. */
 .filter-dropdown-btn {
   display: flex; align-items: center; gap: 8px;
-  width: 100%; padding: 9px 12px;
-  border: 1.5px solid var(--border-strong);
-  border-radius: 8px;
+  width: 100%; min-height: 36px; padding: 0 12px;
+  border: 1px solid var(--sl-color-gray-5, #B6C2D5);
+  border-radius: 12px;
   background: #fff;
   font-size: 13px; color: var(--fg);
   cursor: pointer; text-align: left;
-  transition: border-color .12s;
+  transition: border-color .12s, box-shadow .12s;
 }
-.filter-dropdown-btn:hover { border-color: var(--primary); }
-.filter-dropdown-btn.open { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(41,98,255,.1); }
+.filter-dropdown-btn:hover { border-color: var(--sl-color-gray-6, #5D6C83); }
+/* Aberto e foco compartilham o realce azul. O `Dropdown` de ui-primitives não
+   repassa o estado para o trigger, então quem denuncia o menu aberto é a
+   presença do .dd-menu no wrapper. */
+.filter-dropdown-btn.open,
+.filter-dropdown-btn:focus-visible,
+.dd-wrap:has(> .dd-menu) .filter-dropdown-btn {
+  border-color: #1E4EE5;
+  box-shadow: 0 0 0 3px #E1F3FF;
+  outline: none;
+}
 .filter-dropdown-label-text { font-size: 12px; color: var(--fg-3); flex-shrink: 0; }
 .filter-dropdown-summary { flex: 1; font-weight: 500; }
 .filter-dropdown-chevron { color: var(--fg-3); transition: transform .15s; }
-.filter-dropdown-chevron.open { transform: rotate(180deg); }
+.filter-dropdown-chevron.open,
+.dd-wrap:has(> .dd-menu) .filter-dropdown-chevron { transform: rotate(180deg); }
+/* Handoff v2 §3 (1f) — container único de menu: raio 12px, borda gray-3,
+   sombra 0 2px 6px rgba(0,0,0,.08), padding 4px. Item de 36px em raio 12px. */
 .filter-dropdown-panel {
   position: absolute; top: calc(100% + 4px); left: 0; right: 0; z-index: 200;
   background: #fff;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  box-shadow: 0 4px 16px rgba(0,0,0,.10);
-  padding: 4px 0;
+  border: 1px solid #E3E6EF;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0,0,0,.08);
+  padding: 4px;
 }
-.filter-dropdown-panel .wf-check { padding: 7px 14px; }
-.filter-dropdown-panel .wf-check:hover { background: var(--bg-soft); }
+.filter-dropdown-panel .wf-check {
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: 12px;
+}
+.filter-dropdown-panel .wf-check:hover { background: rgba(29, 44, 67, 0.05); }
 
 /* Dependency dropdown */
 .dep-add-wrapper { position: relative; }
 .dep-dropdown {
   z-index: 1000;
   background: #fff;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  box-shadow: 0 8px 24px rgba(0,0,0,.14);
+  border: 1px solid var(--sl-color-gray-3, #E3E6EF);
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, .08);
   overflow: hidden;
 }
 .dep-dropdown-section { padding: 12px 14px; }
-.dep-dropdown-section + .dep-dropdown-section { border-top: 1px solid var(--border); }
+.dep-dropdown-section + .dep-dropdown-section { border-top: 1px solid var(--sl-color-gray-3, #E3E6EF); }
 .dep-dropdown-label { font-size: 11px; font-weight: 600; color: var(--fg-3); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 8px; }
 .dep-wf-list { display: flex; flex-direction: column; gap: 2px; max-height: 160px; overflow-y: auto; }
 .dep-wf-item {
   display: flex; align-items: center; gap: 8px;
-  padding: 7px 10px; border-radius: 6px;
+  min-height: 36px; padding: 0 14px; border-radius: 12px;
   font-size: 13px; color: var(--fg);
   background: transparent; text-align: left; width: 100%; cursor: pointer;
   transition: background .1s;
 }
-.dep-wf-item:hover { background: var(--bg-soft); }
-.dep-wf-item.selected { background: var(--primary-soft); color: var(--primary); font-weight: 500; }
+.dep-wf-item:hover { background: rgba(29, 44, 67, 0.05); }
+.dep-wf-item.selected { background: rgba(29, 44, 67, 0.10); color: var(--fg); font-weight: 500; }
+.dep-wf-item.selected::after {
+  content: "check";
+  font-family: "Material Symbols Outlined";
+  font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 20;
+  font-size: 18px;
+  color: var(--fg-2);
+  margin-left: auto;
+}
 .dep-status-btns { display: flex; gap: 6px; }
+/* Handoff v2 §1/§3 — pill selecionável: raio 12px, borda de 1px e seleção em
+   blue-10 sobre blue-2, com o texto no cinza de corpo. */
 .dep-status-btn {
-  padding: 5px 14px; border-radius: 6px;
-  border: 1.5px solid var(--border);
+  min-height: 36px; padding: 0 14px; border-radius: 12px;
+  border: 1px solid var(--sl-color-gray-3, #E3E6EF);
   font-size: 13px; color: var(--fg-2);
   background: #fff; cursor: pointer;
   transition: border-color .12s, background .12s;
 }
-.dep-status-btn.selected { border-color: var(--primary); background: var(--primary-soft); color: var(--primary); font-weight: 500; }
+.dep-status-btn:hover { border-color: var(--sl-color-gray-5, #B6C2D5); background: rgba(29, 44, 67, 0.05); }
+.dep-status-btn.selected { border-color: #1E4EE5; background: #E1F3FF; color: var(--fg); font-weight: 500; }
 .dep-dropdown-footer {
   display: flex; justify-content: flex-end; gap: 8px;
   padding: 10px 14px;
-  border-top: 1px solid var(--border);
-  background: var(--bg-soft);
+  border-top: 1px solid var(--sl-color-gray-3, #E3E6EF);
+  background: transparent;
 }
-/* Trigger dropdown */
+/* Trigger dropdown (popover do lápis, seleção de gatilho, orquestração)
+   — mesmo contêiner do padrão único de menus (handoff §7). */
 .trigger-dropdown {
   z-index: 1000;
   background: #fff;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  box-shadow: 0 4px 16px rgba(0,0,0,.12);
+  border: 1px solid var(--sl-color-gray-3, #E3E6EF);
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, .08);
   overflow: hidden;
   min-width: 220px;
 }
@@ -6359,27 +6541,45 @@ label.wf-radio-row { font-weight: 400; }
 .trigger-opt-list { display: flex; flex-direction: column; gap: 2px; }
 .trigger-opt-item {
   display: flex; flex-direction: column; align-items: flex-start; justify-content: flex-start; gap: 4px;
-  padding: 8px 10px; border-radius: 6px;
+  padding: 8px 14px; border-radius: 12px;
   font-size: 13px; color: var(--fg);
   background: transparent; border: none; cursor: pointer; width: 100%; text-align: left;
   transition: background .1s;
 }
 .trigger-opt-item:hover { background: var(--bg-soft); }
 .trigger-opt-item.selected { background: var(--bg-muted); color: var(--fg); font-weight: 500; }
+/* Popover do lápis — segmented único (handoff §4 + §10).
+   Container em muted 5% (via .trigger-orch-row), itens flex:1 (justificados
+   na largura do popover), item ativo bg branco + shadow-1. */
+/* Handoff v2 §5.5 — geometria do segmented do sistema: container raio 16px com
+   padding 3px, opção de 36px em raio 12px, ativa branca com sombra de 1px. Aqui
+   as opções seguem lado a lado (flex:1) porque os rótulos são curtos; o
+   empilhamento da §5.5 vale só para o card estreito do chat. */
 .trigger-orch-row {
-  display: flex; gap: 8px; padding: 12px 12px;
-  border-top: 1px solid var(--border);
+  display: flex; gap: 0; padding: 3px;
+  /* O recuo vem do .trigger-dropdown-section que hospeda o controle; a margem
+     antiga somava com aquele padding e indentava o segmented duas vezes. */
+  margin: 0;
+  background: rgba(29, 44, 67, 0.05);
+  border-radius: 16px;
+  border-top: none;
 }
 .trigger-orch-btn {
-  flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 5px;
-  padding: 8px 8px; border-radius: 5px; font-size: 12px; cursor: pointer;
-  border: 1px solid var(--border); background: transparent; color: var(--fg-2);
-  transition: all .1s;
+  flex: 1;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  min-height: 36px; padding: 0 12px;
+  border-radius: 12px;
+  font-size: 13px; font-weight: 500; line-height: 20px;
+  cursor: pointer;
+  border: none; background: transparent; color: var(--sl-color-gray-7);
+  transition: background .12s, color .12s, box-shadow .12s;
 }
 .trigger-orch-btn svg { display: none; }
-.trigger-orch-btn:hover:not(.selected) { border-color: var(--border-strong); }
+.trigger-orch-btn:hover:not(.selected) { color: var(--fg); }
 .trigger-orch-btn.selected {
-  border-color: var(--sl-fg-base); background: var(--bg-muted); color: var(--fg); font-weight: 500;
+  background: var(--sl-color-gray-0, #fff);
+  color: var(--fg);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .06);
 }
 
 .dep-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 4px; }
@@ -6390,9 +6590,13 @@ label.wf-radio-row { font-weight: 400; }
 }
 .dep-row-arrow { color: var(--fg-3); }
 .dep-row-task { font-weight: 500; flex: 1; }
+/* Handoff v2 §1 — tag de estado info nas medidas de tag: 24px, raio 9999px,
+   600 12/1. #DBEAFE/#0064C3 estavam fora da escala. */
 .dep-row-status {
-  font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 99px;
-  background: #DBEAFE; color: #0064C3;
+  display: inline-flex; align-items: center;
+  height: 24px; padding: 0 10px; border-radius: 9999px;
+  font-size: 12px; font-weight: 600; line-height: 1;
+  background: #E1F3FF; color: var(--fg);
 }
 .dep-row-remove {
   width: 20px; height: 20px; border-radius: 4px;
@@ -6401,7 +6605,7 @@ label.wf-radio-row { font-weight: 400; }
   font-size: 14px; line-height: 1;
   transition: background .1s, color .1s;
 }
-.dep-row-remove:hover { background: #FEE2E2; color: #DC2626; }
+.dep-row-remove:hover { background: #FFEDEA; color: #D31A15; }
 
 /* ── StageCard — "Adicionar tarefa" Shoreline tertiary button ────────── */
 button.stage-add-task-btn[data-sl-button][data-variant="tertiary"][data-has-label] {
@@ -6459,7 +6663,7 @@ button.stage-add-task-btn[data-sl-button][data-variant="tertiary"][data-has-labe
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: var(--fg-4, #9ca3af);
+  color: var(--fg-4, #5D6C83);
   padding: 6px 14px 3px;
 }
 .task-lib-item {
@@ -6481,15 +6685,21 @@ button.stage-add-task-btn[data-sl-button][data-variant="tertiary"][data-has-labe
   font-size: 12px;
   color: var(--fg-3);
 }
+/* Handoff v2 §1 — medidas de tag e cores de estado do cartão 1b; os hexes
+   #dbeafe/#1d4ed8 e #fef3c7/#92400e estavam fora da escala. */
 .task-lib-item-tag {
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 9999px;
   font-size: 12px;
-  font-weight: 500;
-  padding: 1px 6px;
-  border-radius: 99px;
+  font-weight: 600;
+  line-height: 1;
   flex-shrink: 0;
 }
-.task-lib-item-tag--auto   { background: #dbeafe; color: #1d4ed8; }
-.task-lib-item-tag--manual { background: #fef3c7; color: #92400e; }
+.task-lib-item-tag--auto   { background: #E1F3FF; color: var(--fg); }
+.task-lib-item-tag--manual { background: #FFEDCD; color: #B24D01; }
 .task-lib-empty {
   font-size: 12.5px;
   color: var(--fg-3);
@@ -6573,7 +6783,7 @@ button.stage-add-task-btn[data-sl-button][data-variant="tertiary"][data-has-labe
   transition: background .12s, border-color .12s;
 }
 .task-create-form .stage-prop-input:hover {
-  background: #e4e6ea;
+  background: var(--sl-bg-muted-hover);
 }
 .task-create-form .stage-prop-input:focus {
   background: #fff;
@@ -6970,7 +7180,7 @@ button.stage-add-task-btn[data-sl-button][data-variant="tertiary"][data-has-labe
   flex-direction: column;
   padding: 12px;
   background: var(--bg);
-  border: 1px solid var(--border, #e5e7eb);
+  border: 1px solid var(--border, #E3E6EF);
   border-radius: 8px;
 }
 .task-quickinfo-card:hover .wf-card-chevron,
@@ -7025,49 +7235,55 @@ button.stage-add-task-btn[data-sl-button][data-variant="tertiary"][data-has-labe
   color: var(--fg-3);
 }
 
-/* ── Inline toggle group (qi-toggle) ── */
+/* ── Segmented único (handoff §4) ──
+   Container bg --sl-bg-muted, radius 8, padding 2. Item ativo bg branco
+   + shadow-1; item inativo texto gray-7. Sem descrição embutida — a
+   descrição vira tooltip (via title). Dentro de popover/modal, opções
+   justificadas (flex:1 cada) — ver .trigger-dropdown .qi-toggle-group. */
 .qi-toggle-group {
   display: inline-flex;
-  gap: 8px;
+  align-items: stretch;
+  gap: 0;
+  padding: 2px;
+  background: var(--sl-bg-muted);
+  border-radius: 8px;
   flex-shrink: 0;
 }
 .qi-toggle-btn {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 2px;
-  padding: 8px 12px;
-  text-align: left;
-  color: var(--fg);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 12px;
+  height: 32px;
+  text-align: center;
+  color: var(--sl-color-gray-7);
   background: transparent;
-  border: 1px solid var(--border-strong);
-  border-radius: 8px;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 20px;
   cursor: pointer;
-  transition: background 0.12s, color 0.12s;
+  transition: background 0.12s, color 0.12s, box-shadow 0.12s;
 }
 .qi-toggle-btn:hover {
-  background: var(--sl-bg-hover, #f3f4f6);
   color: var(--fg);
 }
 .qi-toggle-btn--active {
-  background: var(--bg-soft);
+  background: var(--sl-color-gray-0, #fff);
   color: var(--fg);
+  box-shadow: var(--sl-shadow-1);
 }
 .qi-toggle-title {
-  font-size: 12px;
-  font-weight: 600;
-  line-height: 16px;
-  color: var(--fg);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 20px;
+  color: inherit;
 }
-.qi-toggle-desc {
-  font-size: 11px;
-  font-weight: 400;
-  line-height: 14px;
-  color: var(--fg-2);
-}
-.qi-toggle-btn--active .qi-toggle-desc {
-  color: var(--fg-2);
-}
+/* Descrição embutida some — vira tooltip via atributo title. Mantém a
+   regra para não quebrar markup antigo, mas oculta visualmente. */
+.qi-toggle-desc { display: none; }
 
 .stage-task-config .wf-settings-card {
   border-radius: 0;
@@ -7129,7 +7345,7 @@ button.stage-add-task-btn[data-sl-button][data-variant="tertiary"][data-has-labe
   border-radius: 4px;
 }
 .stage-task-config .field-value-pill:hover {
-  background: #e4e6ea;
+  background: var(--sl-bg-muted-hover);
 }
 /* stage-prop-input inside task config — same transparent pill style as stage-config-inline */
 .stage-task-config .stage-prop-input {
@@ -7178,37 +7394,53 @@ button.stage-add-task-btn[data-sl-button][data-variant="tertiary"][data-has-labe
   animation: stage-task-footer-in 0.18s ease-out both;
   flex-shrink: 0;
 }
+/* Handoff §10 — "Remover tarefa" em menu/popover:
+   texto red-10 + ícone delete outlined + divisor gray-3 acima.
+   Regra do sistema: destrutivo em menu = texto vermelho; botão cheio red-10
+   só em confirmações. */
+/* O divisor vive no container, não no botão: com o botão em raio 12px, uma
+   borda no próprio elemento viraria um toco da largura do texto em vez de um
+   divisor de seção. */
+.stage-task-remove-row {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--sl-color-gray-3, #E3E6EF);
+}
 .stage-task-remove-btn {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  font-size: 12.5px;
-  font-weight: 500;
-  color: #DC2626;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 16px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+  letter-spacing: -0.14px;
+  color: var(--sl-color-red-10, #D31A15);
   background: transparent;
   border: none;
+  border-radius: 12px;
   cursor: pointer;
-  padding: 8px 6px;
-  border-radius: 4px;
-  transition: color .12s, background .12s;
+  transition: background .12s;
 }
-.stage-task-remove-btn:hover {
-  color: #DC2626;
-  background: #FEF2F2;
-}
+.stage-task-remove-btn:hover { background: rgba(29, 44, 67, 0.05); }
+.stage-task-remove-btn:active { background: rgba(29, 44, 67, 0.10); }
 .stage-task-remove-confirm-text {
   flex: 1;
   font-size: 14px;
   font-weight: 500;
-  color: #DC2626;
+  color: var(--sl-color-red-10, #D31A15);
 }
 .btn-danger {
-  background: #DC2626;
+  background: var(--sl-color-red-10, #D31A15);
   color: #fff;
   border: none;
 }
 .btn-danger:hover {
-  background: #B91C1C;
+  background: #B40202;
+}
+.btn-danger:active {
+  background: #8F0000;
 }
 
 /* Cite-in-chat button — field-row and setting-row, scoped to task collapse */
@@ -7279,7 +7511,7 @@ button.stage-add-task-btn[data-sl-button][data-variant="tertiary"][data-has-labe
 }
 .stage-task-config .field-value-pill--dirty {
   color: var(--primary);
-  background: var(--primary-soft, #eff4ff);
+  background: var(--primary-soft, #E1F3FF);
   border-radius: 4px;
 }
 .stage-task-config .field-value-pill--dirty:hover {
@@ -7292,7 +7524,7 @@ button.stage-add-task-btn[data-sl-button][data-variant="tertiary"][data-has-labe
 /* ── Config card chip simulate variant ───────────────────────────────── */
 .wf-config-chip { cursor: pointer; transition: background .12s, border-color .12s, color .12s; }
 .wf-config-chip:hover { border-color: var(--primary); background: var(--primary-soft); color: var(--primary); }
-.wf-config-chip-simulate { border-color: #059669 !important; color: #059669 !important; background: #D1FAE5 !important; }
+.wf-config-chip-simulate { border-color: #059669 !important; color: #059669 !important; background: var(--sl-color-green-1) !important; }
 .wf-config-chip-simulate:hover { background: #A7F3D0 !important; }
 
 /* ── Workflow Simulator ──────────────────────────────────────────────── */
@@ -7512,7 +7744,8 @@ button.stage-add-task-btn[data-sl-button][data-variant="tertiary"][data-has-labe
 }
 .chat-origin-card.selected .chat-origin-card-title,
 .chat-origin-card.selected .chat-origin-card-desc { color: var(--sl-fg-base); }
-.chat-origin-card.dimmed  { display: none; }
+/* Handoff v2 §7 — resposta antiga fica visível em .45, não sumida. */
+.chat-origin-card.dimmed  { opacity: .45; }
 
 .chat-quick-reply.selected {
   background: var(--bg);
@@ -7521,18 +7754,24 @@ button.stage-add-task-btn[data-sl-button][data-variant="tertiary"][data-has-labe
   color: var(--sl-fg-base);
   cursor: default;
 }
-.chat-quick-reply.dimmed  { display: none; }
+/* Handoff v2 §7 — resposta antiga fica visível em .45, não sumida. */
+.chat-quick-reply.dimmed  { opacity: .45; }
 
-/* Confirm chip — "Pronto →" in Fluxo G bulk selection */
+/* Handoff v2 §7 — "Pronto →" agora é o primário da §2 (o token
+   --sl-bg-action-secondary não existe na escala Shoreline). */
 .chat-quick-reply--confirm {
-  background: var(--sl-bg-action-secondary);
-  border: var(--sl-border-base-strong);
-  color: var(--sl-fg-base);
-  font-weight: var(--sl-font-weight-medium);
+  background: #1E4EE5;
+  border: 1px solid transparent;
+  color: #fff;
+  font-weight: 600;
 }
 .chat-quick-reply--confirm:hover {
-  background: var(--sl-fg-accent);
-  border-color: var(--sl-fg-accent);
+  background: #1B45CC;
+  border-color: transparent;
+  color: #fff;
+}
+.chat-quick-reply--confirm:active {
+  background: #163AA8;
   color: #fff;
 }
 
@@ -7543,36 +7782,16 @@ button.stage-add-task-btn[data-sl-button][data-variant="tertiary"][data-has-labe
   gap: 10px;
   margin-top: 8px;
   padding: 10px 12px;
-  border-radius: 10px;
-  border: var(--sl-border-base);
+  /* Handoff §14 — mesmo contêiner do draft card: border gray-3, radius 12. */
+  border-radius: 12px;
+  border: 1px solid var(--sl-color-gray-3, #E3E6EF);
   background: var(--sl-bg-base);
   color: var(--fg);
   transition: border .12s;
 }
-.chat-action-card:hover {
-  border: 1px solid var(--border-strong);
-}
-.chat-action-card-body {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  flex: 1;
-  min-width: 0;
-}
-.chat-action-card-title {
-  font: var(--sl-text-display-3);
-  letter-spacing: var(--sl-text-display-3-letter-spacing);
-  color: var(--fg);
-}
-.chat-action-card-desc {
-  font: var(--sl-text-body);
-  letter-spacing: var(--sl-text-body-letter-spacing);
-  color: var(--fg-2);
-}
-.chat-action-apply {
-  flex-shrink: 0;
-  white-space: nowrap;
-}
+/* Handoff v2 §7 — o card não é clicável: sem troca de borda no hover.
+   §4.2 — `.chat-action-card-body/-title/-desc` e `.chat-action-apply` saíram
+   junto com o card simples; todo action card usa o container da §4.1. */
 
 /* ── Structured action card 3c — "Como chegamos aqui" ──────────────────
    Container, header e footer da família do card de pergunta (§verify-card).
@@ -7589,7 +7808,6 @@ button.stage-add-task-btn[data-sl-button][data-variant="tertiary"][data-has-labe
   background: #fff;
   overflow: hidden;
 }
-.chat-action-card--structured:hover { border-color: var(--border); }
 
 /* Header — igual ao .canvas-a-verify-header. */
 .chat-action-card-head {
@@ -7608,7 +7826,8 @@ button.stage-add-task-btn[data-sl-button][data-variant="tertiary"][data-has-labe
   line-height: 16px;
   color: var(--fg-3);
 }
-.chat-action-card-kind svg { flex-shrink: 0; }
+.chat-action-card-kind svg,
+.chat-action-card-kind .material-symbols-outlined { flex-shrink: 0; }
 .chat-action-card-badge {
   display: inline-flex;
   align-items: center;
@@ -7674,7 +7893,7 @@ button.stage-add-task-btn[data-sl-button][data-variant="tertiary"][data-has-labe
 .chat-action-card-group-head[aria-expanded="false"]:hover { background: var(--bg-soft); }
 .chat-action-card-group-head:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 1px #fff, 0 0 0 4px rgba(33,88,232,.28);
+  box-shadow: 0 0 0 1px #fff, 0 0 0 4px rgba(30, 78, 229,.28);
 }
 .chat-action-card-group-text {
   display: inline-flex;
@@ -7761,16 +7980,20 @@ button.stage-add-task-btn[data-sl-button][data-variant="tertiary"][data-has-labe
 }
 
 /* Tag (mantida para valores marcados como tag). */
+/* Handoff v2 §1 — tag: 24px, raio 9999px, 600 12/1, info = blue-2 + gray-12.
+   `align-self` impede que o flex-column do campo estique a pill. */
 .chat-action-field-tag {
   display: inline-flex;
   align-items: center;
-  padding: 4px 8px;
-  height: auto;
-  border-radius: 4px;
-  background: var(--sl-color-blue-3, #cbe9ff);
-  color: var(--sl-fg-accent, #0366dd);
+  align-self: flex-start;
+  gap: 4px;
+  padding: 0 8px;
+  height: 24px;
+  border-radius: 9999px;
+  background: #E1F3FF;
+  color: #171717;
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 600;
   line-height: 1;
 }
 
@@ -7782,7 +8005,7 @@ button.stage-add-task-btn[data-sl-button][data-variant="tertiary"][data-has-labe
   gap: 8px;
   padding: 12px 16px;
   margin-top: 8px;
-  border-top: 1px solid var(--bg-muted);
+  border-top: 1px solid #E3E6EF;
 }
 .chat-action-card--structured .chat-action-card-btns .canvas-a-run-btn--primary { flex: 1; }
 .chat-action-card--structured .chat-action-card-btns .canvas-a-run-btn {
@@ -7808,55 +8031,9 @@ button.stage-add-task-btn[data-sl-button][data-variant="tertiary"][data-has-labe
 }
 .chat-action-card--options .chat-action-card-btns .canvas-a-run-btn { flex: 1 1 auto; width: 100%; }
 
-/* New workflow draft/summary card */
-.chat-draft-card {
-  margin-top: 8px;
-  border-radius: 10px;
-  border: var(--sl-border-base);
-  background: var(--sl-bg-base-soft);
-  overflow: hidden;
-  transition: border .12s;
-}
-.chat-draft-card:hover {
-  border: var(--sl-border-base-strong-hover);
-}
-.chat-draft-header {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  padding: 9px 12px;
-  background: var(--sl-color-gray-2);
-  border-bottom: var(--sl-border-base);
-  font: var(--sl-text-display-3);
-  letter-spacing: var(--sl-text-display-3-letter-spacing);
-  color: var(--fg);
-}
-.chat-draft-rows {
-  padding: 8px 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-.chat-draft-row {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  font: var(--sl-text-body);
-  letter-spacing: var(--sl-text-body-letter-spacing);
-}
-.chat-draft-label {
-  color: var(--fg-3);
-  min-width: 80px;
-  flex-shrink: 0;
-}
-.chat-draft-row strong {
-  color: var(--fg);
-  font-weight: var(--sl-font-weight-semibold);
-}
-.chat-draft-card > .btn {
-  margin: 0 12px 12px;
-  display: block;
-}
+/* Handoff v2 §4.2 — `.chat-draft-card` foi removido. O rascunho de workflow
+   passou a usar o container da §4.1 (`.chat-action-card--structured`), com
+   ícone `account_tree` e rótulo do próprio momento. */
 
 /* ─────────────────────────────────────────────────────────────────────── */
 
@@ -7872,7 +8049,7 @@ button.stage-add-task-btn[data-sl-button][data-variant="tertiary"][data-has-labe
   margin: 0 0 24px;
   border: 1px solid var(--border);
   border-radius: 10px;
-  background: var(--bg-soft, #f7f8fa);
+  background: var(--bg-soft, rgba(29, 44, 67, 0.05));
   overflow: hidden;
 }
 .wf-meta-fields {
@@ -7920,15 +8097,18 @@ button.stage-add-task-btn[data-sl-button][data-variant="tertiary"][data-has-labe
   color: var(--fg-2);
 }
 
+/* Handoff v2 §1 — badge de contagem é a tag neutra do cartão 1b nas medidas de
+   tag: 24px, raio 9999px, 600 12/1. O #E2E5EB não existe na escala. */
 .wf-meta-hist-count {
   display: inline-flex; align-items: center; justify-content: center;
   margin-left: 8px;
-  padding: 2px 8px;
-  font-size: 13px; font-weight: 500;
-  color: var(--fg-3);
-  background: #E2E5EB;
+  height: 24px;
+  padding: 0 10px;
+  font-size: 12px; font-weight: 600; line-height: 1;
+  color: #2A3F5E;
+  background: rgba(29, 44, 67, 0.05);
   border: none;
-  border-radius: 99px;
+  border-radius: 9999px;
   vertical-align: middle;
 }
 
@@ -7945,7 +8125,9 @@ button.stage-add-task-btn[data-sl-button][data-variant="tertiary"][data-has-labe
 .wf-meta-hist-head {
   display: flex; align-items: center; gap: 8px;
 }
-.wf-meta-hist-ver  { font-size: 12.5px; font-weight: 600; color: var(--fg); }
+/* Identificador da versão segue o tratamento de ID da §4.3: 600 13px com
+   numerais tabulares, para os "v1.2" alinharem entre as entradas. */
+.wf-meta-hist-ver  { font-size: 13px; font-weight: 600; color: var(--fg); font-variant-numeric: tabular-nums; }
 .wf-meta-hist-when { font-size: 12px; color: var(--fg-3); }
 .wf-meta-hist-who  { font-size: 12px; color: var(--fg-2); margin-left: auto; }
 .wf-meta-hist-desc {
@@ -7957,28 +8139,37 @@ button.stage-add-task-btn[data-sl-button][data-variant="tertiary"][data-has-labe
   list-style: none; margin: 0; padding: 0;
   display: flex; flex-direction: column; gap: 3px;
 }
+/* Handoff v2 §3 — superfície de repouso na base .05 da escada, em raio 12px. */
 .wf-meta-delta {
   display: flex; align-items: center; gap: 5px;
   font-size: 12px;
-  padding: 4px 8px;
+  padding: 6px 10px;
   background: var(--bg-soft);
-  border-radius: 4px;
+  border-radius: 12px;
 }
+/* Handoff v2 §1 — os sinais usam as cores de estado do cartão 1b. Os hexes
+   anteriores (#16a34a, #dc2626, #d97706, #2563eb) eram de outra paleta. */
 .wf-meta-delta-sign   { font-weight: 700; font-size: 16px; width: 16px; flex-shrink: 0; text-align: center; }
-.wf-meta-delta--added    .wf-meta-delta-sign { color: #16a34a; }
-.wf-meta-delta--removed  .wf-meta-delta-sign { color: #dc2626; }
-.wf-meta-delta--replaced .wf-meta-delta-sign { color: #d97706; }
+.wf-meta-delta--added    .wf-meta-delta-sign { color: var(--sl-color-green-10, #017D10); }
+.wf-meta-delta--removed  .wf-meta-delta-sign { color: var(--sl-color-red-10, #D31A15); }
+.wf-meta-delta--replaced .wf-meta-delta-sign { color: #B24D01; }
 .wf-meta-delta--changed  .wf-meta-delta-sign,
 .wf-meta-delta--renamed  .wf-meta-delta-sign,
-.wf-meta-delta--edited   .wf-meta-delta-sign { color: #2563eb; }
-.wf-meta-delta-entity  { font-weight: 500; color: var(--fg); }
-.wf-meta-delta-change  { color: var(--fg-3); }
-.wf-meta-delta-detail  { color: var(--fg-2); }
+.wf-meta-delta--edited   .wf-meta-delta-sign { color: #1E4EE5; }
+/* Entidade e tipo de mudança são rótulos curtos e não quebram; quem acomoda a
+   sobra é o detalhe, que é texto livre. Sem isso "Config. geral" partia em duas
+   linhas e as entradas ficavam com alturas diferentes. */
+.wf-meta-delta-entity  { font-weight: 500; color: var(--fg); white-space: nowrap; }
+.wf-meta-delta-change  { color: var(--fg-3); white-space: nowrap; }
+.wf-meta-delta-detail  { color: var(--fg-2); min-width: 0; }
+/* Handoff v2 §3 (2e) — divisor só em 1px solid gray-3; a hairline tracejada e o
+   --fg-4 (#9AA0A8) estavam fora do sistema, e 11,5px ficava abaixo do piso de
+   12px da §4.3. */
 .wf-meta-hist-footer {
   display: flex; justify-content: space-between;
-  font-size: 11.5px; color: var(--fg-4, #9ca3af);
-  padding-top: 4px;
-  border-top: 1px dashed var(--border);
+  font-size: 12px; color: var(--fg-3);
+  padding-top: 8px;
+  border-top: 1px solid #E3E6EF;
   gap: 8px;
 }
 
@@ -8033,7 +8224,7 @@ button.stage-add-task-btn[data-sl-button][data-variant="tertiary"][data-has-labe
   align-items: center;
   padding: 8px 10px;
   background: var(--bg, #fff);
-  border: 1px solid var(--border, #e5e7eb);
+  border: 1px solid var(--border, #E3E6EF);
   border-radius: 8px;
   text-align: left;
   width: 100%;
@@ -8041,15 +8232,15 @@ button.stage-add-task-btn[data-sl-button][data-variant="tertiary"][data-has-labe
   transition: border-color .15s, background .15s;
 }
 .chat-order-row:hover {
-  border-color: var(--primary, #2962ff);
-  background: var(--primary-soft, #eff4ff);
+  border-color: var(--primary, #1E4EE5);
+  background: var(--primary-soft, #E1F3FF);
 }
 .chat-order-id {
   display: flex;
   flex-direction: column;
   font-size: 11.5px;
   font-weight: 600;
-  color: var(--fg, #111);
+  color: var(--fg, #171717);
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -8057,7 +8248,7 @@ button.stage-add-task-btn[data-sl-button][data-variant="tertiary"][data-has-labe
 }
 .chat-order-customer {
   font-size: 12px;
-  color: var(--fg-2, #444);
+  color: var(--fg-2, #2A3F5E);
   white-space: nowrap;
 }
 .chat-order-meta {
@@ -8068,7 +8259,7 @@ button.stage-add-task-btn[data-sl-button][data-variant="tertiary"][data-has-labe
 .chat-order-sla,
 .chat-order-eta {
   font-size: 11px;
-  color: var(--fg-3, #888);
+  color: var(--fg-3, #4E607A);
   white-space: nowrap;
 }
 
@@ -8276,23 +8467,25 @@ button.stage-add-task-btn[data-sl-button][data-variant="tertiary"][data-has-labe
   font-size: 12px;
 }
 
-/* ── Version badge — pill button that opens the version history modal,
-   mirroring the "Segmentar por" pill from vtex-ads-campaign-manager-design-prototype ── */
+/* Handoff §10 — botão-valor único para triggers de drawer
+   (Gatilho/Orquestração/Dependência/Desbloqueia) e badge de versão
+   (WfMetaSection): 32px, bg --sl-bg-muted, hover -hover, radius 8. */
 .wf-ver-badge-btn {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 10px;
+  min-height: 32px;
+  padding: 0 10px;
   border: none;
   border-radius: 8px;
-  background: var(--bg-soft, #f8f8f8);
+  background: var(--sl-bg-muted);
   transition: background 0.15s ease;
 }
 button.wf-ver-badge-btn {
   cursor: pointer;
 }
 button.wf-ver-badge-btn:hover {
-  background: var(--border, #ebebeb);
+  background: var(--sl-bg-muted-hover);
 }
 .wf-ver-badge-btn--static {
   cursor: default;
@@ -8330,8 +8523,8 @@ button.wf-ver-badge-btn:hover {
   align-items: center;
   gap: 5px;
   background: #fff;
-  border: 1px solid var(--border);
-  border-radius: 5px;
+  border: 1px solid var(--sl-color-gray-3, #E3E6EF);
+  border-radius: 6px;
   padding: 4px 6px;
   font-size: 12.5px;
   color: var(--fg-2);
@@ -8341,18 +8534,24 @@ button.wf-ver-badge-btn:hover {
   margin-left: 0;
 }
 .wf-ver-badge-chevron {
-  color: var(--fg-3);
+  color: var(--sl-color-gray-7, var(--fg-3));
   flex-shrink: 0;
+}
+/* Estado vazio do botão-valor: "Nenhum selecionado" em gray-7 */
+.wf-ver-badge-btn[data-empty="true"] .wf-ver-badge-label,
+.wf-ver-badge-label--empty {
+  color: var(--sl-color-gray-7, var(--fg-3));
 }
 
 /* Drawer lateral genérico — mesmo padrão de painel lateral usado em
    "Segmentar por" (campaigns), abrindo pela direita em vez de um modal
    centralizado. Reutilizado pelo histórico de versões (WfVersionHistoryModal)
    e pelos seletores de opção única (WfChoiceDrawer: Gatilho, Orquestração). */
+/* Handoff §6 — padrão único de drawer (420px, header 64px, X, corpo 20px). */
 .wf-side-drawer-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(15, 17, 21, .5);
+  background: var(--sl-overlay-bg, rgba(15, 17, 21, .5));
   display: flex;
   align-items: stretch;
   justify-content: flex-end;
@@ -8362,7 +8561,7 @@ button.wf-ver-badge-btn:hover {
 .wf-side-drawer {
   display: flex;
   flex-direction: column;
-  width: 460px;
+  width: 420px;
   max-width: calc(100% - 32px);
   height: 100%;
   background: #fff;
@@ -8376,10 +8575,18 @@ button.wf-ver-badge-btn:hover {
 }
 .wf-side-drawer .stage-config-modal-head {
   height: 64px;
-  padding: 0 20px;
-  border-bottom: none;
+  padding: 0 12px 0 20px;
+  border-bottom: 1px solid var(--border);
+  /* Handoff §6: título à esquerda, X à direita — DOM ainda tem o botão
+     antes do título (por compatibilidade), então invertemos com row-reverse
+     e reforçamos justify-content: space-between. */
+  flex-direction: row-reverse;
+  justify-content: space-between;
+  gap: 12px;
 }
 .wf-side-drawer .stage-config-modal-title {
+  flex: 1;
+  min-width: 0;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -8404,7 +8611,7 @@ button.wf-ver-badge-btn:hover {
   margin: 0 0 24px;
   border: 1px solid var(--border);
   border-radius: 10px;
-  background: var(--bg-soft, #f7f8fa);
+  background: var(--bg-soft, rgba(29, 44, 67, 0.05));
   overflow: hidden;
 }
 .wf-meta-fields {
@@ -8452,67 +8659,6 @@ button.wf-ver-badge-btn:hover {
   color: var(--fg-2);
 }
 
-.wf-meta-hist-count {
-  display: inline-flex; align-items: center; justify-content: center;
-  margin-left: 8px;
-  padding: 2px 8px;
-  font-size: 13px; font-weight: 500;
-  color: var(--fg-3);
-  background: #E2E5EB;
-  border: none;
-  border-radius: 99px;
-  vertical-align: middle;
-}
-.wf-meta-hist-list {
-  display: flex; flex-direction: column;
-}
-.wf-meta-hist-entry {
-  padding: 16px 0;
-  border-top: 1px solid var(--border);
-  display: flex; flex-direction: column; gap: 12px;
-}
-.wf-meta-hist-entry:first-child { border-top: none; }
-.wf-meta-hist-head {
-  display: flex; align-items: center; gap: 8px;
-}
-.wf-meta-hist-ver  { font-size: 12.5px; font-weight: 600; color: var(--fg); }
-.wf-meta-hist-when { font-size: 12px; color: var(--fg-3); }
-.wf-meta-hist-who  { font-size: 12px; color: var(--fg-2); margin-left: auto; }
-.wf-meta-hist-desc {
-  margin: 0;
-  font-size: 12px; font-style: italic;
-  color: var(--fg-2);
-}
-.wf-meta-hist-deltas {
-  list-style: none; margin: 0; padding: 0;
-  display: flex; flex-direction: column; gap: 3px;
-}
-.wf-meta-delta {
-  display: flex; align-items: center; gap: 5px;
-  font-size: 12px;
-  padding: 4px 8px;
-  background: var(--bg-soft);
-  border-radius: 4px;
-}
-.wf-meta-delta-sign   { font-weight: 700; font-size: 16px; width: 16px; flex-shrink: 0; text-align: center; }
-.wf-meta-delta--added    .wf-meta-delta-sign { color: #16a34a; }
-.wf-meta-delta--removed  .wf-meta-delta-sign { color: #dc2626; }
-.wf-meta-delta--replaced .wf-meta-delta-sign { color: #d97706; }
-.wf-meta-delta--changed  .wf-meta-delta-sign,
-.wf-meta-delta--renamed  .wf-meta-delta-sign,
-.wf-meta-delta--edited   .wf-meta-delta-sign { color: #2563eb; }
-.wf-meta-delta-entity  { font-weight: 500; color: var(--fg); }
-.wf-meta-delta-change  { color: var(--fg-3); }
-.wf-meta-delta-detail  { color: var(--fg-2); }
-.wf-meta-hist-footer {
-  display: flex; justify-content: space-between;
-  font-size: 11.5px; color: var(--fg-4, #9ca3af);
-  padding-top: 4px;
-  border-top: 1px dashed var(--border);
-  gap: 8px;
-}
-
-
 /* ---------- Composer citation chips ---------- */
 .composer-citations {
   display: flex;
@@ -8533,7 +8679,7 @@ button.wf-ver-badge-btn:hover {
 .composer-citation-text {
   font-size: 13px;
   font-weight: 500;
-  color: var(--fg, #111);
+  color: var(--fg, #171717);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -8551,7 +8697,7 @@ button.wf-ver-badge-btn:hover {
   transition: background 0.15s;
   font-size: 10px;
 }
-.composer-citation-close:hover { background: #b8bac0; }
+.composer-citation-close:hover { background: rgba(29, 44, 67, 0.10); }
 
 /* ════════════════════════════════════════════════════════
    Package Card — Figma-style product view
@@ -8805,7 +8951,7 @@ button.wf-ver-badge-btn:hover {
   align-items: center;
   justify-content: center;
   background: #fff;
-  border: 1px solid var(--border, #e5e7eb);
+  border: 1px solid var(--border, #E3E6EF);
   border-radius: 8px;
   box-shadow: 0 1px 4px 0 rgba(0, 0, 0, 0.10);
   padding: 0;
@@ -9009,7 +9155,7 @@ button.wf-ver-badge-btn:hover {
   border: 1px solid var(--border);
   border-radius: 12px;
   background: var(--sl-bg-base, #fff);
-  color: var(--fg-2, #666);
+  color: var(--fg-2, #2A3F5E);
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
@@ -9133,7 +9279,7 @@ button.wf-ver-badge-btn:hover {
 [data-sl-my-tasks-sticky-top][data-scrolled] {
   padding-top: 16px;
   padding-bottom: 16px;
-  border-bottom-color: var(--sl-color-gray-3, #E0E5EF);
+  border-bottom-color: var(--sl-color-gray-3, #E3E6EF);
 }
 
 /* Fade gradient below sticky bar */
@@ -9231,7 +9377,7 @@ button.wf-ver-badge-btn:hover {
   flex-shrink: 0;
   align-items: center;
   justify-content: center;
-  color: var(--sl-color-gray-7, #5F6D82);
+  color: var(--sl-color-gray-7, #4E607A);
 }
 
 [data-sl-module-browser-search-pre-icon] svg {
@@ -9274,7 +9420,7 @@ button.wf-ver-badge-btn:hover {
 }
 
 [data-sl-module-browser-search-input]::placeholder {
-  color: var(--sl-color-gray-6, #7F8C9E);
+  color: var(--sl-color-gray-6, #5D6C83);
 }
 
 [data-sl-module-browser-search-input]::-webkit-search-cancel-button,
@@ -9393,7 +9539,7 @@ button.wf-ver-badge-btn:hover {
   font-weight: 500;
   line-height: 1;
   letter-spacing: -0.01em;
-  color: var(--sl-color-gray-7, #5F6D82);
+  color: var(--sl-color-gray-7, #4E607A);
   white-space: nowrap;
   background-color: transparent;
   cursor: pointer;
@@ -9472,7 +9618,7 @@ button.wf-ver-badge-btn:hover {
   height: 100%;
   gap: 0;
   align-items: stretch;
-  border: 1px solid var(--sl-color-gray-3, #E0E5EF);
+  border: 1px solid var(--sl-color-gray-3, #E3E6EF);
   border-bottom: none;
   border-radius: 12px 12px 0 0;
   overflow: hidden;
@@ -9487,7 +9633,7 @@ button.wf-ver-badge-btn:hover {
 }
 
 [data-droppable-column]:not(:last-child) {
-  border-right: 1px solid var(--sl-color-gray-3, #E0E5EF);
+  border-right: 1px solid var(--sl-color-gray-3, #E3E6EF);
 }
 
 [data-sl-kanban-column] {
@@ -9518,13 +9664,13 @@ button.wf-ver-badge-btn:hover {
   font-size: 15px;
   font-weight: 600;
   letter-spacing: -0.02em;
-  color: var(--fg, #0F1115);
+  color: var(--fg, #171717);
 }
 
 [data-sl-kanban-column-count] {
   font-size: 13px;
   font-weight: 400;
-  color: var(--sl-color-gray-6, #7F8C9E);
+  color: var(--sl-color-gray-6, #5D6C83);
 }
 
 /* ── Column body ── */
@@ -9556,7 +9702,7 @@ button.wf-ver-badge-btn:hover {
   overflow: hidden;
   min-width: 0;
   height: 160px;
-  border: 1px solid var(--border, #E0E5EF);
+  border: 1px solid var(--border, #E3E6EF);
   border-radius: 16px;
   background-color: var(--bg, #fff);
   cursor: pointer;
@@ -9573,7 +9719,7 @@ button.wf-ver-badge-btn:hover {
 }
 
 [data-sl-task-kanban-card][data-completed] [data-sl-task-kanban-card-title] {
-  color: var(--sl-color-gray-5, #B7C3D2);
+  color: var(--sl-color-gray-5, #B6C2D5);
 }
 
 [data-sl-task-kanban-card-inner] {
@@ -9633,7 +9779,7 @@ button.wf-ver-badge-btn:hover {
   font-weight: 500;
   line-height: 20px;
   letter-spacing: -0.01em;
-  color: var(--fg, #0F1115);
+  color: var(--fg, #171717);
   margin: 0;
 }
 
@@ -9660,7 +9806,7 @@ button.wf-ver-badge-btn:hover {
   min-width: 0;
   max-width: 9.5rem;
   flex: 0 1 auto;
-  color: var(--sl-color-gray-6, #7F8C9E);
+  color: var(--sl-color-gray-6, #5D6C83);
 }
 
 [data-sl-task-kanban-card-source-icon-wrap] {
@@ -9744,7 +9890,7 @@ button.wf-ver-badge-btn:hover {
   height: 24px;
   min-width: 24px;
   border-radius: 9999px;
-  background: var(--sl-color-gray-3, #E0E5EF);
+  background: var(--sl-color-gray-3, #E3E6EF);
   overflow: hidden;
   flex-shrink: 0;
 }
@@ -9810,7 +9956,7 @@ button.wf-ver-badge-btn:hover {
   box-sizing: border-box;
   width: 100%;
   min-width: 0;
-  border: 1px solid var(--sl-color-gray-3, #E0E5EF);
+  border: 1px solid var(--sl-color-gray-3, #E3E6EF);
   border-radius: 12px;
   overflow-x: auto;
   overflow-y: hidden;
@@ -9853,10 +9999,10 @@ button.wf-ver-badge-btn:hover {
   min-width: 0;
   min-height: 56px;
   padding-inline: 16px;
-  border-bottom: 1px solid var(--sl-color-gray-3, #E0E5EF);
+  border-bottom: 1px solid var(--sl-color-gray-3, #E3E6EF);
   background-color: var(--sl-bg-base, #fff);
   font-size: 14px;
-  color: var(--fg, #1F1F1F);
+  color: var(--fg, #171717);
 }
 
 [data-sl-initiative-table-cell][data-align="end"] {
@@ -9869,7 +10015,7 @@ button.wf-ver-badge-btn:hover {
   font-size: 12px;
   font-weight: 400;
   letter-spacing: 0;
-  color: var(--sl-color-gray-6, #7F8C9E);
+  color: var(--sl-color-gray-6, #5D6C83);
   white-space: nowrap;
 }
 
@@ -9965,12 +10111,12 @@ button.wf-ver-badge-btn:hover {
   height: var(--initiative-table-pill-height, 20px);
   padding: 0 var(--initiative-table-pill-padding-x, 6px);
   border-radius: var(--initiative-table-pill-radius, 6px);
-  background-color: var(--sl-color-gray-3, #E0E5EF);
+  background-color: var(--sl-color-gray-3, #E3E6EF);
   font-size: 13px;
   font-weight: 500;
   line-height: var(--initiative-table-pill-height, 20px);
   letter-spacing: -0.26px;
-  color: var(--fg, #1F1F1F);
+  color: var(--fg, #171717);
   flex-shrink: 0;
   white-space: nowrap;
   overflow: hidden;
@@ -9997,7 +10143,7 @@ button.wf-ver-badge-btn:hover {
   font-weight: 600;
   line-height: var(--initiative-table-pill-height, 20px);
   letter-spacing: -0.26px;
-  color: var(--fg, #1F1F1F);
+  color: var(--fg, #171717);
   margin: 0;
 }
 
@@ -10023,7 +10169,7 @@ button.wf-ver-badge-btn:hover {
   font-weight: 600;
   line-height: 21px;
   letter-spacing: -0.15px;
-  color: var(--fg, #1F1F1F);
+  color: var(--fg, #171717);
 }
 
 /* ── Coluna Pedidos afetados ── */
@@ -10033,7 +10179,7 @@ button.wf-ver-badge-btn:hover {
   line-height: 20px;
   letter-spacing: -0.14px;
   font-variant-numeric: tabular-nums;
-  color: var(--fg, #1F1F1F);
+  color: var(--fg, #171717);
   white-space: nowrap;
 }
 
@@ -10052,19 +10198,24 @@ button.wf-ver-badge-btn:hover {
    iniciativas) e o painel de detalhe da iniciativa. O wrapper
    `[data-sl-initiative-table-severity-inline]` mantém a largura fixa de 64px
    apenas dentro da tabela; fora dela, a tag se ajusta ao conteúdo. */
+/* Handoff §3 — tag única: h24, radius full, 12/600, padding 0 8px, gap 4.
+   [data-sl-criticality-tag] é a base do componente único.
+   Overrides de contexto (tabela 20px, document-metadata 28px) permanecem
+   por especificidade abaixo. */
 [data-sl-criticality-tag] {
   box-sizing: border-box;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: var(--initiative-table-pill-height, 20px);
-  padding: 0 var(--initiative-table-pill-padding-x, 6px);
-  border-radius: var(--initiative-table-pill-radius, 6px);
+  height: 24px;
+  padding: 0 8px;
+  border-radius: var(--sl-radius-full, 9999px);
   gap: 4px;
   overflow: hidden;
-  font-size: 13px;
-  line-height: var(--initiative-table-pill-height, 20px);
-  letter-spacing: -0.26px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 24px;
+  letter-spacing: 0;
   white-space: nowrap;
 }
 
@@ -10074,9 +10225,8 @@ button.wf-ver-badge-btn:hover {
 }
 
 [data-sl-criticality-tag][data-priority="high"] {
-  background-color: var(--sl-bg-critical, #FDEEEE);
-  font-weight: 700;
-  color: var(--sl-fg-critical, #C4170C);
+  background-color: var(--sl-color-red-2, #FFEDEA);
+  color: var(--sl-color-red-10, #D31A15);
 }
 
 [data-sl-criticality-tag][data-priority="high"] [data-sl-status="dot"] {
@@ -10085,39 +10235,54 @@ button.wf-ver-badge-btn:hover {
   min-width: 8px;
   min-height: 8px;
   border-radius: var(--sl-radius-full, 9999px);
-  background-color: var(--sl-fg-critical, #C4170C);
+  background-color: var(--sl-color-red-10, #D31A15);
 }
 
 [data-sl-criticality-tag][data-priority="medium"] {
   background-color: var(--sl-color-orange-2, #FFEDCD);
-  font-weight: 600;
-  color: var(--sl-color-orange-8, #E57001);
+  color: var(--sl-color-orange-10, #B24D01);
 }
 
+/* Handoff v2 §1 — Neutro: rgba(29,44,67,.05) / #2A3F5E gray-9. */
 [data-sl-criticality-tag][data-priority="low"] {
-  background-color: var(--sl-color-gray-0, #fff);
-  border: 1px solid var(--sl-color-gray-3, #E0E5EF);
-  font-weight: 600;
-  color: var(--fg-3, #707070);
+  background-color: rgba(29, 44, 67, 0.05);
+  color: #2A3F5E;
 }
 
-/* Variante "attention": mesma pill visual usada no contador de atenção da
-   tabela da home; aplicada em [data-sl-doc-status][data-status="attention"]
-   no painel de detalhe da tarefa. */
+/* Handoff v2 §1 — variantes de estado. */
+[data-sl-criticality-tag][data-priority="success"],
+[data-sl-criticality-tag][data-priority="active"] {
+  background-color: var(--sl-color-green-1, #E9FCE3);
+  color: var(--sl-color-green-10, #017D10);
+}
+[data-sl-criticality-tag][data-priority="neutral"],
+[data-sl-criticality-tag][data-priority="draft"] {
+  background-color: rgba(29, 44, 67, 0.05);
+  color: #2A3F5E;
+}
+[data-sl-criticality-tag][data-priority="ai"] {
+  background-color: var(--sl-color-purple-2, #F5EAFE);
+  color: var(--sl-color-purple-11, #7225D2);
+}
+
+/* Variante "attention" — handoff §3: MANTER visual atual (blue-2 / --fg,
+   bullet svg com círculo blue-4 e miolo --primary). */
 [data-sl-criticality-tag][data-priority="attention"] {
-  background-color: var(--sl-color-blue-2, #DBEDFD);
-  font-weight: 600;
-  color: var(--fg, #1F1F1F);
+  background-color: var(--sl-color-blue-2, #E1F3FF);
+  color: var(--fg, #171717);
 }
 
-/* Variante "completed" — v3 port do TaskRowStatusTag (teal-3 fundo, teal-9
-   texto, com check à esquerda). Usada em [data-sl-doc-status][data-status="completed"]. */
+/* Variante "completed" — handoff §3: mesmo sucesso (green-1 / green-10) +
+   ícone check filled 13px. */
 [data-sl-criticality-tag][data-priority="completed"] {
-  background-color: color-mix(in srgb, var(--sl-color-teal-3, #B8E5DA) 88%, var(--sl-bg-base, #fff));
-  font-weight: 600;
-  color: var(--sl-color-teal-9, #0B5C4B);
+  background-color: var(--sl-color-green-1, #E9FCE3);
+  color: var(--sl-color-green-10, #017D10);
 }
-[data-sl-criticality-tag][data-priority="completed"] svg { color: var(--sl-color-teal-9, #0B5C4B); }
+[data-sl-criticality-tag][data-priority="completed"] svg {
+  color: var(--sl-color-green-10, #017D10);
+  width: 13px;
+  height: 13px;
+}
 
 /* ── Pill scope: document metadata (v3 port de initiative-metadata.css) ──
    Dentro do cabeçalho do doc (SevPill/TaskDocStatus na coluna Severidade/
@@ -10140,7 +10305,7 @@ button.wf-ver-badge-btn:hover {
   font-weight: 500;
   line-height: 20px;
   letter-spacing: -0.14px;
-  color: var(--fg, #1F1F1F);
+  color: var(--fg, #171717);
   white-space: nowrap;
 }
 
@@ -10151,7 +10316,7 @@ button.wf-ver-badge-btn:hover {
   grid-template-columns: subgrid;
   position: relative;
   background-color: var(--initiative-expanded-surface);
-  border-bottom: 1px solid var(--sl-color-gray-3, #E0E5EF);
+  border-bottom: 1px solid var(--sl-color-gray-3, #E3E6EF);
 }
 
 [data-sl-initiative-table] > [data-sl-initiative-table-detail-row]:last-child {
@@ -10254,7 +10419,7 @@ button.wf-ver-badge-btn:hover {
   font-weight: 500;
   line-height: 20px;
   letter-spacing: -0.14px;
-  color: var(--fg, #1F1F1F);
+  color: var(--fg, #171717);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -10265,7 +10430,7 @@ button.wf-ver-badge-btn:hover {
   font-weight: 500;
   line-height: 18px;
   letter-spacing: -0.13px;
-  color: var(--fg-3, #707070);
+  color: var(--fg-3, #4E607A);
   white-space: nowrap;
   flex-shrink: 0;
 }
@@ -10345,7 +10510,7 @@ button.wf-ver-badge-btn:hover {
 .initiative-pill[data-status="attention"] { background: var(--sl-color-blue-2); color: var(--sl-color-blue-11); }
 .initiative-pill[data-status="completed"] { background: var(--sl-color-gray-2); color: var(--sl-color-gray-9); }
 .initiative-pill--severity[data-priority="high"] { background: var(--sl-color-red-2); color: var(--sl-color-red-10); }
-.initiative-pill--severity[data-priority="medium"] { background: var(--sl-color-orange-2); color: var(--sl-color-orange-8); }
+.initiative-pill--severity[data-priority="medium"] { background: var(--sl-color-orange-2); color: var(--sl-color-orange-10); }
 .initiative-pill--severity[data-priority="low"] { background: var(--sl-color-gray-2); color: var(--sl-color-gray-9); }
 
 .initiative-metadata-person {
@@ -10493,7 +10658,7 @@ button.wf-ver-badge-btn:hover {
   font-size: 14px;
   font-weight: 500;
   letter-spacing: -0.01em;
-  color: var(--fg, #0F1115);
+  color: var(--fg, #171717);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -10535,14 +10700,14 @@ button.wf-ver-badge-btn:hover {
   align-items: center;
   gap: 12px;
   padding: 14px 24px;
-  border-bottom: 1px solid var(--border, #e5e7eb);
+  border-bottom: 1px solid var(--border, #E3E6EF);
   flex-shrink: 0;
 }
 
 [data-sl-chats-conversation-title] {
   font-size: 15px;
   font-weight: 600;
-  color: var(--fg, #0F1115);
+  color: var(--fg, #171717);
 }
 
 [data-sl-chats-conversation-body] {
@@ -10629,17 +10794,20 @@ button.wf-ver-badge-btn:hover {
   color: var(--fg);
   overflow: hidden;
 }
+/* Handoff v2 §5.8 — o chip usa a tag de aviso de `1b` (orange-2 / orange-10),
+   nas medidas de tag da §1: 24px, raio 9999px, 600 12/1. */
 .canvas-a-verify-alert-chip {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  padding: 3px 10px;
-  border-radius: 99px;
-  background: var(--sl-color-yellow-2, #fdf5ad);
-  color: var(--sl-color-yellow-11, #715401);
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 9999px;
+  background: #FFEDCD;
+  color: #B24D01;
   font-size: 12px;
-  font-weight: 500;
-  line-height: 16px;
+  font-weight: 600;
+  line-height: 1;
   white-space: nowrap;
 }
 .canvas-a-verify-alert-recap {
@@ -10660,12 +10828,13 @@ button.wf-ver-badge-btn:hover {
 .canvas-a-verify-alert-body {
   padding: 12px 20px 4px;
 }
+/* Handoff v2 §5.8 — 15/600, o mesmo do card no chat: é a mesma família. */
 .canvas-a-verify-alert-title {
   margin: 0;
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 600;
-  line-height: 24px;
-  letter-spacing: -0.32px;
+  line-height: 22px;
+  letter-spacing: -0.2px;
   color: var(--fg);
   overflow-wrap: anywhere;
 }
@@ -10726,7 +10895,7 @@ button.wf-ver-badge-btn:hover {
   background: var(--border);
   display: block;
 }
-.canvas-a-verify-meter i[data-state="current"] { background: #2158E8; }
+.canvas-a-verify-meter i[data-state="current"] { background: #1E4EE5; }
 .canvas-a-verify-meter i[data-state="done"]    { background: var(--sl-color-green-11, #016810); }
 .canvas-a-verify-nav { display: inline-flex; align-items: center; }
 .canvas-a-verify-nav-btn {
@@ -10750,7 +10919,7 @@ button.wf-ver-badge-btn:hover {
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: #2158E8;
+  background: #1E4EE5;
   display: block;
   animation: canvas-a-verify-dot-bounce 1.2s infinite ease-in-out both;
 }
@@ -10899,7 +11068,7 @@ button.wf-ver-badge-btn:hover {
   gap: 10px;
   margin: 0;
   padding: 12px 16px;
-  border-top: 1px solid var(--bg-muted);
+  border-top: 1px solid #E3E6EF;
 }
 .canvas-a-verify-confirm-hint {
   display: inline-flex;
@@ -10969,22 +11138,22 @@ button.wf-ver-badge-btn:hover {
 .canvas-a-verify-option:hover { background: var(--bg-soft); }
 .canvas-a-verify-option.selected {
   background: var(--primary-soft);
-  box-shadow: inset 0 0 0 1px #2158E8;
+  box-shadow: inset 0 0 0 1px #1E4EE5;
 }
 .canvas-a-verify-option.selected .canvas-a-verify-option-title { font-weight: 500; }
 .canvas-a-verify-option.selected .canvas-a-verify-option-badge {
-  border-color: #2158E8;
-  background: #2158E8;
+  border-color: #1E4EE5;
+  background: #1E4EE5;
   color: #fff;
   font-weight: 600;
 }
 /* Anel de foco em duas paradas — padrão Shoreline. */
 .canvas-a-verify-option:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 1px #fff, 0 0 0 4px rgba(33,88,232,.28);
+  box-shadow: 0 0 0 1px #fff, 0 0 0 4px rgba(30, 78, 229,.28);
 }
 .canvas-a-verify-option.selected:focus-visible {
-  box-shadow: inset 0 0 0 1px #2158E8, 0 0 0 1px #fff, 0 0 0 4px rgba(33,88,232,.28);
+  box-shadow: inset 0 0 0 1px #1E4EE5, 0 0 0 1px #fff, 0 0 0 4px rgba(30, 78, 229,.28);
 }
 .canvas-a-verify-option-badge {
   flex-shrink: 0;
@@ -11036,9 +11205,9 @@ button.wf-ver-badge-btn:hover {
 }
 .canvas-a-verify-other-input:focus {
   outline: none;
-  border-color: var(--primary, #2158E8);
+  border-color: var(--primary, #1E4EE5);
 }
-.canvas-a-verify-other-input::placeholder { color: var(--fg-3, #737373); }
+.canvas-a-verify-other-input::placeholder { color: var(--fg-3, #4E607A); }
 
 /* Campo livre de uma pergunta inteiramente aberta (tipo short_text): mesmo
    tratamento do campo do "Outro", só que ocupando a área das opções. */
@@ -11056,29 +11225,33 @@ button.wf-ver-badge-btn:hover {
   line-height: 20px;
   resize: none;
 }
-.canvas-a-verify-free-input:focus { outline: none; border-color: var(--primary, #2158E8); }
-.canvas-a-verify-free-input::placeholder { color: var(--fg-3, #737373); }
+.canvas-a-verify-free-input:focus { outline: none; border-color: var(--primary, #1E4EE5); }
+.canvas-a-verify-free-input::placeholder { color: var(--fg-3, #4E607A); }
 
 /* ── Seleção manual vs. comprovante ──
    Segmented control com os dois caminhos sempre visíveis: dropdown de dois
    itens esconderia metade da resposta. ── */
+/* Handoff v2 §5.5 — os dois rótulos não dividem 356px sem quebrar linha, então
+   o segmented empilha: container raio 16px / padding 3px, opção de 36px em
+   raio 12px, ativa branca com sombra de 1px. */
 .canvas-a-verify-mode {
   display: flex;
+  flex-direction: column;
   gap: 4px;
   margin: 4px 8px 8px;
   padding: 3px;
-  border-radius: 99px;
-  background: var(--bg-muted);
+  border-radius: 16px;
+  background: rgba(29, 44, 67, 0.05);
 }
 .canvas-a-verify-mode-option {
-  flex: 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 6px 10px;
+  min-height: 36px;
+  padding: 0 12px;
   border: none;
-  border-radius: 99px;
+  border-radius: 12px;
   background: transparent;
   font: inherit;
   font-size: 13px;
@@ -11093,15 +11266,15 @@ button.wf-ver-badge-btn:hover {
 .canvas-a-verify-mode-option:hover { color: var(--fg-2); }
 .canvas-a-verify-mode-option.selected {
   background: #fff;
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 1px 2px rgba(0,0,0,.06);
   color: var(--fg);
 }
 .canvas-a-verify-mode-option:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px rgba(33,88,232,.28);
+  box-shadow: 0 0 0 2px rgba(30, 78, 229,.28);
 }
 .canvas-a-verify-mode-option.selected:focus-visible {
-  box-shadow: var(--shadow-sm), 0 0 0 2px rgba(33,88,232,.28);
+  box-shadow: 0 1px 2px rgba(0,0,0,.06), 0 0 0 2px rgba(30, 78, 229,.28);
 }
 
 .canvas-a-verify-orders {
@@ -11120,7 +11293,7 @@ button.wf-ver-badge-btn:hover {
   background: #fff;
   color: var(--fg-3);
 }
-.canvas-a-verify-orders-search:focus-within { border-color: var(--primary, #2158E8); }
+.canvas-a-verify-orders-search:focus-within { border-color: var(--primary, #1E4EE5); }
 .canvas-a-verify-orders-search input {
   flex: 1;
   min-width: 0;
@@ -11148,7 +11321,7 @@ button.wf-ver-badge-btn:hover {
   font-size: 12px;
   font-weight: 500;
   line-height: 16px;
-  color: var(--primary, #2158E8);
+  color: var(--primary, #1E4EE5);
   cursor: pointer;
 }
 .canvas-a-verify-orders-all:disabled { color: var(--fg-3); cursor: default; }
@@ -11173,8 +11346,9 @@ button.wf-ver-badge-btn:hover {
 .canvas-a-verify-orders-list {
   max-height: 176px;
   overflow-y: auto;
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  border: 1px solid #E3E6EF;
+  border-radius: 12px;
+  overflow: hidden auto;
 }
 .canvas-a-verify-orders-empty {
   margin: 0;
@@ -11191,11 +11365,31 @@ button.wf-ver-badge-btn:hover {
   cursor: pointer;
   transition: background .12s ease;
 }
-.canvas-a-verify-order:hover { background: var(--bg-soft); }
-.canvas-a-verify-order.selected { background: var(--primary-soft); }
+.canvas-a-verify-order:hover { background: rgba(29, 44, 67, 0.05); }
+/* Handoff v2 §1 — linha de lista selecionada é blue-2, como todo o resto. */
+.canvas-a-verify-order.selected { background: #E1F3FF; }
 .canvas-a-verify-order.selected .canvas-a-verify-order-id { font-weight: 500; }
-.canvas-a-verify-order + .canvas-a-verify-order { border-top: 1px solid var(--border); }
-.canvas-a-verify-order input { flex-shrink: 0; accent-color: var(--primary, #2158E8); }
+.canvas-a-verify-order + .canvas-a-verify-order { border-top: 1px solid #E3E6EF; }
+/* Handoff v2 §5.6 / §3 (2d) — 18px, raio 4px, borda gray-5, marcado blue-10
+   com glifo branco. Mesmo desenho de `.wf-check`. */
+.canvas-a-verify-order input[type="checkbox"] {
+  appearance: none; -webkit-appearance: none;
+  width: 18px; height: 18px; flex-shrink: 0; margin: 0;
+  border: 1.5px solid var(--sl-color-gray-5, #B6C2D5);
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+  transition: background .12s, border-color .12s;
+}
+.canvas-a-verify-order input[type="checkbox"]:hover { border-color: var(--sl-color-gray-6, #5D6C83); }
+.canvas-a-verify-order input[type="checkbox"]:checked {
+  background: #1E4EE5;
+  border-color: #1E4EE5;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 6l3 3 5-5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 12px;
+}
 .canvas-a-verify-order-copy {
   display: flex;
   flex-direction: column;
@@ -11222,20 +11416,21 @@ button.wf-ver-badge-btn:hover {
   gap: 6px;
   margin: 0 8px 6px;
   padding: 20px 12px 16px;
-  border: 1px dashed var(--border-strong);
-  border-radius: 10px;
+  border: 1px dashed var(--sl-color-gray-5, #B6C2D5);
+  border-radius: 12px;
   background: #fff;
   text-align: center;
   transition: border-color .12s, background .12s;
 }
+/* Handoff v2 §1 — estado ativo/arrastando em blue-10 + blue-2. */
 .canvas-a-verify-upload.dragging {
-  border-color: #2158E8;
-  background: var(--primary-soft);
+  border-color: #1E4EE5;
+  background: #E1F3FF;
 }
 .canvas-a-verify-upload input[type="file"] { display: none; }
 .canvas-a-verify-upload-icon { color: var(--fg-3); }
-.canvas-a-verify-upload.dragging .canvas-a-verify-upload-icon { color: #2158E8; }
-.canvas-a-verify-upload .canvas-a-run-btn { margin-top: 4px; font-size: 13px; padding: 6px 16px; background: #fff; }
+.canvas-a-verify-upload.dragging .canvas-a-verify-upload-icon { color: var(--primary, #1E4EE5); }
+.canvas-a-verify-upload .canvas-a-run-btn { margin-top: 4px; }
 .canvas-a-verify-upload-name {
   max-width: 100%;
   font-size: 14px;
@@ -11289,7 +11484,7 @@ button.wf-ver-badge-btn:hover {
 .canvas-a-verify-summary-item:hover { background: var(--bg-soft); }
 .canvas-a-verify-summary-item:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 1px #fff, 0 0 0 4px rgba(33,88,232,.28);
+  box-shadow: 0 0 0 1px #fff, 0 0 0 4px rgba(30, 78, 229, .28);
 }
 .canvas-a-verify-summary-item > .canvas-a-verify-summary-q,
 .canvas-a-verify-summary-item > .canvas-a-verify-answer-title { grid-column: 1; }
@@ -11318,19 +11513,9 @@ button.wf-ver-badge-btn:hover {
   align-items: center;
   gap: 10px;
   padding: 12px 16px;
-  border-top: 1px solid var(--bg-muted);
+  border-top: 1px solid #E3E6EF;
 }
-.canvas-a-verify-footer .canvas-a-run-btn {
-  font-size: 14px;
-  font-weight: 500;
-  line-height: 20px;
-  padding: 8px 18px;
-}
-.canvas-a-run-btn.canvas-a-run-btn--primary:disabled {
-  background: var(--bg-soft);
-  border-color: var(--border);
-  color: var(--fg-4);
-}
+/* Botões do footer do verify-card seguem o sistema padrão da §2. */
 /* Hint textual do footer — sobrevive só no alerta do canvas, onde carrega o
    progresso da árvore ("N de M respondidas"). */
 .canvas-a-verify-footer-hint {
@@ -11344,7 +11529,7 @@ button.wf-ver-badge-btn:hover {
   align-items: center;
   gap: 5px;
   font-size: 13px;
-  color: var(--sl-fg-success, #0E6E3A);
+  color: var(--sl-fg-success, #017D10);
 }
 
 /* ── Card de verificação ancorado no chat ──
@@ -11356,9 +11541,49 @@ button.wf-ver-badge-btn:hover {
   margin: 0 auto;
   padding-top: 12px;
 }
+/* O card ancorado tem altura limitada, mas o CTA ("Continuar", "Enviar
+   respostas") não pode sair de vista: quem rola é só o miolo. O card vira
+   coluna flex, header/intro/footer ficam fixos e a lista de opções ou de
+   respostas absorve o que sobra. */
 .chat-above-composer .canvas-tasks-card {
-  max-height: 380px;
+  display: flex;
+  flex-direction: column;
+  /* 380px não cabia mais: com o segmented empilhado da §5.5 (82px) a lista de
+     pedidos sobrava com ~17px. O teto acompanha a altura da janela para o
+     miolo ter espaço útil sem engolir a conversa acima. */
+  max-height: min(560px, 62vh);
+  overflow: hidden;
+}
+.chat-above-composer .canvas-a-verify-header,
+.chat-above-composer .canvas-a-verify-intro,
+.chat-above-composer .canvas-a-verify-error-notice,
+.chat-above-composer .canvas-a-verify-footer { flex-shrink: 0; }
+.chat-above-composer .canvas-a-verify-options,
+.chat-above-composer .canvas-a-verify-answer {
+  flex: 1 1 auto;
+  min-height: 0;
   overflow-y: auto;
+}
+/* Pergunta com seletor de modo: o seletor não pode rolar para fora junto com
+   a lista — meio segmented visível lê como um botão solto. Então o miolo para
+   de rolar e a rolagem desce para a lista de pedidos, que é o que cresce. */
+.chat-above-composer .canvas-a-verify-options:has(.canvas-a-verify-mode) {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.chat-above-composer .canvas-a-verify-mode { flex-shrink: 0; }
+.chat-above-composer .canvas-a-verify-orders {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.chat-above-composer .canvas-a-verify-orders-search { flex-shrink: 0; }
+.chat-above-composer .canvas-a-verify-orders-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: none;
 }
 .chat-above-composer .canvas-a-verify-header { padding: 14px 16px 0; }
 .chat-above-composer .canvas-a-verify-intro { padding: 10px 16px 6px; }
@@ -11372,8 +11597,8 @@ button.wf-ver-badge-btn:hover {
    O anel é inset porque o card recorta o próprio conteúdo (overflow-y) e
    porque, sobre a borda, ele lê como a moldura acendendo. ── */
 @keyframes verify-card-ring {
-  from { box-shadow: inset 0 0 0 2px rgba(33, 88, 232, 0.45); }
-  to   { box-shadow: inset 0 0 0 2px rgba(33, 88, 232, 0); }
+  from { box-shadow: inset 0 0 0 2px rgba(30, 78, 229, 0.45); }
+  to   { box-shadow: inset 0 0 0 2px rgba(30, 78, 229, 0); }
 }
 .canvas-a-verify-entering {
   animation: verify-card-ring .8s cubic-bezier(0.22, 1, 0.36, 1) .2s both;
@@ -11392,6 +11617,9 @@ button.wf-ver-badge-btn:hover {
 .chat-body-card { display: flex; flex-direction: column; gap: 14px; }
 
 /* ── Tarefas sugeridas · botão de ação no lugar do "Responsável" ── */
+/* Handoff v2 §2 — botão único (raio 12px, 36px, 600 14/20, ícone 18px).
+   `.canvas-a-run-btn` mantém o nome de classe, mas o desenho segue o
+   sistema `[data-sl-button]`. Variante default = secondary. */
 .canvas-a-run-btn {
   appearance: none;
   -webkit-appearance: none;
@@ -11400,33 +11628,41 @@ button.wf-ver-badge-btn:hover {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  font-size: 15px;
-  font-weight: 500;
-  padding: 6px 14px;
-  border-radius: 99px;
-  border: 1px solid var(--border, #e5e5e5);
-  background: transparent;
-  color: var(--fg, #171717);
+  min-height: 36px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+  letter-spacing: -0.14px;
+  padding: 0 16px;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  background: rgba(29, 44, 67, 0.05);
+  color: #2A3F5E;
   cursor: pointer;
   white-space: nowrap;
-  transition: background .12s ease, opacity .12s ease;
+  transition: background .12s ease, color .12s ease, opacity .12s ease;
 }
-.canvas-a-run-btn svg { flex-shrink: 0; }
-.canvas-a-run-btn:hover { background: var(--bg-soft, #f5f5f5); }
+.canvas-a-run-btn svg,
+.canvas-a-run-btn .material-symbols-outlined { flex-shrink: 0; font-size: 18px; width: 18px; height: 18px; }
+.canvas-a-run-btn:hover { background: rgba(29, 44, 67, 0.10); }
+.canvas-a-run-btn:active { background: rgba(29, 44, 67, 0.15); }
+
 .canvas-a-run-btn--primary {
-  background: #2158E8;
+  background: #1E4EE5;
   color: #fff;
-  border-color: #2158E8;
+  border-color: transparent;
 }
-.canvas-a-run-btn.canvas-a-run-btn--primary:hover {
-  background: #1b4bd1;
-  color: #fff;
-}
+.canvas-a-run-btn.canvas-a-run-btn--primary:hover { background: #1B45CC; color: #fff; }
+.canvas-a-run-btn.canvas-a-run-btn--primary:active { background: #163AA8; color: #fff; }
+
 .canvas-a-run-btn--danger {
-  color: var(--sl-color-red-9, #EC3727);
-  border-color: var(--sl-color-red-4, #FFD0C7);
+  background: #D31A15;
+  color: #fff;
+  border-color: transparent;
 }
-.canvas-a-run-btn--danger:hover { background: var(--sl-color-red-1, #FDF6F5); }
+.canvas-a-run-btn--danger:hover { background: #B40202; color: #fff; }
+.canvas-a-run-btn--danger:active { background: #8F0000; color: #fff; }
 
 /* ══════════════════════════════════════════════════════════
    Canvas Pattern D · Devoluções — decisão necessária em lote
@@ -11456,7 +11692,7 @@ button.wf-ver-badge-btn:hover {
   white-space: nowrap;
   transition: background .12s ease;
 }
-.canvas-d-conf-badge--high { color: var(--sl-fg-success, #0E6E3A); border-color: var(--sl-color-green-4, #BBF7D0); }
+.canvas-d-conf-badge--high { color: var(--sl-fg-success, #017D10); border-color: var(--sl-color-green-4, #BBF7D0); }
 .canvas-d-conf-badge--med {
   color: rgba(255, 123, 0, 1);
   background-color: var(--sl-color-orange-2, #FFEDCD);
@@ -11555,29 +11791,27 @@ button.wf-ver-badge-btn:hover {
   padding: 1px 8px;
   vertical-align: middle;
 }
-/* "Aguardando" — mesmo botão canvas-a-run-btn, só que desabilitado */
-.canvas-a-run-btn:disabled {
-  opacity: .5;
+/* Handoff v2 §2 — desabilitado é cinza (jamais azul), independente da variante. */
+.canvas-a-run-btn:disabled,
+.canvas-a-run-btn.canvas-a-run-btn--primary:disabled,
+.canvas-a-run-btn.canvas-a-run-btn--danger:disabled {
+  background: rgba(29, 44, 67, 0.05);
+  color: #5D6C83;
+  border-color: transparent;
   cursor: not-allowed;
-  background: transparent;
-  color: var(--fg-3);
 }
-.canvas-a-run-btn:disabled:hover { background: transparent; }
-/* Botão "Continuar" do bloco de verificação (lacuna): mantém o style de
-   botão primário mesmo desabilitado, só com opacidade reduzida. */
-.canvas-a-run-btn.canvas-a-run-btn--primary:disabled {
-  background: #2158E8;
-  color: #fff;
-  border-color: #2158E8;
+.canvas-a-run-btn:disabled:hover,
+.canvas-a-run-btn.canvas-a-run-btn--primary:disabled:hover,
+.canvas-a-run-btn.canvas-a-run-btn--danger:disabled:hover {
+  background: rgba(29, 44, 67, 0.05);
 }
-.canvas-a-run-btn.canvas-a-run-btn--primary:disabled:hover { background: #2158E8; }
 
 /* Task row clicável (tarefas com detailKey abrem o subview dedicado,
    igual ao clique numa linha da ImpactedTable abre o pedido) */
 .canvas-task-row--clickable { cursor: pointer; transition: background .12s ease; }
 .canvas-task-row--clickable:hover { background: var(--bg-soft, #f5f5f5); }
 .canvas-task-row--clickable:focus-visible {
-  outline: 2px solid var(--primary, #2962FF);
+  outline: 2px solid var(--primary, #1E4EE5);
   outline-offset: -2px;
   border-radius: var(--radius, 8px);
 }
@@ -11641,7 +11875,7 @@ button.wf-ver-badge-btn:hover {
   flex-direction: column;
   gap: 6px;
 }
-.decision-card-actions .canvas-a-run-btn { padding: 5px 12px; font-size: 13px; text-align: center; }
+.decision-card-actions .canvas-a-run-btn { text-align: center; }
 .canvas-d-decision-group--subview .decision-card-actions { flex-direction: row; }
 
 /* ── Canvas D · Cards de ticket de devolução (design_handoff_tickets_abertos v2) ──
@@ -12476,10 +12710,13 @@ button.wf-ver-badge-btn:hover {
   padding: 0 12px;
   white-space: nowrap;
 }
+/* Handoff v2 §3 (1f) — ícone de item em 18px. O check já vem à esquerda, por
+   isso o item selecionado não repete o glifo do `::after` do .dd-item. */
 .wfp-cat-option { gap: 8px; }
+.wfp-cat-option.selected::after { content: none; }
 .wfp-cat-check {
   display: inline-flex; align-items: center; justify-content: center;
-  width: 16px; flex-shrink: 0;
+  width: 18px; flex-shrink: 0;
   color: var(--primary);
 }
 .wfp-cat-option-label { flex: 1; min-width: 0; white-space: nowrap; }
@@ -12517,9 +12754,19 @@ button.wf-ver-badge-btn:hover {
   display: flex; align-items: center; gap: 16px;
   padding: 10px 20px;
   background: #fff;
-  border-bottom: 1px solid var(--bg-soft);
+  border-bottom: 1px solid #E3E6EF;
+  transition: background .12s ease;
 }
-.wfp-row.is-selected { background: var(--primary-soft); }
+/* Handoff v2 §3 (2g) — hover da linha inteira em rgba(29,44,67,.05); quem
+   responde ao mouse é a linha, não o texto. */
+.wfp-row:hover { background: rgba(29, 44, 67, 0.05); }
+/* Handoff v2 §1 — selecionado é blue-2 com marcador blue-10. --primary-soft
+   (#EAF0FF) era claro demais para a seleção se ler. */
+.wfp-row.is-selected,
+.wfp-row.is-selected:hover {
+  background: #E1F3FF;
+  box-shadow: inset 2px 0 0 #1E4EE5;
+}
 /* Regra recém-criada pelo chat: pisca no lugar onde o canvas parou o scroll. */
 .wfp-row.is-new { animation: wfp-row-in 1.4s ease-out; }
 @keyframes wfp-row-in {
@@ -12533,16 +12780,21 @@ button.wf-ver-badge-btn:hover {
    entre os cards. */
 .wfp-card-rules > .wfp-row:last-child { border-bottom: none; }
 
+/* Handoff v2 §1 — medidas de tag: altura 24px, raio 9999px, 600 12px/1.
+   A cor continua vindo da matriz da categoria (cat.color / cat.fg): são
+   rótulos categóricos, não os cinco estados do cartão 1b. */
 .wfp-cat-tag {
   display: inline-flex; align-items: center; gap: 4px;
   flex-shrink: 0;
-  padding: 2px 8px;
-  border-radius: var(--sl-radius-1);
-  font-size: 11px; font-weight: 500; line-height: 16px;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 9999px;
+  font-size: 12px; font-weight: 600; line-height: 1;
   letter-spacing: .04em; text-transform: uppercase;
   color: var(--fg);
   white-space: nowrap;
 }
+.wfp-cat-tag svg { flex-shrink: 0; }
 
 /* Linha de regra em três faixas: nome cresce, "N tarefas" ocupa uma coluna
    de largura fixa e o toggle fica sempre encostado à direita — assim as três
@@ -12562,7 +12814,7 @@ button.wf-ver-badge-btn:hover {
   font-size: 14px; font-weight: 500; color: var(--fg);
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
-.wfp-row-main:hover .wfp-row-name { color: var(--primary); }
+/* Handoff v2 §4.3/§3 — o texto não tem hover: nada de nome virando azul. */
 .wfp-row-tasks {
   flex: none;
   width: 140px;
