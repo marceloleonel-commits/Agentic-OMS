@@ -7,14 +7,19 @@ const { useCallback } = React;
  * 360ms, placements right / top / bottom. `asChild` — clones the single child
  * to attach ref + pointer handlers (no extra wrapper that would break layout).
  */
-const TOOLTIP_GAP = 4;
+const TOOLTIP_GAP = 8;
 const TOOLTIP_GAP_RIGHT = 16;
+/* Folga mínima até a borda da viewport, para que o tooltip de uma âncora
+   encostada na direita abra deslocado em vez de sair da tela. */
+const TOOLTIP_VIEWPORT_PAD = 8;
 const TOOLTIP_SHOW_DELAY = 140;
 const TOOLTIP_LEAVE_DELAY = 360;
 
 function SidebarTooltip({ label, placement = "right", enabled = true, children }) {
   const wrapRef = React.useRef(null);
+  const tipRef = React.useRef(null);
   const [coords, setCoords] = React.useState(null);
+  const [shift, setShift] = React.useState(0);
   const [visible, setVisible] = React.useState(false);
   const showTimer = React.useRef(null);
   const leaveTimer = React.useRef(null);
@@ -32,6 +37,7 @@ function SidebarTooltip({ label, placement = "right", enabled = true, children }
     if (showTimer.current) clearTimeout(showTimer.current);
     if (leaveTimer.current) { clearTimeout(leaveTimer.current); leaveTimer.current = null; }
     showTimer.current = setTimeout(() => {
+      setShift(0);
       setCoords(computeCoords());
       setVisible(true);
       showTimer.current = null;
@@ -51,7 +57,7 @@ function SidebarTooltip({ label, placement = "right", enabled = true, children }
 
   React.useLayoutEffect(() => {
     if (!visible) return undefined;
-    const onMove = () => setCoords(computeCoords());
+    const onMove = () => { setShift(0); setCoords(computeCoords()); };
     window.addEventListener("scroll", onMove, true);
     window.addEventListener("resize", onMove);
     return () => {
@@ -59,6 +65,20 @@ function SidebarTooltip({ label, placement = "right", enabled = true, children }
       window.removeEventListener("resize", onMove);
     };
   }, [visible, computeCoords]);
+
+  /* Nas colocações centradas (top/bottom) a âncora encostada numa das bordas
+     jogaria metade do tooltip fora da tela. Mede o balão já posicionado e
+     desloca só o que falta para caber. */
+  React.useLayoutEffect(() => {
+    if (!visible || !coords || placement === "right") return;
+    const el = tipRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const overflowRight = rect.right - (window.innerWidth - TOOLTIP_VIEWPORT_PAD);
+    const overflowLeft = TOOLTIP_VIEWPORT_PAD - rect.left;
+    const delta = overflowRight > 0 ? -overflowRight : overflowLeft > 0 ? overflowLeft : 0;
+    if (delta) setShift((s) => s + delta);
+  }, [visible, coords, placement, label]);
 
   if (!enabled || !label) return children;
 
@@ -73,7 +93,7 @@ function SidebarTooltip({ label, placement = "right", enabled = true, children }
     <React.Fragment>
       {cloned}
       {visible && coords && ReactDOM.createPortal(
-        <div className="sl-tooltip" data-placement={placement} style={{ position: "fixed", top: coords.top, left: coords.left }} aria-hidden>
+        <div ref={tipRef} className="sl-tooltip" data-placement={placement} style={{ position: "fixed", top: coords.top, left: coords.left + shift }} aria-hidden>
           {label}
         </div>,
         document.body

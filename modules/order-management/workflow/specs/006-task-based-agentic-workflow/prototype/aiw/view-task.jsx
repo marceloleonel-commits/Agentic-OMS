@@ -1,4 +1,4 @@
-/* global React, ReactDOM, Icon, IconCopy, IconArrowUpRight, AIWData, ChatPanel, ChatEngine, SevPill, PersonAvatar, WorkflowSection */
+/* global React, ReactDOM, Icon, IconCopy, IconArrowUpRight, AIWData, ChatPanel, ChatEngine, SevPill, PersonAvatar, Dropdown, WorkflowSection, WorkflowViewToggle, workflowStepCounts, MSIcon, SidebarTooltip */
 const { useState, useRef, useEffect, useLayoutEffect, useCallback, useMemo } = React;
 
 function StatusSegmented({ value, onChange }) {
@@ -376,7 +376,7 @@ function OdStageCard({ stage }) {
   const s = map[stage.status] || map.pending;
   return (
     <div className="od-stage-card" style={{ background: s.bg }}>
-      <span className="od-stage-card-icon"><MSIcon name={stage.icon} size={20} /></span>
+      <span className="od-stage-card-icon"><MSIcon name={stepIcon(stage.icon)} size={20} /></span>
       <span className="od-stage-card-label">{stage.label}</span>
       <span className="od-stage-card-status">
         <span className="od-stage-card-dot" style={{ background: s.dot }} />
@@ -566,7 +566,9 @@ function OdItemRow({ item, group }) {
     <div className="od-item-row">
       <div className="od-item-head">
         <div className="od-item-thumb">
-          {item.emoji && <MSIcon name={item.emoji} size={20} />}
+          {productPhoto(item)
+            ? <img src={productPhoto(item)} alt="" />
+            : <MSIcon name={pkgItemIcon(item)} size={20} />}
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div className="od-item-name">
@@ -637,7 +639,7 @@ function OdCancelSection({ cancelGroup }) {
           const bg       = st.status === "done" ? "#F0FDF4" : st.status === "active" ? "#FEF2F2" : "#F9FAFB";
           return (
             <div key={i} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6, padding: "12px 8px", textAlign: "center", background: bg, borderRight: i < cancelGroup.stages.length - 1 ? "1px solid #FECACA" : "none" }}>
-              <MSIcon name={st.icon} size={18} />
+              <MSIcon name={stepIcon(st.icon)} size={18} />
               <span style={{ fontSize: 11, fontWeight: 500 }}>{st.label}</span>
               <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 10.5, color: dotColor }}>
                 <span style={{ width: 6, height: 6, borderRadius: "50%", background: dotColor, display: "inline-block" }} />
@@ -922,20 +924,79 @@ function CopyTrackingButton({ code }) {
   );
 }
 
+/* O escopo do pacote agrega os itens: uma tarefa só conta como concluída se
+   estiver concluída em todos eles. Sem isso o modal usava o primeiro item como
+   procuração e podia mostrar o pacote adiantado. */
+function aggregatePackageItem(group) {
+  const items = (group && group.items) || [];
+  if (items.length === 0) return null;
+  if (items.length === 1) return items[0];
+
+  const RANK = { done: 2, active: 1, pending: 0 };
+  const byLabel = new Map();
+  items.forEach((it) => {
+    (it.steps || []).forEach((s) => {
+      const prev = byLabel.get(s.label);
+      if (!prev || RANK[s.status] < RANK[prev.status]) byLabel.set(s.label, s);
+    });
+  });
+  return { ...items[0], steps: Array.from(byLabel.values()) };
+}
+
 /* Modal do workflow do pacote — reaproveita WorkflowSection (mesmo componente
-   usado no Product Detail) dentro de um portal centralizado. O toggle interno
-   Etapas / Timeline continua funcionando: o usuário alterna as duas views sem
-   fechar o modal. Como o workflow é único por pacote, passa o primeiro item
-   do group como referência para buildSteps(). */
-function PackageWorkflowModal({ group, order, title, experienceName, onClose }) {
+   usado no Product Detail) dentro de um portal centralizado.
+
+   Duas colunas: à esquerda o escopo (o pacote inteiro ou um produto), à direita
+   o workflow. Antes o modal abria direto no workflow do primeiro item, sem
+   dizer de quem era aquele workflow nem permitir trocar — num pacote com vários
+   produtos não havia como olhar o que travou. */
+function PackageWorkflowModal({ group, order, title, experienceName, initiativeLabel, onOpenInitiative, onClose }) {
+  const [scope, setScope] = useState("package");
+  const [view, setView] = useState("stages");
+
   useEffect(() => {
     const onKey = (e) => { if (e.key === "Escape") onClose(); };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, [onClose]);
 
-  const item = (group && group.items && group.items[0]) || null;
+  const items = (group && group.items) || [];
   const workflows = (typeof AIWData !== "undefined" && AIWData.workflows) || null;
+  const packageItem = aggregatePackageItem(group);
+  const item = scope === "package" ? packageItem : items[scope];
+  const scopeItem = scope === "package" ? null : items[scope];
+  const errorCount = items.filter((it) => pkgItemStalled(it, group)).length;
+  const taskCount = (packageItem && packageItem.steps || []).length;
+
+  /* O escopo manda no título do modal (§7) e na barra de contexto (§3): o
+     operador que troca de produto tem que ver de quem é o workflow que está
+     lendo, nos dois lugares. */
+  const headTitle = scopeItem ? scopeItem.name : title;
+  const headSuffix = scopeItem ? scopeItem.sku : experienceName;
+  const scopeName = scopeItem ? scopeItem.name : "Pacote (total)";
+  const scopeErrors = scopeItem ? (pkgItemStalled(scopeItem, group) ? 1 : 0) : errorCount;
+  const counts = typeof workflowStepCounts === "function"
+    ? workflowStepCounts({ item, group, workflows, sellerLabel: order && order.seller })
+    : { done: 0, pending: 0 };
+  const scopeMeta = [
+    scopeItem
+      ? `${scopeItem.qty || 1} un.`
+      : `${items.length} ${items.length === 1 ? "produto" : "produtos"}`,
+    `${counts.done} concluídas`,
+    `${counts.pending} previstas`,
+  ].join(" · ");
+
+  const ScopeRow = ({ active, onClick, children, badge }) => (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`pkg-wf-scope-row${active ? " pkg-wf-scope-row--active" : ""}`}
+      aria-current={active ? "true" : undefined}
+    >
+      {children}
+      {badge}
+    </button>
+  );
 
   return ReactDOM.createPortal(
     <div
@@ -950,9 +1011,10 @@ function PackageWorkflowModal({ group, order, title, experienceName, onClose }) 
       >
         <div className="stage-config-modal-head">
           <h2 className="stage-config-modal-title">
-            {title}
-            {experienceName ? <span className="pkg-wf-modal-sub"> · {experienceName}</span> : null}
+            {headTitle}
+            {headSuffix ? <span className="pkg-wf-modal-sub"> · {headSuffix}</span> : null}
           </h2>
+          <WorkflowViewToggle view={view} onChange={setView} />
           <button
             type="button"
             className="canvas-topbar-icon"
@@ -963,13 +1025,77 @@ function PackageWorkflowModal({ group, order, title, experienceName, onClose }) 
             <Icon name="x" size={18} />
           </button>
         </div>
-        <div className="stage-config-modal-body pkg-wf-modal-body">
-          <WorkflowSection
-            item={item}
-            group={group}
-            order={order}
-            workflows={workflows}
-          />
+
+        <div className="pkg-wf-modal-split">
+          <nav className="pkg-wf-scope" aria-label="Escopo do workflow">
+            <span className="pkg-wf-scope-head">Escopo</span>
+            <ScopeRow
+              active={scope === "package"}
+              onClick={() => setScope("package")}
+              badge={errorCount > 0 ? <span className="pkg-error-tag">{errorCount}</span> : null}
+            >
+              <span className="pkg-wf-scope-thumb pkg-wf-scope-thumb--pkg">
+                <MSIcon name="inventory_2" size={18} />
+              </span>
+              <span className="pkg-wf-scope-text">
+                <span className="pkg-wf-scope-name">Pacote (total)</span>
+                <span className="pkg-wf-scope-sub">
+                  {items.length} {items.length === 1 ? "produto" : "produtos"} · {taskCount} tarefas
+                </span>
+              </span>
+            </ScopeRow>
+
+            <span className="pkg-wf-scope-head">Produtos</span>
+            {items.map((it, i) => {
+              const hasError = pkgItemStalled(it, group);
+              return (
+                <ScopeRow key={it.sku || it.name} active={scope === i} onClick={() => setScope(i)}>
+                  <span className="pkg-wf-scope-thumb-wrap">
+                    <span className={`pkg-wf-scope-thumb${hasError ? " pkg-wf-scope-thumb--error" : ""}`}>
+                      {productPhoto(it) ? <img src={productPhoto(it)} alt="" /> : <MSIcon name={pkgItemIcon(it)} size={18} />}
+                    </span>
+                    {hasError && (
+                      <span className="pkg-product-thumb-badge" aria-hidden="true">
+                        <MSIcon name="priority_high" size={8} />
+                      </span>
+                    )}
+                  </span>
+                  <span className="pkg-wf-scope-text">
+                    <span className="pkg-wf-scope-name">{it.name}</span>
+                    <span className="pkg-wf-scope-sub">{it.sku} · {it.qty || 1} un.</span>
+                  </span>
+                </ScopeRow>
+              );
+            })}
+          </nav>
+
+          <div className="pkg-wf-modal-main">
+            <div className="pkg-wf-modal-context">
+              <span className="pkg-wf-modal-context-label">{scopeName}</span>
+              {scopeErrors > 0 && (
+                <span className="pkg-error-tag">
+                  {/* O mesmo glifo SVG do alerta abaixo: a ligatura do Material
+                      Symbols cai como texto literal quando a fonte não carrega. */}
+                  <Icon name="error-outline" size={13} />
+                  {scopeErrors} com erro
+                </span>
+              )}
+              <span className="pkg-wf-modal-context-meta">{scopeMeta}</span>
+            </div>
+            <div className="stage-config-modal-body pkg-wf-modal-body">
+              <WorkflowSection
+                item={item}
+                group={group}
+                order={order}
+                workflows={workflows}
+                view={view}
+                onViewChange={setView}
+                initiativeLabel={initiativeLabel}
+                onOpenInitiative={onOpenInitiative}
+                hideHeader
+              />
+            </div>
+          </div>
         </div>
       </div>
     </div>,
@@ -977,7 +1103,226 @@ function PackageWorkflowModal({ group, order, title, experienceName, onClose }) 
   );
 }
 
-function PackageCard({ group, index, order, onOpenProduct }) {
+/* Os dados de item ainda trazem `emoji` com valores mistos: uns já são nomes de
+   ligatura do Material Symbols, outros são emoji literais. Como os dados estão
+   fora do escopo desta rodada, a tradução acontece aqui — assim a renderização
+   fica sem emoji sem precisar migrar a seed. */
+const PKG_ITEM_ICON_BY_EMOJI = {
+  "👗": "apparel",
+  "👖": "apparel",
+  "🩳": "apparel",
+  "🧦": "apparel",
+  "👟": "steps",
+  "👓": "eyeglasses",
+  "💊": "medication",
+  "🔬": "biotech",
+  "🔧": "build",
+  "🪵": "carpenter",
+};
+function pkgItemIcon(item) {
+  const raw = item && item.emoji;
+  if (!raw) return "inventory_2";
+  if (PKG_ITEM_ICON_BY_EMOJI[raw]) return PKG_ITEM_ICON_BY_EMOJI[raw];
+  /* Nome de ligatura é ASCII; qualquer coisa fora disso é emoji que não temos
+     mapeado e cairia como texto literal dentro da fonte de ícones. */
+  return /^[a-z0-9_]+$/i.test(raw) ? raw : "inventory_2";
+}
+
+/* Foto de catálogo (estilo PLP: fundo neutro, produto centrado) por SKU. As
+   imagens vivem em products/<SKU>.jpg e são resolvidas aqui, não na seed: o
+   campo `photo` dos dados aponta para arquivos que nunca existiram, então o SKU
+   é a chave confiável. O ícone continua como fallback para SKU sem foto. */
+const PRODUCT_PHOTO_SKUS = new Set([
+  "CA-BL-1042", "CA-CJ-2187", "CA-TN-3051", "CA-CB-0991", "CA-BC-1773",
+  "SM-S724B", "DS-CO-3M", "DS-VC-1000", "KIT-PISO-RODAPE", "CI-1KG-VIN",
+  "LO-OAK-HOLB-54-PRETO", "LO-LENTE-AR-250", "LO-RB-3025-G15", "CMB-LIN-001-P-WH",
+  "LB-TN-4409", "LB-ME-1180",
+  "LUM-ART-0142", "FON-OVE-8830", "NEC-TER-2291", "NEC-TER-2288", "TOA-ROS-1140", "CAL-ALF-5507",
+]);
+function productPhoto(item) {
+  if (!item) return null;
+  if (item.sku && PRODUCT_PHOTO_SKUS.has(item.sku)) return `products/${item.sku}.jpg`;
+  return null;
+}
+
+/* Mesmo problema no `icon` de etapa e de tarefa: parte da seed já usa ligatura,
+   parte ainda usa emoji. Sem a tradução, o emoji atravessa a fonte de ícones e
+   volta como emoji colorido no meio de glifos monocromáticos. */
+const STEP_ICON_BY_EMOJI = {
+  "🧾": "receipt_long",
+  "🔍": "search",
+  "🔎": "search",
+  "📮": "local_post_office",
+  "📝": "edit_note",
+  "🤝": "handshake",
+  "🔔": "notifications",
+  "💰": "payments",
+  "🔬": "biotech",
+  "📧": "mail",
+  "🔑": "key",
+  "🔀": "alt_route",
+};
+function stepIcon(raw, fallback = "radio_button_unchecked") {
+  if (!raw) return fallback;
+  if (STEP_ICON_BY_EMOJI[raw]) return STEP_ICON_BY_EMOJI[raw];
+  return /^[a-z0-9_]+$/i.test(raw) ? raw : fallback;
+}
+
+/* Um item está com problema quando alguma etapa dele registra falha de
+   conector. A linha sinaliza só que existe erro — o motivo fica no detalhe do
+   item e no modal de workflow. */
+function pkgItemHasError(item) {
+  return (item && item.steps || []).some((s) => !!s.connectorStatus);
+}
+
+/* O menu de escopo do modal usa os mesmos dois sinais de `orderProblemAlerts`:
+   falha de conector na etapa ativa do item, ou projeção do pacote em erro. Com
+   o teste mais estreito de `pkgItemHasError` o modal se contradizia — alerta de
+   etapa parada no painel e nenhum item marcado no menu ao lado.
+
+   SPEC CONFLICT: o card de pacote (`4c`) segue no teste estreito, então um
+   pacote parado por conector do carrier marca itens no modal e nenhum no card.
+   Reconciliar pede tocar em `4c`, que tem handoff próprio. */
+function pkgItemStalled(item, group) {
+  const active = (item && item.steps || []).find((s) => s.status === "active");
+  if (!active) return false;
+  if (active.connectorStatus) return true;
+  return ((group && group.projections) || []).some((p) => p.status === "error");
+}
+
+/* ── Alerta de problema no topo do canvas do pedido ──
+   Quando um item trava, o pedido não avisava: o operador tinha de abrir o
+   pacote, achar a linha, entrar no item e só então descobria que já existia uma
+   Iniciativa cuidando do caso. Os alertas nascem dos mesmos dados que o card de
+   pacote lê — etapa ativa com falha de conector (crítico) ou projeção do grupo
+   em erro (risco de SLA) — para que os dois nunca discordem. */
+function orderProblemAlerts(order) {
+  if (!order || !order.itemGroups) return [];
+  /* Dois itens travados na mesma etapa do mesmo pacote são um problema, não
+     dois: a chave agrupa por pacote + etapa e os itens entram na descrição. */
+  const byProblem = new Map();
+  order.itemGroups.forEach((group, groupIdx) => {
+    const groupStalled = (group.projections || []).some((p) => p.status === "error");
+
+    (group.items || []).forEach((item, itemIdx) => {
+      const active = (item.steps || []).find((s) => s.status === "active");
+      if (!active) return;
+      const connector = !!active.connectorStatus;
+      if (!connector && !groupStalled) return;
+
+      const key = `${groupIdx}·${active.label}·${connector ? "c" : "w"}`;
+      const found = byProblem.get(key);
+      if (found) { found.items.push(item.name); return; }
+
+      /* O último evento registrado é a etapa concluída mais recente — é o que
+         responde "desde quando". */
+      const done = (item.steps || []).filter((s) => s.status === "done" && s.time);
+      const last = done.length ? done[done.length - 1] : null;
+      /* As notas vêm do dado às vezes sem ponto final; a descrição encadeia
+         duas frases e sem isso elas colam uma na outra. */
+      const raw = active.connectorNote || active.note || "Etapa parada sem evento novo";
+      byProblem.set(key, {
+        key,
+        groupIdx,
+        itemIdx,
+        items: [item.name],
+        tone: connector ? "critical" : "warning",
+        title: `${active.label} parada`,
+        where: group.label || group.supplier || `Pacote ${groupIdx + 1}`,
+        detail: /[.!?]$/.test(raw) ? raw : `${raw}.`,
+        lastEvent: last ? `Último evento: ${last.label}, ${last.time}` : null,
+      });
+    });
+  });
+  /* Crítico primeiro: o que já falhou vem antes do que ainda corre contra o
+     SLA. */
+  return [...byProblem.values()]
+    .sort((a, b) => (a.tone === "critical" ? 0 : 1) - (b.tone === "critical" ? 0 : 1));
+}
+
+/* A Iniciativa que cobre o pedido. Quando o canvas do pedido é aberto de dentro
+   de uma Iniciativa ela já vem por prop; abrindo pela lista de pedidos, é aqui
+   que ela é encontrada. */
+function initiativeForOrder(orderId) {
+  const tasks = (AIWData && AIWData.tasks) || [];
+  return tasks.find((t) => {
+    const d = t.detail || {};
+    const scoped = (d.impacted || []).concat((d.affectedOrders && d.affectedOrders.items) || []);
+    return scoped.some((o) => o.id === orderId);
+  }) || null;
+}
+
+/* O alerta do topo do pedido e o do modal de workflow apontam para a mesma
+   Iniciativa: sem isto o modal perdia o primário quando o pedido era aberto pela
+   lista, e os dois lugares diziam coisas diferentes sobre o mesmo problema. */
+function initiativeHandle({ orderId, task, initiativeLabel, onOpenInitiative }) {
+  const owning = task && task.id ? task : initiativeForOrder(orderId);
+  return {
+    owning,
+    label: initiativeLabel || (owning && owning.id ? owning.id.replace(/^TA-/, "") : null),
+    open: onOpenInitiative
+      || (owning && owning.id ? () => { window.location.hash = `#/task/${owning.id}`; } : null),
+  };
+}
+
+function OrderProblemAlerts({ order, orderId, task, initiativeLabel, onOpenInitiative, onOpenItem }) {
+  const alerts = orderProblemAlerts(order);
+  /* Ausência de alerta é o estado normal — não existe versão "nenhum problema". */
+  if (!alerts.length) return null;
+
+  const { owning, label, open: openInitiative } =
+    initiativeHandle({ orderId, task, initiativeLabel, onOpenInitiative });
+  /* Quem está no caso e o tamanho do problema: o operador precisa saber que não
+     vai resolver isso sozinho. */
+  const meta = owning
+    ? [owning.assigneeName, owning.detail && owning.detail.slaRisk].filter(Boolean).join(" · ")
+    : null;
+
+  return (
+    <div className="od-alerts">
+      {alerts.map((a) => (
+        <div key={a.key} className="od-alert" data-tone={a.tone}>
+          <span className="od-alert-icon">
+            {/* `error_outline` e `warning` vêm do set proprietário: são os
+                mesmos glifos do Material, mas em SVG, e não dependem da
+                ligatura da fonte — que falha em silêncio. */}
+            <Icon name={a.tone === "critical" ? "error-outline" : "warning-amber"} size={20} />
+          </span>
+          <div className="od-alert-body">
+            <span className="od-alert-title">{a.title}</span>
+            {/* Onde e por quê, na ordem em que importa: item, pacote, motivo,
+                último evento. */}
+            <span className="od-alert-desc">
+              {a.items.join(", ")} · {a.where}. {a.detail}
+              {a.lastEvent ? ` ${a.lastEvent}.` : ""}
+            </span>
+            <div className="od-alert-actions">
+              {label && openInitiative && (
+                <button type="button" className="od-alert-primary" onClick={openInitiative}>
+                  <MSIcon name="bolt" size={16} />
+                  Ver iniciativa {label}
+                  <Icon name="chevron-right" size={16} />
+                </button>
+              )}
+              {onOpenItem && (
+                <button
+                  type="button"
+                  className="od-alert-secondary"
+                  onClick={() => onOpenItem(a.groupIdx, a.itemIdx)}
+                >
+                  Ver item
+                </button>
+              )}
+              {meta && <span className="od-alert-meta">{meta}</span>}
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function PackageCard({ group, index, order, onOpenProduct, initiativeLabel, onOpenInitiative }) {
   const [open, setOpen] = useState(true);
   const [wfModalOpen, setWfModalOpen] = useState(false);
   const [expandedItems, setExpandedItems] = useState(new Set());
@@ -1006,7 +1351,7 @@ function PackageCard({ group, index, order, onOpenProduct }) {
   const isVirtual   = group.type === "virtual";
 
   const packageLabel = isReturn ? "Devolução" : isCanceling ? "Cancelamento" : isVirtual ? "Virtual" : null;
-  const title = packageLabel ? `${packageLabel} #${index + 1}` : `Pacote #${index + 1}`;
+  const title = `${packageLabel || "Pacote"} ${index + 1}`;
 
   const stageLabel = allDone ? "Entregue" : currentStage ? currentStage.label : "—";
 
@@ -1045,8 +1390,8 @@ function PackageCard({ group, index, order, onOpenProduct }) {
   function deriveCurrentTaskStatus() {
     const steps = (group.items || []).reduce((all, it) => all.concat(it.steps || []), []);
     const running = steps.find(s => s.status === "active");
-    if (running) return running.connectorStatus ? "Blocked" : "In Progress";
-    if (steps.some(s => s.status === "pending")) return "Allocated";
+    if (running) return running.connectorStatus ? "error" : "running";
+    if (steps.some(s => s.status === "pending")) return "allocated";
     return null;
   }
   const currentTaskStatus = deriveCurrentTaskStatus();
@@ -1069,7 +1414,7 @@ function PackageCard({ group, index, order, onOpenProduct }) {
             {invoiceNumber && (
               <SidebarTooltip label="Abrir nota fiscal" placement="top">
                 <button type="button" className="pkg-title-btn">
-                  <IconArrowUpRight size={14} />
+                  <IconArrowUpRight size={16} />
                   {invoiceNumber}
                 </button>
               </SidebarTooltip>
@@ -1077,12 +1422,14 @@ function PackageCard({ group, index, order, onOpenProduct }) {
           </div>
         </div>
         <div className="pkg-header-right">
-          <button className="pkg-collapse-btn" onClick={() => setOpen(o => !o)} aria-label={open ? "Recolher" : "Expandir"}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-                 style={{ width: 16, height: 16, transition: "transform .2s", transform: open ? "rotate(0)" : "rotate(180deg)" }}>
-              <path d="M18 15l-6-6-6 6" />
-            </svg>
-          </button>
+          <SidebarTooltip label={open ? "Recolher pacote" : "Expandir pacote"} placement="top">
+            <button className="pkg-collapse-btn" onClick={() => setOpen(o => !o)} aria-label={open ? "Recolher" : "Expandir"}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                   style={{ width: 18, height: 18, transition: "transform .2s", transform: open ? "rotate(0)" : "rotate(180deg)" }}>
+                <path d="M18 15l-6-6-6 6" />
+              </svg>
+            </button>
+          </SidebarTooltip>
         </div>
       </div>
 
@@ -1090,15 +1437,13 @@ function PackageCard({ group, index, order, onOpenProduct }) {
         <>
           <div className="pkg-meta">
             <div className="pkg-meta-field">
-              <span className="pkg-meta-key">Entrega</span>
+              <span className="pkg-meta-key">Entrega prevista</span>
               <span className="pkg-meta-val">{deliveryDate}</span>
             </div>
-            <div className="pkg-meta-sep" />
             <div className="pkg-meta-field">
               <span className="pkg-meta-key">Vendido por</span>
               <span className="pkg-meta-val">{soldBy}</span>
             </div>
-            <div className="pkg-meta-sep" />
             <div className="pkg-meta-field">
               <span className="pkg-meta-key">Entregue por</span>
               <span className="pkg-meta-val">{shippedBy}</span>
@@ -1107,23 +1452,31 @@ function PackageCard({ group, index, order, onOpenProduct }) {
 
           <div className="pkg-meta pkg-meta--wide">
             <div className="pkg-meta-field">
-              <span className="pkg-meta-key">Instância do workflow</span>
+              <span className="pkg-meta-key">Instância de workflow</span>
               <span className="pkg-meta-val">{experienceName}</span>
             </div>
             <div className="pkg-meta-sep" />
             <div className="pkg-meta-field">
-              <span className="pkg-meta-key">Tarefa atual</span>
-              <span className="pkg-meta-val">
-                {currentTaskStatus ? `${stageLabel} · ${currentTaskStatus}` : stageLabel}
-              </span>
+              {/* Só o nome da tarefa e, quando houver, a tag genérica de erro:
+                  o sufixo "· Em execução" / "· Atribuída" duplicava em texto o
+                  que a faixa já diz por ser a tarefa corrente. */}
+              <span className="pkg-meta-key">Tarefa corrente</span>
+              <span className="pkg-meta-val">{stageLabel}</span>
             </div>
+            {currentTaskStatus === "error" && (
+              <span className="pkg-error-tag">
+                <MSIcon name="priority_high" size={14} /> Com erro
+              </span>
+            )}
             <div className="pkg-meta-sep" />
             {/* Abre o mesmo componente WorkflowSection usado no Product Detail
                 dentro de um modal centralizado, com as duas views (Etapas /
                 Timeline) e o toggle interno preservado. */}
-            <button type="button" className="pkg-wf-see-btn" onClick={() => setWfModalOpen(true)}>
-              Ver workflow <Icon name="chevron-right" size={12} />
-            </button>
+            <SidebarTooltip label="Abrir o workflow deste pacote" placement="top">
+              <button type="button" className="pkg-wf-see-btn" onClick={() => setWfModalOpen(true)}>
+                Ver workflow <Icon name="chevron-right" size={16} />
+              </button>
+            </SidebarTooltip>
           </div>
 
           {wfModalOpen && (
@@ -1132,6 +1485,8 @@ function PackageCard({ group, index, order, onOpenProduct }) {
               order={order}
               title={title}
               experienceName={experienceName}
+              initiativeLabel={initiativeLabel}
+              onOpenInitiative={onOpenInitiative}
               onClose={() => setWfModalOpen(false)}
             />
           )}
@@ -1155,20 +1510,39 @@ function PackageCard({ group, index, order, onOpenProduct }) {
               const currentTaskLabel = currentTask
                 ? currentTask.label
                 : (!allDone && currentStage ? currentStage.label : null);
+              const itemHasError = pkgItemHasError(item);
               return (
                 <div key={i} className="pkg-product-block">
                   <div className={`pkg-product-row${onOpenProduct ? " pkg-product-row--clickable" : ""}`} onClick={() => onOpenProduct && onOpenProduct(i)}>
                     <div className="pkg-product-info">
-                      <div className="pkg-product-thumb"><MSIcon name={item.emoji || "inventory_2"} size={20} /></div>
+                      <div className="pkg-product-thumb-wrap">
+                        <div className={`pkg-product-thumb${itemHasError ? " pkg-product-thumb--error" : ""}`}>
+                          {productPhoto(item)
+                            ? <img src={productPhoto(item)} alt="" />
+                            : <MSIcon name={pkgItemIcon(item)} size={20} />}
+                        </div>
+                        {itemHasError && (
+                          <span className="pkg-product-thumb-badge" aria-hidden="true">
+                            <MSIcon name="priority_high" size={12} />
+                          </span>
+                        )}
+                      </div>
                       <div className="pkg-product-details">
                         <span className="pkg-product-name">{item.name}</span>
                         <span className="pkg-product-sub">{item.price}/Un.</span>
+                        {itemHasError && (
+                          <span className="pkg-product-tags-row">
+                            <span className="pkg-error-tag">Com erro</span>
+                          </span>
+                        )}
                       </div>
                     </div>
                     <span className="pkg-cell-center">{item.qty || 1}</span>
                     <span className="pkg-cell-center">{fmtBRL(item.tax != null ? item.tax : itemTotal * 0.12)}</span>
                     <span className="pkg-cell-right">{fmtBRL(itemTotal)}</span>
-                    {onOpenProduct && <button className="pkg-product-caret" tabIndex={-1} aria-hidden="true">›</button>}
+                    <span className="pkg-product-chevron" aria-hidden="true">
+                      {onOpenProduct && <Icon name="chevron-right" size={16} />}
+                    </span>
                   </div>
 
                   {isWfOpen && (() => {
@@ -1292,7 +1666,7 @@ function ProductDetailView({ allProducts, productIdx, order, onNavigate, initiat
         <dt>Tarefa do workflow</dt>
         <dd>{taskLabel}</dd>
         <dt>Pacote</dt>
-        <dd>Pacote #{groupIdx + 1}</dd>
+        <dd>Pacote {groupIdx + 1}</dd>
         <dt>Vendido por</dt>
         <dd>{order && order.seller ? order.seller : "—"}</dd>
         <dt>Entregue por</dt>
@@ -1301,15 +1675,18 @@ function ProductDetailView({ allProducts, productIdx, order, onNavigate, initiat
         <dd>{order && order.eta ? order.eta : "—"}</dd>
       </dl>
 
-      {/* Product section */}
+      {/* Product section. Sem hairline nos cabeçalhos: é a mesma regra do pedido
+          (Cliente / Valores) — o gap do `.detail-body` já separa as seções. */}
       <section className="detail-section flush">
-        <div className="detail-section-head"><h3>Produto</h3></div>
+        <div className="detail-section-head detail-section-head--no-border"><h3>Produto</h3></div>
         <div className="prod-detail-cards">
           {/* Infos card */}
           <div className="prod-detail-card">
             <div className="prod-detail-card-title">Informações</div>
             <div className="prod-detail-card-rows">
-              <div className="prod-detail-card-row">
+              {/* A URL é longa demais para dividir a linha com o rótulo: fica
+                  empilhada, rótulo em cima e link em linha própria. */}
+              <div className="prod-detail-card-row prod-detail-card-row--stack">
                 <span className="prod-detail-card-label">URL do produto</span>
                 <a
                   href={`https://www.cea.com.br/p/${item.sku}`}
@@ -1384,7 +1761,7 @@ function ProductDetailView({ allProducts, productIdx, order, onNavigate, initiat
 
       {/* Promotions section */}
       <section className="detail-section flush">
-        <div className="detail-section-head"><h3>Promotions Included</h3></div>
+        <div className="detail-section-head detail-section-head--no-border"><h3>Promotions Included</h3></div>
         <div style={{ padding: 0, display: "flex", flexDirection: "column", gap: 12 }}>
           {promotions.map((p, i) => (
             <div
@@ -1420,6 +1797,7 @@ function OrderDetailView({ task, orderId, onBack, onOpenOrder, standalone = fals
   // When used from app.jsx (standalone), productView is lifted to the parent via props
   const productView    = externalProductView !== undefined ? externalProductView : internalProductView;
   const setProductView = onProductViewChange  !== undefined ? onProductViewChange  : setInternalProductView;
+  const owningInitiative = initiativeHandle({ orderId, task, initiativeLabel, onOpenInitiative });
 
   /* Navegar internamente entre pedido → produto → outro produto → voltar não
      passa pela pilha de subviews do TaskCanvas (que só reseta o scroll em
@@ -1476,7 +1854,9 @@ function OrderDetailView({ task, orderId, onBack, onOpenOrder, standalone = fals
     const productIdx = allProducts.findIndex(p => p.groupIdx === productView.groupIdx && p.itemIdx === productView.itemIdx);
     const safeIdx = productIdx >= 0 ? productIdx : 0;
     return (
-      <div ref={rootRef}>
+      /* `display: contents`: o wrapper só existe para o ref. Como caixa real ele
+         engolia o gap do `.detail-body` e os metadados subiam sobre o título. */
+      <div ref={rootRef} style={{ display: "contents" }}>
         <ProductDetailView
           allProducts={allProducts}
           productIdx={safeIdx}
@@ -1521,6 +1901,17 @@ function OrderDetailView({ task, orderId, onBack, onOpenOrder, standalone = fals
         )}
         <h1 className="detail-title">Pedido {orderId}</h1>
       </div>
+
+      {/* Um alerta por problema, no topo e acima dos pacotes: o operador lê o
+          que travou antes de varrer os itens. */}
+      <OrderProblemAlerts
+        order={fullOrder}
+        orderId={orderId}
+        task={task}
+        initiativeLabel={initiativeLabel}
+        onOpenInitiative={onOpenInitiative}
+        onOpenItem={(groupIdx, itemIdx) => setProductView({ groupIdx, itemIdx })}
+      />
 
       {/* Order metadata */}
       <dl className="detail-fields od-meta">
@@ -1597,7 +1988,15 @@ function OrderDetailView({ task, orderId, onBack, onOpenOrder, standalone = fals
                 return key(a) - key(b);
               })
               .map((group, i) => (
-                <PackageCard key={group.id} group={group} index={i} order={fullOrder} onOpenProduct={(itemIdx) => setProductView({ groupIdx: itemGroups.indexOf(group), itemIdx })} />
+                <PackageCard
+                  key={group.id}
+                  group={group}
+                  index={i}
+                  order={fullOrder}
+                  initiativeLabel={owningInitiative.label}
+                  onOpenInitiative={owningInitiative.open}
+                  onOpenProduct={(itemIdx) => setProductView({ groupIdx: itemGroups.indexOf(group), itemIdx })}
+                />
               ))}
           </div>
         </section>
@@ -1738,7 +2137,7 @@ function DocMetaRow({ label, children }) {
    (shown the first time the section is opened, to simulate an agent query). */
 /* `count` aceita número ou texto — o badge é o mesmo nos dois casos, só muda o
    que está escrito dentro ("6" ou "0/4 resolvidos"). */
-function DocAccordionSection({ title, defaultOpen = true, count, loadingMs = 0, skeleton, children }) {
+function DocAccordionSection({ title, defaultOpen = true, count, countAsTag = false, action, titleSize, loadingMs = 0, skeleton, children }) {
   const [open, setOpen] = useState(defaultOpen);
   const [loaded, setLoaded] = useState(!loadingMs || defaultOpen);
   const [loading, setLoading] = useState(false);
@@ -1757,26 +2156,33 @@ function DocAccordionSection({ title, defaultOpen = true, count, loadingMs = 0, 
 
   return (
     <div data-sl-doc-accordion-section="" data-open={open ? "" : undefined}>
-      <button data-sl-doc-accordion-trigger="" onClick={toggle} aria-expanded={open}>
-        <span data-sl-doc-section-title="">
-          {title}
-          {(typeof count === "number" || (typeof count === "string" && count)) && (
-            <span data-sl-doc-section-count="">{count}</span>
-          )}
-        </span>
-        <svg
-          data-sl-doc-accordion-chevron=""
-          viewBox="0 0 16 16"
-          width="16"
-          height="16"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          style={{ transform: open ? "rotate(0deg)" : "rotate(-90deg)" }}
-        >
-          <path d="M4 6l4 4 4-4" />
-        </svg>
-      </button>
+      {/* A ação da seção fica fora do gatilho: botão dentro de botão é HTML
+          inválido e roubaria o clique do acordeão. */}
+      <div data-sl-doc-accordion-head="">
+        <button data-sl-doc-accordion-trigger="" onClick={toggle} aria-expanded={open}>
+          <span data-sl-doc-section-title="" data-size={titleSize}>
+            {title}
+            {(typeof count === "number" || (typeof count === "string" && count)) && (
+              countAsTag
+                ? <span data-sl-doc-section-tag="">{count}</span>
+                : <span data-sl-doc-section-count="">{count}</span>
+            )}
+          </span>
+          <svg
+            data-sl-doc-accordion-chevron=""
+            viewBox="0 0 16 16"
+            width="16"
+            height="16"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            style={{ transform: open ? "rotate(0deg)" : "rotate(-90deg)" }}
+          >
+            <path d="M4 6l4 4 4-4" />
+          </svg>
+        </button>
+        {action}
+      </div>
       {open && <div data-sl-doc-accordion-panel="">{loading ? (skeleton || null) : children}</div>}
     </div>
   );
@@ -1820,49 +2226,128 @@ function ImpactedSortHeader({ label, sortKey, sort, onSort, className }) {
   );
 }
 
-function ImpactedTable({ rows, onOpenOrder, sortable }) {
+/* As Tarefas da Iniciativa resolvem pedidos, e a lista precisa dizer isso: sem
+   sinal, os pedidos do escopo aparecem iguais do começo ao fim e o operador não
+   vê o que já saiu do problema. O sinal vem em três camadas, da mais grossa
+   para a mais fina: barra de progresso, coluna `Situação` e dot antes do ID.
+
+   `max` corta a lista para a seção do documento. O corte acontece aqui, depois
+   do filtro — cortar antes deixaria o filtro sem efeito nas primeiras linhas. */
+function ImpactedTable({ rows, onOpenOrder, sortable, max }) {
   const [sort, setSort] = useState({ key: null, dir: "asc" });
+  const [filter, setFilter] = useState("all");
   const toggleSort = (key) =>
     setSort((s) => (s.key === key ? { key, dir: s.dir === "asc" ? "desc" : "asc" } : { key, dir: "asc" }));
 
-  const sorted = sort.key
-    ? rows.slice().sort((a, b) => compareCells(a[sort.key], b[sort.key]) * (sort.dir === "desc" ? -1 : 1))
+  const resolvedTotal = rows.filter((o) => !!o.resolvedBy).length;
+  /* Sem nenhum pedido resolvido a lista não tem o que sinalizar: barra, coluna
+     e filtro só aparecem quando as Tarefas já mudaram algo. */
+  const hasSignal = resolvedTotal > 0;
+
+  const filtered = hasSignal && filter !== "all"
+    ? rows.filter((o) => (filter === "resolved" ? !!o.resolvedBy : !o.resolvedBy))
     : rows;
+  /* Sem ordenação explícita, o que ainda está em aberto vem primeiro: é o que
+     pede ação. O sort é estável, então dentro de cada grupo a ordem original
+     do escopo se mantém. */
+  const sorted = sort.key
+    ? filtered.slice().sort((a, b) => compareCells(a[sort.key], b[sort.key]) * (sort.dir === "desc" ? -1 : 1))
+    : hasSignal
+      ? filtered.slice().sort((a, b) => Number(!!a.resolvedBy) - Number(!!b.resolvedBy))
+      : filtered;
+  const visible = max ? sorted.slice(0, max) : sorted;
 
   return (
-    <div className="impacted-table">
-      <div className="impacted-thead">
-        <span className="impacted-col-id">ID do pedido</span>
-        {sortable ? (
-          <>
-            <ImpactedSortHeader label="SLA restante" sortKey="sla" sort={sort} onSort={toggleSort} />
-            <ImpactedSortHeader label="Seller / Localização" sortKey="seller" sort={sort} onSort={toggleSort} />
-            <ImpactedSortHeader label="Entrega estimada" sortKey="eta" sort={sort} onSort={toggleSort} className="impacted-col-eta" />
-          </>
-        ) : (
-          <>
-            <span>SLA restante</span>
-            <span>Seller / Localização</span>
-            <span className="impacted-col-eta">Entrega estimada</span>
-          </>
-        )}
+    <>
+      {hasSignal && (
+        <div className="impacted-progress">
+          <span className="impacted-progress-text">
+            <b>{resolvedTotal} resolvidos</b> pelas tarefas
+          </span>
+          {/* Numa lista de 23, saber o que falta sem o filtro exige rolar tudo. */}
+          <span className="impacted-filter" role="tablist" aria-label="Filtrar por situação">
+            {[
+              { key: "all", label: "Todos" },
+              { key: "open", label: "Em aberto" },
+              { key: "resolved", label: "Resolvidos" },
+            ].map((f) => (
+              <button
+                key={f.key}
+                type="button"
+                role="tab"
+                className="impacted-filter-option"
+                aria-selected={filter === f.key}
+                onClick={() => setFilter(f.key)}
+              >
+                {f.label}
+              </button>
+            ))}
+          </span>
+        </div>
+      )}
+
+      <div className="impacted-table" data-signal={hasSignal ? "true" : undefined}>
+        <div className="impacted-thead">
+          <span className="impacted-col-id">ID do pedido</span>
+          {sortable ? (
+            <>
+              <ImpactedSortHeader label="SLA restante" sortKey="sla" sort={sort} onSort={toggleSort} className="impacted-col-sla" />
+              <ImpactedSortHeader label="Seller / Localização" sortKey="seller" sort={sort} onSort={toggleSort} className="impacted-col-seller" />
+              <ImpactedSortHeader label="Entrega estimada" sortKey="eta" sort={sort} onSort={toggleSort} className="impacted-col-eta" />
+            </>
+          ) : (
+            <>
+              <span className="impacted-col-sla">SLA restante</span>
+              <span className="impacted-col-seller">Seller / Localização</span>
+              <span className="impacted-col-eta">Entrega estimada</span>
+            </>
+          )}
+          {hasSignal && <span className="impacted-col-state">Situação</span>}
+        </div>
+        {visible.map((o, i) => {
+          const openable = !!onOpenOrder && hasOrderRecord(o.id);
+          const resolved = !!o.resolvedBy;
+          return (
+            <button
+              key={i}
+              className={`impacted-row${openable ? "" : " impacted-row--static"}`}
+              /* Nada riscado nem esmaecido por inteiro: revisar o que foi
+                 resolvido é parte do trabalho. */
+              data-resolved={resolved ? "true" : undefined}
+              onClick={openable ? () => onOpenOrder(o.id) : undefined}
+            >
+              <span className="impacted-col-id">
+                {hasSignal && <span className="impacted-dot" data-resolved={resolved ? "true" : undefined} />}
+                <span className="impacted-id-stack">
+                  <span className="impacted-id">{o.id}</span>
+                  {/* Estreito, seller e entrega descem para uma segunda linha em
+                      vez de sumir: espremidas em colunas de 30px não informavam
+                      nada, e apagá-las tirava contexto que a lista precisa. */}
+                  <span className="impacted-id-sub">{o.seller} · {o.eta}</span>
+                </span>
+              </span>
+              <span className="impacted-col-sla impacted-sla">{o.sla}</span>
+              <span className="impacted-col-seller">{o.seller}</span>
+              <span className="impacted-col-eta">{o.eta}</span>
+              {hasSignal && (
+                <span className="impacted-col-state">
+                  <span
+                    className="impacted-state-tag"
+                    data-resolved={resolved ? "true" : undefined}
+                    /* O title nomeia a Tarefa que resolveu — a tag sozinha diria
+                       apenas que saiu do problema. */
+                    title={resolved ? o.resolvedBy : "Nenhuma tarefa resolveu este pedido ainda"}
+                  >
+                    {resolved && <Icon name="check" size={12} />}
+                    {resolved ? "Resolvido" : "Em aberto"}
+                  </span>
+                </span>
+              )}
+            </button>
+          );
+        })}
       </div>
-      {sorted.map((o, i) => {
-        const openable = !!onOpenOrder && hasOrderRecord(o.id);
-        return (
-          <button
-            key={i}
-            className={`impacted-row${openable ? "" : " impacted-row--static"}`}
-            onClick={openable ? () => onOpenOrder(o.id) : undefined}
-          >
-            <span className="impacted-id impacted-col-id">{o.id}</span>
-            <span>{o.sla}</span>
-            <span className="impacted-col-seller">{o.seller}</span>
-            <span className="impacted-col-eta">{o.eta}</span>
-          </button>
-        );
-      })}
-    </div>
+    </>
   );
 }
 
@@ -2019,53 +2504,44 @@ function TasksSkeleton({ rows = 2 }) {
   );
 }
 
-/* Filtro do feed. Mesmo dropdown do Responsável (AssigneePill): o select nativo
-   não aceita o arredondamento nem o hover do resto da tela. */
-function ActivityFilter({ label, value, options, onChange, withAvatar }) {
-  const [open, setOpen] = useState(false);
-  const wrapRef = useRef(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const onDocClick = (e) => { if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false); };
-    document.addEventListener("mousedown", onDocClick);
-    return () => document.removeEventListener("mousedown", onDocClick);
-  }, [open]);
-
+/* Filtro do feed. Mesmo dropdown dos filtros da toolbar de Políticas
+   (`Dropdown` + `.filter-dropdown-btn.wfp-cat-btn`): gatilho "Prefixo: valor"
+   e menu de seleção única com check à esquerda. `label` é o item "todos" do
+   menu; `allLabel` é o resumo curto dele no gatilho. */
+function ActivityFilter({ prefix, label, allLabel, value, options, onChange, withAvatar }) {
   const all = [{ value: "", label }, ...options];
   const current = all.find((o) => o.value === value) || all[0];
+  const summary = current.value === "" ? (allLabel || label) : current.label;
 
   return (
-    <div className="act-filter-wrap" ref={wrapRef}>
-      <button
-        type="button"
-        className={`act-filter${open ? " open" : ""}${value ? " act-filter--active" : ""}`}
-        aria-haspopup="menu"
-        aria-expanded={open}
-        onClick={() => setOpen((o) => !o)}
-      >
-        {withAvatar && current.value !== "" && <PersonAvatar initial={current.initial} agent={current.agent} name={current.label} />}
-        <span className="act-filter-label">{current.label}</span>
-        <Icon name="chevron-down" size={12} />
-      </button>
-      {open && (
-        <div className="act-filter-menu" role="menu">
-          {all.map((o) => (
-            <button
-              key={o.value || "all"}
-              type="button"
-              className={`act-filter-option${o.value === value ? " selected" : ""}`}
-              role="menuitem"
-              aria-current={o.value === value}
-              onClick={() => { onChange(o.value); setOpen(false); }}
-            >
-              {withAvatar && o.value !== "" && <PersonAvatar initial={o.initial} agent={o.agent} name={o.label} />}
-              <span className="act-filter-option-name">{o.label}</span>
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
+    <Dropdown
+      align="left"
+      trigger={
+        <button type="button" className="filter-dropdown-btn wfp-cat-btn" aria-haspopup="menu">
+          {prefix && <span className="filter-dropdown-label-text">{prefix}:</span>}
+          {withAvatar && current.value !== "" && <PersonAvatar initial={current.initial} agent={current.agent} name={current.label} />}
+          <span className="filter-dropdown-summary">{summary}</span>
+          <span className="filter-dropdown-chevron"><Icon name="chevron-down" size={16} /></span>
+        </button>
+      }
+    >
+      {all.map((o) => (
+        <button
+          key={o.value || "all"}
+          type="button"
+          className={`dd-item wfp-cat-option${o.value === value ? " selected" : ""}`}
+          role="menuitem"
+          aria-current={o.value === value}
+          onClick={() => onChange(o.value)}
+        >
+          <span className="wfp-cat-check">
+            {o.value === value && <Icon name="check" size={18} />}
+          </span>
+          {withAvatar && o.value !== "" && <PersonAvatar initial={o.initial} agent={o.agent} name={o.label} />}
+          <span className="dd-item-label wfp-cat-option-label">{o.label}</span>
+        </button>
+      ))}
+    </Dropdown>
   );
 }
 
@@ -2102,13 +2578,16 @@ function ActivitiesSubview({ items, loaded, onLoaded }) {
       <div className="act-filters">
         <span className="act-filters-title">Filtrar por</span>
         <ActivityFilter
+          prefix="Responsável"
           label="Todos os responsáveis"
+          allLabel="Todos"
           value={owner}
           options={owners}
           onChange={setOwner}
           withAvatar
         />
         <ActivityFilter
+          prefix="Ordem"
           label="Mais recente primeiro"
           value={direction === "recent" ? "" : direction}
           options={[{ value: "oldest", label: "Mais antigo primeiro" }]}
@@ -2226,7 +2705,6 @@ function TaskListSubview({ kind, task, onOpenOrder, activities, activitiesLoaded
 
 function TaskCanvasMain({ task, onOpenOrder, onOpenList, onOpenTask, activities }) {
   const d = task.detail;
-  const impactedVisible = d.impacted.slice(0, DOC_ORDERS_MAX);
   const feed = orderActivities(activities || d.activities, "recent");
   const activitiesVisible = feed.slice(0, DOC_ACTIVITIES_MAX);
 
@@ -2292,7 +2770,7 @@ function TaskCanvasMain({ task, onOpenOrder, onOpenList, onOpenTask, activities 
         </DocAccordionSection>
 
         <DocAccordionSection title="Pedidos impactados">
-          <ImpactedTable rows={impactedVisible} onOpenOrder={onOpenOrder} />
+          <ImpactedTable rows={d.impacted} max={DOC_ORDERS_MAX} onOpenOrder={onOpenOrder} />
           {d.impacted.length > DOC_ORDERS_MAX && (
             <DocSeeAll onClick={() => onOpenList("impacted")} />
           )}
@@ -3151,7 +3629,6 @@ function CanvasAVerificationCard({ ctl, orders }) {
 function CanvasPatternA({ task, onOpenOrder, onOpenList, onOpenTask, verification, onOpenChat, activities }) {
   const d = task.detail;
   const orders = d.affectedOrders || { total: 0, items: [] };
-  const shownOrders = orders.items.slice(0, DOC_ORDERS_MAX);
   const ordersTotal = orders.total || orders.items.length;
   const feed = orderActivities(activities || d.activities || [], "recent");
   const activitiesVisible = feed.slice(0, DOC_ACTIVITIES_MAX);
@@ -3278,8 +3755,8 @@ function CanvasPatternA({ task, onOpenOrder, onOpenList, onOpenTask, verificatio
 
         {/* Pedidos afetados: a mesma ImpactedTable das outras tarefas */}
         <DocAccordionSection title="Pedidos afetados" count={ordersTotal}>
-          <ImpactedTable rows={shownOrders} onOpenOrder={onOpenOrder || (() => {})} />
-          {ordersTotal > shownOrders.length && (
+          <ImpactedTable rows={orders.items} max={DOC_ORDERS_MAX} onOpenOrder={onOpenOrder || (() => {})} />
+          {ordersTotal > DOC_ORDERS_MAX && (
             <DocSeeAll onClick={() => onOpenList && onOpenList("impacted")} />
           )}
         </DocAccordionSection>
@@ -3449,11 +3926,12 @@ const TICKET_OUTCOME_LABEL = {
   escalated: "Escalada",
 };
 
-/* Ícone Material filled no bloco decidido. */
+/* Mesmos três ícones do segmented: o bloco decidido fecha o gesto que começou
+   na aba escolhida. */
 const TICKET_OUTCOME_GLYPH = {
   accepted: "check-circle",
   denied: "x-circle",
-  escalated: "escalate",
+  escalated: "arrow-up",
 };
 
 /* Recomendação do agente → modo de abertura do painel. "Avaliar" não mapeia
@@ -3461,18 +3939,6 @@ const TICKET_OUTCOME_GLYPH = {
 const TICKET_REC_MODE = { Aceitar: "accept", Negar: "deny", Escalar: "escalate" };
 const ticketRecMode = (t) => TICKET_REC_MODE[t.recommendation] || null;
 const ticketOpenMode = (t) => ticketRecMode(t) || "accept";
-
-/* Consequência exibida no rodapé enquanto o painel está aberto. */
-const TICKET_CONFIRM_META = {
-  accept: "A mensagem é enviada e o aceite vai para o Document Audit",
-  deny: "A mensagem é enviada e o cliente tem 7 dias para contestar",
-  escalate: "O ticket sai da fila do SAC",
-};
-const TICKET_CONFIRM_LABEL = {
-  accept: "Confirmar aceite",
-  deny: "Confirmar negativa",
-  escalate: "Confirmar escalonamento",
-};
 
 function ticketDecisionTime(date) {
   const d = date || new Date();
@@ -3541,11 +4007,14 @@ function ticketSummaryWindow(decisions) {
    observação opcional ao supervisor. Trocar de aba não fecha o painel e
    preserva o que já foi digitado no Escalar. */
 function CanvasDTicketDecision({ ticket, mode, onModeChange, escalateNote, onEscalateNote, messageOpen, onToggleMessage }) {
-  const recMode = ticketRecMode(ticket);
+  /* O ponto marca a aba em que o modal abriu, não só as recomendações que
+     mapeiam numa ação: com "Avaliar" o painel abre em Aceitar, e sem o ponto
+     ali a aba aberta ficava sem explicação. */
+  const recMode = ticketOpenMode(ticket);
   const tabs = [
     { key: "accept",   label: "Aceitar", icon: "check-circle" },
     { key: "deny",     label: "Negar",   icon: "x-circle" },
-    { key: "escalate", label: "Escalar", icon: "escalate" },
+    { key: "escalate", label: "Escalar", icon: "arrow-up" },
   ];
 
   return (
@@ -3562,7 +4031,7 @@ function CanvasDTicketDecision({ ticket, mode, onModeChange, escalateNote, onEsc
               aria-pressed={mode === tab.key}
               onClick={() => onModeChange(tab.key)}
             >
-              <Icon name={tab.icon} size={16} />
+              <Icon name={tab.icon} size={18} />
               {tab.label}
               {recMode === tab.key && <span className="tck-tab-dot" aria-hidden />}
             </button>
@@ -3649,7 +4118,7 @@ function CanvasDTicketDecision({ ticket, mode, onModeChange, escalateNote, onEsc
               <textarea
                 id={`tck-note-${ticket.id}`}
                 className="tck-escalate-note"
-                rows={2}
+                rows={3}
                 placeholder="Opcional — ex.: cliente pede troca por outro tamanho, fora da resolução prevista na política."
                 value={escalateNote}
                 onChange={(e) => onEscalateNote(e.target.value)}
@@ -3667,42 +4136,63 @@ function CanvasDTicketDecision({ ticket, mode, onModeChange, escalateNote, onEsc
   );
 }
 
-/* Cabeçalho do card: id do ticket · pares label/valor (Status · SLA · Pedido)
-   · paginação. Depois de decidido, a célula de SLA vira "Decisão" com o horário
-   e o status pill assume o tom do desfecho. */
-function CanvasDTicketHeader({ ticket, decision, pagination, onOpenOrder }) {
-  const orderOpenable = !!onOpenOrder && hasOrderRecord(ticket.order);
+/* Cabeçalho do ticket: id e o estado da avaliação, nada mais. O pedido e o SLA
+   são metadados do item e vivem à direita do bloco seguinte — no cabeçalho
+   competiam com a identificação do ticket. */
+function CanvasDTicketHeader({ ticket, decision }) {
   return (
     <div className="tck-head">
-      <div className="tck-head-top">
-        <span className="tck-id">{ticket.id}</span>
-        {pagination}
+      <span className="tck-id">{ticket.id}</span>
+      <span className="tck-status-pill" data-outcome={decision ? decision.kind : "pending"}>
+        {decision ? TICKET_OUTCOME_LABEL[decision.kind] : "Aguardando avaliação"}
+      </span>
+    </div>
+  );
+}
+
+/* Alerta de falha de envio. Fica acima do segmento, junto da decisão que ficou
+   preservada, e rola para a vista: o botão que falhou está no rodapé, e sem o
+   scroll o operador só via o rótulo mudar. */
+function CanvasDTicketSendError() {
+  const ref = useRef(null);
+  useEffect(() => {
+    if (ref.current) ref.current.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }, []);
+  return (
+    <div className="tck-error" role="alert" ref={ref}>
+      <Icon name="error-outline" size={16} />
+      <div className="tck-error-text">
+        <span className="tck-error-title">Não foi possível enviar a decisão</span>
+        <span className="tck-error-body">
+          A escolha e o rascunho seguem preservados — nada precisa ser redigitado.
+        </span>
       </div>
-      <div className="tck-metrics">
-        <div className="tck-metric">
-          <span className="tck-metric-label">Status</span>
-          <span className="tck-status-pill" data-outcome={decision ? decision.kind : undefined}>
-            {decision ? TICKET_OUTCOME_LABEL[decision.kind] : "Aguardando avaliação"}
-          </span>
-        </div>
-        <div className="tck-metric">
-          <span className="tck-metric-label">{decision ? "Decisão" : "SLA"}</span>
-          <span className={`tck-metric-value${!decision && ticket.overdue ? " tck-metric-value--overdue" : ""}`}>
-            <Icon name={decision ? "check-circle" : "clock"} size={16} />
-            {decision ? decision.at : (ticket.overdue ? `Vencido há ${ticket.sla}` : `Restante ${ticket.sla}`)}
-          </span>
-        </div>
-        <div className="tck-metric">
-          <span className="tck-metric-label">Pedido</span>
-          {orderOpenable ? (
-            <button type="button" className="tck-order-link" onClick={() => onOpenOrder(ticket.order)}>
-              #{ticket.order}
-              <Icon name="chevron-right" size={16} />
-            </button>
-          ) : (
-            <span className="tck-order-link" disabled>#{ticket.order}</span>
-          )}
-        </div>
+    </div>
+  );
+}
+
+/* Pares SLA e Pedido, à direita do item. Depois de decidido, a célula de SLA
+   vira "Decisão" com o horário: o prazo deixa de ser a informação em jogo. */
+function CanvasDTicketMeta({ ticket, decision, onOpenOrder }) {
+  const orderOpenable = !!onOpenOrder && hasOrderRecord(ticket.order);
+  return (
+    <div className="tck-metrics">
+      <div className="tck-metric">
+        <span className="tck-metric-label">{decision ? "Decisão" : "SLA"}</span>
+        <span className={`tck-metric-value${!decision && ticket.overdue ? " tck-metric-value--overdue" : ""}`}>
+          {decision ? decision.at : (ticket.overdue ? `Vencido há ${ticket.sla}` : `Restante ${ticket.sla}`)}
+        </span>
+      </div>
+      <div className="tck-metric">
+        <span className="tck-metric-label">Pedido</span>
+        {orderOpenable ? (
+          <button type="button" className="tck-order-link" onClick={() => onOpenOrder(ticket.order)}>
+            #{ticket.order}
+            <Icon name="chevron-right" size={16} />
+          </button>
+        ) : (
+          <span className="tck-order-link" data-static="true">#{ticket.order}</span>
+        )}
       </div>
     </div>
   );
@@ -3712,17 +4202,17 @@ function CanvasDTicketHeader({ ticket, decision, pagination, onOpenOrder }) {
    está preenchido. */
 function CanvasDTicketSingleItem({ ticket }) {
   const attachments = ticket.attachments || [];
+  const photo = productPhoto(ticket);
   return (
     <div className="tck-product">
       <span className="tck-thumb">
-        {ticket.photo
-          ? <img src={ticket.photo} alt="" draggable={false} />
+        {photo
+          ? <img src={photo} alt="" draggable={false} />
           : <Icon name="image" size={20} />}
       </span>
       <div className="tck-product-info">
         <span className="tck-product-name">{ticket.item}</span>
-        <span className="tck-product-sku">SKU {ticket.sku}</span>
-        <span className="tck-item-reason">Motivo declarado: {ticket.shopperReason}</span>
+        <span className="tck-product-sku">SKU {ticket.sku} · Motivo declarado: {ticket.shopperReason}</span>
       </div>
       {attachments.length > 0 && (
         <button type="button" className="tck-photos" title={`Ver fotos anexadas · ${attachments.join(" · ")}`}>
@@ -3778,8 +4268,7 @@ function CanvasDTicketMultiItem({ rows, open, onToggle }) {
           </span>
           <div className="tck-product-info">
             <span className="tck-product-name">{r.item}</span>
-            <span className="tck-product-sku">SKU {r.sku}</span>
-            <span className="tck-item-reason">Motivo declarado: {r.reason}</span>
+            <span className="tck-product-sku">SKU {r.sku} · Motivo declarado: {r.reason}</span>
           </div>
           {r.attachments && r.attachments.length > 0 && (
             <button type="button" className="tck-photos" title={`Ver fotos anexadas · ${r.attachments.join(" · ")}`}>
@@ -3800,24 +4289,21 @@ function CanvasDTicketCard({
   ticket,
   decision,
   decidedBy,
-  pagination,
+  sendFailed,
   mode,
   onModeChange,
   escalateNote,
   onEscalateNote,
   messageOpen,
   onToggleMessage,
-  onConfirm,
-  onUndo,
-  onNext,
-  onOpenSummary,
-  queueDone,
   onOpenOrder,
 }) {
-  const rows = ticket.items || [{
+  /* A foto vem do catálogo por SKU (ver `productPhoto`), não do campo `photo`
+     da seed, que aponta para arquivos inexistentes. */
+  const rows = (ticket.items || [{
     item: ticket.item, sku: ticket.sku, reason: ticket.shopperReason,
-    photo: ticket.photo, attachments: ticket.attachments || [],
-  }];
+    attachments: ticket.attachments || [],
+  }]).map((r) => ({ ...r, photo: productPhoto(r) }));
   const isMulti = rows.length > 1;
   const [itemsOpen, setItemsOpen] = useState(false);
   const feedback = decision ? ticketDecisionFeedback(ticket, decision, decidedBy) : null;
@@ -3825,17 +4311,13 @@ function CanvasDTicketCard({
 
   return (
     <article className="tck-card">
-      <CanvasDTicketHeader
-        ticket={ticket}
-        decision={decision}
-        pagination={pagination}
-        onOpenOrder={onOpenOrder}
-      />
+      <CanvasDTicketHeader ticket={ticket} decision={decision} />
 
       <div className="tck-product-section">
         {isMulti
           ? <CanvasDTicketMultiItem rows={rows} open={itemsOpen} onToggle={() => setItemsOpen((o) => !o)} />
           : <CanvasDTicketSingleItem ticket={ticket} />}
+        <CanvasDTicketMeta ticket={ticket} decision={decision} onOpenOrder={onOpenOrder} />
       </div>
 
       <div className="tck-request">
@@ -3854,6 +4336,10 @@ function CanvasDTicketCard({
             <span className="tck-rec-history">Histórico do cliente: {ticket.history}</span>
           </div>
 
+          {/* O alerta de falha entra acima do segmented, junto da decisão que
+              ficou preservada — no rodapé ele lia como consequência do botão. */}
+          {sendFailed && <CanvasDTicketSendError />}
+
           <CanvasDTicketDecision
             ticket={ticket}
             mode={mode}
@@ -3863,26 +4349,16 @@ function CanvasDTicketCard({
             messageOpen={messageOpen}
             onToggleMessage={onToggleMessage}
           />
-
-          <div className="tck-actions">
-            <span className="tck-actions-meta">{TICKET_CONFIRM_META[mode]}</span>
-            <button
-              type="button"
-              className="tck-confirm"
-              data-tone={mode === "deny" ? "deny" : undefined}
-              onClick={onConfirm}
-            >
-              {TICKET_CONFIRM_LABEL[mode]}
-            </button>
-          </div>
         </>
       )}
 
       {decision && (
-        <div className="tck-decided">
+        /* Sem "Desfazer"/"Próximo" aqui: as ações vivem no rodapé sticky do
+           modal, que tem a mesma anatomia nos sete estados. */
+        <div className="tck-decided" data-outcome={decision.kind}>
           <div className="tck-decided-head">
             <span className="tck-decided-glyph" data-outcome={decision.kind}>
-              <Icon name={TICKET_OUTCOME_GLYPH[decision.kind]} size={16} />
+              <Icon name={TICKET_OUTCOME_GLYPH[decision.kind]} size={20} />
             </span>
             <div className="tck-decided-text">
               <span className="tck-decided-title" data-outcome={decision.kind}>{feedback.title}</span>
@@ -3893,28 +4369,6 @@ function CanvasDTicketCard({
             <span className="tck-decided-note-label">{decidedNote.label}</span>
             <span className="tck-decided-note-body">{decidedNote.body}</span>
           </div>
-          <div className="tck-decided-foot">
-            {/* Aceite e negativa já dispararam a mensagem ao cliente — não há
-                o que desfazer. Escalonamento só troca o Lead do ticket, então
-                é reversível. */}
-            {decision.kind === "escalated" && (
-              <button type="button" className="tck-undo" onClick={onUndo}>
-                <Icon name="undo" size={16} />
-                Desfazer
-              </button>
-            )}
-            {queueDone ? (
-              <button type="button" className="tck-next" onClick={onOpenSummary}>
-                Ver resumo da fila
-                <Icon name="chevron-right" size={16} />
-              </button>
-            ) : onNext && (
-              <button type="button" className="tck-next" onClick={onNext}>
-                Próximo ticket
-                <Icon name="chevron-right" size={16} />
-              </button>
-            )}
-          </div>
         </div>
       )}
     </article>
@@ -3924,7 +4378,7 @@ function CanvasDTicketCard({
 /* Resumo da fila — substitui o card inteiro quando todos os tickets foram
    resolvidos e o SAC pediu para abrir o resumo (ou o resumo entrou sozinho ao
    confirmar o último ticket). Cada linha volta ao ticket correspondente. */
-function CanvasDTicketSummary({ rows, decisions, decidedBy, onOpenTicket, onReview }) {
+function CanvasDTicketSummary({ rows, decisions, decidedBy, onOpenTicket }) {
   const counts = [
     { kind: "accepted", label: "Aceitos" },
     { kind: "denied", label: "Negados" },
@@ -3937,7 +4391,7 @@ function CanvasDTicketSummary({ rows, decisions, decidedBy, onOpenTicket, onRevi
   return (
     <article className="tck-summary" role="status">
       <div className="tck-summary-head">
-        <span className="tck-summary-glyph"><Icon name="check" size={20} /></span>
+        <span className="tck-summary-glyph"><Icon name="check-circle" size={24} /></span>
         <div className="tck-summary-title">
           <span className="tck-summary-title-text">Todos os tickets foram concluídos</span>
           <span className="tck-summary-subtitle">
@@ -3956,10 +4410,9 @@ function CanvasDTicketSummary({ rows, decisions, decidedBy, onOpenTicket, onRevi
       <div className="tck-summary-list">
         {rows.map((r) => {
           const d = decisions[r.id] || {};
-          const items = r.items || [{ item: r.item }];
           const detail = d.kind === "escalated"
-            ? `Aguarda ${d.to}`
-            : `${d.kind === "accepted" ? r.policyResolution : "Motivo enviado ao cliente"} · ${items.length > 1 ? `${items.length} itens` : items[0].item}`;
+            ? `${TICKET_OUTCOME_LABEL[d.kind]} · aguarda ${d.to}`
+            : `${TICKET_OUTCOME_LABEL[d.kind]} · ${d.kind === "accepted" ? r.policyResolution : "motivo enviado ao cliente"}`;
           return (
             <button
               key={r.id}
@@ -3969,29 +4422,190 @@ function CanvasDTicketSummary({ rows, decisions, decidedBy, onOpenTicket, onRevi
             >
               <span className="tck-summary-row-dot" data-outcome={d.kind} />
               <span className="tck-summary-row-text">
-                <span className="tck-summary-row-title">{r.id} · {TICKET_OUTCOME_LABEL[d.kind]}</span>
+                <span className="tck-summary-row-title">{r.id} · {ticketQueueSubtitle(r)}</span>
                 <span className="tck-summary-row-detail">{detail}</span>
               </span>
               <span className="tck-summary-row-at">{d.at}</span>
-              <Icon name="chevron-right" size={18} />
+              <Icon name="chevron-right" size={16} />
             </button>
           );
         })}
-      </div>
-      <div className="tck-summary-foot">
-        <span className="tck-summary-foot-note">
-          Iniciativa fechada — os escalonamentos seguem como tickets do supervisor
-        </span>
       </div>
     </article>
   );
 }
 
-/* Lista horizontal de tickets: um card por vez, navegado pelas setas do header.
-   A ordem é fixa (SLA vencido primeiro) e não se reordena conforme as decisões
-   — o card não pode sair de baixo do cursor. Componente controlado: recebe
-   `decisions`, `index`, `summaryOpen` e callbacks do pai (CanvasPatternD). */
-function CanvasDTicketList({
+/* Segunda linha do item da fila: o produto, ou a contagem quando a devolução
+   tem mais de um item. */
+function ticketQueueSubtitle(ticket) {
+  const items = ticket.items || [];
+  return items.length > 1 ? `${items.length} itens na devolução` : ticket.item;
+}
+
+/* Ordem fixa: SLA vencido primeiro, e não se reordena conforme as decisões — a
+   linha não pode sair de baixo do cursor. */
+function ticketRowOrder(tickets) {
+  return tickets.slice().sort((a, b) => (b.overdue ? 1 : 0) - (a.overdue ? 1 : 0));
+}
+
+/* Tabela de tickets — o entry point no canvas.
+
+   Antes o canvas trazia o card de avaliação inteiro, um ticket por vez, com o
+   resto da fila invisível: não havia como saber quantos faltavam nem o que já
+   tinha sido decidido sem fechar o card. Aqui a fila é visível de relance, e a
+   coluna Desfecho diz o resultado sem precisar abrir nada — antes o ícone verde
+   só informava que o ticket terminou.
+
+   Os grupos "Tarefas a fazer / realizadas" saem: a ordenação já põe o pendente
+   no topo, e a coluna Desfecho faz o mesmo trabalho com menos estrutura. */
+function CanvasDTicketTable({ tickets, decisions, lead, onOpen }) {
+  const rows = useMemo(() => ticketRowOrder(tickets), [tickets]);
+
+  return (
+    <div className="tck-table">
+      <div className="tck-table-head">
+        <span>Ticket</span>
+        <span>Responsável</span>
+        <span>Desfecho</span>
+        <span />
+      </div>
+      {rows.map((t, i) => {
+        const d = decisions[t.id];
+        const outcome = d ? d.kind : "pending";
+        /* Escalado troca o dono do ticket: mostrar o SAC que saiu da fila
+           esconderia justamente quem precisa agir agora. */
+        const owner = d && d.kind === "escalated"
+          ? (d.to || TICKET_ESCALATION_LEAD)
+          : lead;
+        return (
+          <button
+            key={t.id}
+            type="button"
+            className="tck-table-row"
+            onClick={() => onOpen(i)}
+          >
+            <span className="tck-table-ticket">
+              <span className="tck-table-dot" data-outcome={outcome} />
+              <span className="tck-table-ticket-text">
+                <span className="tck-table-id">{t.id}</span>
+                <span className="tck-table-sub">
+                  {(t.items || [{ item: t.item }]).length > 1
+                    ? `${t.items.length} itens`
+                    : t.item}
+                </span>
+              </span>
+            </span>
+            <span className="tck-table-owner">
+              <PersonAvatar initial={(owner || "?").slice(0, 1)} />
+              <span className="tck-table-owner-name">{owner}</span>
+            </span>
+            <span className="tck-table-outcome">
+              <span className="tck-status-pill" data-outcome={outcome}>
+                {d ? TICKET_OUTCOME_LABEL[d.kind] : "Aguardando"}
+              </span>
+            </span>
+            <span className="tck-table-chevron" aria-hidden="true">
+              <Icon name="chevron-right" size={16} />
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/* Fila do modal — 300px aberta, trilha de 56px fechada.
+
+   Aberta e fechada são dois elementos irmãos, não a mesma coluna com filhos
+   escondidos um a um: isso deixaria um resto de coluna cortado. Fechada, a
+   trilha continua dizendo quantos faltam e onde o operador está. */
+function CanvasDTicketQueue({ rows, decisions, index, onSelect, collapsed, onToggle }) {
+  const decidedCount = rows.filter((r) => !!decisions[r.id]).length;
+  const progress = `${decidedCount}/${rows.length}`;
+
+  if (collapsed) {
+    return (
+      <div className="tck-queue-rail" aria-label="Fila de tickets">
+        <button
+          type="button"
+          className="tck-pager-btn"
+          onClick={onToggle}
+          aria-label="Expandir fila"
+          title="Expandir fila"
+        >
+          {/* Chevron do set proprietário, como o resto do card: ligatura de
+              fonte falha em silêncio e o nome vaza como texto. */}
+          <Icon name="chevron-right" size={18} />
+        </button>
+        <span className="tck-queue-rail-divider" />
+        <span className="tck-queue-rail-dots">
+          {rows.map((r, i) => (
+            <span
+              key={r.id}
+              className="tck-queue-rail-dot"
+              data-outcome={decisions[r.id] ? decisions[r.id].kind : "pending"}
+              data-current={i === index ? "true" : undefined}
+              title={r.id}
+            />
+          ))}
+        </span>
+        <span className="tck-queue-rail-progress">{progress}</span>
+      </div>
+    );
+  }
+
+  return (
+    <nav className="tck-queue" aria-label="Fila de tickets">
+      <div className="tck-queue-head">
+        <span className="tck-queue-title">Fila de avaliação</span>
+        <span className="tck-queue-count">{progress}</span>
+        <button
+          type="button"
+          className="tck-pager-btn"
+          onClick={onToggle}
+          aria-label="Recolher fila"
+          title="Recolher fila"
+        >
+          <Icon name="chevron-left" size={18} />
+        </button>
+      </div>
+      <div className="tck-queue-list">
+        {rows.map((r, i) => {
+          const d = decisions[r.id];
+          return (
+            <button
+              key={r.id}
+              type="button"
+              className={`tck-queue-row${i === index ? " tck-queue-row--active" : ""}`}
+              onClick={() => onSelect(i)}
+              aria-current={i === index ? "true" : undefined}
+            >
+              <span className="tck-table-dot" data-outcome={d ? d.kind : "pending"} />
+              <span className="tck-queue-row-text">
+                <span className="tck-queue-row-id">{r.id}</span>
+                {/* O produto identifica o ticket melhor que o SLA: é por ele que
+                    o SAC reconhece o caso que acabou de ler. */}
+                <span className="tck-queue-row-sub">{ticketQueueSubtitle(r)}</span>
+                <span className="tck-status-pill" data-outcome={d ? d.kind : "pending"}>
+                  {d ? TICKET_OUTCOME_LABEL[d.kind] : "Aguardando"}
+                </span>
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </nav>
+  );
+}
+
+/* Modal de avaliação: fila à esquerda, ticket à direita, rodapé de confirmação
+   sticky. A avaliação saiu do canvas porque um ticket longo empurrava o
+   "Confirmar" fora da tela e a fila ficava invisível.
+
+   Sete estados no mesmo rodapé (uma anatomia só): pendente nas três abas,
+   enviando, erro de envio, decidido e fila concluída. Não existe estado de fila
+   vazia — sem tickets não há entry point no canvas. */
+function CanvasDTicketModal({
   tickets,
   decisions,
   decidedBy,
@@ -4003,27 +4617,39 @@ function CanvasDTicketList({
   onDecide,
   onUndo,
   onOpenOrder,
+  onClose,
 }) {
-  const rows = useMemo(
-    () => tickets.slice().sort((a, b) => (b.overdue ? 1 : 0) - (a.overdue ? 1 : 0)),
-    [tickets]
-  );
+  const rows = useMemo(() => ticketRowOrder(tickets), [tickets]);
   const ticket = rows[index] || rows[0];
   const [dir, setDir] = useState(0);
+  const [queueCollapsed, setQueueCollapsed] = useState(false);
+  /* idle | sending | error — o envio tem duração, e falhar não pode custar a
+     decisão que o operador acabou de tomar. */
+  const [sendState, setSendState] = useState("idle");
+  const sendTimer = useRef(null);
 
   /* Ao entrar em cada ticket, o painel abre no modo recomendado — trocar de
      ticket reseta o modo, a nota do escalonamento e o toggle da mensagem. */
   const [mode, setMode] = useState(() => ticketOpenMode(ticket));
   const [escalateNote, setEscalateNote] = useState("");
   const [messageOpen, setMessageOpen] = useState(false);
-  const currentIdRef = useRef(ticket.id);
+  const currentIdRef = useRef(ticket && ticket.id);
   useEffect(() => {
-    if (currentIdRef.current === ticket.id) return;
+    if (!ticket || currentIdRef.current === ticket.id) return;
     currentIdRef.current = ticket.id;
     setMode(ticketOpenMode(ticket));
     setEscalateNote("");
     setMessageOpen(false);
+    setSendState("idle");
   }, [ticket]);
+
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === "Escape") onClose(); };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  useEffect(() => () => { if (sendTimer.current) clearTimeout(sendTimer.current); }, []);
 
   const go = (next) => {
     if (next < 0 || next >= rows.length) return;
@@ -4041,54 +4667,12 @@ function CanvasDTicketList({
     return -1;
   };
   const nextPending = nextPendingFrom(index);
+  const decidedTotal = rows.filter((r) => !!decisions[r.id]).length;
   const queueDone = rows.every((r) => !!decisions[r.id]);
+  const decision = ticket ? decisions[ticket.id] : null;
+  const showSummary = summaryOpen && queueDone;
 
-  if (!ticket) return null;
-
-  if (summaryOpen && queueDone) {
-    return (
-      <div className="tck-cards">
-        <CanvasDTicketSummary
-          rows={rows}
-          decisions={decisions}
-          decidedBy={decidedBy}
-          onOpenTicket={(id) => {
-            const i = rows.findIndex((r) => r.id === id);
-            if (i >= 0) { onReview(); onIndexChange(i); }
-          }}
-          onReview={onReview}
-        />
-      </div>
-    );
-  }
-
-  const pagination = (
-    <span className="tck-pager">
-      <span className="tck-pager-count">{index + 1} de {rows.length}</span>
-      <button
-        type="button"
-        className="tck-pager-btn"
-        aria-label="Ticket anterior"
-        title="Ticket anterior"
-        disabled={index === 0}
-        onClick={() => go(index - 1)}
-      >
-        <Icon name="chevron-left" size={18} />
-      </button>
-      <button
-        type="button"
-        className="tck-pager-btn"
-        aria-label="Próximo ticket"
-        title="Próximo ticket"
-        disabled={index === rows.length - 1}
-        onClick={() => go(index + 1)}
-      >
-        <Icon name="chevron-right" size={18} />
-      </button>
-    </span>
-  );
-
-  const handleConfirm = () => {
+  const commit = () => {
     const at = ticketDecisionTime();
     if (mode === "deny") {
       onDecide(ticket.id, { kind: "denied", message: ticket.denyMessage, at });
@@ -4100,30 +4684,166 @@ function CanvasDTicketList({
     /* Trocar de aba dentro do ticket é local; confirmar reseta o rascunho. */
     setEscalateNote("");
     setMessageOpen(false);
+    setSendState("idle");
   };
 
-  return (
-    <div className={`tck-cards${dir > 0 ? " tck-cards--fwd" : dir < 0 ? " tck-cards--back" : ""}`}>
-      <CanvasDTicketCard
-        key={ticket.id}
-        ticket={ticket}
-        decision={decisions[ticket.id]}
-        decidedBy={decidedBy}
-        pagination={pagination}
-        mode={mode}
-        onModeChange={setMode}
-        escalateNote={escalateNote}
-        onEscalateNote={setEscalateNote}
-        messageOpen={messageOpen}
-        onToggleMessage={() => setMessageOpen((o) => !o)}
-        onConfirm={handleConfirm}
-        onUndo={() => onUndo(ticket.id)}
-        onNext={nextPending === -1 ? null : () => go(nextPending)}
-        onOpenSummary={onOpenSummary}
-        queueDone={queueDone}
-        onOpenOrder={onOpenOrder}
-      />
-    </div>
+  /* O envio passa por "enviando" antes de virar decisão: é o que dá lugar ao
+     estado de erro, em que o rascunho e a aba escolhida continuam ali. */
+  const handleConfirm = () => {
+    setSendState("sending");
+    if (sendTimer.current) clearTimeout(sendTimer.current);
+    sendTimer.current = setTimeout(() => {
+      sendTimer.current = null;
+      if (ticket.sendFails && sendState !== "error") { setSendState("error"); return; }
+      commit();
+    }, 700);
+  };
+
+  if (!ticket) return null;
+
+  const footer = (() => {
+    if (showSummary) {
+      return (
+        <div className="tck-modal-foot">
+          <button type="button" className="tck-undo" onClick={onReview}>
+            <Icon name="chevron-left" size={16} />
+            Revisar tickets
+          </button>
+          <button type="button" className="tck-confirm" onClick={onClose}>Fechar</button>
+        </div>
+      );
+    }
+    if (decision) {
+      return (
+        <div className="tck-modal-foot">
+          {/* "Desfazer" existe nos três desfechos: o rodapé tem uma anatomia só
+              nos sete estados, e limitá-lo ao escalonamento deixava o estado
+              decidido sem saída à esquerda. */}
+          <button type="button" className="tck-undo" onClick={() => onUndo(ticket.id)}>
+            <Icon name="undo" size={16} />
+            Desfazer
+          </button>
+          {queueDone ? (
+            <button type="button" className="tck-next" onClick={onOpenSummary}>
+              Ver resumo da fila
+              <Icon name="chevron-right" size={16} />
+            </button>
+          ) : nextPending !== -1 && (
+            <button type="button" className="tck-next" onClick={() => go(nextPending)}>
+              Próximo pendente
+              <Icon name="chevron-right" size={16} />
+            </button>
+          )}
+        </div>
+      );
+    }
+    /* Erro de envio: o alerta vive no painel, junto da decisão preservada — o
+       rodapé só troca o rótulo do primário. */
+    if (sendState === "error") {
+      return (
+        <div className="tck-modal-foot">
+          <button type="button" className="tck-confirm" onClick={handleConfirm}>Tentar novamente</button>
+        </div>
+      );
+    }
+    const sending = sendState === "sending";
+    return (
+      <div className="tck-modal-foot">
+        {sending && (
+          <span className="tck-modal-foot-dots" aria-hidden="true">
+            <span /><span /><span />
+          </span>
+        )}
+        {/* "Pular" deixa o ticket na fila para depois: a fila é por SLA, e nem
+            todo caso se decide na primeira leitura. */}
+        {nextPending !== -1 && !sending && (
+          <button
+            type="button"
+            className="tck-undo"
+            data-variant="secondary"
+            onClick={() => go(nextPending)}
+          >
+            Pular
+          </button>
+        )}
+        <button
+          type="button"
+          className="tck-confirm"
+          data-tone={mode === "deny" ? "deny" : undefined}
+          disabled={sending}
+          onClick={handleConfirm}
+        >
+          {sending ? "Enviando…" : "Confirmar e avançar"}
+        </button>
+      </div>
+    );
+  })();
+
+  return ReactDOM.createPortal(
+    <div
+      className="stage-config-modal-backdrop"
+      onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div className="stage-config-modal tck-modal" role="dialog" aria-modal="true" aria-label="Tickets abertos">
+        <div className="stage-config-modal-head">
+          <h2 className="stage-config-modal-title">Tickets abertos</h2>
+          {/* Tag neutra de progresso: o contador sobe conforme a fila avança. */}
+          <span className="tck-status-pill">{decidedTotal} de {rows.length} resolvidos</span>
+          <button type="button" className="canvas-topbar-icon" onClick={onClose} aria-label="Fechar" title="Fechar">
+            <Icon name="x" size={18} />
+          </button>
+        </div>
+
+        <div className="tck-modal-split">
+          <CanvasDTicketQueue
+            rows={rows}
+            decisions={decisions}
+            index={index}
+            onSelect={(i) => { onReview(); go(i); }}
+            collapsed={queueCollapsed}
+            onToggle={() => setQueueCollapsed((c) => !c)}
+          />
+
+          <div className="tck-modal-main">
+            {/* Fila concluída troca o conteúdo desta coluna em vez de fechar o
+                modal: o operador vê o que fez, e a fila ao lado deixa revisar
+                qualquer decisão com um clique. */}
+            <div className="tck-modal-scroll" data-sending={sendState === "sending" ? "true" : undefined}>
+              {showSummary ? (
+                <CanvasDTicketSummary
+                  rows={rows}
+                  decisions={decisions}
+                  decidedBy={decidedBy}
+                  onOpenTicket={(id) => {
+                    const i = rows.findIndex((r) => r.id === id);
+                    if (i >= 0) { onReview(); onIndexChange(i); }
+                  }}
+                />
+              ) : (
+                <div className={`tck-cards${dir > 0 ? " tck-cards--fwd" : dir < 0 ? " tck-cards--back" : ""}`}>
+                  <CanvasDTicketCard
+                    key={ticket.id}
+                    ticket={ticket}
+                    decision={decision}
+                    decidedBy={decidedBy}
+                    sendFailed={sendState === "error"}
+                    mode={mode}
+                    onModeChange={setMode}
+                    escalateNote={escalateNote}
+                    onEscalateNote={setEscalateNote}
+                    messageOpen={messageOpen}
+                    onToggleMessage={() => setMessageOpen((o) => !o)}
+                    onOpenOrder={onOpenOrder}
+                  />
+                </div>
+              )}
+            </div>
+            {footer}
+          </div>
+        </div>
+      </div>
+    </div>,
+    document.body
   );
 }
 
@@ -4136,6 +4856,9 @@ function CanvasPatternD({ task, onOpenList, onOpenOrder, onOpenTask, activities,
      do resumo possa saltar para o ticket certo. */
   const [index, setIndex] = useState(0);
   const [summaryOpen, setSummaryOpen] = useState(false);
+  /* A avaliação acontece em modal: o canvas fica com a tabela-resumo e o modal
+     carrega a fila, o card do ticket e o rodapé de decisão. */
+  const [modalOpen, setModalOpen] = useState(false);
   /* A mensagem de fechamento é postada no chat apenas uma vez — mesmo se o
      SAC desfizer um escalonamento depois de fechar a fila. */
   const closedRef = useRef(false);
@@ -4325,22 +5048,34 @@ function CanvasPatternD({ task, onOpenList, onOpenOrder, onOpenTask, activities,
         {tickets.length > 0 && (
           <DocAccordionSection
             title="Tickets abertos"
-            /* Única seção em que o badge mostra progresso em vez de total: o
-               total já aparece no contador da paginação dos cards. */
-            count={`${decidedCount}/${tickets.length} resolvidos`}
+            /* O canvas já tem um display-1 no header: dois 24px competiriam. */
+            titleSize="20"
+            /* Única seção em que o badge mostra progresso em vez de total: a
+               avaliação em si mora no modal, então quantos faltam precisa estar
+               legível sem abri-lo. */
+            count={`${tickets.length - decidedCount} de ${tickets.length} aguardando`}
+            countAsTag
+            action={
+              <button
+                type="button"
+                className="tck-open-modal-btn"
+                onClick={() => {
+                  /* Abre no primeiro pendente: a linha da tabela é quem leva a
+                     um ticket já decidido. */
+                  const first = orderedTickets.findIndex((t) => !decisions[t.id]);
+                  setIndex(first === -1 ? 0 : first);
+                  setModalOpen(true);
+                }}
+              >
+                Avaliar tickets
+              </button>
+            }
           >
-            <CanvasDTicketList
+            <CanvasDTicketTable
               tickets={tickets}
               decisions={decisions}
-              decidedBy={d.decidedBy}
-              index={index}
-              onIndexChange={setIndex}
-              summaryOpen={summaryOpen}
-              onOpenSummary={() => setSummaryOpen(true)}
-              onReview={() => setSummaryOpen(false)}
-              onDecide={(id, dec) => setDecisions((s) => ({ ...s, [id]: dec }))}
-              onUndo={(id) => setDecisions((s) => { const next = { ...s }; delete next[id]; return next; })}
-              onOpenOrder={onOpenOrder}
+              lead={d.lead}
+              onOpen={(i) => { setIndex(i); setModalOpen(true); }}
             />
           </DocAccordionSection>
         )}
@@ -4368,6 +5103,23 @@ function CanvasPatternD({ task, onOpenList, onOpenOrder, onOpenTask, activities,
       </div>
 
       <div data-sl-canvas-doc-end-spacer="" style={{ height: 24 }} />
+
+      {modalOpen && (
+        <CanvasDTicketModal
+          tickets={tickets}
+          decisions={decisions}
+          decidedBy={d.decidedBy}
+          index={index}
+          onIndexChange={setIndex}
+          summaryOpen={summaryOpen}
+          onOpenSummary={() => setSummaryOpen(true)}
+          onReview={() => setSummaryOpen(false)}
+          onDecide={(id, dec) => setDecisions((s) => ({ ...s, [id]: dec }))}
+          onUndo={(id) => setDecisions((s) => { const next = { ...s }; delete next[id]; return next; })}
+          onOpenOrder={onOpenOrder}
+          onClose={() => setModalOpen(false)}
+        />
+      )}
     </div>
   );
 }
