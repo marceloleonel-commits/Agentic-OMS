@@ -284,7 +284,8 @@ const ORDER_STATUS_SORT = { attention: 0, return: 1, processing: 2, invoiced: 3,
 const ORDER_STATUS_LABEL = {
   processing: "Em processamento",
   invoiced:   "Faturado",
-  attention:  "Atenção necessária",
+  /* "Requer atenção" é o vocabulário já usado na iniciativa. */
+  attention:  "Requer atenção",
   return:     "Troca e devolução",
   error:      "Com erro",
   complete:   "Concluído",

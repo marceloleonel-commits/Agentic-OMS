@@ -17,11 +17,15 @@
      escala e vazava pelos fallbacks de var()). */
   --sl-color-gray-6:  #5D6C83;
   --sl-color-gray-7:  #4E607A;
-  --sl-color-gray-8:  #506077;
-  --sl-color-gray-9:  #425269;
+  /* gray-8/9/12 são os três valores que os handoffs nomeiam explicitamente:
+     #3D516E (fg-2 do modal de workflow), #2A3F5E (texto de tag neutra) e
+     #171717 (texto de corpo, que a tabela de substituição da rodada 1 troca
+     por #1F1F1F). Os anteriores não existiam na escala Shoreline. */
+  --sl-color-gray-8:  #3D516E;
+  --sl-color-gray-9:  #2A3F5E;
   --sl-color-gray-10: #212D3F;
   --sl-color-gray-11: #0A1524;
-  --sl-color-gray-12: #1F1F1F;
+  --sl-color-gray-12: #171717;
   --sl-color-gray-13: #000000;
 
   /* ── Primitive palette — Red ── */
@@ -109,9 +113,11 @@
   --sl-color-blue-7:  #5AA8F7;
   --sl-color-blue-8:  #3993F4;
   --sl-color-blue-9:  #157BF4;
-  --sl-color-blue-10: #0366DD;
-  --sl-color-blue-11: #0155B7;
-  --sl-color-blue-12: #014592;
+  /* Azul único do handoff: blue-10 é #1E4EE5, e os dois degraus seguintes são
+     os do botão primário (hover / pressionado). */
+  --sl-color-blue-10: #1E4EE5;
+  --sl-color-blue-11: #1B45CC;
+  --sl-color-blue-12: #163AA8;
   --sl-color-blue-13: #013672;
 
   /* ── Primitive palette — Purple ── */
@@ -161,17 +167,20 @@
 
   /* ── Semantic — background ── */
   --sl-bg-base:                    var(--sl-color-gray-0);
-  --sl-bg-base-disabled:           color-mix(in srgb, var(--sl-color-gray-12) 5%, transparent);
+  --sl-bg-base-disabled:           rgba(29, 44, 67, 0.05);
   --sl-bg-base-strong:             var(--sl-color-gray-3);
   --sl-bg-base-strong-disabled:    var(--sl-color-gray-6);
   --sl-bg-base-soft:               var(--sl-color-gray-1);
 
-  --sl-bg-muted:                   color-mix(in srgb, var(--sl-color-gray-12) 5%, transparent);
-  --sl-bg-muted-hover:             color-mix(in srgb, var(--sl-color-gray-12) 10%, transparent);
-  --sl-bg-muted-pressed:           color-mix(in srgb, var(--sl-color-gray-12) 15%, transparent);
-  --sl-bg-muted-plain:             color-mix(in srgb, var(--sl-color-gray-12) 0%, transparent);
-  --sl-bg-muted-plain-hover:       color-mix(in srgb, var(--sl-color-gray-12) 5%, transparent);
-  --sl-bg-muted-plain-pressed:     color-mix(in srgb, var(--sl-color-gray-12) 10%, transparent);
+  /* A escada de interação do handoff é alfa de rgba(29,44,67,…) — um cinza
+     azulado. Derivar de gray-12 (#171717, neutro) dessaturava todo hover do
+     protótipo. */
+  --sl-bg-muted:                   rgba(29, 44, 67, 0.05);
+  --sl-bg-muted-hover:             rgba(29, 44, 67, 0.10);
+  --sl-bg-muted-pressed:           rgba(29, 44, 67, 0.15);
+  --sl-bg-muted-plain:             transparent;
+  --sl-bg-muted-plain-hover:       rgba(29, 44, 67, 0.05);
+  --sl-bg-muted-plain-pressed:     rgba(29, 44, 67, 0.10);
 
   --sl-bg-accent:                  var(--sl-color-blue-2);
   --sl-bg-accent-hover:            var(--sl-color-blue-3);
@@ -181,8 +190,8 @@
   --sl-bg-accent-plain-pressed:    color-mix(in srgb, var(--sl-color-blue-10) 10%, transparent);
   /* Handoff §1.1 — azul primário único: blue-10 / blue-11 (hover) / blue-12 (pressed). */
   --sl-bg-accent-strong:           #1E4EE5;
-  --sl-bg-accent-strong-hover:     #0131C5;
-  --sl-bg-accent-strong-pressed:   #001EA5;
+  --sl-bg-accent-strong-hover:     #1B45CC;
+  --sl-bg-accent-strong-pressed:   #163AA8;
 
   --sl-bg-warning:                 var(--sl-color-yellow-1);
   --sl-bg-warning-strong:          var(--sl-color-yellow-9);
@@ -264,7 +273,8 @@
   /* Shadows (handoff §4 usa shadow-1 para item ativo do segmented; §7 usa
      shadow-3 para dropdowns/menus). */
   --sl-shadow-1: 0 1px 2px rgba(15, 17, 21, 0.06), 0 1px 1px rgba(15, 17, 21, 0.04);
-  --sl-shadow-2: 0 4px 12px rgba(15, 17, 21, 0.08);
+  /* shadow-2 é a sombra de modal da rodada 4. */
+  --sl-shadow-2: 0 24px 48px rgba(0, 0, 0, 0.16);
   --sl-shadow-3: 0 12px 32px rgba(15, 17, 21, 0.12), 0 4px 12px rgba(15, 17, 21, 0.06);
 
   /* Overlay (scrim) — handoff §6 (drawers) e §8 (modais). */
@@ -1194,6 +1204,16 @@
   text-align: left;
   color: var(--fg);
 }
+[data-sl-doc-accordion-head] {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+[data-sl-doc-accordion-head] > *:not([data-sl-doc-accordion-trigger]) {
+  flex-shrink: 0;
+  align-self: flex-end;
+  margin-bottom: 12px;
+}
 [data-sl-doc-section-title] {
   flex: 1;
   min-width: 0;
@@ -1204,6 +1224,29 @@
   color: var(--fg);
   vertical-align: middle;
 }
+/* O canvas já tem um display-1 no header; uma seção dentro dele não compete em
+   24px. */
+[data-sl-doc-section-title][data-size="20"] {
+  font-size: 20px;
+  line-height: 28px;
+  letter-spacing: -0.4px;
+}
+/* Tag de 1b em vez do contador circular: o texto explica o progresso ("1 de 4
+   aguardando"), o que um número solto não fazia. */
+[data-sl-doc-section-tag] {
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  padding: 0 10px;
+  margin-left: 10px;
+  border-radius: 9999px;
+  background: rgba(29, 44, 67, 0.05);
+  color: var(--sl-color-gray-9, #2A3F5E);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  vertical-align: middle;
+}
 [data-sl-doc-accordion-chevron] {
   flex-shrink: 0;
   color: var(--fg-3);
@@ -1211,57 +1254,243 @@
 }
 [data-sl-doc-accordion-panel] { padding-bottom: 8px; }
 
-/* ── "Ver todos" — open full list in a subview. Mesmo comportamento de
-   pill button do .wf-ver-badge-btn (fundo + hover escurecendo), em vez
-   de link sublinhado ── */
-/* .pkg-wf-see-btn (card do pacote) compartilha estas regras: é o mesmo botão
-   pequeno de "abrir o próximo nível", em outra superfície. */
+/* ── Secundário pequeno de "abrir o próximo nível" ──
+   "Ver todos" das seções, "Ver workflow" do card de pacote e as referências do
+   cabeçalho do pacote (rastreio, nota fiscal) são o mesmo botão da §2 em
+   32px/r12 — antes eram quatro variações de borda, peso e raio. */
 [data-sl-doc-see-all],
-.pkg-wf-see-btn {
+.pkg-wf-see-btn,
+.pkg-title-btn {
   appearance: none;
   border: none;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  margin-top: 10px;
-  padding: 6px 6px 6px 10px;
-  border-radius: 8px;
-  background: var(--bg-soft, #f8f8f8);
-  transition: background 0.15s ease;
+  justify-content: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 0 12px;
+  border-radius: 12px;
+  background: rgba(29, 44, 67, 0.05);
+  transition: background 0.12s ease;
   font-size: 13px;
-  font-weight: 500;
-  color: var(--fg);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.13px;
+  color: var(--fg-2, #2A3F5E);
 }
 [data-sl-doc-see-all]:hover,
-.pkg-wf-see-btn:hover {
-  background: var(--border, #ebebeb);
+.pkg-wf-see-btn:hover,
+.pkg-title-btn:hover {
+  background: rgba(29, 44, 67, 0.10);
   text-decoration: none;
 }
+[data-sl-doc-see-all]:active,
+.pkg-wf-see-btn:active,
+.pkg-title-btn:active {
+  background: rgba(29, 44, 67, 0.15);
+}
+/* Só o "Ver todos" encerra um bloco e precisa do respiro de cima. */
+[data-sl-doc-see-all] { margin-top: 8px; }
 
 /* Modal do "Ver workflow" do pacote — mesma linguagem visual do
-   .stage-config-modal, mas mais largo para acomodar o WorkflowSection (grid
-   de 4 etapas na view Etapas) e sem padding interno duplicado, já que a
-   própria WorkflowSection cuida do próprio espaçamento. */
-.pkg-wf-modal {
-  width: 1040px;
+   .stage-config-modal, mas com dois níveis de escopo à esquerda e o workflow
+   à direita, e por isso mais largo.
+
+   Compondo com .stage-config-modal porque a regra base vem depois no arquivo e
+   fixa 760px × 640px. */
+.stage-config-modal.pkg-wf-modal {
+  width: 1180px;
   max-width: calc(100% - 32px);
+  /* Altura fixa: a rolagem é das duas colunas, não do modal. O min() é só para
+     viewport baixo, onde 720px não caberia. */
+  height: min(720px, calc(100vh - 48px));
+  max-height: none;
+  border: 1px solid var(--sl-color-gray-3, #E3E6EF);
+}
+/* O cabeçalho hospeda o segmented de 36px, então cresce pelo conteúdo em vez
+   de ficar preso nos 56px da regra base. */
+.pkg-wf-modal .stage-config-modal-head {
   height: auto;
-  max-height: calc(100vh - 64px);
-}
-.pkg-wf-modal-body {
-  padding: 20px 24px 24px;
-}
-/* A seção interna já traz seu próprio border-top + padding-top; dentro do
-   modal esse espaçamento vira ruído (o cabeçalho do modal já delimita). */
-.pkg-wf-modal-body > section > div:first-child {
-  border-top: none !important;
-  padding-top: 0 !important;
+  padding: 16px 20px;
 }
 .pkg-wf-modal-sub {
   color: var(--fg-3);
   font-weight: 400;
 }
+
+/* ── Modal do workflow: escopo à esquerda, workflow à direita ──
+   Duas áreas de rolagem independentes: percorrer os produtos não desloca o
+   workflow que está sendo lido, e vice-versa. */
+.pkg-wf-modal-split {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  overflow: hidden;
+}
+.pkg-wf-scope {
+  flex-shrink: 0;
+  width: 300px;
+  min-width: 0;
+  min-height: 0;
+  /* Nunca `overflow: hidden` depois de `overflow-y`: a declaração de eixo único
+     perde para a curta e a coluna deixa de rolar. */
+  overflow-x: hidden;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 8px;
+  border-right: 1px solid var(--sl-color-gray-3, #E3E6EF);
+  background: #fff;
+}
+.pkg-wf-scope-head {
+  padding: 0 12px 6px;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--fg-3, #4E607A);
+}
+/* O divisor separa o escopo do pacote da lista de produtos: são dois níveis,
+   não uma lista contínua. */
+.pkg-wf-scope-head:not(:first-child) {
+  margin-top: 6px;
+  padding-top: 12px;
+  border-top: 1px solid var(--sl-color-gray-3, #E3E6EF);
+}
+.pkg-wf-scope-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--fg);
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.pkg-wf-scope-row:hover { background: rgba(29, 44, 67, 0.05); }
+.pkg-wf-scope-row:active { background: rgba(29, 44, 67, 0.10); }
+.pkg-wf-scope-row--active,
+.pkg-wf-scope-row--active:hover,
+.pkg-wf-scope-row--active:active {
+  background: var(--sl-color-blue-2, #E1F3FF);
+  box-shadow: inset 0 0 0 1px var(--sl-color-blue-10, #1E4EE5);
+}
+.pkg-wf-scope-thumb-wrap {
+  position: relative;
+  flex-shrink: 0;
+  line-height: 0;
+}
+.pkg-wf-scope-thumb {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--sl-color-gray-3, #E3E6EF);
+  background: rgba(29, 44, 67, 0.05);
+  color: var(--fg-3, #4E607A);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.pkg-wf-scope-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.pkg-wf-scope-thumb--error {
+  background: var(--sl-color-red-2, #FFEDEA);
+  border-color: var(--sl-color-red-4, #FFD0C7);
+}
+/* Ícone, não miniatura: sem borda, na cor de interação. A borda é o que marca
+   que ali existe uma foto de produto. */
+.pkg-wf-scope-thumb--pkg {
+  background: rgba(29, 44, 67, 0.05);
+  border: none;
+}
+/* Menor que o do card de pacote: o slot aqui é de 32px, não de 40px. O anel
+   branco é o que separa o badge da miniatura embaixo. */
+.pkg-wf-scope-thumb-wrap .pkg-product-thumb-badge {
+  top: -4px;
+  right: -4px;
+  width: 14px;
+  height: 14px;
+}
+.pkg-wf-scope-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  flex: 1;
+}
+.pkg-wf-scope-name {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 18px;
+  color: var(--fg);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pkg-wf-scope-sub {
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--fg-3, #4E607A);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pkg-wf-modal-main {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+/* Barra de contexto: diz de quem é o workflow à direita, quantos itens do
+   escopo estão com erro e o tamanho do trabalho. O contador vive aqui, e não
+   numa segunda faixa dentro do painel. */
+.pkg-wf-modal-context {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--sl-color-gray-3, #E3E6EF);
+}
+.pkg-wf-modal-context-label {
+  min-width: 0;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 24px;
+  letter-spacing: -0.32px;
+  color: var(--fg);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pkg-wf-modal-context-meta {
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--fg-3, #4E607A);
+  white-space: nowrap;
+}
+.pkg-wf-modal-main .pkg-wf-modal-body {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+}
+/* O gatilho das tarefas anteriores e seguintes é uma linha clicável de largura
+   total: precisa da escada de interação, que não se escreve inline. */
+.wf-timeline-toggle { background: #fff; transition: background 0.12s ease; }
+.wf-timeline-toggle:hover { background: rgba(29, 44, 67, 0.05); }
+.wf-timeline-toggle:active { background: rgba(29, 44, 67, 0.10); }
 
 .detail-tasks { margin-top: 8px; border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
 .tasks-head {
@@ -1289,9 +1518,7 @@
 .task-title { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 /* Assignee pill + v3 dropdown — uniform proportions (initiatives canvas parity). */
 .assignee-pill-wrap { position: relative; display: inline-flex; max-width: 100%; }
-/* Mesma escala do gatilho de filtro de Atividades (.act-filter): 29px de altura,
-   texto 12.5px/500, avatar de 18px. São o mesmo controle em contextos
-   diferentes, então têm o mesmo tamanho. */
+/* 29px de altura, texto 12.5px/500, avatar de 18px. */
 .assignee-pill {
   display: inline-flex; align-items: center; gap: 6px;
   padding: 4px 10px 4px 4px;
@@ -1322,10 +1549,7 @@
 .assignee-pill-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: left; font-size: 13px; }
 .assignee-pill svg { flex-shrink: 0; color: var(--fg-3); }
 
-/* .act-filter-menu (filtros de Atividades) compartilha estas regras de
-   propósito: são o mesmo dropdown, em contextos diferentes. */
-.assignee-menu,
-.act-filter-menu {
+.assignee-menu {
   position: absolute;
   top: calc(100% + 6px);
   right: 0;
@@ -1340,8 +1564,7 @@
   transform-origin: top right;
   animation: composer-add-menu-in .15s ease-out;
 }
-.assignee-menu-item,
-.act-filter-option {
+.assignee-menu-item {
   display: flex; align-items: center; gap: 12px;
   width: 100%;
   border: none; background: transparent; cursor: pointer;
@@ -1351,9 +1574,7 @@
   transition: background .12s;
 }
 .assignee-menu-item:hover,
-.assignee-menu-item.selected,
-.act-filter-option:hover,
-.act-filter-option.selected { background: var(--bg-soft, #eeeeee); }
+.assignee-menu-item.selected { background: var(--bg-soft, #eeeeee); }
 .assignee-menu-item .person-avatar,
 .assignee-menu-item .agent-avatar-mini,
 .assignee-menu-item .team-avatar { width: 18px; height: 18px; flex-shrink: 0; }
@@ -2108,7 +2329,7 @@
   color: var(--fg);
 }
 
-[data-sl-overview-summary-side-value svg] { flex: 0 0 auto; }
+[data-sl-overview-summary-side-value] svg { flex: 0 0 auto; }
 
 /* Valor da linha "Tempo até liberar" — número grande + selo de variação. */
 [data-sl-overview-summary-resolution-value] {
@@ -2612,7 +2833,8 @@
 }
 
 [data-sl-orders-table] {
-  --sl-orders-status-col: calc(11.5rem + 2 * 16px);
+  /* A tag deixou de ter largura própria: agora é a coluna que a dimensiona. */
+  --sl-orders-status-col: 184px;
   display: grid;
   grid-template-columns:
     var(--sl-orders-status-col)
@@ -2644,7 +2866,7 @@
   font-size: 12px;
   font-weight: 400;
   letter-spacing: 0;
-  color: var(--sl-color-gray-6, #5D6C83);
+  color: var(--sl-color-gray-7, #4E607A);
 }
 
 [data-sl-orders-row][data-orders-body] {
@@ -2654,7 +2876,10 @@
 }
 
 [data-sl-orders-row][data-orders-body]:hover [data-sl-orders-cell] {
-  background-color: color-mix(in srgb, var(--sl-bg-muted, rgba(10,21,36,0.05)) 68%, var(--sl-bg-base, #fff));
+  background-color: rgba(29, 44, 67, 0.05);
+}
+[data-sl-orders-row][data-orders-body]:active [data-sl-orders-cell] {
+  background-color: rgba(29, 44, 67, 0.10);
 }
 
 [data-sl-orders-row][data-orders-body]:last-child [data-sl-orders-cell] {
@@ -2671,7 +2896,8 @@
   padding-inline: 16px;
   border-bottom: 1px solid var(--sl-color-gray-3, #E3E6EF);
   font-size: 14px;
-  color: var(--sl-color-gray-11, #0A1524);
+  font-weight: 400;
+  color: var(--sl-color-gray-12, #171717);
   background-color: var(--sl-bg-base, #fff);
 }
 
@@ -2688,11 +2914,13 @@
   white-space: nowrap;
 }
 
-/* Order id — emphasized */
+/* Order id — emphasized. `tabular-nums` para o alinhamento vertical dos
+   dígitos: a coluna é varrida de cima a baixo, não lida uma linha por vez. */
 [data-sl-orders-cell] [data-sl-orders-id] {
   font-size: 14px;
   font-weight: 500;
-  color: var(--sl-color-gray-11, #0A1524);
+  font-variant-numeric: tabular-nums;
+  color: var(--sl-color-gray-12, #171717);
 }
 
 [data-sl-orders-cell] [data-sl-orders-muted] {
@@ -2708,7 +2936,7 @@
 
 [data-sl-orders-total-amount] {
   font-size: 14px;
-  color: var(--sl-color-gray-11, #0A1524);
+  color: var(--sl-color-gray-12, #171717);
 }
 
 [data-sl-orders-total-currency] {
@@ -2721,64 +2949,60 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* ── Status tag (v3 order-status-tag.css) ── */
+/* ── Status tag ──
+   Tag de 1b. A coluna mostra status e nada mais — o progresso das tarefas mora
+   dentro da iniciativa. A largura acompanha a coluna em vez de ser fixa em
+   184px, e o texto fica centrado. */
 [data-sl-order-status-tag] {
   box-sizing: border-box;
-  display: inline-flex;
+  display: flex;
   align-items: center;
   justify-content: center;
-  width: 11.5rem;
-  max-width: 100%;
-  height: 28px;
-  padding: 0 8px;
-  border-radius: 8px;
+  width: 100%;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 9999px;
   border: 0 solid transparent;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
-  letter-spacing: -0.02em;
-  line-height: 28px;
+  letter-spacing: 0;
+  line-height: 1;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
+/* Cinco estados, não sete matizes: cyan em faturado, purple em troca e teal em
+   concluído eram três famílias que só existiam nesta tabela. Troca e devolução
+   passam a usar a tag info; faturado e concluído, a de sucesso. */
 [data-sl-order-status-tag][data-status="processing"],
-[data-sl-order-status-tag][data-status="handling"] {
+[data-sl-order-status-tag][data-status="handling"],
+[data-sl-order-status-tag][data-status="return"] {
   background-color: var(--sl-color-blue-2, #E1F3FF);
-  color: var(--sl-color-blue-9, #157BF4);
+  color: var(--sl-color-blue-10, #1E4EE5);
 }
 
-[data-sl-order-status-tag][data-status="invoiced"] {
-  background-color: color-mix(in srgb, var(--sl-color-cyan-3, #A5F1FF) 88%, var(--sl-bg-base, #fff));
-  color: var(--sl-color-cyan-9, #0187B5);
+[data-sl-order-status-tag][data-status="invoiced"],
+[data-sl-order-status-tag][data-status="complete"],
+[data-sl-order-status-tag][data-status="delivered"] {
+  background-color: var(--sl-color-green-1, #E9FCE3);
+  color: var(--sl-color-green-10, #017D10);
 }
 
 [data-sl-order-status-tag][data-status="attention"],
 [data-sl-order-status-tag][data-status="payment_pending"] {
   background-color: var(--sl-color-orange-2, #FFEDCD);
-  color: var(--sl-color-orange-8, #E57001);
-}
-
-[data-sl-order-status-tag][data-status="return"] {
-  background-color: color-mix(in srgb, var(--sl-color-purple-3, #EDDCFE) 88%, var(--sl-bg-base, #fff));
-  color: var(--sl-color-purple-9, #9C56F3);
-}
-
-[data-sl-order-status-tag][data-status="complete"],
-[data-sl-order-status-tag][data-status="delivered"] {
-  background-color: color-mix(in srgb, var(--sl-color-teal-3, #ABF2EB) 80%, var(--sl-bg-base, #fff));
-  color: var(--sl-color-teal-9, #018D88);
+  color: var(--sl-color-orange-11, #963E01);
 }
 
 [data-sl-order-status-tag][data-status="error"] {
   background-color: var(--sl-color-red-2, #FFEDEA);
-  color: var(--sl-color-red-9, #EC3727);
+  color: var(--sl-color-red-10, #D31A15);
 }
 
 [data-sl-order-status-tag][data-status="canceled"] {
-  background-color: var(--sl-color-gray-0, #fff);
-  border: 1px solid var(--sl-color-gray-3, #E3E6EF);
-  color: var(--sl-color-gray-7, #4E607A);
+  background-color: rgba(29, 44, 67, 0.05);
+  color: var(--sl-color-gray-9, #2A3F5E);
 }
 
 /* ── Payment method (brand chip) ── */
@@ -2787,7 +3011,7 @@
   align-items: center;
   gap: 6px;
   font-size: 14px;
-  color: var(--sl-color-gray-11, #0A1524);
+  color: var(--sl-color-gray-12, #171717);
 }
 
 [data-sl-order-payment-brand] {
@@ -2823,7 +3047,7 @@
 }
 
 [data-sl-orders-list-toolbar] strong {
-  color: var(--sl-color-gray-11, #0A1524);
+  color: var(--sl-color-gray-12, #171717);
   font-weight: 600;
 }
 
@@ -3208,36 +3432,20 @@
   color: var(--fg-3);
   flex-shrink: 0;
 }
-.act-filter-wrap { position: relative; display: inline-flex; }
-.act-filter {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 10px 6px 12px;
-  border-radius: 99px;
-  border: 1px solid var(--border);
-  background: #fff;
-  color: var(--fg);
-  font-size: 12.5px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background .12s, border-color .12s;
+/* Os filtros usam o mesmo `Dropdown` + `.filter-dropdown-btn.wfp-cat-btn` da
+   toolbar de Políticas; aqui só o escopo do wrapper e o avatar de 18px, que
+   acompanha o corpo do gatilho e das linhas do menu. */
+.act-filters .dd-wrap { display: inline-flex; align-items: center; }
+.act-filters .dd-wrap > span { display: inline-flex; }
+.act-filters .wfp-cat-btn {
+  width: auto; height: 36px;
+  padding: 0 12px;
+  white-space: nowrap;
 }
-.act-filter:hover { background: var(--bg-muted); border-color: var(--border-strong, var(--fg-3)); }
-.act-filter.open { border-color: var(--primary, #1E4EE5); }
-.act-filter--active { background: var(--bg-soft); }
-.act-filter svg { flex-shrink: 0; color: var(--fg-3); }
-/* No gatilho o avatar acompanha o corpo do pill; no menu, avatar e texto seguem
-   a mesma medida das linhas do Responsável (.assignee-menu-item), senão os dois
-   dropdowns abrem com alturas e larguras diferentes. */
-.act-filter .person-avatar,
-.act-filter .agent-avatar-mini { width: 18px; height: 18px; flex-shrink: 0; }
-.act-filter-option .person-avatar,
-.act-filter-option .agent-avatar-mini { width: 18px; height: 18px; flex-shrink: 0; }
-.act-filter-option-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }
-/* O menu herda o alinhamento à direita do Responsável; nos filtros da esquerda
-   isso o jogaria para fora da coluna do documento. */
-.act-filters > .act-filter-wrap .act-filter-menu { right: auto; left: 0; transform-origin: top left; }
+.act-filters .filter-dropdown-btn .person-avatar,
+.act-filters .filter-dropdown-btn .agent-avatar-mini,
+.act-filters .dd-item .person-avatar,
+.act-filters .dd-item .agent-avatar-mini { width: 18px; height: 18px; flex-shrink: 0; }
 .act-empty {
   margin: 0;
   padding: 20px 0;
@@ -3882,34 +4090,6 @@ body.resizing-x .split-resizer::before { background: var(--primary); }
   font-size: 13px; color: var(--fg-2); font-weight: 500;
 }
 .chat-back-btn:hover { background: var(--bg-soft); color: var(--fg); }
-  position: relative;
-  cursor: col-resize;
-  background: transparent;
-  z-index: 5;
-  /* hairline divider sits in the middle */
-}
-.split-resizer::before {
-  content: "";
-  position: absolute;
-  left: 50%; top: 0; bottom: 0;
-  width: 1px;
-  background: var(--border);
-  transform: translateX(-50%);
-}
-.split-resizer-grip {
-  position: absolute;
-  left: 50%; top: 50%;
-  transform: translate(-50%, -50%);
-  width: 4px; height: 36px;
-  border-radius: 999px;
-  background: var(--border-strong);
-  opacity: 0;
-  transition: opacity .15s;
-}
-.split-resizer:hover .split-resizer-grip,
-body.resizing-x .split-resizer-grip { opacity: 1; }
-body.resizing-x { cursor: col-resize; user-select: none; }
-body.resizing-x .split-resizer::before { background: var(--primary); }
 
 /* Shadow between chat and canvas */
 .resizable-split .chat-panel {
@@ -4006,15 +4186,23 @@ body.resizing-x .split-resizer::before { background: var(--primary); }
   border-radius: var(--radius);
   background: #fff;
   overflow: hidden;
+  /* A mesma tabela é renderizada no documento (painel de 420px) e na página
+     cheia; a largura do container decide quantas colunas cabem. */
+  container-type: inline-size;
 }
 .impacted-thead {
   display: grid;
   grid-template-columns: 150px 1fr 1fr 1fr;
   row-gap: 8px;
   padding: 12px 20px;
-  background: var(--bg-soft);
   color: var(--fg-3);
-  font-size: 13px;
+  font-size: 12px;
+  font-weight: 400;
+}
+/* Com a coluna Situação, a grade ganha uma faixa fixa no fim. */
+.impacted-table[data-signal="true"] .impacted-thead,
+.impacted-table[data-signal="true"] .impacted-row {
+  grid-template-columns: 170px 1fr 1fr 1fr 130px;
 }
 .impacted-row {
   display: grid;
@@ -4022,8 +4210,11 @@ body.resizing-x .split-resizer::before { background: var(--primary); }
   row-gap: 8px;
   padding: 14px 20px;
   align-items: center;
-  border-top: 1px solid var(--border);
-  font-size: 13px;
+  /* Hairline por baixo, a última linha sem — `border-top` somava com a borda do
+     container e desenhava duas linhas no topo. */
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+  font-weight: 400;
   color: var(--fg);
   background: transparent;
   text-align: left;
@@ -4031,11 +4222,15 @@ body.resizing-x .split-resizer::before { background: var(--primary); }
   cursor: pointer;
   transition: background .12s;
 }
-.impacted-row:hover { background: var(--bg-soft); }
+.impacted-row:last-child { border-bottom: none; }
+.impacted-row:hover { background: rgba(29, 44, 67, 0.05); }
+.impacted-row:active { background: rgba(29, 44, 67, 0.10); }
 /* Linha sem pedido modelado por trás: continua legível, mas não se anuncia
    como clicável. */
 .impacted-row--static { cursor: default; }
 .impacted-row--static:hover { background: transparent; }
+/* Único ID monoespaçado fora do .id-chip — é uma escolha de leitura de código,
+   não um desvio. */
 .impacted-id {
   font-family: ui-monospace, "SF Mono", monospace;
   font-size: 13px;
@@ -4043,12 +4238,129 @@ body.resizing-x .split-resizer::before { background: var(--primary); }
   color: var(--fg);
 }
 .impacted-col-id {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   width: 150px;
 }
+.impacted-table[data-signal="true"] .impacted-col-id { width: 170px; }
 .impacted-col-seller {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+/* Camada 3 — dot antes do ID: faz a varredura vertical funcionar sem chegar à
+   última coluna. */
+.impacted-dot {
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--sl-color-gray-5, #B6C2D5);
+}
+.impacted-dot[data-resolved="true"] { background: var(--sl-color-green-10, #017D10); }
+/* Resolvido, o SLA deixa de ser contagem contra o operador e vira histórico. */
+.impacted-row[data-resolved="true"] .impacted-sla { color: var(--fg-3); }
+/* Camada 2 — coluna Situação. */
+.impacted-col-state { display: flex; }
+.impacted-state-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 9999px;
+  background: rgba(29, 44, 67, 0.05);
+  color: var(--sl-color-gray-9, #2A3F5E);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+}
+.impacted-state-tag[data-resolved="true"] {
+  background: var(--sl-color-green-1, #E9FCE3);
+  color: var(--sl-color-green-10, #017D10);
+}
+.impacted-state-tag svg { flex-shrink: 0; }
+
+/* Camada 1 — barra de progresso + filtro. É o número que o operador quer antes
+   de ler qualquer linha. */
+.impacted-progress {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.impacted-progress-text {
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--fg-3);
+}
+.impacted-progress-text b { font-weight: 600; color: var(--fg); }
+.impacted-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-left: auto;
+  padding: 3px;
+  border-radius: 16px;
+  background: rgba(29, 44, 67, 0.05);
+}
+.impacted-filter-option {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 14px;
+  border: none;
+  border-radius: 12px;
+  background: transparent;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+  letter-spacing: -0.14px;
+  color: var(--fg-2);
+  cursor: pointer;
+  transition: background .12s, color .12s;
+}
+.impacted-filter-option:hover[aria-selected="false"] { background: rgba(29, 44, 67, 0.05); color: var(--fg); }
+.impacted-filter-option[aria-selected="true"] {
+  background: #fff;
+  color: var(--fg);
+  box-shadow: var(--sl-shadow-1, 0 2px 4px rgba(0, 0, 0, 0.06));
+}
+
+/* A segunda linha do ID só existe na versão estreita — larga, seller e entrega
+   têm coluna própria. */
+.impacted-id-stack { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.impacted-id-sub { display: none; }
+
+@container (max-width: 620px) {
+  .impacted-thead .impacted-col-seller,
+  .impacted-row .impacted-col-seller,
+  .impacted-thead .impacted-col-eta,
+  .impacted-row .impacted-col-eta { display: none; }
+
+  .impacted-thead,
+  .impacted-row { grid-template-columns: 1fr auto; column-gap: 12px; }
+
+  .impacted-table[data-signal="true"] .impacted-thead,
+  .impacted-table[data-signal="true"] .impacted-row { grid-template-columns: 1fr auto auto; }
+
+  .impacted-col-id,
+  .impacted-table[data-signal="true"] .impacted-col-id { width: auto; }
+  .impacted-col-sla { justify-self: end; white-space: nowrap; }
+
+  .impacted-id-sub {
+    display: block;
+    font-size: 12px;
+    line-height: 18px;
+    color: var(--fg-3);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 }
 /* Cabeçalho ordenável: mesma tipografia das outras colunas — só a seta e o
    hover denunciam que é clicável. */
@@ -4067,12 +4379,13 @@ body.resizing-x .split-resizer::before { background: var(--primary); }
 }
 .impacted-sort:hover { color: var(--fg); }
 .impacted-sort--active { color: var(--fg); font-weight: 500; }
+/* Sempre visível: invisível em repouso, a coluna não se anunciava ordenável. */
 .impacted-sort-caret {
   flex-shrink: 0;
-  opacity: 0;
+  opacity: .5;
   transition: opacity .12s ease, transform .12s ease;
 }
-.impacted-sort:hover .impacted-sort-caret { opacity: .5; }
+.impacted-sort:hover .impacted-sort-caret { opacity: .8; }
 .impacted-sort--active .impacted-sort-caret { opacity: 1; }
 .impacted-sort-caret--desc { transform: rotate(180deg); }
 
@@ -4196,6 +4509,126 @@ body.resizing-x .split-resizer::before { background: var(--primary); }
 /* Order metadata grid — same visual style as canvas metadata
    ([data-sl-initiative-document-metadata]): label 15px/400 em fg-2,
    valor 15px/500 em fg, coluna do rótulo 10rem, row-gap 12px. */
+/* ── Alerta de problema no topo do canvas do pedido ──
+   Mesma anatomia do alerta bloqueado do modal de workflow: os dois lugares em
+   que o pedido fala de problema falam igual. */
+.od-alerts {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.od-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--sl-color-red-4, #FFD0C7);
+  border-radius: 12px;
+  background: var(--sl-color-red-2, #FFEDEA);
+}
+.od-alert[data-tone="warning"] {
+  border-color: var(--sl-color-orange-4, #FED392);
+  background: var(--sl-color-orange-2, #FFEDCD);
+}
+.od-alert-icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: var(--sl-color-red-10, #D31A15);
+}
+.od-alert[data-tone="warning"] .od-alert-icon { color: var(--sl-color-orange-11, #963E01); }
+.od-alert-body { display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 0; }
+.od-alert-title {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+  letter-spacing: -0.14px;
+  color: var(--sl-color-gray-12, #171717);
+}
+.od-alert-desc {
+  font-size: 14px;
+  line-height: 22px;
+  color: var(--sl-color-gray-8, #3D516E);
+  text-wrap: pretty;
+}
+.od-alert-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 9px;
+}
+/* O primário leva à Iniciativa que já está cuidando do caso — o `bolt` é o
+   ícone que marca Iniciativa no sistema. */
+.od-alert-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 12px;
+  background: var(--sl-color-blue-10, #1E4EE5);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+  letter-spacing: -0.14px;
+  color: #fff;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background .12s;
+}
+.od-alert-primary:hover { background: #1B45CC; }
+.od-alert-primary:active { background: #163AA8; }
+/* "Ver item" é para quem quer contexto antes de sair da tela. */
+.od-alert-secondary {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 12px;
+  background: rgba(29, 44, 67, 0.05);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+  letter-spacing: -0.14px;
+  color: var(--sl-color-gray-9, #2A3F5E);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background .12s;
+}
+.od-alert-secondary:hover { background: rgba(29, 44, 67, 0.10); }
+.od-alert-secondary:active { background: rgba(29, 44, 67, 0.15); }
+.od-alert-meta {
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--sl-color-gray-8, #3D516E);
+}
+/* Fechar: ícone-only no canto, mesma cor do texto do alerta. */
+.od-alert-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  margin: -4px -6px 0 0;
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--sl-color-gray-8, #3D516E);
+  cursor: pointer;
+  transition: background .12s;
+}
+.od-alert-close:hover { background: rgba(29, 44, 67, 0.08); }
+.od-alert-close:active { background: rgba(29, 44, 67, 0.14); }
+/* No modal do pacote, mais ar entre o alerta e a grade de etapas. */
+.pkg-wf-modal-body .od-alert { margin-bottom: 8px; }
+
 .od-meta {
   grid-template-columns: 10rem 1fr;
   row-gap: 12px;
@@ -5008,8 +5441,8 @@ sl-tag[data-color="blue"] {
   height: 640px;
   max-height: calc(100vh - 64px);
   background: #fff;
-  border-radius: 14px;
-  box-shadow: var(--shadow-lg);
+  border-radius: 12px;
+  box-shadow: var(--sl-shadow-2);
   overflow: hidden;
   animation: popIn .18s cubic-bezier(.2,.8,.3,1.2);
 }
@@ -5026,8 +5459,10 @@ sl-tag[data-color="blue"] {
   flex: 1;
   min-width: 0;
   margin: 0;
-  font: var(--sl-text-display-3);
-  letter-spacing: var(--sl-text-display-3-letter-spacing);
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 28px;
+  letter-spacing: -0.4px;
   color: var(--fg);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -8726,10 +9161,10 @@ button.wf-ver-badge-btn:hover {
   padding: 14px 16px 12px;
 }
 .pkg-title {
-  font-size: 18px;
-  font-weight: 500;
+  font-size: 16px;
+  font-weight: 600;
   color: var(--fg);
-  letter-spacing: -0.2px;
+  letter-spacing: -0.32px;
 }
 .pkg-title-group {
   display: flex;
@@ -8745,106 +9180,105 @@ button.wf-ver-badge-btn:hover {
   gap: 8px;
   margin-left: auto;
 }
-.pkg-title-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 6px 12px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  background: #fff;
-  color: var(--fg);
-  font-size: 12.5px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
-}
-.pkg-title-btn:hover {
-  background: var(--bg-muted);
-  border-color: var(--border-strong, var(--fg-3));
-}
 /* Confirmação de cópia no próprio botão — some sozinha depois de 1,6s. */
 .pkg-title-btn--copied,
 .pkg-title-btn--copied:hover {
-  background: var(--bg-muted);
-  border-color: var(--border-strong, var(--fg-3));
-  color: var(--fg-2);
+  background: rgba(29, 44, 67, 0.10);
+  color: var(--fg-2, #2A3F5E);
 }
-
-/* "Ver workflow" fecha a linha de meta do pacote: herda o botão do "Ver todos",
-   mas sem o respiro de cima que ele usa quando encerra um bloco. */
+/* Na faixa de workflow o botão encerra a linha, encostado à direita. */
 .pkg-meta .pkg-wf-see-btn {
-  margin-top: 0;
   flex-shrink: 0;
-  padding: 4px 6px 4px 10px;
-  font-size: 12.5px;
+  margin-left: auto;
 }
 .pkg-header-right {
   display: flex;
   align-items: center;
   gap: 10px;
 }
-.pkg-exp-link {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--fg-2);
-  cursor: pointer;
-}
-.pkg-exp-link:hover { color: var(--fg); }
 .pkg-collapse-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 24px; height: 24px;
+  width: 36px; height: 36px;
   border: none;
   background: transparent;
   cursor: pointer;
   color: var(--fg-3);
-  border-radius: 6px;
-  transition: background 0.15s;
+  border-radius: 50%;
+  transition: background 0.12s;
 }
-.pkg-collapse-btn:hover { background: var(--bg-muted); }
+.pkg-collapse-btn:hover { background: rgba(29, 44, 67, 0.05); }
+.pkg-collapse-btn:active { background: rgba(29, 44, 67, 0.10); }
 
-/* ── Meta row ── */
+/* ── Meta row ──
+   Três campos em colunas iguais, rótulo acima do valor. A hairline horizontal
+   já separa a linha do resto do card, então não há separador vertical aqui. */
 .pkg-meta {
-  display: flex;
-  align-items: center;
-  gap: 0;
-  padding: 10px 16px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  padding: 12px 16px;
   border-bottom: 1px solid var(--border);
   background: var(--bg);
 }
 .pkg-meta-field {
   display: flex;
-  align-items: baseline;
-  gap: 6px;
-  flex: 1;
-  width: 250px;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
 }
 .pkg-meta-key {
-  font-size: 11.5px;
-  color: var(--fg-3);
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--fg-3, #4E607A);
   white-space: nowrap;
 }
 .pkg-meta-val {
-  font-size: 12.5px;
-  font-weight: 600;
+  font-size: 14px;
+  font-weight: 400;
   color: var(--fg);
-  width: 130px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.pkg-meta-sep {
+.pkg-meta .pkg-meta-sep { display: none; }
+
+/* ── Faixa de workflow ──
+   Linha própria do pacote: instância, tarefa corrente e o acesso ao modal.
+   Aqui o separador vertical fica, porque os campos correm na horizontal. */
+.pkg-meta--wide {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0;
+  row-gap: 8px;
+  background: #fff;
+  border-top: 1px solid var(--border);
+}
+.pkg-meta--wide .pkg-meta-field {
+  flex-direction: row;
+  align-items: baseline;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+/* Na faixa os nomes de workflow e de tarefa são a informação — quando não
+   couberem na linha, a faixa quebra em vez de reticenciar. */
+.pkg-meta--wide .pkg-meta-val {
+  font-size: 13px;
+  font-weight: 600;
+  overflow: visible;
+  text-overflow: clip;
+}
+.pkg-meta--wide .pkg-meta-sep {
+  display: block;
   width: 1px;
   height: 18px;
   background: var(--border);
   margin: 0 16px;
   flex-shrink: 0;
 }
-/* Linha com menos campos e rótulos mais longos (nome do workflow, task
-   corrente): o valor acompanha o texto em vez da coluna fixa de 130px. */
-.pkg-meta--wide .pkg-meta-val { width: auto; }
+.pkg-meta--wide .pkg-error-tag { margin-left: 8px; }
 
 /* ── Products table ── */
 .pkg-products-table {
@@ -8888,6 +9322,12 @@ button.wf-ver-badge-btn:hover {
   border-bottom: 1px solid var(--border);
   margin-bottom: 2px;
 }
+.prod-detail-card-row--stack {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+.prod-detail-card-row--stack .prod-detail-card-link { text-align: left; }
 .prod-detail-card-label {
   font-size: 13px;
   color: var(--fg-3);
@@ -8915,58 +9355,45 @@ button.wf-ver-badge-btn:hover {
 .pkg-products-body {
   padding: 16px;
 }
+/* A última coluna é o chevron permanente: em repouso ele já diz que a linha
+   abre o detalhe do item. */
 .pkg-thead {
   display: grid;
-  grid-template-columns: 1fr 56px 72px 100px;
+  grid-template-columns: 1fr 56px 72px 100px 24px;
   column-gap: 16px;
   padding: 16px 0px 8px;
   font-size: 12px;
-  color: var(--fg-3);
+  font-weight: 400;
+  color: var(--fg-3, #4E607A);
   border-bottom: 1px solid var(--border);
 }
 .pkg-thead span:not(:first-child) { text-align: right; }
 
 .pkg-product-row {
   display: grid;
-  grid-template-columns: 1fr 56px 72px 100px;
+  grid-template-columns: 1fr 56px 72px 100px 24px;
   row-gap: 14px;
   column-gap: 16px;
-  align-items: start;
-  padding: 20px 0px;
+  align-items: center;
+  padding: 12px 8px;
+  margin: 0 -8px;
+  border-radius: 0;
   border-bottom: 1px solid var(--border);
   position: relative;
+  transition: background 0.12s;
 }
 .pkg-product-row--clickable {
   cursor: pointer;
 }
-.pkg-product-caret {
-  position: absolute;
-  right: 8px;
-  top: 50%;
-  transform: translateY(-50%);
-  bottom: auto;
-  width: 32px;
-  height: 32px;
+.pkg-product-row--clickable:hover {
+  background: rgba(29, 44, 67, 0.05);
+}
+.pkg-product-chevron {
   display: flex;
   align-items: center;
-  justify-content: center;
-  background: #fff;
-  border: 1px solid var(--border, #E3E6EF);
-  border-radius: 8px;
-  box-shadow: 0 1px 4px 0 rgba(0, 0, 0, 0.10);
-  padding: 0;
-  margin: 0;
-  color: var(--fg-2);
-  font-size: 18px;
-  line-height: 1;
-  cursor: pointer;
-  opacity: 0;
-  transition: opacity 0.15s ease;
-  pointer-events: none;
-}
-.pkg-product-row:hover .pkg-product-caret {
-  opacity: 1;
-  pointer-events: auto;
+  justify-content: flex-end;
+  color: var(--fg-3, #4E607A);
+  flex-shrink: 0;
 }
 .prod-promo-row {
   display: flex;
@@ -9002,53 +9429,73 @@ button.wf-ver-badge-btn:hover {
   align-items: flex-start;
   gap: 12px;
 }
+/* O badge de problema mora no wrapper, que não corta: o overflow:hidden fica
+   só na caixa da imagem, senão o badge some no canto. */
+.pkg-product-thumb-wrap {
+  position: relative;
+  flex-shrink: 0;
+  line-height: 0;
+}
 .pkg-product-thumb {
-  width: 52px;
-  height: 52px;
+  width: 48px;
+  height: 48px;
   border-radius: 8px;
-  background: var(--bg-muted, #F3F4F6);
+  background: rgba(29, 44, 67, 0.05);
   border: 1px solid var(--border);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 22px;
-  flex-shrink: 0;
+  overflow: hidden;
+  color: var(--fg-3, #4E607A);
+}
+.pkg-product-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+/* Item com problema: a cor entra na moldura e no fundo do thumb, e o badge
+   marca a linha na varredura vertical. */
+.pkg-product-thumb--error {
+  background: #FFEDEA;
+  border-color: #FFD0C7;
+}
+.pkg-product-thumb-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--sl-color-red-10, #D31A15);
+  color: #fff;
+  box-shadow: 0 0 0 2px #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .pkg-product-details {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  min-width: 0;
 }
-.pkg-product-name {
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--fg);
-  cursor: pointer;
-}
-.pkg-product-name:hover { text-decoration: underline; }
-.pkg-product-sub {
-  font-size: 14px;
-  color: var(--fg-2);
-}
-.pkg-product-sku {
-  font-size: 12px;
-  color: var(--fg-3);
-  font-family: ui-monospace, "SF Mono", monospace;
-}
-.pkg-product-tags {
+.pkg-product-tags-row {
   display: flex;
   align-items: center;
   gap: 6px;
   margin-top: 4px;
-  flex-wrap: wrap;
 }
-.pkg-item-stage {
-  display: inline-flex;
-  align-items: center;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 13px;
+/* Sem hover próprio: quem responde ao ponteiro é a linha inteira. */
+.pkg-product-name {
+  font-size: 14px;
   font-weight: 600;
+  color: var(--fg);
+}
+.pkg-product-sub {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--fg-2);
 }
 .pkg-promotions-pill {
   display: inline-flex;
@@ -9058,21 +9505,38 @@ button.wf-ver-badge-btn:hover {
   font-size: 13px;
   font-weight: 500;
   border: none;
-  background: var(--bg-muted, #F3F4F6);
+  background: var(--bg-muted);
   color: var(--fg-2);
+}
+/* Tag genérica de problema, na linha do item e na faixa de workflow. Ela diz
+   que existe erro, nunca qual — o motivo específico vive no detalhe do item e
+   no modal de workflow, para que um motivo novo não peça uma tag nova. */
+.pkg-error-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 9999px;
+  background: #FFEDEA;
+  color: var(--sl-color-red-10, #D31A15);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 .pkg-cell-center {
   text-align: right;
-  font-size: 15px;
+  font-size: 14px;
+  font-weight: 400;
   color: var(--fg);
-  padding-top: 2px;
 }
 .pkg-cell-right {
   text-align: right;
-  font-size: 15px;
-  font-weight: 500;
+  font-size: 14px;
+  font-weight: 600;
   color: var(--fg);
-  padding-top: 2px;
 }
 
 /* ── Footer ── */
@@ -9104,32 +9568,6 @@ button.wf-ver-badge-btn:hover {
   border-bottom: none;
 }
 
-/* "Ver workflow" toggle button inside the product tags row */
-.pkg-wf-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 2px 8px;
-  border-radius: 99px;
-  border: 1px solid var(--sl-border-base, var(--border));
-  background: var(--sl-bg-base, #fff);
-  color: var(--fg-2);
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background 0.12s, border-color 0.12s, color 0.12s;
-}
-.pkg-wf-toggle:hover {
-  border-color: var(--border-strong, var(--fg-3));
-  background: var(--bg-muted);
-  color: var(--fg);
-}
-.pkg-wf-toggle--open {
-  background: var(--sl-bg-base-soft, var(--bg-muted));
-  border-color: var(--border-strong, var(--fg-3));
-  color: var(--fg);
-}
-
 /* Expandable workflow container inside a package product block */
 .pkg-wf-expand {
   display: flex;
@@ -9145,28 +9583,29 @@ button.wf-ver-badge-btn:hover {
   padding: 4px 0 4px;
 }
 
+/* Mesmo secundário da §2, em largura total porque encerra a lista de etapas. */
 .pkg-wf-prev-toggle-btn {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
   width: 100%;
-  padding: 12px 14px;
-  border: 1px solid var(--border);
+  min-height: 36px;
+  padding: 0 16px;
+  border: none;
   border-radius: 12px;
-  background: var(--sl-bg-base, #fff);
+  background: rgba(29, 44, 67, 0.05);
   color: var(--fg-2, #2A3F5E);
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
+  line-height: 20px;
+  letter-spacing: -0.14px;
   cursor: pointer;
-  box-shadow: 0px 2px 4px 0px rgba(0,0,0,0.04);
-  transition: background 0.15s, color 0.15s;
+  transition: background 0.12s;
 }
 
-.pkg-wf-prev-toggle-btn:hover {
-  background: var(--sl-bg-hover, #F5F5F5);
-  color: var(--fg-1, #333);
-}
+.pkg-wf-prev-toggle-btn:hover { background: rgba(29, 44, 67, 0.10); }
+.pkg-wf-prev-toggle-btn:active { background: rgba(29, 44, 67, 0.15); }
 
 /* ==========================================================================
    MY TASKS — Page layout (v3 port: module-browser-page.css + page-header.css)
@@ -11925,58 +12364,47 @@ button.wf-ver-badge-btn:hover {
   overflow: hidden;
 }
 
-/* ── 1. Cabeçalho ── */
+/* ── 1. Cabeçalho ──
+   Só o id e a tag de estado: o pedido e o SLA são metadados do item, e vivem
+   à direita do bloco seguinte. */
 .tck-head {
   display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin: 0 20px;
-  padding: 16px 0;
-}
-.tck-head-top {
-  display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 16px;
+  gap: 10px;
+  padding: 16px 24px 14px;
+  border-bottom: 1px solid var(--sl-color-gray-3, #E3E6EF);
 }
 .tck-id {
   font-size: 16px;
   font-weight: 600;
   line-height: 24px;
-  letter-spacing: -0.16px;
+  letter-spacing: -0.32px;
   color: #171717;
-}
-.tck-pager { display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0; }
-.tck-pager-count {
-  padding-right: 4px;
-  font-size: 12px;
-  line-height: 18px;
-  color: #4e607a;
-  white-space: nowrap;
 }
 .tck-pager-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 36px;
+  height: 36px;
   padding: 0;
-  border: 1px solid #e3e6ef;
-  border-radius: 8px;
-  background: #fff;
-  color: #2a3f5e;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--fg-2, #2A3F5E);
   cursor: pointer;
   transition: background .12s;
 }
-.tck-pager-btn:hover:not(:disabled) { background: #f7f9fc; }
-.tck-pager-btn:disabled { color: #d0d6e3; cursor: default; }
+.tck-pager-btn:hover:not(:disabled) { background: rgba(29, 44, 67, 0.05); }
+.tck-pager-btn:active:not(:disabled) { background: rgba(29, 44, 67, 0.10); }
+.tck-pager-btn:disabled { color: var(--sl-color-gray-5, #B6C2D5); cursor: default; }
 
-/* Linha 2 do cabeçalho: pares label/valor (Status · SLA · Pedido). */
-.tck-metrics { display: flex; gap: 40px; flex-wrap: wrap; }
+/* Metadados à direita do item: pares label/valor (SLA · Pedido). */
+.tck-metrics { display: flex; gap: 28px; flex-shrink: 0; }
 .tck-metric { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .tck-metric-label {
   font-size: 12px;
-  line-height: 18px;
+  line-height: 16px;
   color: #4e607a;
 }
 .tck-metric-value {
@@ -11993,20 +12421,26 @@ button.wf-ver-badge-btn:hover {
 /* Pill de status (Pendente / Aceita / Negada / Escalada) — assume o tom do
    desfecho depois de decidido. */
 .tck-status-pill {
+  display: inline-flex;
+  align-items: center;
   align-self: flex-start;
-  padding: 2px 8px;
+  height: 24px;
+  padding: 0 10px;
   border: none;
-  border-radius: 999px;
-  background: var(--sl-bg-muted, #f3f4f6);
+  border-radius: 9999px;
+  background: rgba(29, 44, 67, 0.05);
   font-size: 12px;
-  font-weight: 500;
-  line-height: 18px;
-  color: var(--sl-color-gray-11, #374151);
+  font-weight: 600;
+  line-height: 1;
+  color: var(--sl-color-gray-9, #2A3F5E);
   white-space: nowrap;
 }
-.tck-status-pill[data-outcome="accepted"]  { background: var(--sl-color-green-1, #E9FCE3); color: var(--sl-color-green-12, #01540E); }
-.tck-status-pill[data-outcome="denied"]    { background: var(--sl-color-red-1,   #FDF6F5); color: var(--sl-color-red-12,   #940303); }
-.tck-status-pill[data-outcome="escalated"] { background: var(--sl-color-blue-1,  #F1F8FD); color: var(--sl-color-blue-12,  #014592); }
+.tck-status-pill[data-outcome="pending"]   { background: var(--sl-color-orange-2, #FFEDCD); color: var(--sl-color-orange-10, #B24D01); }
+.tck-status-pill[data-outcome="accepted"]  { background: var(--sl-color-green-1, #E9FCE3); color: var(--sl-color-green-10, #017D10); }
+.tck-status-pill[data-outcome="denied"]    { background: var(--sl-color-red-2,   #FFEDEA); color: var(--sl-color-red-10,   #D31A15); }
+/* Escalada é a única cujo texto fica em preto: o azul da tag já é a superfície,
+   e repeti-lo no rótulo fazia a tag parecer um link. */
+.tck-status-pill[data-outcome="escalated"] { background: var(--sl-color-blue-2,  #E1F3FF); color: #171717; }
 /* Link para o pedido — segue o tom accent do design system. */
 .tck-order-link {
   display: inline-flex;
@@ -12022,19 +12456,22 @@ button.wf-ver-badge-btn:hover {
   color: #1e4ee5;
   cursor: pointer;
 }
-.tck-order-link:hover { color: #0131c5; text-decoration: underline; }
-.tck-order-link[disabled] { color: #171717; cursor: default; }
-.tck-order-link[disabled]:hover { text-decoration: none; }
+.tck-order-link:hover { color: #163AA8; text-decoration: underline; }
+.tck-order-link[data-static="true"] { color: #171717; cursor: default; }
+.tck-order-link[data-static="true"]:hover { text-decoration: none; }
 .tck-order-link svg { flex-shrink: 0; }
 
-/* ── 2. Produto (single item) e bloco multi-item ── */
+/* ── 2. Item e metadados ──
+   O item ocupa a esquerda; SLA e pedido ficam à direita, top-aligned, tanto no
+   ticket de um item quanto no bloco multi-item. */
 .tck-product-section {
   display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin: 0 20px;
-  padding: 16px 0;
+  align-items: flex-start;
+  gap: 24px;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--sl-color-gray-3, #E3E6EF);
 }
+.tck-product-section > :first-child { flex: 1; min-width: 0; }
 .tck-product {
   display: flex;
   align-items: flex-start;
@@ -12045,12 +12482,12 @@ button.wf-ver-badge-btn:hover {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  width: 40px;
-  height: 40px;
+  width: 48px;
+  height: 48px;
   overflow: hidden;
   border: 1px solid #e3e6ef;
-  border-radius: 4px;
-  background: #f7f9fc;
+  border-radius: 8px;
+  background: rgba(29, 44, 67, 0.05);
   color: #4e607a;
 }
 .tck-thumb img {
@@ -12062,20 +12499,16 @@ button.wf-ver-badge-btn:hover {
 .tck-product-info { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
 .tck-product-name {
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
   line-height: 20px;
   letter-spacing: -0.14px;
   color: #171717;
 }
+/* SKU e motivo declarado numa linha só: são a mesma informação de contexto do
+   item, e em duas linhas competiam com o nome. */
 .tck-product-sku {
   font-size: 12px;
-  line-height: 18px;
-  color: #2a3f5e;
-}
-.tck-item-reason {
-  padding-top: 2px;
-  font-size: 12px;
-  line-height: 18px;
+  line-height: 16px;
   color: #4e607a;
 }
 /* Botão "Ver fotos (N)" — só aparece com anexos. */
@@ -12096,7 +12529,7 @@ button.wf-ver-badge-btn:hover {
   cursor: pointer;
   transition: background .12s;
 }
-.tck-photos:hover { background: #f7f9fc; }
+.tck-photos:hover { background: rgba(29, 44, 67, 0.05); }
 .tck-photos svg { color: #2a3f5e; flex-shrink: 0; }
 
 /* Bloco multi-item: fechado por padrão. Fechado, mostra miniaturas empilhadas,
@@ -12116,31 +12549,33 @@ button.wf-ver-badge-btn:hover {
   width: 100%;
   padding: 10px 12px;
   border: none;
-  background: #f7f9fc;
+  background: rgba(29, 44, 67, 0.05);
   font: inherit;
   text-align: left;
   cursor: pointer;
   transition: background .12s;
 }
-.tck-items-header:hover { background: #eff1f7; }
+.tck-items-header:hover { background: rgba(29, 44, 67, 0.05); }
 .tck-items-header[data-open="true"] { border-bottom: 1px solid #e3e6ef; }
 .tck-items-stack { display: inline-flex; flex-shrink: 0; }
+/* Mesma miniatura do item único: a de 28px sobreposta em -8px virava um
+   amontoado ilegível. */
+.tck-items-stack { gap: 4px; }
 .tck-items-stack-thumb {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  width: 28px;
-  height: 28px;
+  width: 40px;
+  height: 40px;
   overflow: hidden;
-  border: 1px solid #e3e6ef;
-  border-radius: 4px;
-  background: #f7f9fc;
+  border: 1px solid var(--sl-color-gray-3, #E3E6EF);
+  border-radius: 8px;
+  background: rgba(29, 44, 67, 0.05);
   background-size: cover;
   background-position: center;
-  color: #4e607a;
+  color: var(--fg-3, #4E607A);
 }
-.tck-items-stack-thumb + .tck-items-stack-thumb { margin-left: -8px; }
 .tck-items-title { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
 .tck-items-label {
   font-size: 14px;
@@ -12169,20 +12604,22 @@ button.wf-ver-badge-btn:hover {
   border-bottom: 1px solid #e3e6ef;
 }
 .tck-items-row:last-child { border-bottom: none; }
+/* Linha do acordeão é mais densa que o item único: miniatura de 40 e nome em
+   500, para o bloco não competir com o cabeçalho do ticket. */
+.tck-items-row .tck-thumb { width: 40px; height: 40px; }
+.tck-items-row .tck-product-name { font-weight: 500; }
 
 /* ── 3. Solicitação do cliente (sempre) ── */
 .tck-request {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  margin: 0 20px;
-  padding: 16px 0;
+  padding: 16px 24px;
   border-bottom: 1px solid #e3e6ef;
 }
 .tck-request-label {
   font-size: 12px;
-  font-weight: 500;
-  line-height: 18px;
+  line-height: 16px;
   color: #4e607a;
 }
 .tck-request-body {
@@ -12198,11 +12635,8 @@ button.wf-ver-badge-btn:hover {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  margin-top: -1px;
-  padding: 16px 20px;
-  border-top: 1px solid #cbe9ff;
-  border-bottom: 1px solid #cbe9ff;
-  background: #f1f8fd;
+  padding: 16px 24px;
+  background: var(--sl-color-blue-2, #E1F3FF);
 }
 .tck-rec-title {
   display: inline-flex;
@@ -12214,7 +12648,7 @@ button.wf-ver-badge-btn:hover {
   letter-spacing: -0.14px;
   color: #171717;
 }
-.tck-rec-title svg { color: #0a72ee; flex-shrink: 0; }
+.tck-rec-title svg { color: var(--sl-color-blue-10, #1E4EE5); flex-shrink: 0; }
 .tck-rec-why {
   font-size: 14px;
   line-height: 22px;
@@ -12223,56 +12657,66 @@ button.wf-ver-badge-btn:hover {
 }
 .tck-rec-history {
   font-size: 12px;
-  line-height: 18px;
-  color: #2a3f5e;
+  line-height: 16px;
+  color: #4e607a;
 }
 
 /* ── 5. Painel de decisão (sempre aberto enquanto pendente) ── */
 .tck-panel-header {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 16px 20px 8px;
-  background: #f7f9fc;
+  padding: 14px 24px 0;
 }
-/* Segmented control. A aba ativa ganha fundo #fff + borda no tom da ação; a
-   aba recomendada leva um ponto azul depois do label. */
+/* Segmented da §1c: contêiner r16 sobre o cinza de interação, opção 36px/r12,
+   ativa branca com shadow-1 e cor no tom da ação. Ocupa a largura do painel —
+   as três saídas do ticket têm o mesmo peso. O ponto azul continua marcando a
+   aba recomendada. */
 .tck-tabs {
-  display: inline-flex;
-  gap: 2px;
-  padding: 2px;
-  border-radius: 8px;
-  background: #eff1f7;
-  align-self: flex-start;
+  display: flex;
+  gap: 4px;
+  width: 100%;
+  padding: 3px;
+  border-radius: 16px;
+  background: rgba(29, 44, 67, 0.05);
+  box-sizing: border-box;
 }
 .tck-tab {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  height: 30px;
-  padding: 0 12px;
-  border: 1px solid transparent;
-  border-radius: 6px;
+  flex: 1;
+  min-width: 0;
+  height: 36px;
+  padding: 0 8px;
+  border: none;
+  border-radius: 12px;
   background: transparent;
   font: inherit;
-  font-size: 13px;
-  font-weight: 500;
-  color: #2a3f5e;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+  color: var(--fg-3, #4E607A);
   white-space: nowrap;
   cursor: pointer;
-  transition: color .12s;
+  transition: background .12s, color .12s;
 }
 .tck-tab svg { flex-shrink: 0; }
-.tck-tab:hover { color: #171717; }
-.tck-tab[aria-pressed="true"] { background: #fff; border-color: #e3e6ef; color: #171717; }
-.tck-tab[aria-pressed="true"][data-mode="deny"]     { border-color: #ffd0c7; color: #d31a15; }
-.tck-tab[aria-pressed="true"][data-mode="escalate"] { border-color: #b6dfff; color: #1e4ee5; }
+.tck-tab:hover:not([aria-pressed="true"]) { background: rgba(29, 44, 67, 0.05); color: #171717; }
+.tck-tab:active:not([aria-pressed="true"]) { background: rgba(29, 44, 67, 0.10); }
+.tck-tab[aria-pressed="true"] {
+  background: #fff;
+  color: #171717;
+  box-shadow: var(--sl-shadow-1);
+}
+.tck-tab[aria-pressed="true"][data-mode="accept"]   { color: var(--sl-color-green-10, #017D10); }
+.tck-tab[aria-pressed="true"][data-mode="deny"]     { color: var(--sl-color-red-10, #D31A15); }
+.tck-tab[aria-pressed="true"][data-mode="escalate"] { color: var(--sl-color-blue-10, #1E4EE5); }
 .tck-tab-dot {
   width: 6px;
   height: 6px;
   border-radius: 999px;
-  background: #0a72ee;
+  background: var(--sl-color-blue-10, #1E4EE5);
   flex-shrink: 0;
 }
 
@@ -12281,26 +12725,25 @@ button.wf-ver-badge-btn:hover {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  padding: 0 20px 16px;
-  border-bottom: 1px solid #e3e6ef;
-  background: #f7f9fc;
+  padding: 14px 24px 16px;
 }
 .tck-panel-card {
   display: flex;
   flex-direction: column;
   gap: 6px;
   padding: 12px;
-  border: 1px solid #e3e6ef;
-  border-radius: 8px;
+  border: 1px solid var(--sl-color-gray-3, #E3E6EF);
+  border-radius: 12px;
   background: #fff;
 }
-.tck-panel-card[data-tone="accept"] { border-color: #aff79e; }
-.tck-panel-card[data-tone="deny"]   { border-color: #ffdfd9; }
+/* Só aceite e escalonamento ganham borda no tom: a negativa aplica uma regra da
+   política, e o vermelho na moldura fazia o card parecer um erro do sistema. */
+.tck-panel-card[data-tone="accept"] { border-color: var(--sl-color-green-4, #97EF86); }
 .tck-panel-card[data-tone="escalate"] {
   flex-direction: row;
   align-items: center;
   gap: 10px;
-  border-color: #cbe9ff;
+  border-color: var(--sl-color-blue-4, #B6DFFF);
 }
 .tck-panel-card-label {
   display: inline-flex;
@@ -12312,8 +12755,8 @@ button.wf-ver-badge-btn:hover {
   color: #4e607a;
 }
 .tck-panel-card-label svg { flex-shrink: 0; }
-.tck-panel-card-label[data-tone="accept"] { color: #01540e; }
-.tck-panel-card-label[data-tone="deny"]   { color: #940303; }
+.tck-panel-card-label[data-tone="accept"] { color: var(--sl-color-green-10, #017D10); }
+.tck-panel-card-label[data-tone="deny"]   { color: var(--sl-color-red-10, #D31A15); }
 .tck-panel-card-title {
   font-size: 14px;
   font-weight: 600;
@@ -12324,7 +12767,7 @@ button.wf-ver-badge-btn:hover {
 .tck-panel-card-body {
   font-size: 14px;
   line-height: 22px;
-  color: #2a3f5e;
+  color: var(--sl-color-gray-8, #3D516E);
   text-wrap: pretty;
 }
 .tck-panel-card-body--strong { color: #171717; }
@@ -12346,7 +12789,7 @@ button.wf-ver-badge-btn:hover {
   cursor: pointer;
 }
 .tck-message-toggle svg { flex-shrink: 0; }
-.tck-message-toggle .tck-message-toggle-star { color: #0a72ee; }
+.tck-message-toggle .tck-message-toggle-star { color: var(--sl-color-blue-10, #1E4EE5); }
 .tck-message-toggle-chevron {
   margin-left: auto;
   color: #4e607a;
@@ -12375,7 +12818,7 @@ button.wf-ver-badge-btn:hover {
   line-height: 18px;
   color: #4e607a;
 }
-.tck-panel-card[data-tone="escalate"] > svg { color: #0a72ee; flex-shrink: 0; }
+.tck-panel-card[data-tone="escalate"] > svg { color: var(--sl-color-blue-10, #1E4EE5); flex-shrink: 0; }
 
 /* Bloco do textarea "O que o supervisor precisa decidir". */
 .tck-escalate-field { display: flex; flex-direction: column; gap: 6px; }
@@ -12386,9 +12829,9 @@ button.wf-ver-badge-btn:hover {
 }
 .tck-escalate-note {
   width: 100%;
-  padding: 8px 12px;
-  border: 1px solid #d0d6e3;
-  border-radius: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--sl-color-gray-5, #B6C2D5);
+  border-radius: 12px;
   background: #fff;
   font: inherit;
   font-size: 14px;
@@ -12397,7 +12840,11 @@ button.wf-ver-badge-btn:hover {
   resize: vertical;
   box-sizing: border-box;
 }
-.tck-escalate-note:focus { outline: none; border-color: #1e4ee5; }
+.tck-escalate-note:focus {
+  outline: none;
+  border-color: var(--sl-color-blue-10, #1E4EE5);
+  box-shadow: 0 0 0 3px var(--sl-color-blue-1, #F1F8FD);
+}
 .tck-escalate-note::placeholder { color: #4e607a; }
 
 /* Nota "info" (rodapé de cada painel: consequência ou aviso). */
@@ -12405,99 +12852,104 @@ button.wf-ver-badge-btn:hover {
   display: flex;
   gap: 6px;
   font-size: 12px;
-  line-height: 18px;
+  line-height: 16px;
   color: #4e607a;
 }
 .tck-note svg { flex-shrink: 0; color: #4e607a; }
 
-/* ── 6. Rodapé — com painel aberto, mostra consequência + Confirmar ── */
-.tck-actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 12px;
-  padding: 12px 20px;
-  flex-wrap: wrap;
-}
-.tck-actions-meta {
-  margin-right: auto;
-  font-size: 12px;
-  line-height: 18px;
-  color: #4e607a;
-}
+/* ── 6. Botões de decisão — vivem no rodapé sticky do modal ── */
 .tck-confirm {
-  height: 36px;
-  padding: 0 14px;
-  border-radius: 8px;
-  border: 1px solid #1e4ee5;
-  background: #1e4ee5;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 16px;
+  border-radius: 12px;
+  border: none;
+  background: var(--sl-color-blue-10, #1E4EE5);
   font: inherit;
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
+  line-height: 20px;
   letter-spacing: -0.14px;
   color: #fff;
   white-space: nowrap;
   cursor: pointer;
-  transition: background .12s, border-color .12s;
+  transition: background .12s;
 }
-.tck-confirm:hover { background: #0131c5; border-color: #0131c5; }
-.tck-confirm[data-tone="deny"]  { background: #d31a15; border-color: #d31a15; }
-.tck-confirm[data-tone="deny"]:hover { background: #a80f0a; border-color: #a80f0a; }
+.tck-confirm:hover { background: #1B45CC; }
+.tck-confirm:active { background: #163AA8; }
+.tck-confirm[data-tone="deny"]  { background: var(--sl-color-red-10, #D31A15); }
+.tck-confirm[data-tone="deny"]:hover { background: #B40202; }
+.tck-confirm[data-tone="deny"]:active { background: #8F0000; }
+/* Desabilitado é cinza, jamais o azul (ou o vermelho) esmaecido. */
+.tck-confirm:disabled,
+.tck-confirm:disabled:hover,
+.tck-confirm[data-tone="deny"]:disabled,
+.tck-confirm[data-tone="deny"]:disabled:hover {
+  background: rgba(29, 44, 67, 0.05);
+  color: var(--fg-4, #5D6C83);
+  cursor: not-allowed;
+}
 
 /* ── 7. Estado decidido ──
    Substitui a faixa de recomendação, o painel e o rodapé. */
+/* Superfície no tom do desfecho: é ela, com a tag do cabeçalho, que diz o que
+   aconteceu — não um glifo colorido. */
 .tck-decided {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  margin-top: -1px;
-  padding: 16px 20px;
-  border-top: 1px solid #e3e6ef;
-  background: #f7f9fc;
+  padding: 16px 24px;
+  background: var(--sl-color-green-1, #E9FCE3);
   animation: tck-in .18s ease-out both;
 }
+.tck-decided[data-outcome="denied"]    { background: var(--sl-color-red-2, #FFEDEA); }
+.tck-decided[data-outcome="escalated"] { background: var(--sl-color-blue-2, #E1F3FF); }
 .tck-decided-head {
   display: flex;
   align-items: flex-start;
   gap: 10px;
 }
+/* Sem disco sólido: a superfície green-1 e a tag do cabeçalho já dizem o
+   desfecho, então basta o ícone no tom. */
 .tck-decided-glyph {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  width: 24px;
-  height: 24px;
-  border-radius: 999px;
-  color: #fff;
+  margin-top: 2px;
 }
-.tck-decided-glyph[data-outcome="accepted"]  { background: #019213; }
-.tck-decided-glyph[data-outcome="denied"]    { background: #d31a15; }
-.tck-decided-glyph[data-outcome="escalated"] { background: #0a72ee; }
+.tck-decided-glyph[data-outcome="accepted"]  { color: var(--sl-color-green-10, #017D10); }
+.tck-decided-glyph[data-outcome="denied"]    { color: var(--sl-color-red-10, #D31A15); }
+.tck-decided-glyph[data-outcome="escalated"] { color: var(--sl-color-blue-10, #1E4EE5); }
 .tck-decided-text { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+/* Título em preto: o tom do desfecho já está na superfície, no ícone e na tag
+   do cabeçalho — colorir também o texto empilhava três sinais iguais. */
 .tck-decided-title {
   font-size: 14px;
   font-weight: 600;
   line-height: 20px;
   letter-spacing: -0.14px;
+  color: #171717;
 }
-.tck-decided-title[data-outcome="accepted"]  { color: #01540e; }
-.tck-decided-title[data-outcome="denied"]    { color: #940303; }
-.tck-decided-title[data-outcome="escalated"] { color: #042db4; }
 .tck-decided-sub {
   font-size: 12px;
   line-height: 18px;
-  color: #2a3f5e;
+  color: var(--sl-color-gray-8, #3D516E);
 }
 .tck-decided-note {
   display: flex;
   flex-direction: column;
   gap: 4px;
   padding: 10px 12px;
-  border: 1px solid #e3e6ef;
-  border-radius: 8px;
+  border: 1px solid var(--sl-color-green-4, #97EF86);
+  border-radius: 12px;
   background: #fff;
 }
+.tck-decided[data-outcome="denied"] .tck-decided-note    { border-color: var(--sl-color-red-4, #FFD0C7); }
+.tck-decided[data-outcome="escalated"] .tck-decided-note { border-color: var(--sl-color-blue-4, #B6DFFF); }
 .tck-decided-note-label {
   font-size: 12px;
   line-height: 18px;
@@ -12509,103 +12961,106 @@ button.wf-ver-badge-btn:hover {
   color: #171717;
   text-wrap: pretty;
 }
-.tck-decided-foot {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 12px;
-  flex-wrap: wrap;
-}
+/* Terciário pinado à esquerda pelo próprio botão — sem spacer injetado, para
+   que o rodapé tenha a mesma anatomia nos sete estados. */
 .tck-undo {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  height: 32px;
+  gap: 6px;
+  min-height: 36px;
   margin-right: auto;
-  padding: 0 10px 0 8px;
+  padding: 0 16px;
   border: none;
-  border-radius: 8px;
+  border-radius: 12px;
   background: transparent;
   font: inherit;
-  font-size: 13px;
-  font-weight: 500;
-  color: #2a3f5e;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+  letter-spacing: -0.14px;
+  color: var(--fg-2, #2A3F5E);
   cursor: pointer;
   transition: background .12s;
 }
-.tck-undo:hover { background: #eff1f7; }
+.tck-undo:hover { background: rgba(29, 44, 67, 0.05); }
+.tck-undo:active { background: rgba(29, 44, 67, 0.10); }
 .tck-undo svg { flex-shrink: 0; }
+/* "Pular" fica à direita, ao lado do primário: não é a saída de uma decisão
+   tomada, é a alternativa a tomá-la. */
+.tck-undo[data-variant="secondary"] {
+  margin-right: 0;
+  background: rgba(29, 44, 67, 0.05);
+}
+.tck-undo[data-variant="secondary"]:hover { background: rgba(29, 44, 67, 0.10); }
+.tck-undo[data-variant="secondary"]:active { background: rgba(29, 44, 67, 0.15); }
+/* "Próximo pendente" é o primário do estado decidido — a ação que dá
+   seguimento à fila. */
 .tck-next {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  height: 36px;
-  padding: 0 10px 0 14px;
-  border: 1px solid #d0d6e3;
-  border-radius: 8px;
-  background: #fff;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 12px;
+  background: var(--sl-color-blue-10, #1E4EE5);
   font: inherit;
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
+  line-height: 20px;
   letter-spacing: -0.14px;
-  color: #171717;
+  color: #fff;
   white-space: nowrap;
   cursor: pointer;
-  transition: border-color .12s;
+  transition: background .12s;
 }
-.tck-next:hover { border-color: #b6c2d5; }
-.tck-next svg { flex-shrink: 0; color: #4e607a; }
+.tck-next:hover { background: #1B45CC; }
+.tck-next:active { background: #163AA8; }
+.tck-next svg { flex-shrink: 0; color: currentColor; }
 
 /* ── Resumo da fila (substitui o card quando todos os tickets forem resolvidos) ── */
 .tck-summary {
   display: flex;
   flex-direction: column;
-  border: 1px solid #e3e6ef;
-  border-radius: 12px;
   background: #fff;
-  overflow: hidden;
   animation: tck-in .18s ease-out both;
 }
 .tck-summary-head {
   display: flex;
   align-items: flex-start;
   gap: 12px;
-  margin: 0 20px;
-  padding: 20px 0;
+  padding: 20px 24px;
 }
+/* Sem disco sólido, como no bloco decidido: o ícone em green-10 basta. */
 .tck-summary-glyph {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  width: 32px;
-  height: 32px;
-  border-radius: 999px;
-  background: #019213;
-  color: #fff;
+  color: var(--sl-color-green-10, #017D10);
 }
 .tck-summary-title { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .tck-summary-title-text {
-  font-size: 16px;
+  font-size: 20px;
   font-weight: 600;
-  line-height: 24px;
-  letter-spacing: -0.16px;
+  line-height: 28px;
+  letter-spacing: -0.4px;
   color: #171717;
 }
 .tck-summary-subtitle {
   font-size: 14px;
   line-height: 22px;
-  color: #2a3f5e;
+  color: var(--sl-color-gray-8, #3D516E);
 }
 .tck-summary-counts {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 1px;
-  margin: 0 20px;
-  padding: 0 0 16px;
+  gap: 16px;
+  margin: 0 24px;
+  padding: 16px 0;
   border-top: 1px solid #e3e6ef;
 }
-.tck-summary-stat { display: flex; flex-direction: column; gap: 2px; padding: 16px 0 0; }
+.tck-summary-stat { display: flex; flex-direction: column; gap: 2px; }
 .tck-summary-stat-label { font-size: 12px; line-height: 18px; color: #4e607a; }
 .tck-summary-stat-value {
   font-size: 20px;
@@ -12614,16 +13069,18 @@ button.wf-ver-badge-btn:hover {
   letter-spacing: -0.4px;
   color: #b6c2d5;
 }
-.tck-summary-stat-value[data-outcome="accepted"]  { color: #01540e; }
-.tck-summary-stat-value[data-outcome="denied"]    { color: #940303; }
-.tck-summary-stat-value[data-outcome="escalated"] { color: #042db4; }
-.tck-summary-list { display: flex; flex-direction: column; margin: 0 20px; border-top: 1px solid #e3e6ef; }
+.tck-summary-stat-value[data-outcome="accepted"]  { color: var(--sl-color-green-10, #017D10); }
+.tck-summary-stat-value[data-outcome="denied"]    { color: var(--sl-color-red-10, #D31A15); }
+.tck-summary-stat-value[data-outcome="escalated"] { color: var(--sl-color-blue-10, #1E4EE5); }
+.tck-summary-list { display: flex; flex-direction: column; border-top: 1px solid #e3e6ef; }
+/* Linhas de largura total, sem raio: é uma lista de revisão, não uma pilha de
+   cards. */
 .tck-summary-row {
   display: flex;
   align-items: center;
   gap: 10px;
   width: 100%;
-  padding: 12px 0;
+  padding: 12px 24px;
   border: none;
   border-bottom: 1px solid #e3e6ef;
   background: transparent;
@@ -12633,17 +13090,18 @@ button.wf-ver-badge-btn:hover {
   transition: background .12s;
 }
 .tck-summary-row:last-child { border-bottom: none; }
-.tck-summary-row:hover { background: #f7f9fc; }
+.tck-summary-row:hover { background: rgba(29, 44, 67, 0.05); }
+.tck-summary-row:active { background: rgba(29, 44, 67, 0.10); }
 .tck-summary-row-dot {
   flex-shrink: 0;
   width: 8px;
   height: 8px;
   border-radius: 999px;
-  background: #b6c2d5;
+  background: var(--sl-color-orange-8, #E48F13);
 }
-.tck-summary-row-dot[data-outcome="accepted"]  { background: #019213; }
-.tck-summary-row-dot[data-outcome="denied"]    { background: #d31a15; }
-.tck-summary-row-dot[data-outcome="escalated"] { background: #0a72ee; }
+.tck-summary-row-dot[data-outcome="accepted"]  { background: var(--sl-color-green-10, #017D10); }
+.tck-summary-row-dot[data-outcome="denied"]    { background: var(--sl-color-red-10, #D31A15); }
+.tck-summary-row-dot[data-outcome="escalated"] { background: var(--sl-color-blue-10, #1E4EE5); }
 .tck-summary-row-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
 .tck-summary-row-title {
   font-size: 14px;
@@ -12654,7 +13112,7 @@ button.wf-ver-badge-btn:hover {
 }
 .tck-summary-row-detail {
   font-size: 12px;
-  line-height: 18px;
+  line-height: 16px;
   color: #4e607a;
 }
 .tck-summary-row-at {
@@ -12664,19 +13122,372 @@ button.wf-ver-badge-btn:hover {
   color: #4e607a;
 }
 .tck-summary-row svg { flex-shrink: 0; color: #4e607a; }
-.tck-summary-foot {
+
+/* ── 8. Tabela de tickets no canvas ──
+   Entry point da avaliação: a fila inteira de relance, com o desfecho já
+   resolvido na própria linha. Mesma grade em cabeçalho e linhas. */
+.tck-table {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--sl-color-gray-3, #E3E6EF);
+  border-radius: 12px;
+  background: #fff;
+  overflow: hidden;
+}
+.tck-table-head,
+.tck-table-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 200px) 140px 24px;
+  align-items: center;
+  gap: 12px;
+  padding: 0 16px;
+  text-align: left;
+}
+/* Mesma anatomia de cabeçalho das outras tabelas do protótipo (2e): 12/400 sem
+   faixa de fundo. A faixa cinza fazia esta tabela parecer de outro sistema ao
+   lado da de pedidos da iniciativa. */
+.tck-table-head {
+  min-height: 36px;
+  border-bottom: 1px solid var(--sl-color-gray-3, #E3E6EF);
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 18px;
+  color: var(--fg-3, #4E607A);
+}
+.tck-table-row {
+  min-height: 56px;
+  border: none;
+  border-bottom: 1px solid var(--sl-color-gray-3, #E3E6EF);
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+  transition: background .12s;
+}
+.tck-table-row:last-child { border-bottom: none; }
+.tck-table-row:hover { background: rgba(29, 44, 67, 0.05); }
+.tck-table-row:active { background: rgba(29, 44, 67, 0.10); }
+.tck-table-ticket { display: flex; align-items: center; gap: 10px; min-width: 0; }
+/* Ponto no tom do desfecho — a mesma escala da tag, para que a coluna Desfecho
+   e a linha não contem histórias diferentes. */
+.tck-table-dot {
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--sl-color-orange-8, #E48F13);
+}
+.tck-table-dot[data-outcome="accepted"]  { background: var(--sl-color-green-10, #017D10); }
+.tck-table-dot[data-outcome="denied"]    { background: var(--sl-color-red-10, #D31A15); }
+.tck-table-dot[data-outcome="escalated"] { background: var(--sl-color-blue-10, #1E4EE5); }
+.tck-table-ticket-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.tck-table-id {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+  letter-spacing: -0.14px;
+  color: #171717;
+}
+.tck-table-sub {
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--fg-3, #4E607A);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tck-table-owner { display: flex; align-items: center; gap: 8px; min-width: 0; }
+/* Cinza de interação: qualquer tom de marca aqui leria como seleção de linha. */
+.tck-table-owner .person-avatar {
+  background: rgba(29, 44, 67, 0.10);
+  color: var(--fg-2, #2A3F5E);
+  font-weight: 600;
+}
+.tck-table-owner-name {
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--fg-2, #2A3F5E);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tck-table-outcome { display: flex; }
+.tck-table-chevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--fg-3, #4E607A);
+}
+/* Ação da seção "Tickets abertos" — secundário, para não competir com o
+   primário do rodapé do modal. */
+.tck-open-modal-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  padding: 0 12px;
+  border: none;
+  border-radius: 12px;
+  background: rgba(29, 44, 67, 0.05);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 18px;
+  color: var(--fg-2, #2A3F5E);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background .12s;
+}
+.tck-open-modal-btn:hover { background: rgba(29, 44, 67, 0.10); }
+.tck-open-modal-btn:active { background: rgba(29, 44, 67, 0.15); }
+
+/* ── 9. Modal de avaliação ──
+   Fila à esquerda, ticket à direita, rodapé sticky com anatomia única nos
+   sete estados. Herda .stage-config-modal e sobrescreve só a medida. */
+.stage-config-modal.tck-modal {
+  width: 1180px;
+  max-width: calc(100vw - 48px);
+  /* Altura fixa: é ela, com o rodapé sticky, que garante que um ticket longo
+     rola dentro do painel em vez de empurrar o "Confirmar" fora da tela. O
+     min() só evita estourar viewports curtas. */
+  height: 720px;
+  max-height: min(720px, calc(100vh - 48px));
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--sl-color-gray-3, #E3E6EF);
+  overflow: hidden;
+}
+/* Cabeçalho do modal na densidade do documento (16/24), não na barra de 56px
+   do modal de etapa — aqui ele carrega título e tag de progresso. */
+.tck-modal .stage-config-modal-head {
+  height: auto;
+  padding: 16px 24px;
+}
+/* A tag herda `align-self: flex-start` da fila; no cabeçalho ela alinha ao
+   centro do título e do botão de fechar. */
+.tck-modal .stage-config-modal-head .tck-status-pill { align-self: center; }
+.tck-modal-split { display: flex; flex: 1; min-height: 0; overflow: hidden; }
+.tck-modal-main { display: flex; flex-direction: column; flex: 1; min-width: 0; min-height: 0; }
+/* Sem padding próprio: cada bloco do painel carrega os seus 24px laterais,
+   para que as hairlines corram de ponta a ponta. */
+.tck-modal-scroll {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+}
+/* Enviando: o conteúdo fica inerte sem sumir, para que o operador continue
+   vendo o que confirmou. */
+.tck-modal-scroll[data-sending="true"] { pointer-events: none; opacity: .6; }
+/* Dentro do modal o card não desenha moldura própria — a moldura é o modal. */
+.tck-modal-scroll .tck-card { border: none; border-radius: 0; }
+/* Anatomia única nos sete estados: ações à direita, e o que fica à esquerda se
+   pina sozinho com `margin-right: auto`, sem spacer injetado. */
+.tck-modal-foot {
   display: flex;
   align-items: center;
   justify-content: flex-end;
   gap: 8px;
-  padding: 12px 20px;
-  border-top: 1px solid #e3e6ef;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+  position: sticky;
+  bottom: 0;
+  margin-top: auto;
+  padding: 12px 24px;
+  border-top: 1px solid var(--sl-color-gray-3, #E3E6EF);
+  background: #fff;
 }
-.tck-summary-foot-note {
+/* Três pontos enquanto grava: o progresso à esquerda, e o rótulo do primário
+   já diz "Enviando…". */
+.tck-modal-foot-dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   margin-right: auto;
-  font-size: 12px;
+}
+.tck-modal-foot-dots span {
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--sl-color-blue-10, #1E4EE5);
+  animation: tck-dot 1s ease-in-out infinite;
+}
+.tck-modal-foot-dots span:nth-child(2) { animation-delay: .15s; }
+.tck-modal-foot-dots span:nth-child(3) { animation-delay: .3s; }
+@keyframes tck-dot {
+  0%, 100% { opacity: .3; }
+  50% { opacity: 1; }
+}
+/* Alerta de falha de envio — dentro do painel, acima do segmented. */
+.tck-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 16px 24px;
+  padding: 12px;
+  border: 1px solid var(--sl-color-red-4, #FFD0C7);
+  border-radius: 12px;
+  background: var(--sl-color-red-2, #FFEDEA);
+}
+.tck-error > svg { flex-shrink: 0; margin-top: 1px; color: var(--sl-color-red-10, #D31A15); }
+.tck-error-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.tck-error-title {
+  font-size: 13px;
+  font-weight: 600;
   line-height: 18px;
-  color: #4e607a;
+  color: #171717;
+}
+.tck-error-body {
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--fg-3, #4E607A);
+}
+
+/* Fila aberta — 300px, scroll independente do painel do ticket. */
+.tck-queue {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  width: 300px;
+  min-width: 0;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  border-right: 1px solid var(--sl-color-gray-3, #E3E6EF);
+  background: #fff;
+  transition: width .15s ease;
+}
+.tck-queue-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-shrink: 0;
+  padding: 14px 16px 10px;
+}
+.tck-queue-title {
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--fg-3, #4E607A);
+}
+/* Contador da fila empurrado pelo próprio elemento: rótulo à esquerda,
+   contador e botão de colapsar juntos à direita. */
+.tck-queue-count {
+  margin-left: auto;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--fg-3, #4E607A);
+  font-variant-numeric: tabular-nums;
+}
+.tck-queue-head .tck-pager-btn { width: 28px; height: 28px; }
+.tck-queue-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0 8px 8px;
+}
+.tck-queue-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  border-radius: 12px;
+  background: transparent;
+  box-shadow: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background .12s;
+}
+.tck-queue-row:hover { background: rgba(29, 44, 67, 0.05); }
+.tck-queue-row:active { background: rgba(29, 44, 67, 0.10); }
+/* Corrente no padrão de seleção de `2c`: superfície blue-2 e anel interno em
+   azul — a linha se lê selecionada sem depender de sombra. */
+.tck-queue-row--active,
+.tck-queue-row--active:hover {
+  background: var(--sl-color-blue-2, #E1F3FF);
+  box-shadow: inset 0 0 0 1px var(--sl-color-blue-10, #1E4EE5);
+}
+.tck-queue-row .tck-table-dot { margin-top: 6px; }
+.tck-queue-row-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.tck-queue-row-id {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 18px;
+  color: #171717;
+}
+.tck-queue-row-sub {
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--fg-3, #4E607A);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tck-queue-row .tck-status-pill { margin-top: 2px; }
+
+/* Fila fechada — trilha de 56px que preserva progresso e posição. */
+.tck-queue-rail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  flex-shrink: 0;
+  width: 56px;
+  padding: 14px 0;
+  border-right: 1px solid var(--sl-color-gray-3, #E3E6EF);
+  background: #fff;
+}
+/* Na trilha o botão ganha superfície: sem a coluna ao lado, ele é o único
+   alvo de clique e precisa se ler como tal. */
+.tck-queue-rail .tck-pager-btn {
+  width: 32px;
+  height: 32px;
+  background: rgba(29, 44, 67, 0.05);
+}
+.tck-queue-rail .tck-pager-btn:hover:not(:disabled) { background: rgba(29, 44, 67, 0.10); }
+.tck-queue-rail .tck-pager-btn:active:not(:disabled) { background: rgba(29, 44, 67, 0.15); }
+.tck-queue-rail-divider {
+  width: 24px;
+  height: 1px;
+  background: var(--sl-color-gray-3, #E3E6EF);
+}
+.tck-queue-rail-dots {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+/* Slot de 16px: o ponto de 8px mais a margem, para que o anel do corrente
+   caiba sem deslocar a coluna. */
+.tck-queue-rail-dot {
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  margin: 4px;
+  border-radius: 999px;
+  background: var(--sl-color-orange-8, #E48F13);
+}
+.tck-queue-rail-dot[data-outcome="accepted"]  { background: var(--sl-color-green-10, #017D10); }
+.tck-queue-rail-dot[data-outcome="denied"]    { background: var(--sl-color-red-10, #D31A15); }
+.tck-queue-rail-dot[data-outcome="escalated"] { background: var(--sl-color-blue-10, #1E4EE5); }
+/* O ticket corrente ganha um anel em vez de tamanho: a coluna de pontos não
+   pode saltar de largura conforme o operador anda na fila. */
+.tck-queue-rail-dot[data-current="true"] {
+  box-shadow: 0 0 0 2px var(--sl-color-blue-2, #E1F3FF);
+}
+.tck-queue-rail-progress {
+  flex-shrink: 0;
+  margin-top: auto;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--fg-3, #4E607A);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
 }
 
 /* ═══ Políticas de pedido (view-workflow-policies.jsx) ═════════════════════
@@ -12783,18 +13594,37 @@ button.wf-ver-badge-btn:hover {
 /* Handoff v2 §1 — medidas de tag: altura 24px, raio 9999px, 600 12px/1.
    A cor continua vindo da matriz da categoria (cat.color / cat.fg): são
    rótulos categóricos, não os cinco estados do cartão 1b. */
+/* Só ícone (24×24), nome da categoria no tooltip. */
 .wfp-cat-tag {
-  display: inline-flex; align-items: center; gap: 4px;
+  display: inline-flex; align-items: center; justify-content: center;
   flex-shrink: 0;
+  width: 24px;
   height: 24px;
-  padding: 0 10px;
   border-radius: 9999px;
-  font-size: 12px; font-weight: 600; line-height: 1;
-  letter-spacing: .04em; text-transform: uppercase;
+  font-size: 11px; font-weight: 600; line-height: 1;
   color: var(--fg);
   white-space: nowrap;
 }
 .wfp-cat-tag svg { flex-shrink: 0; }
+
+/* Estado da regra na linha. Inativa em cinza: lê como desligada de longe. */
+.wfp-state-tag {
+  display: inline-flex; align-items: center;
+  flex-shrink: 0;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 9999px;
+  background: var(--sl-color-green-1, #E9FCE3);
+  color: var(--sl-color-green-10, #017D10);
+  font-size: 12px; font-weight: 600; line-height: 1;
+  white-space: nowrap;
+}
+.wfp-state-tag--off {
+  background: rgba(29, 44, 67, 0.06);
+  color: var(--sl-color-gray-7, #4E607A);
+}
+.wfp-row.is-off .wfp-row-name,
+.wfp-row.is-off .wfp-row-tasks-label { color: var(--fg-4, #5D6C83); }
 
 /* Linha de regra em três faixas: nome cresce, "N tarefas" ocupa uma coluna
    de largura fixa e o toggle fica sempre encostado à direita — assim as três
@@ -12824,11 +13654,6 @@ button.wf-ver-badge-btn:hover {
 .wfp-dots { display: flex; align-items: center; gap: 3px; }
 .wfp-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
 .wfp-dot--lg { width: 10px; height: 10px; }
-.wfp-col-status {
-  flex: none;
-  width: 40px;
-  display: flex; align-items: center; justify-content: flex-end;
-}
 .wfp-empty { padding: 40px 20px; text-align: center; font-size: 13px; color: var(--fg-3); }
 
 /* Drawer de detalhe — corpo dentro do .wf-side-drawer já existente. */
@@ -12966,15 +13791,10 @@ button.wf-ver-badge-btn:hover {
 .wf-list > .wf-list-card--v2 + .wf-list-card--v2 {
   border-top: 1px solid var(--sl-color-gray-3, #e3e6ef);
 }
-/* Solta o `.detail-body` do max-width padrão (800px) quando renderiza a
-   lista v2 — os cards devem ocupar a largura total do canvas, com padding
-   lateral batendo com o `.canvas-topbar` (20px) para o título "Workflows"
-   ficar alinhado à esquerda dos cards. */
-.detail-body:has(.wf-list-card--v2) {
-  max-width: none;
-  padding-left: 80px;
-  padding-right: 80px;
-}
+/* A lista usa a mesma coluna do resto do canvas (`.detail-body`: 800px
+   centrados, 44px laterais) — o detalhe e as configurações do workflow já
+   abrem nessa medida, e a lista alinhada a eles evita o salto de largura
+   ao entrar e sair de um workflow. */
 
 .wf-card-head { display: flex; align-items: center; gap: 10px; }
 .wf-card-name {

@@ -1,4 +1,4 @@
-/* global React, ReactDOM, Icon, AIWData, ChatPanel, ResizableSplit, Toggle, Dropdown, IconButton */
+/* global React, ReactDOM, Icon, AIWData, ChatPanel, ResizableSplit, Toggle, Dropdown, IconButton, SidebarTooltip */
 const { useState, useRef, useEffect, useMemo, useCallback } = React;
 
 /* ══ Políticas do Workflow ══════════════════════════════════════════════
@@ -44,12 +44,31 @@ const POLICY_CATEGORY_ICON = {
 function PolicyCategoryTag({ categoryId }) {
   const cat = categoryOf(categoryId);
   const iconName = POLICY_CATEGORY_ICON[categoryId];
-  /* `cat.fg` é o tom escuro da mesma matriz da `cat.color` — texto e
-     ícone usam o mesmo fg pra manter contraste dentro da paleta. */
+  /* Só o ícone, com o nome da categoria no tooltip: a cor da tag (`cat.color`)
+     já identifica a categoria na varredura da lista, e o rótulo em caixa alta
+     disputava espaço com o nome da política. `cat.fg` é o tom escuro da mesma
+     matriz da cor de fundo. */
   return (
-    <span className="wfp-cat-tag" style={{ background: cat.color, color: cat.fg }}>
-      {iconName && <Icon name={iconName} size={14} />}
-      {cat.label}
+    <SidebarTooltip label={cat.label} placement="top">
+      <span
+        className="wfp-cat-tag"
+        style={{ background: cat.color, color: cat.fg }}
+        role="img"
+        aria-label={cat.label}
+      >
+        {iconName ? <Icon name={iconName} size={14} /> : <span className="wfp-cat-tag-fallback">{cat.label.charAt(0)}</span>}
+      </span>
+    </SidebarTooltip>
+  );
+}
+
+/* ── Tag de estado da regra ─────────────────────────────────────────────
+   Substitui o toggle na linha: ligar/desligar fica só dentro do drawer, e a
+   lista passa a dizer o estado em vez de oferecer o controle. */
+function PolicyStateTag({ active }) {
+  return (
+    <span className={`wfp-state-tag${active ? "" : " wfp-state-tag--off"}`}>
+      {active ? "Ativa" : "Inativa"}
     </span>
   );
 }
@@ -163,7 +182,7 @@ function PolicyRuleDrawer({ rule, policy, onToggle, onClose }) {
 /* ── Canvas ─────────────────────────────────────────────────────────────── */
 function WorkflowPoliciesCanvas({
   policies, query, onQuery, category, onCategory, status, onStatus,
-  onToggleRule, selectedRuleId, onSelectRule, highlightId, onNewRule,
+  selectedRuleId, onSelectRule, highlightId, onNewRule,
 }) {
   const rowRefs = useRef({});
 
@@ -299,7 +318,7 @@ function WorkflowPoliciesCanvas({
                     <div
                       key={rule.id}
                       ref={(el) => { rowRefs.current[rule.id] = el; }}
-                      className={`wfp-row${selectedRuleId === rule.id ? " is-selected" : ""}${highlightId === rule.id ? " is-new" : ""}`}
+                      className={`wfp-row${selectedRuleId === rule.id ? " is-selected" : ""}${highlightId === rule.id ? " is-new" : ""}${rule.active ? "" : " is-off"}`}
                     >
                       <button className="wfp-row-main" onClick={() => onSelectRule(rule.id)}>
                         <span className="wfp-sid">{rule.id}</span>
@@ -310,9 +329,7 @@ function WorkflowPoliciesCanvas({
                         <span className="wfp-row-tasks-label">{plural(rule.tasks.length, "tarefa", "tarefas")}</span>
                       </span>
 
-                      <span className="wfp-col-status">
-                        <Toggle on={rule.active} onChange={() => onToggleRule(policy.id, rule.id)} />
-                      </span>
+                      <PolicyStateTag active={rule.active} />
                     </div>
                   ))}
                 </div>
@@ -2109,7 +2126,6 @@ function WorkflowPoliciesView() {
           onCategory={setCategory}
           status={status}
           onStatus={setStatus}
-          onToggleRule={toggleRule}
           selectedRuleId={selectedRuleId}
           onSelectRule={(id) => { setHighlightId(null); setSelectedRuleId(id); }}
           highlightId={highlightId}

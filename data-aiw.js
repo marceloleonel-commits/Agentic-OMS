@@ -118,6 +118,10 @@ window.AIWData = (function () {
       "Carolina Estrela", "Felipe Guedes", "Renata Vilela", "Otávio Lacerda",
       "Amanda Cordeiro", "Leandro Pontes", "Sofia Andrade"
     ];
+    /* `resolvedBy` nomeia a Tarefa que tirou o pedido do problema. Os 14 do
+       recorte crítico são justamente os que a reatribuição cobriu, então são
+       eles que aparecem resolvidos na lista da Iniciativa. */
+    const resolvedByTask = ["Coleta reagendada", "Cliente notificado"];
     return customers.map((customer, i) => {
       const today = i < 14;
       return {
@@ -125,7 +129,8 @@ window.AIWData = (function () {
         customer,
         sla: today ? "D+1 hoje" : "D+2 amanhã",
         seller: "Loja Botafogo",
-        eta: today ? "14/06/2026" : "15/06/2026"
+        eta: today ? "14/06/2026" : "15/06/2026",
+        resolvedBy: today ? resolvedByTask[i % 2] : null
       };
     });
   }
@@ -442,6 +447,9 @@ window.AIWData = (function () {
             sla: "3h",
             overdue: true,
             order: "BR-3010984",
+            /* Único ticket em que o primeiro envio falha, para que o estado de
+               erro do rodapé seja alcançável no protótipo. */
+            sendFails: true,
             /* Devolução com mais de um item: o motivo é declarado por item, e o
                bloco no card aparece contido e colapsado, com miniaturas + contagem
                + resumo por motivo. Aberto, cada linha entra dividida por hairline. */
