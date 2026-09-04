@@ -1,4 +1,4 @@
-/* global React, Icon, IconSparkleFill, IconHandFill, IconPencil, IconCursorFill, IconDragDots, IconDotsSixVertical, IconDotsThreeVertical, IconEdit, IconPlayCircleFill, IconCaretLeftSmall, IconCaretDown, IconCaretUp, IconTrash, IconCheck, IconCube, IconCurrencyCircleDollar, IconNewspaper, IconTruck, IconReorder, AIWData, ChatPanel, ResizableSplit, IconButton, SidebarTooltip, PersonAvatar */
+/* global React, Icon, IconSparkleFill, IconHandFill, IconPencil, IconCursorFill, IconDragDots, IconDotsSixVertical, IconDotsThreeVertical, IconEdit, IconPlayCircleFill, IconCaretLeftSmall, IconCaretDown, IconCaretUp, IconTrash, IconCheck, IconCube, IconCurrencyCircleDollar, IconNewspaper, IconTruck, IconReorder, AIWData, ChatPanel, ResizableSplit, IconButton, SidebarTooltip, PersonAvatar, CanvasTopbar */
 const { useState, useRef, useEffect, useLayoutEffect, useCallback } = React;
 
 // Usuário da sessão atual — mesmo e-mail já usado como autor/editor nos dados
@@ -3540,6 +3540,7 @@ function WorkflowBoardCanvas({
   detailHasChanges, setDetailHasChanges,
   wfLayout = "expanded", wfGroup = "flat",
   wfDetailView = "2-passos",
+  onLeave, chatOpen, onToggleChat, onCloseCanvas,
 }) {
   const agentSay     = React.useContext(AgentSayContext);
   const isList       = mode.kind === "list";
@@ -3556,48 +3557,66 @@ function WorkflowBoardCanvas({
   };
 
   const hasBack = showWizard || isDetail || isTask || isStage || isSettings;
-  const headerTitle = (isDetail || isTask || isStage || isSettings)
-    ? (workflow?.name || "Configurações de Workflow")
-    : "Configurações de Workflow";
+  /* O nome do workflow não aparece mais no topbar (handoff §1.3): dentro de um
+     workflow ele já é o h1 editável do corpo; na lista, o h1 abaixo. */
+  const inWorkflow = isDetail || isTask || isStage || isSettings;
+  /* Subview: task ou stage dentro de um workflow mostra o nome no topbar,
+     e o chip do id volta para o detalhe do workflow. */
+  const inSubview = isTask || isStage;
+  const subviewTitle = (() => {
+    if (isTask && workflow) {
+      const task = workflow.stages.flatMap(s => s.tasks).find(t => t.id === mode.taskId);
+      return task?.name || "Tarefa";
+    }
+    if (isStage && workflow) {
+      const stage = workflow.stages.find((s, i) => (s.id ?? String(i)) === mode.stageId);
+      return stage?.name || "Etapa";
+    }
+    return null;
+  })();
+  const resetToWorkflow = () => setMode({ kind: "detail", workflowId: mode.workflowId });
+
+  /* "Publicar" é o único CTA desta tela, e só existe quando há alterações
+     pendentes — daí ser primário. */
+  const publish = () => {
+    detailActionsRef.current?.save?.();
+    setDetailHasChanges(false);
+    if (workflow) {
+      const now = new Date().toISOString();
+      workflow.publishedAt = now;
+      workflow.publishedBy = CURRENT_USER_EMAIL;
+      workflow.lastEditedAt = now;
+      workflow.lastEditedBy = CURRENT_USER_EMAIL;
+      workflow.wfStatus = "published";
+    }
+    const wfName = workflow?.name ?? "workflow";
+    agentSay?.({
+      from: "agent",
+      text: `**${wfName}** publicado com sucesso! As alterações já estão ativas para novos pedidos.`,
+      quickReplies: ["Ver histórico de versões", "+ Adicionar tarefa", "O que posso fazer?"],
+    });
+  };
 
   return (
     <div className="detail-panel">
-      <div className="detail-head canvas-topbar" data-sl-canvas-tool-topbar="">
-        {hasBack ? (
-          <button className="canvas-topbar-back" onClick={back} title="Voltar">
-            <Icon name="chevron-left" size={16} />
-            <span>Voltar</span>
-          </button>
-        ) : (
-          <span className="canvas-topbar-title">{headerTitle}</span>
-        )}
-        <div className="detail-head-right">
-          {(isDetail || isTask || isStage || isSettings) && detailHasChanges &&
-            <button data-sl-button data-variant="primary" data-size="small" data-has-label onClick={() => {
-              detailActionsRef.current?.save?.();
-              setDetailHasChanges(false);
-              if (workflow) {
-                const now = new Date().toISOString();
-                workflow.publishedAt = now;
-                workflow.publishedBy = CURRENT_USER_EMAIL;
-                workflow.lastEditedAt = now;
-                workflow.lastEditedBy = CURRENT_USER_EMAIL;
-                workflow.wfStatus = "published";
-              }
-              const wfName = workflow?.name ?? "workflow";
-              agentSay?.({
-                from: "agent",
-                text: `**${wfName}** publicado com sucesso! As alterações já estão ativas para novos pedidos.`,
-                quickReplies: ["Ver histórico de versões", "+ Adicionar tarefa", "O que posso fazer?"],
-              });
-            }}>
-              Publicar
-            </button>
-          }
-        </div>
-      </div>
+      <CanvasTopbar
+        onBack={hasBack ? back : onLeave}
+        backLabel="Voltar para Workflows"
+        id={inWorkflow ? (workflow?.code || undefined) : undefined}
+        onResetToMain={inSubview ? resetToWorkflow : undefined}
+        subTitle={subviewTitle}
+        cta={inWorkflow && detailHasChanges
+          ? { label: "Publicar", variant: "primary", onClick: publish }
+          : undefined}
+        chatOpen={chatOpen}
+        onToggleChat={onToggleChat}
+        onCloseCanvas={onCloseCanvas}
+      />
       <div className="detail-scroll">
         <div className="detail-body">
+          {/* §1.3 — o título saiu do topbar; na lista ele passa a ser o h1 do
+              corpo, como já era dentro de um workflow. */}
+          {isList && !showWizard && <h1 className="detail-title">Workflows</h1>}
           {isList && showWizard &&
             <NewWorkflowWizard
               existingWorkflows={AIWData.workflows}
@@ -3889,6 +3908,11 @@ function WorkflowBoardView({ onBack, wfLayout = "expanded", wfGroup = "flat", wf
   const [chatMsgs, setChatMsgs] = useState([]);
   const [isTyping, setIsTyping] = useState(false);
   const chatComposerRef = useRef(null);
+
+  /* Modos do shell (handoff §8) — o chat e o canvas se revezam pela tela;
+     nunca os dois fechados ao mesmo tempo. */
+  const [chatOpen, setChatOpen] = useState(true);
+  const [canvasOpen, setCanvasOpen] = useState(true);
 
   // True while the agent is collecting a new task through chat
   const [chatAddingTask, setChatAddingTask] = useState(false);
@@ -4854,16 +4878,17 @@ function WorkflowBoardView({ onBack, wfLayout = "expanded", wfGroup = "flat", wf
     <ChatStartAddStageContext.Provider value={chatStartAddStageFn}>
     <AgentSayContext.Provider value={agentSay}>
     <ChatTaskRemovedContext.Provider value={notifyTaskRemovedFn}>
-      <ResizableSplit screenLabel="03 Gerenciador de Workflows" initialWidth={400}>
+      <ResizableSplit screenLabel="03 Gerenciador de Workflows" initialWidth={400} chatOpen={chatOpen} canvasOpen={canvasOpen}>
         <ChatPanel
           title={ctx.title}
           chips={ctx.chips}
           placeholder={ctx.placeholder}
-          onBack={onBack}
           messages={chatMsgs}
           onSend={handleSend}
           isTyping={isTyping}
           composerRef={chatComposerRef}
+          canvasOpen={canvasOpen}
+          onOpenCanvas={() => setCanvasOpen(true)}
         />
         <WorkflowBoardCanvas
           mode={mode}
@@ -4880,6 +4905,10 @@ function WorkflowBoardView({ onBack, wfLayout = "expanded", wfGroup = "flat", wf
           wfLayout={wfLayout}
           wfGroup={wfGroup}
           wfDetailView={wfDetailView}
+          onLeave={onBack}
+          chatOpen={chatOpen}
+          onToggleChat={() => setChatOpen(o => !o)}
+          onCloseCanvas={() => { setChatOpen(true); setCanvasOpen(false); }}
         />
       </ResizableSplit>
     </ChatTaskRemovedContext.Provider>

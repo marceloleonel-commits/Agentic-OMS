@@ -135,6 +135,25 @@ window.AIWData = (function () {
     });
   }
 
+  /* Opções do "Qual o motivo?" do Branch C. Ficam fora da árvore porque a
+     pergunta aparece em dois pontos com desfechos diferentes: vindo do q1
+     ("não despacharam") ela ainda pergunta se há previsão; vindo do b2 a
+     previsão já foi respondida ("não / sem previsão"), então o motivo fecha
+     a árvore. Compartilhar a lista evita manter dois conjuntos de opções. */
+  const CANVAS_A_MOTIVOS = [
+    { id: "capacidade", title: "Sem capacidade operacional"              },
+    { id: "fechada",    title: "Loja fechada / feriado não previsto"     },
+    { id: "fiscal",     title: "Pendência de nota fiscal / documentação" },
+    { id: "outro",      title: "Outro motivo", other: true, otherPlaceholder: "Descreva o motivo informado pelo seller." }
+  ];
+  /* Desfecho C.2.2 — sem previsão de despacho: escalona, comunica e registra. */
+  const CANVAS_A_SEM_PREVISAO_TASKS = [
+    { state: "attention", title: "Contatar seller para novo prazo de despacho", assignee: "Ecommerce Supervisor", initial: "E" },
+    { state: "attention", title: "Redistribuir pedidos para seller backup (se aplicável)", assignee: "Ecommerce Supervisor", initial: "E" },
+    { state: "loading",   title: "Comunicar atraso definitivo aos clientes", assignee: "Order Management Agent", agent: true },
+    { state: "done",      title: "Registrar recorrência para gestão de performance do seller", assignee: "Order Management Agent", agent: true }
+  ];
+
   const tasks = [
 
     /* ── Canvas A · Bloqueio operacional em massa (Seller não despachou no SLA) ── */
@@ -277,9 +296,12 @@ window.AIWData = (function () {
                   ]
                 },
                 /* Convergência B.2.2 → Branch C: sem previsão, os restantes
-                   passam a seguir o conjunto de tarefas do Branch C. */
+                   passam a seguir o conjunto de tarefas do Branch C. Cai em
+                   `c1-restantes` (só o motivo) porque a previsão de despacho
+                   é justamente o que esta pergunta acabou de responder —
+                   mandar para `c1` repetiria a pergunta em seguida, no `c2`. */
                 {
-                  id: "nao", title: "Não / sem previsão", next: "c1",
+                  id: "nao", title: "Não / sem previsão", next: "c1-restantes",
                   tasks: [
                     { state: "loading", title: "Forçar atualização de status dos pedidos já despachados ({count:b1})", assignee: "Order Management Agent", agent: true }
                   ]
@@ -291,12 +313,18 @@ window.AIWData = (function () {
             c1: {
               type: "single_select",
               title: "Qual o motivo?",
-              options: [
-                { id: "capacidade", title: "Sem capacidade operacional",             next: "c2" },
-                { id: "fechada",    title: "Loja fechada / feriado não previsto",    next: "c2" },
-                { id: "fiscal",     title: "Pendência de nota fiscal / documentação", next: "c2" },
-                { id: "outro",      title: "Outro motivo", other: true, otherPlaceholder: "Descreva o motivo informado pelo seller.", next: "c2" }
-              ]
+              options: CANVAS_A_MOTIVOS.map((o) => ({ ...o, next: "c2" }))
+            },
+            /* Mesma pergunta de motivo, mas encerrando a árvore: quem chega
+               aqui vem do b2 e já disse que não há previsão de despacho. */
+            "c1-restantes": {
+              type: "single_select",
+              title: "Qual o motivo?",
+              options: CANVAS_A_MOTIVOS.map((o) => ({
+                ...o,
+                next: null,
+                tasks: CANVAS_A_SEM_PREVISAO_TASKS
+              }))
             },
             c2: {
               type: "single_select",
@@ -309,15 +337,7 @@ window.AIWData = (function () {
                     { state: "loading", title: "Comunicar novo prazo aos clientes", assignee: "Order Management Agent", agent: true }
                   ]
                 },
-                {
-                  id: "nao", title: "Não", next: null,
-                  tasks: [
-                    { state: "attention", title: "Contatar seller para novo prazo de despacho", assignee: "Ecommerce Supervisor", initial: "E" },
-                    { state: "attention", title: "Redistribuir pedidos para seller backup (se aplicável)", assignee: "Ecommerce Supervisor", initial: "E" },
-                    { state: "loading",   title: "Comunicar atraso definitivo aos clientes", assignee: "Order Management Agent", agent: true },
-                    { state: "done",      title: "Registrar recorrência para gestão de performance do seller", assignee: "Order Management Agent", agent: true }
-                  ]
-                }
+                { id: "nao", title: "Não", next: null, tasks: CANVAS_A_SEM_PREVISAO_TASKS }
               ]
             },
 

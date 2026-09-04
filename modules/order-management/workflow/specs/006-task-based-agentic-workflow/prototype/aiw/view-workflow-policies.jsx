@@ -1,4 +1,4 @@
-/* global React, ReactDOM, Icon, AIWData, ChatPanel, ResizableSplit, Toggle, Dropdown, IconButton, SidebarTooltip */
+/* global React, ReactDOM, Icon, AIWData, ChatPanel, ResizableSplit, Toggle, Dropdown, IconButton, SidebarTooltip, CanvasTopbar */
 const { useState, useRef, useEffect, useMemo, useCallback } = React;
 
 /* ══ Políticas do Workflow ══════════════════════════════════════════════
@@ -183,6 +183,7 @@ function PolicyRuleDrawer({ rule, policy, onToggle, onClose }) {
 function WorkflowPoliciesCanvas({
   policies, query, onQuery, category, onCategory, status, onStatus,
   selectedRuleId, onSelectRule, highlightId, onNewRule,
+  onBack, chatOpen, onToggleChat, onCloseCanvas,
 }) {
   const rowRefs = useRef({});
 
@@ -223,18 +224,23 @@ function WorkflowPoliciesCanvas({
 
   return (
     <div className="detail-panel">
-      <div className="detail-head canvas-topbar" data-sl-canvas-tool-topbar="">
-        <span className="canvas-topbar-title">Políticas de pedido</span>
-        <div className="detail-head-right">
-          <button data-sl-button data-variant="primary" data-has-label onClick={onNewRule}>
-            <Icon name="plus" size={16} />
-            Nova regra
-          </button>
-        </div>
+      <CanvasTopbar
+        onBack={onBack}
+        backLabel="Voltar para Workflows"
+        cta={{ label: "Nova regra", variant: "primary", onClick: onNewRule }}
+        chatOpen={chatOpen}
+        onToggleChat={onToggleChat}
+        onCloseCanvas={onCloseCanvas}
+      />
+
+      {/* §1.3/§5 — "Políticas de pedido" saiu do topbar e virou o h1 do corpo,
+          acima da toolbar de filtros. */}
+      <div className="wfp-page-head">
+        <h1 className="detail-title">Políticas de pedido</h1>
       </div>
 
       <div className="wfp-toolbar">
-        <div data-sl-module-browser-search="" className="wfp-search">
+        <div data-sl-module-browser-search="" className="wfp-search search-pill-compact">
           <span data-sl-module-browser-search-pre-icon=""><Icon name="search" size={20} /></span>
           <input
             data-sl-module-browser-search-input=""
@@ -1109,7 +1115,10 @@ function matchTreeOption(currentNode, freeTextAnswer) {
 }
 
 /* ── View ───────────────────────────────────────────────────────────────── */
-function WorkflowPoliciesView() {
+function WorkflowPoliciesView({ onBack }) {
+  /* Modos do shell (handoff §8). */
+  const [chatOpen, setChatOpen] = useState(true);
+  const [canvasOpen, setCanvasOpen] = useState(true);
   const [policies, setPolicies] = useState(() => {
     /* Backfill de `sourceEventId` a partir do EVENT_CATALOG: cada evento
        com `existingRuleIds` declara quais regras seed pertencem ao seu
@@ -2107,7 +2116,7 @@ function WorkflowPoliciesView() {
 
   return (
     <React.Fragment>
-      <ResizableSplit screenLabel="Políticas do Workflow" initialWidth={400}>
+      <ResizableSplit screenLabel="Políticas do Workflow" initialWidth={400} chatOpen={chatOpen} canvasOpen={canvasOpen}>
         <ChatPanel
           title="Assistente de políticas"
           chips={POLICY_CHIPS}
@@ -2117,6 +2126,8 @@ function WorkflowPoliciesView() {
           isTyping={isTyping}
           placeholder="Descreva o evento em uma frase…"
           composerRef={composerRef}
+          canvasOpen={canvasOpen}
+          onOpenCanvas={() => setCanvasOpen(true)}
         />
         <WorkflowPoliciesCanvas
           policies={policies}
@@ -2130,6 +2141,10 @@ function WorkflowPoliciesView() {
           onSelectRule={(id) => { setHighlightId(null); setSelectedRuleId(id); }}
           highlightId={highlightId}
           onNewRule={startNewRule}
+          onBack={onBack}
+          chatOpen={chatOpen}
+          onToggleChat={() => setChatOpen(o => !o)}
+          onCloseCanvas={() => { setChatOpen(true); setCanvasOpen(false); }}
         />
       </ResizableSplit>
 

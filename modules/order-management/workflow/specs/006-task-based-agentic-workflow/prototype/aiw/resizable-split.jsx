@@ -14,31 +14,39 @@ const RESIZER_W = 6;
  * Resizable split layout — chat on left, canvas on right, drag handle in middle.
  * Children: [chat, canvas]
  *
- * `chatOpen` (default true) — when false, the chat column and resizer are not
- * rendered and the canvas takes the full width. Lets a screen open with just
- * the canvas ("iniciativa") and reveal the chat only when the user activates it.
+ * Três modos (handoff-topbar-canvas §8) — nunca existe tela sem chat e sem
+ * canvas:
+ *   both    chat + resizer + canvas, chat em `initialWidth`      (padrão)
+ *   canvas  `chatOpen=false`   — só o canvas, largura total
+ *   chat    `canvasOpen=false` — só o chat, largura total
  */
-function ResizableSplit({ children, initialWidth = 460, min = 320, max = 900, screenLabel, chatOpen = true }) {
+function ResizableSplit({ children, initialWidth = 460, min = 320, max = 900, screenLabel, chatOpen = true, canvasOpen = true }) {
   const [chat, canvas] = React.Children.toArray(children);
   const [w, setW] = rsUseState(initialWidth);
   const dragRef = rsUseRef(false);
   const rootRef = rsUseRef(null);
 
+  /* Fechar o canvas nunca deixa a tela vazia: o chat assume a largura toda,
+     mesmo que `chatOpen` esteja em false. */
+  const showChat = chatOpen || !canvasOpen;
+  const split = showChat && canvasOpen;
+
   /* Slide-in a cada ativação do chat — só na transição fechado → aberto, para
-     a tela que já nasce com o chat em cena não repetir a animação.
+     a tela que já nasce com o chat em cena não repetir a animação. Só no modo
+     `both`: em largura total o painel não vem da borda, ele já é a tela.
      Precisa ser layout effect: num efeito comum a classe só chegaria depois da
      pintura, e o painel apareceria já posicionado antes de recuar para animar. */
-  const wasChatOpenRef = rsUseRef(chatOpen);
+  const wasChatOpenRef = rsUseRef(showChat);
   const [chatEntering, setChatEntering] = rsUseState(false);
 
   rsUseLayoutEffect(() => {
     const wasOpen = wasChatOpenRef.current;
-    wasChatOpenRef.current = chatOpen;
-    if (!chatOpen || wasOpen) return;
+    wasChatOpenRef.current = showChat;
+    if (!showChat || wasOpen || !split) return;
     setChatEntering(true);
     const timer = setTimeout(() => setChatEntering(false), CHAT_ENTER_MS);
     return () => clearTimeout(timer);
-  }, [chatOpen]);
+  }, [showChat, split]);
 
   rsUseEffect(() => {
     const onMove = (e) => {
@@ -63,17 +71,17 @@ function ResizableSplit({ children, initialWidth = 460, min = 320, max = 900, sc
   return (
     <div
       ref={rootRef}
-      className={`main split-main resizable-split${chatOpen ? "" : " resizable-split--chat-closed"}${chatEntering ? " resizable-split--chat-entering" : ""}`}
+      className={`main split-main resizable-split${showChat ? "" : " resizable-split--chat-closed"}${canvasOpen ? "" : " resizable-split--canvas-closed"}${chatEntering ? " resizable-split--chat-entering" : ""}`}
       style={{
-        gridTemplateColumns: chatOpen ? `${w}px ${RESIZER_W}px 1fr` : "1fr",
+        gridTemplateColumns: split ? `${w}px ${RESIZER_W}px 1fr` : "1fr",
         /* Distância do slide: painel e resizer partem juntos de fora da borda
            esquerda, mantendo a posição relativa durante todo o percurso. */
         "--chat-enter-x": `-${w + RESIZER_W}px`,
       }}
       data-screen-label={screenLabel}
     >
-      {chatOpen && chat}
-      {chatOpen && (
+      {showChat && chat}
+      {split && (
         <div
           className="split-resizer"
           onMouseDown={(e) => {
@@ -86,7 +94,7 @@ function ResizableSplit({ children, initialWidth = 460, min = 320, max = 900, sc
           <span className="split-resizer-grip" />
         </div>
       )}
-      {canvas}
+      {canvasOpen && canvas}
     </div>
   );
 }

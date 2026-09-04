@@ -1,4 +1,4 @@
-/* global React, ReactDOM, Sidebar, Icon, AppData, AIWData, AssistantView, TaskView, OrderDetailView, WorkflowBoardView, WorkflowPoliciesView, ChatPanel, ResizableSplit, ChatEngine, AITeamDrawer, Dropdown, MessageComposer, ChatsView, InitiativesView, HomePreviewView, HomeQueueView */
+/* global React, ReactDOM, Sidebar, Icon, AppData, AIWData, AssistantView, TaskView, OrderDetailView, WorkflowBoardView, WorkflowPoliciesView, ChatPanel, ResizableSplit, ChatEngine, AITeamDrawer, Dropdown, MessageComposer, ChatsView, InitiativesView, HomePreviewView, HomeQueueView, CanvasTopbar, CanvasBackBar */
 const { useState, useEffect, useRef } = React;
 
 /* ── Hash-based routing ─────────────────────────────────────────────────── */
@@ -41,6 +41,12 @@ function App() {
   const [wfMode, setWfMode] = useState(_init.wfMode || { kind: 'list' });
   const [wfBoardKey, setWfBoardKey] = useState(0);
   const [productView, setProductView] = useState(null);
+  /* Nome do item aberto — o topbar do canvas usa como título da subview e só
+     o OrderDetailView sabe resolvê-lo a partir dos índices. */
+  const [orderItemName, setOrderItemName] = useState(null);
+  /* Modos do shell na rota do pedido (handoff §8). */
+  const [orderChatOpen, setOrderChatOpen] = useState(true);
+  const [orderCanvasOpen, setOrderCanvasOpen] = useState(true);
   const [collapsed, setCollapsed] = useState(true);
   const [aiOpen, setAIOpen] = useState(false);
   const [activeConvId, setActiveConvId] = useState(null);
@@ -122,7 +128,12 @@ function App() {
     });
   }, [route.name, route.orderId]);
 
-  useEffect(() => { setProductView(null); }, [route.orderId]);
+  useEffect(() => {
+    setProductView(null);
+    setOrderItemName(null);
+    setOrderChatOpen(true);
+    setOrderCanvasOpen(true);
+  }, [route.orderId]);
 
   const goHome   = () => setRoute({ name: "orders" });
   /* Voltar do task: usa a rota anterior guardada (última tela antes da task).
@@ -247,7 +258,7 @@ function App() {
     // does not replace or affect #/home-preview or #/orders.
     view = <HomeQueueView onOpenTask={openTask} onGotoResource={gotoResource} />;
   } else if (route.name === "workflow-policies") {
-    view = <WorkflowPoliciesView />;
+    view = <WorkflowPoliciesView onBack={() => setRoute({ name: "workflow-board" })} />;
   } else if (route.name === "task") {
     view = <TaskView taskId={route.id} onBack={goBackFromTask} onOpenOrder={openOrder} initialChatOpen={route.openChat} />;
   } else if (route.name === "workflow-board") {
@@ -282,8 +293,9 @@ function App() {
       setOrderChatMsgs(m => [...m, { from: "user", text }]);
       orderEngineRef.current && orderEngineRef.current.send(text, opts);
     };
+    const orderChipId = `#${route.orderId}`;
     view = (
-      <ResizableSplit screenLabel="Order Detail" initialWidth={400}>
+      <ResizableSplit screenLabel="Order Detail" initialWidth={400} chatOpen={orderChatOpen} canvasOpen={orderCanvasOpen}>
         <ChatPanel
           title={currentOrder ? `Pedido ${currentOrder.short}` : "Detalhe do Pedido"}
           chips={orderDynamicChips.length > 0 ? orderDynamicChips : orderChips}
@@ -291,26 +303,25 @@ function App() {
           onSend={handleOrderChatSend}
           isTyping={orderChatTyping}
           placeholder="Pergunte sobre este pedido…"
-          onBack={goHome}
+          canvasOpen={orderCanvasOpen}
+          onOpenCanvas={() => setOrderCanvasOpen(true)}
         />
         <div className="detail-panel">
-          <div className="detail-head no-border">
-            <div className="detail-head-left">
-              {productView !== null ? (
-                <button className="od-back-link" onClick={() => setProductView(null)}
-                  style={{ display: "flex", alignItems: "center", gap: 4, background: "none", border: "none", cursor: "pointer", color: "var(--fg-2)", fontSize: 13 }}>
-                  <Icon name="chevron-left" size={14} /> Pedido {route.orderId}
-                </button>
-              ) : (
-                <button className="od-back-link" onClick={goHome}
-                  style={{ display: "flex", alignItems: "center", gap: 4, background: "none", border: "none", cursor: "pointer", color: "var(--fg-2)", fontSize: 13 }}>
-                  <Icon name="chevron-left" size={14} /> Todos os Pedidos
-                </button>
-              )}
-            </div>
-          </div>
+          <CanvasTopbar
+            onBack={goHome}
+            backLabel="Voltar para Pedidos"
+            id={orderChipId}
+            onResetToMain={productView !== null ? () => setProductView(null) : undefined}
+            subTitle={orderItemName}
+            chatOpen={orderChatOpen}
+            onToggleChat={() => setOrderChatOpen(o => !o)}
+            onCloseCanvas={() => { setOrderChatOpen(true); setOrderCanvasOpen(false); }}
+          />
           <div className="detail-scroll">
             <div className="detail-body">
+              {productView !== null && (
+                <CanvasBackBar id={orderChipId} label="Pedido" onClick={() => setProductView(null)} />
+              )}
               <OrderDetailView
                 task={syntheticTask}
                 orderId={route.orderId}
@@ -319,6 +330,7 @@ function App() {
                 standalone={true}
                 productView={productView}
                 onProductViewChange={setProductView}
+                onProductTitleChange={setOrderItemName}
               />
             </div>
           </div>

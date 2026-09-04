@@ -1,4 +1,4 @@
-/* global React, Icon */
+/* global React, Icon, MSIcon, AIWData */
 const { useState, useRef, useEffect, useCallback } = React;
 
 /**
@@ -495,6 +495,125 @@ function renderCardField(f, fi) {
    - { from:"agent", type:"action", title, body, onApply }  proposed change card
    - { from:"agent", type:"wf-draft", draft, onConfirm }    new-workflow summary card
 */
+/* ── Título da conversa como menu (handoff-topbar-canvas §6) ────────────────
+   O título do chat deixou de ser rótulo estático: virou o gatilho do menu de
+   conversas. É por aqui que se troca de conversa, renomeia a atual e abre uma
+   nova — os três icon-buttons que ficavam à direita do cabeçalho saíram. */
+function ChatTitleMenu({ title, conversations, activeId, onSelect, onRename, onNewChat }) {
+  const [open, setOpen] = useState(false);
+  const [renaming, setRenaming] = useState(false);
+  const [draft, setDraft] = useState(title);
+  const wrapRef = useRef(null);
+  const inputRef = useRef(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onClick = (e) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, [open]);
+
+  useEffect(() => { if (renaming) inputRef.current?.select(); }, [renaming]);
+
+  const startRename = () => { setDraft(title); setRenaming(true); setOpen(false); };
+  const commitRename = () => {
+    const next = draft.trim();
+    setRenaming(false);
+    if (next && next !== title) onRename?.(next);
+  };
+
+  if (renaming) {
+    return (
+      <input
+        ref={inputRef}
+        className="chat-title-input"
+        value={draft}
+        autoFocus
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={commitRename}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") commitRename();
+          if (e.key === "Escape") setRenaming(false);
+        }}
+        aria-label="Renomear conversa"
+      />
+    );
+  }
+
+  return (
+    <div className="chat-title-wrap" ref={wrapRef}>
+      <button
+        type="button"
+        className={`chat-title${open ? " open" : ""}`}
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        title="Conversas"
+      >
+        <span className="chat-title-text">{title}</span>
+        <MSIcon name={open ? "expand_less" : "expand_more"} size={18} />
+      </button>
+
+      {open && (
+        <div className="chat-conv-menu">
+          <span className="chat-conv-menu-label">Conversas</span>
+          {conversations.map((c) => {
+            const current = c.id === activeId;
+            return (
+              <button
+                key={c.id}
+                type="button"
+                className={`chat-conv-item${current ? " current" : ""}`}
+                onClick={() => { setOpen(false); onSelect?.(c); }}
+              >
+                <span className="chat-conv-item-body">
+                  <span className="chat-conv-item-title">{c.title}</span>
+                  {c.preview && <span className="chat-conv-item-meta">{c.preview}</span>}
+                </span>
+                {current && <MSIcon name="check" size={16} fill={1} />}
+              </button>
+            );
+          })}
+          <span className="chat-conv-menu-sep" aria-hidden />
+          <button type="button" className="chat-conv-action" onClick={startRename}>
+            <MSIcon name="drive_file_rename_outline" size={18} />
+            Renomear conversa
+          </button>
+          <button type="button" className="chat-conv-action" onClick={() => { setOpen(false); onNewChat?.(); }}>
+            <MSIcon name="add_comment" size={18} />
+            Nova conversa
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── Card de referência (handoff-topbar-canvas §7) ──────────────────────────
+   Toda entidade que o agente cria ou cita é um card na conversa — substitui o
+   `.intro-link` com chip inline. Clicar abre a entidade no canvas; com o
+   canvas fechado, o card também é o que reabre o painel. */
+const CHAT_REF_ICON = { initiative: "bolt", task: "task_alt", order: "receipt_long" };
+
+function ChatReferenceCard({ id, title, meta, entity = "initiative", canvasOpen = true, onClick }) {
+  return (
+    <button type="button" className="chat-ref-card" onClick={onClick}>
+      <span className="chat-ref-tile">
+        <MSIcon name={CHAT_REF_ICON[entity] || CHAT_REF_ICON.initiative} size={20} />
+      </span>
+      <span className="chat-ref-body">
+        {id && <span className="chat-ref-chip">{id}</span>}
+        <span className="chat-ref-title">{title}</span>
+        {meta && <span className="chat-ref-meta">{meta}</span>}
+      </span>
+      <span className="chat-ref-action" title={canvasOpen ? "No canvas" : "Abrir canvas"}>
+        <MSIcon name={canvasOpen ? "chevron_right" : "web_asset"} size={20} />
+      </span>
+    </button>
+  );
+}
+
 function ChatPanel({
   title = "New chat",
   intro,
@@ -503,7 +622,11 @@ function ChatPanel({
   initialMessages = [],
   placeholder = "Message VTEX My Assistant...",
   agent = "VTEX My Assistant",
-  onBack,
+  /* §8 — "Abrir canvas" só aparece no modo "só chat"; fechar o chat é o botão
+     de chat do topbar do canvas, por isso o antigo `onBack` saiu. */
+  canvasOpen = true,
+  onOpenCanvas,
+  conversations,
   // Conteúdo fixo ancorado logo acima do composer (ex.: card de verificação).
   aboveComposer,
   // Conteúdo fixo no fim do corpo da conversa, junto às mensagens
@@ -517,6 +640,18 @@ function ChatPanel({
 }) {
   const isControlled = controlledMessages !== undefined;
   const [localMessages, setLocalMessages] = useState(initialMessages);
+  /* Trocar ou renomear a conversa pelo menu do cabeçalho só muda o título
+     exibido — a conversa em si continua vindo de quem monta o painel. */
+  const [convTitle, setConvTitle] = useState(null);
+  /* A conversa atual do canvas (iniciativa, pedido, tarefa) aparece no menu
+     para o operador poder voltar a ela depois de navegar para outra. A entry
+     sintética usa id "__current__" e sempre fica no topo. */
+  const CURRENT_CONV_ID = "__current__";
+  const [activeConvId, setActiveConvId] = useState(CURRENT_CONV_ID);
+  const baseConvList = conversations || (window.AIWData && window.AIWData.conversations) || [];
+  const currentConv = { id: CURRENT_CONV_ID, title, preview: "Conversa atual", pinned: true };
+  const convList = [currentConv, ...baseConvList];
+  const headTitle = convTitle || title;
   const messages = isControlled ? controlledMessages : localMessages;
   const scrollRef = useRef(null);
   // Tracks which message index had a quick-reply answered and what was chosen
@@ -650,24 +785,30 @@ function ChatPanel({
   return (
     <div className="chat-panel">
       <div className="chat-head">
-        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-          {onBack ? (
-            <button className="chat-back-btn" onClick={onBack} title="Esconder chat">
-              <Icon name="chevron-left" size={16} />
-              <span>Esconder chat</span>
-            </button>
-          ) : (
-            <button className="chat-title">
-              <span>{title}</span>
-              <Icon name="chevron-down" size={12} />
-            </button>
-          )}
-        </div>
-        <div className="chat-head-actions">
-          <button className="icon-btn" title="New chat"><Icon name="plus" size={16} /></button>
-          <button className="icon-btn" title="History"><Icon name="history" size={16} /></button>
-          <button className="icon-btn" title="More"><Icon name="more" size={16} /></button>
-        </div>
+        <ChatTitleMenu
+          title={headTitle}
+          conversations={convList}
+          activeId={activeConvId}
+          onSelect={(c) => {
+            setActiveConvId(c.id);
+            /* Selecionar a conversa atual (id "__current__") não troca o título
+               porque ele já é o do contexto do canvas. */
+            setConvTitle(c.id === CURRENT_CONV_ID ? null : c.title);
+          }}
+          onRename={(next) => setConvTitle(next)}
+          onNewChat={() => { setActiveConvId(null); setConvTitle(null); }}
+        />
+        {!canvasOpen && onOpenCanvas && (
+          <button
+            type="button"
+            className="canvas-topbar-icon"
+            onClick={onOpenCanvas}
+            aria-label="Abrir canvas"
+            title="Abrir canvas"
+          >
+            <MSIcon name="web_asset" size={20} />
+          </button>
+        )}
       </div>
 
       <div className="chat-body" ref={scrollRef}>
@@ -678,10 +819,14 @@ function ChatPanel({
         )}
 
         {contextCard && (
-          <button className="intro-link" onClick={contextCard.onClick}>
-            <span><span className="id-chip">{contextCard.id}</span> {contextCard.title}</span>
-            <Icon name="chevron-right" size={14} />
-          </button>
+          <ChatReferenceCard
+            id={contextCard.id}
+            title={contextCard.title}
+            meta={contextCard.meta}
+            entity={contextCard.entity}
+            canvasOpen={canvasOpen}
+            onClick={() => { if (!canvasOpen) onOpenCanvas?.(); contextCard.onClick?.(); }}
+          />
         )}
 
         {messages.map(renderMessage)}
@@ -720,6 +865,7 @@ function ChatPanel({
 
 window.MessageComposer = MessageComposer;
 window.ChatPanel = ChatPanel;
+window.ChatReferenceCard = ChatReferenceCard;
 /* §4.2 — view-assistant.jsx reusa o mesmo card em vez de duplicá-lo. */
 window.StructuredActionCard = StructuredActionCard;
 window.wfDraftCard = wfDraftCard;
