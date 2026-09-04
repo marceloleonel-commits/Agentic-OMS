@@ -104,7 +104,7 @@
     font: var(--sl-text-action-font); letter-spacing: var(--sl-text-action-letter-spacing);
   }
 
-  .body { display: flex; flex: 1; min-height: 0; }
+  .body { display: flex; flex: 1; min-height: 0; min-width: 0; }
 
   /* 280px é a largura total, borda inclusa: box-sizing: border-box vem do reset
      do Shoreline. Os 20px de padding no topo colocam o primeiro item a 20px da
@@ -208,7 +208,17 @@
      24px vêm inteiros deste margin. */
   .nav-item-group-start { margin-top: var(--sl-space-6); }
 
-  .content { flex: 1; min-width: 0; overflow-y: auto; background: var(--sl-bg-base); }
+  .content { flex: 1; min-width: 0; overflow-x: hidden; overflow-y: auto; background: var(--sl-bg-base); }
+
+  /* A tabela com header-sticky usa overflow:unset internamente, delegando o
+     scroll para o ancestral. Para conter o scroll horizontal na própria tabela
+     (e não "vazar" para o .content), embrulhamos em .table-scroll.
+     O scroll vertical continua no .content. */
+  .table-scroll { overflow-x: auto; }
+
+  /* Linha de filtros: quando há muitos chips activos eles descem para a
+     próxima linha em vez de cortar ou gerar scroll horizontal. */
+  #filter-row { flex-wrap: wrap; }
 
   /* O padding do cabeçalho vem do Container + Content do próprio Shoreline
      (ver a marcação de [data-sl-page-header-container]), não de regra própria. */
@@ -224,8 +234,8 @@
 
   /* A busca encolhe antes da paginação: o Shoreline não impede o rótulo
      "1 — 25 de 74" de quebrar, então quem cede espaço é o campo de busca. */
-  .toolbar-end { display: flex; align-items: center; gap: var(--sl-space-5); flex-shrink: 0; }
-  .list-search { flex: 1 1 300px; min-width: 200px; max-width: 340px; }
+  .toolbar-end { display: flex; align-items: center; gap: var(--sl-space-5); flex-shrink: 1; flex-wrap: wrap; min-width: 0; }
+  .list-search { flex: 1 1 200px; min-width: 0; max-width: 340px; }
 
   /* O rótulo fica à esquerda das setas dentro de uma toolbar alinhada à direita,
      então cada dígito que entra no total empurrava os botões de visão. A largura
@@ -253,6 +263,56 @@
   .filter-popover { position: absolute; top: calc(100% + var(--sl-space-2)); left: 0; display: none; }
   .filter[data-open="true"] .filter-popover { display: block; }
 
+  /* Destino é o único filtro que não cabe nos 16.25rem que o Filter reserva: a
+     busca anuncia os dois níveis da árvore ("Buscar seller ou estoque") e os
+     nomes de estoque são longos. --sl-filter-popover-width é a variável que o
+     próprio componente expõe para essa medida, então o ajuste é dela, não da
+     largura. Os outros três filtros ficam na medida padrão. */
+  .filter[data-filter="destinations"] .filter-popover,
+  .export-filter-item[data-filter="export-destinations"] .filter-popover {
+    --sl-filter-popover-width: 18.75rem;
+  }
+
+  /* Trunca o valor selecionado do filtro (ex.: "Destino" com nome de seller/
+     estoque longo) para não vazar da largura do card/drawer — tanto na
+     listagem quanto na drawer de exportação, que reusam os mesmos data-
+     attributes do Shoreline Filter. min-width:0 é necessário na cadeia flex
+     inteira: sem ele, o item nunca encolhe abaixo do tamanho do texto e a
+     reticência nunca chega a aparecer. O texto completo aparece num Tooltip
+     do Shoreline ao passar o mouse (ver #filter-value-tooltip). */
+  .filter,
+  .export-filter-item {
+    min-width: 0;
+    max-width: 100%;
+  }
+  .filter [data-sl-filter-trigger],
+  .export-filter-item [data-sl-filter-trigger] {
+    min-width: 0;
+    max-width: 100%;
+  }
+  .filter [data-sl-filter-trigger] [data-sl-button-content],
+  .export-filter-item [data-sl-filter-trigger] [data-sl-button-content] {
+    min-width: 0;
+  }
+  [data-sl-filter-value] {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+  }
+
+  /* Tooltip global (1 elemento reaproveitado por qualquer filtro truncado).
+     Usa a classe oficial [data-sl-tooltip-popover]; só falta position:fixed,
+     que no React vem do Ariakit — aqui replicado à mão, igual ao filter-
+     popover acima. Top/left são calculados por JS no mouseenter. */
+  #filter-value-tooltip {
+    position: fixed;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    z-index: var(--sl-z-9);
+  }
+
   /* Mesma ancoragem à mão para o Calendar que o DatePicker abre. Ele fica com a
      largura que os sete dias pedem, então é mais largo que o popover de filtro e
      sobra para a direita — é o mesmo bottom-start do componente, que também não
@@ -269,10 +329,21 @@
      sem desfazer o nowrap o texto sairia numa linha só. */
   .header-help { position: relative; display: flex; }
   .header-help-popover {
-    position: absolute; top: calc(100% + var(--sl-space-2)); left: 0;
-    display: none; white-space: normal;
+    position: absolute; top: calc(100% + var(--sl-space-2)); right: 0;
+    display: none; white-space: normal; text-align: left;
   }
   .header-help[data-open="true"] .header-help-popover { display: block; }
+
+  /* Link "Saiba mais" dentro do ContextualHelp: flui inline como continuação
+     do texto do popover, sem sublinhado sobre o ícone. */
+  .help-saiba-mais {
+    display: inline-flex; align-items: center; gap: var(--sl-space-1);
+    font: var(--sl-text-emphasis-font); letter-spacing: var(--sl-text-emphasis-letter-spacing);
+    color: var(--sl-fg-accent); text-decoration: none; outline: none;
+  }
+  .help-saiba-mais:hover { color: var(--sl-fg-accent-hover); }
+  .help-saiba-mais:focus-visible { box-shadow: var(--sl-focus-ring-accent); border-radius: var(--sl-radius-1); }
+  .help-saiba-mais span { text-decoration: underline; }
 
   /* Ancoragem à mão do popover do Menu. No Shoreline ele sai por portal com
      placement bottom-end e gutter de 4px; aqui nasce dentro do [data-sl-menu],
@@ -339,6 +410,27 @@
     box-shadow: 0 0 0 var(--sl-filter-item-check-border-width) var(--sl-bg-accent-strong-pressed);
   }
 
+  /* Árvore de destinos. O chevron fica entre o checkbox e o nome do seller, no
+     mesmo gap de 8px que o data-sl-filter-item já usa entre os filhos.
+
+     O recuo do estoque é a caixa do check (1.25rem) mais esse gap, o que põe o
+     checkbox do estoque exatamente sob o chevron do seller. O item do Shoreline
+     não tem padding horizontal, então o padding-left não briga com nada — e o
+     fundo do hover continua atravessando a linha inteira. */
+  .dest-chevron {
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+    color: var(--sl-fg-base-soft);
+  }
+  /* O chevron gira por CSS, como o dos cards da drawer, em vez de o JS trocar um
+     ícone pelo outro. Trocar o SVG desprendia do documento o próprio nó clicado,
+     e o handler de clique fora — que roda depois, no document — passava a ler um
+     alvo órfão, concluía "clicou fora do filtro" e fechava o popover inteiro. */
+  .dest-chevron svg { transition: rotate 160ms ease; }
+  [data-role="dest-seller"][aria-expanded="false"] .dest-chevron svg { rotate: -90deg; }
+  .dest-child { padding-left: calc(var(--sl-filter-item-check-size, 1.25rem) + var(--sl-space-2)); }
+
   /* Rodapé de carregamento da lista de destinos. O Shoreline não tem esse
      elemento porque não tem scroll infinito em filtro; o spinner é dele. */
   .filter-list-more {
@@ -392,7 +484,7 @@
   .sku-thumb {
     display: flex; align-items: center; justify-content: center; flex-shrink: 0;
     width: 36px; height: 36px; border-radius: var(--sl-radius-2);
-    background: var(--sl-bg-base); border: 1px solid var(--sl-border-base);
+    background: var(--sl-bg-base); border: var(--sl-border-base);
     color: var(--sl-fg-base-soft);
   }
 
@@ -402,7 +494,7 @@
   .product-thumb {
     display: flex; align-items: center; justify-content: center; flex-shrink: 0;
     width: 40px; height: 40px; border-radius: var(--sl-radius-2);
-    background: var(--sl-bg-base); border: 1px solid var(--sl-border-base);
+    background: var(--sl-bg-base); border: var(--sl-border-base);
     color: var(--sl-fg-base-soft);
   }
   .product-thumb svg,
@@ -491,18 +583,24 @@
   }
   .form-card-viewport[data-more="true"]::after { opacity: 1; }
 
-  /* A soma das quantidades fecha a seção de produtos, alinhada à direita como a
-     coluna que ela resume. */
+  /* Soma das quantidades: linha única abaixo da tabela do card, com 12px de
+     distância. margin-top (não padding) porque o elemento ficou fora do
+     data-sl-collection, então não há gap de flex para compensar.
+     padding-left igual ao da célula do cabeçalho (var(--sl-space-3))
+     para alinhar com o texto "Produto". padding-bottom igual ao padding
+     do topo do card para simetria visual. */
   .form-total {
-    display: flex; justify-content: space-between; align-items: center;
-    padding-top: var(--sl-space-3);
-    font: var(--sl-text-emphasis-font); letter-spacing: var(--sl-text-emphasis-letter-spacing);
+    margin-top: var(--sl-space-3);
+    padding-left: var(--sl-space-3);
+    padding-bottom: var(--sl-space-4);
+    font: var(--sl-text-body-font); letter-spacing: var(--sl-text-body-letter-spacing);
+    color: var(--sl-fg-base-soft);
   }
   .form-total-label { color: var(--sl-fg-base-soft); font: var(--sl-text-body-font); }
 
   /* Quantidade editável na célula: o Input do Shoreline em 44px dentro de uma
      linha de 64px, com a largura do maior número que a fixture produz. */
-  .qty-cell { width: 96px; margin-left: auto; }
+  .qty-cell { width: 96px; }
 
   /* ── Combobox ────────────────────────────────────────────────
      O Combobox desta versão do Shoreline é um invólucro do Ariakit sem CSS
@@ -588,6 +686,306 @@
   }
 
   .modal-root [data-sl-modal-backdrop] { position: fixed; inset: 0; }
+
+  /* ── Drawer de exportação ──────────────────────────────────────
+     Mesma mecânica da drawer-root: translate anima o painel para dentro e
+     fora do viewport. A classe export-drawer-root separa do seletor original
+     para não haver conflito de especificidade.
+     ───────────────────────────────────────────────────────────── */
+  .export-drawer-root [data-sl-drawer-popover] { transition: translate 220ms ease; }
+  .export-drawer-root[data-enter="false"] [data-sl-drawer-popover] { translate: 100% 0; }
+
+  /* ── Card flutuante de exportações ─────────────────────────── */
+  /* O card não disputa espaço com uma drawer: ao abrir, ele desliza para a
+     esquerda a largura do painel, medida no próprio painel (--export-card-shift,
+     escrita por syncExportCardOffset). Ficar atrás da drawer resolveria a
+     sobreposição escondendo o card, e é o progresso da exportação que ele
+     carrega — some justo quando o usuário volta a esperar por ele. */
+  #export-card-host {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 900;
+    width: 360px;
+    translate: calc(-1 * var(--export-card-shift, 0px)) 0;
+    transition: translate 220ms ease;
+  }
+  .export-card {
+    background: var(--sl-bg-base);
+    border: var(--sl-border-base);
+    border-radius: var(--sl-radius-3);
+    overflow: hidden;
+    /* --sl-shadow-1 é justamente 0 0.25rem 1rem rgba(0,0,0,.16): a sombra que
+       estava escrita à mão aqui era este token com outro alfa. */
+    box-shadow: var(--sl-shadow-1);
+  }
+  /* Sem border-bottom aqui: a régua sob o header é o border-top da primeira
+     linha de job. Com as duas, os traços de 1px encostavam e liam como um único
+     de 2px, mais grosso que qualquer borda do design system. */
+  .export-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--sl-space-3) var(--sl-space-4);
+    background: var(--sl-bg-base-soft);
+    font-weight: 600;
+    font-size: 14px;
+  }
+  .export-card-header-actions { display: flex; align-items: center; gap: var(--sl-space-1); }
+  /* Com o limite contando só exportações em andamento, a sessão pode acumular
+     linhas concluídas sem teto, então o corpo do card ganha altura máxima e
+     rolagem própria — senão o card cresceria para fora da viewport. O teto é
+     dado em linhas (≈66px cada), não em pixels redondos. */
+  .export-card-body {
+    display: flex;
+    flex-direction: column-reverse;
+    max-height: calc(66px * 4.5);
+    overflow-y: auto;
+  }
+  .export-card-body[data-collapsed="true"] { display: none; }
+  /* O status é centrado no bloco de texto, não alinhado ao topo dele: com
+     flex-start o ícone e o botão encostavam na linha do horário e liam como
+     desalinhados em relação ao nome do arquivo, que é o assunto da linha.
+     Centrar o bloco só acerta o nome do arquivo porque a primeira e a última
+     linha são simétricas — as duas em 11px, separadas pelo mesmo gap. É por isso
+     que .export-job-email não leva margin-top próprio: ele somava 2px só de um
+     lado e empurrava o centro para baixo do nome. */
+  .export-job-row {
+    display: flex;
+    align-items: center;
+    gap: var(--sl-space-3);
+    padding: var(--sl-space-3) var(--sl-space-4);
+    border-top: var(--sl-border-base);
+  }
+  .export-job-info { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .export-job-label {
+    font-size: 12px; font-weight: 500; color: var(--sl-fg-base);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .export-job-time { font-size: 11px; color: var(--sl-fg-base-soft); }
+  .export-job-email { font-size: 11px; color: var(--sl-fg-base-soft); }
+  .export-job-status { display: flex; align-items: center; gap: var(--sl-space-2); flex-shrink: 0; }
+  /* Tokens semânticos, não degraus da paleta: fg-success e fg-critical dizem o
+     que a cor significa. Os fallbacks em hex que estavam aqui eram código morto
+     — os tokens existem — e um deles carregava um vermelho que nem é o do tema. */
+  .export-icon-success { color: var(--sl-fg-success);  display: flex; }
+  .export-icon-error   { color: var(--sl-fg-critical); display: flex; }
+
+  /* O spinner é o Spinner do Shoreline ([data-sl-spinner]), que traz as próprias
+     animações (sl-animation-rotate + sl-animation-dash) na folha de estilos do
+     tema. Aqui só entram a cor — o traço do círculo é currentColor — e o
+     flex-shrink, para o spinner não ser comprimido pela linha do job. */
+  [data-sl-spinner] {
+    display: flex;
+    flex-shrink: 0;
+    color: var(--sl-fg-accent);
+  }
+
+  /* ── Seções internas da drawer de exportação (v2) ───────────── */
+
+  /* Seção de granularidade: sempre visível, sem colapso. Sem padding horizontal
+     próprio — herda o padding-left do data-sl-content da drawer (mesma base dos
+     cards de Filtros/Campos, que também não têm margin horizontal), garantindo
+     que título e radio buttons fiquem alinhados à esquerda com a borda dos cards. */
+  .export-granularity-section {
+    display: flex; flex-direction: column; gap: var(--sl-space-3);
+    padding: var(--sl-space-4) 0;
+  }
+  .export-scope-note {
+    font: var(--sl-text-body-font);
+    letter-spacing: var(--sl-text-body-letter-spacing);
+    color: var(--sl-fg-base-soft);
+    margin: 0 0 var(--sl-space-5);
+  }
+  .export-granularity-label {
+    font: var(--sl-text-display-3-font);
+    letter-spacing: var(--sl-text-display-3-letter-spacing);
+    color: var(--sl-fg-base); margin: 0;
+  }
+  /* Replica o Stack horizontal que o RadioGroup do Shoreline usa quando
+     horizontal=true (gap de $space-5 = 20px, mesmo valor usado internamente). */
+  .export-granularity-options {
+    display: flex;
+    align-items: center;
+    gap: var(--sl-space-5);
+  }
+
+  /* O input de radio nativo vem com margin do próprio browser (no Chrome,
+     3px 3px 0 5px), que o CSS do Shoreline não reseta porque no React o
+     React Aria cuida disso. Sem o reset, essa margem soma ao gap e o
+     espaçamento entre as opções fica maior que os 20px do token. */
+  [data-sl-radio] > [data-sl-radio-input] { margin: 0; }
+
+  /* O rótulo já é clicável pelo for/id, mas sem cursor: pointer não parece
+     ser — o input do Shoreline tem pointer, então o label acompanha. */
+  [data-sl-radio] > [data-sl-label] { cursor: pointer; }
+
+  /* Grupo de um filtro dentro da seção Filtros (espaçamento entre sub-filtros).
+     Substitui inline style="margin-bottom". */
+  .export-filter-group {
+    margin-bottom: var(--sl-space-4);
+  }
+  .export-filter-group:last-child { margin-bottom: 0; }
+
+  /* Linha de triggers do padrão Shoreline Filter dentro do card Filtros.
+     Mesmo layout da filter-row da listagem, mas inline no card. */
+  .export-filters-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--sl-space-2);
+    padding: var(--sl-space-5);
+  }
+
+  /* Container do filter: posicionamento relativo para o popover absoluto.
+     Reutiliza .filter-popover já definida no topo (position: absolute; ...). */
+  .export-filter-item { position: relative; }
+  .export-filter-item[data-open="true"] .filter-popover { display: block; }
+
+  /* Override: popovers dos filtros da drawer usam position:fixed para escapar de
+     qualquer ancestor com overflow:hidden ou overflow-y:auto (card + drawer scroll).
+     top/left são calculados por JS no momento de abertura. */
+  .export-filter-item .filter-popover {
+    position: fixed;
+    top: 0;
+    left: 0;
+  }
+
+  /* ─── Seção Filtros — card collapsível ─────────────────────────────────── */
+  /* Layout de card: borda full (4 lados) + cantos arredondados. Margem vertical
+     separa do bloco de granularidade acima e do bloco de Campos abaixo. */
+  .export-filtros-card {
+    border: var(--sl-border-base);
+    border-radius: var(--sl-radius-2);
+    overflow: hidden;
+    margin: var(--sl-space-4) 0;
+  }
+
+  /* Header do card: chevron À ESQUERDA do título */
+  .export-filtros-card-btn {
+    display: flex;
+    align-items: center;
+    gap: var(--sl-space-2);
+    width: 100%;
+    padding: var(--sl-space-4) var(--sl-space-5);
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--sl-fg-base);
+    text-align: left;
+  }
+  .export-filtros-card-btn:hover { background: var(--sl-bg-base-soft); }
+  .export-filtros-card-btn:focus-visible {
+    outline: none;
+    box-shadow: inset var(--sl-focus-ring-base);
+  }
+
+  /* Chevron: rotaciona -90° quando colapsado */
+  /* Chevron do card Filtros: usa seletor no SVG gerado por hydrateIcons,
+     pois a classe export-filtros-chevron é perdida durante a hidratação.
+     Aberto → ∨ (padrão, 0°) | Fechado → → (-90°) */
+  .export-filtros-card-btn svg[data-sl-icon-small] {
+    transition: rotate 200ms ease;
+    flex-shrink: 0;
+    color: var(--sl-fg-base-soft);
+    rotate: 0deg;  /* override explícito para neutralizar aria-expanded do Shoreline */
+  }
+  .export-filtros-card[data-open="false"] .export-filtros-card-btn svg[data-sl-icon-small] {
+    rotate: -90deg;
+  }
+
+  /* Título: token text-display3 (semibold 1rem) */
+  .export-filtros-title {
+    flex: 1;
+    font: var(--sl-text-display-3-font);
+    letter-spacing: var(--sl-text-display-3-letter-spacing);
+    color: var(--sl-fg-base);
+  }
+
+  /* Badge com a contagem de filtros aplicados. O Shoreline 1.12.13 não tem
+     componente de badge, então é composto com os tokens pedidos: bg-base-strong
+     atrás, número em text-action e fg-base.
+
+     A altura é a própria line-height do token (1.25rem), e min-width igual a ela
+     mantém o badge redondo enquanto o número tem um dígito — a contagem vai até
+     4, então o padding só existe como garantia. */
+  .export-filter-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: var(--sl-line-height-2);
+    height: var(--sl-line-height-2);
+    padding: 0 var(--sl-space-2);
+    border-radius: var(--sl-radius-full);
+    background: var(--sl-bg-base-strong);
+    color: var(--sl-fg-base);
+    font: var(--sl-text-action-font);
+    letter-spacing: var(--sl-text-action-letter-spacing);
+    flex-shrink: 0;
+  }
+
+  /* Corpo collapsível do card Filtros: grid-template-rows para transição suave
+     sem precisar de max-height arbitrário. O inner leva o padding real. */
+  .export-filtros-card-body {
+    display: grid;
+    grid-template-rows: 1fr;
+    transition: grid-template-rows 220ms ease;
+  }
+  .export-filtros-card[data-open="false"] .export-filtros-card-body {
+    grid-template-rows: 0fr;
+  }
+  .export-filtros-card-body-inner {
+    overflow: hidden;
+    min-height: 0;
+  }
+
+  /* ─── Seção Campos — mesmo card de Filtros, com header próprio ─────────── */
+  /* Header: botão (chevron+título) flex:1 + checkbox "Todos" à direita,
+     ambos irmãos — reaproveita .export-filtros-card-btn/.export-filtros-title,
+     só sobrescrevendo width:100% → flex:1 para conviver com o checkbox.
+     O hover fica no header inteiro (não só no button, que aqui não tem mais
+     100% de largura) para o realce cobrir a linha toda, inclusive atrás do
+     checkbox — hover em um filho (button ou checkbox) já ativa :hover no
+     ancestral, então não precisa de :has(). */
+  .export-campos-card-header {
+    display: flex;
+    align-items: center;
+  }
+  .export-campos-card-header:hover { background: var(--sl-bg-base-soft); }
+  .export-campos-card-header .export-filtros-card-btn {
+    width: auto;
+    flex: 1;
+  }
+  .export-campos-card-header .export-filtros-card-btn:hover { background: none; }
+
+  /* Checkbox "Todos" no header da seção Campos — irmão do button, não filho */
+  .export-select-all {
+    padding-right: var(--sl-space-5);
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  /* Oculta visualmente inputs nativos dentro de componentes Shoreline (Checkbox,
+     Radio), mantendo-os acessíveis para leitores de tela e teclado. Equivalente
+     ao VisuallyHidden do Shoreline. */
+  .sl-visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+
+  /* Grid de campos (checkboxes Shoreline) */
+  .export-fields-grid {
+    display: flex;
+    flex-direction: column;
+    gap: var(--sl-space-3);
+    padding: var(--sl-space-5);
+  }
 </style>
 </head>
 
@@ -746,6 +1144,10 @@
                             Exportar inventário futuro
                           </button>
                           <hr data-sl-menu-separator>
+                          <!-- Vira <a target="_blank"> para o módulo Audit do Admin quando a
+                               URL estiver confirmada (002.1, FR-14c). Aqui é botão inerte:
+                               um arquivo estático não tem Admin para abrir. O arrow-up-right
+                               é o que já anuncia a saída. -->
                           <button data-sl-menu-item role="menuitem" type="button" tabindex="-1" data-action="history">
                             <i data-icon="arrow-up-right"></i>
                             Histórico de alterações
@@ -876,9 +1278,11 @@
                  Cabeçalho e grade são montados pelo script a partir de COLUMNS,
                  porque as duas visões têm um número diferente de colunas — e
                  porque é a mesma definição que o esqueleto de carregamento lê. -->
+            <div class="table-scroll">
             <div data-sl-table id="table" data-sl-table-header-sticky="true" data-sl-table-density="default">
               <div data-sl-table-header id="thead"></div>
               <div data-sl-table-body id="tbody"></div>
+            </div>
             </div>
 
             <div id="state-slot"></div>
@@ -1011,6 +1415,167 @@
   </div>
 </div>
 
+<!-- Drawer de exportação. Mesma estrutura da drawer de adicionar produtos:
+     painel ancorado à direita, sem fundo escurecido e fechável só pelo botão —
+     clique fora não descarta o que já foi marcado. O corpo tem três seções, nesta
+     ordem: Exportar por, Filtros e Campos. -->
+<div class="drawer-root export-drawer-root" id="export-drawer" data-enter="false" hidden>
+  <div data-sl-container data-sl-drawer-popover data-size="small" data-vaul-drawer-direction="right"
+       id="export-drawer-panel" role="dialog" aria-labelledby="export-drawer-title">
+    <header data-sl-content data-narrow="true" data-sl-drawer-header>
+      <h2 data-sl-heading data-variant="display2" data-sl-drawer-heading id="export-drawer-title">Exportar inventário futuro</h2>
+      <button data-sl-button data-sl-icon-button data-sl-modal-dismiss data-variant="tertiary" data-size="large"
+              data-role="export-drawer-close" aria-label="Fechar">
+        <span data-sl-button-content>
+          <i data-icon="x"></i>
+        </span>
+      </button>
+    </header>
+
+    <div data-sl-content data-narrow="true" data-sl-drawer-content>
+
+      <!-- A drawer não herda a busca nem os filtros da listagem: ela declara o
+           escopo inteiro por conta própria. Dizer isso aqui evita a surpresa de
+           buscar um lote, ver quinze linhas na tela e receber o inventário todo. -->
+      <p class="export-scope-note">
+        O arquivo considera apenas os filtros desta janela. A busca e os filtros da
+        listagem não são aplicados.
+      </p>
+
+      <!-- Seção 1: Exportar por (granularidade — sempre visível) -->
+      <div class="export-granularity-section">
+        <p class="export-granularity-label">Exportar por</p>
+        <div class="export-granularity-options">
+          <div data-sl-radio>
+            <input data-sl-radio-input type="radio" name="export-granularity" value="lots"
+                   id="export-granularity-lots" checked data-error="false">
+            <label data-sl-label for="export-granularity-lots">Lote</label>
+          </div>
+          <div data-sl-radio>
+            <input data-sl-radio-input type="radio" name="export-granularity" value="skus"
+                   id="export-granularity-skus" data-error="false">
+            <label data-sl-label for="export-granularity-skus">SKU</label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Seção 2: Filtros (card collapsável — chevron à esquerda, título display3) -->
+      <div class="export-filtros-card" data-open="false">
+        <button type="button" class="export-filtros-card-btn" aria-expanded="false" aria-controls="export-filtros-body">
+          <i data-icon="caret-down-small" class="export-filtros-chevron"></i>
+          <span class="export-filtros-title">Filtros</span>
+          <span class="export-filter-badge" hidden></span>
+        </button>
+        <div class="export-filtros-card-body" id="export-filtros-body">
+          <div class="export-filtros-card-body-inner">
+          <!-- Quatro filtros no padrão Shoreline (trigger + popover).
+               Mesmo padrão dos filtros da listagem: .export-filter-item[data-open],
+               data-sl-filter-trigger, data-sl-filter-popover, conteúdo por JS. -->
+          <div class="export-filters-row">
+
+            <div class="export-filter-item" data-filter="export-destinations" data-open="false">
+              <button data-sl-filter-trigger data-sl-button data-variant="secondary" data-size="normal" aria-expanded="false">
+                <span data-sl-button-content>
+                  <span>Destino</span><span data-sl-filter-value></span>
+                  <i data-icon="caret-down-small"></i>
+                </span>
+              </button>
+              <div class="filter-popover" data-sl-filter-popover data-sl-popover>
+                <div data-sl-container></div>
+              </div>
+            </div>
+
+            <div class="export-filter-item" data-filter="export-arrival" data-open="false">
+              <button data-sl-filter-trigger data-sl-button data-variant="secondary" data-size="normal" aria-expanded="false">
+                <span data-sl-button-content>
+                  <span>Data de chegada</span><span data-sl-filter-value></span>
+                  <i data-icon="caret-down-small"></i>
+                </span>
+              </button>
+              <div class="filter-popover" data-sl-filter-popover data-sl-popover>
+                <div data-sl-container></div>
+              </div>
+            </div>
+
+            <div class="export-filter-item" data-filter="export-quantity" data-open="false">
+              <button data-sl-filter-trigger data-sl-button data-variant="secondary" data-size="normal" aria-expanded="false">
+                <span data-sl-button-content>
+                  <span>Quantidade</span><span data-sl-filter-value></span>
+                  <i data-icon="caret-down-small"></i>
+                </span>
+              </button>
+              <div class="filter-popover" data-sl-filter-popover data-sl-popover>
+                <div data-sl-container></div>
+              </div>
+            </div>
+
+            <div class="export-filter-item" data-filter="export-statuses" data-open="false">
+              <button data-sl-filter-trigger data-sl-button data-variant="secondary" data-size="normal" aria-expanded="false">
+                <span data-sl-button-content>
+                  <span>Status</span><span data-sl-filter-value></span>
+                  <i data-icon="caret-down-small"></i>
+                </span>
+              </button>
+              <div class="filter-popover" data-sl-filter-popover data-sl-popover>
+                <div data-sl-container></div>
+              </div>
+            </div>
+
+          </div><!-- .export-filters-row -->
+
+          </div><!-- .export-filtros-card-body-inner -->
+        </div><!-- .export-filtros-card-body -->
+      </div>
+
+      <!-- Seção 3: Campos (mesmo card colapsável de Filtros — chevron à esquerda,
+           título display3, borda + cantos arredondados). O checkbox "Todos" é
+           irmão do button dentro de um header próprio, não filho dele. -->
+      <div class="export-filtros-card" data-open="false">
+        <div class="export-campos-card-header">
+          <button type="button" class="export-filtros-card-btn" aria-expanded="false" aria-controls="export-campos-body">
+            <i data-icon="caret-down-small"></i>
+            <span class="export-filtros-title">Campos</span>
+          </button>
+          <!-- Checkbox "selecionar todos" é irmão do button — HTML válido, keyboard
+               nav preservada. Sem o texto "Todos" (só o checkbox alinhado à direita);
+               o rótulo continua acessível para leitor de tela via sl-visually-hidden. -->
+          <label class="export-select-all" data-sl-checkbox>
+            <input type="checkbox" id="export-fields-select-all" class="sl-visually-hidden" checked>
+            <div data-sl-checkbox-input data-checked="true" data-disabled="false" aria-hidden="true">
+              <svg data-sl-checkbox-check width="12" height="12" viewBox="0 0 12 12" fill="none">
+                <path d="M2 6L5 9L10 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <span data-sl-checkbox-label data-sl-text data-variant="body" class="sl-visually-hidden">Selecionar todos os campos</span>
+          </label>
+        </div>
+        <div class="export-filtros-card-body" id="export-campos-body">
+          <div class="export-filtros-card-body-inner">
+          <div class="export-fields-grid" id="export-fields-checklist">
+            <!-- populado por JS conforme granularidade selecionada -->
+          </div>
+          </div><!-- .export-filtros-card-body-inner -->
+        </div>
+      </div>
+
+    </div>
+
+    <footer data-sl-content data-narrow="true" data-sl-drawer-footer>
+      <button data-sl-button data-variant="tertiary" data-size="large" data-role="export-drawer-close">
+        <span data-sl-button-content>Cancelar</span>
+      </button>
+      <button data-sl-button data-variant="primary" data-size="large" id="export-btn-confirm"
+              data-disabled="true" aria-disabled="true">
+        <span data-sl-button-content>Exportar</span>
+      </button>
+    </footer>
+  </div>
+</div>
+
+<!-- Host do card flutuante de exportações. Fica fora da .shell para sobrepor
+     tudo sem conflito de stacking context. Populado por renderExportCard(). -->
+<div id="export-card-host"></div>
+
 <!-- Confirmação de descarte. Segue o ConfirmationModal: tamanho small, título,
      texto e as duas ações no rodapé, sendo a de confirmar crítica. -->
 <div class="modal-root" id="discard-modal" hidden>
@@ -1020,7 +1585,7 @@
     <div data-sl-container data-sl-modal-container>
       <header data-sl-content data-narrow="true" data-sl-modal-header>
         <div data-sl-flex style="--sl-flex-direction: row; --sl-flex-justify: space-between; --sl-flex-align: center">
-          <h2 data-sl-heading data-variant="display2" id="discard-title">Descartar o lote?</h2>
+          <h2 data-sl-heading data-variant="display2" id="discard-title">Sair da edição</h2>
           <button data-sl-button data-sl-icon-button data-sl-modal-dismiss data-variant="tertiary" data-size="large"
                   data-role="discard-cancel" aria-label="Fechar">
             <span data-sl-button-content>
@@ -1031,7 +1596,7 @@
       </header>
 
       <div data-sl-content data-sl-modal-content>
-        <p data-sl-text data-variant="body" id="discard-body">O que você preencheu não será salvo.</p>
+        <p data-sl-text data-variant="body" id="discard-body">Todas as informações preenchidas serão perdidas, tem certeza que deseja sair?</p>
       </div>
 
       <footer data-sl-content data-narrow="true" data-sl-modal-footer data-sl-confirmation-modal-footer>
@@ -1039,7 +1604,7 @@
           <span data-sl-button-content>Continuar editando</span>
         </button>
         <button data-sl-button data-variant="critical" data-size="large" id="discard-confirm">
-          <span data-sl-button-content id="discard-confirm-label">Descartar</span>
+          <span data-sl-button-content id="discard-confirm-label">Sair</span>
         </button>
       </footer>
     </div>
@@ -1052,6 +1617,12 @@
      para a listagem inteira — o conteúdo é remontado a cada abertura, com o
      lote da linha. -->
 <div class="row-menu-popover" data-sl-menu-popover id="row-menu" role="menu" data-open="false"></div>
+
+<!-- Tooltip global reaproveitado por qualquer [data-sl-filter-value] truncado
+     (listagem + drawer de exportação). Usa a classe oficial do Shoreline
+     [data-sl-tooltip-popover]; position:fixed e texto são setados por JS no
+     mouseenter, só quando o texto realmente estiver truncado. -->
+<div id="filter-value-tooltip" data-sl-tooltip-popover role="tooltip" hidden></div>
 
 <div data-sl-toast-stack id="toast-stack"></div>
 
@@ -1174,10 +1745,18 @@
     'caret-left': { box: 20, body: line('M12.5 16.25L6.25 10L12.5 3.75') },
     'caret-right': { box: 20, body: line('M7.5 3.75L13.75 10L7.5 16.25') },
     'caret-down': { box: 20, body: line('M16.25 7.5L10 13.75L3.75 7.5') },
+    'caret-up': { box: 20, body: line('M3.75 12.5L10 6.25L16.25 12.5') },
 
     'arrow-left': { box: 20, body: line('M16.875 10H3.125M3.125 10L8.75 4.375M3.125 10L8.75 15.625') },
 
     x: { box: 20, body: line('M15.625 4.375L4.375 15.625', 'M15.625 15.625L4.375 4.375') },
+
+    /* x-circle — círculo com X interno; usado para "Cancelar lote". Círculo
+       idêntico ao do ícone question; linhas X escaladas do Phosphor 256→20. */
+    'x-circle': { box: 20, body: line(
+      'M10 17.5C14.1421 17.5 17.5 14.1421 17.5 10C17.5 5.85786 14.1421 2.5 10 2.5C5.85786 2.5 2.5 5.85786 2.5 10C2.5 14.1421 5.85786 17.5 10 17.5Z',
+      'M7.07 7.07L12.93 12.93',
+      'M12.93 7.07L7.07 12.93') },
 
     trash: { box: 20, body: line(
       'M16.8748 4.375L3.12476 4.375',
@@ -1199,10 +1778,32 @@
     'caret-up-small': { box: 16, body: line('M3 10L8 5L13 10') },
     'caret-right-small': { box: 16, body: line('M6 3L11 8L6 13') },
     'check-small': { box: 16, body: line('M2.3999 8.5L5.8999 12L13.8999 4') },
+    /* Traço do estado indeterminado, na mesma caixa e espessura do check. */
+    'minus-small': { box: 16, body: line('M3 8H13') },
 
     /* O gatilho do Select não leva um caret comum, e sim o par para cima e para
        baixo — é o SelectArrow do componente. */
     'caret-up-down-small': { box: 16, body: line('M5 11L8 14L11 11', 'M5 5L8 2L11 5') },
+
+    /* Download — seta para baixo com base/bandeja; distingue-se do arrow-line-down
+       pelo comprimento menor do tronco (começa no meio), que lembra uma descida
+       até uma superfície plana. */
+    download: { box: 20, body: line(
+      'M10 3.125V13.4375',
+      'M4.375 8.75L10 14.375L15.625 8.75',
+      'M3.125 16.875H16.875') },
+
+    'download-small': { box: 16, body: line(
+      'M8 2.5V10.75',
+      'M3.5 7L8 11.5L12.5 7',
+      'M2.5 13.5H13.5') },
+
+    /* Warning circle — círculo com ponto de exclamação (traço + ponto).
+       Mesmo padrão do ícone question: dot() para o ponto preenchido. */
+    'warning-circle': { box: 20, body:
+      line('M10 17.5C14.1421 17.5 17.5 14.1421 17.5 10C17.5 5.85786 14.1421 2.5 10 2.5C5.85786 2.5 2.5 5.85786 2.5 10C2.5 14.1421 5.85786 17.5 10 17.5Z',
+           'M10 6.875V10.625') +
+      dot('M10.625 13.4375C10.625 13.7827 10.3452 14.0625 10 14.0625C9.65482 14.0625 9.375 13.7827 9.375 13.4375C9.375 13.0923 9.65482 12.8125 10 12.8125C10.3452 12.8125 10.625 13.0923 10.625 13.4375Z') },
   }
 
   /* As variantes Small carregam data-sl-icon-small; as normais, data-sl-icon.
@@ -1222,6 +1823,17 @@
       el.outerHTML = icon(el.dataset.icon)
     })
   }
+
+  /* A mesma pergunta que event.target.closest, mas à prova de um alvo que saiu do
+     documento durante o próprio clique: um handler que rode antes e troque o
+     innerHTML de onde o alvo estava deixa closest sem ancestrais para subir, e
+     então todo "o clique foi fora?" responde sim — fechando popover e menu por
+     engano. composedPath é tirado no início do despacho e guarda a linhagem
+     original, mesmo a de um nó já removido. Usar em decisão de clique fora. */
+  const clickedNode = (event, selector) => event.composedPath()
+    .find((node) => node.nodeType === 1 && node.matches(selector))
+
+  const clickedInside = (event, selector) => Boolean(clickedNode(event, selector))
 
   const PAGE_SIZE = 25
 
@@ -1468,6 +2080,23 @@
      enxergar o que acabou de ser criado (INV-8). */
   let SKU_ROWS = buildSkuRows(LOTS)
 
+  /* ── Fila de jobs de exportação assíncrona (máx 3) ─────────── */
+  let exportQueue = []
+  let exportJobCounter = 0
+
+  /* ── Capacidade da fila ──────────────────────────────────────────
+     O limite existe para não sobrecarregar o backend com exportações
+     simultâneas ou empilhadas, então ele conta só o que ainda consome
+     capacidade: job em andamento (running) ou esperando a vez (pending). Job
+     concluído ou com erro já é passado — o processamento aconteceu e o slot
+     está livre, mesmo que a linha continue no card até o usuário descartar.
+     Com a fila sendo sequencial, "3 em voo" significa 1 processando + 2
+     esperando. */
+  const MAX_IN_FLIGHT = 3
+  const inFlight = (job) => job.status === 'pending' || job.status === 'running'
+  const inFlightCount = () => exportQueue.filter(inFlight).length
+  const hasExportCapacity = () => inFlightCount() < MAX_IN_FLIGHT
+
   const state = {
     /* 'lots' ou 'skus'. A busca, os filtros e a paginação são os mesmos nas
        duas visões; só muda o que cada linha representa. */
@@ -1712,8 +2341,8 @@
             <span class="cell-soft">${escapeHtml(lot.destination.warehouse)}</span>
           </div>
         </div>
-        <div data-sl-table-cell class="num">${lotQuantity(lot)}</div>
-        <div data-sl-table-cell class="num">${lotReserved(lot)}</div>
+        <div data-sl-table-cell>${lotQuantity(lot)}</div>
+        <div data-sl-table-cell>${lotReserved(lot)}</div>
         <div data-sl-table-cell>${formatDate(lot.arrivalDate)}</div>
         <div data-sl-table-cell>
           <span data-sl-tag data-color="${status.color}" data-size="normal" data-variant="secondary">${status.label}</span>
@@ -1743,8 +2372,8 @@
           </div>
         </div>
         <div data-sl-table-cell class="muted">—</div>
-        <div data-sl-table-cell class="num">${item.quantity}</div>
-        <div data-sl-table-cell class="num">${item.reserved}</div>
+        <div data-sl-table-cell>${item.quantity}</div>
+        <div data-sl-table-cell>${item.reserved}</div>
         <div data-sl-table-cell class="muted">—</div>
         <div data-sl-table-cell class="muted">—</div>
         <div data-sl-table-cell></div>
@@ -1780,17 +2409,13 @@
             <span class="cell-soft">${escapeHtml(row.lot.destination.warehouse)}</span>
           </div>
         </div>
-        <div data-sl-table-cell class="num">${row.quantity}</div>
-        <div data-sl-table-cell class="num">${row.reserved}</div>
+        <div data-sl-table-cell>${row.quantity}</div>
+        <div data-sl-table-cell>${row.reserved}</div>
         <div data-sl-table-cell>${formatDate(row.lot.arrivalDate)}</div>
         <div data-sl-table-cell>
           <span data-sl-tag data-color="${status.color}" data-size="normal" data-variant="secondary">${status.label}</span>
         </div>
-        <div data-sl-table-cell>
-          <button data-sl-button data-sl-icon-button data-variant="tertiary" data-size="normal" aria-label="Ações do SKU ${escapeHtml(row.skuId)} no lote ${escapeHtml(row.lot.code)}">
-            <span data-sl-button-content>${DOTS}</span>
-          </button>
-        </div>
+        <div data-sl-table-cell></div>
       </div>`
   }
 
@@ -1818,27 +2443,27 @@
      Reservas é medida pelo cabeçalho, como Quantidade, e o cabeçalho dela leva a
      ajuda contextual: 62px de "Reservas", 4px de intervalo e o gatilho de 24px
      dão 90px, mais os 16px. */
-  const DESTINO_HELP = 'Seller e estoque que receberão o lote'
-  const RESERVAS_HELP = 'Unidades já vendidas em pedidos e reservadas neste lote'
+  const DESTINO_HELP = { message: 'Seller e estoque que receberão o lote.', helpUrl: 'https://help.vtex.com/pt/tutorial/inventario-futuro--placeholder' }
+  const RESERVAS_HELP = { message: 'Unidades já vendidas em pedidos e reservadas neste lote.', helpUrl: 'https://help.vtex.com/pt/tutorial/reservas--placeholder' }
 
   const COLUMNS = {
     lots: [
       { label: 'Lote',       width: 'minmax(230px, 1fr)', bars: ['70%'] },
-      { label: 'Destino',    width: '166px',              bars: ['90%', '60%'] },
-      { label: 'Quantidade', width: '94px',  cell: 'num', bars: ['60%'] },
-      { label: 'Reservas',   width: '106px', cell: 'num', help: RESERVAS_HELP, bars: ['60%'] },
+      { label: 'Destino',    width: '166px', help: DESTINO_HELP,              bars: ['90%', '60%'] },
+      { label: 'Quantidade', width: '94px',               bars: ['60%'] },
+      { label: 'Reservas',   width: '106px', help: RESERVAS_HELP, bars: ['60%'] },
       { label: 'Chegada',    width: '97px',               bars: ['80%'] },
-      { label: 'Status',     width: '106px',              bars: ['72%'] },
+      { label: 'Status',         width: '106px',              bars: ['72%'] },
       { label: '',           width: '56px',               bars: [] },
     ],
     skus: [
       { label: 'Produto',    width: 'minmax(230px, 1fr)', thumb: true, bars: ['90%', '60%'] },
       { label: 'Lote',       width: '184px',              bars: ['90%', '60%'] },
       { label: 'Destino',    width: '166px', help: DESTINO_HELP, bars: ['90%', '60%'] },
-      { label: 'Quantidade', width: '94px',  cell: 'num', bars: ['60%'] },
-      { label: 'Reservas',   width: '106px', cell: 'num', help: RESERVAS_HELP, bars: ['60%'] },
+      { label: 'Quantidade', width: '94px',               bars: ['60%'] },
+      { label: 'Reservas',   width: '106px', help: RESERVAS_HELP, bars: ['60%'] },
       { label: 'Chegada',    width: '97px',               bars: ['80%'] },
-      { label: 'Status',     width: '106px',              bars: ['72%'] },
+      { label: 'Status do lote', width: '106px',          bars: ['72%'] },
       { label: '',           width: '56px',               bars: [] },
     ],
   }
@@ -1847,7 +2472,13 @@
      popover com Container > Content. O gatilho tem 24px e a linha de texto do
      cabeçalho tem 20px, então o Bleed de -2px devolve os 44px que a Table
      prescreve para o cabeçalho. */
-  function contextualHelpHtml(label, message) {
+  function contextualHelpHtml(label, message, helpUrl) {
+    const saibaMaisHtml = helpUrl
+      ? `<a href="${escapeHtml(helpUrl)}" target="_blank" rel="noopener noreferrer"
+            class="help-saiba-mais" aria-label="Saiba mais sobre ${escapeHtml(label)} (abre em nova aba)">
+           <span>Saiba mais</span>${icon('arrow-up-right-small')}
+         </a>`
+      : ''
     return `
       <div data-sl-stack data-horizontal="true" style="--sl-stack-space: var(--sl-space-1)">
         <span>${escapeHtml(label)}</span>
@@ -1863,7 +2494,9 @@
               </button>
               <div class="header-help-popover" data-sl-contextual-help-popover data-sl-popover>
                 <div data-sl-container>
-                  <div data-sl-content data-narrow="false">${escapeHtml(message)}</div>
+                  <div data-sl-content data-narrow="false">
+                    ${escapeHtml(message)} ${saibaMaisHtml}
+                  </div>
                 </div>
               </div>
             </div>
@@ -1885,7 +2518,7 @@
     el('thead').innerHTML = `
       <div data-sl-table-row>${columns.map((column) => `
         <div data-sl-table-header-cell${column.cell ? ` class="${column.cell}"` : ''}>${
-          column.help ? contextualHelpHtml(column.label, column.help) : escapeHtml(column.label)
+          column.help ? contextualHelpHtml(column.label, column.help.message, column.help.helpUrl) : escapeHtml(column.label)
         }</div>`).join('')}
       </div>`
   }
@@ -1968,9 +2601,21 @@
   /* Sem nenhuma linha no resultado não há CSV para gerar, e o item que exporta
      fica indisponível. O Menu do Shoreline marca isso por data-disabled, e não
      pelo disabled do elemento: é o atributo que o CSS oficial estiliza. */
-  function syncExportItem(total = 0, isLoading = false) {
+  /* O total é lembrado para que a conclusão de um job possa ressincronizar o
+     item sem conhecer o resultado da listagem: antes, quando a capacidade era
+     liberada, ninguém reavaliava o item e ele ficava desabilitado até o próximo
+     render(). Só o total entra no cache — isLoading é condição do momento, e
+     quem não declara que está carregando não está. */
+  let ultimoTotalExport = 0
+
+  function syncExportItem(total = ultimoTotalExport, isLoading = false) {
+    ultimoTotalExport = total
+
     const item = document.querySelector('[data-action="export"]')
-    const isOff = isLoading || total === 0
+    /* Desabilita quando: carregando, sem resultados, ou sem capacidade na fila.
+       Capacidade conta só exportação em andamento — três já concluídas no card
+       não impedem uma nova (FR-15). */
+    const isOff = isLoading || total === 0 || !hasExportCapacity()
 
     item.dataset.disabled = String(isOff)
     item.setAttribute('aria-disabled', String(isOff))
@@ -2226,6 +2871,17 @@
   /* Mesmo IconCheckSmall que o FilterItem do Shoreline usa no modo múltiplo. */
   const CHECK = icon('check-small')
 
+  /* Traço do estado indeterminado do seller na árvore de destinos: parte dos
+     estoques dele está marcada, mas não todos. */
+  const MINUS = icon('minus-small')
+
+  /* A marca de escolhido do Select existe em todos os itens, com o ícone dentro
+     só no escolhido: o CheckboxCheck do Ariakit tem 1em fixo e apenas esvazia o
+     conteúdo quando não está marcado. Renderizar a caixa só no escolhido
+     empurraria o texto dele para a direita e desalinharia a lista. */
+  const selectCheckHtml = (chosen) =>
+    `<span data-sl-select-item-check aria-hidden="true">${chosen ? CHECK : ''}</span>`
+
   /* O indicador só existe quando a opção está marcada: é ele que pinta o
      quadrado de azul. A caixa vazia vem do próprio data-sl-filter-item-check. */
   function filterItemHtml(value, label, isSelected) {
@@ -2259,17 +2915,216 @@
   const DESTINATION_PAGE = 10
   const DESTINATION_DELAY = 400
 
-  const destinationList = { search: '', loaded: 0, loading: false, token: 0 }
+  /* expanded guarda os sellers abertos e é a única fonte da verdade da abertura:
+     abrir o filtro e buscar apenas semeiam o conjunto, e daí em diante o chevron
+     manda — inclusive para fechar um seller que abriu sozinho. */
+  const destinationList = { search: '', loaded: 0, loading: false, token: 0, expanded: new Set() }
 
   /* A seleção pendente vive fora do DOM porque a lista se refaz a cada busca e a
      cada página: um destino marcado que sai da lista continua marcado, e é isso
      que o Aplicar precisa enxergar. */
   const pendingSelection = { destinations: new Set(), statuses: new Set() }
 
-  const destinationMatches = () => {
-    const term = norm(destinationList.search.trim())
-    return term ? DESTINATION_OPTIONS.filter((o) => norm(o).includes(term)) : DESTINATION_OPTIONS
+  /* ── Árvore de destinos: seller → estoque ────────────────────
+     O filtro é uma árvore de dois níveis. O seller é a linha de cima, com o
+     chevron entre o checkbox e o nome; os estoques dele entram recuados abaixo.
+     Marcar o seller é filtrar por todos os estoques dele, marcar um estoque é
+     filtrar só por aquele — e por isso a seleção continua sendo uma lista de
+     chaves "Seller — Estoque", a mesma que o predicado do filtro já lia.
+     O chevron existe em todo seller, mesmo nos que têm um único estoque, para a
+     lista não ter duas formas de linha.
+     ───────────────────────────────────────────────────────────── */
+
+  const destKeyOf = (seller, warehouse) => `${seller} — ${warehouse}`
+
+  const DEST_GROUPS = SELLERS.map((seller) => ({ seller, warehouses: warehousesOf(seller) }))
+
+  /* Agrupa uma lista de chaves "Seller — Estoque" na mesma forma de DEST_GROUPS.
+     É o que a drawer de exportação usa, porque lá as opções vêm dos lotes e não
+     do catálogo. O separador é procurado pela primeira ocorrência: nome de
+     estoque não tem " — ". */
+  function destGroupsOfKeys(keys) {
+    const bySeller = new Map()
+    for (const key of keys) {
+      const cut = key.indexOf(' — ')
+      const seller = cut === -1 ? key : key.slice(0, cut)
+      const warehouse = cut === -1 ? '' : key.slice(cut + 3)
+      if (!bySeller.has(seller)) bySeller.set(seller, [])
+      bySeller.get(seller).push(warehouse)
+    }
+    return [...bySeller].map(([seller, warehouses]) => ({ seller, warehouses }))
   }
+
+  /* A busca casa no seller e no estoque. Casando pelo nome do seller, ele entra
+     com todos os estoques; casando só pelo estoque, entra apenas com os que
+     casaram e marcado como viaWarehouse — é o que faz o seller abrir sozinho,
+     como a listagem faz com o lote que casou por SKU.
+
+     all guarda sempre todos os estoques do seller: o checkbox do seller fala do
+     seller inteiro, não do que a busca deixou à vista. */
+  function destMatches(groups, term) {
+    const t = norm((term || '').trim())
+    if (!t) return groups.map((g) => ({ ...g, all: g.warehouses, viaWarehouse: false }))
+
+    return groups.flatMap((g) => {
+      const all = g.warehouses
+      if (norm(g.seller).includes(t)) {
+        return [{ seller: g.seller, warehouses: all, all, viaWarehouse: false }]
+      }
+      const hit = all.filter((w) => norm(destKeyOf(g.seller, w)).includes(t))
+      return hit.length ? [{ seller: g.seller, warehouses: hit, all, viaWarehouse: true }] : []
+    })
+  }
+
+  const destGroupFor = (groups, seller) => groups.find((g) => g.seller === seller)
+
+  /* Nenhum, alguns (traço) ou todos (check) — sempre sobre all. */
+  function destSellerState(group, selection) {
+    const on = group.all.filter((w) => selection.has(destKeyOf(group.seller, w))).length
+    return on === 0 ? 'none' : on === group.all.length ? 'all' : 'some'
+  }
+
+  const destStateGlyph = (state) => (state === 'all' ? CHECK : state === 'some' ? MINUS : '')
+
+  const destCheckHtml = (glyph) =>
+    `<span data-sl-filter-item-check data-multiselect="true" aria-hidden="true">${
+      glyph ? `<span data-sl-filter-item-check-indicator data-multiselect="true">${glyph}</span>` : ''
+    }</span>`
+
+  const setDestCheck = (row, glyph) => {
+    row.querySelector('[data-sl-filter-item-check]').innerHTML = glyph
+      ? `<span data-sl-filter-item-check-indicator data-multiselect="true">${glyph}</span>`
+      : ''
+  }
+
+  function destSellerRowHtml(seller, state, isOpen) {
+    return `
+      <span data-sl-filter-item class="dest-seller" role="option" data-role="dest-seller"
+            data-seller="${escapeHtml(seller)}"
+            aria-selected="${state === 'all'}" aria-expanded="${isOpen}">
+        ${destCheckHtml(destStateGlyph(state))}
+        <span class="dest-chevron" data-role="dest-toggle" aria-hidden="true">${
+          icon('caret-down-small')}</span>
+        <span>${escapeHtml(seller)}</span>
+      </span>`
+  }
+
+  function destChildRowHtml(seller, warehouse, isSelected) {
+    return `
+      <span data-sl-filter-item class="dest-child" role="option" data-role="dest-warehouse"
+            data-seller="${escapeHtml(seller)}"
+            data-value="${escapeHtml(destKeyOf(seller, warehouse))}"
+            aria-selected="${isSelected}">
+        ${destCheckHtml(isSelected ? CHECK : '')}
+        <span>${escapeHtml(warehouse)}</span>
+      </span>`
+  }
+
+  const destChildrenHtml = (group, selection) => group.warehouses
+    .map((w) => destChildRowHtml(group.seller, w, selection.has(destKeyOf(group.seller, w))))
+    .join('')
+
+  const destTreeHtml = (groups, selection, expanded) => groups.map((g) => {
+    const isOpen = expanded.has(g.seller)
+    return destSellerRowHtml(g.seller, destSellerState(g, selection), isOpen)
+      + (isOpen ? destChildrenHtml(g, selection) : '')
+  }).join('')
+
+  /* Ao abrir o filtro, os sellers que já têm estoque marcado vêm abertos: o que
+     está aplicado fica à vista sem precisar ser caçado. */
+  const destExpandedFromSelection = (groups, selection) => new Set(groups
+    .filter((g) => g.all.some((w) => selection.has(destKeyOf(g.seller, w))))
+    .map((g) => g.seller))
+
+  const destExpandedFromSearch = (groups) => new Set(groups
+    .filter((g) => g.viaWarehouse)
+    .map((g) => g.seller))
+
+  /* Abrir, fechar e marcar mexem na linha no lugar, sem redesenhar a lista: um
+     innerHTML novo zeraria o scroll e quem acabou de chegar ao fim voltaria ao
+     topo — o mesmo motivo que faz a paginação ser acrescentada, não redesenhada. */
+  function removeDestChildren(sellerRow) {
+    let next = sellerRow.nextElementSibling
+    while (next && next.dataset.role === 'dest-warehouse') {
+      const gone = next
+      next = next.nextElementSibling
+      gone.remove()
+    }
+  }
+
+  function toggleDestSellerOpen(sellerRow, group, selection, expanded) {
+    const isOpen = !expanded.has(group.seller)
+    if (isOpen) expanded.add(group.seller)
+    else expanded.delete(group.seller)
+
+    /* aria-expanded é o que gira o chevron (ver .dest-chevron no CSS). */
+    sellerRow.setAttribute('aria-expanded', String(isOpen))
+
+    removeDestChildren(sellerRow)
+    if (isOpen) sellerRow.insertAdjacentHTML('afterend', destChildrenHtml(group, selection))
+  }
+
+  /* Devolve true quando o clique era da árvore, para o handler genérico de item
+     não passar por cima. */
+  function handleDestTreeClick(event, { groups, selection, expanded }) {
+    const sellerRow = event.target.closest('[data-role="dest-seller"]')
+    if (sellerRow) {
+      const group = destGroupFor(groups, sellerRow.dataset.seller)
+      if (!group) return true
+
+      /* Na linha do seller, marcar é o checkbox; o resto da linha — chevron, nome
+         e o vazio entre eles — abre e fecha. O chevron sozinho é um alvo de 16px
+         sem folga, e errar por um pixel não pode significar "filtrei por esse
+         seller inteiro" quando a intenção era ver o que tem dentro dele. Na linha
+         do estoque não há o que abrir, então lá a linha toda continua marcando. */
+      if (!event.target.closest('[data-sl-filter-item-check]')) {
+        toggleDestSellerOpen(sellerRow, group, selection, expanded)
+        return true
+      }
+
+      /* Marcar o seller alcança todos os estoques dele, inclusive os que a busca
+         está escondendo: o pedido é "esse seller todo". */
+      const willSelect = destSellerState(group, selection) !== 'all'
+      for (const w of group.all) {
+        const key = destKeyOf(group.seller, w)
+        if (willSelect) selection.add(key)
+        else selection.delete(key)
+      }
+
+      sellerRow.setAttribute('aria-selected', String(willSelect))
+      setDestCheck(sellerRow, destStateGlyph(willSelect ? 'all' : 'none'))
+      let child = sellerRow.nextElementSibling
+      while (child && child.dataset.role === 'dest-warehouse') {
+        setFilterItemSelected(child, willSelect)
+        child = child.nextElementSibling
+      }
+      return true
+    }
+
+    const childRow = event.target.closest('[data-role="dest-warehouse"]')
+    if (childRow) {
+      const key = childRow.dataset.value
+      const willSelect = !selection.has(key)
+      if (willSelect) selection.add(key)
+      else selection.delete(key)
+      setFilterItemSelected(childRow, willSelect)
+
+      /* O seller acompanha os filhos: parte marcada vira traço, tudo vira check. */
+      let parent = childRow.previousElementSibling
+      while (parent && parent.dataset.role !== 'dest-seller') parent = parent.previousElementSibling
+      const group = parent && destGroupFor(groups, parent.dataset.seller)
+      if (parent && group) {
+        const state = destSellerState(group, selection)
+        parent.setAttribute('aria-selected', String(state === 'all'))
+        setDestCheck(parent, destStateGlyph(state))
+      }
+      return true
+    }
+
+    return false
+  }
+
+  const destinationMatches = () => destMatches(DEST_GROUPS, destinationList.search)
 
   /* As cinco barras do FilterListSkeleton, com as larguras que o componente fixa
      e o respiro de 8px na primeira e na última. */
@@ -2317,21 +3172,23 @@
     const shown = matches.slice(0, destinationList.loaded)
     const spinner = destinationList.loading ? filterSpinnerHtml() : ''
 
+    const tree = (groups) =>
+      destTreeHtml(groups, pendingSelection.destinations, destinationList.expanded)
+
+    /* A conta é de sellers, não de linhas: cada página traz dez sellers, e os
+       estoques de um seller entram junto com ele. */
     if (append) {
-      const onScreen = list.querySelectorAll('[data-sl-filter-item]').length
+      const onScreen = list.querySelectorAll('[data-role="dest-seller"]').length
       const more = list.querySelector('.filter-list-more')
       if (more) more.remove()
-      list.insertAdjacentHTML('beforeend', itemsHtml(shown.slice(onScreen)) + spinner)
+      list.insertAdjacentHTML('beforeend', tree(shown.slice(onScreen)) + spinner)
       return
     }
 
-    list.innerHTML = shown.length ? itemsHtml(shown) + spinner
+    list.innerHTML = shown.length ? tree(shown) + spinner
       : destinationList.loading ? filterSkeletonHtml()
       : matches.length ? '' : filterEmptyHtml()
   }
-
-  const itemsHtml = (options) => options
-    .map((o) => filterItemHtml(o, o, pendingSelection.destinations.has(o))).join('')
 
   /* Simula a chamada que traz a página seguinte. O token descarta a resposta de
      uma busca que já foi substituída por outra — sem ele, uma busca lenta
@@ -2376,6 +3233,8 @@
       pendingSelection.destinations = new Set(state.filters.destinations)
       filterNode('destinations').querySelector('[data-sl-search-input]').value = ''
       destinationList.search = ''
+      destinationList.expanded = destExpandedFromSelection(
+        destinationMatches(), pendingSelection.destinations)
       loadDestinations({ reset: true })
       return
     }
@@ -2475,12 +3334,12 @@
 
   /* O valor de verdade fica num input escondido, em ISO: é dele que o
      applyFilter lê, então a leitura do filtro não muda por causa do campo. */
-  function datePickerHtml(id, role, iso, min) {
+  function datePickerHtml(id, role, iso, min, max) {
     const parts = isoParts(iso)
     const separator = '<div data-sl-date-segment aria-hidden="true">/</div>'
 
     return `
-      <div class="date-picker" data-sl-date-picker data-min="${min || ''}">
+      <div class="date-picker" data-sl-date-picker data-min="${min || ''}" data-max="${max || ''}">
         <input type="hidden" data-role="${role}" value="${iso || ''}">
         <div data-sl-date-picker-input>
           <div data-sl-date-field>
@@ -2502,9 +3361,10 @@
       </div>`
   }
 
-  function calendarCellHtml(year, month, day, selectedIso, min) {
+  function calendarCellHtml(year, month, day, selectedIso, min, max) {
     const iso = `${year}-${pad(month, 2)}-${pad(day, 2)}`
     const isSelected = iso === selectedIso
+    const outOfRange = (min && iso < min) || (max && iso > max)
 
     /* Numa data única o próprio componente marca a célula como início e fim da
        seleção ao mesmo tempo — é o que arredonda os dois lados. */
@@ -2512,7 +3372,7 @@
       <td data-sl-calendar-cell>
         <button type="button" data-sl-button data-sl-icon-button data-sl-calendar-cell-button
                 data-variant="tertiary" data-size="normal" data-date="${iso}"
-                ${min && iso < min ? 'disabled' : ''}
+                ${outOfRange ? 'disabled' : ''}
                 data-selected="${isSelected}"
                 data-selection-start="${isSelected}" data-selection-end="${isSelected}"
                 aria-label="${day} de ${monthTitle(year, month)}">
@@ -2521,9 +3381,11 @@
       </td>`
   }
 
-  /* O mínimo vem do campo, não do calendário: a data de chegada de um lote novo
-     começa amanhã, enquanto o filtro de chegada precisa alcançar o que já chegou. */
-  function calendarHtml(monthKey, selectedIso, min) {
+  /* Os limites vêm do campo, não do calendário: a data de chegada de um lote novo
+     começa amanhã, enquanto o filtro de chegada precisa alcançar o que já chegou.
+     Num intervalo os dois limites são o outro campo — o "De" recebe o máximo do
+     "Até" e o "Até" recebe o mínimo do "De" (ver syncRangeBounds). */
+  function calendarHtml(monthKey, selectedIso, min, max) {
     const [year, month] = monthKey.split('-').map(Number)
     const firstWeekday = new Date(year, month - 1, 1).getDay()
     const total = daysInMonth(year, month)
@@ -2532,7 +3394,7 @@
     const cells = [...Array(weeks * 7).keys()].map((i) => {
       const day = i - firstWeekday + 1
       return day >= 1 && day <= total
-        ? calendarCellHtml(year, month, day, selectedIso, min)
+        ? calendarCellHtml(year, month, day, selectedIso, min, max)
         : '<td data-sl-calendar-cell></td>'
     })
 
@@ -2610,8 +3472,12 @@
 
     if (isOpen) {
       const iso = hiddenOf(picker).value
-      popover.dataset.month = (iso || picker.dataset.min || todayIso()).slice(0, 7)
-      popover.innerHTML = calendarHtml(popover.dataset.month, iso, picker.dataset.min)
+      /* Sem valor, o mês visível vem do limite que o campo tem — nunca de hoje.
+         Um "De" limitado a 15/08 aberto em setembro mostraria uma grade inteira
+         desabilitada, e a saída (voltar um mês) não está escrita em lugar nenhum. */
+      const seed = iso || picker.dataset.min || picker.dataset.max || todayIso()
+      popover.dataset.month = seed.slice(0, 7)
+      popover.innerHTML = calendarHtml(popover.dataset.month, iso, picker.dataset.min, picker.dataset.max)
     }
 
     picker.dataset.open = String(isOpen)
@@ -2630,17 +3496,56 @@
     const [year, month] = popover.dataset.month.split('-').map(Number)
     const moved = new Date(year, month - 1 + delta, 1)
     popover.dataset.month = `${moved.getFullYear()}-${pad(moved.getMonth() + 1, 2)}`
-    popover.innerHTML = calendarHtml(popover.dataset.month, hiddenOf(picker).value, picker.dataset.min)
+    popover.innerHTML = calendarHtml(popover.dataset.month, hiddenOf(picker).value, picker.dataset.min, picker.dataset.max)
+  }
+
+  /* Os dois campos de um intervalo se limitam um ao outro, nas duas direções: o
+     "Até" não desce abaixo do "De" e o "De" não sobe acima do "Até". Um campo
+     vazio não limita nada, então apagar um devolve a liberdade ao outro.
+
+     Não há como se trancar: cada campo sempre pode andar para o lado que alarga o
+     intervalo — o "De" para trás, o "Até" para frente —, e "Limpar" zera os dois.
+     O que exige ordem é mover um intervalo já montado: para adiantá-lo, mexa no
+     "Até" primeiro; para atrasá-lo, no "De". */
+  function applyDateBound(picker, bound, value) {
+    picker.dataset[bound] = value
+
+    if (picker.dataset.open !== 'true') return
+
+    const popover = picker.querySelector('.calendar-popover')
+    if (popover?.dataset.month) {
+      popover.innerHTML = calendarHtml(
+        popover.dataset.month, hiddenOf(picker).value, picker.dataset.min, picker.dataset.max)
+    }
+  }
+
+  function syncRangeBounds(root) {
+    const pickerOf = (role) => root
+      .querySelector(`[data-sl-date-picker] input[data-role="${role}"]`)
+      ?.closest('[data-sl-date-picker]')
+
+    const startPicker = pickerOf('start')
+    const endPicker = pickerOf('end')
+    if (!startPicker || !endPicker) return
+
+    applyDateBound(endPicker, 'min', hiddenOf(startPicker).value || '')
+    applyDateBound(startPicker, 'max', hiddenOf(endPicker).value || '')
   }
 
   /* O padding do rodapé vem do data-sl-content, como no componente real. */
   function footerHtml() {
     return `
       <footer data-sl-filter-popover-footer data-sl-content data-narrow="true">
-        <button data-sl-button data-variant="tertiary" data-size="normal" data-role="clear"><span data-sl-button-content>Limpar</span></button>
+        <button data-sl-button data-variant="secondary" data-size="normal" data-role="clear"><span data-sl-button-content>Limpar</span></button>
         <button data-sl-button data-variant="primary" data-size="normal" data-role="apply"><span data-sl-button-content>Aplicar</span></button>
       </footer>`
   }
+
+  /* Um lote nunca tem quantidade 0 (spec 002.1, INV-12), então 0 não é um limite
+     possível no filtro. As duas mensagens dividem o mesmo data-sl-field-error,
+     por isso o texto é escrito na hora em vez de ficar fixo no HTML. */
+  const QTY_RANGE_ERROR = 'A quantidade mínima não pode ser maior que a quantidade máxima.'
+  const QTY_ZERO_ERROR  = 'A quantidade precisa ser maior que 0.'
 
   function buildFilterBodies() {
     const f = state.filters
@@ -2659,7 +3564,7 @@
         <div data-sl-search>
           <span data-sl-pre-icon>${icon('magnifying-glass-small')}</span>
           <input data-sl-search-input data-role="destination-search"
-                 placeholder="Buscar destino" autocomplete="off">
+                 placeholder="Buscar seller ou estoque" autocomplete="off">
         </div>
       </div>
       <div data-sl-filter-list data-sl-combobox-list role="listbox" aria-multiselectable="true"></div>`)
@@ -2668,6 +3573,8 @@
     destinationList.loaded = 0
     destinationList.loading = false
     destinationList.token += 1
+    destinationList.expanded = destExpandedFromSelection(
+      destinationMatches(), pendingSelection.destinations)
     filterNode('destinations').querySelector('[data-sl-filter-list]')
       .addEventListener('scroll', onDestinationScroll)
 
@@ -2680,10 +3587,11 @@
       <div data-sl-content>
         <div data-sl-stack data-horizontal="false" data-fluid="true">
           ${fieldHtml('filter-arrival-start', 'De',
-            datePickerHtml('filter-arrival-start', 'start', f.arrival.start), { labelable: false })}
+            datePickerHtml('filter-arrival-start', 'start', f.arrival.start, '', f.arrival.end),
+            { labelable: false })}
           ${fieldHtml('filter-arrival-end', 'Até',
-            datePickerHtml('filter-arrival-end', 'end', f.arrival.end), { labelable: false })}
-          <span data-sl-field-error role="alert" data-role="error" hidden>A data final é anterior à inicial.</span>
+            datePickerHtml('filter-arrival-end', 'end', f.arrival.end, f.arrival.start), { labelable: false })}
+          <span data-sl-field-error role="alert" data-role="error" hidden>A data final não pode ser anterior à data inicial.</span>
         </div>
       </div>`)
 
@@ -2697,6 +3605,7 @@
             `type="text" inputmode="numeric" data-role="min" value="${f.quantity.min ?? ''}"`))}
           ${fieldHtml('filter-quantity-max', 'Máxima', inputHtml('filter-quantity-max',
             `type="text" inputmode="numeric" data-role="max" value="${f.quantity.max ?? ''}"`))}
+          <span data-sl-field-error role="alert" data-role="qty-error" hidden>${QTY_RANGE_ERROR}</span>
         </div>
       </div>`)
   }
@@ -2734,6 +3643,50 @@
       node.querySelector('[data-sl-filter-trigger]').setAttribute('aria-expanded', 'false')
     }
   }
+
+  /* ── Tooltip de valor truncado dos filtros ────────────────────
+     Um único elemento reaproveitado por qualquer [data-sl-filter-value] que
+     estiver com o texto cortado (scrollWidth > clientWidth) — cobre tanto os
+     filtros da listagem quanto os da drawer de exportação, que reusam os
+     mesmos data-attributes. Mostra o texto completo só ao passar o mouse,
+     como manda o padrão do Tooltip do Shoreline (hover-only, sem clique). */
+  const filterValueTooltip = document.getElementById('filter-value-tooltip')
+
+  function showFilterValueTooltip(target) {
+    const text = target.textContent.trim()
+    if (!text || target.scrollWidth <= target.clientWidth + 1) return
+
+    filterValueTooltip.textContent = text
+    filterValueTooltip.hidden = false
+
+    const rect  = target.getBoundingClientRect()
+    const ttRect = filterValueTooltip.getBoundingClientRect()
+    const GAP   = 6
+
+    let left = rect.left + rect.width / 2 - ttRect.width / 2
+    left = Math.max(8, Math.min(left, window.innerWidth - ttRect.width - 8))
+    let top  = rect.top - ttRect.height - GAP
+    if (top < 8) top = rect.bottom + GAP /* sem espaço acima: mostra abaixo */
+
+    filterValueTooltip.style.left = `${left}px`
+    filterValueTooltip.style.top  = `${top}px`
+  }
+
+  function hideFilterValueTooltip() {
+    filterValueTooltip.hidden = true
+  }
+
+  document.addEventListener('mouseover', (event) => {
+    const target = event.target.closest('[data-sl-filter-value]')
+    if (target) showFilterValueTooltip(target)
+  })
+  document.addEventListener('mouseout', (event) => {
+    const target = event.target.closest('[data-sl-filter-value]')
+    if (target && !target.contains(event.relatedTarget)) hideFilterValueTooltip()
+  })
+  /* Captura (3º argumento true) para pegar scroll de qualquer container
+     interno (drawer, tabela) — scroll não faz bubbling até o document. */
+  document.addEventListener('scroll', hideFilterValueTooltip, true)
 
   function closeHeaderHelp() {
     for (const node of document.querySelectorAll('.header-help')) {
@@ -2775,6 +3728,16 @@
       const raw = (role) => node.querySelector(`[data-role="${role}"]`).value
       const min = raw('min') === '' ? null : Number(raw('min'))
       const max = raw('max') === '' ? null : Number(raw('max'))
+      const error = node.querySelector('[data-role="qty-error"]')
+      const reject = (message) => {
+        if (error) { error.textContent = message; error.hidden = false }
+        return false
+      }
+
+      if ((min !== null && min < 1) || (max !== null && max < 1)) return reject(QTY_ZERO_ERROR)
+      if (min !== null && max !== null && min > max) return reject(QTY_RANGE_ERROR)
+
+      if (error) error.hidden = true
       f.quantity = { min, max }
     }
 
@@ -2840,7 +3803,7 @@
     const item = event.target.closest('[data-sl-menu-item]')
     if (!item || item.dataset.disabled === 'true') return
 
-    if (item.dataset.action === 'export') exportRows()
+    if (item.dataset.action === 'export') openExportDrawer()
     closeActionsMenu({ restoreFocus: true })
   })
 
@@ -2893,9 +3856,10 @@
     ...(lot.status === 'received' || lot.status === 'cancelled'
       ? []
       : [{ action: 'receive', label: 'Marcar como recebido', icon: 'check' }]),
-    { action: 'history', label: 'Histórico de atualizações', icon: 'arrow-up-right' },
+    /* Mesmo item do menu do header, mesmo nome: um destino, um nome (002.1, FR-14c). */
+    { action: 'history', label: 'Histórico de alterações', icon: 'arrow-up-right' },
     { separator: true },
-    { action: 'delete', label: 'Excluir lote', icon: 'trash', critical: true },
+    { action: 'delete', label: 'Cancelar lote', icon: 'x-circle', critical: true },
   ]
 
   const rowMenuItemHtml = (item) => (item.separator
@@ -2994,6 +3958,9 @@
      comportamento do menu ancorado do design system. */
   document.querySelector('.content').addEventListener('scroll', positionRowMenu)
   window.addEventListener('resize', positionRowMenu)
+  /* A drawer do Shoreline tem largura máxima relativa ao viewport, então o
+     deslocamento do card precisa ser remedido quando a janela muda. */
+  window.addEventListener('resize', syncExportCardOffset)
 
   /* A ajuda contextual é delegada no cabeçalho porque renderTableHead refaz o
      conteúdo dele a cada troca de visão. */
@@ -3095,6 +4062,14 @@
       }
       return
     }
+
+    /* Destino é árvore, não lista chapada: o clique tem chevron, seller e
+       estoque para distinguir antes de cair no item genérico. */
+    if (name === 'destinations' && handleDestTreeClick(event, {
+      groups: destinationMatches(),
+      selection: pendingSelection.destinations,
+      expanded: destinationList.expanded,
+    })) return
 
     const item = event.target.closest('[data-sl-filter-item]')
     if (item) {
@@ -3225,6 +4200,14 @@
 
   bindDateSegments(document.getElementById('filter-row'))
 
+  /* Qualquer mudança num dos dois campos do filtro de chegada reaplica os limites
+     dos dois — inclusive no calendário que já está aberto, para os campos nunca
+     discordarem entre si enquanto o popover está na tela. */
+  document.getElementById('filter-row').addEventListener('sl-date-change', (event) => {
+    if (!event.target.closest('[data-sl-date-picker]')) return
+    syncRangeBounds(filterNode('arrival'))
+  })
+
   /* A restrição a dígitos é o que o Shoreline pede no lugar do type="number":
      sem ela o campo aceitaria qualquer texto. O cursor volta para onde estava,
      descontando o que foi recusado antes dele, senão pular para o fim atrapalha
@@ -3256,15 +4239,20 @@
 
     destinationList.search = event.target.value
     clearTimeout(destinationSearchTimer)
-    destinationSearchTimer = setTimeout(() => loadDestinations({ reset: true }), 250)
+    destinationSearchTimer = setTimeout(() => {
+      /* Semeia a abertura antes de desenhar: quem casou pelo estoque já aparece
+         aberto, e o que o usuário fizer no chevron depois disso prevalece. */
+      destinationList.expanded = destExpandedFromSearch(destinationMatches())
+      loadDestinations({ reset: true })
+    }, 250)
   })
 
   document.addEventListener('click', (event) => {
-    if (!event.target.closest('.filter')) closeAllFilters()
-    if (!event.target.closest('[data-sl-date-picker]')) closeAllCalendars()
-    if (!event.target.closest('.header-help')) closeHeaderHelp()
-    if (!event.target.closest('.actions-menu')) closeActionsMenu()
-    if (!event.target.closest('[data-row-menu]') && !event.target.closest('#row-menu')) closeRowMenu()
+    if (!clickedInside(event, '.filter')) closeAllFilters()
+    if (!clickedInside(event, '[data-sl-date-picker]')) closeAllCalendars()
+    if (!clickedInside(event, '.header-help')) closeHeaderHelp()
+    if (!clickedInside(event, '.actions-menu')) closeActionsMenu()
+    if (!clickedInside(event, '[data-row-menu], #row-menu')) closeRowMenu()
   })
 
   document.addEventListener('keydown', (event) => {
@@ -3355,7 +4343,28 @@
     else location.hash = route
   }
 
-  window.addEventListener('hashchange', handleRoute)
+  /* O voltar do navegador é a mesma saída que a seta de voltar, e por isso faz a
+     mesma pergunta. A navegação é desfeita antes de perguntar: só assim cancelar
+     devolve o formulário onde ele estava. Como `requestLeave` marca o formulário
+     como limpo ao confirmar, a segunda passagem por aqui já sai sem perguntar —
+     sem precisar de bandeira de controle. */
+  window.addEventListener('hashchange', () => {
+    const saindoDoForm = onCreateScreen && location.hash !== ROUTES.create
+
+    if (saindoDoForm && drawer.open) {
+      location.hash = ROUTES.create
+      closeDrawer()
+      return
+    }
+
+    if (saindoDoForm && snapshot() !== formPristine) {
+      location.hash = ROUTES.create
+      requestLeave()
+      return
+    }
+
+    handleRoute()
+  })
 
   /* ── Erros de campo ──────────────────────────────────────── */
 
@@ -3462,7 +4471,7 @@
     const items = shown.map((option) => `
       <div data-sl-select-item role="option" data-value="${escapeHtml(option.value)}"
            aria-selected="${option.value === selected}" aria-disabled="${Boolean(option.disabled)}">
-        ${option.value === selected ? `<span data-sl-select-item-check>${CHECK}</span>` : ''}
+        ${selectCheckHtml(option.value === selected)}
         <span class="combobox-item-text">
           <span>${escapeHtml(option.label)}</span>
           ${option.hint ? `<span class="cell-soft">${escapeHtml(option.hint)}</span>` : ''}
@@ -3633,13 +4642,11 @@
     return `<span data-sl-tag data-color="${status.color}" data-size="normal" data-variant="secondary">${status.label}</span>`
   }
 
-  const statusCheckHtml = `<span data-sl-select-item-check>${CHECK}</span>`
-
   function statusSelectHtml() {
     const items = CREATE_STATUSES.map((id) => `
       <div data-sl-select-item role="option" data-value="${id}"
            aria-selected="${id === form.status}" aria-disabled="false">
-        ${id === form.status ? statusCheckHtml : ''}
+        ${selectCheckHtml(id === form.status)}
         <span>${statusTagHtml(id)}</span>
       </div>`).join('')
 
@@ -3668,8 +4675,8 @@
     for (const item of node.querySelectorAll('[data-sl-select-item]')) {
       const chosen = item.dataset.value === form.status
       item.setAttribute('aria-selected', String(chosen))
-      item.querySelector('[data-sl-select-item-check]')?.remove()
-      if (chosen) item.insertAdjacentHTML('afterbegin', statusCheckHtml)
+      /* A caixa fica; só o ícone entra e sai. */
+      item.querySelector('[data-sl-select-item-check]').innerHTML = chosen ? CHECK : ''
     }
   }
 
@@ -3817,7 +4824,7 @@
             </div>
           </div>
         </div>
-        <div data-sl-table-cell class="num">
+        <div data-sl-table-cell>
           <div data-sl-field data-space="normal" class="qty-cell">
             ${inputHtml(`qty-${item.skuId.replace('#', '')}`,
               `type="text" inputmode="numeric" data-digits data-qty="${escapeHtml(item.skuId)}"
@@ -3826,7 +4833,7 @@
           </div>
         </div>
         <div data-sl-table-cell>
-          <button type="button" data-sl-button data-sl-icon-button data-variant="tertiary" data-size="normal"
+          <button type="button" data-sl-button data-sl-icon-button data-variant="criticalTertiary" data-size="normal"
                   data-remove-item="${escapeHtml(item.skuId)}"
                   aria-label="Remover ${escapeHtml(item.name)} do lote">
             <span data-sl-button-content>${TRASH}</span>
@@ -3911,7 +4918,7 @@
               <div data-sl-table-header>
                 <div data-sl-table-row>
                   <div data-sl-table-header-cell>Produto</div>
-                  <div data-sl-table-header-cell class="num">Quantidade</div>
+                  <div data-sl-table-header-cell>Quantidade</div>
                   <div data-sl-table-header-cell></div>
                 </div>
               </div>
@@ -3930,10 +4937,9 @@
               </div>`}
           </div>
           </div>
-          <div class="form-total">
-            <span class="form-total-label">Total do lote</span>
-            <span>${formTotal()} unidades</span>
-          </div>
+        </div>
+        <div class="form-total">
+          <span>Total de unidades no lote: <span id="form-total-value">${formTotal()}</span></span>
         </div>
       </div>`
 
@@ -3960,12 +4966,32 @@
 
   const drawerFilled = () => drawer.rows.some((row) => row.skuId || row.quantity)
 
-  /* Toda linha aberta precisa estar completa: uma linha em branco no meio da
-     drawer é trabalho por terminar, não um convite descartável. */
+  const rowState = (row) => {
+    const temSku = Boolean(row.skuId)
+    const temQtd = row.quantity !== ''
+
+    if (!temSku && !temQtd) return 'empty'
+    if (temSku && temQtd)   return 'complete'
+    return 'partial'
+  }
+
+  /* A drawer abre com uma linha vazia e "Adicionar outro produto" cria outras:
+     cobrar a última, que o operador abriu e não usou, seria cobrar um clique
+     dele mesmo. Então as vazias do fim caem em silêncio — mas só as do fim. Uma
+     vazia no meio da lista é trabalho por terminar, e uma linha pela metade diz
+     que alguém começou e parou: essas duas param o Adicionar. */
+  const effectiveDrawerRows = () => {
+    const rows = [...drawer.rows]
+    while (rows.length && rowState(rows[rows.length - 1]) === 'empty') rows.pop()
+    return rows
+  }
+
+  const drawerHasComplete = () => drawer.rows.some((row) => rowState(row) === 'complete')
+
   function drawerErrors() {
     const errors = []
 
-    for (const row of drawer.rows) {
+    for (const row of effectiveDrawerRows()) {
       if (!row.skuId) errors.push({ field: `drawer-sku-${row.id}`, message: 'Escolha um produto' })
 
       if (row.quantity === '') {
@@ -3981,7 +5007,10 @@
   /* O botão fica desabilitado no aria, não no atributo: um botão desabilitado de
      verdade não recebe clique, e é o clique que mostra o que falta preencher. */
   const syncDrawerConfirm = () => {
-    el('drawer-confirm').setAttribute('aria-disabled', String(drawerErrors().length > 0))
+    /* Sem nenhuma linha completa não há o que adicionar: o botão fica
+       desabilitado mesmo sem erro a apontar, porque não há erro — há vazio. */
+    const bloqueado = drawerErrors().length > 0 || !drawerHasComplete()
+    el('drawer-confirm').setAttribute('aria-disabled', String(bloqueado))
   }
 
   function drawerRowHtml(row, index) {
@@ -4000,7 +5029,7 @@
 
         ${drawer.rows.length === 1 ? '' : `
           <div class="drawer-row-remove">
-            <button type="button" data-sl-button data-sl-icon-button data-variant="tertiary" data-size="normal"
+            <button type="button" data-sl-button data-sl-icon-button data-variant="criticalTertiary" data-size="normal"
                     data-remove-row="${row.id}" aria-label="Remover a linha ${index + 1}">
               <span data-sl-button-content>${TRASH}</span>
             </button>
@@ -4022,7 +5051,10 @@
     el('drawer').hidden = false
     /* Um quadro entre montar e animar: sem isso o painel nasce já no lugar e a
        transição não acontece. */
-    requestAnimationFrame(() => { el('drawer').dataset.enter = 'true' })
+    requestAnimationFrame(() => {
+      el('drawer').dataset.enter = 'true'
+      syncExportCardOffset()
+    })
     el('drawer').querySelector('[data-sl-input-element]').focus()
   }
 
@@ -4042,6 +5074,7 @@
     drawer.rows = []
     el('drawer').dataset.enter = 'false'
     el('drawer').hidden = true
+    syncExportCardOffset()
     if (drawerReturnFocus) drawerReturnFocus.focus()
   }
 
@@ -4056,7 +5089,18 @@
       return
     }
 
-    for (const row of drawer.rows) {
+    /* Só vazias: não é erro de preenchimento, é não ter pedido nada. O clique
+       aponta a primeira linha em vez de fechar a drawer sem adicionar nada. */
+    if (!drawerHasComplete()) {
+      const first = drawer.rows[0]
+      if (first) {
+        paintError(`drawer-sku-${first.id}`, 'Escolha um produto')
+        el(`drawer-sku-${first.id}`).focus()
+      }
+      return
+    }
+
+    for (const row of effectiveDrawerRows()) {
       form.items.push({
         skuId: row.skuId,
         name: productBySku(row.skuId).name,
@@ -4198,9 +5242,9 @@
     }
 
     openConfirm({
-      title: 'Descartar o lote?',
-      body: 'O que você preencheu não será salvo.',
-      confirmLabel: 'Descartar',
+      title: 'Sair da edição',
+      body: 'Todas as informações preenchidas serão perdidas, tem certeza que deseja sair?',
+      confirmLabel: 'Sair',
       onConfirm: () => {
         closeConfirm()
         formPristine = snapshot()
@@ -4280,8 +5324,7 @@
       const item = form.items.find((i) => i.skuId === quantity.dataset.qty)
       item.quantity = quantity.value
       paintError(`item:${item.skuId}`, '')
-      el('lot-form').querySelector('.form-total span:last-child').textContent =
-        `${formTotal()} unidades`
+      el('lot-form').querySelector('#form-total-value').textContent = formTotal()
       return
     }
 
@@ -4447,8 +5490,9 @@
     if (event.target.classList && event.target.classList.contains('form-card-scroll')) syncItemsFade()
   }, true)
 
-  /* Clique fora fecha a lista do combobox e, se estiver aberta, a drawer — que
-     no Shoreline não tem fundo escurecido e é dispensável por clique fora. */
+  /* Clique fora fecha a lista do combobox e do select, e nada além disso: as duas
+     drawers saem só por ação explícita — × , Cancelar, Esc ou o botão de submit.
+     Um clique fora levaria embora o que já foi preenchido sem avisar. */
   document.addEventListener('mousedown', (event) => {
     if (!event.target.closest('.combobox')) closeAllComboboxes()
 
@@ -4458,13 +5502,6 @@
     const noCampoDoSelect = event.target.closest('.select')
       || event.target.closest('[data-sl-field]')?.querySelector('.select')
     if (!noCampoDoSelect) closeStatusSelect()
-
-    if (!drawer.open) return
-    if (!el('discard-modal').hidden) return
-    if (event.target.closest('#drawer-panel')) return
-    if (event.target.closest('#btn-add-products')) return
-
-    closeDrawer()
   })
 
   /* ── Shell: recolher a navegação ─────────────────────────── */
@@ -4477,6 +5514,14 @@
   })
 
   /* Skeleton é um estado real da tela; um atraso curto o torna visível na revisão. */
+  // Colapsa a sidebar automaticamente em viewports estreitos (< 1100px),
+  // como quando o painel lateral do Chrome está aberto. O hamburger
+  // continua funcionando normalmente para abrir/fechar.
+  if (window.innerWidth < 1100) {
+    document.querySelector('.shell').classList.add('nav-collapsed')
+    document.getElementById('btn-menu').setAttribute('aria-expanded', 'false')
+  }
+
   hydrateIcons()
   buildFilterBodies()
   renderTableHead()
@@ -4486,6 +5531,1094 @@
     state.isLoading = false
     render()
   }, 450)
+
+  /* ─────────────────────────────────────────────────────────────
+     Exportação assíncrona — Drawer, fila de jobs e card flutuante
+     ─────────────────────────────────────────────────────────────
+
+     Fluxo: o operador clica em "Exportar inventário futuro" no menu de ações
+     do header → abre a Drawer → configura filtros + granularidade + campos →
+     clica "Exportar" → job é enfileirado (máx 3) → Drawer fecha →
+     card flutuante aparece (posição fixed bottom-right) → progresso simulado
+     (~1,5 s via setInterval) → done: download + e-mail / error: retry.
+     ───────────────────────────────────────────────────────────── */
+
+  /* ── Definição dos campos por granularidade ─────────────────── */
+  /* Cada entrada é { key, label } (1 checkbox = 1 coluna no CSV) ou
+     { keys, label, columnLabels } quando 1 checkbox agrupa mais de uma coluna
+     — caso do "Destino", que no CSV continua saindo como Seller + Estoque
+     separados, mas na drawer aparece como um único campo pra marcar/desmarcar
+     (mesmo agrupamento visual da coluna "Destino" da listagem). */
+  const EXPORT_FIELDS_LOTS = [
+    { key: 'loteId',      label: 'Lote ID' },
+    { key: 'dataChegada', label: 'Data de chegada' },
+    { key: 'nomeLote',    label: 'Nome do lote' },
+    { key: 'status',      label: 'Status' },
+    { key: 'quantidade',  label: 'Quantidade' },
+    { key: 'reservas',    label: 'Reservas' },
+    { keys: ['seller', 'estoque'], label: 'Destino (seller + estoque)',
+      columnLabels: { seller: 'Seller', estoque: 'Estoque' } },
+  ]
+
+  const EXPORT_FIELDS_SKUS = [
+    { key: 'skuId',       label: 'SKU ID' },
+    { key: 'loteId',      label: 'Lote ID' },
+    { key: 'dataChegada', label: 'Data de chegada' },
+    { key: 'nomeLote',    label: 'Nome do lote' },
+    { key: 'nomeProduto', label: 'Nome do produto' },
+    { key: 'statusLote',  label: 'Status do lote' },
+    { key: 'quantidade',  label: 'Quantidade' },
+    { key: 'reservas',    label: 'Reservas' },
+    { keys: ['seller', 'estoque'], label: 'Destino (seller + estoque)',
+      columnLabels: { seller: 'Seller', estoque: 'Estoque' } },
+  ]
+
+  /* Destinos únicos que existem nos lotes (para o filtro da Drawer) */
+  const EXPORT_DEST_OPTIONS = [...new Set(LOTS.map((lot) => destKey(lot.destination)))]
+    .sort((a, b) => a.localeCompare(b, 'pt-BR'))
+
+  /* Campos que nunca podem ser removidos da exportação: sem eles o relatório
+     não tem como identificar a linha nem quando o lote chega. A lista muda com
+     a granularidade — exportando por SKU, o skuId também é identificador da
+     linha, então entra como obrigatório junto de loteId e dataChegada. */
+  const REQUIRED_EXPORT_FIELDS = {
+    lots: ['loteId', 'dataChegada'],
+    skus: ['skuId', 'loteId', 'dataChegada'],
+  }
+
+  /* Ícones de estado do checkbox de campos (check e indeterminado). O Shoreline
+     real renderiza esses ícones condicionalmente via React (isChecked && <Icon/>);
+     aqui replicamos à mão adicionando/removendo do innerHTML do box. */
+  const EXPORT_FIELD_CHECK_SVG = `<svg data-sl-checkbox-check width="12" height="12" viewBox="0 0 12 12" fill="none">
+    <path d="M2 6L5 9L10 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>`
+  const EXPORT_FIELD_MINUS_SVG = `<svg data-sl-checkbox-check-mixed width="12" height="12" viewBox="0 0 12 12" fill="none">
+    <path d="M2 6H10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+  </svg>`
+
+  /* ── Estado da Drawer de exportação ─────────────────────────── */
+  const exportDrawerState = { open: false, granularity: 'lots' }
+
+  /* Estado aplicado dos filtros da drawer (análogo ao state.filters da listagem).
+     arrival e quantity substituem a leitura direta do DOM. */
+  const exportDrawerSelection = {
+    destinations: new Set(),
+    statuses:     new Set(),
+    arrival:      { start: null, end: null },
+    quantity:     { min: null,   max: null },
+  }
+
+  /* Estado pendente enquanto um popover de filtro está aberto (confirma só ao
+     clicar em "Aplicar" — análogo ao pendingSelection da listagem). */
+  const exportPendingSelection = {
+    destinations: new Set(),
+    statuses:     new Set(),
+  }
+
+  /* Helper: retorna o elemento do filtro na drawer (análogo a filterNode()). */
+  function exportFilterNode(name) {
+    return document.querySelector(`.export-filter-item[data-filter="${name}"]`)
+  }
+
+  /* Fecha todos os popovers de filtro da drawer sem alterar o estado aplicado. */
+  function closeAllExportFilters() {
+    closeAllCalendars(exportDrawerEl)
+    for (const node of document.querySelectorAll('.export-filter-item')) {
+      node.dataset.open = 'false'
+      const trigger = node.querySelector('[data-sl-filter-trigger]')
+      if (trigger) trigger.setAttribute('aria-expanded', 'false')
+    }
+  }
+
+  /* ── Ícones pré-renderizados para o card ────────────────────── */
+  const ICON_DOWNLOAD = icon('download')
+  const ICON_CHECK    = icon('check-circle-fill')
+  const ICON_WARNING  = icon('warning-circle')
+
+  /* ── Helpers ────────────────────────────────────────────────── */
+
+  function formatTime(isoString) {
+    const d = new Date(isoString)
+    const h = String(d.getHours()).padStart(2, '0')
+    const m = String(d.getMinutes()).padStart(2, '0')
+    return `${h}:${m}`
+  }
+
+  /* Retorna true se o item (lote ou SKU-row) passa por todos os filtros.
+     isSku=true usa os campos do SKU-row (lot está aninhado). */
+  function matchesExportFilters(item, filters, isSku = false) {
+    const destination = isSku ? item.lot.destination : item.destination
+    const arrivalDate = isSku ? item.lot.arrivalDate  : item.arrivalDate
+    const status      = isSku ? item.lot.status        : item.status
+    const qty         = isSku ? item.quantity           : lotQuantity(item)
+    const key         = destKey(destination)
+
+    if (filters.destinations.length > 0 && !filters.destinations.includes(key)) return false
+    if (filters.arrival.start && arrivalDate < filters.arrival.start) return false
+    if (filters.arrival.end   && arrivalDate > filters.arrival.end)   return false
+    if (filters.quantity.min !== null && qty < filters.quantity.min)   return false
+    if (filters.quantity.max !== null && qty > filters.quantity.max)   return false
+    if (filters.statuses.length > 0 && !filters.statuses.includes(status)) return false
+
+    return true
+  }
+
+  /* Extrai o valor de um field-key de um item (lot ou sku-row). */
+  function extractField(item, key, isSku) {
+    if (isSku) {
+      switch (key) {
+        case 'skuId':       return item.skuId
+        case 'nomeProduto': return item.name
+        case 'loteId':      return item.lot.code
+        case 'nomeLote':    return item.lot.name
+        case 'seller':      return item.lot.destination.seller
+        case 'estoque':     return item.lot.destination.warehouse
+        case 'quantidade':  return item.quantity
+        case 'reservas':    return item.reserved
+        case 'dataChegada': return formatDate(item.lot.arrivalDate)
+        case 'statusLote':  return statusById(item.lot.status).label
+        default:            return ''
+      }
+    }
+    switch (key) {
+      case 'loteId':      return item.code
+      case 'nomeLote':    return item.name
+      case 'seller':      return item.destination.seller
+      case 'estoque':     return item.destination.warehouse
+      case 'quantidade':  return lotQuantity(item)
+      case 'reservas':    return lotReserved(item)
+      case 'dataChegada': return formatDate(item.arrivalDate)
+      case 'status':      return statusById(item.status).label
+      default:            return ''
+    }
+  }
+
+  /* ── Funções core de exportação ─────────────────────────────── */
+
+  /* Serializa o job como CSV e cria um Blob URL para download. */
+  function exportToCsv(job) {
+    const today   = new Date().toISOString().slice(0, 10)
+    const suffix  = job.granularity === 'lots' ? 'lote' : 'sku'
+    job.filename  = `inventario-futuro-por-${suffix}-${today}.csv`
+
+    const isSku   = job.granularity === 'skus'
+    const allRows = isSku ? SKU_ROWS : LOTS
+    const rows    = allRows.filter((r) => matchesExportFilters(r, job.filters, isSku))
+
+    const fieldDefs  = isSku ? EXPORT_FIELDS_SKUS : EXPORT_FIELDS_LOTS
+    /* Campos agrupados (Destino = seller + estoque) viram 2 entradas aqui,
+       cada uma com o próprio header de coluna (columnLabels), não o label do
+       checkbox agrupado. */
+    const labelByKey = Object.fromEntries(
+      fieldDefs.flatMap((f) => f.key
+        ? [[f.key, f.label]]
+        : f.keys.map((k) => [k, f.columnLabels?.[k] || k])
+      )
+    )
+
+    const header = job.fields.map((k) => labelByKey[k] || k).join(',')
+    const body   = rows.map((row) =>
+      job.fields.map((k) => csvCell(extractField(row, k, isSku))).join(',')
+    )
+
+    const csv  = [header, ...body].join('\n')
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' })
+    job.blobUrl  = URL.createObjectURL(blob)
+    job.rowCount = rows.length
+  }
+
+  /* Serializa a fila: um job por vez. Chamada a cada enfileiramento e a cada
+     conclusão; sem ela, cada job disparava o próprio setInterval na hora e três
+     exportações rodavam em paralelo — exatamente a carga que o limite tenta
+     evitar. */
+  function pumpQueue() {
+    if (exportQueue.some((job) => job.status === 'running')) return
+
+    const next = exportQueue.find((job) => job.status === 'pending')
+    if (next) runJob(next)
+  }
+
+  /* Adiciona um job à fila e retorna o objeto criado. */
+  function enqueueJob(filters, granularity, fields) {
+    exportJobCounter += 1
+    const today  = new Date().toISOString().slice(0, 10)
+    const suffix = granularity === 'lots' ? 'lote' : 'sku'
+    const job = {
+      id:          `export-${exportJobCounter}`,
+      granularity,
+      filters,
+      fields,
+      status:      'pending',
+      progress:    0,
+      rowCount:    null,
+      /* queuedAt é quando o usuário pediu; startedAt só existe quando a fila
+         chega neste job. Antes os dois eram a mesma coisa, e a linha dizia
+         "Iniciado às" para um job que ainda estava esperando. */
+      queuedAt:    new Date().toISOString(),
+      /* id do setInterval enquanto o job processa; null fora disso */
+      timer:       null,
+      filename:    `inventario-futuro-por-${suffix}-${today}.csv`,
+      blobUrl:     null,
+      startedAt:   null,
+      completedAt: null,
+    }
+    exportQueue.push(job)
+    return job
+  }
+
+  /* Simula processamento assíncrono: ~100 ms/tick × 15 ticks ≈ 1,5 s.
+     10% de chance de erro para demonstrar o estado de falha. */
+  function runJob(job) {
+    job.status    = 'running'
+    job.startedAt = new Date().toISOString()
+    renderExportCard()
+
+    const TICKS = 15
+    let tick = 0
+
+    /* O timer fica no job, não só no fechamento: sem essa referência, fechar o
+       card não tinha como pará-lo — o job seguia até o fim em background e
+       criava um Blob depois da revogação, que então vazava. */
+    job.timer = setInterval(() => {
+      tick += 1
+      job.progress = Math.min(100, Math.round((tick / TICKS) * 100))
+
+      if (tick >= TICKS) {
+        clearInterval(job.timer)
+        job.timer = null
+
+        if (Math.random() < 0.1) {
+          /* Erro simulado: 10% de chance */
+          job.status      = 'error'
+          job.completedAt = new Date().toISOString()
+        } else {
+          exportToCsv(job)
+          job.status      = 'done'
+          job.completedAt = new Date().toISOString()
+        }
+      }
+
+      renderExportCard()
+
+      /* Terminou: libera a vez para quem esperava e reavalia o item do menu,
+         que pode ter voltado a caber uma exportação. */
+      if (tick >= TICKS) {
+        syncExportItem()
+        pumpQueue()
+      }
+    }, 100)
+  }
+
+  /* Reinicia um job com erro no mesmo slot da fila.
+     Passa pelo mesmo teste de capacidade de um job novo: o job com erro não
+     ocupa slot, então recolocá-lo em voo é uma admissão como qualquer outra —
+     sem isso, 3 exportações em andamento mais um retry dariam 4. */
+  function retryJob(jobId) {
+    const job = exportQueue.find((j) => j.id === jobId)
+    if (!job || !hasExportCapacity()) return
+
+    if (job.blobUrl) { URL.revokeObjectURL(job.blobUrl); job.blobUrl = null }
+    job.status      = 'pending'
+    job.progress    = 0
+    job.rowCount    = null
+    job.queuedAt    = new Date().toISOString()
+    job.startedAt   = null
+    job.completedAt = null
+
+    renderExportCard()
+    pumpQueue()
+  }
+
+  /* Descarta o card: revoga Blob URLs, limpa a fila e re-renderiza. */
+  function dismissCard() {
+    exportQueue.forEach((j) => {
+      /* Para o job em andamento antes de revogar: na ordem inversa, ele
+         terminaria depois e criaria um Blob que ninguém revoga. */
+      if (j.timer) { clearInterval(j.timer); j.timer = null }
+      if (j.blobUrl) URL.revokeObjectURL(j.blobUrl)
+    })
+    exportQueue = []
+    renderExportCard()
+    render()   /* re-render da tabela para atualizar syncExportItem */
+  }
+
+  /* ── Render do card flutuante ────────────────────────────────── */
+
+  function jobRowHtml(job) {
+    /* Quem espera a vez diz que está na fila; "Iniciado às" fica reservado para
+       quem realmente começou a ser processado. */
+    const timeStr = job.status === 'pending'
+      ? 'Na fila'
+      : `Iniciado às ${formatTime(job.startedAt)}`
+
+    let statusHtml
+    if (job.status === 'pending') {
+      /* Sem spinner: o spinner é do job que está sendo processado, e a fila é
+         sequencial — no máximo um o exibe por vez. */
+      statusHtml = ''
+    } else if (job.status === 'running') {
+      /* Marcação do Spinner do Shoreline (@vtex/shoreline 1.12.13,
+         src/components/spinner/spinner.tsx), com uma correção: o componente
+         React emite o <title> como irmão do <svg>, onde ele não é HTML válido
+         nem nomeia coisa alguma. Aqui ele vai dentro do <svg>, que é o elemento
+         que ele descreve. */
+      statusHtml = `
+        <div data-sl-spinner aria-atomic="true" aria-live="assertive">
+          <svg viewBox="0 0 50 50" width="16" height="16" role="img">
+            <title>Processando</title>
+            <circle cx="25" cy="25" r="20"></circle>
+          </svg>
+        </div>`
+    } else if (job.status === 'done') {
+      /* Sem contagem de linhas na linha do job: em granularidade de SKU o número
+         chega a cinco dígitos e empurra o ícone e o download para fora do card,
+         que tem largura fixa. Quem quer o número abre o arquivo. */
+      statusHtml = `
+        <span class="export-icon-success">${ICON_CHECK}</span>
+        <button data-sl-button data-sl-icon-button data-variant="tertiary" data-size="normal"
+                data-role="export-download" data-job-id="${escapeHtml(job.id)}" aria-label="Baixar arquivo">
+          <span data-sl-button-content>${ICON_DOWNLOAD}</span>
+        </button>`
+    } else {
+      /* Sem capacidade, o retry fica desabilitado em vez de falhar em silêncio:
+         recolocar este job em voo consumiria um slot que está ocupado. */
+      const semVaga = !hasExportCapacity()
+      statusHtml = `
+        <span class="export-icon-error">${ICON_WARNING}</span>
+        <button data-sl-button data-variant="secondary" data-size="normal"
+                data-role="export-retry" data-job-id="${escapeHtml(job.id)}"
+                ${semVaga ? 'disabled data-disabled="true"' : ''}
+                title="${semVaga ? 'Aguarde as exportações em andamento terminarem' : ''}">
+          <span data-sl-button-content>Tentar novamente</span>
+        </button>`
+    }
+
+    const emailHtml = job.status === 'done'
+      ? `<span class="export-job-email">Também será enviado por e-mail.</span>`
+      : ''
+
+    return `
+      <div class="export-job-row" data-job-id="${escapeHtml(job.id)}">
+        <div class="export-job-info">
+          <span class="export-job-time">${timeStr}</span>
+          <span class="export-job-label" title="${escapeHtml(job.filename || '')}">${escapeHtml(job.filename || 'Processando...')}</span>
+          ${emailHtml}
+        </div>
+        ${statusHtml ? `<div class="export-job-status">${statusHtml}</div>` : ''}
+      </div>`
+  }
+
+  /* Empurra o card para a esquerda da drawer aberta, em vez de deixá-lo por cima
+     do painel (onde cobria os botões do rodapé) ou por baixo (onde a drawer o
+     esconderia inteiro — e é progresso de exportação, justamente o que o usuário
+     quer ver enquanto monta a próxima).
+
+     A largura vem do painel na hora, não de um número escrito aqui: o tamanho da
+     drawer é decisão do Shoreline, e cada tamanho tem a sua. Vale para qualquer
+     drawer ancorada à direita, então abrir "Adicionar produtos" com uma
+     exportação em curso desloca o card do mesmo jeito. */
+  function syncExportCardOffset() {
+    const host = document.getElementById('export-card-host')
+    if (!host) return
+
+    const panel = [...document.querySelectorAll('.drawer-root, .export-drawer-root')]
+      .filter((root) => !root.hidden && root.dataset.enter === 'true')
+      .map((root) => root.querySelector('[data-sl-drawer-popover]'))
+      .find(Boolean)
+
+    const largura = panel ? Math.round(panel.getBoundingClientRect().width) : 0
+    /* O deslocamento inclui a goteira de 24px, para o card não colar no painel. */
+    host.style.setProperty('--export-card-shift', largura ? `${largura + 24}px` : '0px')
+  }
+
+  /* Tudo que o card de fato mostra de cada job. O progresso fica de fora de
+     propósito: avança de 100 em 100 ms e não é renderizado em lugar nenhum.
+     pending e running entram como estados distintos porque desenham coisas
+     diferentes — "Na fila" sem spinner contra "Iniciado às" com spinner. Enquanto
+     os dois eram idênticos na tela, esta função os fundia para o card não ser
+     reconstruído na largada; se algum dia voltarem a desenhar igual, vale fundir
+     de novo (a reconstrução reinicia a animação do spinner). */
+  function exportCardSignature() {
+    return exportQueue
+      .map((job) => [job.id, job.status, job.filename, job.startedAt].join('|'))
+      .join(';')
+  }
+
+  /* Idempotente: reconstrói #export-card-host do zero a cada chamada, mas só
+     quando há algo diferente para mostrar. Preserva o estado colapsado lendo o
+     DOM antes de substituir. */
+  function renderExportCard() {
+    const host = document.getElementById('export-card-host')
+    if (!host) return
+
+    if (exportQueue.length === 0) {
+      host.innerHTML = ''
+      host.dataset.signature = ''
+      return
+    }
+
+    /* O job em execução chama esta função a cada tick do setInterval. Sem esta
+       guarda, o HTML era refeito idêntico dez vezes por segundo, e cada troca de
+       innerHTML destruía o <div> do spinner: a animação de 0,8 s reiniciava em 0°
+       depois de girar 45°, o que se vê como um spinner travado e tremendo. O
+       mesmo remendo protege os cliques no header, que podiam cair num botão
+       substituído entre o mousedown e o click. */
+    const signature = exportCardSignature()
+    if (host.dataset.signature === signature && host.firstElementChild) return
+    host.dataset.signature = signature
+
+    /* Cobre o card que nasce com uma drawer já aberta: o deslocamento é do host,
+       que este render não substitui, mas na primeira vez ninguém o escreveu. */
+    syncExportCardOffset()
+
+    /* Preserva estado colapsado entre re-renders */
+    const prevCollapsed = host.querySelector('.export-card-body')?.dataset.collapsed === 'true'
+
+    const jobRows  = exportQueue.map(jobRowHtml).join('')
+    const colLabel = prevCollapsed ? 'Expandir' : 'Recolher'
+    /* O chevron aponta para onde o card vai, não para onde ele está: para baixo
+       quando há o que recolher, para cima quando há o que abrir. Em 20px, como o
+       × ao lado: as variantes Small de 16px deixavam os dois botões do header
+       visivelmente desiguais. */
+    const colIcon  = icon(prevCollapsed ? 'caret-up' : 'caret-down')
+
+    host.innerHTML = `
+      <div class="export-card" data-sl-card>
+        <div class="export-card-header">
+          <span>Exportações (${exportQueue.length})</span>
+          <div class="export-card-header-actions">
+            <button data-sl-button data-sl-icon-button data-variant="tertiary" data-size="normal"
+                    data-role="toggle-card" aria-label="${colLabel}">
+              <span data-sl-button-content>${colIcon}</span>
+            </button>
+            <button data-sl-button data-sl-icon-button data-variant="tertiary" data-size="normal"
+                    data-role="dismiss-card" aria-label="Fechar exportações">
+              <span data-sl-button-content>${icon('x')}</span>
+            </button>
+          </div>
+        </div>
+        <div class="export-card-body" data-role="card-body"
+             data-collapsed="${prevCollapsed ? 'true' : 'false'}">
+          ${jobRows}
+        </div>
+      </div>`
+  }
+
+  /* ── Drawer de exportação: open / close / render ─────────────── */
+
+  /* Renderiza o conteúdo de cada popover de filtro da drawer, inicializando o
+     estado pendente a partir do estado aplicado — análogo a buildFilterBodies(). */
+  function buildExportFilterBodies() {
+    exportPendingSelection.destinations = new Set(exportDrawerSelection.destinations)
+    exportPendingSelection.statuses     = new Set(exportDrawerSelection.statuses)
+
+    const fill = (name, content) => {
+      const node = exportFilterNode(name)
+      if (!node) return
+      node.querySelector('[data-sl-container]').innerHTML = content + footerHtml()
+      hydrateIcons(node)
+    }
+
+    /* Destino: com busca (>5 opções) */
+    fill('export-destinations', `
+      <div data-sl-content data-narrow="true" data-sl-filter-popover-combobox>
+        <div data-sl-search>
+          <span data-sl-pre-icon>${icon('magnifying-glass-small')}</span>
+          <input data-sl-search-input data-role="export-dest-search"
+                 placeholder="Buscar seller ou estoque" autocomplete="off">
+        </div>
+      </div>
+      <div data-sl-filter-list data-sl-combobox-list
+           role="listbox" aria-multiselectable="true"
+           id="export-popover-dest-list"></div>`)
+    exportDestSearch = ''
+    exportDestExpanded = destExpandedFromSelection(
+      destMatches(EXPORT_DEST_GROUPS, ''), exportPendingSelection.destinations)
+    renderExportPopoverDestList('')
+
+    /* Status: lista fixa */
+    fill('export-statuses', optionListHtml(
+      STATUSES.map((s) => ({ value: s.id, label: s.label })),
+      [...exportPendingSelection.statuses]
+    ))
+
+    /* Data de chegada */
+    fill('export-arrival', `
+      <div data-sl-content>
+        <div data-sl-stack data-horizontal="false" data-fluid="true">
+          ${fieldHtml('export-fl-start', 'De',
+              datePickerHtml('export-fl-start', 'start',
+                exportDrawerSelection.arrival.start || '', '',
+                exportDrawerSelection.arrival.end || ''), { labelable: false })}
+          ${fieldHtml('export-fl-end', 'Até',
+              datePickerHtml('export-fl-end', 'end',
+                exportDrawerSelection.arrival.end || '',
+                exportDrawerSelection.arrival.start || ''), { labelable: false })}
+          <span data-sl-field-error role="alert" data-role="export-arrival-error" hidden>
+            A data final não pode ser anterior à data inicial.
+          </span>
+        </div>
+      </div>`)
+
+    /* Quantidade */
+    fill('export-quantity', `
+      <div data-sl-content>
+        <div data-sl-stack data-horizontal="false" data-fluid="true">
+          ${fieldHtml('export-fl-qty-min', 'Mínima', inputHtml('export-fl-qty-min',
+              `type="text" inputmode="numeric" data-role="min" value="${exportDrawerSelection.quantity.min ?? ''}"`))}
+          ${fieldHtml('export-fl-qty-max', 'Máxima', inputHtml('export-fl-qty-max',
+              `type="text" inputmode="numeric" data-role="max" value="${exportDrawerSelection.quantity.max ?? ''}"`))}
+          <span data-sl-field-error role="alert" data-role="qty-error" hidden>${QTY_RANGE_ERROR}</span>
+        </div>
+      </div>`)
+  }
+
+  /* Mesma árvore seller → estoque da listagem, sobre os destinos que os lotes
+     ocupam. Aqui não há carregamento em partes: o corte segue sendo em 20, só
+     que de sellers, e cada um traz os seus estoques. */
+  const EXPORT_DEST_GROUPS = destGroupsOfKeys(EXPORT_DEST_OPTIONS)
+
+  let exportDestExpanded = new Set()
+  let exportDestSearch = ''
+
+  const exportDestMatches = () =>
+    destMatches(EXPORT_DEST_GROUPS, exportDestSearch).slice(0, 20)
+
+  function renderExportPopoverDestList(term) {
+    exportDestSearch = term || ''
+    const list = document.getElementById('export-popover-dest-list')
+    if (!list) return
+    list.innerHTML = destTreeHtml(
+      exportDestMatches(), exportPendingSelection.destinations, exportDestExpanded)
+  }
+
+  /* Atualiza os FilterValue nos triggers após um Apply (análogo a syncFilterTriggers()). */
+  function syncExportFilterTriggers() {
+    const listSummary = (labels) =>
+      labels.length ? `: ${labels[0]}${labels.length > 1 ? `, +${labels.length - 1}` : ''}` : ''
+
+    const s = exportDrawerSelection
+    const summaries = {
+      'export-destinations': listSummary([...s.destinations]),
+      'export-statuses':     listSummary(
+        STATUSES.filter((x) => s.statuses.has(x.id)).map((x) => x.label)
+      ),
+      'export-arrival': (s.arrival.start || s.arrival.end)
+        ? `: ${s.arrival.start ? formatDate(s.arrival.start) : '…'} – ${s.arrival.end ? formatDate(s.arrival.end) : '…'}`
+        : '',
+      'export-quantity': (s.quantity.min !== null || s.quantity.max !== null)
+        ? `: ${s.quantity.min ?? '…'} – ${s.quantity.max ?? '…'}`
+        : '',
+    }
+    for (const [name, summary] of Object.entries(summaries)) {
+      const node = exportFilterNode(name)
+      if (node) {
+        const valEl = node.querySelector('[data-sl-filter-value]')
+        if (valEl) valEl.textContent = summary
+      }
+    }
+  }
+
+  /* Comita a seleção pendente de um filtro no estado aplicado.
+     Retorna false se houver validação com erro (não fecha o popover). */
+  function applyExportFilter(name, node) {
+    if (name === 'export-destinations') {
+      exportDrawerSelection.destinations = new Set(
+        EXPORT_DEST_OPTIONS.filter((o) => exportPendingSelection.destinations.has(o))
+      )
+    }
+    if (name === 'export-statuses') {
+      exportDrawerSelection.statuses = new Set(
+        STATUSES.filter((s) => exportPendingSelection.statuses.has(s.id)).map((s) => s.id)
+      )
+    }
+    if (name === 'export-arrival') {
+      const start = node.querySelector('[data-role="start"]')?.value || null
+      const end   = node.querySelector('[data-role="end"]')?.value || null
+      const err   = node.querySelector('[data-role="export-arrival-error"]')
+      if (!isDateRangeValid(start, end)) { if (err) err.hidden = false; return false }
+      if (err) err.hidden = true
+      exportDrawerSelection.arrival = { start, end }
+    }
+    if (name === 'export-quantity') {
+      const raw = (role) => node.querySelector(`[data-role="${role}"]`)?.value ?? ''
+      const min = raw('min') === '' ? null : Number(raw('min'))
+      const max = raw('max') === '' ? null : Number(raw('max'))
+      const err = node.querySelector('[data-role="qty-error"]')
+      const reject = (message) => {
+        if (err) { err.textContent = message; err.hidden = false }
+        return false
+      }
+
+      if ((min !== null && min < 1) || (max !== null && max < 1)) return reject(QTY_ZERO_ERROR)
+      if (min !== null && max !== null && min > max) return reject(QTY_RANGE_ERROR)
+      if (err) err.hidden = true
+      exportDrawerSelection.quantity = { min, max }
+    }
+    return true
+  }
+
+  /* Atualiza o badge de filtros aplicados. Lê de exportDrawerSelection (sem
+     dependência de DOM).
+
+     A contagem é de filtros, não de valores: Data de chegada e Quantidade valem
+     1 cada uma mesmo com as duas pontas preenchidas, então o número vai de 1 a 4
+     — os quatro filtros da seção. O dígito fica escondido do leitor de tela, que
+     recebe a frase inteira no lugar de um "3" solto. */
+  function syncExportFilterBadge() {
+    const badge = document.querySelector('#export-drawer .export-filter-badge')
+    if (!badge) return
+    const filtersSection = badge.closest('.export-filtros-card')
+    const isOpen = filtersSection?.dataset.open === 'true'
+
+    const s = exportDrawerSelection
+    const count = [
+      s.destinations.size > 0,
+      s.statuses.size > 0,
+      Boolean(s.arrival.start) || Boolean(s.arrival.end),
+      s.quantity.min !== null || s.quantity.max !== null,
+    ].filter(Boolean).length
+
+    badge.hidden = !(count > 0 && !isOpen)
+    if (badge.hidden) {
+      badge.innerHTML = ''
+      return
+    }
+
+    badge.innerHTML = `<span aria-hidden="true">${count}</span>`
+      + `<span class="sl-visually-hidden">${
+          count === 1 ? '1 filtro aplicado' : `${count} filtros aplicados`}</span>`
+  }
+
+  /* Atualiza o checkbox "Todos" da seção Campos conforme o estado dos
+     checkboxes individuais (all / none / indeterminate). loteId e dataChegada
+     são obrigatórios (sempre marcados), então "none" nunca ocorre na prática —
+     o branch fica só por segurança. */
+  function syncExportSelectAll() {
+    const all   = [...document.querySelectorAll('.export-field-cb')]
+    const checked = all.filter((cb) => cb.checked).length
+    const selectAll     = document.getElementById('export-fields-select-all')
+    const selectAllBox  = selectAll?.closest('[data-sl-checkbox]')?.querySelector('[data-sl-checkbox-input]')
+    if (!selectAll) return
+
+    if (checked === all.length && all.length > 0) {
+      selectAll.indeterminate   = false
+      selectAll.checked         = true
+      if (selectAllBox) {
+        selectAllBox.dataset.checked = 'true'; selectAllBox.dataset.disabled = 'false'
+        delete selectAllBox.dataset.indeterminate
+        selectAllBox.innerHTML = EXPORT_FIELD_CHECK_SVG
+      }
+    } else if (checked === 0) {
+      selectAll.indeterminate   = false
+      selectAll.checked         = false
+      if (selectAllBox) {
+        delete selectAllBox.dataset.checked; selectAllBox.dataset.disabled = 'false'
+        delete selectAllBox.dataset.indeterminate
+        selectAllBox.innerHTML = ''
+      }
+    } else {
+      selectAll.indeterminate   = true
+      selectAll.checked         = false
+      if (selectAllBox) {
+        delete selectAllBox.dataset.checked; selectAllBox.dataset.disabled = 'false'
+        selectAllBox.dataset.indeterminate = 'true'
+        selectAllBox.innerHTML = EXPORT_FIELD_MINUS_SVG
+      }
+    }
+  }
+
+  function openExportDrawer() {
+    exportDrawerState.open        = true
+    exportDrawerState.granularity = 'lots'
+
+    /* Limpa estado aplicado da sessão anterior */
+    exportDrawerSelection.destinations.clear()
+    exportDrawerSelection.statuses.clear()
+    exportDrawerSelection.arrival  = { start: null, end: null }
+    exportDrawerSelection.quantity = { min: null,   max: null }
+
+    /* Reseta o radio de granularidade */
+    document.getElementById('export-granularity-lots').checked = true
+
+    /* Reseta seções colapsáveis para fechadas por default (Filtros e Campos usam
+       o mesmo card colapsável — .export-filtros-card / .export-filtros-card-btn) */
+    document.querySelectorAll('#export-drawer .export-filtros-card').forEach((sec) => {
+      sec.dataset.open = 'false'
+      const btn = sec.querySelector('.export-filtros-card-btn')
+      if (btn) btn.setAttribute('aria-expanded', 'false')
+    })
+
+    /* Fecha eventuais popovers de filtro abertos da sessão anterior */
+    closeAllExportFilters()
+
+    /* Monta os popovers dos filtros (destino, chegada, quantidade, status) */
+    buildExportFilterBodies()
+
+    /* Zera display dos triggers (estado limpo) */
+    syncExportFilterTriggers()
+
+    /* Reconstrói checklist de campos */
+    renderExportFields('lots')
+
+    syncExportFilterBadge()
+    syncExportConfirmButton()
+
+    const panel = document.getElementById('export-drawer')
+    panel.hidden = false
+    requestAnimationFrame(() => {
+      panel.dataset.enter = 'true'
+      syncExportCardOffset()
+    })
+  }
+
+  function closeExportDrawer() {
+    exportDrawerState.open = false
+    const panel = document.getElementById('export-drawer')
+    panel.dataset.enter = 'false'
+    panel.hidden = true
+    syncExportCardOffset()
+  }
+
+  /* Reconstrói o checklist de campos conforme a granularidade (checkboxes Shoreline).
+     Os campos obrigatórios da granularidade (REQUIRED_EXPORT_FIELDS) vêm
+     marcados e desabilitados, pois sem eles o relatório não identifica a linha
+     nem quando o lote chega (spec 002.4, FR-22).
+     Campos agrupados (ex: Destino = seller + estoque) guardam as duas keys
+     separadas por vírgula no value — 1 checkbox controla as duas colunas do CSV
+     (spec 002.4, FR-23). */
+  function renderExportFields(granularity) {
+    const fields       = granularity === 'lots' ? EXPORT_FIELDS_LOTS : EXPORT_FIELDS_SKUS
+    const requiredKeys = REQUIRED_EXPORT_FIELDS[granularity] ?? REQUIRED_EXPORT_FIELDS.lots
+    const container    = document.getElementById('export-fields-checklist')
+    container.innerHTML = fields.map((f) => {
+      const keys     = f.key ? [f.key] : f.keys
+      const required = keys.some((k) => requiredKeys.includes(k))
+      return `<label data-sl-checkbox>
+         <input type="checkbox" class="sl-visually-hidden export-field-cb" value="${escapeHtml(keys.join(','))}"
+                checked ${required ? 'disabled data-required="true"' : ''}>
+         <div data-sl-checkbox-input data-checked="true" data-disabled="${required ? 'true' : 'false'}" aria-hidden="true">${EXPORT_FIELD_CHECK_SVG}</div>
+         <span data-sl-checkbox-label data-sl-text data-variant="body"${required ? ' data-disabled="true"' : ''}>${escapeHtml(f.label)}</span>
+       </label>`
+    }).join('')
+    syncExportSelectAll()
+    syncExportConfirmButton()
+  }
+
+  /* Habilita/desabilita o botão "Exportar" conforme campos marcados (FR-6).
+     Segue o padrão Shoreline: data-disabled + aria-disabled, sem disabled HTML. */
+  function syncExportConfirmButton() {
+    const anyChecked = document.querySelectorAll('.export-field-cb:checked').length > 0
+    const btn        = document.getElementById('export-btn-confirm')
+    if (!btn) return
+    btn.dataset.disabled = String(!anyChecked)
+    btn.setAttribute('aria-disabled', String(!anyChecked))
+  }
+
+  /* Lê os filtros da Drawer diretamente do estado aplicado (sem DOM scraping). */
+  function getExportDrawerFilters() {
+    const s = exportDrawerSelection
+    return {
+      destinations: [...s.destinations],
+      arrival:      { ...s.arrival },
+      quantity:     { ...s.quantity },
+      statuses:     [...s.statuses],
+    }
+  }
+
+  /* ── Listeners da Drawer de exportação ──────────────────────── */
+
+  const exportDrawerEl = document.getElementById('export-drawer')
+
+  /* Ativa navegação por teclado nos segmentos de data dentro da drawer. */
+  bindDateSegments(exportDrawerEl)
+
+  /* Mesma regra do filtro de chegada da listagem, pela mesma função: os dois
+     campos se limitam um ao outro nas duas direções. O datePickerHtml já nasce
+     com os limites do filtro aplicado; este listener é o que mantém os dois
+     coerentes enquanto o popover está aberto. */
+  exportDrawerEl.addEventListener('sl-date-change', (event) => {
+    if (!event.target.closest('[data-sl-date-picker]')) return
+
+    const arrivalFilter = exportFilterNode('export-arrival')
+    if (arrivalFilter) syncRangeBounds(arrivalFilter)
+  })
+
+  /* Toggle das seções colapsáveis: Filtros e Campos usam o mesmo card
+     colapsável (.export-filtros-card / .export-filtros-card-btn). */
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('.export-filtros-card-btn')
+    if (!btn) return
+    const section = btn.closest('.export-filtros-card')
+    if (!section) return
+    const isOpen = section.dataset.open === 'true'
+    section.dataset.open = isOpen ? 'false' : 'true'
+    btn.setAttribute('aria-expanded', String(!isOpen))
+    syncExportFilterBadge()
+  })
+
+  /* Botões Cancelar e × fecham a Drawer.
+     Cliques dentro de um .export-filter-item são tratados aqui (trigger, itens,
+     Apply, Clear, date pickers) — mesmo padrão do handler da listagem. */
+  exportDrawerEl.addEventListener('click', (event) => {
+    /* Fechar drawer */
+    if (event.target.closest('[data-role="export-drawer-close"]')) {
+      closeExportDrawer()
+      return
+    }
+
+    /* ── Filtros da drawer (trigger + popover) ───────────────── */
+    const exportFilterEl = clickedNode(event, '.export-filter-item')
+    if (exportFilterEl) {
+      const name = exportFilterEl.dataset.filter
+
+      /* Trigger: toggle do popover */
+      if (event.target.closest('[data-sl-filter-trigger]')) {
+        const willOpen = exportFilterEl.dataset.open !== 'true'
+        closeAllExportFilters()
+        if (willOpen) {
+          const trigger  = exportFilterEl.querySelector('[data-sl-filter-trigger]')
+          const popover  = exportFilterEl.querySelector('.filter-popover')
+          const rect     = trigger.getBoundingClientRect()
+          const GAP      = 8  /* ~var(--sl-space-2) */
+          const popW     = 260 /* largura do data-sl-filter-popover = 16.25rem ~260px */
+
+          /* Posiciona abaixo do trigger; ajusta se ultrapassar a borda direita */
+          const leftRaw  = rect.left
+          const leftAdj  = Math.min(leftRaw, window.innerWidth - popW - 8)
+          popover.style.top  = `${rect.bottom + GAP}px`
+          popover.style.left = `${Math.max(8, leftAdj)}px`
+
+          exportFilterEl.dataset.open = 'true'
+          trigger.setAttribute('aria-expanded', 'true')
+        }
+        return
+      }
+
+      /* Date picker dentro do popover */
+      const picker = event.target.closest('[data-sl-date-picker]')
+      if (picker) {
+        document.querySelectorAll('[data-sl-date-picker][data-open="true"]')
+          .forEach((other) => { if (other !== picker) openCalendar(other, false) })
+        if (event.target.closest('[data-sl-date-picker-button]')) {
+          openCalendar(picker, picker.dataset.open !== 'true')
+          return
+        }
+        const nav = event.target.closest('[data-calendar-nav]')
+        if (nav) {
+          shiftCalendarMonth(picker.querySelector('.calendar-popover'),
+            nav.dataset.calendarNav === 'prev' ? -1 : 1)
+          return
+        }
+        const cell = event.target.closest('[data-sl-calendar-cell-button]')
+        if (cell) {
+          setPickerDate(picker, cell.dataset.date)
+          openCalendar(picker, false)
+          return
+        }
+        if (!event.target.closest('[data-segment]')) segmentOf(picker, 'day').focus()
+        return
+      }
+
+      /* Destino é a árvore seller → estoque, igual à da listagem. */
+      if (name === 'export-destinations' && handleDestTreeClick(event, {
+        groups: exportDestMatches(),
+        selection: exportPendingSelection.destinations,
+        expanded: exportDestExpanded,
+      })) return
+
+      /* Item da lista de opções (status) */
+      const item = event.target.closest('[data-sl-filter-item]')
+      if (item) {
+        const val        = item.dataset.value
+        const willSelect = item.getAttribute('aria-selected') !== 'true'
+        setFilterItemSelected(item, willSelect)
+        if (name === 'export-statuses') {
+          if (willSelect) exportPendingSelection.statuses.add(val)
+          else            exportPendingSelection.statuses.delete(val)
+        }
+        return
+      }
+
+      /* Botões do rodapé do popover */
+      const action = event.target.closest('[data-role]')
+      if (!action) return
+
+      if (action.dataset.role === 'clear') {
+        if (name === 'export-destinations') exportDrawerSelection.destinations.clear()
+        else if (name === 'export-statuses') exportDrawerSelection.statuses.clear()
+        else if (name === 'export-arrival')  exportDrawerSelection.arrival = { start: null, end: null }
+        else if (name === 'export-quantity') exportDrawerSelection.quantity = { min: null, max: null }
+        buildExportFilterBodies()
+        syncExportFilterTriggers()
+        closeAllExportFilters()
+        syncExportFilterBadge()
+        return
+      }
+
+      if (action.dataset.role === 'apply') {
+        if (!applyExportFilter(name, exportFilterEl)) return
+        syncExportFilterTriggers()
+        closeAllExportFilters()
+        syncExportFilterBadge()
+      }
+      return
+    }
+
+    /* Clique fora de qualquer .export-filter-item: fecha todos os popovers */
+    closeAllExportFilters()
+  })
+
+  /* Troca de granularidade, toggle de campo individual e select-all */
+  exportDrawerEl.addEventListener('change', (event) => {
+    if (event.target.name === 'export-granularity') {
+      exportDrawerState.granularity = event.target.value
+      renderExportFields(event.target.value)
+      return
+    }
+
+    /* Select-all: usa `change` (não `click`) para ser confiável mesmo com o
+       stopPropagation no onclick do label — change e click são eventos distintos.
+       Quando indeterminate, o primeiro clique do browser marca checked=true;
+       quando checked, o clique marca checked=false. Logo markAll = checked.
+       loteId e dataChegada são obrigatórios (input disabled) — ficam de fora do
+       loop, sempre marcados, então "desmarcar todos" na prática desmarca só os
+       campos opcionais e o "Todos" some para o estado indeterminado. */
+    if (event.target.id === 'export-fields-select-all') {
+      const selectAll    = event.target
+      const allCbs       = [...document.querySelectorAll('.export-field-cb')].filter((cb) => !cb.disabled)
+      const markAll      = selectAll.checked
+
+      selectAll.indeterminate = false
+      allCbs.forEach((cb) => {
+        cb.checked = markAll
+        const box = cb.closest('[data-sl-checkbox]')?.querySelector('[data-sl-checkbox-input]')
+        if (box) {
+          box.dataset.disabled = 'false'
+          if (markAll) { box.dataset.checked = 'true'; delete box.dataset.indeterminate; box.innerHTML = EXPORT_FIELD_CHECK_SVG }
+          else { delete box.dataset.checked; delete box.dataset.indeterminate; box.innerHTML = '' }
+        }
+      })
+      /* syncExportSelectAll() já recalcula o próprio estado do "Todos" a partir
+         dos checkboxes (inclusive os obrigatórios, sempre marcados), então não
+         precisamos forçar checked/innerHTML aqui — evita ficar dessincronizado
+         quando markAll=false mas ainda restam campos obrigatórios marcados. */
+      syncExportSelectAll()
+      syncExportConfirmButton()
+      return
+    }
+
+    if (event.target.classList.contains('export-field-cb')) {
+      /* Atualiza data-sl-checkbox-input data-checked/data-disabled conforme o
+         estado do checkbox e alterna o ícone (o Shoreline renderiza o ícone
+         condicionalmente via React; aqui replicamos à mão). */
+      const box = event.target.closest('[data-sl-checkbox]')?.querySelector('[data-sl-checkbox-input]')
+      if (box) {
+        box.dataset.disabled = 'false'
+        if (event.target.checked) { box.dataset.checked = 'true'; box.innerHTML = EXPORT_FIELD_CHECK_SVG }
+        else { delete box.dataset.checked; box.innerHTML = '' }
+      }
+      syncExportSelectAll()
+      syncExportConfirmButton()
+    }
+  })
+
+  /* Busca de destino e digit-filtering dos campos de quantidade nos popovers */
+  exportDrawerEl.addEventListener('input', (event) => {
+    /* Busca de destino no popover */
+    if (event.target.dataset.role === 'export-dest-search') {
+      exportDestSearch = event.target.value
+      exportDestExpanded = destExpandedFromSearch(exportDestMatches())
+      renderExportPopoverDestList(event.target.value)
+      return
+    }
+    /* Digit-only nos campos de quantidade do popover */
+    const inQtyFilter = event.target.closest('.export-filter-item[data-filter="export-quantity"]')
+    if (inQtyFilter && event.target.tagName === 'INPUT') {
+      const field  = event.target
+      const digits = field.value.replace(/\D/g, '')
+      if (digits !== field.value) {
+        const caret   = field.selectionStart
+        const antes   = field.value.slice(0, caret)
+        const destino = caret - (antes.length - antes.replace(/\D/g, '').length)
+        field.value   = digits
+        field.setSelectionRange(destino, destino)
+      }
+    }
+  })
+
+  /* Botão "Exportar" — enfileira o job e fecha a Drawer */
+  document.getElementById('export-btn-confirm').addEventListener('click', () => {
+    const btn = document.getElementById('export-btn-confirm')
+    if (btn.dataset.disabled === 'true' || !hasExportCapacity()) return
+
+    const granularity = document.querySelector('input[name="export-granularity"]:checked').value
+    /* flatMap: checkboxes agrupados (Destino) guardam "seller,estoque" no value —
+       cada key vira uma coluna própria no CSV final. */
+    const fields      = [...document.querySelectorAll('.export-field-cb:checked')]
+      .flatMap((cb) => cb.value.split(','))
+    const filters     = getExportDrawerFilters()
+
+    closeExportDrawer()
+
+    const job = enqueueJob(filters, granularity, fields)
+    renderExportCard()
+    /* Se a fila ficou sem capacidade, desabilita o item no DOM diretamente.
+       Caso contrário, o próximo render() atualizará via syncExportItem(). */
+    if (!hasExportCapacity()) {
+      const exportItem = document.querySelector('[data-action="export"]')
+      if (exportItem) {
+        exportItem.dataset.disabled = 'true'
+        exportItem.setAttribute('aria-disabled', 'true')
+      }
+    }
+    /* Pequena pausa para o estado "pending" aparecer antes de começar. Quem
+       decide o que roda é pumpQueue, não este job: se houver outro em
+       andamento, ele espera a vez. */
+    setTimeout(pumpQueue, 250)
+  })
+
+  /* ── Listeners do card flutuante (delegado ao host) ─────────── */
+
+  document.getElementById('export-card-host').addEventListener('click', (event) => {
+    /* Toggle colapsado/expandido */
+    const toggleBtn = event.target.closest('[data-role="toggle-card"]')
+    if (toggleBtn) {
+      const body = document.querySelector('#export-card-host .export-card-body')
+      if (!body) return
+      const nowCollapsed = body.dataset.collapsed !== 'true'
+      body.dataset.collapsed = String(nowCollapsed)
+      toggleBtn.setAttribute('aria-label', nowCollapsed ? 'Expandir' : 'Recolher')
+      const content = toggleBtn.querySelector('[data-sl-button-content]')
+      if (content) content.innerHTML = icon(nowCollapsed ? 'caret-up' : 'caret-down')
+      return
+    }
+
+    /* × — dismiss total */
+    if (event.target.closest('[data-role="dismiss-card"]')) {
+      dismissCard()
+      return
+    }
+
+    /* Download do arquivo gerado */
+    const dlBtn = event.target.closest('[data-role="export-download"]')
+    if (dlBtn) {
+      const job = exportQueue.find((j) => j.id === dlBtn.dataset.jobId)
+      if (job && job.blobUrl) {
+        const link = document.createElement('a')
+        link.href     = job.blobUrl
+        link.download = job.filename
+        document.body.appendChild(link)
+        link.click()
+        link.remove()
+      }
+      return
+    }
+
+    /* Tentar novamente (retry) */
+    const retryBtn = event.target.closest('[data-role="export-retry"]')
+    if (retryBtn) retryJob(retryBtn.dataset.jobId)
+  })
 })()
 </script>
 
