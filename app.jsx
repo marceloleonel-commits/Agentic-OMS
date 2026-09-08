@@ -1,4 +1,4 @@
-/* global React, ReactDOM, Sidebar, Icon, AppData, AIWData, AssistantView, TaskView, OrderDetailView, WorkflowBoardView, WorkflowPoliciesView, ChatPanel, ResizableSplit, ChatEngine, AITeamDrawer, Dropdown, MessageComposer, ChatsView, InitiativesView, HomePreviewView, HomeQueueView */
+/* global React, ReactDOM, Sidebar, Icon, AppData, AIWData, AssistantView, TaskView, OrderDetailView, WorkflowBoardView, WorkflowPoliciesView, ChatPanel, ResizableSplit, ChatEngine, AITeamDrawer, Dropdown, MessageComposer, ChatsView, InitiativesView, HomePreviewView, HomeQueueView, Mode2AnomalyModal, Mode2AssistantEngine, Mode2ToPolicy, Mode1Trigger, Mode1Launcher, Mode1ToPolicy, AgentConfigLoader, AssistantClient, InitiativeFromPolicy, CanvasTopbar, CanvasBackBar */
 const { useState, useEffect, useRef } = React;
 
 /* ── Hash-based routing ─────────────────────────────────────────────────── */
@@ -41,6 +41,12 @@ function App() {
   const [wfMode, setWfMode] = useState(_init.wfMode || { kind: 'list' });
   const [wfBoardKey, setWfBoardKey] = useState(0);
   const [productView, setProductView] = useState(null);
+  /* Nome do item aberto — o topbar do canvas usa como título da subview e só
+     o OrderDetailView sabe resolvê-lo a partir dos índices. */
+  const [orderItemName, setOrderItemName] = useState(null);
+  /* Modos do shell na rota do pedido (handoff §8). */
+  const [orderChatOpen, setOrderChatOpen] = useState(true);
+  const [orderCanvasOpen, setOrderCanvasOpen] = useState(true);
   const [collapsed, setCollapsed] = useState(true);
   const [aiOpen, setAIOpen] = useState(false);
   const [activeConvId, setActiveConvId] = useState(null);
@@ -49,6 +55,22 @@ function App() {
   const [orderChatTyping, setOrderChatTyping] = useState(false);
   const [orderDynamicChips, setOrderDynamicChips] = useState([]);
   const orderEngineRef = useRef(null);
+
+  /* Chat de My Assistant — hoje só existe para a investigação do Modo 2
+     continuar de verdade (texto livre, não só clique) depois que o
+     gerente escolhe explorar a notificação; ver mode2-anomaly-modal.jsx
+     e mode2-assistant-engine.js. */
+  const [assistantMsgs, setAssistantMsgs] = useState([]);
+  const [assistantTyping, setAssistantTyping] = useState(false);
+  const assistantEngineRef = useRef(null);
+  const mode1EngineRef = useRef(null); // roteiro do Modo 1 ativo neste chat, se houver
+  const mode1ScriptRef = useRef(null);
+  const assistantScriptRef = useRef(null);
+  /* Conversa livre com o Senior E-commerce Operations Manager (Responses
+     API) fora dos roteiros dos Modos 1/2 — guarda o id da última resposta
+     para encadear memória de conversa (previous_response_id), e reseta
+     sozinha se a página recarregar, igual ao resto do protótipo. */
+  const assistantResponseIdRef = useRef(null);
 
   /* Rota anterior à entrada de um task — usada pelo "Voltar" do chat da task
      para retornar à última tela vista (Iniciativas, My Assistant, etc.) em
@@ -122,7 +144,12 @@ function App() {
     });
   }, [route.name, route.orderId]);
 
-  useEffect(() => { setProductView(null); }, [route.orderId]);
+  useEffect(() => {
+    setProductView(null);
+    setOrderItemName(null);
+    setOrderChatOpen(true);
+    setOrderCanvasOpen(true);
+  }, [route.orderId]);
 
   const goHome   = () => setRoute({ name: "orders" });
   /* Voltar do task: usa a rota anterior guardada (última tela antes da task).
@@ -137,11 +164,11 @@ function App() {
      tarefa abre com o chat já ativo, em vez do padrão canvas-only. */
   const openTask = (id, opts) => setRoute({ name: "task", id, openChat: !!(opts && opts.openChat) });
   const openOrder = (id) => setRoute({ name: "order-detail", orderId: id });
-  const gotoResource = (id) => {
+  const gotoResource = (id, extra) => {
     if (id === "workflow-board") setRoute({ name: "workflow-board" });
     else if (id === "all-orders") setRoute({ name: "orders" });
     else if (id === "tasks") setRoute({ name: "tasks" });
-    else if (id === "workflow-policies") setRoute({ name: "workflow-policies" });
+    else if (id === "workflow-policies") setRoute({ name: "workflow-policies", ...extra });
   };
   const pickAgent = (id) => {
     setAIOpen(false);
@@ -150,6 +177,118 @@ function App() {
   const openConversation = (id) => {
     setActiveConvId(id);
     setRoute({ name: "chats", convId: id });
+  };
+
+  /* Ação direta do botão "Criar iniciativa e política" na notificação do
+     Modo 2 (mode2-anomaly-modal.jsx): pula a conversa turno a turno e cria
+     a política + a iniciativa de acompanhamento na hora, levando o
+     gerente já para a política aberta em #/workflow-policies — mesmo par
+     Policy/Initiative de InitiativeFromPolicy.createFromPolicy usado pelo
+     Modo 1 e pelo chat de políticas, só que sem a etapa de "quer que eu
+     crie a iniciativa também?", já que o próprio botão diz isso. */
+  const createPolicyAndInitiativeFromMode2 = (script) => {
+    const newPolicy = Mode2ToPolicy.createFromScript(script);
+    AIWData.workflowPolicies.push(newPolicy);
+    InitiativeFromPolicy.createFromPolicy(newPolicy);
+    setRoute({ name: "workflow-policies", openPolicyId: newPolicy.id, initiativeAutoCreated: true });
+  };
+
+  /* Mantido para o motor de conversa turno a turno do Modo 2 continuar
+     funcionando caso algo volte a chamá-lo — hoje nada mais aciona isto
+     depois que o botão da notificação passou a criar direto (acima). */
+  const startMode2InAssistant = (script, actionClicked) => {
+    assistantScriptRef.current = script;
+    setAssistantMsgs([{ from: "agent", text: script.turns[0].text }]);
+    assistantEngineRef.current = Mode2AssistantEngine.create({
+      script,
+      typingDelayMs: 900,
+      onAgentSay: (msgs) => setAssistantMsgs((m) => [...m, ...msgs]),
+      onTyping: setAssistantTyping,
+    });
+    setRoute({ name: "assistant" });
+    handleAssistantSend(actionClicked);
+  };
+
+  /* "Transformar em política permanente" não é mais um passo do roteiro —
+     é o desfecho real do Modo 2 (Learn and Scale): cria a Policy de
+     verdade a partir do experimento e leva o gerente para revisá-la em
+     #/workflow-policies, já aberta. Intercepta antes do engine porque o
+     engine só sabe tocar o roteiro, não criar dado no resto do app. */
+  const handleAssistantSend = (text) => {
+    setAssistantMsgs((m) => [...m, { from: "user", text }]);
+    if (text === "Transformar em política permanente" && assistantScriptRef.current) {
+      const newPolicy = Mode2ToPolicy.createFromScript(assistantScriptRef.current);
+      AIWData.workflowPolicies.push(newPolicy);
+      setAssistantMsgs((m) => [...m, {
+        from: "agent",
+        text: `Prontinho — criei a política **${newPolicy.name}**, com a regra que validamos no experimento. Te levando para revisar antes de qualquer coisa.`,
+      }]);
+      setTimeout(() => setRoute({ name: "workflow-policies", openPolicyId: newPolicy.id }), 900);
+      return;
+    }
+    /* "Criar política" — botão do turno final do Modo 1 (mesmo padrão do
+       Modo 2 acima): cria a Policy de verdade e leva para revisar. */
+    if (text === "Criar política" && mode1ScriptRef.current) {
+      const newPolicy = Mode1ToPolicy.createFromScript(mode1ScriptRef.current);
+      AIWData.workflowPolicies.push(newPolicy);
+      setAssistantMsgs((m) => [...m, {
+        from: "agent",
+        text: `Prontinho — criei a política **${newPolicy.name}**. Te levando para revisar antes de qualquer coisa.`,
+      }]);
+      setTimeout(() => setRoute({ name: "workflow-policies", openPolicyId: newPolicy.id }), 900);
+      return;
+    }
+    if (assistantEngineRef.current) {
+      assistantEngineRef.current.send(text);
+      return;
+    }
+    /* Roteiro do Modo 1 já em andamento neste chat: a mensagem real do
+       gerente só marca "pode continuar" — o motor responde um turno e
+       espera de novo, nunca toca o roteiro inteiro de uma vez. */
+    if (mode1EngineRef.current) {
+      mode1EngineRef.current.send();
+      return;
+    }
+    /* Nenhuma investigação do Modo 2 em curso: qualquer tela com o agente
+       pode disparar o Modo 1 (Mode1Trigger.matches), não só My Assistant. */
+    if (Mode1Trigger.matches(text)) {
+      Mode1Launcher.launch(
+        (msg) => setAssistantMsgs((m) => [...m, msg]),
+        setAssistantTyping,
+      ).then((result) => {
+        if (!result) return;
+        mode1EngineRef.current = result.engine;
+        mode1ScriptRef.current = result.script;
+      });
+      return;
+    }
+    /* Nenhum roteiro fixo em curso: conversa livre de verdade com o
+       agente configurado pelo gerente (agent-behavior.yaml,
+       assistantChat), via Responses API — encadeando previous_response_id
+       a cada turno para manter memória da conversa. */
+    setAssistantTyping(true);
+    AgentConfigLoader.load().then((config) => {
+      const chatConfig = (config && config.assistantChat) || {};
+      return AssistantClient.send(text, {
+        model: chatConfig.model,
+        instructions: chatConfig.instructions,
+        previousResponseId: assistantResponseIdRef.current,
+      });
+    }).then(({ reply, responseId }) => {
+      assistantResponseIdRef.current = responseId;
+      setAssistantTyping(false);
+      setAssistantMsgs((m) => [...m, {
+        from: "agent",
+        text: reply || "Não recebi uma resposta do agente agora — pode tentar de novo?",
+        poweredByLLM: true,
+      }]);
+    }).catch(() => {
+      setAssistantTyping(false);
+      setAssistantMsgs((m) => [...m, {
+        from: "agent",
+        text: "Não consegui falar com o agente agora. Verifique se o servidor está rodando com a chave da OpenAI configurada (.env.local) e tente de novo.",
+      }]);
+    });
   };
 
   /* ── Topbar actions ── */
@@ -210,20 +349,18 @@ function App() {
   if (route.name === "orders") {
     view = <AssistantView onOpenTask={openTask} onGotoResource={gotoResource} onOpenOrder={openOrder} />;
   } else if (route.name === "assistant") {
+    /* O composer precisa funcionar mesmo sem nenhuma mensagem ainda — é
+       daqui que o Modo 1 pode ser disparado (Mode1Trigger), então não dá
+       para deixar essa tela com um composer decorativo enquanto vazia. */
     view = (
-      <div className="main">
-        {renderModuleHeader("My Assistant")}
-        <div className="scroll">
-          <div className="aiw-placeholder">
-            <div className="aiw-placeholder-eyebrow">My Assistant</div>
-            <h2 className="aiw-placeholder-title">Pergunte qualquer coisa.</h2>
-            <p className="aiw-placeholder-sub">Este é o ponto de partida do seu assistente.</p>
-          </div>
-        </div>
-        <div className="aiw-composer-bar">
-          <MessageComposer placeholder="Message VTEX My Assistant..." />
-        </div>
-      </div>
+      <ChatPanel
+        title="My Assistant"
+        intro={assistantMsgs.length === 0 ? "Pergunte qualquer coisa. Este é o ponto de partida do seu assistente." : undefined}
+        messages={assistantMsgs}
+        onSend={handleAssistantSend}
+        isTyping={assistantTyping}
+        placeholder="Pergunte qualquer coisa…"
+      />
     );
   } else if (route.name === "tasks") {
     view = <TasksView />;
@@ -247,7 +384,7 @@ function App() {
     // does not replace or affect #/home-preview or #/orders.
     view = <HomeQueueView onOpenTask={openTask} onGotoResource={gotoResource} />;
   } else if (route.name === "workflow-policies") {
-    view = <WorkflowPoliciesView />;
+    view = <WorkflowPoliciesView onBack={() => setRoute({ name: "workflow-board" })} initialExpandedPolicyId={route.openPolicyId || null} initiativeAutoCreated={!!route.initiativeAutoCreated} />;
   } else if (route.name === "task") {
     view = <TaskView taskId={route.id} onBack={goBackFromTask} onOpenOrder={openOrder} initialChatOpen={route.openChat} />;
   } else if (route.name === "workflow-board") {
@@ -282,8 +419,9 @@ function App() {
       setOrderChatMsgs(m => [...m, { from: "user", text }]);
       orderEngineRef.current && orderEngineRef.current.send(text, opts);
     };
+    const orderChipId = `#${route.orderId}`;
     view = (
-      <ResizableSplit screenLabel="Order Detail" initialWidth={400}>
+      <ResizableSplit screenLabel="Order Detail" initialWidth={400} chatOpen={orderChatOpen} canvasOpen={orderCanvasOpen}>
         <ChatPanel
           title={currentOrder ? `Pedido ${currentOrder.short}` : "Detalhe do Pedido"}
           chips={orderDynamicChips.length > 0 ? orderDynamicChips : orderChips}
@@ -291,26 +429,25 @@ function App() {
           onSend={handleOrderChatSend}
           isTyping={orderChatTyping}
           placeholder="Pergunte sobre este pedido…"
-          onBack={goHome}
+          canvasOpen={orderCanvasOpen}
+          onOpenCanvas={() => setOrderCanvasOpen(true)}
         />
         <div className="detail-panel">
-          <div className="detail-head no-border">
-            <div className="detail-head-left">
-              {productView !== null ? (
-                <button className="od-back-link" onClick={() => setProductView(null)}
-                  style={{ display: "flex", alignItems: "center", gap: 4, background: "none", border: "none", cursor: "pointer", color: "var(--fg-2)", fontSize: 13 }}>
-                  <Icon name="chevron-left" size={14} /> Pedido {route.orderId}
-                </button>
-              ) : (
-                <button className="od-back-link" onClick={goHome}
-                  style={{ display: "flex", alignItems: "center", gap: 4, background: "none", border: "none", cursor: "pointer", color: "var(--fg-2)", fontSize: 13 }}>
-                  <Icon name="chevron-left" size={14} /> Todos os Pedidos
-                </button>
-              )}
-            </div>
-          </div>
+          <CanvasTopbar
+            onBack={goHome}
+            backLabel="Voltar para Pedidos"
+            id={orderChipId}
+            onResetToMain={productView !== null ? () => setProductView(null) : undefined}
+            subTitle={orderItemName}
+            chatOpen={orderChatOpen}
+            onToggleChat={() => setOrderChatOpen(o => !o)}
+            onCloseCanvas={() => { setOrderChatOpen(true); setOrderCanvasOpen(false); }}
+          />
           <div className="detail-scroll">
             <div className="detail-body">
+              {productView !== null && (
+                <CanvasBackBar id={orderChipId} label="Pedido" onClick={() => setProductView(null)} />
+              )}
               <OrderDetailView
                 task={syntheticTask}
                 orderId={route.orderId}
@@ -319,6 +456,7 @@ function App() {
                 standalone={true}
                 productView={productView}
                 onProductViewChange={setProductView}
+                onProductTitleChange={setOrderItemName}
               />
             </div>
           </div>
@@ -361,6 +499,12 @@ function App() {
           onClick={() => setAIOpen(false)}
         />
       )}
+
+      {/* Modo 2 é global: a detecção não pertence a uma tela, dispara depois
+          de N segundos de navegação em qualquer parte do protótipo. A
+          notificação só mostra a etapa Surface — a investigação continua
+          de verdade em My Assistant (startMode2InAssistant). */}
+      <Mode2AnomalyModal onCreateDirectly={createPolicyAndInitiativeFromMode2} />
     </div>
   );
 }

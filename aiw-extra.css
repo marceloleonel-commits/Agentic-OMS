@@ -282,18 +282,26 @@
 }
 
 /* Handoff §5 — Material Symbols Outlined é o único conjunto de ícones no
-   lugar de emojis. O icons.jsx (Icon) permanece nos headers e navegação. */
+   lugar de emojis. O icons.jsx (Icon) permanece nos headers e navegação.
+   O font-display=block no link do Google Fonts esconde o texto até a fonte
+   carregar; overflow:hidden garante que se algo vazar, não aparece. */
 .material-symbols-outlined {
   font-family: 'Material Symbols Outlined';
   font-weight: normal;
   font-style: normal;
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   line-height: 1;
   text-transform: none;
   letter-spacing: normal;
   word-wrap: normal;
   white-space: nowrap;
   direction: ltr;
+  overflow: hidden;
+  /* Largura/altura vem do fontSize inline; fallback para 1em */
+  width: 1em;
+  height: 1em;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
@@ -731,23 +739,113 @@
   min-width: 0; height: 100%;
   background: #fff;
 }
+/* Cabeçalho do chat (handoff-topbar-canvas §6): 56px, sem borda inferior. O
+   título é o único controle à esquerda e o gatilho do menu de conversas; à
+   direita só existe "Abrir canvas", e só no modo "só chat". */
 .chat-head {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--border);
+  padding: 0 12px 0 16px;
+  border-bottom: none;
   flex-shrink: 0;
-  min-height: 56px;
+  min-height: 64px; /* Mesma altura do .canvas-topbar para alinhar */
 }
+.chat-title-wrap { position: relative; min-width: 0; max-width: 100%; }
 .chat-title {
-  display: inline-flex; align-items: center; gap: 6px;
+  display: inline-flex; align-items: center; gap: 2px;
+  max-width: 100%;
+  height: 32px;
+  padding: 0 6px 0 8px;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  font-size: 14px; font-weight: 500; line-height: 20px;
+  color: var(--fg, #171717);
+  cursor: pointer;
+  transition: background .12s ease;
+}
+.chat-title-text { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chat-title .material-symbols-outlined { flex-shrink: 0; color: #4E607A; }
+.chat-title:hover { background: rgba(29, 44, 67, 0.05); }
+.chat-title.open { background: rgba(29, 44, 67, 0.10); }
+/* Renomear a conversa acontece no próprio cabeçalho, sem modal. */
+.chat-title-input {
+  width: 100%;
+  height: 32px;
+  padding: 0 8px;
+  border: 1px solid var(--sl-color-gray-3, #E3E6EF);
+  border-radius: 8px;
+  font-family: inherit;
   font-size: 14px; font-weight: 500;
-  padding: 4px 8px; border-radius: 8px;
-  color: var(--fg);
-  max-width: 70%;
+  color: var(--fg, #171717);
+  background: #fff;
+}
+/* Menu de conversas — F8. */
+.chat-conv-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 40;
+  width: 300px;
+  padding: 4px;
+  border: 1px solid var(--sl-color-gray-3, #E3E6EF);
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, .08);
+}
+.chat-conv-menu-label {
+  display: block;
+  padding: 8px 8px 4px;
+  font-size: 11px; font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #4E607A;
+}
+.chat-conv-item {
+  display: flex; align-items: center; gap: 8px;
+  width: 100%;
+  min-height: 36px;
+  padding: 6px 8px;
+  border: none;
+  border-radius: 12px;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+.chat-conv-item:hover { background: rgba(29, 44, 67, 0.05); }
+.chat-conv-item-body { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1; }
+.chat-conv-item-title {
+  font-size: 13px; font-weight: 400;
+  color: var(--fg, #171717);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.chat-title:hover { background: var(--bg-soft); }
-.chat-head-actions { display: flex; gap: 2px; }
+.chat-conv-item.current .chat-conv-item-title { font-weight: 500; }
+.chat-conv-item-meta {
+  font-size: 12px; font-weight: 400;
+  color: #4E607A;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.chat-conv-item .material-symbols-outlined { flex-shrink: 0; color: #2A3F5E; }
+.chat-conv-menu-sep {
+  display: block;
+  height: 1px;
+  margin: 4px 0;
+  background: var(--sl-color-gray-3, #E3E6EF);
+}
+.chat-conv-action {
+  display: flex; align-items: center; gap: 8px;
+  width: 100%;
+  min-height: 36px;
+  padding: 0 8px;
+  border: none;
+  border-radius: 12px;
+  background: none;
+  font-size: 13px; font-weight: 400;
+  color: var(--fg, #171717);
+  text-align: left;
+  cursor: pointer;
+}
+.chat-conv-action:hover { background: rgba(29, 44, 67, 0.05); }
+.chat-conv-action .material-symbols-outlined { color: #4E607A; }
 .chat-body {
   flex: 1; min-height: 0; overflow-y: auto;
   padding: 28px 32px 24px;
@@ -755,19 +853,59 @@
 }
 .chat-body > * { width: 100%; max-width: 760px; margin-left: auto; margin-right: auto; }
 .chat-intro p { margin: 0 0 16px 0; color: var(--fg-2); font-size: 13.5px; line-height: 1.55; font-weight: 500; }
-.intro-link {
-  display: flex; align-items: center; justify-content: space-between;
+/* Card de referência (handoff-topbar-canvas §7) — substitui o `.intro-link`
+   com chip inline. Cabe em 300px porque chip, nome e meta empilham. */
+.chat-ref-card {
+  display: flex; align-items: center; gap: 12px;
   width: 100%;
-  padding: 10px 14px;
-  border: 1px solid var(--border);
+  padding: 12px 14px;
+  border: 1px solid var(--sl-color-gray-3, #E3E6EF);
   border-radius: 12px;
   background: #fff;
-  font-size: 13px;
-  color: var(--fg);
   text-align: left;
-  transition: border-color .15s, background .15s;
+  cursor: pointer;
+  transition: background .15s;
 }
-.intro-link:hover { border-color: var(--border-strong); background: var(--bg-soft); }
+.chat-ref-card:hover { background: rgba(29, 44, 67, 0.05); }
+.chat-ref-tile {
+  flex-shrink: 0;
+  display: grid; place-items: center;
+  width: 36px; height: 36px;
+  border-radius: 10px;
+  background: rgba(29, 44, 67, 0.05);
+  color: #2A3F5E;
+}
+.chat-ref-body { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-width: 0; flex: 1; }
+.chat-ref-chip {
+  display: inline-flex; align-items: center;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 9999px;
+  background: rgba(29, 44, 67, 0.05);
+  font-family: ui-monospace, "SF Mono", monospace;
+  font-size: 11px; font-weight: 600; line-height: 1;
+  color: #2A3F5E;
+}
+.chat-ref-title {
+  max-width: 100%;
+  font-size: 14px; font-weight: 500;
+  color: var(--fg, #171717);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.chat-ref-meta {
+  max-width: 100%;
+  font-size: 12px; font-weight: 400;
+  color: #4E607A;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.chat-ref-action {
+  flex-shrink: 0;
+  display: grid; place-items: center;
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  color: #2A3F5E;
+}
+.chat-ref-card:hover .chat-ref-action { background: rgba(29, 44, 67, 0.05); }
 .chat-sub-q { margin-top: 0; margin-bottom: 10px; font-size: 14px; font-weight: 400; font-family: Inter, sans-serif; color: var(--fg-2); }
 .chip-row { display: flex; flex-wrap: wrap; gap: var(--sl-space-2); }
 .suggest-chip {
@@ -850,63 +988,86 @@
 .detail-head-right { display: flex; align-items: center; gap: 6px; }
 .canvas-name { font-size: 13px; color: var(--fg-2); font-weight: 500; }
 
-/* Task canvas header — mesmas proporções do header do doc de campaigns
-   (vtex-ads-campaign-manager-design-prototype/components/CampaignDocument.tsx):
-   altura 64px, ícone de voltar 28px com canto arredondado, título 20px. */
+/* Topbar único de todos os canvases (handoff-topbar-canvas §1.1): 64px de
+   altura, padding assimétrico porque o primeiro item é um icon-button de 36px
+   (14 + 36 = a mesma sangria óptica dos 20px do lado direito), sem borda
+   inferior. O nome do canvas não vive aqui — §1.3 deixa o h1 do corpo como
+   único título, por isso `.canvas-topbar-title` deixou de existir. */
 .detail-head.canvas-topbar {
   gap: 8px;
   min-height: 64px;
-  padding: 0 20px;
+  padding: 0 20px 0 14px;
   border-bottom: none;
 }
-.canvas-topbar-title {
-  flex: 1;
-  min-width: 0;
-  font-size: 20px;
-  font-weight: 600;
-  letter-spacing: -0.45px;
-  line-height: 1.2;
-  color: var(--fg);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+/* Empurra CTA / chat / fechar para a direita (§1.2 passo 4). */
+.canvas-topbar-spacer { flex: 1; min-width: 0; }
+/* Chip do ID (§1.2 passo 2) — pill de F2 em mono. Independente do chip da
+   tabela de iniciativas: aqui a largura acompanha o conteúdo. */
+.canvas-topbar-chip {
+  flex-shrink: 0;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-}
-/* Breadcrumb do topbar em subview (v3 port de [data-sl-initiative-canvas-breadcrumb]):
-   [chip do id] · [rótulo da subview]. */
-.canvas-topbar-title [data-sl-initiative-canvas-breadcrumb-sep] {
-  flex-shrink: 0;
-  color: var(--fg-2);
-  font-weight: 400;
-}
-.canvas-topbar-title [data-sl-initiative-canvas-breadcrumb-task] {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-weight: 600;
-  color: var(--fg);
-}
-/* Chip do id vira botão clicável quando o canvas está em subview — atalho
-   para voltar direto ao canvas principal, saindo de qualquer profundidade
-   da pilha. Preserva o layout do chip (largura/alinhamento). */
-.canvas-topbar-chip-btn {
-  appearance: none;
+  height: 24px;
+  padding: 0 8px;
   border: none;
-  padding: 0;
-  margin: 0;
-  font: inherit;
-  cursor: pointer;
-  background: transparent;
+  border-radius: 9999px;
+  background: rgba(29, 44, 67, 0.05);
+  font-family: ui-monospace, "SF Mono", monospace;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+  color: #2A3F5E;
 }
-.canvas-topbar-chip-btn:hover { filter: brightness(0.96); }
-.canvas-topbar-chip-btn:focus-visible {
+/* Em subview o chip vira o atalho de volta ao canvas principal, de qualquer
+   profundidade da pilha. */
+.canvas-topbar-chip--btn { cursor: pointer; }
+.canvas-topbar-chip--btn:hover { background: rgba(29, 44, 67, 0.10); }
+.canvas-topbar-chip--btn:focus-visible {
   outline: 2px solid var(--fg-3);
   outline-offset: 2px;
-  border-radius: var(--initiative-table-pill-radius, 6px);
+}
+/* Separador + título da subview (§1.2 passo 3) — o único texto do topbar. */
+.canvas-topbar-sep {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  color: #4E607A;
+}
+/* §1.2 passo 3 — título da subview agora usa a mesma tipografia do
+   .canvas-back-label: 14/600/20 #2A3F5E (era 13/500/1.4 #4E607A). */
+.canvas-topbar-subtitle {
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+  color: #2A3F5E;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* CTA único (§1.2 passo 5) — botão de F1 h36 r12 600. */
+.canvas-topbar-cta {
+  flex-shrink: 0;
+  height: 36px;
+  min-width: unset;
+  padding: 0 14px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.28px;
+}
+.canvas-topbar-cta[data-variant="secondary"] {
+  background: rgba(29, 44, 67, 0.05);
+  color: #2A3F5E;
+}
+.canvas-topbar-cta[data-variant="secondary"]:hover { background: rgba(29, 44, 67, 0.10); }
+/* Divisor entre o CTA e os controles de painel — só existe quando há CTA. */
+.canvas-topbar-divider {
+  flex-shrink: 0;
+  width: 1px;
+  height: 20px;
+  margin: 0 4px;
+  background: var(--sl-color-gray-3, #E3E6EF);
 }
 
 /* ── Slide-in nav (v3 port de initiative-canvas-tool.css) ─────────────────
@@ -948,37 +1109,47 @@
 [data-sl-canvas-doc-view] > [data-sl-canvas-tool-back-wrap] {
   margin-bottom: calc(var(--back-bar-content-gap) - 44px);
 }
+/* Handoff §1.4 — o voltar da subview é o terciário de F1: chevron + chip do
+   ID + nome do destino. Deixou de ser link azul: o azul agora significa ação
+   primária, não navegação. */
 [data-sl-canvas-tool-back] {
   display: inline-flex;
   align-items: center;
   gap: 6px;
   margin: 0;
-  padding: 0;
+  padding: 0 12px 0 8px;
+  height: 36px;
   border: none;
+  border-radius: 12px;
   background: none;
   font-size: 14px;
-  font-weight: 500;
-  color: var(--primary, #1E4EE5);
+  font-weight: 600;
+  line-height: 20px;
+  color: #2A3F5E;
   cursor: pointer;
+  transition: background .12s ease;
 }
 [data-sl-canvas-tool-back]:hover {
-  color: var(--primary-hover, #0131C5);
+  background: rgba(29, 44, 67, 0.05);
 }
-/* Voltar do canvas-topbar — chevron + rótulo, mesmos tokens do .chat-back-btn.
-   Substitui o título quando existe navegação para trás; o nome do workflow já
-   aparece como h1 editável no corpo. */
-.canvas-topbar-back {
+[data-sl-canvas-tool-back] .canvas-back-chip {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  margin-right: auto;
-  padding: 6px 10px 6px 6px;
-  border-radius: var(--sl-radius-2);
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--fg-2);
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 9999px;
+  background: rgba(29, 44, 67, 0.05);
+  font-family: ui-monospace, "SF Mono", monospace;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
 }
-.canvas-topbar-back:hover { background: var(--bg-soft); color: var(--fg); }
+[data-sl-canvas-tool-back] .canvas-back-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 /* Handoff v2 §2 — icon-button: 36px redondo (era 28px em radius-2),
    transparente em repouso, hover .05 e pressionado .10. */
 .canvas-topbar-icon {
@@ -1008,7 +1179,7 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #DE387F;
+  background: #D31A15;
 }
 
 .detail-scroll { flex: 1; min-height: 0; overflow-y: auto; }
@@ -1246,6 +1417,19 @@
   font-weight: 600;
   line-height: 1;
   vertical-align: middle;
+}
+[data-sl-doc-accordion-toggle] {
+  appearance: none;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 32px;
+  width: 16px;
+  color: var(--fg-3);
 }
 [data-sl-doc-accordion-chevron] {
   flex-shrink: 0;
@@ -4101,7 +4285,7 @@ body.resizing-x .split-resizer::before { background: var(--primary); }
 }
 
 /* No border on chat-head / detail-head in task open view */
-.resizable-split .chat-head { border-bottom: none; min-height: 56px; }
+.resizable-split .chat-head { border-bottom: none; min-height: 64px; }
 .detail-head.no-border { border-bottom: none; }
 
 /* Canvas head — meta counts (replaces the Run button) */
@@ -4241,9 +4425,8 @@ body.resizing-x .split-resizer::before { background: var(--primary); }
   display: flex;
   align-items: center;
   gap: 8px;
-  width: 150px;
+  /* Largura controlada pelo grid-template-columns — não precisa de width fixo. */
 }
-.impacted-table[data-signal="true"] .impacted-col-id { width: 170px; }
 .impacted-col-seller {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -4389,32 +4572,10 @@ body.resizing-x .split-resizer::before { background: var(--primary); }
 .impacted-sort--active .impacted-sort-caret { opacity: 1; }
 .impacted-sort-caret--desc { transform: rotate(180deg); }
 
-/* Busca da página cheia de pedidos — mesmo campo da seleção de pedidos no
-   card de verificação. */
-.impacted-search {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 12px;
-  padding: 0 10px;
-  border: 1px solid var(--border-strong);
-  border-radius: 8px;
-  background: #fff;
-  color: var(--fg-3);
-}
-.impacted-search:focus-within { border-color: var(--primary, #1E4EE5); }
-.impacted-search input {
-  flex: 1;
-  min-width: 0;
-  padding: 8px 0;
-  border: none;
-  outline: none;
-  background: transparent;
-  font: inherit;
-  font-size: 13.5px;
-  color: var(--fg);
-}
-.impacted-search input::placeholder { color: var(--fg-3); }
+/* Busca da página cheia de pedidos — search pill do module browser
+   (`[data-sl-module-browser-search]` + `.search-pill-compact`), o mesmo da
+   toolbar de Políticas. Aqui só a margem, que é do contexto do documento. */
+.impacted-search { margin-bottom: 12px; }
 
 /* ---------- Order detail styling ---------- */
 
@@ -4429,40 +4590,14 @@ body.resizing-x .split-resizer::before { background: var(--primary); }
 }
 
 /* Back as a hyperlink */
+/* O pager agora vive ao lado do h1 (antes ficava numa linha acima). */
 .od-header {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.od-topnav {
-  display: flex; align-items: center; justify-content: space-between;
+  align-items: center;
+  justify-content: space-between;
   gap: 16px;
 }
 
-/* Quando o pedido está aberto como subview do TaskCanvas, o back-bar
-   ("Voltar para {ID}") e o pager ("1 de N" + prev/next) compartilham a mesma
-   linha: o back-bar segue à esquerda (fluxo normal, sticky), e o pager é
-   içado para a direita da faixa via posicionamento absoluto. A âncora é
-   [data-sl-canvas-doc-view][data-view="sub"] — que só existe no canvas do
-   task, então não afeta a Order Detail em standalone. */
-[data-sl-canvas-doc-view][data-view="sub"] { position: relative; }
-[data-sl-canvas-doc-view][data-view="sub"] .od-topnav {
-  position: absolute;
-  /* Alinha o centro vertical do pager (28px) com o centro do back-button
-     (linha ~20px). O back-bar tem padding-top 16px, então o botão fica com
-     centro em 26px; o pager começa em 16px e teria centro em 30px — o
-     translateY(-4px) puxa 4px para cima e emparelha os centros. */
-  top: var(--sl-space-4, 16px);
-  right: 0;
-  transform: translateY(-4px);
-  z-index: 3; /* acima do back-bar sticky (z-index 2) */
-  margin: 0;
-  padding: 0;
-  background: transparent;
-}
-[data-sl-canvas-doc-view][data-view="sub"] .od-topnav > :first-child {
-  display: none; /* spacer do layout antigo — sem uso quando absolute */
-}
 .od-pager {
   display: inline-flex; align-items: center; gap: 6px;
   font-size: 12.5px;
@@ -4492,19 +4627,6 @@ body.resizing-x .split-resizer::before { background: var(--primary); }
   cursor: not-allowed;
   background: var(--bg-soft);
 }
-
-.od-back-link {
-  display: inline-flex; align-items: center; gap: 4px;
-  background: transparent;
-  border: none;
-  padding: 0;
-  color: var(--primary);
-  font-size: 13px;
-  font-weight: 500;
-  cursor: pointer;
-}
-.od-back-link:hover { text-decoration: underline; color: var(--primary-hover); }
-.od-back-link svg { color: currentColor; }
 
 /* Order metadata grid — same visual style as canvas metadata
    ([data-sl-initiative-document-metadata]): label 15px/400 em fg-2,
@@ -5742,20 +5864,6 @@ sl-tag[data-color="blue"] {
 .task-cond-row .field-cite-btn {
   display: inline-flex;
 }
-
-/* ---------- Workflow Settings ---------- */
-.wf-settings-crumb {
-  display: flex; align-items: center; gap: 8px;
-  font-size: 13px;
-  margin-bottom: -24px;
-}
-.wf-settings-crumb .od-back-link {
-  border: 1px solid var(--border);
-  padding: 6px 10px;
-  border-radius: 6px;
-  color: var(--fg-2);
-}
-.wf-settings-crumb .od-back-link:hover { color: var(--primary); text-decoration: none; }
 
 /* ── Settings view/edit toggle ──────────────────────────────────── */
 /* ── Inline workflow settings ─────────────────────────────────────────────── */
@@ -9219,7 +9327,7 @@ button.wf-ver-badge-btn:hover {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 16px;
   padding: 12px 16px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: none;
   background: var(--bg);
 }
 .pkg-meta-field {
@@ -9810,6 +9918,15 @@ button.wf-ver-badge-btn:hover {
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+/* Densidade compacta (36px) do mesmo pill, para os canvas fora do module
+   browser — onde os 44px do original destoam dos demais controles. */
+.search-pill-compact {
+  height: 36px; min-height: 36px; max-height: 36px;
+  padding: 0 8px 0 12px;
+}
+.search-pill-compact [data-sl-module-browser-search-pre-icon] svg { width: 16px; height: 16px; }
+.search-pill-compact [data-sl-module-browser-search-input] { font-size: 13px; }
 
 [data-sl-module-browser-search-pre-icon] {
   display: inline-flex;
@@ -10887,7 +11004,7 @@ button.wf-ver-badge-btn:hover {
 .initiative-doc-panel {
   position: absolute;
   top: 0; right: 0; bottom: 0;
-  width: min(640px, 58%);
+  width: min(760px, 58%);
   min-width: 420px;
   border-left: 1px solid var(--border);
   box-shadow: 0 0 24px 4px rgba(0, 0, 0, 0.12);
@@ -11249,21 +11366,6 @@ button.wf-ver-badge-btn:hover {
   line-height: 1;
   white-space: nowrap;
 }
-.canvas-a-verify-alert-recap {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 12px 20px 0;
-  padding: 8px 12px;
-  border-radius: 8px;
-  background: var(--bg-soft);
-  font-size: 13px;
-  line-height: 18px;
-  color: var(--fg-2);
-}
-.canvas-a-verify-alert-recap svg { color: var(--sl-color-green-11, #016810); flex-shrink: 0; }
-.canvas-a-verify-alert-recap-q { color: var(--fg-3); }
-.canvas-a-verify-alert-recap-a { color: var(--fg); font-weight: 600; }
 .canvas-a-verify-alert-body {
   padding: 12px 20px 4px;
 }
@@ -12027,7 +12129,12 @@ button.wf-ver-badge-btn:hover {
 .chat-above-composer .canvas-a-verify-header { padding: 14px 16px 0; }
 .chat-above-composer .canvas-a-verify-intro { padding: 10px 16px 6px; }
 .chat-above-composer .canvas-a-verify-options { padding: 2px 8px 4px; }
-.chat-above-composer .canvas-a-verify-footer { padding: 12px 16px; }
+/* Acima do composer o card é estreito e o footer traz só o "Continuar": o
+   divisor não separa nada, só empilha mais uma linha na moldura. */
+.chat-above-composer .canvas-a-verify-footer {
+  padding: 12px 16px;
+  border-top: none;
+}
 
 /* ── Chegada da pergunta ──
    O card interrompe a conversa para pedir uma decisão, então ganha destaque
@@ -12365,14 +12472,22 @@ button.wf-ver-badge-btn:hover {
 }
 
 /* ── 1. Cabeçalho ──
-   Só o id e a tag de estado: o pedido e o SLA são metadados do item, e vivem
-   à direita do bloco seguinte. */
+   Identificação à esquerda (id + pedido vinculado), estado da avaliação em
+   texto à direita. Sem tag e sem hairline: a cor de status vive na fila, e a
+   borda separava o cabeçalho de um parágrafo que é a continuação dele. */
 .tck-head {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 16px 24px 14px;
-  border-bottom: 1px solid var(--sl-color-gray-3, #E3E6EF);
+  gap: 8px;
+  padding: 16px 24px 0;
+}
+.tck-head-status {
+  margin-left: auto;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 18px;
+  color: var(--fg-3, #4E607A);
+  white-space: nowrap;
 }
 .tck-id {
   font-size: 16px;
@@ -12399,27 +12514,8 @@ button.wf-ver-badge-btn:hover {
 .tck-pager-btn:active:not(:disabled) { background: rgba(29, 44, 67, 0.10); }
 .tck-pager-btn:disabled { color: var(--sl-color-gray-5, #B6C2D5); cursor: default; }
 
-/* Metadados à direita do item: pares label/valor (SLA · Pedido). */
-.tck-metrics { display: flex; gap: 28px; flex-shrink: 0; }
-.tck-metric { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.tck-metric-label {
-  font-size: 12px;
-  line-height: 16px;
-  color: #4e607a;
-}
-.tck-metric-value {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 14px;
-  font-weight: 500;
-  line-height: 20px;
-  color: #171717;
-}
-.tck-metric-value--overdue { color: #d31a15; }
-.tck-metric-value svg { flex-shrink: 0; }
-/* Pill de status (Pendente / Aceita / Negada / Escalada) — assume o tom do
-   desfecho depois de decidido. */
+/* Pill de status — só na tabela do canvas (`4e`) e na tag de progresso do
+   cabeçalho do modal. Dentro do card do ticket não existe tag colorida. */
 .tck-status-pill {
   display: inline-flex;
   align-items: center;
@@ -12441,49 +12537,91 @@ button.wf-ver-badge-btn:hover {
 /* Escalada é a única cujo texto fica em preto: o azul da tag já é a superfície,
    e repeti-lo no rótulo fazia a tag parecer um link. */
 .tck-status-pill[data-outcome="escalated"] { background: var(--sl-color-blue-2,  #E1F3FF); color: #171717; }
-/* Link para o pedido — segue o tom accent do design system. */
+/* Pedido vinculado, no cabeçalho: contexto, não chamada. Fica no cinza do
+   texto secundário e escurece no hover — em azul competia com o id do ticket,
+   que é a identificação do caso. */
 .tck-order-link {
   display: inline-flex;
   align-items: center;
-  gap: 2px;
   padding: 0;
   border: none;
   background: none;
   font: inherit;
-  font-size: 14px;
-  font-weight: 500;
-  line-height: 20px;
-  color: #1e4ee5;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 18px;
+  color: var(--fg-3, #4E607A);
   cursor: pointer;
 }
-.tck-order-link:hover { color: #163AA8; text-decoration: underline; }
-.tck-order-link[data-static="true"] { color: #171717; cursor: default; }
-.tck-order-link[data-static="true"]:hover { text-decoration: none; }
-.tck-order-link svg { flex-shrink: 0; }
+.tck-order-link:hover { color: #171717; }
+.tck-order-link[data-static="true"] { cursor: default; }
+.tck-order-link[data-static="true"]:hover { color: var(--fg-3, #4E607A); }
 
-/* ── 2. Item e metadados ──
-   O item ocupa a esquerda; SLA e pedido ficam à direita, top-aligned, tanto no
-   ticket de um item quanto no bloco multi-item. */
-.tck-product-section {
+/* ── 2. Corpo: o resumo em prosa ──
+   O ticket é um parágrafo escrito pelo agente — itens, motivo, evidência,
+   histórico e a recomendação no fecho. Os blocos empilhados (item, solicitação,
+   faixa azul de recomendação) saíram: o SAC lê a frase e abre o detalhe pelos
+   próprios trechos dela. */
+.tck-body {
   display: flex;
-  align-items: flex-start;
-  gap: 24px;
-  padding: 16px 24px;
-  border-bottom: 1px solid var(--sl-color-gray-3, #E3E6EF);
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px;
 }
-.tck-product-section > :first-child { flex: 1; min-width: 0; }
-.tck-product {
+.tck-prose {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 26px;
+  color: #171717;
+  text-wrap: pretty;
+}
+/* Trecho-gatilho: o sublinhado pontilhado marca o que abre detalhe sem virar
+   link — o destino é o próprio parágrafo, logo abaixo. */
+.tck-prose-trigger {
+  font: inherit;
+  color: inherit;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  text-decoration: underline dotted;
+  text-underline-offset: 4px;
+  text-decoration-color: #8a97ad;
+}
+.tck-prose-trigger:hover { text-decoration-color: #171717; }
+.tck-prose-rec { font-weight: 600; }
+
+/* Painel de detalhe — uma linha por item e a fala do cliente. Sem moldura por
+   item: a superfície do painel já contém a lista. */
+.tck-detail {
   display: flex;
-  align-items: flex-start;
+  flex-direction: column;
   gap: 12px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: rgba(29, 44, 67, 0.03);
+}
+.tck-detail-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 0;
+}
+.tck-detail-quote {
+  margin: 0;
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--sl-color-gray-8, #3D516E);
+  text-wrap: pretty;
 }
 .tck-thumb {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  width: 48px;
-  height: 48px;
+  width: 40px;
+  height: 40px;
   overflow: hidden;
   border: 1px solid #e3e6ef;
   border-radius: 8px;
@@ -12499,7 +12637,7 @@ button.wf-ver-badge-btn:hover {
 .tck-product-info { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
 .tck-product-name {
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 500;
   line-height: 20px;
   letter-spacing: -0.14px;
   color: #171717;
@@ -12511,166 +12649,41 @@ button.wf-ver-badge-btn:hover {
   line-height: 16px;
   color: #4e607a;
 }
-/* Botão "Ver fotos (N)" — só aparece com anexos. */
+/* Botão "Ver fotos (N)" — secundário do sistema, só texto: o ícone de galeria
+   repetia o que o rótulo já diz. Só aparece com anexos. */
 .tck-photos {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
   flex-shrink: 0;
   height: 32px;
   padding: 0 12px;
-  border: 1px solid #e3e6ef;
-  border-radius: 8px;
-  background: #fff;
+  border: none;
+  border-radius: 12px;
+  background: rgba(29, 44, 67, 0.05);
   font: inherit;
   font-size: 13px;
-  font-weight: 500;
-  color: #2a3f5e;
-  cursor: pointer;
-  transition: background .12s;
-}
-.tck-photos:hover { background: rgba(29, 44, 67, 0.05); }
-.tck-photos svg { color: #2a3f5e; flex-shrink: 0; }
-
-/* Bloco multi-item: fechado por padrão. Fechado, mostra miniaturas empilhadas,
-   contagem e resumo por motivo. Aberto, cabeçalho persiste no topo e cada
-   linha entra dividida por hairline. */
-.tck-items {
-  display: flex;
-  flex-direction: column;
-  border: 1px solid #e3e6ef;
-  border-radius: 8px;
-  overflow: hidden;
-}
-.tck-items-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-  padding: 10px 12px;
-  border: none;
-  background: rgba(29, 44, 67, 0.05);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-  transition: background .12s;
-}
-.tck-items-header:hover { background: rgba(29, 44, 67, 0.05); }
-.tck-items-header[data-open="true"] { border-bottom: 1px solid #e3e6ef; }
-.tck-items-stack { display: inline-flex; flex-shrink: 0; }
-/* Mesma miniatura do item único: a de 28px sobreposta em -8px virava um
-   amontoado ilegível. */
-.tck-items-stack { gap: 4px; }
-.tck-items-stack-thumb {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  width: 40px;
-  height: 40px;
-  overflow: hidden;
-  border: 1px solid var(--sl-color-gray-3, #E3E6EF);
-  border-radius: 8px;
-  background: rgba(29, 44, 67, 0.05);
-  background-size: cover;
-  background-position: center;
-  color: var(--fg-3, #4E607A);
-}
-.tck-items-title { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
-.tck-items-label {
-  font-size: 14px;
-  font-weight: 500;
-  line-height: 20px;
-  letter-spacing: -0.14px;
-  color: #171717;
-}
-.tck-items-summary {
-  font-size: 12px;
-  line-height: 18px;
-  color: #4e607a;
-}
-.tck-items-chevron {
-  display: inline-flex;
-  color: #4e607a;
-  transition: transform .12s;
-}
-.tck-items-chevron[data-open="true"] { transform: rotate(180deg); }
-.tck-items-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px;
-  background: #fff;
-  border-bottom: 1px solid #e3e6ef;
-}
-.tck-items-row:last-child { border-bottom: none; }
-/* Linha do acordeão é mais densa que o item único: miniatura de 40 e nome em
-   500, para o bloco não competir com o cabeçalho do ticket. */
-.tck-items-row .tck-thumb { width: 40px; height: 40px; }
-.tck-items-row .tck-product-name { font-weight: 500; }
-
-/* ── 3. Solicitação do cliente (sempre) ── */
-.tck-request {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 16px 24px;
-  border-bottom: 1px solid #e3e6ef;
-}
-.tck-request-label {
-  font-size: 12px;
-  line-height: 16px;
-  color: #4e607a;
-}
-.tck-request-body {
-  margin: 0;
-  font-size: 14px;
-  line-height: 22px;
-  color: #171717;
-  text-wrap: pretty;
-}
-
-/* ── 4. Faixa de recomendação — só enquanto pendente ── */
-.tck-rec {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 16px 24px;
-  background: var(--sl-color-blue-2, #E1F3FF);
-}
-.tck-rec-title {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 14px;
   font-weight: 600;
   line-height: 20px;
-  letter-spacing: -0.14px;
-  color: #171717;
+  color: var(--fg-2, #2A3F5E);
+  cursor: pointer;
+  transition: background .12s;
 }
-.tck-rec-title svg { color: var(--sl-color-blue-10, #1E4EE5); flex-shrink: 0; }
-.tck-rec-why {
-  font-size: 14px;
-  line-height: 22px;
-  color: #171717;
-  text-wrap: pretty;
-}
-.tck-rec-history {
-  font-size: 12px;
-  line-height: 16px;
-  color: #4e607a;
-}
+.tck-photos:hover { background: rgba(29, 44, 67, 0.10); }
+.tck-photos:active { background: rgba(29, 44, 67, 0.15); }
 
-/* ── 5. Painel de decisão (sempre aberto enquanto pendente) ── */
-.tck-panel-header {
+/* ── 3. Decisão: segmentado + complemento da ação ativa ──
+   Só existe enquanto o ticket está pendente. O `gap` de 14 é o respiro entre o
+   trilho e o complemento — no resto do corpo o ritmo é 16. */
+.tck-decision {
   display: flex;
   flex-direction: column;
-  padding: 14px 24px 0;
+  gap: 14px;
 }
 /* Segmented da §1c: contêiner r16 sobre o cinza de interação, opção 36px/r12,
-   ativa branca com shadow-1 e cor no tom da ação. Ocupa a largura do painel —
-   as três saídas do ticket têm o mesmo peso. O ponto azul continua marcando a
-   aba recomendada. */
+   ativa branca com shadow-1. Ocupa a largura do painel — as três saídas do
+   ticket têm o mesmo peso — e chega já na recomendação do agente, marcada pelo
+   bullet azul. Sem ícones e sem cor por ação: o texto é o rótulo, e colorir a
+   opção ativa fazia a escolha do SAC parecer um estado do sistema. */
 .tck-tabs {
   display: flex;
   gap: 4px;
@@ -12701,17 +12714,14 @@ button.wf-ver-badge-btn:hover {
   cursor: pointer;
   transition: background .12s, color .12s;
 }
-.tck-tab svg { flex-shrink: 0; }
 .tck-tab:hover:not([aria-pressed="true"]) { background: rgba(29, 44, 67, 0.05); color: #171717; }
 .tck-tab:active:not([aria-pressed="true"]) { background: rgba(29, 44, 67, 0.10); }
 .tck-tab[aria-pressed="true"] {
   background: #fff;
   color: #171717;
-  box-shadow: var(--sl-shadow-1);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
 }
-.tck-tab[aria-pressed="true"][data-mode="accept"]   { color: var(--sl-color-green-10, #017D10); }
-.tck-tab[aria-pressed="true"][data-mode="deny"]     { color: var(--sl-color-red-10, #D31A15); }
-.tck-tab[aria-pressed="true"][data-mode="escalate"] { color: var(--sl-color-blue-10, #1E4EE5); }
+/* Bullet da recomendação do agente. */
 .tck-tab-dot {
   width: 6px;
   height: 6px;
@@ -12720,142 +12730,109 @@ button.wf-ver-badge-btn:hover {
   flex-shrink: 0;
 }
 
-/* Corpo do painel (padrão: cards internos brancos com borda no tom da ação). */
-.tck-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding: 14px 24px 16px;
-}
-.tck-panel-card {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 12px;
-  border: 1px solid var(--sl-color-gray-3, #E3E6EF);
-  border-radius: 12px;
-  background: #fff;
-}
-/* Só aceite e escalonamento ganham borda no tom: a negativa aplica uma regra da
-   política, e o vermelho na moldura fazia o card parecer um erro do sistema. */
-.tck-panel-card[data-tone="accept"] { border-color: var(--sl-color-green-4, #97EF86); }
-.tck-panel-card[data-tone="escalate"] {
-  flex-direction: row;
-  align-items: center;
-  gap: 10px;
-  border-color: var(--sl-color-blue-4, #B6DFFF);
-}
-.tck-panel-card-label {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  font-weight: 500;
-  line-height: 18px;
-  color: #4e607a;
-}
-.tck-panel-card-label svg { flex-shrink: 0; }
-.tck-panel-card-label[data-tone="accept"] { color: var(--sl-color-green-10, #017D10); }
-.tck-panel-card-label[data-tone="deny"]   { color: var(--sl-color-red-10, #D31A15); }
-.tck-panel-card-title {
-  font-size: 14px;
-  font-weight: 600;
-  line-height: 20px;
-  letter-spacing: -0.14px;
-  color: #171717;
-}
-.tck-panel-card-body {
-  font-size: 14px;
-  line-height: 22px;
-  color: var(--sl-color-gray-8, #3D516E);
-  text-wrap: pretty;
-}
-.tck-panel-card-body--strong { color: #171717; }
-/* Toggle da mensagem ao cliente (colapsável dentro do card). */
-.tck-message-toggle {
-  display: flex;
-  align-items: center;
-  gap: 6px;
+/* ── 4. Complementos ──
+   Um por ação: nota do escalonamento, nota + justificativa do aceite,
+   motivo + mensagem da negativa. Só o da ação ativa existe no DOM. */
+.tck-textarea {
   width: 100%;
-  padding: 0;
-  border: none;
-  background: none;
-  font: inherit;
-  font-size: 12px;
-  font-weight: 500;
-  line-height: 18px;
-  color: #4e607a;
-  text-align: left;
-  cursor: pointer;
-}
-.tck-message-toggle svg { flex-shrink: 0; }
-.tck-message-toggle .tck-message-toggle-star { color: var(--sl-color-blue-10, #1E4EE5); }
-.tck-message-toggle-chevron {
-  margin-left: auto;
-  color: #4e607a;
-  transition: transform .12s;
-}
-.tck-message-toggle[aria-expanded="true"] .tck-message-toggle-chevron { transform: rotate(180deg); }
-.tck-message-body {
-  margin: 0;
-  font-size: 14px;
-  line-height: 22px;
-  color: #171717;
-  text-wrap: pretty;
-}
-
-/* Cartão do destino do escalonamento (ícone + Ecommerce Supervisor). */
-.tck-escalate-to { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.tck-escalate-to-title {
-  font-size: 14px;
-  font-weight: 600;
-  line-height: 20px;
-  letter-spacing: -0.14px;
-  color: #171717;
-}
-.tck-escalate-to-sub {
-  font-size: 12px;
-  line-height: 18px;
-  color: #4e607a;
-}
-.tck-panel-card[data-tone="escalate"] > svg { color: var(--sl-color-blue-10, #1E4EE5); flex-shrink: 0; }
-
-/* Bloco do textarea "O que o supervisor precisa decidir". */
-.tck-escalate-field { display: flex; flex-direction: column; gap: 6px; }
-.tck-escalate-field label {
-  font-size: 12px;
-  line-height: 18px;
-  color: #4e607a;
-}
-.tck-escalate-note {
-  width: 100%;
+  min-height: 72px;
   padding: 10px 12px;
-  border: 1px solid var(--sl-color-gray-5, #B6C2D5);
-  border-radius: 12px;
+  border: 1px solid var(--sl-color-gray-3, #E3E6EF);
+  border-radius: 10px;
   background: #fff;
   font: inherit;
   font-size: 14px;
-  line-height: 22px;
+  line-height: 20px;
   color: #171717;
   resize: vertical;
   box-sizing: border-box;
 }
-.tck-escalate-note:focus {
-  outline: none;
-  border-color: var(--sl-color-blue-10, #1E4EE5);
-  box-shadow: 0 0 0 3px var(--sl-color-blue-1, #F1F8FD);
-}
-.tck-escalate-note::placeholder { color: #4e607a; }
+/* A mensagem ao cliente chega escrita e é editada por inteiro: nasce mais alta
+   que uma nota, que costuma ser uma linha. */
+.tck-textarea[data-size="lg"] { min-height: 88px; }
+/* Foco sem anel: dentro do complemento o anel azul lia como validação. */
+.tck-textarea:focus { outline: none; border-color: #171717; }
+.tck-textarea::placeholder { color: var(--fg-3, #4E607A); }
 
-/* Nota "info" (rodapé de cada painel: consequência ou aviso). */
+/* Consequência do aceite — leitura, não campo. */
+.tck-inline-note {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: rgba(29, 44, 67, 0.03);
+  font-size: 14px;
+  line-height: 20px;
+  color: #171717;
+  text-wrap: pretty;
+}
+/* Nota de rodapé do complemento: o que acontece ao confirmar. */
 .tck-note {
-  display: flex;
-  gap: 6px;
   font-size: 12px;
   line-height: 16px;
-  color: #4e607a;
+  color: var(--fg-3, #4E607A);
+  text-wrap: pretty;
 }
-.tck-note svg { flex-shrink: 0; color: #4e607a; }
+
+/* Motivo da negativa — botão + menu, como o dropdown de `1f`. O `<select>`
+   nativo não aceita o rótulo dentro do gatilho nem o check no item escolhido. */
+.tck-reason { position: relative; }
+.tck-reason-trigger {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  height: 40px;
+  padding: 0 14px;
+  border: 1px solid var(--sl-color-gray-5, #B6C2D5);
+  border-radius: 12px;
+  background: #fff;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  color: #171717;
+  text-align: left;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+.tck-reason-label { font-weight: 400; color: var(--fg-3, #4E607A); }
+.tck-reason-trigger svg { margin-left: auto; flex-shrink: 0; color: var(--fg-3, #4E607A); }
+.tck-reason-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px;
+  border: 1px solid var(--sl-color-gray-3, #E3E6EF);
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+.tck-reason-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 14px;
+  border: none;
+  border-radius: 12px;
+  background: transparent;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 400;
+  color: #171717;
+  text-align: left;
+  cursor: pointer;
+}
+.tck-reason-option:hover { background: rgba(29, 44, 67, 0.05); }
+.tck-reason-option[aria-selected="true"] {
+  font-weight: 500;
+  background: rgba(29, 44, 67, 0.05);
+}
+.tck-reason-option svg { margin-left: auto; flex-shrink: 0; }
 
 /* ── 6. Botões de decisão — vivem no rodapé sticky do modal ── */
 .tck-confirm {
@@ -12880,53 +12857,28 @@ button.wf-ver-badge-btn:hover {
 }
 .tck-confirm:hover { background: #1B45CC; }
 .tck-confirm:active { background: #163AA8; }
-.tck-confirm[data-tone="deny"]  { background: var(--sl-color-red-10, #D31A15); }
-.tck-confirm[data-tone="deny"]:hover { background: #B40202; }
-.tck-confirm[data-tone="deny"]:active { background: #8F0000; }
-/* Desabilitado é cinza, jamais o azul (ou o vermelho) esmaecido. */
+/* Desabilitado é cinza, jamais o azul esmaecido. */
 .tck-confirm:disabled,
-.tck-confirm:disabled:hover,
-.tck-confirm[data-tone="deny"]:disabled,
-.tck-confirm[data-tone="deny"]:disabled:hover {
+.tck-confirm:disabled:hover {
   background: rgba(29, 44, 67, 0.05);
   color: var(--fg-4, #5D6C83);
   cursor: not-allowed;
 }
 
-/* ── 7. Estado decidido ──
-   Substitui a faixa de recomendação, o painel e o rodapé. */
-/* Superfície no tom do desfecho: é ela, com a tag do cabeçalho, que diz o que
-   aconteceu — não um glifo colorido. */
+/* ── 5. Estado decidido ──
+   Toma o lugar do segmentado e do complemento; o parágrafo e o disclosure
+   ficam. Superfície neutra e sem glifo: o desfecho já está no cabeçalho em
+   texto, na fila e no contador do modal — repetir em verde era o quarto sinal
+   da mesma coisa. */
 .tck-decided {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 16px 24px;
-  background: var(--sl-color-green-1, #E9FCE3);
+  gap: 6px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: rgba(29, 44, 67, 0.03);
   animation: tck-in .18s ease-out both;
 }
-.tck-decided[data-outcome="denied"]    { background: var(--sl-color-red-2, #FFEDEA); }
-.tck-decided[data-outcome="escalated"] { background: var(--sl-color-blue-2, #E1F3FF); }
-.tck-decided-head {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-}
-/* Sem disco sólido: a superfície green-1 e a tag do cabeçalho já dizem o
-   desfecho, então basta o ícone no tom. */
-.tck-decided-glyph {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  margin-top: 2px;
-}
-.tck-decided-glyph[data-outcome="accepted"]  { color: var(--sl-color-green-10, #017D10); }
-.tck-decided-glyph[data-outcome="denied"]    { color: var(--sl-color-red-10, #D31A15); }
-.tck-decided-glyph[data-outcome="escalated"] { color: var(--sl-color-blue-10, #1E4EE5); }
-.tck-decided-text { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
-/* Título em preto: o tom do desfecho já está na superfície, no ícone e na tag
-   do cabeçalho — colorir também o texto empilhava três sinais iguais. */
 .tck-decided-title {
   font-size: 14px;
   font-weight: 600;
@@ -12935,29 +12887,16 @@ button.wf-ver-badge-btn:hover {
   color: #171717;
 }
 .tck-decided-sub {
-  font-size: 12px;
+  font-size: 13px;
   line-height: 18px;
-  color: var(--sl-color-gray-8, #3D516E);
+  color: var(--fg-3, #4E607A);
 }
+/* O que o SAC escreveu, ecoado: "Nota: …" no escalonamento, "Mensagem: …" na
+   negativa. */
 .tck-decided-note {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 10px 12px;
-  border: 1px solid var(--sl-color-green-4, #97EF86);
-  border-radius: 12px;
-  background: #fff;
-}
-.tck-decided[data-outcome="denied"] .tck-decided-note    { border-color: var(--sl-color-red-4, #FFD0C7); }
-.tck-decided[data-outcome="escalated"] .tck-decided-note { border-color: var(--sl-color-blue-4, #B6DFFF); }
-.tck-decided-note-label {
-  font-size: 12px;
-  line-height: 18px;
-  color: #4e607a;
-}
-.tck-decided-note-body {
-  font-size: 14px;
-  line-height: 22px;
+  margin-top: 4px;
+  font-size: 13px;
+  line-height: 20px;
   color: #171717;
   text-wrap: pretty;
 }
@@ -13137,7 +13076,7 @@ button.wf-ver-badge-btn:hover {
 .tck-table-head,
 .tck-table-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 200px) 140px 24px;
+  grid-template-columns: minmax(0, 1fr) 20px 104px 24px;
   align-items: center;
   gap: 12px;
   padding: 0 16px;
@@ -13201,14 +13140,6 @@ button.wf-ver-badge-btn:hover {
   background: rgba(29, 44, 67, 0.10);
   color: var(--fg-2, #2A3F5E);
   font-weight: 600;
-}
-.tck-table-owner-name {
-  font-size: 14px;
-  line-height: 20px;
-  color: var(--fg-2, #2A3F5E);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 .tck-table-outcome { display: flex; }
 .tck-table-chevron {
@@ -13317,12 +13248,12 @@ button.wf-ver-badge-btn:hover {
   0%, 100% { opacity: .3; }
   50% { opacity: 1; }
 }
-/* Alerta de falha de envio — dentro do painel, acima do segmented. */
+/* Alerta de falha de envio — dentro do corpo, acima do segmentado (o corpo já
+   carrega os 24px laterais, então o alerta não tem margem própria). */
 .tck-error {
   display: flex;
   align-items: flex-start;
   gap: 10px;
-  margin: 16px 24px;
   padding: 12px;
   border: 1px solid var(--sl-color-red-4, #FFD0C7);
   border-radius: 12px;
@@ -13409,7 +13340,21 @@ button.wf-ver-badge-btn:hover {
   background: var(--sl-color-blue-2, #E1F3FF);
   box-shadow: inset 0 0 0 1px var(--sl-color-blue-10, #1E4EE5);
 }
-.tck-queue-row .tck-table-dot { margin-top: 6px; }
+/* Disco de 24px no tom do desfecho, com o ícone dentro — a linha da fila é o
+   único lugar do modal em que cor de status é permitida. */
+.tck-queue-glyph {
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: var(--sl-color-orange-2, #FFEDCD);
+  color: var(--sl-color-orange-10, #B24D01);
+}
+.tck-queue-glyph[data-outcome="accepted"]  { background: var(--sl-color-green-1, #E9FCE3); color: var(--sl-color-green-10, #017D10); }
+.tck-queue-glyph[data-outcome="denied"]    { background: var(--sl-color-red-2, #FFEDEA);   color: var(--sl-color-red-10, #D31A15); }
+.tck-queue-glyph[data-outcome="escalated"] { background: var(--sl-color-blue-2, #E1F3FF);  color: var(--sl-color-blue-10, #1E4EE5); }
 .tck-queue-row-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .tck-queue-row-id {
   font-size: 13px;
@@ -13425,8 +13370,6 @@ button.wf-ver-badge-btn:hover {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.tck-queue-row .tck-status-pill { margin-top: 2px; }
-
 /* Fila fechada — trilha de 56px que preserva progresso e posição. */
 .tck-queue-rail {
   display: flex;
@@ -13499,21 +13442,31 @@ button.wf-ver-badge-btn:hover {
    browser, o gatilho .filter-dropdown-btn do Dropdown, os tabs pill do module
    browser e o Toggle de ui-primitives — aqui só o que é específico desta
    tela. */
+/* Mesma coluna do `.detail-body` usada pelo canvas do board: 800px centrados
+   com 44px laterais. Toolbar e lista compartilham a medida para que os filtros
+   não descolem da borda dos cards. */
+/* §1.3/§5 — o h1 da página vive no corpo, na mesma coluna da toolbar e da
+   lista, já que o topbar deixou de carregar título. */
+.wfp-page-head {
+  flex-shrink: 0;
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 8px 44px 0;
+}
+.wfp-page-head .detail-title { margin: 0; }
 .wfp-toolbar {
   display: flex; align-items: center; gap: 8px;
   flex-shrink: 0;
-  padding: 12px 20px;
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 12px 44px;
 }
 .wfp-toolbar-fill { flex: 1; }
-/* Search pill do module browser na densidade do canvas (36px, como os demais
-   controles da toolbar) — só medida, sem mexer na identidade do componente. */
-.wfp-toolbar .wfp-search {
-  flex: 0 1 280px;
-  height: 36px; min-height: 36px; max-height: 36px;
-  padding: 0 8px 0 12px;
-}
-.wfp-toolbar .wfp-search [data-sl-module-browser-search-pre-icon] svg { width: 16px; height: 16px; }
-.wfp-toolbar .wfp-search [data-sl-module-browser-search-input] { font-size: 13px; }
+/* A densidade (36px) vem de `.search-pill-compact`; aqui fica só a largura que
+   o pill ocupa na toolbar. */
+.wfp-toolbar .wfp-search { flex: 0 1 280px; }
 .wfp-toolbar .dd-wrap { display: inline-flex; align-items: center; }
 .wfp-toolbar .dd-wrap > span { display: inline-flex; }
 .wfp-toolbar .wfp-cat-btn {
@@ -13537,7 +13490,9 @@ button.wf-ver-badge-btn:hover {
    estrutura de tabela: cabeçalho com título h3 + meta à esquerda e tag de
    categoria à direita, seguido de linhas de regra em flex. */
 .wfp-list {
-  padding: 0 20px 24px;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 0 44px 80px;
   display: flex; flex-direction: column;
   gap: 16px;
 }
@@ -13885,3 +13840,369 @@ button.wf-ver-badge-btn:hover {
 }
 .wf-card-foot-spacer { flex: 1; }
 .wf-card-foot-chevron { flex: none; color: var(--sl-color-gray-9, #2a3f5e); }
+
+/* ═══ Tela de detalhe de política (PolicyDetailView) ═══════════════════════
+   Cabeçalho + objetivo do gerente + regras numeradas, cada uma expansível
+   em 3 colunas. Ver view-workflow-policies.jsx — PolicyDetailView. */
+.pd-scroll { padding: 20px 24px 32px; display: flex; flex-direction: column; gap: 20px; }
+
+.pd-breadcrumb {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 13px; color: var(--fg-3);
+  background: none; border: none; cursor: pointer; padding: 0;
+}
+.pd-breadcrumb:hover .pd-breadcrumb-current { color: var(--primary); }
+.pd-breadcrumb svg { flex-shrink: 0; color: var(--fg-4); }
+.pd-breadcrumb-current { color: var(--fg); font-weight: 500; }
+
+.pd-header-card {
+  display: flex; align-items: flex-start; gap: 14px;
+  padding: 18px 20px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+.pd-header-icon {
+  width: 40px; height: 40px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: var(--radius);
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+.pd-header-main { flex: 1; min-width: 0; }
+.pd-header-title-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.pd-header-name { font-size: 20px; font-weight: 700; color: var(--fg); margin: 0; }
+.pd-header-meta { font-size: 12.5px; color: var(--fg-3); margin: 6px 0 0; }
+
+.pd-card {
+  padding: 16px 20px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+.pd-card-headrow { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.pd-card-title {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 14px; font-weight: 600; color: var(--fg); margin: 0;
+}
+.pd-card-title svg { color: var(--fg-3); flex-shrink: 0; }
+.pd-edit-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12.5px; font-weight: 500; color: var(--primary);
+  background: none; border: none; cursor: pointer; padding: 4px 6px;
+  border-radius: var(--radius-sm);
+}
+.pd-edit-btn:hover { background: var(--bg-soft); }
+.pd-objective-text { margin: 12px 0 0; font-size: 13.5px; line-height: 1.55; color: var(--fg-2); font-style: italic; }
+.pd-objective-input {
+  width: 100%; margin-top: 12px; min-height: 80px;
+  font-size: 13.5px; line-height: 1.55; color: var(--fg-2); font-family: inherit;
+  padding: 10px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  resize: vertical;
+}
+
+.pd-rules-section { display: flex; flex-direction: column; gap: 12px; }
+.pd-rules-headrow { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.pd-rules-count { font-size: 12.5px; font-weight: 400; color: var(--fg-3); margin-left: 8px; }
+
+.pd-rule {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.pd-rule.is-off { opacity: .7; }
+.pd-rule-headrow {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 16px;
+}
+.pd-rule-num {
+  width: 22px; height: 22px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  background: var(--sl-color-green-9, #12a150);
+  color: #fff;
+  font-size: 12px; font-weight: 700;
+}
+.pd-rule.is-off .pd-rule-num { background: var(--fg-4); }
+.pd-rule-name {
+  flex: 1; min-width: 0; text-align: left;
+  font-size: 14px; font-weight: 600; color: var(--fg);
+  background: none; border: none; cursor: pointer; padding: 0;
+}
+.pd-rule-name-input {
+  flex: 1; min-width: 0;
+  font-size: 14px; font-weight: 600; color: var(--fg); font-family: inherit;
+  padding: 4px 8px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+}
+.pd-rule-edit-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12.5px; font-weight: 500; color: var(--fg-3);
+  background: none; border: 1px solid var(--border); cursor: pointer;
+  padding: 5px 10px; border-radius: var(--radius-sm); flex-shrink: 0;
+}
+.pd-rule-edit-btn:hover { background: var(--bg-soft); color: var(--fg); }
+.pd-rule-chevron {
+  flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px;
+  background: none; border: none; cursor: pointer; color: var(--fg-3);
+  border-radius: var(--radius-sm);
+}
+.pd-rule-chevron:hover { background: var(--bg-soft); color: var(--fg); }
+
+.pd-rule-cols {
+  display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px;
+  padding: 4px 16px 18px;
+  border-top: 1px solid var(--border);
+}
+.pd-col { display: flex; flex-direction: column; gap: 8px; padding-top: 14px; min-width: 0; }
+.pd-col-title {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 12px; font-weight: 600; color: var(--fg-3);
+  text-transform: uppercase; letter-spacing: .02em;
+  margin: 0 0 4px;
+}
+.pd-col-info { display: inline-flex; color: var(--fg-4); cursor: help; }
+.pd-col-empty { font-size: 12.5px; color: var(--fg-3); line-height: 1.5; margin: 0 0 4px; }
+
+.pd-cond-joiner {
+  align-self: flex-start;
+  font-size: 11px; font-weight: 700; color: var(--fg-3);
+  padding: 2px 8px; margin: -2px 0 0 6px;
+  background: var(--bg-soft); border-radius: var(--radius-sm);
+}
+
+.pd-field-group { display: flex; flex-direction: column; gap: 4px; }
+.pd-field-row { display: flex; align-items: center; gap: 6px; }
+.pd-field-input, .pd-field-select {
+  font-size: 12.5px; color: var(--fg);
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-soft);
+  min-width: 0;
+}
+.pd-field-input--field { flex: 1; }
+.pd-field-input--value { flex: 1; min-width: 0; }
+.pd-field-select { flex: 2; min-width: 0; }
+.pd-field-unit { font-size: 12px; color: var(--fg-3); flex-shrink: 0; }
+.pd-field-remove {
+  flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px;
+  background: none; border: none; cursor: pointer; color: var(--fg-4);
+  border-radius: 50%;
+}
+.pd-field-remove:hover { background: var(--sl-color-red-2, #ffedea); color: var(--sl-color-red-10, #d31a15); }
+
+.pd-task-row { display: flex; align-items: center; gap: 8px; }
+.pd-task-input {
+  flex: 1; min-width: 0;
+  font-size: 12.5px; color: var(--fg);
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-soft);
+}
+.pd-task-kind-select {
+  font-size: 12px; color: var(--fg-3);
+  padding: 5px 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  flex-shrink: 0; max-width: 110px;
+}
+
+.pd-add-link {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12.5px; font-weight: 500; color: var(--primary);
+  background: none; border: none; cursor: pointer; padding: 4px 0;
+  align-self: flex-start;
+}
+.pd-add-link:hover { text-decoration: underline; }
+
+.pd-info-box {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 14px 16px;
+  background: var(--primary-soft);
+  border-radius: var(--radius-lg);
+  color: var(--fg-2);
+}
+.pd-info-box > svg { flex-shrink: 0; color: var(--primary); margin-top: 1px; }
+.pd-info-text b { font-size: 13px; color: var(--fg); }
+.pd-info-text p { font-size: 12.5px; line-height: 1.5; margin: 4px 0 0; color: var(--fg-3); }
+
+.wfp-card-name--link {
+  background: none; border: none; cursor: pointer; padding: 0;
+  font: inherit; text-align: left;
+}
+.wfp-card-name--link:hover { color: var(--primary); text-decoration: underline; }
+
+/* ═══ Acordeão de política (WorkflowPoliciesCanvas) ═════════════════════
+   Substitui a navegação para uma tela separada: o card da política abre
+   e mostra objetivo + regras ali mesmo; cada regra reaproveita o mesmo
+   PolicyRuleRow (Quando/Tarefas/Escalar) usado antes na tela de detalhe. */
+.wfp-card-head--toggle {
+  width: 100%;
+  background: none; border: none; cursor: pointer;
+  font: inherit; text-align: left;
+}
+.wfp-card-head--toggle:hover { background: var(--bg-soft); }
+.wfp-card-head--toggle > svg:first-child { flex-shrink: 0; color: var(--fg-3); }
+.wfp-card-head--toggle .wfp-card-title { flex: 1; }
+.wfp-card:not(.is-open) .wfp-card-head { border-bottom: none; }
+.wfp-card-body { padding: 6px 20px 20px; display: flex; flex-direction: column; gap: 16px; }
+.pd-header-title-row--compact { gap: 10px; }
+
+/* ═══ Simulação Modo 1 (mode1-simulation-view.jsx) ══════════════════════ */
+.m1-phase-track {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.m1-phase-pill {
+  font-size: 11px; font-weight: 600; letter-spacing: .01em;
+  padding: 4px 10px; border-radius: 999px;
+  background: var(--bg-soft); color: var(--fg-4);
+}
+.m1-phase-pill.is-done { background: var(--sl-color-green-2, #e9fce3); color: var(--sl-color-green-11, #01540e); }
+.m1-phase-pill.is-current { background: var(--primary); color: #fff; }
+.m1-scroll { padding: 20px 24px; display: flex; flex-direction: column; gap: 4px; }
+.m1-end-note { text-align: center; font-size: 12.5px; color: var(--fg-3); padding: 20px 0 4px; }
+
+.m1-card {
+  margin: 6px 0 14px; padding: 14px 16px;
+  border: 1px solid var(--border); border-radius: var(--radius-lg);
+  background: var(--bg); max-width: 480px;
+}
+.m1-card-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.m1-card-head svg { color: var(--primary); flex-shrink: 0; }
+.m1-card-title { font-size: 13.5px; font-weight: 700; color: var(--fg); }
+.m1-card-objective { font-size: 12.5px; color: var(--fg-3); margin: 0 0 12px; line-height: 1.5; }
+.m1-card-rule { padding: 8px 0; border-top: 1px solid var(--border); font-size: 12.5px; line-height: 1.5; color: var(--fg-2); }
+.m1-card-rule b { display: block; margin-bottom: 4px; color: var(--fg); font-size: 12.5px; }
+.m1-card-rule-label { font-weight: 600; color: var(--fg-3); }
+.m1-card-escalation {
+  display: flex; align-items: flex-start; gap: 6px;
+  margin: 10px 0 0; padding-top: 10px; border-top: 1px solid var(--border);
+  font-size: 12px; color: var(--fg-3);
+}
+.m1-card-escalation svg { flex-shrink: 0; color: var(--sl-color-orange-9, #cc5e01); margin-top: 1px; }
+
+.m1-sim-grid { display: flex; flex-direction: column; gap: 6px; }
+.m1-sim-row { display: flex; justify-content: space-between; gap: 12px; font-size: 12.5px; }
+.m1-sim-label { color: var(--fg-3); }
+.m1-sim-value { font-weight: 600; color: var(--fg); font-variant-numeric: tabular-nums; }
+.m1-sim-sla {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border);
+  font-size: 12.5px; color: var(--fg-3);
+}
+.m1-sim-sla b { color: var(--sl-color-green-11, #01540e); font-size: 14px; }
+
+/* ═══ Detecção Modo 2 (mode2-anomaly-modal.jsx) ══════════════════════════
+   Fixa no rodapé, sobre qualquer tela — a detecção é global, não pertence
+   a uma rota específica. */
+.m2-modal {
+  position: fixed; right: 24px; bottom: 24px; z-index: 60;
+  width: 380px; max-width: calc(100vw - 48px);
+  background: var(--bg);
+  border: 1px solid var(--sl-color-orange-4, #fed392);
+  border-top: 3px solid var(--sl-color-orange-8, #e57001);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 12px 32px rgba(10, 21, 36, .18);
+  padding: 16px;
+  animation: m2-modal-in .25s ease-out;
+}
+@keyframes m2-modal-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.m2-modal-head { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.m2-modal-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 13px; font-weight: 700; color: var(--sl-color-orange-11, #963e01);
+}
+.m2-modal-badge svg { color: var(--sl-color-orange-9, #cc5e01); flex-shrink: 0; }
+.m2-modal-phase {
+  font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
+  color: var(--sl-color-orange-11, #963e01); background: var(--sl-color-orange-2, #ffedcd);
+  padding: 2px 8px; border-radius: 999px;
+}
+.m2-modal-source { font-size: 11.5px; color: var(--fg-3); margin: 0 0 10px; }
+.m2-modal-close {
+  margin-left: auto; flex-shrink: 0;
+  width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;
+  background: none; border: none; cursor: pointer; color: var(--fg-4); border-radius: 50%;
+}
+.m2-modal-close:hover { background: var(--bg-soft); color: var(--fg); }
+.m2-modal-text { font-size: 13px; line-height: 1.55; color: var(--fg-2); margin: 0 0 14px; white-space: pre-line; }
+.m2-modal-actions { display: flex; flex-direction: column; gap: 6px; }
+.m2-modal-action {
+  text-align: left; font-size: 12.5px; font-weight: 500; color: var(--primary);
+  background: var(--bg-soft); border: none; border-radius: var(--radius-sm);
+  padding: 8px 10px; cursor: pointer;
+}
+.m2-modal-action:hover { background: var(--primary-soft); }
+.m2-modal-progress { margin-top: 10px; font-size: 11px; color: var(--fg-4); text-align: right; }
+
+/* ═══ Selo "GPT" — mensagem cuja decisão veio de uma chamada real à LLM
+   (matchExistingPolicyReal, view-workflow-policies.jsx), não do
+   heurístico determinístico do protótipo. ═══════════════════════════ */
+.msg-llm-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 10.5px; font-weight: 700; letter-spacing: .02em;
+  color: var(--sl-color-green-11, #0a6847);
+  background: var(--sl-color-green-2, #e3faf0);
+  border: 1px solid var(--sl-color-green-4, #b8f0d6);
+  border-radius: 999px;
+  padding: 2px 8px;
+  margin-bottom: 6px;
+  cursor: help;
+}
+.msg-llm-badge svg { color: var(--sl-color-green-9, #12a150); flex-shrink: 0; }
+
+/* ═══ Excluir regra (PolicyRuleRow) ══════════════════════════════════════
+   Botão "..." abre um menu com uma única opção destrutiva; confirmação
+   de duas etapas fora do Dropdown (que fecha em qualquer clique interno,
+   então a confirmação não pode morar dentro dele). ═══════════════════ */
+.pd-rule-more-btn {
+  flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px;
+  background: none; border: none; cursor: pointer; color: var(--fg-3);
+  border-radius: var(--radius-sm);
+}
+.pd-rule-more-btn:hover { background: var(--bg-soft); color: var(--fg); }
+
+.dd-item--danger .dd-item-label,
+.dd-item--danger { color: var(--sl-color-red-10, #d31a15); }
+.dd-item--danger:hover { background: var(--sl-color-red-1, #fdf6f5); }
+
+.pd-rule-delete-confirm {
+  display: flex; align-items: center; gap: 10px;
+  margin: 0 16px 12px;
+  padding: 10px 14px;
+  background: var(--sl-color-red-1, #fdf6f5);
+  border: 1px solid var(--sl-color-red-4, #ffd0c7);
+  border-radius: var(--radius);
+  color: var(--sl-color-red-12, #940303);
+  font-size: 12.5px;
+}
+.pd-rule-delete-confirm > svg { flex-shrink: 0; color: var(--sl-color-red-9, #ec3727); }
+.pd-rule-delete-confirm span { flex: 1; }
+.pd-rule-delete-confirm-actions { display: flex; gap: 8px; flex-shrink: 0; }
+.pd-rule-delete-cancel {
+  font-size: 12.5px; font-weight: 500; color: var(--fg-2);
+  background: none; border: 1px solid var(--border-strong); cursor: pointer;
+  padding: 5px 12px; border-radius: var(--radius-sm);
+}
+.pd-rule-delete-cancel:hover { background: var(--bg-soft); }
+.pd-rule-delete-confirm-btn {
+  font-size: 12.5px; font-weight: 600; color: #fff;
+  background: var(--sl-color-red-10, #d31a15); border: none; cursor: pointer;
+  padding: 5px 12px; border-radius: var(--radius-sm);
+}
+.pd-rule-delete-confirm-btn:hover { background: var(--sl-color-red-11, #b40202); }

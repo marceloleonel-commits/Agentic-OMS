@@ -662,18 +662,6 @@ a { color: inherit; text-decoration: none; }
 }
 .status-dot.completed { background: var(--status-completed); }
 
-/* .id-chip — mantém identidade mono/compacta.
-   Handoff §3: gray-1 / gray-3 / gray-9. */
-.id-chip {
-  font-family: ui-monospace, "SF Mono", monospace;
-  font-size: 11.5px;
-  background: var(--sl-color-gray-1);
-  color: var(--sl-color-gray-9);
-  padding: 2px 7px;
-  border-radius: 5px;
-  border: 1px solid var(--sl-color-gray-3);
-}
-
 /* .tag — variante AI da tag única (handoff §3): purple-2 / purple-11. */
 .tag {
   display: inline-flex; align-items: center; gap: 4px;

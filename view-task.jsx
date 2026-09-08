@@ -968,11 +968,8 @@ function PackageWorkflowModal({ group, order, title, experienceName, initiativeL
   const errorCount = items.filter((it) => pkgItemStalled(it, group)).length;
   const taskCount = (packageItem && packageItem.steps || []).length;
 
-  /* O escopo manda no título do modal (§7) e na barra de contexto (§3): o
-     operador que troca de produto tem que ver de quem é o workflow que está
-     lendo, nos dois lugares. */
-  const headTitle = scopeItem ? scopeItem.name : title;
-  const headSuffix = scopeItem ? scopeItem.sku : experienceName;
+  /* O escopo manda na barra de contexto (§3): o operador que troca de produto
+     tem que ver de quem é o workflow que está lendo. O título do modal é fixo. */
   const scopeName = scopeItem ? scopeItem.name : "Pacote (total)";
   const scopeErrors = scopeItem ? (pkgItemStalled(scopeItem, group) ? 1 : 0) : errorCount;
   const counts = typeof workflowStepCounts === "function"
@@ -1010,10 +1007,7 @@ function PackageWorkflowModal({ group, order, title, experienceName, initiativeL
         aria-label={`Workflow do ${title}`}
       >
         <div className="stage-config-modal-head">
-          <h2 className="stage-config-modal-title">
-            {headTitle}
-            {headSuffix ? <span className="pkg-wf-modal-sub"> · {headSuffix}</span> : null}
-          </h2>
+          <h2 className="stage-config-modal-title">Workflow do Pacote</h2>
           <WorkflowViewToggle view={view} onChange={setView} />
           <button
             type="button"
@@ -1608,9 +1602,13 @@ function Field({ label, value }) {
 }
 
 /* ── Product Detail View ── */
-function ProductDetailView({ allProducts, productIdx, order, onNavigate, initiativeLabel, onOpenInitiative }) {
+function ProductDetailView({ allProducts, productIdx, order, onNavigate, initiativeLabel, onOpenInitiative, onItemName }) {
   const { item, group, groupIdx } = allProducts[productIdx];
   const [showNextSteps, setShowNextSteps] = React.useState(false);
+
+  /* O topbar do canvas nomeia a subview (handoff §1.2 passo 3) e o nome do
+     item só é conhecido aqui, depois de resolver o índice. */
+  React.useEffect(() => { onItemName?.(item.name); }, [item.name, onItemName]);
 
   const prev = productIdx > 0 ? productIdx - 1 : null;
   const next = productIdx < allProducts.length - 1 ? productIdx + 1 : null;
@@ -1646,19 +1644,16 @@ function ProductDetailView({ allProducts, productIdx, order, onNavigate, initiat
   return (
     <div className="od-view">
       <div className="od-header">
-        <div className="od-topnav">
-          <div />
-          <div className="od-pager">
-            <span className="od-pager-count">{productIdx + 1} de {allProducts.length}</span>
-            <button className="od-pager-btn" disabled={prev === null} onClick={() => prev !== null && onNavigate(prev)}>
-              <Icon name="chevron-left" size={14} />
-            </button>
-            <button className="od-pager-btn" disabled={next === null} onClick={() => next !== null && onNavigate(next)}>
-              <Icon name="chevron-right" size={14} />
-            </button>
-          </div>
-        </div>
         <h1 className="detail-title">{item.name}</h1>
+        <div className="od-pager">
+          <span className="od-pager-count">{productIdx + 1} de {allProducts.length}</span>
+          <button className="od-pager-btn" disabled={prev === null} onClick={() => prev !== null && onNavigate(prev)}>
+            <Icon name="chevron-left" size={14} />
+          </button>
+          <button className="od-pager-btn" disabled={next === null} onClick={() => next !== null && onNavigate(next)}>
+            <Icon name="chevron-right" size={14} />
+          </button>
+        </div>
       </div>
 
       {/* Metadata */}
@@ -1792,7 +1787,7 @@ function ProductDetailView({ allProducts, productIdx, order, onNavigate, initiat
   );
 }
 
-function OrderDetailView({ task, orderId, onBack, onOpenOrder, standalone = false, productView: externalProductView, onProductViewChange, initiativeLabel, onOpenInitiative }) {
+function OrderDetailView({ task, orderId, onBack, onOpenOrder, standalone = false, productView: externalProductView, onProductViewChange, onProductTitleChange, initiativeLabel, onOpenInitiative }) {
   const [internalProductView, setInternalProductView] = React.useState(null);
   // When used from app.jsx (standalone), productView is lifted to the parent via props
   const productView    = externalProductView !== undefined ? externalProductView : internalProductView;
@@ -1867,6 +1862,7 @@ function OrderDetailView({ task, orderId, onBack, onOpenOrder, standalone = fals
           }}
           initiativeLabel={initiativeLabel}
           onOpenInitiative={onOpenInitiative}
+          onItemName={onProductTitleChange}
         />
       </div>
     );
@@ -1875,9 +1871,8 @@ function OrderDetailView({ task, orderId, onBack, onOpenOrder, standalone = fals
   return (
     <div className="od-view" ref={rootRef}>
       <div className="od-header">
+        <h1 className="detail-title">Pedido {orderId}</h1>
         {!standalone && (
-        <div className="od-topnav">
-          <div /> {/* spacer; back lives in canvas header */}
           <div className="od-pager">
             <span className="od-pager-count">{idx + 1} de {impacted.length}</span>
             <button
@@ -1897,9 +1892,7 @@ function OrderDetailView({ task, orderId, onBack, onOpenOrder, standalone = fals
               <Icon name="chevron-right" size={14} />
             </button>
           </div>
-        </div>
         )}
-        <h1 className="detail-title">Pedido {orderId}</h1>
       </div>
 
       {/* Um alerta por problema, no topo e acima dos pacotes: o operador lê o
@@ -2168,6 +2161,18 @@ function DocAccordionSection({ title, defaultOpen = true, count, countAsTag = fa
                 : <span data-sl-doc-section-count="">{count}</span>
             )}
           </span>
+        </button>
+        {action}
+        {/* O chevron é o último item da linha, depois da ação da seção. Como
+            não pode viver dentro do gatilho do título sem ficar antes do
+            botão de ação, ele é um gatilho próprio com o mesmo toggle. */}
+        <button
+          type="button"
+          data-sl-doc-accordion-toggle=""
+          onClick={toggle}
+          aria-expanded={open}
+          aria-label={open ? "Recolher seção" : "Expandir seção"}
+        >
           <svg
             data-sl-doc-accordion-chevron=""
             viewBox="0 0 16 16"
@@ -2181,7 +2186,6 @@ function DocAccordionSection({ title, defaultOpen = true, count, countAsTag = fa
             <path d="M4 6l4 4 4-4" />
           </svg>
         </button>
-        {action}
       </div>
       {open && <div data-sl-doc-accordion-panel="">{loading ? (skeleton || null) : children}</div>}
     </div>
@@ -2618,15 +2622,23 @@ function ImpactedSubview({ rows, isCanvasA, onOpenOrder }) {
   return (
     <div data-sl-task-document-content="">
       <h1 data-sl-task-document-title="">Pedidos {isCanvasA ? "afetados" : "impactados"}</h1>
-      <div className="impacted-search">
-        <Icon name="search" size={14} />
+      {/* Mesmo search pill do module browser usado na toolbar de Políticas
+          (`.wfp-search`), na densidade compacta de 36px. */}
+      <div data-sl-module-browser-search="" className="impacted-search search-pill-compact">
+        <span data-sl-module-browser-search-pre-icon=""><Icon name="search" size={20} /></span>
         <input
+          data-sl-module-browser-search-input=""
           type="search"
           placeholder="Buscar por ID, cliente ou seller"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={(e) => e.stopPropagation()}
         />
+        {query && (
+          <button data-sl-module-browser-search-clear="" title="Limpar busca" onClick={() => setQuery("")}>
+            <Icon name="x" size={16} />
+          </button>
+        )}
       </div>
       {filtered.length ? (
         <ImpactedTable rows={filtered} onOpenOrder={onOpenOrder} sortable />
@@ -2850,28 +2862,36 @@ function CanvasAVerifyDots() {
    - nenhuma resposta / parcial → mostra a pergunta atual em aberto
    - `closed && !confirmed`     → mostra "As N perguntas foram respondidas"
    - `confirmed`                → o alerta é desmontado antes de chegar aqui */
-function CanvasAVerifyAlert({ ctl, onOpenChat, orders = [] }) {
+function CanvasAVerifyAlert({ ctl, onOpenChat, chatOpen }) {
   const { path, answers, question, closed, confirmed } = ctl;
   if (confirmed) return null;
-  const total = (ctl.verification && Object.keys(ctl.verification.questions || {}).length) || path.length;
+  /* O total é o do caminho (`ctl.total` === path.length), o mesmo que o card
+     de Pergunta no chat pagina em "{index+1} de {total}". Contar todas as
+     chaves de `verification.questions` inflava o número com perguntas de
+     branches que o operador nunca vai ver. */
+  const total = path.length;
   const answered = path.filter((qid) => !!answers[qid]).length;
 
   const inReview = closed && !confirmed;
   const currentTitle = (question || {}).title || "";
-  const lastAnsweredId = [...path].reverse().find((qid) => !!answers[qid]);
-  const recap = !inReview && answered > 0 && lastAnsweredId
-    ? { qTitle: (ctl.verification.questions[lastAnsweredId] || {}).title, aLabel: canvasAAnswerLabel(ctl.verification, lastAnsweredId, answers[lastAnsweredId], orders) }
-    : null;
 
   const headerLabel = inReview ? "Revisão pendente" : "Pergunta pendente";
   const chipLabel = inReview ? "Aguardando envio" : "Aguardando você";
-  const title = inReview ? `As ${total} perguntas foram respondidas` : currentTitle;
-  const cta = inReview ? "Revisar no chat" : "Responder no chat";
+  const title = inReview
+    ? (total === 1 ? "A pergunta foi respondida" : `As ${total} perguntas foram respondidas`)
+    : currentTitle;
+  /* Com o chat já aberto ao lado não há para onde levar o operador: o botão
+     vira um indicador desabilitado em vez de um CTA que não faz nada. */
+  const cta = chatOpen
+    ? (inReview ? "Revisão aberta no chat" : "Pergunta aberta no chat")
+    : (inReview ? "Revisar no chat" : "Responder no chat");
+  /* Fora da revisão a árvore ainda pode crescer, então o hint fala do que já
+     está em cena no chat em vez de prometer um total fechado. */
   const hint = inReview
     ? `${answered} de ${total} respondidas`
     : answered === 0
-      ? `Nenhuma das ${total} perguntas respondida`
-      : `${answered} de ${total} respondidas · ${total - answered === 1 ? "falta 1" : `faltam ${total - answered}`}`;
+      ? "Nenhuma pergunta respondida"
+      : `${answered} de ${total} respondidas · falta 1`;
 
   return (
     <div className="canvas-a-verify-alert">
@@ -2888,13 +2908,6 @@ function CanvasAVerifyAlert({ ctl, onOpenChat, orders = [] }) {
           </span>
         </div>
       </div>
-      {recap && (
-        <div className="canvas-a-verify-alert-recap">
-          <Icon name="check-circle" size={16} />
-          <span className="canvas-a-verify-alert-recap-q">{recap.qTitle}</span>
-          <span className="canvas-a-verify-alert-recap-a">{recap.aLabel}</span>
-        </div>
-      )}
       <div className="canvas-a-verify-alert-body">
         <p className="canvas-a-verify-alert-title">{title}</p>
         {!inReview && (
@@ -2905,7 +2918,9 @@ function CanvasAVerifyAlert({ ctl, onOpenChat, orders = [] }) {
         <button
           type="button"
           className="canvas-a-run-btn canvas-a-run-btn--primary"
-          onClick={onOpenChat}
+          disabled={chatOpen || !onOpenChat}
+          title={chatOpen ? "O chat já está aberto ao lado" : undefined}
+          onClick={onOpenChat || undefined}
         >
           <Icon name="chat-bubble-outline" size={18} />
           {cta}
@@ -3502,7 +3517,6 @@ function CanvasAVerificationCard({ ctl, orders }) {
           Pergunta
         </span>
         <div className="canvas-a-verify-pagination">
-          <CanvasAVerifyMeter path={ctl.path} answers={ctl.answers} index={index} />
           <span className="canvas-a-verify-count">{index + 1} de {total}</span>
           <div className="canvas-a-verify-nav">
             <button
@@ -3626,7 +3640,7 @@ function CanvasAVerificationCard({ ctl, orders }) {
 /* `verification` vem de useCanvasAVerification — o card em si é renderizado no
    chat (acima do composer); aqui só entram os efeitos no documento e o alerta
    que aponta para a pergunta pendente no chat. */
-function CanvasPatternA({ task, onOpenOrder, onOpenList, onOpenTask, verification, onOpenChat, activities }) {
+function CanvasPatternA({ task, onOpenOrder, onOpenList, onOpenTask, verification, onOpenChat, chatOpen, activities }) {
   const d = task.detail;
   const orders = d.affectedOrders || { total: 0, items: [] };
   const ordersTotal = orders.total || orders.items.length;
@@ -3703,7 +3717,7 @@ function CanvasPatternA({ task, onOpenOrder, onOpenList, onOpenTask, verificatio
             <CanvasAVerifyAlert
               ctl={verification}
               onOpenChat={onOpenChat}
-              orders={orders.items}
+              chatOpen={chatOpen}
             />
           )}
         </DocAccordionSection>
@@ -3926,56 +3940,80 @@ const TICKET_OUTCOME_LABEL = {
   escalated: "Escalada",
 };
 
-/* Mesmos três ícones do segmented: o bloco decidido fecha o gesto que começou
-   na aba escolhida. */
-const TICKET_OUTCOME_GLYPH = {
-  accepted: "check-circle",
-  denied: "x-circle",
-  escalated: "arrow-up",
-};
-
 /* Recomendação do agente → modo de abertura do painel. "Avaliar" não mapeia
    em nenhuma ação, então cai no default (Aceitar). */
 const TICKET_REC_MODE = { Aceitar: "accept", Negar: "deny", Escalar: "escalate" };
 const ticketRecMode = (t) => TICKET_REC_MODE[t.recommendation] || null;
 const ticketOpenMode = (t) => ticketRecMode(t) || "accept";
 
+/* Ícone dentro do disco da fila, por desfecho. O set proprietário não tem os
+   filled do Material (`schedule`, `cancel`, `arrow_circle_up`); o equivalente
+   em outline dentro do disco no tom dá a mesma leitura sem tocar `icons.jsx`. */
+const TICKET_QUEUE_GLYPH = {
+  pending: "clock",
+  accepted: "check",
+  denied: "x",
+  escalated: "arrow-up",
+};
+
+/* Rótulo do primário do rodapé — muda com a ação ativa. */
+const TICKET_CONFIRM_LABEL = {
+  accept: "Aceitar devolução",
+  deny: "Negar devolução",
+  escalate: "Confirmar escalonamento",
+};
+
+/* Motivos da negativa. Cada um traz o texto-base da mensagem ao cliente:
+   trocar o motivo reescreve a mensagem, e a edição manual do SAC vale até a
+   próxima troca. */
+const TICKET_DENY_REASONS = [
+  {
+    id: "politica",
+    label: "Fora da política de devolução",
+    message: "Olá! Analisamos sua solicitação e, pela política da loja, não foi possível aprovar a devolução destes itens. Se precisar, estamos à disposição.",
+  },
+  {
+    id: "prazo",
+    label: "Fora do prazo",
+    message: "Olá! Sua solicitação foi aberta depois do prazo de devolução previsto na política da loja, por isso não foi possível aprová-la. Se precisar, estamos à disposição.",
+  },
+  {
+    id: "evidencia",
+    label: "Sem evidência suficiente",
+    message: "Olá! Analisamos sua solicitação, mas as informações enviadas não foram suficientes para confirmar o problema relatado, por isso não foi possível aprovar a devolução. Se tiver novas fotos ou detalhes, responda este e-mail.",
+  },
+  {
+    id: "uso",
+    label: "Produto com sinais de uso",
+    message: "Olá! Analisamos sua solicitação e os itens apresentam sinais de uso, o que impede a devolução pela política da loja. Se precisar, estamos à disposição.",
+  },
+];
+const ticketDenyReason = (id) => TICKET_DENY_REASONS.find((r) => r.id === id) || TICKET_DENY_REASONS[0];
+
 function ticketDecisionTime(date) {
   const d = date || new Date();
-  return `${String(d.getHours()).padStart(2, "0")}h${String(d.getMinutes()).padStart(2, "0")}`;
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 }
 
-/* Nota exibida no card decidido — o texto muda por desfecho: mensagem enviada
-   (aceite/negativa) ou observação para o especialista (escalonamento). */
-function ticketDecisionNote(decision) {
-  if (decision.kind === "escalated") {
-    return {
-      label: "Observação para o especialista",
-      body: decision.note || "Sem observação do SAC — o especialista assume o caso a partir do histórico.",
-    };
-  }
-  return { label: "Mensagem enviada ao cliente", body: decision.message };
-}
-
-/* Título + subtítulo do bloco decidido. A assinatura entra no subtítulo
-   ("Aceita por Adriana Guimarães às 21h29 · …"). */
-function ticketDecisionFeedback(ticket, decision, decidedBy) {
-  const signature = `${TICKET_OUTCOME_LABEL[decision.kind]} por ${decidedBy} às ${decision.at}`;
+/* Bloco decidido: título do desfecho, registro e — quando houver — o texto que
+   o SAC escreveu. Sem tom, sem glifo: o desfecho já está no cabeçalho, na fila
+   e no contador do modal. */
+function ticketDecisionFeedback(decision, decidedBy) {
+  const registry = `Registrado às ${decision.at} por ${decidedBy}. O ticket sai da sua fila; você pode desfazer até o próximo evento.`;
   if (decision.kind === "accepted") {
-    return {
-      title: `Aceite confirmado · ${decision.resolution}`,
-      sub: `${signature} · resolução dentro da política, registrada no Document Audit`,
-    };
+    return { title: "Devolução aceita — etiqueta reversa enviada", registry, note: null };
   }
   if (decision.kind === "denied") {
     return {
-      title: "Negativa confirmada",
-      sub: `${signature} · cliente tem 7 dias para contestação`,
+      title: "Devolução negada — cliente notificado",
+      registry,
+      note: decision.message ? `Mensagem: ${decision.message}` : null,
     };
   }
   return {
-    title: `Escalado para ${decision.to || TICKET_ESCALATION_LEAD}`,
-    sub: `${signature} · ${ticket.id} aguarda o retorno do especialista`,
+    title: `Escalado para o ${decision.to || TICKET_ESCALATION_LEAD}`,
+    registry,
+    note: decision.note ? `Nota: ${decision.note}` : null,
   };
 }
 
@@ -3991,6 +4029,44 @@ function ticketItemsSummary(rows) {
   return groups.map((g) => `${g.n} por ${g.reason.toLowerCase()}`).join(" · ");
 }
 
+/* ── Resumo em prosa ──
+   O ticket chega como um parágrafo escrito pelo agente: itens, motivo,
+   evidência, histórico e, por último, a recomendação. Os blocos separados
+   (item, solicitação, faixa de recomendação, histórico) saíram — o SAC lê uma
+   frase e abre o detalhe pelos trechos sublinhados do próprio texto.
+
+   Cada parte é `{ text }` (corrido), `{ trigger }` (abre o disclosure) ou
+   `{ strong }` (a recomendação, em 600). Montado a partir dos campos que o
+   ticket já tem — nenhum campo novo na seed. */
+function ticketSummaryProse(ticket, rows) {
+  const parts = [];
+  const reasons = rows.length > 1
+    ? ticketItemsSummary(rows).split(" · ").join(" e ")
+    : `motivo declarado: ${(rows[0].reason || "").toLowerCase()}`;
+  const attachments = rows.reduce((n, r) => n + ((r.attachments || []).length), 0);
+
+  parts.push({ text: "O cliente quer devolver " });
+  parts.push({ trigger: rows.length > 1 ? `${rows.length} itens` : "1 item" });
+  parts.push({ text: ` do pedido — ${reasons}. ${ticket.why} ` });
+  if (attachments > 0) {
+    parts.push({ text: "As " });
+    parts.push({ trigger: "fotos anexadas" });
+    parts.push({ text: " estão no ticket. " });
+  }
+  parts.push({ text: `Histórico: ${ticket.history}. ` });
+  parts.push({ strong: `Recomendação: ${ticketRecSentence(ticket)}.` });
+  return parts;
+}
+
+/* Fecho do parágrafo. "Avaliar" não mapeia numa ação — o agente não recomenda,
+   pede avaliação, e a frase precisa dizer isso em vez de forçar um verbo. */
+function ticketRecSentence(ticket) {
+  if (ticket.recommendation === "Escalar") return `escalar para o ${TICKET_ESCALATION_LEAD}`;
+  if (ticket.recommendation === "Aceitar") return "aceitar a devolução como exceção";
+  if (ticket.recommendation === "Negar") return "negar a devolução";
+  return "avaliar caso a caso — não há regra automática aplicável";
+}
+
 /* Janela de trabalho da fila para o resumo ("às 21h29" ou "entre 09h12 e 21h29"). */
 function ticketSummaryWindow(decisions) {
   const times = Object.values(decisions).map((d) => d.at).sort();
@@ -4000,152 +4076,178 @@ function ticketSummaryWindow(decisions) {
     : `entre ${times[0]} e ${times[times.length - 1]}`;
 }
 
-/* ── Painel de decisão ──
-   Sempre aberto na aba correspondente à recomendação do agente (ou "Aceitar"
-   como default se a recomendação não mapeia). Aceitar e Negar são leitura;
-   Escalar é o único editável, com destino fixo em Ecommerce Supervisor e uma
-   observação opcional ao supervisor. Trocar de aba não fecha o painel e
-   preserva o que já foi digitado no Escalar. */
-function CanvasDTicketDecision({ ticket, mode, onModeChange, escalateNote, onEscalateNote, messageOpen, onToggleMessage }) {
-  /* O ponto marca a aba em que o modal abriu, não só as recomendações que
-     mapeiam numa ação: com "Avaliar" o painel abre em Aceitar, e sem o ponto
-     ali a aba aberta ficava sem explicação. */
-  const recMode = ticketOpenMode(ticket);
-  const tabs = [
-    { key: "accept",   label: "Aceitar", icon: "check-circle" },
-    { key: "deny",     label: "Negar",   icon: "x-circle" },
-    { key: "escalate", label: "Escalar", icon: "arrow-up" },
-  ];
+/* ── Dropdown de motivo da negativa ──
+   Botão + menu, como o de `1f`: o `<select>` nativo não aceita o rótulo
+   "Motivo" dentro do gatilho nem o check no item escolhido. */
+function CanvasDTicketReasonSelect({ value, onChange }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, [open]);
 
   return (
-    <>
-      <div className="tck-panel-header">
-        <div className="tck-tabs" role="tablist">
-          {tabs.map((tab) => (
+    <div className="tck-reason" ref={ref}>
+      <button
+        type="button"
+        className="tck-reason-trigger"
+        aria-expanded={open}
+        onClick={() => setOpen((o) => !o)}
+      >
+        <span className="tck-reason-label">Motivo</span>
+        {ticketDenyReason(value).label}
+        <Icon name={open ? "expand-less" : "expand-more"} size={16} />
+      </button>
+      {open && (
+        <div className="tck-reason-menu" role="listbox">
+          {TICKET_DENY_REASONS.map((r) => (
             <button
-              key={tab.key}
+              key={r.id}
               type="button"
-              role="tab"
-              className="tck-tab"
-              data-mode={tab.key}
-              aria-pressed={mode === tab.key}
-              onClick={() => onModeChange(tab.key)}
+              role="option"
+              className="tck-reason-option"
+              aria-selected={r.id === value}
+              onClick={() => { onChange(r.id); setOpen(false); }}
             >
-              <Icon name={tab.icon} size={18} />
-              {tab.label}
-              {recMode === tab.key && <span className="tck-tab-dot" aria-hidden />}
+              {r.label}
+              {r.id === value && <Icon name="check" size={16} />}
             </button>
           ))}
         </div>
-      </div>
-
-      <div className="tck-panel">
-        {mode === "accept" && (
-          <>
-            {/* Card 1: resolução prevista na política. */}
-            <div className="tck-panel-card" data-tone="accept">
-              <span className="tck-panel-card-label" data-tone="accept">
-                <Icon name="verified" size={16} />
-                Resolução dentro da política
-              </span>
-              <span className="tck-panel-card-title">{ticket.policyResolution}</span>
-              <span className="tck-panel-card-body">{ticket.policyResolutionDetail}</span>
-            </div>
-            {/* Card 2: rascunho da mensagem ao cliente, colapsável. */}
-            <div className="tck-panel-card">
-              <button
-                type="button"
-                className="tck-message-toggle"
-                aria-expanded={messageOpen}
-                onClick={onToggleMessage}
-              >
-                <Icon name="sparkle" size={16} className="tck-message-toggle-star" />
-                Mensagem ao cliente · rascunho do agente
-                <span className="tck-message-toggle-chevron"><Icon name="chevron-down" size={16} /></span>
-              </button>
-              {messageOpen && <p className="tck-message-body">{ticket.acceptMessage}</p>}
-            </div>
-            <span className="tck-note">
-              <Icon name="info" size={16} />
-              Troca, vale-compra ou estorno parcial estão fora da autonomia do SAC — para isso, escale para o Ecommerce Supervisor.
-            </span>
-          </>
-        )}
-
-        {mode === "deny" && (
-          <>
-            {/* Card 1: regra aplicada, verbatim do denyReason do ticket. */}
-            <div className="tck-panel-card" data-tone="deny">
-              <span className="tck-panel-card-label" data-tone="deny">
-                <Icon name="gavel" size={16} />
-                Regra aplicada
-              </span>
-              <span className="tck-panel-card-body tck-panel-card-body--strong">{ticket.denyReason}</span>
-            </div>
-            {/* Card 2: rascunho da mensagem ao cliente, colapsável. */}
-            <div className="tck-panel-card">
-              <button
-                type="button"
-                className="tck-message-toggle"
-                aria-expanded={messageOpen}
-                onClick={onToggleMessage}
-              >
-                <Icon name="sparkle" size={16} className="tck-message-toggle-star" />
-                Mensagem ao cliente · rascunho do agente
-                <span className="tck-message-toggle-chevron"><Icon name="chevron-down" size={16} /></span>
-              </button>
-              {messageOpen && <p className="tck-message-body">{ticket.denyMessage}</p>}
-            </div>
-            <span className="tck-note">
-              <Icon name="info" size={16} />
-              Negar com outra justificativa, ou abrir exceção contra a regra, está fora da autonomia do SAC — para isso, escale para o Ecommerce Supervisor.
-            </span>
-          </>
-        )}
-
-        {mode === "escalate" && (
-          <>
-            {/* Destino fixo — o SAC não escolhe para onde escalar. */}
-            <div className="tck-panel-card" data-tone="escalate">
-              <Icon name="supervisor-account" size={20} />
-              <div className="tck-escalate-to">
-                <span className="tck-escalate-to-title">{TICKET_ESCALATION_LEAD}</span>
-                <span className="tck-escalate-to-sub">Assume o ticket como Lead — o SAC sai da fila</span>
-              </div>
-            </div>
-            <div className="tck-escalate-field">
-              <label htmlFor={`tck-note-${ticket.id}`}>O que o supervisor precisa decidir</label>
-              <textarea
-                id={`tck-note-${ticket.id}`}
-                className="tck-escalate-note"
-                rows={3}
-                placeholder="Opcional — ex.: cliente pede troca por outro tamanho, fora da resolução prevista na política."
-                value={escalateNote}
-                onChange={(e) => onEscalateNote(e.target.value)}
-                onKeyDown={(e) => e.stopPropagation()}
-              />
-            </div>
-            <span className="tck-note">
-              <Icon name="info" size={16} />
-              A recomendação do agente e o histórico do ticket seguem anexados.
-            </span>
-          </>
-        )}
-      </div>
-    </>
+      )}
+    </div>
   );
 }
 
-/* Cabeçalho do ticket: id e o estado da avaliação, nada mais. O pedido e o SLA
-   são metadados do item e vivem à direita do bloco seguinte — no cabeçalho
-   competiam com a identificação do ticket. */
-function CanvasDTicketHeader({ ticket, decision }) {
+/* ── Decisão ──
+   Segmentado na ordem fixa Aceitar · Negar · Escalar, já na recomendação do
+   agente, e um complemento só — o da ação ativa. O painel de leitura por aba
+   (resolução da política, regra aplicada, rascunho colapsável) saiu: o
+   parágrafo do §2 já conta o caso, e o que sobra aqui é o que o SAC preenche.
+   Trocar de ação preserva o que foi digitado nas outras. */
+function CanvasDTicketDecision({
+  ticket,
+  rows,
+  mode,
+  onModeChange,
+  escalateNote,
+  onEscalateNote,
+  acceptNote,
+  onAcceptNote,
+  denyReason,
+  onDenyReason,
+  denyMessage,
+  onDenyMessage,
+}) {
+  /* O bullet marca a ação em que o modal abriu, não só as recomendações que
+     mapeiam numa ação: com "Avaliar" o segmentado abre em Aceitar, e sem o
+     ponto ali a opção selecionada ficava sem explicação. */
+  const recMode = ticketOpenMode(ticket);
+  const tabs = [
+    { key: "accept",   label: "Aceitar" },
+    { key: "deny",     label: "Negar"   },
+    { key: "escalate", label: "Escalar" },
+  ];
+  const itemsLabel = rows.length > 1 ? `os ${rows.length} itens` : "o item";
+
+  return (
+    <div className="tck-decision">
+      <div className="tck-tabs" role="tablist">
+        {tabs.map((tab) => (
+          <button
+            key={tab.key}
+            type="button"
+            role="tab"
+            className="tck-tab"
+            data-mode={tab.key}
+            aria-pressed={mode === tab.key}
+            onClick={() => onModeChange(tab.key)}
+          >
+            {tab.label}
+            {recMode === tab.key && <span className="tck-tab-dot" title="Recomendação do agente" aria-hidden />}
+          </button>
+        ))}
+      </div>
+
+      {mode === "accept" && (
+        <>
+          <p className="tck-inline-note">
+            Etiqueta reversa para {itemsLabel} será enviada ao cliente por e-mail. Reembolso liberado após o recebimento.
+          </p>
+          {/* Justificativa só quando aceitar não é a recomendação: aceitar o que
+              o agente já recomendou não precisa de defesa escrita. */}
+          {recMode !== "accept" && (
+            <textarea
+              className="tck-textarea"
+              placeholder={`Por que aceitar em vez de ${recMode === "deny" ? "negar" : "escalar"}? (registrado no ticket)`}
+              value={acceptNote}
+              onChange={(e) => onAcceptNote(e.target.value)}
+              onKeyDown={(e) => e.stopPropagation()}
+            />
+          )}
+        </>
+      )}
+
+      {mode === "deny" && (
+        <>
+          <CanvasDTicketReasonSelect value={denyReason} onChange={onDenyReason} />
+          <textarea
+            className="tck-textarea"
+            data-size="lg"
+            value={denyMessage}
+            onChange={(e) => onDenyMessage(e.target.value)}
+            onKeyDown={(e) => e.stopPropagation()}
+          />
+          <span className="tck-note">
+            Mensagem enviada ao cliente por e-mail.
+            {recMode !== "deny" && " Você está decidindo contra a recomendação — a justificativa fica registrada no ticket."}
+          </span>
+        </>
+      )}
+
+      {mode === "escalate" && (
+        <>
+          <textarea
+            className="tck-textarea"
+            placeholder={`Nota para o ${TICKET_ESCALATION_LEAD} (opcional)`}
+            value={escalateNote}
+            onChange={(e) => onEscalateNote(e.target.value)}
+            onKeyDown={(e) => e.stopPropagation()}
+          />
+          <span className="tck-note">
+            Abre uma tarefa para o {TICKET_ESCALATION_LEAD}. Nada é enviado ao cliente até a decisão final.
+          </span>
+        </>
+      )}
+    </div>
+  );
+}
+
+/* Cabeçalho do ticket: identificação à esquerda (id + pedido vinculado) e o
+   estado da avaliação em texto à direita. A tag de status saiu do detalhe — cor
+   de status só na fila — e com ela o SLA e o pedido subiram para cá, que era
+   onde o SAC procurava. */
+function CanvasDTicketHeader({ ticket, decision, onOpenOrder }) {
+  const orderOpenable = !!onOpenOrder && hasOrderRecord(ticket.order);
+  const status = decision
+    ? `${TICKET_OUTCOME_LABEL[decision.kind]} · ${decision.at}`
+    : ticket.overdue
+      ? `SLA vencido há ${ticket.sla}`
+      : `Aguardando avaliação · SLA ${ticket.sla}`;
   return (
     <div className="tck-head">
       <span className="tck-id">{ticket.id}</span>
-      <span className="tck-status-pill" data-outcome={decision ? decision.kind : "pending"}>
-        {decision ? TICKET_OUTCOME_LABEL[decision.kind] : "Aguardando avaliação"}
-      </span>
+      {orderOpenable ? (
+        <button type="button" className="tck-order-link" onClick={() => onOpenOrder(ticket.order)}>
+          Pedido #{ticket.order}
+        </button>
+      ) : (
+        <span className="tck-order-link" data-static="true">Pedido #{ticket.order}</span>
+      )}
+      <span className="tck-head-status">{status}</span>
     </div>
   );
 }
@@ -4171,120 +4273,43 @@ function CanvasDTicketSendError() {
   );
 }
 
-/* Pares SLA e Pedido, à direita do item. Depois de decidido, a célula de SLA
-   vira "Decisão" com o horário: o prazo deixa de ser a informação em jogo. */
-function CanvasDTicketMeta({ ticket, decision, onOpenOrder }) {
-  const orderOpenable = !!onOpenOrder && hasOrderRecord(ticket.order);
+/* ── Detalhe do resumo ──
+   Fechado por padrão, aberto por qualquer um dos trechos sublinhados do
+   parágrafo. Uma linha por item — sem contêiner com borda, sem cabeçalho
+   colapsável próprio: o colapso agora é do painel inteiro, e o ticket de um
+   item usa a mesma linha uma vez. Abaixo dos itens, a fala do cliente. */
+function CanvasDTicketDetail({ ticket, rows }) {
   return (
-    <div className="tck-metrics">
-      <div className="tck-metric">
-        <span className="tck-metric-label">{decision ? "Decisão" : "SLA"}</span>
-        <span className={`tck-metric-value${!decision && ticket.overdue ? " tck-metric-value--overdue" : ""}`}>
-          {decision ? decision.at : (ticket.overdue ? `Vencido há ${ticket.sla}` : `Restante ${ticket.sla}`)}
-        </span>
-      </div>
-      <div className="tck-metric">
-        <span className="tck-metric-label">Pedido</span>
-        {orderOpenable ? (
-          <button type="button" className="tck-order-link" onClick={() => onOpenOrder(ticket.order)}>
-            #{ticket.order}
-            <Icon name="chevron-right" size={16} />
-          </button>
-        ) : (
-          <span className="tck-order-link" data-static="true">#{ticket.order}</span>
-        )}
-      </div>
-    </div>
-  );
-}
-
-/* Card único de item (ticket com 1 SKU só) — usado quando `ticket.items` não
-   está preenchido. */
-function CanvasDTicketSingleItem({ ticket }) {
-  const attachments = ticket.attachments || [];
-  const photo = productPhoto(ticket);
-  return (
-    <div className="tck-product">
-      <span className="tck-thumb">
-        {photo
-          ? <img src={photo} alt="" draggable={false} />
-          : <Icon name="image" size={20} />}
-      </span>
-      <div className="tck-product-info">
-        <span className="tck-product-name">{ticket.item}</span>
-        <span className="tck-product-sku">SKU {ticket.sku} · Motivo declarado: {ticket.shopperReason}</span>
-      </div>
-      {attachments.length > 0 && (
-        <button type="button" className="tck-photos" title={`Ver fotos anexadas · ${attachments.join(" · ")}`}>
-          <Icon name="photo-library" size={16} />
-          Ver fotos ({attachments.length})
-        </button>
-      )}
-    </div>
-  );
-}
-
-/* Bloco multi-item: contido, colapsado por padrão. Fechado, empilha até três
-   miniaturas e mostra contagem + resumo por motivo. Aberto, o cabeçalho fica
-   fixo no topo do contêiner e cada linha aparece dividida por hairline. */
-function CanvasDTicketMultiItem({ rows, open, onToggle }) {
-  const stack = rows.slice(0, 3);
-  return (
-    <div className="tck-items">
-      <button
-        type="button"
-        className="tck-items-header"
-        data-open={open ? "true" : undefined}
-        aria-expanded={open}
-        onClick={onToggle}
-      >
-        {!open && (
-          <span className="tck-items-stack">
-            {stack.map((r, i) => (
-              <span
-                key={i}
-                className="tck-items-stack-thumb"
-                style={r.photo ? { backgroundImage: `url(${r.photo})` } : undefined}
-              >
-                {!r.photo && <Icon name="image" size={16} />}
-              </span>
-            ))}
-          </span>
-        )}
-        <span className="tck-items-title">
-          <span className="tck-items-label">{rows.length} itens na devolução</span>
-          <span className="tck-items-summary">{ticketItemsSummary(rows)}</span>
-        </span>
-        <span className="tck-items-chevron" data-open={open ? "true" : undefined}>
-          <Icon name="chevron-down" size={18} />
-        </span>
-      </button>
-      {open && rows.map((r, i) => (
-        <div key={i} className="tck-items-row">
-          <span className="tck-thumb">
-            {r.photo
-              ? <img src={r.photo} alt="" draggable={false} />
-              : <Icon name="image" size={20} />}
-          </span>
-          <div className="tck-product-info">
-            <span className="tck-product-name">{r.item}</span>
-            <span className="tck-product-sku">SKU {r.sku} · Motivo declarado: {r.reason}</span>
+    <div className="tck-detail">
+      {rows.map((r, i) => {
+        const attachments = r.attachments || [];
+        return (
+          <div key={i} className="tck-detail-item">
+            <span className="tck-thumb">
+              {r.photo
+                ? <img src={r.photo} alt="" draggable={false} />
+                : <Icon name="image" size={20} />}
+            </span>
+            <div className="tck-product-info">
+              <span className="tck-product-name">{r.item}</span>
+              <span className="tck-product-sku">SKU {r.sku} · {r.reason}</span>
+            </div>
+            {attachments.length > 0 && (
+              <button type="button" className="tck-photos" title={`Ver fotos anexadas · ${attachments.join(" · ")}`}>
+                Ver fotos ({attachments.length})
+              </button>
+            )}
           </div>
-          {r.attachments && r.attachments.length > 0 && (
-            <button type="button" className="tck-photos" title={`Ver fotos anexadas · ${r.attachments.join(" · ")}`}>
-              <Icon name="photo-library" size={16} />
-              Ver fotos ({r.attachments.length})
-            </button>
-          )}
-        </div>
-      ))}
+        );
+      })}
+      <p className="tck-detail-quote">“{ticket.message}” — cliente</p>
     </div>
   );
 }
 
-/* Um card por ticket. Pendente: cabeçalho + produto + solicitação + faixa de
-   recomendação + painel de decisão + rodapé "Confirmar". Decidido: cabeçalho
-   (com status/decisão) + produto + solicitação + bloco de confirmação. */
+/* Um card por ticket. Pendente: cabeçalho + parágrafo (com o detalhe abrindo
+   por dentro dele) + segmentado + complemento da ação ativa. Decidido: o
+   parágrafo fica e o bloco de registro toma o lugar da decisão. */
 function CanvasDTicketCard({
   ticket,
   decision,
@@ -4294,8 +4319,12 @@ function CanvasDTicketCard({
   onModeChange,
   escalateNote,
   onEscalateNote,
-  messageOpen,
-  onToggleMessage,
+  acceptNote,
+  onAcceptNote,
+  denyReason,
+  onDenyReason,
+  denyMessage,
+  onDenyMessage,
   onOpenOrder,
 }) {
   /* A foto vem do catálogo por SKU (ver `productPhoto`), não do campo `photo`
@@ -4304,73 +4333,71 @@ function CanvasDTicketCard({
     item: ticket.item, sku: ticket.sku, reason: ticket.shopperReason,
     attachments: ticket.attachments || [],
   }]).map((r) => ({ ...r, photo: productPhoto(r) }));
-  const isMulti = rows.length > 1;
-  const [itemsOpen, setItemsOpen] = useState(false);
-  const feedback = decision ? ticketDecisionFeedback(ticket, decision, decidedBy) : null;
-  const decidedNote = decision ? ticketDecisionNote(decision) : null;
+  /* Um disclosure só, aberto por qualquer um dos trechos do parágrafo. */
+  const [detailOpen, setDetailOpen] = useState(false);
+  const parts = ticketSummaryProse(ticket, rows);
+  const feedback = decision ? ticketDecisionFeedback(decision, decidedBy) : null;
 
   return (
     <article className="tck-card">
-      <CanvasDTicketHeader ticket={ticket} decision={decision} />
+      <CanvasDTicketHeader ticket={ticket} decision={decision} onOpenOrder={onOpenOrder} />
 
-      <div className="tck-product-section">
-        {isMulti
-          ? <CanvasDTicketMultiItem rows={rows} open={itemsOpen} onToggle={() => setItemsOpen((o) => !o)} />
-          : <CanvasDTicketSingleItem ticket={ticket} />}
-        <CanvasDTicketMeta ticket={ticket} decision={decision} onOpenOrder={onOpenOrder} />
+      <div className="tck-body">
+        <p className="tck-prose">
+          {parts.map((p, i) => {
+            if (p.trigger) {
+              return (
+                <button
+                  key={i}
+                  type="button"
+                  className="tck-prose-trigger"
+                  aria-expanded={detailOpen}
+                  onClick={() => setDetailOpen((o) => !o)}
+                >
+                  {p.trigger}
+                </button>
+              );
+            }
+            if (p.strong) return <strong key={i} className="tck-prose-rec">{p.strong}</strong>;
+            return <React.Fragment key={i}>{p.text}</React.Fragment>;
+          })}
+        </p>
+
+        {detailOpen && <CanvasDTicketDetail ticket={ticket} rows={rows} />}
+
+        {!decision && (
+          <>
+            {/* O alerta de falha entra acima do segmentado, junto da decisão que
+                ficou preservada — no rodapé ele lia como consequência do botão. */}
+            {sendFailed && <CanvasDTicketSendError />}
+
+            <CanvasDTicketDecision
+              ticket={ticket}
+              rows={rows}
+              mode={mode}
+              onModeChange={onModeChange}
+              escalateNote={escalateNote}
+              onEscalateNote={onEscalateNote}
+              acceptNote={acceptNote}
+              onAcceptNote={onAcceptNote}
+              denyReason={denyReason}
+              onDenyReason={onDenyReason}
+              denyMessage={denyMessage}
+              onDenyMessage={onDenyMessage}
+            />
+          </>
+        )}
+
+        {decision && (
+          /* Sem "Desfazer"/"Próximo" aqui: as ações vivem no rodapé sticky do
+             modal, que tem a mesma anatomia em todos os estados. */
+          <div className="tck-decided">
+            <span className="tck-decided-title">{feedback.title}</span>
+            <span className="tck-decided-sub">{feedback.registry}</span>
+            {feedback.note && <span className="tck-decided-note">{feedback.note}</span>}
+          </div>
+        )}
       </div>
-
-      <div className="tck-request">
-        <span className="tck-request-label">Solicitação do cliente</span>
-        <p className="tck-request-body">{ticket.message}</p>
-      </div>
-
-      {!decision && (
-        <>
-          <div className="tck-rec">
-            <span className="tck-rec-title">
-              <Icon name="sparkle" size={16} />
-              Recomendação: {ticket.recommendation}
-            </span>
-            <span className="tck-rec-why">{ticket.why}</span>
-            <span className="tck-rec-history">Histórico do cliente: {ticket.history}</span>
-          </div>
-
-          {/* O alerta de falha entra acima do segmented, junto da decisão que
-              ficou preservada — no rodapé ele lia como consequência do botão. */}
-          {sendFailed && <CanvasDTicketSendError />}
-
-          <CanvasDTicketDecision
-            ticket={ticket}
-            mode={mode}
-            onModeChange={onModeChange}
-            escalateNote={escalateNote}
-            onEscalateNote={onEscalateNote}
-            messageOpen={messageOpen}
-            onToggleMessage={onToggleMessage}
-          />
-        </>
-      )}
-
-      {decision && (
-        /* Sem "Desfazer"/"Próximo" aqui: as ações vivem no rodapé sticky do
-           modal, que tem a mesma anatomia nos sete estados. */
-        <div className="tck-decided" data-outcome={decision.kind}>
-          <div className="tck-decided-head">
-            <span className="tck-decided-glyph" data-outcome={decision.kind}>
-              <Icon name={TICKET_OUTCOME_GLYPH[decision.kind]} size={20} />
-            </span>
-            <div className="tck-decided-text">
-              <span className="tck-decided-title" data-outcome={decision.kind}>{feedback.title}</span>
-              <span className="tck-decided-sub">{feedback.sub}</span>
-            </div>
-          </div>
-          <div className="tck-decided-note">
-            <span className="tck-decided-note-label">{decidedNote.label}</span>
-            <span className="tck-decided-note-body">{decidedNote.body}</span>
-          </div>
-        </div>
-      )}
     </article>
   );
 }
@@ -4465,7 +4492,9 @@ function CanvasDTicketTable({ tickets, decisions, lead, onOpen }) {
     <div className="tck-table">
       <div className="tck-table-head">
         <span>Ticket</span>
-        <span>Responsável</span>
+        {/* Coluna do avatar: o rótulo não cabe em 20px e o tooltip da linha já
+            nomeia o responsável. */}
+        <span />
         <span>Desfecho</span>
         <span />
       </div>
@@ -4495,9 +4524,10 @@ function CanvasDTicketTable({ tickets, decisions, lead, onOpen }) {
                 </span>
               </span>
             </span>
-            <span className="tck-table-owner">
+            {/* Só o avatar: o nome do responsável repete a mesma fila em todas
+                as linhas e roubava largura do ticket. O nome vive no tooltip. */}
+            <span className="tck-table-owner" title={owner} aria-label={owner}>
               <PersonAvatar initial={(owner || "?").slice(0, 1)} />
-              <span className="tck-table-owner-name">{owner}</span>
             </span>
             <span className="tck-table-outcome">
               <span className="tck-status-pill" data-outcome={outcome}>
@@ -4580,15 +4610,20 @@ function CanvasDTicketQueue({ rows, decisions, index, onSelect, collapsed, onTog
               onClick={() => onSelect(i)}
               aria-current={i === index ? "true" : undefined}
             >
-              <span className="tck-table-dot" data-outcome={d ? d.kind : "pending"} />
+              {/* Disco no tom do desfecho com o ícone dentro: a linha diz o
+                  estado sem a tag, que repetia a mesma informação em texto. */}
+              <span
+                className="tck-queue-glyph"
+                data-outcome={d ? d.kind : "pending"}
+                title={d ? TICKET_OUTCOME_LABEL[d.kind] : "Aguardando"}
+              >
+                <Icon name={TICKET_QUEUE_GLYPH[d ? d.kind : "pending"]} size={15} />
+              </span>
               <span className="tck-queue-row-text">
                 <span className="tck-queue-row-id">{r.id}</span>
                 {/* O produto identifica o ticket melhor que o SLA: é por ele que
                     o SAC reconhece o caso que acabou de ler. */}
                 <span className="tck-queue-row-sub">{ticketQueueSubtitle(r)}</span>
-                <span className="tck-status-pill" data-outcome={d ? d.kind : "pending"}>
-                  {d ? TICKET_OUTCOME_LABEL[d.kind] : "Aguardando"}
-                </span>
               </span>
             </button>
           );
@@ -4628,20 +4663,33 @@ function CanvasDTicketModal({
   const [sendState, setSendState] = useState("idle");
   const sendTimer = useRef(null);
 
-  /* Ao entrar em cada ticket, o painel abre no modo recomendado — trocar de
-     ticket reseta o modo, a nota do escalonamento e o toggle da mensagem. */
+  /* Ao entrar em cada ticket, o segmentado abre na ação recomendada — trocar
+     de ticket reseta a ação, os complementos e o motivo da negativa. Cada
+     complemento tem estado próprio para que trocar de ação não apague o que já
+     foi escrito na outra. */
   const [mode, setMode] = useState(() => ticketOpenMode(ticket));
   const [escalateNote, setEscalateNote] = useState("");
-  const [messageOpen, setMessageOpen] = useState(false);
+  const [acceptNote, setAcceptNote] = useState("");
+  const [denyReason, setDenyReason] = useState(TICKET_DENY_REASONS[0].id);
+  const [denyMessage, setDenyMessage] = useState(TICKET_DENY_REASONS[0].message);
   const currentIdRef = useRef(ticket && ticket.id);
   useEffect(() => {
     if (!ticket || currentIdRef.current === ticket.id) return;
     currentIdRef.current = ticket.id;
     setMode(ticketOpenMode(ticket));
     setEscalateNote("");
-    setMessageOpen(false);
+    setAcceptNote("");
+    setDenyReason(TICKET_DENY_REASONS[0].id);
+    setDenyMessage(TICKET_DENY_REASONS[0].message);
     setSendState("idle");
   }, [ticket]);
+
+  /* Trocar o motivo reescreve a mensagem ao cliente com o texto-base daquele
+     motivo: a edição manual vale até a próxima troca. */
+  const changeDenyReason = (id) => {
+    setDenyReason(id);
+    setDenyMessage(ticketDenyReason(id).message);
+  };
 
   useEffect(() => {
     const onKey = (e) => { if (e.key === "Escape") onClose(); };
@@ -4675,15 +4723,15 @@ function CanvasDTicketModal({
   const commit = () => {
     const at = ticketDecisionTime();
     if (mode === "deny") {
-      onDecide(ticket.id, { kind: "denied", message: ticket.denyMessage, at });
+      onDecide(ticket.id, { kind: "denied", reason: denyReason, message: denyMessage.trim() || null, at });
     } else if (mode === "escalate") {
       onDecide(ticket.id, { kind: "escalated", to: TICKET_ESCALATION_LEAD, note: escalateNote.trim() || null, at });
     } else {
-      onDecide(ticket.id, { kind: "accepted", resolution: ticket.policyResolution, message: ticket.acceptMessage, at });
+      onDecide(ticket.id, { kind: "accepted", resolution: ticket.policyResolution, note: acceptNote.trim() || null, at });
     }
-    /* Trocar de aba dentro do ticket é local; confirmar reseta o rascunho. */
+    /* Trocar de ação dentro do ticket é local; confirmar reseta os rascunhos. */
     setEscalateNote("");
-    setMessageOpen(false);
+    setAcceptNote("");
     setSendState("idle");
   };
 
@@ -4716,23 +4764,21 @@ function CanvasDTicketModal({
     if (decision) {
       return (
         <div className="tck-modal-foot">
-          {/* "Desfazer" existe nos três desfechos: o rodapé tem uma anatomia só
-              nos sete estados, e limitá-lo ao escalonamento deixava o estado
-              decidido sem saída à esquerda. */}
-          <button type="button" className="tck-undo" onClick={() => onUndo(ticket.id)}>
-            <Icon name="undo" size={16} />
+          {/* "Desfazer" existe nos três desfechos, secundário e à direita junto
+              do primário: é a alternativa a seguir a fila, não a saída de uma
+              tela. */}
+          <button
+            type="button"
+            className="tck-undo"
+            data-variant="secondary"
+            onClick={() => onUndo(ticket.id)}
+          >
             Desfazer
           </button>
           {queueDone ? (
-            <button type="button" className="tck-next" onClick={onOpenSummary}>
-              Ver resumo da fila
-              <Icon name="chevron-right" size={16} />
-            </button>
+            <button type="button" className="tck-next" onClick={onOpenSummary}>Ver resumo da fila</button>
           ) : nextPending !== -1 && (
-            <button type="button" className="tck-next" onClick={() => go(nextPending)}>
-              Próximo pendente
-              <Icon name="chevron-right" size={16} />
-            </button>
+            <button type="button" className="tck-next" onClick={() => go(nextPending)}>Próximo ticket</button>
           )}
         </div>
       );
@@ -4766,14 +4812,15 @@ function CanvasDTicketModal({
             Pular
           </button>
         )}
+        {/* O primário nomeia a ação ativa. Negar não vira critical: é uma
+            decisão prevista na política, não uma destruição de dado. */}
         <button
           type="button"
           className="tck-confirm"
-          data-tone={mode === "deny" ? "deny" : undefined}
           disabled={sending}
           onClick={handleConfirm}
         >
-          {sending ? "Enviando…" : "Confirmar e avançar"}
+          {sending ? "Enviando…" : TICKET_CONFIRM_LABEL[mode]}
         </button>
       </div>
     );
@@ -4831,8 +4878,12 @@ function CanvasDTicketModal({
                     onModeChange={setMode}
                     escalateNote={escalateNote}
                     onEscalateNote={setEscalateNote}
-                    messageOpen={messageOpen}
-                    onToggleMessage={() => setMessageOpen((o) => !o)}
+                    acceptNote={acceptNote}
+                    onAcceptNote={setAcceptNote}
+                    denyReason={denyReason}
+                    onDenyReason={changeDenyReason}
+                    denyMessage={denyMessage}
+                    onDenyMessage={setDenyMessage}
                     onOpenOrder={onOpenOrder}
                   />
                 </div>
@@ -5053,7 +5104,9 @@ function CanvasPatternD({ task, onOpenList, onOpenOrder, onOpenTask, activities,
             /* Única seção em que o badge mostra progresso em vez de total: a
                avaliação em si mora no modal, então quantos faltam precisa estar
                legível sem abri-lo. */
-            count={`${tickets.length - decidedCount} de ${tickets.length} aguardando`}
+            count={decidedCount >= tickets.length
+              ? "Tickets resolvidos"
+              : `${tickets.length - decidedCount} de ${tickets.length} aguardando`}
             countAsTag
             action={
               <button
@@ -5143,7 +5196,7 @@ function subViewBreadcrumbLabel(sub) {
   return null;
 }
 
-function TaskCanvas({ task, onBack, chatOpen, onToggleChat, panelClassName, verification, onAgentMessage }) {
+function TaskCanvas({ task, onBack, chatOpen, onToggleChat, onCloseCanvas, panelClassName, verification, onAgentMessage }) {
   /* Pilha de subviews (paridade v3 initiative-canvas-tool): permite encadear
      canvas → pedido → outro pedido → tarefa e voltar um nível por vez. O chip
      do id no topbar volta direto ao canvas (esvazia a pilha). */
@@ -5226,55 +5279,24 @@ function TaskCanvas({ task, onBack, chatOpen, onToggleChat, panelClassName, veri
      outro pedido, volta pro pedido; se está no primeiro nível, volta pro
      canvas. O chip do id no topbar cobre o atalho para voltar direto pro
      canvas de qualquer profundidade. */
-  const backLabel = prevSubView ? subViewBreadcrumbLabel(prevSubView) : initiativeChipId;
+  /* O chip do ID agora é um elemento próprio da barra (§1.4), então o rótulo
+     nomeia o destino: a subview anterior ou, no primeiro nível, o canvas
+     principal pelo mesmo nome que o h1 do corpo usa. */
+  const backLabel = prevSubView ? subViewBreadcrumbLabel(prevSubView) : d.title;
 
   return (
     <div className={`detail-panel${panelClassName ? ` ${panelClassName}` : ""}`}>
-      <div className="detail-head canvas-topbar" data-sl-canvas-tool-topbar="">
-        <button className="canvas-topbar-icon" onClick={onBack} aria-label="Fechar" title="Fechar">
-          <Icon name="x" size={18} />
-        </button>
-        {/* Breadcrumb v3: chip do id + separador · + rótulo da subview.
-            Fora de subview, só o chip. */}
-        <span className="canvas-topbar-title">
-          {inSub ? (
-            <button
-              type="button"
-              className="canvas-topbar-chip-btn"
-              onClick={resetToCanvas}
-              title={`Voltar para ${initiativeChipId}`}
-              data-sl-initiative-table-id-chip=""
-            >
-              {initiativeChipId}
-            </button>
-          ) : (
-            <span data-sl-initiative-table-id-chip="">{initiativeChipId}</span>
-          )}
-          {inSub && subLabel && (
-            <>
-              <span data-sl-initiative-canvas-breadcrumb-sep="" aria-hidden>·</span>
-              <span data-sl-initiative-canvas-breadcrumb-task="">{subLabel}</span>
-            </>
-          )}
-        </span>
-        {onToggleChat && (
-          <button
-            className={`canvas-topbar-icon${chatOpen ? " active" : ""}${chatQuestionPending ? " canvas-topbar-icon--alert" : ""}`}
-            onClick={onToggleChat}
-            aria-label={
-              chatQuestionPending
-                ? `${chatOpen ? "Fechar chat" : "Abrir chat"} — pergunta pendente`
-                : (chatOpen ? "Fechar chat" : "Abrir chat")
-            }
-            title={chatQuestionPending ? "Pergunta pendente no chat" : (chatOpen ? "Fechar chat" : "Abrir chat")}
-          >
-            <Icon name="chat" size={18} />
-          </button>
-        )}
-        <button className="canvas-topbar-icon" aria-label="Mais opções" title="Mais opções">
-          <Icon name="more" size={18} />
-        </button>
-      </div>
+      <CanvasTopbar
+        onBack={onBack}
+        backLabel="Voltar para Iniciativas"
+        id={initiativeChipId}
+        onResetToMain={inSub ? resetToCanvas : undefined}
+        subTitle={subLabel}
+        chatOpen={chatOpen}
+        onToggleChat={onToggleChat}
+        chatPending={chatQuestionPending}
+        onCloseCanvas={onCloseCanvas}
+      />
       <div className="detail-scroll" ref={scrollRef}>
         <div
           className="detail-body"
@@ -5285,14 +5307,8 @@ function TaskCanvas({ task, onBack, chatOpen, onToggleChat, panelClassName, veri
           data-doc-nav-animation={animateNav ? "true" : undefined}
           key={inSub ? `sub-${subView.type}-${subView.id || subView.kind || subView.subtask?.title || ""}` : "main"}
         >
-          {inSub && (
-            <div data-sl-canvas-tool-back-wrap="">
-              <button type="button" onClick={closeSubView} data-sl-canvas-tool-back="" aria-label={`Voltar para ${backLabel}`}>
-                <Icon name="chevron-left" size={16} />
-                <span>Voltar para {backLabel}</span>
-              </button>
-            </div>
-          )}
+          {/* CanvasBackBar removido — voltar da subview usa só o chip do topbar
+              (onResetToMain) ou o arrow_back que fecha o canvas inteiro. */}
           {subView?.type === "order" ? (
             <OrderDetailView
               task={task}
@@ -5321,6 +5337,7 @@ function TaskCanvas({ task, onBack, chatOpen, onToggleChat, panelClassName, veri
               onOpenTask={openSubtask}
               verification={verificationCtl}
               onOpenChat={!chatOpen && onToggleChat ? onToggleChat : null}
+              chatOpen={chatOpen}
               activities={activities}
             />
           ) : task.canvasPattern === "D" ? (
@@ -5359,11 +5376,15 @@ function TaskView({ taskId, onBack, onOpenOrder, initialChatOpen }) {
      usuário aciona explicitamente, seja pelo botão no topbar do canvas, seja
      por "Ver conversa" numa tarefa do InitiativeDocumentPanel (initialChatOpen). */
   const [chatOpen, setChatOpen] = useState(!!initialChatOpen);
+  /* §8 — o `close` do topbar não fecha a tela: fecha o canvas e deixa o chat
+     em largura total. A volta é o "Abrir canvas" do cabeçalho do chat. */
+  const [canvasOpen, setCanvasOpen] = useState(true);
 
   useEffect(() => {
     setChatMsgs(d.chat || []);
     setIsTyping(false);
     setChatOpen(!!initialChatOpen);
+    setCanvasOpen(true);
     engineRef.current = ChatEngine.create({
       context: "task",
       data: AIWData,
@@ -5416,7 +5437,7 @@ function TaskView({ taskId, onBack, onOpenOrder, initialChatOpen }) {
   ) : null;
 
   return (
-    <ResizableSplit screenLabel={`02 Task ${taskId}`} initialWidth={400} chatOpen={chatOpen}>
+    <ResizableSplit screenLabel={`02 Task ${taskId}`} initialWidth={400} chatOpen={chatOpen} canvasOpen={canvasOpen}>
       <ChatPanel
         title={d.title}
         messages={chatMsgs}
@@ -5425,12 +5446,14 @@ function TaskView({ taskId, onBack, onOpenOrder, initialChatOpen }) {
         placeholder={`Pergunte sobre a iniciativa ${task.id}…`}
         aboveComposer={verificationCard}
         bodyFooter={verificationAnswer}
-        onBack={() => setChatOpen(false)} />
+        canvasOpen={canvasOpen}
+        onOpenCanvas={() => setCanvasOpen(true)} />
       <TaskCanvas
         task={task}
         onBack={onBack}
         chatOpen={chatOpen}
         onToggleChat={() => setChatOpen((o) => !o)}
+        onCloseCanvas={() => { setChatOpen(true); setCanvasOpen(false); }}
         verification={verification}
         /* Canvas D avisa o chat quando a fila de tickets fecha: o agente
            publica uma mensagem com o resumo dos desfechos. */
