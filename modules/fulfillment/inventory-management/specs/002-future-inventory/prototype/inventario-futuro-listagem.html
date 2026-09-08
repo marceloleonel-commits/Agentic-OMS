@@ -661,6 +661,13 @@
   .drawer-root [data-sl-drawer-popover] { transition: translate 220ms ease; }
   .drawer-root[data-enter="false"] [data-sl-drawer-popover] { translate: 100% 0; }
 
+  /* O DrawerHeader e o ModalHeader do Shoreline são sticky e não declaram
+     z-index: o conteúdo vem depois deles no documento, então rolar faz as
+     linhas pintarem por cima do fundo deles. Uma camada resolve. Os rodapés não
+     precisam — vindo depois do conteúdo, já pintam acima dele. */
+  [data-sl-drawer-header],
+  [data-sl-modal-header] { z-index: 1; }
+
   .drawer-rows { display: flex; flex-direction: column; gap: var(--sl-space-4); }
   /* Cada par produto + quantidade é uma caixa: com várias linhas na tela, é ela
      que diz onde um item termina e o outro começa. O fundo sozinho já demarca —
@@ -687,6 +694,12 @@
 
   .modal-root [data-sl-modal-backdrop] { position: fixed; inset: 0; }
 
+  /* O card de exportações vive acima das drawers (z 900) porque com elas ele
+     continua utilizável — a drawer não bloqueia a tela. Um Modal bloqueia: com
+     um aberto, o card desce para trás do backdrop. Deslocá-lo para o lado, como
+     faço com as drawers, deixaria clicável justamente o que o modal fechou. */
+  body:has(.modal-root:not([hidden])) #export-card-host { z-index: var(--sl-z-3); }
+
   /* ── Drawer de exportação ──────────────────────────────────────
      Mesma mecânica da drawer-root: translate anima o painel para dentro e
      fora do viewport. A classe export-drawer-root separa do seletor original
@@ -694,6 +707,61 @@
      ───────────────────────────────────────────────────────────── */
   .export-drawer-root [data-sl-drawer-popover] { transition: translate 220ms ease; }
   .export-drawer-root[data-enter="false"] [data-sl-drawer-popover] { translate: 100% 0; }
+
+  /* ── Modal de marcar como recebido (002.5) ─────────────────────
+     Modal large, não drawer: conferir um pallet é uma contagem, e uma drawer
+     deixa a listagem à mostra oferecendo tudo o que tira a atenção dela. O
+     large do Shoreline tem 50rem, a largura em que as três colunas de número
+     cabem sem apertar o nome do produto.
+
+     O conteúdo é uma máquina de três passos: a conferência, a pergunta sobre o
+     restante quando falta unidade, e a saída quando nada chegou. Cada passo
+     remonta corpo e rodapé — o rodapé muda de ações, não só de rótulos.
+     ───────────────────────────────────────────────────────────── */
+  .receipt-body { display: flex; flex-direction: column; gap: var(--sl-space-4); }
+
+  /* Produto fica com o que sobra; as três colunas de número têm largura fixa, e
+     Recebido cabe o Input de 44px na largura de três dígitos. */
+  .receipt-table { --sl-table-grid-template-columns: minmax(180px, 1fr) 120px 120px 120px; }
+  .receipt-qty { width: 82px; }
+
+  /* Reservas maiores que o recebido: o número fica crítico e ganha peso. Cor
+     sozinha não carrega significado — quem lê por leitor de tela recebe a
+     explicação no texto oculto ao lado, e quem lê na tela a recebe com números
+     no passo seguinte. */
+  .receipt-short {
+    color: var(--sl-fg-critical);
+    font: var(--sl-text-action-font);
+    letter-spacing: var(--sl-text-action-letter-spacing);
+  }
+
+  /* Etapa 2. Radios sem moldura, com o espaçamento vertical que o Stack do
+     RadioGroup usa. */
+  .receipt-choices { display: grid; gap: var(--sl-space-4); }
+
+  /* Cada opção carrega um help text — a decisão é entre descartar unidades que
+     o merchant pagou e reagendá-las, e o Radio pede help justamente nas
+     escolhas em que a consequência precisa ser explicada. O Radio do Shoreline
+     só tem slot de descrição no grupo, não na opção: o grid de duas colunas põe
+     o help embaixo do rótulo mantendo controle e rótulo como filhos diretos de
+     [data-sl-radio], que é o que preserva o CSS do componente. O help herda a
+     margem do rótulo para alinhar com ele. */
+  .receipt-choice {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    row-gap: 0;
+    align-items: start;
+  }
+  .receipt-choice > [data-sl-label] { cursor: pointer; }
+  .receipt-choice > [data-sl-field-description] {
+    grid-column: 2;
+    margin-left: var(--sl-space-2);
+  }
+
+  /* "Voltar e editar quantidades" é navegação, não ação. A margem automática o
+     manda para a borda esquerda sem desmontar o flex-end com que o rodapé do
+     Modal alinha as ações à direita. */
+  .receipt-back { margin-right: auto; }
 
   /* ── Card flutuante de exportações ─────────────────────────── */
   /* O card não disputa espaço com uma drawer: ao abrir, ele desliza para a
@@ -1572,6 +1640,40 @@
   </div>
 </div>
 
+<!-- Modal de marcar como recebido (002.5). Large: o conteúdo é uma tabela de
+     conferência, e nas larguras menores as colunas de número ficariam mais
+     estreitas que a comparação que elas pedem. A casca é fixa; título, corpo e
+     rodapé são montados por renderReceipt() — dependem do lote e do passo. -->
+<div class="modal-root" id="receipt-modal" hidden>
+  <!-- Sem data-role de fechar aqui: uma conferência já digitada não se perde
+       por um clique fora do modal (FR-2a). A saída é o X, o Cancelar ou Esc. -->
+  <div data-sl-modal-backdrop></div>
+  <div data-sl-modal data-size="large" role="dialog" aria-modal="true"
+       aria-labelledby="receipt-title" id="receipt-panel">
+    <div data-sl-container data-sl-modal-container>
+      <header data-sl-content data-narrow="true" data-sl-modal-header>
+        <div data-sl-flex style="--sl-flex-direction: row; --sl-flex-justify: space-between; --sl-flex-align: center">
+          <!-- O lote vive no título: é o que responde "em que pallet eu estou
+               agindo" sem custar uma linha do conteúdo. -->
+          <h2 data-sl-heading data-variant="display2" id="receipt-title"></h2>
+          <button data-sl-button data-sl-icon-button data-sl-modal-dismiss data-variant="tertiary" data-size="large"
+                  data-role="receipt-close" aria-label="Fechar">
+            <span data-sl-button-content>
+              <i data-icon="x"></i>
+            </span>
+          </button>
+        </div>
+      </header>
+
+      <div data-sl-content data-sl-modal-content>
+        <div class="receipt-body" id="receipt-body"></div>
+      </div>
+
+      <footer data-sl-content data-narrow="true" data-sl-modal-footer id="receipt-footer"></footer>
+    </div>
+  </div>
+</div>
+
 <!-- Host do card flutuante de exportações. Fica fora da .shell para sobrepor
      tudo sem conflito de stacking context. Populado por renderExportCard(). -->
 <div id="export-card-host"></div>
@@ -1804,14 +1906,23 @@
       line('M10 17.5C14.1421 17.5 17.5 14.1421 17.5 10C17.5 5.85786 14.1421 2.5 10 2.5C5.85786 2.5 2.5 5.85786 2.5 10C2.5 14.1421 5.85786 17.5 10 17.5Z',
            'M10 6.875V10.625') +
       dot('M10.625 13.4375C10.625 13.7827 10.3452 14.0625 10 14.0625C9.65482 14.0625 9.375 13.7827 9.375 13.4375C9.375 13.0923 9.65482 12.8125 10 12.8125C10.3452 12.8125 10.625 13.0923 10.625 13.4375Z') },
+
+    /* Os dois ícones que o Alert usa nas variantes deste fluxo. Vão marcados
+       com fill porque o SVG precisa sair com data-sl-icon-fill: é desse seletor
+       que o CSS do Alert tira a cor da variante — informational puxa
+       --sl-fg-informational, warning puxa --sl-fg-warning. Com data-sl-icon o
+       ícone nasceria sem cor semântica. */
+    'info-fill': { box: 20, fill: true, body: solid('M10 1.875C8.39303 1.875 6.82214 2.35152 5.486 3.24431C4.14985 4.1371 3.10844 5.40605 2.49348 6.8907C1.87852 8.37535 1.71762 10.009 2.03112 11.5851C2.34463 13.1612 3.11846 14.6089 4.25476 15.7452C5.39106 16.8815 6.8388 17.6554 8.4149 17.9689C9.99099 18.2824 11.6247 18.1215 13.1093 17.5065C14.594 16.8916 15.8629 15.8502 16.7557 14.514C17.6485 13.1779 18.125 11.607 18.125 10C18.1227 7.84581 17.266 5.78051 15.7427 4.25727C14.2195 2.73403 12.1542 1.87727 10 1.875ZM9.6875 5.625C9.87292 5.625 10.0542 5.67998 10.2084 5.783C10.3625 5.88601 10.4827 6.03243 10.5536 6.20373C10.6246 6.37504 10.6432 6.56354 10.607 6.7454C10.5708 6.92725 10.4815 7.0943 10.3504 7.22541C10.2193 7.35652 10.0523 7.44581 9.8704 7.48199C9.68854 7.51816 9.50004 7.49959 9.32874 7.42864C9.15743 7.35768 9.01101 7.23752 8.908 7.08335C8.80499 6.92918 8.75 6.74792 8.75 6.5625C8.75 6.31386 8.84878 6.0754 9.02459 5.89959C9.20041 5.72377 9.43886 5.625 9.6875 5.625ZM10.625 14.375C10.2935 14.375 9.97554 14.2433 9.74112 14.0089C9.5067 13.7745 9.375 13.4565 9.375 13.125V10C9.20924 10 9.05027 9.93415 8.93306 9.81694C8.81585 9.69973 8.75 9.54076 8.75 9.375C8.75 9.20924 8.81585 9.05027 8.93306 8.93306C9.05027 8.81585 9.20924 8.75 9.375 8.75C9.70652 8.75 10.0245 8.8817 10.2589 9.11612C10.4933 9.35054 10.625 9.66848 10.625 10V13.125C10.7908 13.125 10.9497 13.1908 11.0669 13.3081C11.1842 13.4253 11.25 13.5842 11.25 13.75C11.25 13.9158 11.1842 14.0747 11.0669 14.1919C10.9497 14.3092 10.7908 14.375 10.625 14.375Z') },
+
+    'warning-circle-fill': { box: 20, fill: true, body: solid('M10 1.875C8.39303 1.875 6.82214 2.35152 5.486 3.24431C4.14985 4.1371 3.10844 5.40605 2.49348 6.8907C1.87852 8.37535 1.71762 10.009 2.03112 11.5851C2.34463 13.1612 3.11846 14.6089 4.25476 15.7452C5.39106 16.8815 6.8388 17.6554 8.4149 17.9689C9.99099 18.2824 11.6247 18.1215 13.1093 17.5065C14.594 16.8916 15.8629 15.8502 16.7557 14.514C17.6485 13.1779 18.125 11.607 18.125 10C18.1226 7.84586 17.2658 5.78065 15.7426 4.25744C14.2194 2.73424 12.1541 1.87743 10 1.875ZM9.375 6.25C9.375 6.08424 9.44085 5.92527 9.55806 5.80806C9.67527 5.69085 9.83424 5.625 10 5.625C10.1658 5.625 10.3247 5.69085 10.4419 5.80806C10.5592 5.92527 10.625 6.08424 10.625 6.25V10.625C10.625 10.7908 10.5592 10.9497 10.4419 11.0669C10.3247 11.1842 10.1658 11.25 10 11.25C9.83424 11.25 9.67527 11.1842 9.55806 11.0669C9.44085 10.9497 9.375 10.7908 9.375 10.625V6.25ZM10 14.375C9.81458 14.375 9.63333 14.32 9.47916 14.217C9.32499 14.114 9.20482 13.9676 9.13387 13.7963C9.06291 13.625 9.04434 13.4365 9.08052 13.2546C9.11669 13.0727 9.20598 12.9057 9.33709 12.7746C9.4682 12.6435 9.63525 12.5542 9.81711 12.518C9.99896 12.4818 10.1875 12.5004 10.3588 12.5714C10.5301 12.6423 10.6765 12.7625 10.7795 12.9167C10.8825 13.0708 10.9375 13.2521 10.9375 13.4375C10.9375 13.6861 10.8387 13.9246 10.6629 14.1004C10.4871 14.2762 10.2486 14.375 10 14.375Z') },
   }
 
   /* As variantes Small carregam data-sl-icon-small; as normais, data-sl-icon.
      O Shoreline usa esse atributo para posicionar o ícone dentro de botões. */
   const icon = (name, size) => {
-    const { box, body } = ICONS[name]
+    const { box, body, fill } = ICONS[name]
     const px = size || box
-    const attr = box === 16 ? 'data-sl-icon-small' : 'data-sl-icon'
+    const attr = fill ? 'data-sl-icon-fill' : box === 16 ? 'data-sl-icon-small' : 'data-sl-icon'
     return `<svg ${attr} width="${px}" height="${px}" viewBox="0 0 ${box} ${box}" fill="none" aria-hidden="true" focusable="false">${body}</svg>`
   }
 
@@ -3843,19 +3954,23 @@
      da linha e posicionado à mão — é o que o portal do MenuPopover faz. Dentro
      da célula ele seria cortado pela rolagem da tabela.
 
-     Os quatro itens são inertes: nenhum deles tem tela no protótipo, e item sem
-     para onde levar fecha o menu e não faz mais nada. "Marcar como recebido"
-     nem entra na lista de um lote já recebido ou cancelado — o passado do lote
-     não se marca de novo.
+     "Marcar como recebido" é o único item com destino: abre o modal de
+     recebimento (002.5). Os outros três seguem inertes — nenhum deles tem tela
+     no protótipo, e item sem para onde levar fecha o menu e não faz mais nada.
      ───────────────────────────────────────────────────────────── */
   const rowMenu = el('row-menu')
   let rowMenuTrigger = null
 
   const rowMenuItems = (lot) => [
     { action: 'edit', label: 'Editar', icon: 'pencil' },
-    ...(lot.status === 'received' || lot.status === 'cancelled'
-      ? []
-      : [{ action: 'receive', label: 'Marcar como recebido', icon: 'check' }]),
+    /* Só lote agendado se recebe (002.5, FR-1a). Recebido e cancelado são
+       passado, e não se marca o passado de novo; inativo é estoque que a
+       operação estacionou de propósito — recebê-lo empurraria para o
+       inventário físico unidades que ninguém quis vender ainda, e o caminho é
+       voltar a agendá-lo em "Editar". O item fica ausente, não desabilitado. */
+    ...(lot.status === 'scheduled'
+      ? [{ action: 'receive', label: 'Marcar como recebido', icon: 'check' }]
+      : []),
     /* Mesmo item do menu do header, mesmo nome: um destino, um nome (002.1, FR-14c). */
     { action: 'history', label: 'Histórico de alterações', icon: 'arrow-up-right' },
     { separator: true },
@@ -3924,8 +4039,16 @@
   const rowMenuOptions = () => [...rowMenu.querySelectorAll('[data-sl-menu-item]')]
 
   rowMenu.addEventListener('click', (event) => {
-    if (!event.target.closest('[data-sl-menu-item]')) return
+    const item = event.target.closest('[data-sl-menu-item]')
+    if (!item) return
+
+    /* O lote sai do gatilho, e não do item clicado: o menu é um só para a
+       listagem inteira e não guarda de qual linha ele foi aberto. */
+    const lotId = rowMenuTrigger?.dataset.rowMenu
+
     closeRowMenu({ restoreFocus: true })
+
+    if (item.dataset.action === 'receive') openReceiptModal(lotId)
   })
 
   rowMenu.addEventListener('keydown', (event) => {
@@ -4324,8 +4447,17 @@
     closeRowMenu()
 
     /* Entrar na rota — pelo botão, por link direto ou pelo voltar do navegador
-       — sempre começa um lote novo. */
-    if (isCreate && !onCreateScreen) resetForm()
+       — sempre começa um lote novo. A exceção é o restante de um recebimento:
+       ele chega com o lote pronto para ser criado (002.5, FR-13). */
+    if (isCreate && !onCreateScreen) {
+      if (receiptOrigin) applyReceiptPrefill()
+      else resetForm()
+    }
+
+    /* Sair do formulário encerra a origem: o próximo lote não herda o
+       recebimento de ninguém, e a saída volta a ser a genérica. */
+    if (!isCreate) receiptOrigin = null
+
     onCreateScreen = isCreate
 
     el('screen-listing').hidden = isCreate
@@ -5241,10 +5373,20 @@
       return
     }
 
+    /* Formulário aberto pelo restante de um recebimento não tem informação do
+       formulário em risco: tem unidades. O recebimento já está gravado, e sair
+       agora descarta o que não chegou — é isso que o modal precisa dizer
+       (002.5, FR-14). O genérico "Sair da edição" seria mentira aqui. */
+    const origem = receiptOrigin
+
     openConfirm({
-      title: 'Sair da edição',
-      body: 'Todas as informações preenchidas serão perdidas, tem certeza que deseja sair?',
-      confirmLabel: 'Sair',
+      title: origem ? 'Descartar as unidades que não chegaram?' : 'Sair da edição',
+      body: origem
+        ? (origem.missing === 1
+          ? `O lote ${origem.code} já foi marcado como recebido. Se você sair agora, a unidade que não chegou será descartada.`
+          : `O lote ${origem.code} já foi marcado como recebido. Se você sair agora, as ${origem.missing} unidades que não chegaram serão descartadas.`)
+        : 'Todas as informações preenchidas serão perdidas, tem certeza que deseja sair?',
+      confirmLabel: origem ? 'Descartar e sair' : 'Sair',
       onConfirm: () => {
         closeConfirm()
         formPristine = snapshot()
@@ -5268,14 +5410,17 @@
         <div data-sl-toast data-variant="success">
           <div data-sl-toast-icon-container>${icon('check-circle-fill')}</div>
           <div data-sl-toast-container>${escapeHtml(message)}</div>
-          <div data-sl-toast-actions>
-            <div data-sl-bleed>
-              <div data-sl-bleed-content style="--sl-bleed-top: var(--sl-space-2); --sl-bleed-end: var(--sl-space-2); --sl-bleed-bottom: var(--sl-space-2)">
-                <button type="button" data-sl-button data-sl-icon-button data-variant="tertiary" data-size="normal"
-                        id="toast-dismiss" aria-label="Fechar aviso">
-                  <span data-sl-button-content>${icon('x')}</span>
-                </button>
-              </div>
+          <!-- O Bleed é filho direto do Toast, como no componente. Sem
+               data-sl-toast-actions em volta: aquele seletor já traz -space-2 em
+               cima e embaixo, e somado ao Bleed puxava o botão 16px para cima —
+               o desalinhamento com o texto. O toast-actions é para ações que o
+               consumidor passa, não para o fechar. -->
+          <div data-sl-bleed style="--sl-bleed-top: var(--sl-space-2); --sl-bleed-end: var(--sl-space-2); --sl-bleed-bottom: var(--sl-space-2)">
+            <div data-sl-bleed-content>
+              <button type="button" data-sl-button data-sl-icon-button data-variant="tertiary" data-size="normal"
+                      id="toast-dismiss" aria-label="Fechar aviso">
+                <span data-sl-button-content>${icon('x')}</span>
+              </button>
             </div>
           </div>
         </div>
@@ -5434,26 +5579,30 @@
 
   /* Foco preso enquanto a drawer está aberta: sem isso o Tab sairia para a
      página atrás dela, que continua montada. */
-  el('drawer').addEventListener('keydown', (event) => {
-    if (event.key !== 'Tab') return
+  function bindFocusTrap(rootId, panelId) {
+    el(rootId).addEventListener('keydown', (event) => {
+      if (event.key !== 'Tab') return
 
-    const focusable = [...el('drawer-panel').querySelectorAll(
-      'button:not([disabled]), input:not([disabled]), [tabindex="0"]')]
-      .filter((node) => node.offsetParent !== null)
+      const focusable = [...el(panelId).querySelectorAll(
+        'button:not([disabled]), input:not([disabled]), [tabindex="0"]')]
+        .filter((node) => node.offsetParent !== null)
 
-    if (!focusable.length) return
+      if (!focusable.length) return
 
-    const first = focusable[0]
-    const last = focusable[focusable.length - 1]
+      const first = focusable[0]
+      const last = focusable[focusable.length - 1]
 
-    if (event.shiftKey && document.activeElement === first) {
-      event.preventDefault()
-      last.focus()
-    } else if (!event.shiftKey && document.activeElement === last) {
-      event.preventDefault()
-      first.focus()
-    }
-  })
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault()
+        last.focus()
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault()
+        first.focus()
+      }
+    })
+  }
+
+  bindFocusTrap('drawer', 'drawer-panel')
 
   el('discard-modal').addEventListener('click', (event) => {
     if (event.target.closest('[data-role="discard-cancel"]')) {
@@ -5481,6 +5630,13 @@
       return
     }
 
+    /* A contagem sai calada (002.5, FR-2b): o modal abriu preenchido a partir
+       do lote e nada foi criado dentro dele — de qualquer passo. */
+    if (receipt.open) {
+      closeReceiptModal()
+      return
+    }
+
     closeAllComboboxes()
     closeStatusSelect()
   })
@@ -5503,6 +5659,637 @@
       || event.target.closest('[data-sl-field]')?.querySelector('.select')
     if (!noCampoDoSelect) closeStatusSelect()
   })
+
+  /* ─────────────────────────────────────────────────────────────
+     Marcar como recebido (002.5)
+
+     Saída manual de um processo que normalmente é automático: o lote viraria
+     inventário físico sozinho, na data agendada ou por um trigger do ERP.
+     Quando não existe integração — ou ela falhou — é aqui que o operador
+     registra o que realmente chegou.
+
+     O modal faz três coisas, uma por passo: declara o efeito e coleta a
+     conferência, pergunta o destino do que não chegou, e oferece a saída quando
+     nada chegou. Um diálogo de confirmação por cima do modal transformaria um
+     recebimento de rotina em alarme (Decisão 1); os passos são o mesmo modal.
+     ───────────────────────────────────────────────────────────── */
+
+  /* Estado da conferência: nasce ao abrir o modal e morre com ele. O que ele
+     guarda não é um lote — é o que o operador contou no pallet. `received` é
+     string pelo mesmo motivo do formulário: enquanto o campo é apagado para
+     redigitar, ele é '', e '' não é zero. `step` é o passo em cartaz: 'count',
+     'remainder' ou 'empty'. */
+  const receipt = { open: false, lotId: null, lines: [], remainder: null, step: 'count', search: '' }
+  let receiptReturnFocus = null
+
+  /* Este atravessa a navegação: quando o restante vai para um lote novo, é
+     daqui que o formulário de criação nasce preenchido (FR-13) e é isto que
+     troca a copy do modal de saída (FR-14). */
+  let receiptOrigin = null
+
+  /* Acima de oito SKUs a conferência deixa de caber numa tela e procurar um
+     produto passa a valer o campo. Abaixo disso a busca filtraria uma tabela
+     que já está inteira à vista. */
+  const RECEIPT_SEARCH_MIN = 8
+
+  const RECEIPT_EFFECT = 'Ao marcar um lote como recebido, as unidades serão transferidas para o '
+    + 'inventário físico e passam a ser vendidas com o SLA normal. Esse processo não pode ser '
+    + 'desfeito. Confira as quantidades abaixo:'
+
+  const receiptLot = () => LOTS.find((lot) => lot.id === receipt.lotId)
+  const receiptItem = (line) => receiptLot().items.find((item) => item.id === line.itemId)
+  const receiptLine = (itemId) => receipt.lines.find((line) => line.itemId === itemId)
+
+  /* Campo vazio conta como zero (FR-7): um SKU que não veio é digitado 0, e
+     apagar o campo para redigitar não pode travar a contagem no meio. */
+  const receivedOf = (line) => Number(line.received) || 0
+
+  const receiptUnits = () => receipt.lines.reduce((sum, line) => sum + receivedOf(line), 0)
+  const receiptMissing = () => receipt.lines.reduce(
+    (sum, line) => sum + Math.max(0, line.expected - receivedOf(line)), 0)
+
+  /* Disponíveis = recebido − reservado, por SKU (FR-10a). Só o que falta para
+     cobrir as reservas conta: acima delas não há nada a avisar. */
+  const negativeOf = (line) => Math.max(0, receiptItem(line).reserved - receivedOf(line))
+  const negativeLines = () => receipt.lines.filter((line) => negativeOf(line) > 0)
+
+  /* O saldo com sinal, como o inventário mostra e como o aviso do passo 2 o
+     escreve — a nota da célula e o aviso falam do mesmo número, e falar dele de
+     dois jeitos faria o leitor de tela ouvir duas coisas. */
+  const negativeText = (n) => `-${n}un disponíveis`
+
+  /* O Alert do Shoreline: ícone da variante e o conteúdo. O ícone sai com
+     data-sl-icon-fill porque é desse seletor que o CSS do componente tira a cor
+     da variante. */
+  function alertHtml(variant, text) {
+    return `
+      <div data-sl-alert data-variant="${variant}">
+        <div data-sl-alert-icon-container>${icon(variant === 'warning' ? 'warning-circle-fill' : 'info-fill')}</div>
+        <div data-sl-alert-container>
+          <span data-sl-text data-variant="body">${escapeHtml(text)}</span>
+        </div>
+      </div>`
+  }
+
+  /* ── Passo 1: a conferência ──────────────────────────────── */
+
+  function receiptRowHtml(line) {
+    const item = receiptItem(line)
+
+    return `
+      <div data-sl-table-row data-selected="false">
+        <div data-sl-table-cell>
+          <div class="product-cell">
+            ${productThumb(item, 'sku')}
+            <div class="cell-stack">
+              <span class="lot-name" title="${escapeHtml(item.name)}">${escapeHtml(item.name)}</span>
+              <span class="cell-soft">SKU ID ${escapeHtml(item.skuId)}</span>
+            </div>
+          </div>
+        </div>
+        <div data-sl-table-cell>${line.expected}</div>
+        <!-- As reservas do SKU. Quando o recebido não as cobre, o número fica
+             crítico e o texto oculto ao lado diz por quê — pintados a cada
+             dígito por syncReceiptFeedback. -->
+        <div data-sl-table-cell>
+          <span data-receipt-reserved="${escapeHtml(line.itemId)}">${item.reserved}</span>
+          <span class="sl-visually-hidden" data-receipt-short="${escapeHtml(line.itemId)}" hidden></span>
+        </div>
+        <div data-sl-table-cell>
+          <div data-sl-field data-space="normal" class="receipt-qty">
+            ${inputHtml(`receipt-qty-${line.itemId}`,
+              `type="text" inputmode="numeric" data-digits data-receipt-qty="${escapeHtml(line.itemId)}"
+               value="${escapeHtml(line.received)}" aria-label="Unidades recebidas de ${escapeHtml(item.name)}"`)}
+          </div>
+        </div>
+      </div>`
+  }
+
+  /* O termo filtra nome e SKU ID — os dois jeitos de procurar um produto no
+     pallet. Filtrar é só de exibição: a linha escondida continua contando com o
+     número que o operador digitou nela. */
+  function receiptVisibleLines() {
+    const term = norm(receipt.search.trim())
+    if (!term) return receipt.lines
+
+    return receipt.lines.filter((line) => {
+      const item = receiptItem(line)
+      return norm(`${item.name} ${item.skuId}`).includes(term)
+    })
+  }
+
+  function receiptCountHtml() {
+    const visible = receiptVisibleLines()
+
+    /* A mesma Search da listagem, e pelo mesmo critério do formulário: só
+       aparece quando a coleção passa do tamanho de uma tela. */
+    const busca = receipt.lines.length > RECEIPT_SEARCH_MIN ? `
+      <div data-sl-collection-row>
+        <div data-sl-search class="list-search">
+          <span data-sl-pre-icon>${icon('magnifying-glass-small')}</span>
+          <input data-sl-search-input id="receipt-search" placeholder="Buscar SKU"
+                 autocomplete="off" value="${escapeHtml(receipt.search)}">
+        </div>
+      </div>` : ''
+
+    return `
+      <p data-sl-text data-variant="body">${escapeHtml(RECEIPT_EFFECT)}</p>
+
+      <div data-sl-collection>
+        ${busca}
+        <div data-sl-table class="receipt-table" data-sl-table-density="default">
+          <div data-sl-table-header>
+            <div data-sl-table-row>
+              <div data-sl-table-header-cell>Produto</div>
+              <div data-sl-table-header-cell>Agendado</div>
+              <div data-sl-table-header-cell>Reservas</div>
+              <div data-sl-table-header-cell>Recebido</div>
+            </div>
+          </div>
+          <div data-sl-table-body>${visible.map(receiptRowHtml).join('')}</div>
+        </div>
+        ${visible.length ? '' : `
+          <div data-sl-collection-view>
+            <div data-sl-empty-state data-sl-size="large">
+              <div data-sl-empty-state-container>
+                <div data-sl-empty-state-illustration data-sl-collection-view-illustration
+                     style="color: var(--sl-color-gray-8)">${icon('magnifying-glass')}</div>
+                <h3 data-sl-heading data-variant="context" data-sl-collection-view-heading>Nenhum produto encontrado</h3>
+                <span data-sl-text data-variant="context" data-sl-collection-view-description>Tente outros termos</span>
+              </div>
+            </div>
+          </div>`}
+      </div>`
+  }
+
+  function receiptCountFooterHtml() {
+    return `
+      <button data-sl-button data-variant="secondary" data-size="large" data-role="receipt-close">
+        <span data-sl-button-content>Cancelar</span>
+      </button>
+      <!-- Primary, não critical: o operador está registrando o que aconteceu, e a
+           variante destrutiva leria um recebimento de rotina como estrago. O
+           rótulo é escrito por syncReceiptFeedback — com sobra, este botão não
+           marca nada, apenas leva ao passo seguinte. -->
+      <button data-sl-button data-variant="primary" data-size="large" id="receipt-advance">
+        <span data-sl-button-content id="receipt-advance-label">Marcar como recebido</span>
+      </button>`
+  }
+
+  /* ── Passo 2: o destino do restante ──────────────────────── */
+
+  const receiptBackHtml = () => `
+    <button data-sl-button data-variant="tertiary" data-size="large" class="receipt-back" id="receipt-back">
+      <span data-sl-button-content>${icon('arrow-left')}Voltar e editar quantidades</span>
+    </button>`
+
+  function receiptRemainderHtml() {
+    return `
+      <p data-sl-text data-variant="body" id="receipt-remainder-question">Você alterou algumas
+        quantidades previstas, o que devemos fazer com as unidades que restaram?</p>
+
+      <!-- Sem opção pré-selecionada: descartar unidades que o merchant pagou não
+           pode acontecer por um clique destinado a outra coisa (FR-11a). A
+           pergunta acima é o nome acessível do grupo — um rótulo separado
+           repetiria na leitura de tela o que já está escrito na tela. Cada opção
+           tem help text: o rótulo diz o que a opção é, o help diz o que ela faz,
+           que é o que o Radio pede quando a consequência é de peso. -->
+      <div data-sl-field data-space="large" data-sl-radio-group id="receipt-remainder">
+        <div class="receipt-choices" role="radiogroup" aria-labelledby="receipt-remainder-question">
+          <div data-sl-radio class="receipt-choice">
+            <input data-sl-radio-input type="radio" name="receipt-remainder" value="discard"
+                   id="receipt-remainder-discard" data-error="false"
+                   aria-describedby="receipt-remainder-discard-help"
+                   ${receipt.remainder === 'discard' ? 'checked' : ''}>
+            <label data-sl-label for="receipt-remainder-discard">Descartar</label>
+            <span data-sl-field-description id="receipt-remainder-discard-help">As unidades serão
+              removidas do lote</span>
+          </div>
+          <div data-sl-radio class="receipt-choice">
+            <input data-sl-radio-input type="radio" name="receipt-remainder" value="new-lot"
+                   id="receipt-remainder-new" data-error="false"
+                   aria-describedby="receipt-remainder-new-help"
+                   ${receipt.remainder === 'new-lot' ? 'checked' : ''}>
+            <label data-sl-label for="receipt-remainder-new">Criar um novo lote com uma nova data de chegada</label>
+            <span data-sl-field-description id="receipt-remainder-new-help">Você será redirecionado
+              para a criação do novo lote com as unidades restantes</span>
+          </div>
+        </div>
+        <span data-sl-field-error role="alert" data-error-for="receipt-remainder" hidden></span>
+      </div>
+
+      ${receiptWarningHtml()}`
+  }
+
+  function receiptRemainderFooterHtml() {
+    const travado = !receipt.remainder
+
+    return `
+      ${receiptBackHtml()}
+      <button data-sl-button data-variant="secondary" data-size="large" data-role="receipt-close">
+        <span data-sl-button-content>Cancelar</span>
+      </button>
+      <button data-sl-button data-variant="primary" data-size="large" id="receipt-confirm"
+              ${travado ? 'data-disabled="true" aria-disabled="true"' : ''}>
+        <span data-sl-button-content>Marcar como recebido</span>
+      </button>`
+  }
+
+  /* ── Passo 3: nada chegou ────────────────────────────────── */
+
+  /* Zerar o lote inteiro não é um recebimento — é um cancelamento, e tem fluxo
+     próprio (FR-8). Em vez de travar o botão do passo 1 e explicar num alerta
+     que dividiria a atenção com a tabela, o passo é este: só a explicação e as
+     duas saídas que existem.
+
+     Texto corrido, não Alert, pelo mesmo motivo do passo 1: nada falhou aqui.
+     Um informational emolduraria como aviso o que é apenas a consequência dos
+     números que o operador acabou de digitar. É o alvo do foco na entrada do
+     passo — quem usa leitor de tela ouve por que a tela mudou, e "Cancelar
+     lote" não fica a um Enter de quem só trocou de passo. */
+  function receiptEmptyHtml() {
+    return `
+      <p data-sl-text data-variant="body" id="receipt-empty-text" tabindex="-1">Você zerou as
+        quantidades de todos os produtos, então nenhuma unidade será transferida para o
+        inventário físico. Deseja cancelar o lote? Esta ação não poderá ser desfeita.</p>`
+  }
+
+  function receiptEmptyFooterHtml() {
+    return `
+      ${receiptBackHtml()}
+      <button data-sl-button data-variant="secondary" data-size="large" data-role="receipt-close">
+        <span data-sl-button-content>Fechar</span>
+      </button>
+      <button data-sl-button data-variant="critical" data-size="large" id="receipt-cancel-lot">
+        <span data-sl-button-content>Cancelar lote</span>
+      </button>`
+  }
+
+  /* ── O passo em cartaz ───────────────────────────────────── */
+
+  /* Corpo e rodapé de uma vez: cada passo tem ações próprias, não só rótulos
+     diferentes. É chamado ao abrir, ao trocar de passo e ao buscar — nunca a
+     cada dígito, que refaria a tabela e tiraria o foco do campo em uso. */
+  function renderReceipt() {
+    const lot = receiptLot()
+
+    el('receipt-title').textContent = `Marcar como recebido | ${lot.name} ${lot.code}`
+
+    if (receipt.step === 'remainder') {
+      el('receipt-body').innerHTML = receiptRemainderHtml()
+      el('receipt-footer').innerHTML = receiptRemainderFooterHtml()
+      return
+    }
+
+    if (receipt.step === 'empty') {
+      el('receipt-body').innerHTML = receiptEmptyHtml()
+      el('receipt-footer').innerHTML = receiptEmptyFooterHtml()
+      return
+    }
+
+    el('receipt-body').innerHTML = receiptCountHtml()
+    el('receipt-footer').innerHTML = receiptCountFooterHtml()
+    syncReceiptFeedback()
+  }
+
+  function setReceiptStep(step) {
+    receipt.step = step
+    renderReceipt()
+
+    if (step === 'remainder') {
+      el('receipt-remainder-discard').focus()
+      return
+    }
+
+    /* Nada chegou: o foco vai para a frase, não para um botão. Ela explica por
+       que a tela mudou — e "Cancelar lote" não pode estar a um Enter de quem só
+       trocou de passo. */
+    if (step === 'empty') {
+      el('receipt-empty-text').focus()
+      return
+    }
+
+    /* De volta à conferência, o foco cai na primeira quantidade; com a busca
+       filtrando tudo, no próprio campo de busca. */
+    const primeiro = el('receipt-body').querySelector('[data-receipt-qty]')
+      || el('receipt-body').querySelector('#receipt-search')
+    if (primeiro) primeiro.focus()
+  }
+
+  /* ── O que o recebimento causa ───────────────────────────── */
+
+  /* Duas frases curtas, sem pronome pessoal: onde o saldo vai parar, e o que
+     isso custa aos pedidos. Separar em duas evita o "ficarão … ficarão" que a
+     coordenação trazia e deixa cada consequência escaneável por si. A
+     comparação recebido × reservado ficou fora
+     de propósito — é a conta que o operador acabou de fazer na tabela do passo
+     anterior, e repeti-la enterrava o número em que ele age. Não conta nem
+     identifica pedidos: o módulo tem reservas em unidades e mais nada (FR-10a).
+     Mora no passo 2, que só existe quando falta unidade — sem falta não há como
+     o saldo ficar negativo. */
+  function receiptWarningHtml() {
+    const lines = negativeLines()
+    if (!lines.length) return ''
+
+    if (lines.length > 1) {
+      return alertHtml('warning',
+        `${lines.length} produtos ficarão com unidades disponíveis negativas. `
+        + 'Os pedidos afetados perdem a cobertura de estoque.')
+    }
+
+    const line = lines[0]
+
+    return alertHtml('warning',
+      `${receiptItem(line).name} ficará com ${negativeText(negativeOf(line))}. `
+      + 'Os pedidos afetados perdem a cobertura de estoque.')
+  }
+
+  /* O FieldError do grupo mais a moldura crítica nos dois radios: paintError
+     procura [data-sl-input], que um RadioGroup não tem. */
+  function paintRemainderError(message) {
+    paintError('receipt-remainder', message)
+    for (const option of el('receipt-remainder').querySelectorAll('[data-sl-radio-input]')) {
+      option.dataset.error = String(Boolean(message))
+    }
+  }
+
+  /* O que muda a cada dígito no passo 1: as reservas que o recebido deixou de
+     cobrir, e o rótulo do botão — porque é o que falta que decide se ele marca
+     ou pergunta. Remendo, não re-render: a tabela refeita levaria o foco do
+     campo em uso embora. */
+  function syncReceiptFeedback() {
+    for (const line of receipt.lines) {
+      /* A busca pode ter deixado a linha fora do DOM. O número dela continua
+         contando na soma; só não há o que pintar. */
+      const cell = document.querySelector(`[data-receipt-reserved="${line.itemId}"]`)
+      if (!cell) continue
+
+      const short = negativeOf(line)
+      cell.classList.toggle('receipt-short', Boolean(short))
+
+      const note = document.querySelector(`[data-receipt-short="${line.itemId}"]`)
+      note.hidden = !short
+      note.textContent = short ? `, acima do recebido: ${negativeText(short)}` : ''
+    }
+
+    /* Com sobra este botão não marca nada — leva ao passo que decide o destino
+       dela, ou ao que oferece a saída quando nada chegou. Prometer a ação e
+       entregar uma pergunta é o atrito que o rótulo evita. */
+    el('receipt-advance-label').textContent = receiptMissing() > 0
+      ? 'Continuar'
+      : 'Marcar como recebido'
+  }
+
+  /* ── Abrir e fechar ──────────────────────────────────────── */
+
+  function openReceiptModal(lotId) {
+    const lot = LOTS.find((item) => item.id === lotId)
+    if (!lot) return
+
+    /* closeRowMenu já devolveu o foco ao gatilho e zerou a referência dele, e é
+       do foco que a guardo para devolver na saída. */
+    receiptReturnFocus = rowMenuTrigger || document.activeElement
+    receipt.open = true
+    receipt.lotId = lotId
+    receipt.remainder = null
+    receipt.step = 'count'
+    receipt.search = ''
+    /* Previsto já no campo: o caso comum — o pallet veio inteiro — é um clique,
+       e o operador edita só o que divergiu (FR-6). */
+    receipt.lines = lot.items.map((item) => ({
+      itemId: item.id,
+      expected: item.quantity,
+      received: String(item.quantity),
+    }))
+
+    renderReceipt()
+
+    el('receipt-modal').hidden = false
+
+    /* O foco vai para a primeira quantidade, não para o botão que confirma: uma
+       ação irreversível não deve estar a um Enter de distância de quem acabou
+       de abrir o modal. */
+    el('receipt-body').querySelector('[data-receipt-qty]').focus()
+  }
+
+  /* Fechar descarta a contagem sem perguntar (Decisão 10): nada foi criado
+     aqui, o modal abriu preenchido a partir do lote, e a conferência pode ser
+     refeita no mesmo pallet. */
+  function closeReceiptModal() {
+    receipt.open = false
+    receipt.lotId = null
+    receipt.lines = []
+    receipt.remainder = null
+    receipt.step = 'count'
+    receipt.search = ''
+
+    el('receipt-modal').hidden = true
+
+    /* Devolve o foco ao gatilho que abriu — quando ele ainda existe: um
+       recebimento confirmado refaz as linhas e leva aquele botão embora. */
+    if (receiptReturnFocus && document.contains(receiptReturnFocus)) receiptReturnFocus.focus()
+    receiptReturnFocus = null
+  }
+
+  /* ── Avançar e confirmar ─────────────────────────────────── */
+
+  /* O botão do passo 1 decide o que fazer pelos números: nada recebido é
+     cancelamento disfarçado e vai para a saída; recebimento curto precisa
+     decidir o destino do restante; recebimento inteiro grava direto. */
+  function advanceReceipt() {
+    if (!receiptUnits()) {
+      setReceiptStep('empty')
+      return
+    }
+
+    if (receiptMissing() > 0) {
+      setReceiptStep('remainder')
+      return
+    }
+
+    commitReceipt()
+  }
+
+  function commitReceipt() {
+    const missing = receiptMissing()
+
+    /* Botão aria-disabled se explica em vez de não fazer nada (FR-11a). */
+    if (missing > 0 && !receipt.remainder) {
+      paintRemainderError('Escolha o que fazer com as unidades que não chegaram')
+      el('receipt-remainder-discard').focus()
+      return
+    }
+
+    const lot = receiptLot()
+
+    /* FR-21: o processo automático pode ter recebido o lote enquanto o modal
+       estava aberto. O protótipo não tem um segundo escritor — a revalidação
+       está aqui porque é requisito do módulo real e custa uma comparação. */
+    if (lot.status !== 'scheduled') {
+      closeReceiptModal()
+      showToast('Este lote já foi marcado como recebido')
+      return
+    }
+
+    /* O restante é lido antes da escrita: os itens que não chegaram saem do
+       lote, e depois da mutação não haveria de onde tirar nome e SKU. */
+    const carried = receipt.lines
+      .map((line) => ({
+        item: receiptItem(line),
+        quantity: line.expected - receivedOf(line),
+      }))
+      .filter((entry) => entry.quantity > 0)
+      .map((entry) => ({
+        skuId: entry.item.skuId,
+        name: entry.item.name,
+        quantity: String(entry.quantity),
+      }))
+
+    const code = lot.code
+
+    /* A escrita, de uma vez (FR-16): status, as quantidades contadas, os itens
+       recebidos com zero fora do lote, e a data real no lugar da prevista.
+       `reserved` não é tocado — é o registro do que foi vendido contra aquele
+       lote, e debitá-lo acontece fora deste módulo (FR-18). */
+    lot.status = 'received'
+    lot.arrivalDate = todayIso()
+    lot.items = lot.items
+      .map((item) => ({ ...item, quantity: receivedOf(receiptLine(item.id)) }))
+      .filter((item) => item.quantity > 0)
+
+    SKU_ROWS = buildSkuRows(LOTS)
+
+    const goToForm = receipt.remainder === 'new-lot' && carried.length > 0
+
+    if (goToForm) {
+      receiptOrigin = {
+        code,
+        name: lot.name,
+        seller: lot.destination.seller,
+        warehouse: lot.destination.warehouse,
+        missing,
+        items: carried,
+      }
+    }
+
+    closeReceiptModal()
+
+    /* A linha sai da visão porque o filtro padrão de status não inclui
+       recebidos (FR-20). Se ela era a única da última página, aquela página
+       deixa de existir: recuar uma evita o estado vazio de uma página que a
+       paginação não alcança mais. */
+    const pages = Math.max(1, Math.ceil(runQuery().total / PAGE_SIZE))
+    if (state.page > pages) state.page = pages
+
+    render()
+    showToast(`Lote ${code} marcado como recebido`)
+
+    /* O gatilho que tinha o foco saiu com a linha. Sem isto o foco cai no começo
+       do documento; o contêiner da tabela mantém o teclado onde a ação
+       aconteceu. */
+    el('table').tabIndex = -1
+    el('table').focus()
+
+    /* O recebimento já está gravado; o formulário é o segundo lote (Decisão 5).
+       O toast acima nasce sobre ele, e é essa a ordem que a spec descreve. */
+    if (goToForm) goTo(ROUTES.create)
+  }
+
+  /* ── O lote novo com o restante ──────────────────────────── */
+
+  /* O formulário nasce com os produtos que faltaram, as quantidades que
+     faltaram e o destino do lote de origem; a data fica vazia, porque a data
+     nova é a razão de o lote existir (FR-13). */
+  function applyReceiptPrefill() {
+    resetForm()
+
+    form.name = receiptOrigin.name
+    form.items = receiptOrigin.items.map((item) => ({ ...item }))
+    form.seller = receiptOrigin.seller
+    form.warehouse = receiptOrigin.warehouse
+
+    renderForm()
+
+    /* formPristine continua sendo o formulário vazio de resetForm: o
+       pré-preenchido nasce sujo, e é isso que faz a guarda de saída valer desde
+       o primeiro instante. */
+  }
+
+  /* ── Eventos do modal ───────────────────────────────────── */
+
+  /* Antes do listener de input abaixo, para o filtro de dígitos limpar o campo
+     antes de o valor ser lido. */
+  bindDigitsOnly(el('receipt-modal'), '[data-digits]')
+
+  el('receipt-modal').addEventListener('click', (event) => {
+    if (event.target.closest('[data-role="receipt-close"]')) {
+      closeReceiptModal()
+      return
+    }
+
+    if (event.target.closest('#receipt-back')) {
+      setReceiptStep('count')
+      return
+    }
+
+    if (event.target.closest('#receipt-advance')) {
+      advanceReceipt()
+      return
+    }
+
+    /* O fluxo de cancelamento é uma dependência aberta: por ora a ação devolve
+       o operador à listagem, onde "Cancelar lote" está no menu da linha. */
+    if (event.target.closest('#receipt-cancel-lot')) {
+      closeReceiptModal()
+      return
+    }
+
+    if (event.target.closest('#receipt-confirm')) commitReceipt()
+  })
+
+  el('receipt-modal').addEventListener('input', (event) => {
+    const field = event.target.closest('[data-receipt-qty]')
+    if (field) {
+      receiptLine(field.dataset.receiptQty).received = field.value
+      syncReceiptFeedback()
+      return
+    }
+
+    /* Buscar refaz a tabela, e refazer a tabela tira o foco do campo de busca:
+       devolvo o foco e o cursor onde ele estava, como na busca de produtos do
+       formulário. */
+    const search = event.target.closest('#receipt-search')
+    if (search) {
+      receipt.search = search.value
+      renderReceipt()
+      el('receipt-search').focus()
+      el('receipt-search').setSelectionRange(search.value.length, search.value.length)
+    }
+  })
+
+  /* Campo esvaziado vira 0 ao sair: uma célula vazia nunca trava a contagem
+     (FR-7). */
+  el('receipt-modal').addEventListener('focusout', (event) => {
+    const field = event.target.closest('[data-receipt-qty]')
+    if (!field || field.value !== '') return
+
+    const line = receiptLine(field.dataset.receiptQty)
+    line.received = '0'
+    field.value = '0'
+    syncReceiptFeedback()
+  })
+
+  el('receipt-modal').addEventListener('change', (event) => {
+    const option = event.target.closest('[name="receipt-remainder"]')
+    if (!option) return
+
+    receipt.remainder = option.value
+    paintRemainderError('')
+    /* O rodapé volta com o botão liberado — é ele que guarda o estado travado. */
+    el('receipt-footer').innerHTML = receiptRemainderFooterHtml()
+  })
+
+  bindFocusTrap('receipt-modal', 'receipt-panel')
 
   /* ── Shell: recolher a navegação ─────────────────────────── */
 

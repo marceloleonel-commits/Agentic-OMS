@@ -13,6 +13,7 @@ Hierarquia sob `specs/002-future-inventory/`:
 | [`002.2-listagem-por-sku.md`](../002.2-listagem-por-sku.md) | UI contract — visão por SKU |
 | [`002.3-criacao-de-lote.md`](../002.3-criacao-de-lote.md) | UI contract — formulário de criação |
 | [`002.4-exportacao.md`](../002.4-exportacao.md) | UI contract — exportação da listagem |
+| [`002.5-marcar-como-recebido.md`](../002.5-marcar-como-recebido.md) | UI contract — marcar um lote como recebido |
 
 - **Arquivo**: [`inventario-futuro-listagem.html`](./inventario-futuro-listagem.html)
 - **Design**: [Figma — Future inventory, frames `listagem por lote`](https://www.figma.com/design/xLwjBVD8h1llHt7FcW96Fv/Future-inventory?node-id=86-60142)
@@ -20,7 +21,8 @@ Hierarquia sob `specs/002-future-inventory/`:
 - **Especificações**: [`002.1-listagem-por-lote.md`](../002.1-listagem-por-lote.md) ·
   [`002.2-listagem-por-sku.md`](../002.2-listagem-por-sku.md) ·
   [`002.3-criacao-de-lote.md`](../002.3-criacao-de-lote.md) ·
-  [`002.4-exportacao.md`](../002.4-exportacao.md)
+  [`002.4-exportacao.md`](../002.4-exportacao.md) ·
+  [`002.5-marcar-como-recebido.md`](../002.5-marcar-como-recebido.md)
 
 ## Como abrir
 
@@ -42,7 +44,9 @@ de rede.
 | Expandir lote | Só na visão por lote, e só pelo botão de expandir, nunca pelo clique na linha inteira. Revela os SKUs do lote, e um recolhimento manual vence a abertura automática da busca. |
 | Filtrar | Destino, data de chegada, quantidade e status. Cada filtro só vale ao clicar em **Aplicar**; um intervalo de datas invertido é recusado com mensagem. |
 | Menu de ações | O botão de três pontos ao lado de **Criar lote futuro** abre o `Menu` do Shoreline com **Importar lotes via planilha**, **Exportar inventário futuro** e, depois do separador, **Histórico de alterações** — este último será um link para o módulo Audit do Admin, aberto em outra aba (`002.1`, FR-14c); no protótipo ele é inerte. Abre e fecha pelo gatilho, percorre os itens com as setas, fecha no `Esc` devolvendo o foco e fecha no clique fora. |
-| Menu da linha do lote | Os três pontos ao fim de cada linha abrem **Editar**, **Marcar como recebido**, **Histórico de alterações** e, depois do separador, **Excluir lote** em vermelho. Num lote já recebido ou cancelado, **Marcar como recebido** nem aparece. Os quatro itens são inertes: fecham o menu e nada mais. Perto do rodapé da janela o menu abre para cima, e ele acompanha a linha enquanto a página rola. |
+| Menu da linha do lote | Os três pontos ao fim de cada linha abrem **Editar**, **Marcar como recebido**, **Histórico de alterações** e, depois do separador, **Cancelar lote** em vermelho. **Marcar como recebido** aparece só em lote **Agendado** — recebido e cancelado são passado, e inativo é estoque parado de propósito, cujo caminho de volta é reagendar em Editar. Só ele age; os outros três fecham o menu e nada mais. Perto do rodapé da janela o menu abre para cima, e ele acompanha a linha enquanto a página rola. |
+| Marcar como recebido | Abre o **modal `large`** de conferência do lote (`002.5`), em três etapas. **Etapa 1**: o lote no título, o que a ação causa em texto corrido, e uma tabela de **Produto · Agendado · Reservas · Recebido** com a quantidade recebida já preenchida com a agendada — pallet inteiro é um clique. Acima de oito SKUs aparece uma busca; o que ela esconde continua contando. Receber menos do que está reservado deixa **Reservas** em vermelho na linha, e o botão vira **"Continuar"** no instante em que falta unidade — com sobra ele não marca nada, leva à pergunta. **Etapa 2**: o que fazer com o que restou, em dois radios **sem opção pré-marcada**, cada um com um help text dizendo o que a opção faz, e o aviso, em duas frases curtas, do saldo negativo em que o produto vai parar e dos pedidos que perdem a cobertura de estoque. **Etapa 3**: nada chegou — zerar o lote inteiro não é recebimento, e um texto corrido diz que nada será transferido, pergunta se o operador quer cancelar o lote e avisa que o cancelamento não poderá ser desfeito, com **"Cancelar lote"** como a ação que responde. O foco entra na própria frase, e não num botão: ela explica por que a tela mudou, e cancelar um lote não pode ficar a um Enter de quem só trocou de passo. As duas últimas voltam para a conferência sem perder nada. Confirmar grava de uma vez, o lote sai da visualização (o filtro padrão não traz recebidos) e um toast confirma. `Esc` fecha sem perguntar; clique fora não fecha. |
+| O restante em um lote novo | Escolhendo **Criar um novo lote com uma nova data de chegada**, o recebimento é gravado primeiro e o formulário de criação abre **preenchido** com os SKUs que faltaram, as quantidades que faltaram e o destino do lote de origem — só a data fica vazia, que é a razão de o lote existir. Sair dali sem salvar avisa que as unidades que não chegaram serão descartadas, com o código do lote de origem no texto. |
 | Exportar | Pelo menu de ações: baixa um CSV com o resultado filtrado completo da visão atual. Na visão por lote, cada linha é um lote; na visão por SKU, cada linha é o par `(lote, SKU)`. Sem nenhum resultado o item fica indisponível. Importar planilha e histórico não têm tela e apenas fecham o menu. |
 | Preencher uma data | Os campos de chegada são segmentados: dá para digitar dia, mês e ano direto, andar entre eles com as setas, mudar o valor com as setas para cima e para baixo, ou escolher no calendário pelo botão à direita. |
 | Quantidade nas duas visões | O filtro sempre limita **o número que está na coluna visível**: o total do lote na visão por lote, a quantidade daquele SKU naquele lote na visão por SKU. Um lote de 54 unidades feito de 24, 18 e 12 passa por um mínimo de 20 na visão por lote e contribui uma linha só na visão por SKU. |
@@ -54,8 +58,10 @@ de rede.
 | Estados vazios | Buscar algo inexistente mostra o estado de busca sem resultado, com ação de limpar filtros. O estado de coleção vazia — com a ação de criar lote — existe no código e só apareceria com a fixture zerada. |
 | Carregamento | O skeleton aparece por um instante ao abrir; é um estado real da tela, não enfeite, e sai com as colunas da visão em que está. |
 
-A ordenação por coluna está desenhada mas inerte, assim como os itens do menu da
-linha — as telas que eles abririam não existem aqui. Na visão por SKU o botão de
+A ordenação por coluna está desenhada mas inerte, assim como **Editar**,
+**Histórico de alterações** e **Cancelar lote** no menu da linha — as telas que
+eles abririam não existem aqui, e é por isso que "Cancelar lote", oferecido pelo
+modal quando nada chegou, apenas devolve o operador à listagem. Na visão por SKU o botão de
 três pontos da linha continua sem menu nenhum: o que ele ofereceria são ações do
 lote, e o lote já tem o seu menu na outra visão. Não há seleção múltipla em
 nenhuma das duas visões.
@@ -295,6 +301,18 @@ de `blue-10` para `blue-11` quando marcada. O CSS do Filter mostra essa migraç�
 pela metade: ele declara o fundo de pressed e de item ativo e, três regras
 abaixo, desfaz os dois, deixando só o hover da linha para trás.
 
+Um remendo de uma linha no CSS do Drawer e do Modal: **o cabeçalho sticky não
+declara `z-index`**, e sem ele o conteúdo que rola passa por cima do próprio
+cabeçalho — visível assim que o painel carrega uma tabela mais alta que ele, como
+a conferência de recebimento. O protótipo dá `z-index: 1` a
+`[data-sl-drawer-header]` e `[data-sl-modal-header]`, e a correção também caberia
+no pacote.
+
+O card flutuante de exportações mora acima do conteúdo da página e ficaria por
+cima de qualquer modal aberto. Uma regra com `:has()` o empurra para trás
+enquanto houver modal em cartaz — o card continua visível e continua processando,
+só deixa de disputar o clique com o fluxo em andamento.
+
 O Shoreline não especifica a navegação lateral, então as medidas vêm do Figma e as
 cores dos tokens. A geometria foi conferida pixel a pixel contra o print do
 arquivo de design:
@@ -377,6 +395,10 @@ um botão de 28px de CSS próprio em vez do IconButton de 36px.
 | Nome do lote acima do `Lote ID` | O Figma escreve código e nome na mesma linha. A célula empilhada repete a forma que a coluna **Lote** já tem na visão por SKU, e deixa o nome — que é o que se lê primeiro — sem competir com o código. |
 | Melhor em 1400px ou mais | Abaixo de ~1215px de janela a visão por lote rola por dentro, e abaixo de ~1400px a visão por SKU também: a nav de 280px mais os 40px de padding de cada lado deixam menos espaço do que a soma mínima das colunas — 855px com sete colunas, 1039px com oito. Acima disso sobra folga nas duas. Foi a coluna **Reservas** que empurrou os dois limites para cima, em 106px cada. |
 | A página rola inteira, com o cabeçalho da tabela fixo | Vem do próprio componente, via `data-sl-table-header-sticky`: a tabela deixa de rolar por dentro e o cabeçalho gruda no topo. |
+| Marcar como recebido usa modal, não drawer | Conferir um pallet é uma contagem, e uma drawer deixa a listagem — filtros, linhas, card de exportação — acesa ao lado da única tabela que importa. O `large` (50rem) também é a largura em que Produto e as três colunas de número convivem sem que nenhuma ceda; no `medium` das outras duas drawers o nome do produto ficava apertado. Registrado como Decision 1a na `002.5`, com a inconsistência de geometria anotada como dependência aberta. |
+| Cada radio da etapa 2 tem help text próprio | O `Radio` do Shoreline expõe `description` no grupo, não na opção — mas a orientação de conteúdo do próprio componente é escrita para help por opção, e pede help justamente nas escolhas em que a consequência precisa ser explicada. Aqui uma opção descarta unidades que o merchant pagou e a outra abre um formulário. O help é a composição `FieldDescription` do Shoreline (`caption-2` em `fg-base-soft`); o que é local é um grid de duas colunas dentro de `[data-sl-radio]` que põe o help embaixo do rótulo sem tirar controle e rótulo de filhos diretos, que é o que mantém o CSS do componente valendo (`002.5` FR-11c, Decision 11). |
+| O título do modal carrega o lote | `Marcar como recebido \| Reposição outlet #013`, como no Figma. O Shoreline pede títulos curtos e sem composição; aqui o lote no título é o que responde "em que pallet eu estou agindo" sem gastar uma linha do conteúdo. |
+| "Voltar e editar quantidades" fica à esquerda do rodapé | O `ModalFooter` alinha tudo à direita. Voltar é navegação, não uma das ações em disputa: no grupo da direita leria como uma terceira opção da mesma decisão. |
 
 ## Dados
 
