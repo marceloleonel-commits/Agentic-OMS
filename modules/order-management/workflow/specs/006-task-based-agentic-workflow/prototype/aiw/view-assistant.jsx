@@ -1,4 +1,4 @@
-/* global React, Icon, AIWData, MessageComposer, ChatEngine, Dropdown, TaskCanvas, InitiativesTable, occurrenceQueue */
+/* global React, Icon, AIWData, MessageComposer, ChatEngine, Dropdown, TaskCanvas, InitiativesTable, occurrenceQueue, Mode1Trigger, Mode1Launcher, Mode1ToPolicy */
 const { useState, useEffect, useRef } = React;
 
 /* ------- Overview metric sparkline (v3 port: OverviewMetricChart) ------- */
@@ -426,6 +426,8 @@ function AssistantView({ onOpenTask, onGotoResource, onOpenOrder }) {
   const [openOccurrenceId, setOpenOccurrenceId] = useState(null);
   const orderSearchRef = useRef(null);
   const engineRef = useRef(null);
+  const mode1EngineRef = useRef(null); // roteiro do Modo 1 ativo neste chat, se houver
+  const mode1ScriptRef = useRef(null);
   const chatScrollRef = useRef(null);
 
   const openOccurrenceTask = (AIWData.tasks || []).find((t) => t.id === openOccurrenceId) || null;
@@ -461,6 +463,39 @@ function AssistantView({ onOpenTask, onGotoResource, onOpenOrder }) {
   const handleSend = (text) => {
     if (!text.trim()) return;
     setChatMsgs((m) => [...m, { from: "user", text }]);
+    /* "Criar política" — botão do turno final do Modo 1: cria a Policy
+       de verdade e leva o gerente para revisar em Orders Settings. */
+    if (text === "Criar política" && mode1ScriptRef.current) {
+      const newPolicy = Mode1ToPolicy.createFromScript(mode1ScriptRef.current);
+      AIWData.workflowPolicies.push(newPolicy);
+      setChatMsgs((m) => [...m, {
+        from: "agent",
+        text: `Prontinho — criei a política **${newPolicy.name}**. Te levando para revisar antes de qualquer coisa.`,
+      }]);
+      setTimeout(() => onGotoResource("workflow-policies", { openPolicyId: newPolicy.id }), 900);
+      return;
+    }
+    /* Roteiro do Modo 1 já em andamento neste chat: a mensagem real do
+       gerente só marca "pode continuar" — o motor responde um turno e
+       espera de novo, nunca toca o roteiro inteiro de uma vez. */
+    if (mode1EngineRef.current) {
+      mode1EngineRef.current.send();
+      return;
+    }
+    /* Modo 1 (Product Briefing "Criação de Políticas com Agente"): o
+       gerente pode descrever um cenário de política em qualquer lugar
+       onde o agente conversa, não só numa tela dedicada. */
+    if (Mode1Trigger.matches(text)) {
+      Mode1Launcher.launch(
+        (msg) => setChatMsgs((m) => [...m, msg]),
+        setIsTyping,
+      ).then((result) => {
+        if (!result) return;
+        mode1EngineRef.current = result.engine;
+        mode1ScriptRef.current = result.script;
+      });
+      return;
+    }
     engineRef.current && engineRef.current.send(text);
   };
 

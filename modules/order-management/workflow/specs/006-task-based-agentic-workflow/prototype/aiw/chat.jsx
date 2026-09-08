@@ -700,6 +700,11 @@ function ChatPanel({
 
     return (
       <div key={i} className="msg msg-assistant">
+        {m.poweredByLLM && (
+          <span className="msg-llm-badge" title="Esta decisão foi tomada por uma chamada real à OpenAI, não pelo heurístico do protótipo.">
+            <Icon name="sparkle" size={11} /> GPT
+          </span>
+        )}
         {m.text && <div className="msg-text">{renderMd(m.text)}</div>}
 
         {/* §4.2 — card simples e card com campos usam o mesmo container. */}

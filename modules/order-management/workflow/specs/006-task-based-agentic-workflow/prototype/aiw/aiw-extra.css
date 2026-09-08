@@ -13840,3 +13840,369 @@ button.wf-ver-badge-btn:hover {
 }
 .wf-card-foot-spacer { flex: 1; }
 .wf-card-foot-chevron { flex: none; color: var(--sl-color-gray-9, #2a3f5e); }
+
+/* ═══ Tela de detalhe de política (PolicyDetailView) ═══════════════════════
+   Cabeçalho + objetivo do gerente + regras numeradas, cada uma expansível
+   em 3 colunas. Ver view-workflow-policies.jsx — PolicyDetailView. */
+.pd-scroll { padding: 20px 24px 32px; display: flex; flex-direction: column; gap: 20px; }
+
+.pd-breadcrumb {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 13px; color: var(--fg-3);
+  background: none; border: none; cursor: pointer; padding: 0;
+}
+.pd-breadcrumb:hover .pd-breadcrumb-current { color: var(--primary); }
+.pd-breadcrumb svg { flex-shrink: 0; color: var(--fg-4); }
+.pd-breadcrumb-current { color: var(--fg); font-weight: 500; }
+
+.pd-header-card {
+  display: flex; align-items: flex-start; gap: 14px;
+  padding: 18px 20px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+.pd-header-icon {
+  width: 40px; height: 40px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: var(--radius);
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+.pd-header-main { flex: 1; min-width: 0; }
+.pd-header-title-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.pd-header-name { font-size: 20px; font-weight: 700; color: var(--fg); margin: 0; }
+.pd-header-meta { font-size: 12.5px; color: var(--fg-3); margin: 6px 0 0; }
+
+.pd-card {
+  padding: 16px 20px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+.pd-card-headrow { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.pd-card-title {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 14px; font-weight: 600; color: var(--fg); margin: 0;
+}
+.pd-card-title svg { color: var(--fg-3); flex-shrink: 0; }
+.pd-edit-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12.5px; font-weight: 500; color: var(--primary);
+  background: none; border: none; cursor: pointer; padding: 4px 6px;
+  border-radius: var(--radius-sm);
+}
+.pd-edit-btn:hover { background: var(--bg-soft); }
+.pd-objective-text { margin: 12px 0 0; font-size: 13.5px; line-height: 1.55; color: var(--fg-2); font-style: italic; }
+.pd-objective-input {
+  width: 100%; margin-top: 12px; min-height: 80px;
+  font-size: 13.5px; line-height: 1.55; color: var(--fg-2); font-family: inherit;
+  padding: 10px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  resize: vertical;
+}
+
+.pd-rules-section { display: flex; flex-direction: column; gap: 12px; }
+.pd-rules-headrow { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.pd-rules-count { font-size: 12.5px; font-weight: 400; color: var(--fg-3); margin-left: 8px; }
+
+.pd-rule {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+.pd-rule.is-off { opacity: .7; }
+.pd-rule-headrow {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 16px;
+}
+.pd-rule-num {
+  width: 22px; height: 22px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  background: var(--sl-color-green-9, #12a150);
+  color: #fff;
+  font-size: 12px; font-weight: 700;
+}
+.pd-rule.is-off .pd-rule-num { background: var(--fg-4); }
+.pd-rule-name {
+  flex: 1; min-width: 0; text-align: left;
+  font-size: 14px; font-weight: 600; color: var(--fg);
+  background: none; border: none; cursor: pointer; padding: 0;
+}
+.pd-rule-name-input {
+  flex: 1; min-width: 0;
+  font-size: 14px; font-weight: 600; color: var(--fg); font-family: inherit;
+  padding: 4px 8px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+}
+.pd-rule-edit-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12.5px; font-weight: 500; color: var(--fg-3);
+  background: none; border: 1px solid var(--border); cursor: pointer;
+  padding: 5px 10px; border-radius: var(--radius-sm); flex-shrink: 0;
+}
+.pd-rule-edit-btn:hover { background: var(--bg-soft); color: var(--fg); }
+.pd-rule-chevron {
+  flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px;
+  background: none; border: none; cursor: pointer; color: var(--fg-3);
+  border-radius: var(--radius-sm);
+}
+.pd-rule-chevron:hover { background: var(--bg-soft); color: var(--fg); }
+
+.pd-rule-cols {
+  display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px;
+  padding: 4px 16px 18px;
+  border-top: 1px solid var(--border);
+}
+.pd-col { display: flex; flex-direction: column; gap: 8px; padding-top: 14px; min-width: 0; }
+.pd-col-title {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 12px; font-weight: 600; color: var(--fg-3);
+  text-transform: uppercase; letter-spacing: .02em;
+  margin: 0 0 4px;
+}
+.pd-col-info { display: inline-flex; color: var(--fg-4); cursor: help; }
+.pd-col-empty { font-size: 12.5px; color: var(--fg-3); line-height: 1.5; margin: 0 0 4px; }
+
+.pd-cond-joiner {
+  align-self: flex-start;
+  font-size: 11px; font-weight: 700; color: var(--fg-3);
+  padding: 2px 8px; margin: -2px 0 0 6px;
+  background: var(--bg-soft); border-radius: var(--radius-sm);
+}
+
+.pd-field-group { display: flex; flex-direction: column; gap: 4px; }
+.pd-field-row { display: flex; align-items: center; gap: 6px; }
+.pd-field-input, .pd-field-select {
+  font-size: 12.5px; color: var(--fg);
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-soft);
+  min-width: 0;
+}
+.pd-field-input--field { flex: 1; }
+.pd-field-input--value { flex: 1; min-width: 0; }
+.pd-field-select { flex: 2; min-width: 0; }
+.pd-field-unit { font-size: 12px; color: var(--fg-3); flex-shrink: 0; }
+.pd-field-remove {
+  flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px;
+  background: none; border: none; cursor: pointer; color: var(--fg-4);
+  border-radius: 50%;
+}
+.pd-field-remove:hover { background: var(--sl-color-red-2, #ffedea); color: var(--sl-color-red-10, #d31a15); }
+
+.pd-task-row { display: flex; align-items: center; gap: 8px; }
+.pd-task-input {
+  flex: 1; min-width: 0;
+  font-size: 12.5px; color: var(--fg);
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-soft);
+}
+.pd-task-kind-select {
+  font-size: 12px; color: var(--fg-3);
+  padding: 5px 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  flex-shrink: 0; max-width: 110px;
+}
+
+.pd-add-link {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12.5px; font-weight: 500; color: var(--primary);
+  background: none; border: none; cursor: pointer; padding: 4px 0;
+  align-self: flex-start;
+}
+.pd-add-link:hover { text-decoration: underline; }
+
+.pd-info-box {
+  display: flex; align-items: flex-start; gap: 12px;
+  padding: 14px 16px;
+  background: var(--primary-soft);
+  border-radius: var(--radius-lg);
+  color: var(--fg-2);
+}
+.pd-info-box > svg { flex-shrink: 0; color: var(--primary); margin-top: 1px; }
+.pd-info-text b { font-size: 13px; color: var(--fg); }
+.pd-info-text p { font-size: 12.5px; line-height: 1.5; margin: 4px 0 0; color: var(--fg-3); }
+
+.wfp-card-name--link {
+  background: none; border: none; cursor: pointer; padding: 0;
+  font: inherit; text-align: left;
+}
+.wfp-card-name--link:hover { color: var(--primary); text-decoration: underline; }
+
+/* ═══ Acordeão de política (WorkflowPoliciesCanvas) ═════════════════════
+   Substitui a navegação para uma tela separada: o card da política abre
+   e mostra objetivo + regras ali mesmo; cada regra reaproveita o mesmo
+   PolicyRuleRow (Quando/Tarefas/Escalar) usado antes na tela de detalhe. */
+.wfp-card-head--toggle {
+  width: 100%;
+  background: none; border: none; cursor: pointer;
+  font: inherit; text-align: left;
+}
+.wfp-card-head--toggle:hover { background: var(--bg-soft); }
+.wfp-card-head--toggle > svg:first-child { flex-shrink: 0; color: var(--fg-3); }
+.wfp-card-head--toggle .wfp-card-title { flex: 1; }
+.wfp-card:not(.is-open) .wfp-card-head { border-bottom: none; }
+.wfp-card-body { padding: 6px 20px 20px; display: flex; flex-direction: column; gap: 16px; }
+.pd-header-title-row--compact { gap: 10px; }
+
+/* ═══ Simulação Modo 1 (mode1-simulation-view.jsx) ══════════════════════ */
+.m1-phase-track {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.m1-phase-pill {
+  font-size: 11px; font-weight: 600; letter-spacing: .01em;
+  padding: 4px 10px; border-radius: 999px;
+  background: var(--bg-soft); color: var(--fg-4);
+}
+.m1-phase-pill.is-done { background: var(--sl-color-green-2, #e9fce3); color: var(--sl-color-green-11, #01540e); }
+.m1-phase-pill.is-current { background: var(--primary); color: #fff; }
+.m1-scroll { padding: 20px 24px; display: flex; flex-direction: column; gap: 4px; }
+.m1-end-note { text-align: center; font-size: 12.5px; color: var(--fg-3); padding: 20px 0 4px; }
+
+.m1-card {
+  margin: 6px 0 14px; padding: 14px 16px;
+  border: 1px solid var(--border); border-radius: var(--radius-lg);
+  background: var(--bg); max-width: 480px;
+}
+.m1-card-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.m1-card-head svg { color: var(--primary); flex-shrink: 0; }
+.m1-card-title { font-size: 13.5px; font-weight: 700; color: var(--fg); }
+.m1-card-objective { font-size: 12.5px; color: var(--fg-3); margin: 0 0 12px; line-height: 1.5; }
+.m1-card-rule { padding: 8px 0; border-top: 1px solid var(--border); font-size: 12.5px; line-height: 1.5; color: var(--fg-2); }
+.m1-card-rule b { display: block; margin-bottom: 4px; color: var(--fg); font-size: 12.5px; }
+.m1-card-rule-label { font-weight: 600; color: var(--fg-3); }
+.m1-card-escalation {
+  display: flex; align-items: flex-start; gap: 6px;
+  margin: 10px 0 0; padding-top: 10px; border-top: 1px solid var(--border);
+  font-size: 12px; color: var(--fg-3);
+}
+.m1-card-escalation svg { flex-shrink: 0; color: var(--sl-color-orange-9, #cc5e01); margin-top: 1px; }
+
+.m1-sim-grid { display: flex; flex-direction: column; gap: 6px; }
+.m1-sim-row { display: flex; justify-content: space-between; gap: 12px; font-size: 12.5px; }
+.m1-sim-label { color: var(--fg-3); }
+.m1-sim-value { font-weight: 600; color: var(--fg); font-variant-numeric: tabular-nums; }
+.m1-sim-sla {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border);
+  font-size: 12.5px; color: var(--fg-3);
+}
+.m1-sim-sla b { color: var(--sl-color-green-11, #01540e); font-size: 14px; }
+
+/* ═══ Detecção Modo 2 (mode2-anomaly-modal.jsx) ══════════════════════════
+   Fixa no rodapé, sobre qualquer tela — a detecção é global, não pertence
+   a uma rota específica. */
+.m2-modal {
+  position: fixed; right: 24px; bottom: 24px; z-index: 60;
+  width: 380px; max-width: calc(100vw - 48px);
+  background: var(--bg);
+  border: 1px solid var(--sl-color-orange-4, #fed392);
+  border-top: 3px solid var(--sl-color-orange-8, #e57001);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 12px 32px rgba(10, 21, 36, .18);
+  padding: 16px;
+  animation: m2-modal-in .25s ease-out;
+}
+@keyframes m2-modal-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.m2-modal-head { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.m2-modal-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 13px; font-weight: 700; color: var(--sl-color-orange-11, #963e01);
+}
+.m2-modal-badge svg { color: var(--sl-color-orange-9, #cc5e01); flex-shrink: 0; }
+.m2-modal-phase {
+  font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
+  color: var(--sl-color-orange-11, #963e01); background: var(--sl-color-orange-2, #ffedcd);
+  padding: 2px 8px; border-radius: 999px;
+}
+.m2-modal-source { font-size: 11.5px; color: var(--fg-3); margin: 0 0 10px; }
+.m2-modal-close {
+  margin-left: auto; flex-shrink: 0;
+  width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;
+  background: none; border: none; cursor: pointer; color: var(--fg-4); border-radius: 50%;
+}
+.m2-modal-close:hover { background: var(--bg-soft); color: var(--fg); }
+.m2-modal-text { font-size: 13px; line-height: 1.55; color: var(--fg-2); margin: 0 0 14px; white-space: pre-line; }
+.m2-modal-actions { display: flex; flex-direction: column; gap: 6px; }
+.m2-modal-action {
+  text-align: left; font-size: 12.5px; font-weight: 500; color: var(--primary);
+  background: var(--bg-soft); border: none; border-radius: var(--radius-sm);
+  padding: 8px 10px; cursor: pointer;
+}
+.m2-modal-action:hover { background: var(--primary-soft); }
+.m2-modal-progress { margin-top: 10px; font-size: 11px; color: var(--fg-4); text-align: right; }
+
+/* ═══ Selo "GPT" — mensagem cuja decisão veio de uma chamada real à LLM
+   (matchExistingPolicyReal, view-workflow-policies.jsx), não do
+   heurístico determinístico do protótipo. ═══════════════════════════ */
+.msg-llm-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 10.5px; font-weight: 700; letter-spacing: .02em;
+  color: var(--sl-color-green-11, #0a6847);
+  background: var(--sl-color-green-2, #e3faf0);
+  border: 1px solid var(--sl-color-green-4, #b8f0d6);
+  border-radius: 999px;
+  padding: 2px 8px;
+  margin-bottom: 6px;
+  cursor: help;
+}
+.msg-llm-badge svg { color: var(--sl-color-green-9, #12a150); flex-shrink: 0; }
+
+/* ═══ Excluir regra (PolicyRuleRow) ══════════════════════════════════════
+   Botão "..." abre um menu com uma única opção destrutiva; confirmação
+   de duas etapas fora do Dropdown (que fecha em qualquer clique interno,
+   então a confirmação não pode morar dentro dele). ═══════════════════ */
+.pd-rule-more-btn {
+  flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+  width: 28px; height: 28px;
+  background: none; border: none; cursor: pointer; color: var(--fg-3);
+  border-radius: var(--radius-sm);
+}
+.pd-rule-more-btn:hover { background: var(--bg-soft); color: var(--fg); }
+
+.dd-item--danger .dd-item-label,
+.dd-item--danger { color: var(--sl-color-red-10, #d31a15); }
+.dd-item--danger:hover { background: var(--sl-color-red-1, #fdf6f5); }
+
+.pd-rule-delete-confirm {
+  display: flex; align-items: center; gap: 10px;
+  margin: 0 16px 12px;
+  padding: 10px 14px;
+  background: var(--sl-color-red-1, #fdf6f5);
+  border: 1px solid var(--sl-color-red-4, #ffd0c7);
+  border-radius: var(--radius);
+  color: var(--sl-color-red-12, #940303);
+  font-size: 12.5px;
+}
+.pd-rule-delete-confirm > svg { flex-shrink: 0; color: var(--sl-color-red-9, #ec3727); }
+.pd-rule-delete-confirm span { flex: 1; }
+.pd-rule-delete-confirm-actions { display: flex; gap: 8px; flex-shrink: 0; }
+.pd-rule-delete-cancel {
+  font-size: 12.5px; font-weight: 500; color: var(--fg-2);
+  background: none; border: 1px solid var(--border-strong); cursor: pointer;
+  padding: 5px 12px; border-radius: var(--radius-sm);
+}
+.pd-rule-delete-cancel:hover { background: var(--bg-soft); }
+.pd-rule-delete-confirm-btn {
+  font-size: 12.5px; font-weight: 600; color: #fff;
+  background: var(--sl-color-red-10, #d31a15); border: none; cursor: pointer;
+  padding: 5px 12px; border-radius: var(--radius-sm);
+}
+.pd-rule-delete-confirm-btn:hover { background: var(--sl-color-red-11, #b40202); }

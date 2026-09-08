@@ -2385,7 +2385,7 @@ window.AIWData = (function () {
   const task = (label, kind) => ({ label, kind });
 
   const workflowPolicies = [
-    { id: "pol-risk-sla", category: "exceptions", name: "Detecção de Risco & SLA", rules: [
+    { id: "pol-risk-sla", category: "exceptions", name: "Detecção de Risco & SLA", active: true, objective: "Detectar e agir sobre pedidos que ainda não atrasaram, mas cuja entrega projetada indica risco de furar o SLA combinado, antes que o problema se torne visível ao cliente.", createdBy: "Gerente de E-commerce", createdAt: "03/02/2026", updatedAt: "22/05/2026", rules: [
       { id: "MON-005", name: "Pedido com entrega em risco", active: true,
         trigger: "Pedido ainda não atrasou, mas a projeção indica quebra de SLA.",
         conditions: [{ natural: "A entrega projetada vai furar o SLA combinado.", technical: "delivery.slaBreachProjected == true" }],
@@ -2403,7 +2403,7 @@ window.AIWData = (function () {
         conditions: [{ natural: "O pedido teve uma linha do tempo com muitos eventos incomuns.", technical: 'order.timelineComplexity == "high"' }],
         tasks: [task("Gerar resumo do pedido", "diagnose")] },
     ]},
-    { id: "pol-order-changes", category: "exceptions", name: "Alterações & Cancelamentos", rules: [
+    { id: "pol-order-changes", category: "exceptions", name: "Alterações & Cancelamentos", active: true, objective: "Permitir que o cliente altere item ou endereço dentro de uma janela segura, e bloquear alterações que comprometeriam um pedido já em separação.", createdBy: "Gerente de Operações", createdAt: "11/01/2026", updatedAt: "11/01/2026", rules: [
       { id: "EXC-001", name: "Alterar item antes da separação", active: true,
         trigger: "Cliente pede troca de item antes do picking iniciar.",
         conditions: [{ natural: "O cliente pediu para trocar um item.", technical: "change.requested == true" }, { natural: "A separação ainda não começou.", technical: "picking.started == false" }],
@@ -2421,7 +2421,7 @@ window.AIWData = (function () {
         conditions: [{ natural: "Um dos itens do pedido não pode ser atendido.", technical: "order.hasUnfulfillableItem == true" }],
         tasks: [task("Cancelar item afetado", "cancel"), task("Recalcular valor, invoice e entrega", "workflow"), task("Notificar cliente", "notify")] },
     ]},
-    { id: "pol-fraud-commercial", category: "exceptions", name: "Fraude & Exceções Comerciais", rules: [
+    { id: "pol-fraud-commercial", category: "exceptions", name: "Fraude & Exceções Comerciais", active: true, objective: "Nunca deixar um pedido avançar automaticamente depois de um sinal de fraude pós-aprovação — pausar tudo e exigir revisão humana antes de qualquer outra ação.", createdBy: "Supervisor Antifraude", createdAt: "20/11/2025", updatedAt: "14/04/2026", rules: [
       { id: "EDGE-006", name: "Suspeita de fraude após aprovação", active: true,
         trigger: "Pedido aprovado, mas sinais posteriores indicam risco.",
         conditions: [{ natural: "Surgiu um sinal de risco de fraude depois que o pedido já tinha sido aprovado.", technical: "fraud.postApprovalSignal == true" }],
@@ -2431,7 +2431,7 @@ window.AIWData = (function () {
         conditions: [{ natural: "Uma observação manual no pedido menciona um acordo ou promessa feita ao cliente.", technical: "order.note.containsCommitment == true" }],
         tasks: [task("Converter observação em evidência", "workflow"), task("Criar política temporária", "escalate")] },
     ]},
-    { id: "pol-payment-authorization", category: "payment", name: "Pagamentos & Autorização", rules: [
+    { id: "pol-payment-authorization", category: "payment", name: "Pagamentos & Autorização", active: true, objective: "Recuperar a captura de pagamentos travados sem exigir novo checkout do cliente, e nunca deixar um pedido parado em pagamento sem uma tentativa registrada.", createdBy: "Financeiro", createdAt: "05/12/2025", updatedAt: "05/12/2025", rules: [
       { id: "MON-001", name: "Pedido parado em pagamento", active: true,
         trigger: "Pedido aprovado comercialmente, mas não avança para faturamento ou separação.",
         conditions: [{ natural: "O pagamento já foi aprovado.", technical: "payment.approved == true" }, { natural: "O pedido não avançou para faturamento.", technical: "order.advancedToInvoicing == false" }],
@@ -2445,7 +2445,7 @@ window.AIWData = (function () {
         conditions: [{ natural: "A pré-autorização do pagamento expira antes da data prevista para o faturamento.", technical: "payment.preAuthExpiresBefore(invoice.expectedAt)" }],
         tasks: [task("Reautorizar dentro da política", "reprocess"), task("Capturar de forma idempotente", "workflow")] },
     ]},
-    { id: "pol-invoicing", category: "payment", name: "Faturamento & Invoice", rules: [
+    { id: "pol-invoicing", category: "payment", name: "Faturamento & Invoice", active: true, objective: "Garantir que todo pedido pago avance para faturamento dentro do prazo, mesmo quando parte dos itens está bloqueada.", createdBy: "Financeiro", createdAt: "05/12/2025", updatedAt: "18/03/2026", rules: [
       { id: "MON-002", name: "Pedido pendente de faturamento", active: true,
         trigger: "Pedido pago e liberado, mas invoice total ou parcial não foi gerada.",
         conditions: [{ natural: "O pagamento foi liquidado.", technical: "payment.settled == true" }, { natural: "A nota fiscal ainda não foi emitida.", technical: "invoice.issued == false" }],
@@ -2455,7 +2455,7 @@ window.AIWData = (function () {
         conditions: [{ natural: "Existem itens do pedido que já podem ser faturados.", technical: "invoice.releasableItems > 0" }, { natural: "Existem itens do pedido bloqueados para faturamento.", technical: "invoice.blockedItems > 0" }],
         tasks: [task("Gerar invoice parcial dos itens liberados", "workflow"), task("Abrir follow-up dos itens bloqueados", "workflow")] },
     ]},
-    { id: "pol-charges", category: "payment", name: "Cobrança & Valores Divergentes", rules: [
+    { id: "pol-charges", category: "payment", name: "Cobrança & Valores Divergentes", active: true, objective: "Identificar e corrigir cobranças divergentes ou indevidas antes que o cliente precise abrir um chamado.", createdBy: "Financeiro", createdAt: "09/01/2026", updatedAt: "09/01/2026", rules: [
       { id: "EXC-004", name: "Valor divergente no pedido", active: true,
         trigger: "Valor do pedido não bate com o esperado pelo cliente, SAC ou financeiro.",
         conditions: [{ natural: "O valor total do pedido não bate com o valor esperado.", technical: "order.total != order.expectedTotal" }],
@@ -2465,7 +2465,7 @@ window.AIWData = (function () {
         conditions: [{ natural: "O valor capturado no pagamento é maior do que o valor devido pelo pedido.", technical: "payment.capturedAmount > order.dueAmount" }],
         tasks: [task("Comparar pedido, invoice e captura", "diagnose"), task("Disparar estorno ou reembolso", "refund"), task("Bloquear nova cobrança", "cancel")] },
     ]},
-    { id: "pol-carrier", category: "logistics", name: "Coleta & Transporte", rules: [
+    { id: "pol-carrier", category: "logistics", name: "Coleta & Transporte", active: true, objective: "Garantir que todo pedido embalado seja coletado dentro do prazo combinado com a transportadora, escalando antes que o atraso chegue ao cliente.", createdBy: "Gerente de Logística", createdAt: "14/10/2025", updatedAt: "30/04/2026", rules: [
       { id: "LOG-003", name: "Transportadora não coletou no horário", active: true,
         trigger: "Pedido está separado/embalado, mas sem coleta.",
         conditions: [{ natural: "O pedido já está embalado.", technical: "packing.done == true" }, { natural: "A transportadora ainda não coletou.", technical: "carrier.pickedUp == false" }],
@@ -2479,7 +2479,7 @@ window.AIWData = (function () {
         conditions: [{ natural: "A API da transportadora está fora do ar.", technical: "carrier.apiAvailable == false" }],
         tasks: [task("Adiar task dependente", "replan"), task("Tentar novamente com backoff", "reprocess"), task("Bloquear avanço por evidência", "cancel")] },
     ]},
-    { id: "pol-dispatch", category: "logistics", name: "Despacho & Entrega", rules: [
+    { id: "pol-dispatch", category: "logistics", name: "Despacho & Entrega", active: true, objective: "Proteger a promessa de entrega quando o seller responsável não despacha no SLA combinado, especialmente em pedidos multi-seller.", createdBy: "Gerente de Logística", createdAt: "14/10/2025", updatedAt: "14/10/2025", rules: [
       { id: "MON-004", name: "Seller não despachou no SLA", active: true,
         trigger: "Pedido foi alocado ao seller, mas não foi despachado dentro do combinado.",
         conditions: [{ natural: "O seller passou do prazo combinado para despachar o pedido.", technical: "seller.dispatchElapsed > seller.dispatchSla" }],
@@ -2493,7 +2493,7 @@ window.AIWData = (function () {
         conditions: [{ natural: "O rastreio mostra que o pedido foi entregue.", technical: 'tracking.status == "delivered"' }, { natural: "O cliente afirma que não recebeu o pedido.", technical: "customer.deniesReceipt == true" }],
         tasks: [task("Abrir disputa com carrier", "escalate"), task("Coletar evidências de entrega", "diagnose"), task("Segurar reembolso até decisão", "cancel")] },
     ]},
-    { id: "pol-picking", category: "fulfillment", name: "Separação & Priorização", rules: [
+    { id: "pol-picking", category: "fulfillment", name: "Separação & Priorização", active: true, objective: "Impedir que pedidos prontos para separação se percam em filas grandes, priorizando por risco de SLA.", createdBy: "Gerente de Fulfillment", createdAt: "02/09/2025", updatedAt: "27/02/2026", rules: [
       { id: "MON-003", name: "Pedido atrasado na separação", active: true,
         trigger: "Pedido deveria estar em picking, mas segue parado ou não iniciado.",
         conditions: [{ natural: "A separação ainda não começou.", technical: "picking.started == false" }, { natural: "O prazo para começar a separação já passou.", technical: "picking.dueAt < now()" }],
@@ -2507,7 +2507,37 @@ window.AIWData = (function () {
         conditions: [{ natural: "O pedido é para retirada na loja (BOPIS).", technical: "order.isBopis == true" }, { natural: "O pedido ainda não está pronto para retirada.", technical: "order.readyForPickup == false" }],
         tasks: [task("Repriorizar picking", "replan"), task("Avisar loja e cliente", "notify"), task("Reatribuir loja", "reallocate")] },
     ]},
-    { id: "pol-capacity-stock", category: "fulfillment", name: "Capacidade & Estoque", rules: [
+    { id: "pol-pickup-sla", category: "fulfillment", name: "Pickup SLA Protection", active: true, objective: "Quero garantir que pelo menos 98% dos pedidos de retirada fiquem prontos em até 48 horas. Se estiver em risco, você deve agir antes do prazo vencer. Pode gastar até R$15 adicionais para recuperar um pedido, mas nunca altere a loja escolhida pelo cliente sem autorização.", createdBy: "Gerente de E-commerce", createdAt: "12/05/2026", updatedAt: "18/05/2026", rules: [
+      { id: "PICK-001", name: "Pickup approaching SLA", active: true,
+        trigger: "Pedido de retirada ainda não está pronto e o prazo de 48h está se aproximando.",
+        conditions: [
+          { natural: "O status do pickup é diferente de Ready for pickup.", technical: "pickup.status != 'ready_for_pickup'",
+            param: { field: "Status do pickup", operator: "é diferente de", value: "Ready for pickup" } },
+          { natural: "Faltam menos de 18 horas para o SLA.", technical: "pickup.remainingSlaHours < 18",
+            param: { field: "SLA restante", operator: "é menor que", value: "18", unit: "horas" } },
+        ],
+        tasks: [task("Verificar status do picking", "diagnose"), task("Repriorizar picking", "replan"), task("Verificar estoque alternativo", "diagnose")],
+        escalation: [{ field: "Custo adicional de recuperação", operator: "é maior que", value: "15,00", unit: "R$" }] },
+      { id: "PICK-002", name: "Critical pickup", active: true,
+        trigger: "Pedido de retirada crítico — menos de 8h restantes e ainda não está pronto.",
+        conditions: [
+          { natural: "O status do pickup é diferente de Ready for pickup.", technical: "pickup.status != 'ready_for_pickup'",
+            param: { field: "Status do pickup", operator: "é diferente de", value: "Ready for pickup" } },
+          { natural: "Faltam menos de 8 horas para o SLA.", technical: "pickup.remainingSlaHours < 8",
+            param: { field: "SLA restante", operator: "é menor que", value: "8", unit: "horas" } },
+        ],
+        tasks: [task("Buscar alternativa elegível", "reallocate"), task("Calcular custo incremental", "diagnose"), task("Solicitar consentimento ao cliente", "notify")],
+        escalation: [{ field: "Custo adicional de recuperação", operator: "é maior que", value: "15,00", unit: "R$" }] },
+      { id: "PICK-003", name: "Change pickup store", active: false,
+        trigger: "A melhor alternativa encontrada exige mudar a loja de retirada escolhida pelo cliente.",
+        conditions: [
+          { natural: "A loja alternativa é diferente da loja escolhida pelo cliente.", technical: "pickup.alternativeStore != pickup.customerChosenStore",
+            param: { field: "Loja alternativa", operator: "é diferente de", value: "Loja escolhida pelo cliente" } },
+        ],
+        tasks: [task("Preparar loja alternativa", "diagnose")],
+        escalation: [{ field: "Consentimento do cliente", operator: "é igual a", value: "Não obtido" }] },
+    ]},
+    { id: "pol-capacity-stock", category: "fulfillment", name: "Capacidade & Estoque", active: true, objective: "Redistribuir pedidos quando um centro de distribuição ou loja excede sua capacidade de processamento, sem bloquear novas alocações por completo.", createdBy: "Gerente de Fulfillment", createdAt: "02/09/2025", updatedAt: "02/09/2025", rules: [
       { id: "LOG-002", name: "Fulfillment point com capacidade esgotada", active: true,
         trigger: "CD/loja recebeu mais pedidos do que consegue processar.",
         conditions: [{ natural: "O CD ou loja recebeu mais pedidos do que consegue processar agora.", technical: "fulfillmentPoint.assignedOrders > fulfillmentPoint.capacity" }],
@@ -2521,7 +2551,7 @@ window.AIWData = (function () {
         conditions: [{ natural: "O item foi danificado antes do despacho.", technical: "item.damagedBeforeDispatch == true" }],
         tasks: [task("Substituir item", "reallocate"), task("Reatribuir estoque", "reallocate"), task("Cancelar item afetado", "cancel"), task("Notificar cliente", "notify")] },
     ]},
-    { id: "pol-returns", category: "returns", name: "Devoluções & Reembolsos", rules: [
+    { id: "pol-returns", category: "returns", name: "Devoluções & Reembolsos", active: true, objective: "Aprovar devoluções dentro da política da loja automaticamente e encaminhar qualquer exceção para avaliação humana qualificada.", createdBy: "Gerente de SAC", createdAt: "18/08/2025", updatedAt: "10/03/2026", rules: [
       { id: "DEV-001", name: "Solicitação de devolução simples", active: true,
         trigger: "Cliente solicita devolução dentro da política.",
         conditions: [{ natural: "O cliente solicitou uma devolução.", technical: "return.requested == true" }, { natural: "A solicitação está dentro da política de devolução da loja.", technical: "return.withinPolicy == true" }],
@@ -2535,7 +2565,7 @@ window.AIWData = (function () {
         conditions: [{ natural: "A devolução já foi aprovada.", technical: "return.approved == true" }, { natural: "O tempo decorrido do reembolso já passou do prazo combinado.", technical: "refund.elapsedHours > refund.slaHours" }],
         tasks: [task("Validar evidências do reembolso", "diagnose"), task("Reprocessar reembolso", "refund"), task("Escalar para o PSP", "escalate"), task("Oferecer voucher", "refund")] },
     ]},
-    { id: "pol-reverse-logistics", category: "returns", name: "Recebimento Reverso & Troca", rules: [
+    { id: "pol-reverse-logistics", category: "returns", name: "Recebimento Reverso & Troca", active: true, objective: "Acompanhar o item devolvido desde a chegada ao CD até a conferência, registrando qualquer divergência para decisão.", createdBy: "Gerente de SAC", createdAt: "18/08/2025", updatedAt: "18/08/2025", rules: [
       { id: "DEV-003", name: "Produto devolvido chegou ao CD", active: true,
         trigger: "Item retornou fisicamente ao fulfillment point/CD.",
         conditions: [{ natural: "O item devolvido chegou fisicamente ao centro de distribuição.", technical: "return.receivedAtFulfillmentPoint == true" }],

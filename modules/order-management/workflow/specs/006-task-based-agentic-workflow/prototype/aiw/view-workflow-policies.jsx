@@ -1,4 +1,4 @@
-/* global React, ReactDOM, Icon, AIWData, ChatPanel, ResizableSplit, Toggle, Dropdown, IconButton, SidebarTooltip, CanvasTopbar */
+/* global React, ReactDOM, Icon, AIWData, ChatPanel, ResizableSplit, Toggle, Dropdown, IconButton, SidebarTooltip, Mode1Trigger, Mode1Launcher, Mode1ToPolicy, LLMClient, InitiativeFromPolicy, CanvasTopbar */
 const { useState, useRef, useEffect, useMemo, useCallback } = React;
 
 /* ══ Políticas do Workflow ══════════════════════════════════════════════
@@ -182,18 +182,62 @@ function PolicyRuleDrawer({ rule, policy, onToggle, onClose }) {
 /* ── Canvas ─────────────────────────────────────────────────────────────── */
 function WorkflowPoliciesCanvas({
   policies, query, onQuery, category, onCategory, status, onStatus,
-  selectedRuleId, onSelectRule, highlightId, onNewRule,
+  selectedRuleId, onSelectRule, highlightId, highlightPolicyId, initialExpandedPolicyId, onNewRule,
+  onTogglePolicyActive, onEditObjective, onToggleRule, onRenameRule, onCreateRule, onDeleteRule,
+  onAddCondition, onRemoveCondition, onUpdateCondition,
+  onAddTask, onRemoveTask, onUpdateTask,
+  onAddEscalation, onRemoveEscalation, onUpdateEscalation,
   onBack, chatOpen, onToggleChat, onCloseCanvas,
 }) {
   const rowRefs = useRef({});
+  /* Acordeão de 2 níveis, só nesta tela: uma política aberta por vez, e
+     dentro dela uma regra aberta por vez — nunca navega para outra tela
+     (feedback direto do vídeo de review: "diminuir a quantidade de telas"). */
+  const [expandedPolicyId, setExpandedPolicyId] = useState(initialExpandedPolicyId || null);
+  const [expandedRuleId, setExpandedRuleId] = useState(null);
 
-  /* Regra recém-criada pelo chat: o canvas rola até ela e o card fica em
-     destaque enquanto o drawer correspondente abre. */
+  /* Regra recém-criada ou aberta pelo chat ("abrir MON-005"): abre a
+     política dona da regra e a própria regra em sanfona, depois rola até
+     ela — sem isso, o elemento não existe no DOM (política ainda fechada)
+     e o scroll não teria o que fazer. */
+  useEffect(() => {
+    if (!highlightId) return;
+    const owner = policies.find((p) => p.rules.some((r) => r.id === highlightId));
+    if (owner) {
+      setExpandedPolicyId(owner.id);
+      setExpandedRuleId(highlightId);
+    }
+  }, [highlightId, policies]);
+
   useEffect(() => {
     if (!highlightId) return;
     const el = rowRefs.current[highlightId];
     if (el) el.scrollIntoView({ block: "center", behavior: "smooth" });
-  }, [highlightId]);
+  }, [highlightId, expandedPolicyId]);
+
+  /* "Desejo alterar uma política" (chip/chat): abre a política certa em
+     sanfona e rola até ela — mesma ideia do highlightId acima, mas no
+     nível da política em vez da regra. */
+  useEffect(() => {
+    if (!highlightPolicyId) return;
+    setExpandedPolicyId(highlightPolicyId);
+  }, [highlightPolicyId]);
+
+  useEffect(() => {
+    if (!highlightPolicyId) return;
+    const el = rowRefs.current[highlightPolicyId];
+    if (el) el.scrollIntoView({ block: "start", behavior: "smooth" });
+  }, [highlightPolicyId, expandedPolicyId]);
+
+  /* Chegou aqui já com uma política para abrir (ex.: "Transformar em
+     política permanente" no Modo 2, via initialExpandedPolicyId) — rola
+     até ela uma vez, no primeiro render em que ela existir no DOM. */
+  useEffect(() => {
+    if (!initialExpandedPolicyId) return;
+    const el = rowRefs.current[initialExpandedPolicyId];
+    if (el) el.scrollIntoView({ block: "start", behavior: "smooth" });
+    // eslint-disable-next-line
+  }, []);
 
   const q = norm(query.trim());
   const matches = (rule, policy) => {
@@ -305,40 +349,89 @@ function WorkflowPoliciesCanvas({
 
       <div className="detail-scroll wfp-scroll">
         <div className="wfp-list">
+          {groups.length > 0 && (
+            <div className="pd-info-box">
+              <Icon name="info" size={18} />
+              <div className="pd-info-text">
+                <b>Sobre a execução das regras</b>
+                <p>As regras são avaliadas continuamente pelo agente. Quando uma condição é atendida, o agente executa as tarefas permitidas de forma autônoma, respeitando os limites de escalação definidos.</p>
+              </div>
+            </div>
+          )}
+
           {groups.map(({ policy, rules }) => {
             const active = rules.filter((r) => r.active).length;
+            const isOpen = expandedPolicyId === policy.id;
             return (
-              <section key={policy.id} className="wfp-card">
-                <header className="wfp-card-head">
+              <section
+                key={policy.id}
+                ref={(el) => { rowRefs.current[policy.id] = el; }}
+                className={`wfp-card${isOpen ? " is-open" : ""}`}
+              >
+                <button
+                  className="wfp-card-head wfp-card-head--toggle"
+                  onClick={() => setExpandedPolicyId(isOpen ? null : policy.id)}
+                >
+                  <Icon name={isOpen ? "expand-less" : "expand-more"} size={20} />
                   <div className="wfp-card-title">
-                    <h3 className="wfp-card-name">{policy.name}</h3>
+                    <span className="wfp-card-name">{policy.name}</span>
                     <span className="wfp-card-meta">
                       {plural(rules.length, "regra", "regras")} · {plural(active, "ativa", "ativas")}
                     </span>
                   </div>
+                  <PolicyStateTag active={policy.active} />
                   <PolicyCategoryTag categoryId={policy.category} />
-                </header>
+                </button>
 
-                <div className="wfp-card-rules">
-                  {rules.map((rule) => (
-                    <div
-                      key={rule.id}
-                      ref={(el) => { rowRefs.current[rule.id] = el; }}
-                      className={`wfp-row${selectedRuleId === rule.id ? " is-selected" : ""}${highlightId === rule.id ? " is-new" : ""}${rule.active ? "" : " is-off"}`}
-                    >
-                      <button className="wfp-row-main" onClick={() => onSelectRule(rule.id)}>
-                        <span className="wfp-sid">{rule.id}</span>
-                        <span className="wfp-row-name">{rule.name}</span>
-                      </button>
-
-                      <span className="wfp-row-tasks">
-                        <span className="wfp-row-tasks-label">{plural(rule.tasks.length, "tarefa", "tarefas")}</span>
+                {isOpen && (
+                  <div className="wfp-card-body">
+                    <div className="pd-header-title-row pd-header-title-row--compact">
+                      <Toggle on={policy.active} onChange={() => onTogglePolicyActive(policy.id)} />
+                      <span className="pd-header-meta">
+                        Criada em {policy.createdAt} por {policy.createdBy} · Atualizada em {policy.updatedAt}
                       </span>
-
-                      <PolicyStateTag active={rule.active} />
                     </div>
-                  ))}
-                </div>
+
+                    {policy.objective && (
+                      <PolicyObjectiveCard policy={policy} onEditObjective={(text) => onEditObjective(policy.id, text)} />
+                    )}
+
+                    <div className="pd-rules-headrow">
+                      <h4 className="pd-card-title">
+                        Regras da política
+                        <span className="pd-rules-count">{plural(rules.length, "regra", "regras")} ({plural(active, "ativa", "ativas")})</span>
+                      </h4>
+                      <button data-sl-button data-variant="primary" data-has-label
+                        onClick={() => setExpandedRuleId(onCreateRule(policy.id))}>
+                        <Icon name="plus" size={16} /> Criar regra
+                      </button>
+                    </div>
+
+                    {rules.map((rule, i) => (
+                      <div key={rule.id} ref={(el) => { rowRefs.current[rule.id] = el; }} className={highlightId === rule.id ? "is-new" : ""}>
+                        <PolicyRuleRow
+                          rule={rule}
+                          index={i + 1}
+                          policyId={policy.id}
+                          expanded={expandedRuleId === rule.id}
+                          onExpand={() => setExpandedRuleId(expandedRuleId === rule.id ? null : rule.id)}
+                          onToggleActive={() => onToggleRule(policy.id, rule.id)}
+                          onRename={(name) => onRenameRule(policy.id, rule.id, name)}
+                          onDelete={() => onDeleteRule(policy.id, rule.id)}
+                          onAddCondition={() => onAddCondition(policy.id, rule.id)}
+                          onRemoveCondition={(i2) => onRemoveCondition(policy.id, rule.id, i2)}
+                          onUpdateCondition={(i2, patch) => onUpdateCondition(policy.id, rule.id, i2, patch)}
+                          onAddTask={() => onAddTask(policy.id, rule.id)}
+                          onRemoveTask={(i2) => onRemoveTask(policy.id, rule.id, i2)}
+                          onUpdateTask={(i2, patch) => onUpdateTask(policy.id, rule.id, i2, patch)}
+                          onAddEscalation={() => onAddEscalation(policy.id, rule.id)}
+                          onRemoveEscalation={(i2) => onRemoveEscalation(policy.id, rule.id, i2)}
+                          onUpdateEscalation={(i2, patch) => onUpdateEscalation(policy.id, rule.id, i2, patch)}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
               </section>
             );
           })}
@@ -349,6 +442,198 @@ function WorkflowPoliciesCanvas({
         </div>
       </div>
     </div>
+  );
+}
+
+/* ── Tela de detalhe de política ─────────────────────────────────────────
+   Substitui o canvas de lista quando o gerente clica no nome de uma
+   política. Layout: cabeçalho + objetivo do gerente + lista de regras,
+   cada uma expansível em 3 colunas (Quando / Tarefas / Escalar quando) —
+   modelo validado com o time de design (ver print de referência). */
+const CONDITION_OPERATORS = ["é igual a", "é diferente de", "é maior que", "é menor que", "é maior ou igual a", "é menor ou igual a"];
+const ESCALATION_OPERATORS = ["é maior que", "é menor que", "é igual a", "é diferente de"];
+
+function ConditionRow({ condition, onChange, onRemove }) {
+  const p = condition.param || { field: "Condição", operator: "verdadeiro quando", value: condition.natural || "" };
+  return (
+    <div className="pd-field-group">
+      <div className="pd-field-row">
+        <input className="pd-field-input pd-field-input--field" value={p.field}
+          onChange={(e) => onChange({ field: e.target.value })} placeholder="Campo" />
+        <button className="pd-field-remove" title="Remover condição" onClick={onRemove}><Icon name="x" size={14} /></button>
+      </div>
+      <div className="pd-field-row">
+        <select className="pd-field-select" value={p.operator} onChange={(e) => onChange({ operator: e.target.value })}>
+          {CONDITION_OPERATORS.map((op) => <option key={op} value={op}>{op}</option>)}
+        </select>
+        <input className="pd-field-input pd-field-input--value" value={p.value}
+          onChange={(e) => onChange({ value: e.target.value })} placeholder="Valor" />
+        {p.unit && <span className="pd-field-unit">{p.unit}</span>}
+      </div>
+    </div>
+  );
+}
+
+function EscalationRow({ esc, onChange, onRemove }) {
+  return (
+    <div className="pd-field-group">
+      <div className="pd-field-row">
+        <input className="pd-field-input pd-field-input--field" value={esc.field}
+          onChange={(e) => onChange({ field: e.target.value })} placeholder="Campo" />
+        <button className="pd-field-remove" title="Remover condição de escalação" onClick={onRemove}><Icon name="x" size={14} /></button>
+      </div>
+      <div className="pd-field-row">
+        <select className="pd-field-select" value={esc.operator} onChange={(e) => onChange({ operator: e.target.value })}>
+          {ESCALATION_OPERATORS.map((op) => <option key={op} value={op}>{op}</option>)}
+        </select>
+        <input className="pd-field-input pd-field-input--value" value={esc.value}
+          onChange={(e) => onChange({ value: e.target.value })} placeholder="Valor" />
+        {esc.unit && <span className="pd-field-unit">{esc.unit}</span>}
+      </div>
+    </div>
+  );
+}
+
+function TaskRow({ task, onChange, onRemove }) {
+  return (
+    <div className="pd-task-row">
+      <span className="wfp-dot" style={{ background: kindOf(task.kind).dot }} />
+      <input className="pd-task-input" value={task.label} onChange={(e) => onChange({ label: e.target.value })} />
+      <select className="pd-task-kind-select" value={task.kind} onChange={(e) => onChange({ kind: e.target.value })}>
+        {AIWData.policyActionKinds.map((k) => <option key={k.id} value={k.id}>{k.label}</option>)}
+      </select>
+      <button className="pd-field-remove" title="Remover tarefa" onClick={onRemove}><Icon name="x" size={14} /></button>
+    </div>
+  );
+}
+
+function PolicyRuleRow({
+  rule, index, policyId, expanded, onExpand, onToggleActive, onRename, onDelete,
+  onAddCondition, onRemoveCondition, onUpdateCondition,
+  onAddTask, onRemoveTask, onUpdateTask,
+  onAddEscalation, onRemoveEscalation, onUpdateEscalation,
+}) {
+  const [editingName, setEditingName] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const escalation = rule.escalation || [];
+
+  return (
+    <div className={`pd-rule${expanded ? " is-expanded" : ""}${rule.active ? "" : " is-off"}`}>
+      <div className="pd-rule-headrow">
+        <span className="pd-rule-num">{index}</span>
+        {editingName ? (
+          <input
+            className="pd-rule-name-input"
+            autoFocus
+            defaultValue={rule.name}
+            onBlur={(e) => { onRename(e.target.value || rule.name); setEditingName(false); }}
+            onKeyDown={(e) => { if (e.key === "Enter") e.target.blur(); }}
+          />
+        ) : (
+          <button className="pd-rule-name" onClick={() => onExpand()}>{rule.name}</button>
+        )}
+        <PolicyStateTag active={rule.active} />
+        <Toggle on={rule.active} onChange={onToggleActive} />
+        <button className="pd-rule-edit-btn" onClick={() => setEditingName(true)}>
+          <Icon name="edit" size={14} /> Editar
+        </button>
+        <Dropdown
+          align="right"
+          trigger={<button className="pd-rule-more-btn" aria-label="Mais ações da regra"><Icon name="more" size={16} /></button>}
+        >
+          <button className="dd-item dd-item--danger" onClick={() => setConfirmingDelete(true)}>
+            <Icon name="x-circle" size={16} /> Excluir regra
+          </button>
+        </Dropdown>
+        <button className="pd-rule-chevron" onClick={onExpand} aria-label={expanded ? "Recolher regra" : "Expandir regra"}>
+          <Icon name={expanded ? "expand-less" : "expand-more"} size={20} />
+        </button>
+      </div>
+
+      {confirmingDelete && (
+        <div className="pd-rule-delete-confirm">
+          <Icon name="warning-amber" size={16} />
+          <span>Excluir a regra <b>{rule.name}</b>? Essa ação não pode ser desfeita.</span>
+          <div className="pd-rule-delete-confirm-actions">
+            <button className="pd-rule-delete-cancel" onClick={() => setConfirmingDelete(false)}>Cancelar</button>
+            <button className="pd-rule-delete-confirm-btn" onClick={onDelete}>Excluir regra</button>
+          </div>
+        </div>
+      )}
+
+      {expanded && (
+        <div className="pd-rule-cols">
+          <div className="pd-col">
+            <h4 className="pd-col-title">Quando (condições)</h4>
+            {rule.conditions.map((c, i) => (
+              <React.Fragment key={i}>
+                {i > 0 && <span className="pd-cond-joiner">E</span>}
+                <ConditionRow
+                  condition={c}
+                  onChange={(patch) => onUpdateCondition(i, patch)}
+                  onRemove={() => onRemoveCondition(i)}
+                />
+              </React.Fragment>
+            ))}
+            <button className="pd-add-link" onClick={onAddCondition}>
+              <Icon name="plus" size={14} /> Adicionar condição
+            </button>
+          </div>
+
+          <div className="pd-col">
+            <h4 className="pd-col-title">
+              O agente pode executar (tarefas)
+              <span className="pd-col-info" title="Tarefas que o agente está autorizado a executar quando as condições forem verdadeiras."><Icon name="info" size={14} /></span>
+            </h4>
+            {rule.tasks.map((t, i) => (
+              <TaskRow key={i} task={t} onChange={(patch) => onUpdateTask(i, patch)} onRemove={() => onRemoveTask(i)} />
+            ))}
+            <button className="pd-add-link" onClick={onAddTask}>
+              <Icon name="plus" size={14} /> Adicionar tarefa
+            </button>
+          </div>
+
+          <div className="pd-col">
+            <h4 className="pd-col-title">Escalar quando (limite de autonomia)</h4>
+            {escalation.length === 0 && (
+              <p className="pd-col-empty">Nenhuma condição de escalação definida — o agente nunca escala esta regra.</p>
+            )}
+            {escalation.map((e, i) => (
+              <EscalationRow key={i} esc={e} onChange={(patch) => onUpdateEscalation(i, patch)} onRemove={() => onRemoveEscalation(i)} />
+            ))}
+            <button className="pd-add-link" onClick={onAddEscalation}>
+              <Icon name="plus" size={14} /> Adicionar condição de escalação
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PolicyObjectiveCard({ policy, onEditObjective }) {
+  const [editing, setEditing] = useState(false);
+  return (
+    <section className="pd-card">
+      <div className="pd-card-headrow">
+        <h4 className="pd-card-title"><Icon name="chat-bubble-outline" size={16} /> Objetivo descrito pelo gerente</h4>
+        {!editing && (
+          <button className="pd-edit-btn" onClick={() => setEditing(true)}>
+            <Icon name="edit" size={14} /> Editar objetivo
+          </button>
+        )}
+      </div>
+      {editing ? (
+        <textarea
+          className="pd-objective-input"
+          autoFocus
+          defaultValue={policy.objective}
+          onBlur={(e) => { onEditObjective(e.target.value || policy.objective); setEditing(false); }}
+        />
+      ) : (
+        <p className="pd-objective-text">&ldquo;{policy.objective}&rdquo;</p>
+      )}
+    </section>
   );
 }
 
@@ -442,13 +727,38 @@ Se ruleId for null, o merchant está descrevendo uma variante nova dentro do mes
 trate como needsNewRule mesmo esse evento tendo regras existentes.
 `;
 
+/* Monta o texto real do PROMPT_MATCH_EXISTING_RULE acima — o template com
+   ${...} escapado ali é só documentação; aqui interpolamos os valores de
+   verdade antes de mandar pra LLM. */
+function buildMatchExistingRulePrompt(phrase, eventMatch, existingRules) {
+  return `Este evento já tem mais de uma regra cadastrada, cada uma cobrindo uma causa raiz
+diferente. Decida qual regra existente melhor corresponde à frase do merchant,
+comparando com o "trigger" (a circunstância) de cada uma.
+
+Evento: ${eventMatch.label}
+
+Regras existentes para este evento:
+${existingRules.map((r) => `- ${r.id} (${r.name}): "${r.trigger}"`).join("\n")}
+
+Frase do merchant: "${phrase}"
+
+Responda apenas com JSON:
+{
+  "ruleId": "<um dos ids acima, ou null se nenhuma causa raiz combina>",
+  "reasoning": "<uma frase curta explicando a escolha, para log interno — nunca mostrada ao merchant>"
+}
+
+Se ruleId for null, o merchant está descrevendo uma variante nova dentro do mesmo evento —
+trate como needsNewRule mesmo esse evento tendo regras existentes.`;
+}
+
 /* Heurística determinística de protótipo: pontua cada regra existente do
    evento por sobreposição de tokens (>=4 chars) entre a frase e o
    nome+trigger+tarefas. Empate ou score baixo → null (equivalente a
    "nenhuma causa raiz combina" no PROMPT_MATCH_EXISTING_RULE), o que
-   dispara Fluxo C no `handleFreeformRule`. Em produção, substitua por
-   chamada ao LLM usando PROMPT_MATCH_EXISTING_RULE. */
-function matchExistingPolicy(phrase, eventMatch, policies) {
+   dispara Fluxo C no `handleFreeformRule`. Usada como fallback quando a
+   LLM real (matchExistingPolicyReal, abaixo) não está disponível. */
+function matchExistingPolicyHeuristic(phrase, eventMatch, policies) {
   const ids = eventMatch.existingRuleIds || [];
   if (ids.length === 0) return null;
   const candidates = ids
@@ -476,6 +786,127 @@ function matchExistingPolicy(phrase, eventMatch, policies) {
   if (!top || top.score < 2) return null;
   if (runnerUp && runnerUp.score === top.score) return null;
   return top.rule.id;
+}
+
+/* Heurística de fallback para pedido de exclusão por frase livre — só
+   entra em ação se a chamada real à LLM (classifyDeleteIntentReal,
+   abaixo) falhar. Exige um verbo de exclusão explícito na frase (sem
+   isso, nunca interpreta como pedido de excluir — evitar falso positivo
+   é mais importante que acertar toda vez, já que a ação é destrutiva e
+   aqui é executada sem confirmação). Desempate por sobreposição de
+   token, igual matchExistingPolicyHeuristic. */
+function matchDeleteIntentHeuristic(phrase, candidateRules) {
+  const n = norm(phrase);
+  if (!/exclu|apag|remov|delet/.test(n)) return null;
+  const tokens = n.split(/\s+/).filter((t) => t.length >= 4 && !/^(exclu|apag|remov|delet|regra)/.test(t));
+  if (tokens.length === 0) return null;
+  const scored = candidateRules.map((r) => {
+    const hay = norm(`${r.name} ${r.trigger}`);
+    let s = 0;
+    for (const tok of tokens) if (hay.includes(tok)) s += 1;
+    return { rule: r, score: s };
+  }).sort((a, b) => b.score - a.score);
+  const top = scored[0];
+  const runnerUp = scored[1];
+  if (!top || top.score < 2) return null;
+  if (runnerUp && runnerUp.score === top.score) return null;
+  return top.rule.id;
+}
+
+/* Monta o prompt real de classificação de intenção de exclusão — roda
+   contra TODAS as regras ainda ativas MAIS as já excluídas nesta sessão
+   (não só as de um evento), porque o gerente pode pedir para excluir
+   qualquer regra existente, de qualquer política, em qualquer momento
+   da conversa — e pode repetir um pedido de exclusão que já foi
+   atendido antes, caso em que a regra já não está mais entre as
+   ativas, mas o agente ainda precisa reconhecer do que se trata para
+   responder de forma idempotente em vez de "não consegui identificar". */
+function buildDeleteIntentPrompt(phrase, allRules, deletedRules) {
+  const deletedBlock = deletedRules.length === 0 ? "" : `
+
+Regras já excluídas anteriormente nesta conversa (o gerente pode repetir um pedido sobre uma delas — nesse caso ainda identifique o id normalmente):
+${deletedRules.map((r) => `- ${r.id} (${r.name}): "${r.trigger}"`).join("\n")}`;
+  return `O gerente está conversando com o assistente de políticas de um agente de pedidos. Decida se a frase abaixo é um PEDIDO PARA EXCLUIR uma regra existente — e, se for, qual regra, comparando com o nome e o "trigger" (a circunstância) de cada uma.
+
+Frase do gerente: "${phrase}"
+
+Regras existentes:
+${allRules.map((r) => `- ${r.id} (${r.name}): "${r.trigger}"`).join("\n")}${deletedBlock}
+
+REGRA IMPORTANTE, para evitar falso positivo: isDeleteRequest só pode ser true se a frase contém um verbo claramente dirigido a REMOVER/APAGAR/DESATIVAR A PRÓPRIA REGRA (excluir, apagar, remover, deletar, tirar essa regra, desfazer essa política). Uma frase que apenas DESCREVE uma condição e uma ação — no formato "quando/se X, faça Y" — é sempre um pedido de CRIAÇÃO de regra nova, isDeleteRequest: false, mesmo que a ação descrita (ex.: "cancela o pedido") pareça semelhante ao efeito de alguma regra já existente. Só o texto pedir explicitamente para excluir/apagar a regra em si conta — nunca inferir isso pela semelhança de conteúdo.
+
+Exemplos:
+- "exclua a regra de falha na etiqueta" → isDeleteRequest: true (verbo "exclua" dirigido à regra).
+- "quando o pagamento ficar pendente por mais de 2 horas, cancela o pedido" → isDeleteRequest: false (é uma condição nova sendo descrita, não um pedido para apagar algo).
+- "não preciso mais dessa regra de fraude" → isDeleteRequest: true.
+- "muda o limite dessa regra para 4 horas" → isDeleteRequest: false (é alteração de parâmetro, não exclusão).
+
+Responda apenas com JSON:
+{
+  "isDeleteRequest": true ou false,
+  "ruleId": "<um dos ids acima (existente ou já excluído), ou null se não for pedido de exclusão ou nenhuma regra combina com confiança>",
+  "reasoning": "<uma frase curta explicando a escolha, para log interno — nunca mostrada ao gerente>"
+}`;
+}
+
+/* Versão real: chama a LLM para decidir se a frase é um pedido de
+   exclusão e, se for, qual regra — mesmo padrão de matchExistingPolicyReal
+   (Promise sempre resolvida, nunca rejeitada; cai no heurístico acima se
+   o proxy não existir ou a chamada falhar por qualquer motivo). Testado
+   contra TODA mensagem do chat (não só as que "parecem" um pedido de
+   exclusão) — decisão deliberada para usar a LLM de verdade como
+   primeira linha de roteamento de intenção neste chat, não só como
+   desempate entre candidatos, e para exercitar repetição/idempotência
+   real do agente (pedir a mesma exclusão duas vezes não deve quebrar
+   nada nem excluir "de novo" algo que já sumiu — para isso o id
+   precisa continuar identificável mesmo depois de excluído, daí
+   `deletedRules` entrar como candidato também). */
+function classifyDeleteIntentReal(phrase, allRules, deletedRules) {
+  const candidates = allRules.concat(deletedRules);
+  if (candidates.length === 0) return Promise.resolve({ isDeleteRequest: false, ruleId: null, viaLLM: false });
+  const prompt = buildDeleteIntentPrompt(phrase, allRules, deletedRules);
+  return LLMClient.complete(prompt, { jsonMode: true })
+    .then((result) => {
+      const validIds = candidates.map((r) => r.id);
+      const isDeleteRequest = !!(result && result.isDeleteRequest);
+      const ruleId = (isDeleteRequest && result && validIds.includes(result.ruleId)) ? result.ruleId : null;
+      return { isDeleteRequest, ruleId, viaLLM: true };
+    })
+    .catch(() => {
+      const ruleId = matchDeleteIntentHeuristic(phrase, candidates);
+      return { isDeleteRequest: ruleId !== null, ruleId, viaLLM: false };
+    });
+}
+
+/* Versão real: chama a LLM (via LLMClient → app/api/llm/complete no
+   agentic-oms) com PROMPT_MATCH_EXISTING_RULE de verdade. Se o proxy não
+   existir (protótipo aberto fora do Next.js — GitHub Pages, arquivo
+   estático) ou a chamada falhar por qualquer motivo, cai de volta no
+   heurístico determinístico — o chat nunca fica sem resposta.
+   Sempre devolve uma Promise<string|null>, ao contrário da versão
+   heurística (síncrona) — é o padrão a seguir ao trocar os outros 6
+   PROMPT_* por chamadas reais. */
+function matchExistingPolicyReal(phrase, eventMatch, policies) {
+  const ids = eventMatch.existingRuleIds || [];
+  const existingRules = ids
+    .map((rid) => {
+      for (const p of policies) {
+        const r = p.rules.find((x) => x.id === rid);
+        if (r) return r;
+      }
+      return null;
+    })
+    .filter(Boolean);
+  if (existingRules.length === 0) return Promise.resolve(null);
+
+  const prompt = buildMatchExistingRulePrompt(phrase, eventMatch, existingRules);
+  return LLMClient.complete(prompt, { jsonMode: true })
+    .then((result) => {
+      const validIds = existingRules.map((r) => r.id);
+      const ruleId = (result && validIds.includes(result.ruleId)) ? result.ruleId : null;
+      return { ruleId, viaLLM: true }; // chamada real respondeu — mesmo "null" veio da LLM, não do heurístico
+    })
+    .catch(() => ({ ruleId: matchExistingPolicyHeuristic(phrase, eventMatch, policies), viaLLM: false }));
 }
 
 /* Prompt de referência: a LLM só REDIGE — não decide mais threshold nem
@@ -664,6 +1095,9 @@ function policyDraftFor(phrase, eventMatch, allPolicies, params) {
    é o atalho para o caminho guiado (NEED_TREE), quando o operador não
    tem certeza do que precisa. */
 const POLICY_CHIPS = [
+  { icon: "plus", label: "Desejo criar uma política", intent: "policy-create" },
+  { icon: "edit", label: "Desejo alterar uma política", intent: "policy-alter" },
+  { icon: "search", label: "Desejo verificar quais pedidos afetam a política", intent: "policy-impact" },
   { icon: "sparkle", label: "Me guia com perguntas", intent: "policy-guided-tree" },
 ];
 
@@ -1115,7 +1549,7 @@ function matchTreeOption(currentNode, freeTextAnswer) {
 }
 
 /* ── View ───────────────────────────────────────────────────────────────── */
-function WorkflowPoliciesView({ onBack }) {
+function WorkflowPoliciesView({ onBack, initialExpandedPolicyId = null, initiativeAutoCreated = false } = {}) {
   /* Modos do shell (handoff §8). */
   const [chatOpen, setChatOpen] = useState(true);
   const [canvasOpen, setCanvasOpen] = useState(true);
@@ -1143,7 +1577,7 @@ function WorkflowPoliciesView({ onBack }) {
         const sourceEventId = r.sourceEventId || ruleToEvent[r.id] || null;
         const richConds = (r.conditions || []).map((c) => (typeof c === "string"
           ? { natural: c, technical: c, needsEngineeringInput: false }
-          : { natural: c.natural, technical: c.technical ?? null, needsEngineeringInput: !!c.needsEngineeringInput }));
+          : { natural: c.natural, technical: c.technical ?? null, needsEngineeringInput: !!c.needsEngineeringInput, param: c.param || null }));
         return {
           ...r,
           conditions: richConds,
@@ -1159,6 +1593,7 @@ function WorkflowPoliciesView({ onBack }) {
   const [status, setStatus] = useState("all");
   const [selectedRuleId, setSelectedRuleId] = useState(null);
   const [highlightId, setHighlightId] = useState(null);
+  const [highlightPolicyId, setHighlightPolicyId] = useState(null);
 
   const [chatMsgs, setChatMsgs] = useState([
     { from: "agent", text: "Oi! Eu cuido das políticas do seu agente de pedido. Pode me pedir direto, do seu jeito — *“quando a transportadora não coletar, aciona ela e avisa o cliente”* — ou, se não tiver certeza do que precisa, eu te ajudo a encontrar isso com algumas perguntas." },
@@ -1168,6 +1603,12 @@ function WorkflowPoliciesView({ onBack }) {
      pediu a frase, a próxima mensagem do operador é encaminhada ao
      matchEvent em vez do parser genérico. */
   const [awaitingEventPhrase, setAwaitingEventPhrase] = useState(false);
+  /* Fluxo dos chips "Desejo alterar uma política" / "...verificar quais
+     pedidos afetam a política": o agente pergunta qual política, e a
+     próxima frase livre é casada pelo NOME contra `policies` (em vez de
+     matchEvent, que casa por evento técnico) — "alter" abre a política em
+     sanfona; "impact" responde com o que o protótipo sabe de verdade. */
+  const [awaitingPolicyName, setAwaitingPolicyName] = useState(null);
   /* Caminho não guiado: conta frases seguidas sem eventMatch (contra os 10
      do EVENT_CATALOG). Zera ao aplicar uma regra ou ao entrar no caminho
      guiado; ao chegar em 3, o agente oferece as perguntas guiadas. */
@@ -1188,6 +1629,8 @@ function WorkflowPoliciesView({ onBack }) {
   const [paramFlow, setParamFlow] = useState(null);
   /* { event, trail, phase: "threshold" | "actions", answers, ordered } */
   const composerRef = useRef(null);
+  const mode1EngineRef = useRef(null); // roteiro do Modo 1 ativo neste chat, se houver
+  const mode1ScriptRef = useRef(null);
 
   const agentSay = useCallback((msgs) => {
     setIsTyping(true);
@@ -1205,12 +1648,151 @@ function WorkflowPoliciesView({ onBack }) {
     return null;
   }, [policies, selectedRuleId]);
 
+  const createRule = (policyId) => {
+    const policy = policies.find((p) => p.id === policyId);
+    const catPrefix = policy ? categoryOf(policy.category).rulePrefix : "RUL";
+    const newId = nextRuleId(catPrefix);
+    setPolicies((ps) => ps.map((p) => p.id !== policyId ? p : {
+      ...p,
+      rules: [...p.rules, {
+        id: newId, name: "Nova regra", active: false,
+        trigger: "Descreva quando esta regra deve agir.",
+        conditions: [{ natural: "", technical: "", param: { field: "Novo campo", operator: "é igual a", value: "" } }],
+        tasks: [{ label: "Nova tarefa", kind: "diagnose" }],
+        escalation: [],
+      }],
+    }));
+    return newId;
+  };
+
+  /* Exclusão é definitiva — sem lixeira nem desfazer, consistente com o
+     resto do protótipo (nada aqui persiste entre reloads mesmo). A
+     confirmação de duas etapas mora em PolicyRuleRow, não aqui — esta
+     função só executa depois que o gerente já confirmou.
+     `deletedRulesRef` guarda uma cópia de toda regra excluída nesta
+     sessão (por botão ou por chat) para que um pedido de exclusão por
+     chat repetido depois ainda consiga identificar a regra e responder
+     de forma idempotente, em vez de "não consegui identificar". */
+  const deletedRulesRef = useRef([]);
+  /* Sugestão "criar uma iniciativa para acompanhar": aparece toda vez que
+     uma política NOVA é criada (Modo 1, Modo 2 ou o card de política nova
+     do chat em interação livre) — nunca ao só adicionar uma regra numa
+     política existente. `createdInitiativeForPolicyIdsRef` garante que
+     aceitar a sugestão duas vezes para a mesma política (ex.: clicando de
+     novo num quick reply antigo do histórico) não duplica a iniciativa. */
+  const createdInitiativeForPolicyIdsRef = useRef(new Set());
+  /* Guarda a QUAL política a última oferta de iniciativa se refere — o
+     quick reply "Criar iniciativa para acompanhar" chega como texto puro
+     em handleSend, sem contexto próprio, então precisa consultar isto. */
+  const awaitingInitiativeForPolicyIdRef = useRef(null);
+  const offerInitiative = (policy) => {
+    awaitingInitiativeForPolicyIdRef.current = policy.id;
+    agentSay({
+      from: "agent",
+      text: `Quer que eu também crie uma iniciativa para acompanhar a política **${policy.name}** nas próximas semanas?`,
+      quickReplies: ["Criar iniciativa para acompanhar", "Não, por enquanto"],
+    });
+  };
+
+  /* Modo 1 (disparado em #/orders ou #/assistant) e Modo 2 sempre chegam
+     nesta tela por navegação com openPolicyId, diferente do "Criar
+     política" local em handleSend (já está aqui, oferece a iniciativa
+     direto). Roda uma vez, no mount vindo dessa navegação — mesmo padrão
+     do scroll em initialExpandedPolicyId, no WorkflowPoliciesCanvas.
+     `initiativeAutoCreated` (botão "Criar iniciativa e política" da
+     notificação do Modo 2) já criou a iniciativa antes de navegar para cá
+     — nesse caso só confirma no chat, em vez de oferecer de novo. */
+  useEffect(() => {
+    if (!initialExpandedPolicyId) return;
+    const policy = policies.find((p) => p.id === initialExpandedPolicyId);
+    if (!policy) return;
+    if (initiativeAutoCreated) {
+      createdInitiativeForPolicyIdsRef.current.add(policy.id);
+      agentSay({
+        from: "agent",
+        text: `Prontinho — criei a política **${policy.name}** e a iniciativa para acompanhá-la. Você encontra a iniciativa em My Initiatives, na área de Iniciativas de Orders e no board de Tasks.`,
+      });
+      return;
+    }
+    offerInitiative(policy);
+    // eslint-disable-next-line
+  }, []);
+  const deleteRule = (policyId, ruleId) => {
+    setPolicies((ps) => {
+      const policy = ps.find((p) => p.id === policyId);
+      const rule = policy && policy.rules.find((r) => r.id === ruleId);
+      if (rule && !deletedRulesRef.current.some((r) => r.id === ruleId)) {
+        deletedRulesRef.current = [...deletedRulesRef.current, rule];
+      }
+      return ps.map((p) => p.id !== policyId ? p : {
+        ...p,
+        rules: p.rules.filter((r) => r.id !== ruleId),
+      });
+    });
+  };
+
   const toggleRule = (policyId, ruleId) => {
     setPolicies((ps) => ps.map((p) => p.id !== policyId ? p : {
       ...p,
       rules: p.rules.map((r) => r.id !== ruleId ? r : { ...r, active: !r.active }),
     }));
   };
+
+  /* ── Edição de política/regra na própria listagem (acordeão) ───────────
+     Mutações genéricas por política/regra — todas operam sobre o mesmo
+     `policies` já usado pelo canvas e pelo chat, então uma edição feita
+     aqui aparece imediatamente nos dois lugares. */
+  const togglePolicyActive = (policyId) => {
+    setPolicies((ps) => ps.map((p) => p.id !== policyId ? p : { ...p, active: !p.active }));
+  };
+
+  const updatePolicyObjective = (policyId, objective) => {
+    setPolicies((ps) => ps.map((p) => p.id !== policyId ? p : { ...p, objective }));
+  };
+
+  const renameRule = (policyId, ruleId, name) => updateRule(policyId, ruleId, (r) => ({ ...r, name }));
+
+  const updateRule = (policyId, ruleId, updater) => {
+    setPolicies((ps) => ps.map((p) => p.id !== policyId ? p : {
+      ...p,
+      rules: p.rules.map((r) => r.id !== ruleId ? r : updater(r)),
+    }));
+  };
+
+  const addCondition = (policyId, ruleId) => updateRule(policyId, ruleId, (r) => ({
+    ...r,
+    conditions: [...r.conditions, {
+      natural: "", technical: "",
+      param: { field: "Novo campo", operator: "é igual a", value: "" },
+    }],
+  }));
+  const removeCondition = (policyId, ruleId, index) => updateRule(policyId, ruleId, (r) => ({
+    ...r, conditions: r.conditions.filter((_, i) => i !== index),
+  }));
+  const updateConditionParam = (policyId, ruleId, index, patch) => updateRule(policyId, ruleId, (r) => ({
+    ...r,
+    conditions: r.conditions.map((c, i) => i !== index ? c : { ...c, param: { ...(c.param || {}), ...patch } }),
+  }));
+
+  const addTask = (policyId, ruleId) => updateRule(policyId, ruleId, (r) => ({
+    ...r, tasks: [...r.tasks, { label: "Nova tarefa", kind: "diagnose" }],
+  }));
+  const removeTask = (policyId, ruleId, index) => updateRule(policyId, ruleId, (r) => ({
+    ...r, tasks: r.tasks.filter((_, i) => i !== index),
+  }));
+  const updateTask = (policyId, ruleId, index, patch) => updateRule(policyId, ruleId, (r) => ({
+    ...r, tasks: r.tasks.map((t, i) => i !== index ? t : { ...t, ...patch }),
+  }));
+
+  const addEscalation = (policyId, ruleId) => updateRule(policyId, ruleId, (r) => ({
+    ...r, escalation: [...(r.escalation || []), { field: "Novo campo", operator: "é maior que", value: "" }],
+  }));
+  const removeEscalation = (policyId, ruleId, index) => updateRule(policyId, ruleId, (r) => ({
+    ...r, escalation: (r.escalation || []).filter((_, i) => i !== index),
+  }));
+  const updateEscalation = (policyId, ruleId, index, patch) => updateRule(policyId, ruleId, (r) => ({
+    ...r, escalation: (r.escalation || []).map((e, i) => i !== index ? e : { ...e, ...patch }),
+  }));
 
   /* Numeração da regra nova: próximo livre na família de id da categoria. */
   const nextRuleId = (prefix) => {
@@ -1242,7 +1824,7 @@ function WorkflowPoliciesView({ onBack }) {
        - `tasks`: mantém `target` quando presente (Agente/SAC/Supervisor). */
     const normalizedConditions = draft.conditions.map((c) => (typeof c === "string"
       ? { natural: c, technical: c, needsEngineeringInput: false }
-      : { natural: c.natural, technical: c.technical ?? null, needsEngineeringInput: !!c.needsEngineeringInput }));
+      : { natural: c.natural, technical: c.technical ?? null, needsEngineeringInput: !!c.needsEngineeringInput, param: c.param || null }));
     const normalizedTasks = draft.tasks.map((t) => ({
       label: t.label,
       kind: t.kind,
@@ -1286,6 +1868,10 @@ function WorkflowPoliciesView({ onBack }) {
       text: `Pronto — **${id} · ${rule.name}** entrou na política **${policy.name}** e já está ativa. Vale só para ocorrências novas.`,
       quickReplies: ["Desligar por enquanto", "Criar outra regra"],
     });
+    /* Fluxo C (interação livre): só sugere iniciativa quando uma política
+       de verdade nasceu agora — adicionar mais uma regra numa política já
+       existente (Fluxo A/B) não repete a oferta. */
+    if (policy._new) offerInitiative(policy);
   };
 
   /* ── Prioridade entre regras do mesmo evento ────────────────────────
@@ -1389,7 +1975,7 @@ function WorkflowPoliciesView({ onBack }) {
      A regra já está pronta — sem params, sem draft; só ofereço ativar/
      abrir. Passa pelo runConflictCheck se estiver sendo ativada agora
      (mesmo tratamento do modo guiado kind "existing"). */
-  const proposeExistingRuleCard = (existingRuleId, eventMatch) => {
+  const proposeExistingRuleCard = (existingRuleId, eventMatch, viaLLM) => {
     let target = null;
     for (const p of policies) {
       const r = p.rules.find((x) => x.id === existingRuleId);
@@ -1410,6 +1996,7 @@ function WorkflowPoliciesView({ onBack }) {
     agentSay({
       from: "agent",
       text: `Entendi como **${eventMatch.label}**. Isso já é coberto por uma regra existente — nada a criar:`,
+      poweredByLLM: viaLLM,
       type: "action",
       title: "Como chegamos aqui",
       badge: "Regra existente",
@@ -1446,7 +2033,7 @@ function WorkflowPoliciesView({ onBack }) {
   /* Monta o action card de uma proposta de regra vinculada a uma política
      existente (Fluxo B — "variante nova em evento já coberto"). Usa o
      shape 3c da família para ficar consistente com o caminho guiado. */
-  const proposeRuleDraftCard = (draft, eventMatch, targetRuleId) => {
+  const proposeRuleDraftCard = (draft, eventMatch, targetRuleId, viaLLM) => {
     const targetPolicy = policies.find((p) => p.rules.some((r) => r.id === targetRuleId)) || policies[0];
     const condsLine = draft.conditions
       .map((c) => (typeof c === "string" ? c : c.natural + (c.needsEngineeringInput ? " (mapeamento técnico pendente)" : "")))
@@ -1454,6 +2041,7 @@ function WorkflowPoliciesView({ onBack }) {
     agentSay({
       from: "agent",
       text: `Entendi como **${eventMatch.label}**. Já existe cobertura próxima em **${targetRuleId}** (política *${targetPolicy.name}*), mas o caso que você descreve tem uma causa raiz diferente. Montei uma regra irmã:`,
+      poweredByLLM: viaLLM,
       type: "action",
       title: "Como chegamos aqui",
       badge: "Nova regra",
@@ -1533,35 +2121,41 @@ function WorkflowPoliciesView({ onBack }) {
     setUnmatchedAttempts(0);
 
     const ids = eventMatch.existingRuleIds || [];
-    const policyMatch = ids.length > 1
-      ? matchExistingPolicy(phrase, eventMatch, policies)
-      : ids[0] || null;
+    /* matchExistingPolicyReal tenta a LLM de verdade primeiro (via
+       LLMClient → proxy no agentic-oms) e só cai no heurístico
+       determinístico se o proxy não existir ou falhar — por isso é
+       sempre uma Promise, mesmo no caminho síncrono (ids.length <= 1). */
+    const policyMatch$ = ids.length > 1
+      ? matchExistingPolicyReal(phrase, eventMatch, policies)
+      : Promise.resolve({ ruleId: ids[0] || null, viaLLM: false });
 
-    if (policyMatch) {
-      /* Regra já existe — nada pra perguntar, o conteúdo já está fechado. */
-      proposeExistingRuleCard(policyMatch, eventMatch);
-      return;
-    }
-
-    /* Mesmo ponto de decisão do caminho guiado (resolveTreeLeaf): evento
-       sem regra existente que sirva = precisa de parâmetros antes de
-       gerar qualquer coisa. Vale para needsNewRule e para variante em
-       cluster (matchExistingPolicy retornou null).
-       Antes de perguntar, `extractParamsFromPhrase` tenta pré-preencher
-       threshold/ações que já estão explícitos na frase — o merchant só
-       responde o que faltar. */
-    askRuleParameters(eventMatch, (answers) => {
-      /* Caminho não guiado: draft leva a phrase original como trigger
-         base. Sister (variante em cluster) ou new (needsNewRule /
-         cluster sem match) decide o card. */
-      const ids = eventMatch.existingRuleIds || [];
-      if (ids.length > 0) {
-        const anchor = ids[0];
-        proposeRuleDraftCard(draftFor(phrase, eventMatch, answers), eventMatch, anchor);
-      } else {
-        proposePolicyDraftCard(policyDraftFor(phrase, eventMatch, policies, answers), eventMatch);
+    policyMatch$.then(({ ruleId: policyMatch, viaLLM }) => {
+      if (policyMatch) {
+        /* Regra já existe — nada pra perguntar, o conteúdo já está fechado. */
+        proposeExistingRuleCard(policyMatch, eventMatch, viaLLM);
+        return;
       }
-    }, extractParamsFromPhrase(phrase, eventMatch));
+
+      /* Mesmo ponto de decisão do caminho guiado (resolveTreeLeaf): evento
+         sem regra existente que sirva = precisa de parâmetros antes de
+         gerar qualquer coisa. Vale para needsNewRule e para variante em
+         cluster (matchExistingPolicyReal resolveu null).
+         Antes de perguntar, `extractParamsFromPhrase` tenta pré-preencher
+         threshold/ações que já estão explícitos na frase — o merchant só
+         responde o que faltar. */
+      askRuleParameters(eventMatch, (answers) => {
+        /* Caminho não guiado: draft leva a phrase original como trigger
+           base. Sister (variante em cluster) ou new (needsNewRule /
+           cluster sem match) decide o card. */
+        const ids2 = eventMatch.existingRuleIds || [];
+        if (ids2.length > 0) {
+          const anchor = ids2[0];
+          proposeRuleDraftCard(draftFor(phrase, eventMatch, answers), eventMatch, anchor, viaLLM);
+        } else {
+          proposePolicyDraftCard(policyDraftFor(phrase, eventMatch, policies, answers), eventMatch);
+        }
+      }, extractParamsFromPhrase(phrase, eventMatch));
+    });
   };
 
   /* ── Modo guiado por árvore ───────────────────────────────────────────
@@ -1913,10 +2507,144 @@ function WorkflowPoliciesView({ onBack }) {
     if (/^cancelar$/i.test(raw)) {
       setUnmatchedAttempts(0);
       setAwaitingEventPhrase(false);
+      setAwaitingPolicyName(null);
       setGuidedNode(null);
       setAnswerTrail([]);
       setParamFlow(null);
       agentSay({ from: "agent", text: "Cancelado. Quando quiser voltar, é só me chamar." });
+      return;
+    }
+
+    /* "Criar política" — botão do turno final do Modo 1: como já estamos
+       na tela de políticas, só precisa entrar no estado local e abrir —
+       sem navegação. */
+    if (raw === "Criar política" && mode1ScriptRef.current) {
+      const newPolicy = Mode1ToPolicy.createFromScript(mode1ScriptRef.current);
+      AIWData.workflowPolicies.push(newPolicy);
+      setPolicies((ps) => [...ps, { ...newPolicy, rules: newPolicy.rules.map((r) => ({ ...r, sourceEventId: null, sourceEventLabel: null, priority: null })) }]);
+      setHighlightPolicyId(newPolicy.id);
+      agentSay({ from: "agent", text: `Prontinho — criei a política **${newPolicy.name}**. Já abri ela ali na listagem.` });
+      offerInitiative(newPolicy);
+      return;
+    }
+
+    /* "Criar iniciativa para acompanhar" — sugerido logo depois de toda
+       política nova (aqui mesmo ou navegado de Modo 1/Modo 2 noutra tela,
+       ver o useEffect de initialExpandedPolicyId em WorkflowPoliciesView).
+       Idempotente: aceitar de novo um quick reply antigo do histórico só
+       informa que já existe, não duplica a iniciativa. */
+    if (raw === "Criar iniciativa para acompanhar") {
+      const policyId = awaitingInitiativeForPolicyIdRef.current;
+      const policy = policyId && policies.find((p) => p.id === policyId);
+      if (!policy) {
+        agentSay({ from: "agent", text: "Não encontrei mais a política para essa iniciativa — ela pode já ter sido removida." });
+        return;
+      }
+      if (createdInitiativeForPolicyIdsRef.current.has(policyId)) {
+        agentSay({ from: "agent", text: `Já existe uma iniciativa acompanhando a política **${policy.name}** — nada a fazer.` });
+        return;
+      }
+      const { initiative, tasks: initiativeTasks } = InitiativeFromPolicy.createFromPolicy(policy);
+      createdInitiativeForPolicyIdsRef.current.add(policyId);
+      agentSay({
+        from: "agent",
+        text: `Pronto — criei a iniciativa **${initiative.title}** (${initiative.id.replace(/^TA-/, "")}), com ${initiativeTasks.length} tarefa(s) em "Em aberto". Você encontra ela em My Initiatives, na área de Iniciativas de Orders e no board de Tasks.`,
+      });
+      return;
+    }
+    if (raw === "Não, por enquanto") {
+      agentSay({ from: "agent", text: "Combinado — sem iniciativa por enquanto." });
+      return;
+    }
+
+    /* Roteiro do Modo 1 já em andamento neste chat: a mensagem real do
+       gerente só marca "pode continuar" — o motor responde um turno e
+       espera de novo, nunca toca o roteiro inteiro de uma vez. */
+    if (mode1EngineRef.current) {
+      mode1EngineRef.current.send();
+      return;
+    }
+
+    /* Pedido de exclusão de regra por frase livre: testado contra TODA
+       mensagem que chegar até aqui (nenhum outro fluxo mais específico
+       já consumiu o texto acima). A LLM decide se é um pedido de
+       exclusão e qual regra — sem confirmação extra no chat (o gerente
+       já pediu explicitamente), mas checando de novo se a regra ainda
+       existe no momento de executar: perguntar a mesma exclusão duas
+       vezes deve ser idempotente, nunca um erro. */
+    const allRules = policies.flatMap((p) => p.rules);
+    classifyDeleteIntentReal(raw, allRules, deletedRulesRef.current).then(({ isDeleteRequest, ruleId, viaLLM }) => {
+      if (!isDeleteRequest) return false;
+      if (!ruleId) {
+        agentSay({ from: "agent", text: "Entendi que você quer excluir uma regra, mas não consegui identificar qual — pode dizer o nome ou o comportamento dela?", poweredByLLM: viaLLM });
+        return true;
+      }
+      const stillExists = policies.some((p) => p.rules.some((r) => r.id === ruleId));
+      const target = allRules.find((r) => r.id === ruleId) || deletedRulesRef.current.find((r) => r.id === ruleId);
+      if (!stillExists) {
+        agentSay({ from: "agent", text: `A regra **${target ? target.name : ruleId}** já tinha sido excluída antes — nada a fazer.`, poweredByLLM: viaLLM });
+        return true;
+      }
+      const targetPolicy = policies.find((p) => p.rules.some((r) => r.id === ruleId));
+      deleteRule(targetPolicy.id, ruleId);
+      agentSay({ from: "agent", text: `Pronto — excluí a regra **${target.name}** (${ruleId}).`, poweredByLLM: viaLLM });
+      return true;
+    }).then((handled) => {
+      if (handled) return;
+      /* Não era pedido de exclusão: segue o roteamento normal a partir
+         daqui, como se essa checagem nunca tivesse existido. */
+      routeAfterDeleteCheck(raw, n);
+    });
+    return;
+  };
+
+  /* Continuação de handleSend depois da checagem de exclusão (sempre
+     assíncrona, mesmo no caminho heurístico) — precisa ser uma função à
+     parte porque o restante do roteamento síncrono original não pode
+     ficar dentro do .then() acima sem duplicar todo o corpo. */
+  const routeAfterDeleteCheck = (raw, n) => {
+    /* Modo 1 (Product Briefing "Criação de Políticas com Agente"): o
+       gerente pode descrever um cenário de política em qualquer chat do
+       agente, não só aqui — mas aqui também vale, é justamente onde
+       políticas se criam. */
+    if (Mode1Trigger.matches(raw)) {
+      Mode1Launcher.launch(
+        (msg) => setChatMsgs((m) => [...m, msg]),
+        setIsTyping,
+      ).then((result) => {
+        if (!result) return;
+        mode1EngineRef.current = result.engine;
+        mode1ScriptRef.current = result.script;
+      });
+      return;
+    }
+
+    /* Chips "Desejo alterar uma política" / "...verificar quais pedidos
+       afetam a política": a frase livre é casada pelo NOME da política
+       (substring nos dois sentidos, tolera "detecção de risco" batendo
+       em "Detecção de Risco & SLA"), não por evento técnico. */
+    if (awaitingPolicyName) {
+      const mode = awaitingPolicyName;
+      setAwaitingPolicyName(null);
+      const target = policies.find((p) => norm(p.name).includes(n) || n.includes(norm(p.name)));
+      if (!target) {
+        agentSay({
+          from: "agent",
+          text: `Não achei nenhuma política com esse nome. As políticas cadastradas são:\n${policies.map((p) => `**${p.name}**`).join("\n")}`,
+        });
+        return;
+      }
+      if (mode === "alter") {
+        setHighlightPolicyId(target.id);
+        agentSay({ from: "agent", text: `Abri **${target.name}** para você editar.` });
+        return;
+      }
+      const activeCount = target.rules.filter((r) => r.active).length;
+      setHighlightPolicyId(target.id);
+      agentSay({
+        from: "agent",
+        text: `**${target.name}** tem ${plural(target.rules.length, "regra", "regras")}, ${plural(activeCount, "ativa", "ativas")}. Este protótipo ainda não vincula regras de política direto a uma lista de pedidos — esse cruzamento aparece hoje nas Iniciativas, quando um padrão já foi detectado num grupo de pedidos.`,
+      });
       return;
     }
 
@@ -2045,10 +2773,20 @@ function WorkflowPoliciesView({ onBack }) {
       agentSay({ from: "agent", text: "Ok — descreva de outro jeito, sem pressa. O que o OMS deveria notar, e o que fazer a seguir?" });
       return;
     }
-    if (/regra a partir de uma frase|criar outra regra|nova regra/.test(n)) {
+    if (/regra a partir de uma frase|criar outra regra|nova regra|desejo criar uma politica/.test(n)) {
       setUnmatchedAttempts(0);
       setAwaitingEventPhrase(true);
       agentSay({ from: "agent", text: "Descreva o evento em uma frase — o que o OMS precisa detectar e o que deve acontecer em seguida." });
+      return;
+    }
+    if (/desejo alterar uma politica/.test(n)) {
+      setAwaitingPolicyName("alter");
+      agentSay({ from: "agent", text: "Qual política você quer alterar? Pode escrever o nome completo ou só uma parte." });
+      return;
+    }
+    if (/desejo verificar quais pedidos afetam a politica/.test(n)) {
+      setAwaitingPolicyName("impact");
+      agentSay({ from: "agent", text: "De qual política você quer ver os pedidos afetados?" });
       return;
     }
 
@@ -2140,7 +2878,24 @@ function WorkflowPoliciesView({ onBack }) {
           selectedRuleId={selectedRuleId}
           onSelectRule={(id) => { setHighlightId(null); setSelectedRuleId(id); }}
           highlightId={highlightId}
+          highlightPolicyId={highlightPolicyId}
+          initialExpandedPolicyId={initialExpandedPolicyId}
           onNewRule={startNewRule}
+          onTogglePolicyActive={togglePolicyActive}
+          onEditObjective={updatePolicyObjective}
+          onToggleRule={toggleRule}
+          onRenameRule={renameRule}
+          onCreateRule={createRule}
+          onDeleteRule={deleteRule}
+          onAddCondition={addCondition}
+          onRemoveCondition={removeCondition}
+          onUpdateCondition={updateConditionParam}
+          onAddTask={addTask}
+          onRemoveTask={removeTask}
+          onUpdateTask={updateTask}
+          onAddEscalation={addEscalation}
+          onRemoveEscalation={removeEscalation}
+          onUpdateEscalation={updateEscalation}
           onBack={onBack}
           chatOpen={chatOpen}
           onToggleChat={() => setChatOpen(o => !o)}
