@@ -13442,16 +13442,15 @@ button.wf-ver-badge-btn:hover {
    browser, o gatilho .filter-dropdown-btn do Dropdown, os tabs pill do module
    browser e o Toggle de ui-primitives — aqui só o que é específico desta
    tela. */
-/* Mesma coluna do `.detail-body` usada pelo canvas do board: 800px centrados
-   com 44px laterais. Toolbar e lista compartilham a medida para que os filtros
-   não descolem da borda dos cards. */
+/* Padding lateral do canvas: 44px, o mesmo de `.detail-body`. Topbar, h1,
+   toolbar e lista compartilham a medida para que os filtros não descolem da
+   borda das políticas. */
 /* §1.3/§5 — o h1 da página vive no corpo, na mesma coluna da toolbar e da
    lista, já que o topbar deixou de carregar título. */
+.detail-panel:has(.wfp-list) .detail-head.canvas-topbar { padding: 0 44px; }
 .wfp-page-head {
   flex-shrink: 0;
   width: 100%;
-  max-width: 800px;
-  margin: 0 auto;
   padding: 8px 44px 0;
 }
 .wfp-page-head .detail-title { margin: 0; }
@@ -13459,8 +13458,6 @@ button.wf-ver-badge-btn:hover {
   display: flex; align-items: center; gap: 8px;
   flex-shrink: 0;
   width: 100%;
-  max-width: 800px;
-  margin: 0 auto;
   padding: 12px 44px;
 }
 .wfp-toolbar-fill { flex: 1; }
@@ -13486,13 +13483,11 @@ button.wf-ver-badge-btn:hover {
 .wfp-cat-option-label { flex: 1; min-width: 0; white-space: nowrap; }
 .wfp-cat-count { font-size: 12px; color: var(--fg-3); flex-shrink: 0; }
 
-/* Lista de cards de política — cada política é um card independente, sem
-   estrutura de tabela: cabeçalho com título h3 + meta à esquerda e tag de
-   categoria à direita, seguido de linhas de regra em flex. */
+/* Lista de políticas — plana, sem card por política: cada uma é separada da
+   seguinte por uma hairline, e o cabeçalho é o próprio collapse. As regras
+   dentro da política é que continuam em card r12. */
 .wfp-list {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 0 44px 80px;
+  padding: 0 44px 24px;
   display: flex; flex-direction: column;
   gap: 16px;
 }
@@ -14165,44 +14160,119 @@ button.wf-ver-badge-btn:hover {
 }
 .msg-llm-badge svg { color: var(--sl-color-green-9, #12a150); flex-shrink: 0; }
 
-/* ═══ Excluir regra (PolicyRuleRow) ══════════════════════════════════════
-   Botão "..." abre um menu com uma única opção destrutiva; confirmação
-   de duas etapas fora do Dropdown (que fecha em qualquer clique interno,
-   então a confirmação não pode morar dentro dele). ═══════════════════ */
-.pd-rule-more-btn {
-  flex-shrink: 0; display: flex; align-items: center; justify-content: center;
-  width: 28px; height: 28px;
-  background: none; border: none; cursor: pointer; color: var(--fg-3);
-  border-radius: var(--radius-sm);
-}
-.pd-rule-more-btn:hover { background: var(--bg-soft); color: var(--fg); }
-
 .dd-item--danger .dd-item-label,
 .dd-item--danger { color: var(--sl-color-red-10, #d31a15); }
 .dd-item--danger:hover { background: var(--sl-color-red-1, #fdf6f5); }
 
-.pd-rule-delete-confirm {
-  display: flex; align-items: center; gap: 10px;
-  margin: 0 16px 12px;
-  padding: 10px 14px;
-  background: var(--sl-color-red-1, #fdf6f5);
-  border: 1px solid var(--sl-color-red-4, #ffd0c7);
-  border-radius: var(--radius);
-  color: var(--sl-color-red-12, #940303);
-  font-size: 12.5px;
+/* ═══ v2 — canvas somente leitura ═════════════════════════════════════
+   Criar, alterar e excluir regra ou política acontecem no chat. O canvas
+   reflete estado: nenhum input, select ou botão de adicionar/remover. A
+   única exceção é o Toggle de ativa/desligada, dentro do drawer. ══════ */
+
+/* Objetivo da política em texto corrido, sem card nem aspas. */
+.pd-objective { display: flex; flex-direction: column; gap: 6px; margin: 4px 0 8px; }
+.pd-objective .pd-objective-text { margin: 0; font-style: normal; }
+
+/* Sem cards aninhados: políticas separadas por hairline; as regras dentro
+   delas é que continuam em card r12. */
+.wfp-list { gap: 0; }
+.wfp-card { border: none; border-radius: 0; border-bottom: 1px solid var(--border); overflow: visible; }
+.wfp-card:last-child { border-bottom: none; }
+.wfp-card-head { padding: 16px 0; border-bottom: none; }
+.wfp-card.is-open .wfp-card-head { padding-bottom: 4px; border-bottom: none; }
+.wfp-card-body { padding: 0 0 16px 32px; gap: 12px; }
+.wfp-card-body > .pd-header-title-row--compact { margin-top: -4px; }
+.wfp-card-body > .pd-header-title-row--compact .pd-header-meta { margin: 0; }
+
+/* Hover do collapse = padrão da biblioteca: a linha inteira em
+   rgba(29,44,67,.05), pressionado .10, sem raio e sem recolorir o texto —
+   contido na área do collapse, sem sangrar até a margem do canvas. */
+.wfp-card-head--toggle {
+  padding-left: 0; padding-right: 0;
+  margin-left: 0; margin-right: 0;
+  width: 100%;
+  border-radius: 0;
+  transition: background .12s ease;
 }
-.pd-rule-delete-confirm > svg { flex-shrink: 0; color: var(--sl-color-red-9, #ec3727); }
-.pd-rule-delete-confirm span { flex: 1; }
-.pd-rule-delete-confirm-actions { display: flex; gap: 8px; flex-shrink: 0; }
-.pd-rule-delete-cancel {
-  font-size: 12.5px; font-weight: 500; color: var(--fg-2);
-  background: none; border: 1px solid var(--border-strong); cursor: pointer;
-  padding: 5px 12px; border-radius: var(--radius-sm);
+.wfp-card-head--toggle:hover { background: rgba(29, 44, 67, 0.05); }
+.wfp-card-head--toggle:active { background: rgba(29, 44, 67, 0.10); }
+.wfp-card-head--toggle:hover .wfp-card-name { color: inherit; }
+
+/* Linha de regra: resumo clicável que abre o drawer. */
+.pd-rules-headrow { margin-top: 8px; }
+.pd-rule { border: 1px solid var(--border); border-radius: var(--sl-radius-3); overflow: hidden; }
+.pd-rule + .pd-rule, .wfp-card-body > div + div > .pd-rule { margin-top: 0; }
+.pd-rule.is-selected { border-color: var(--primary); }
+.pd-rule-headrow--btn {
+  width: 100%; padding: 12px 16px;
+  background: none; border: none; cursor: pointer;
+  font-family: inherit; text-align: left;
 }
-.pd-rule-delete-cancel:hover { background: var(--bg-soft); }
-.pd-rule-delete-confirm-btn {
-  font-size: 12.5px; font-weight: 600; color: #fff;
-  background: var(--sl-color-red-10, #d31a15); border: none; cursor: pointer;
-  padding: 5px 12px; border-radius: var(--radius-sm);
+.pd-rule-headrow--btn:hover { background: var(--bg-soft); }
+.pd-rule-headrow--btn:hover .pd-rule-name { color: var(--fg); }
+.pd-rule-summary { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.pd-rule-summary .pd-rule-name { flex: none; cursor: inherit; }
+.pd-rule-summary-meta { font-size: 12px; color: var(--fg-3); display: flex; align-items: center; flex-wrap: wrap; }
+.pd-meta-unit { display: inline-flex; align-items: center; gap: 4px; padding-right: 10px; margin-right: 10px; border-right: 1px solid var(--border); }
+.pd-meta-unit:last-child { padding-right: 0; margin-right: 0; border-right: none; }
+.pd-meta-unit b { font-weight: 600; color: var(--fg-2); }
+.pd-rule--summary .pd-rule-chevron { color: var(--fg-3); }
+
+/* Linha tracejada no fim da política — leva ao chat, não a um editor. */
+.pd-new-rule {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  width: 100%; padding: 12px; margin-top: 4px;
+  border: 1px dashed var(--sl-color-gray-4, #d1d1d1); border-radius: var(--sl-radius-3, 12px);
+  background: none; cursor: pointer; font-family: inherit;
+  font-size: 13px; font-weight: 500; color: var(--fg-2);
 }
-.pd-rule-delete-confirm-btn:hover { background: var(--sl-color-red-11, #b40202); }
+.pd-new-rule:hover { border-color: var(--sl-color-gray-6, #a3a3a3); color: var(--fg); background: var(--bg-soft); }
+
+/* ── Drawer da regra ─────────────────────────────────────────────────
+   Header de 64px sem borda inferior: X, categoria, política e id. O nome
+   da regra vai para o corpo. Uma hairline só, entre header e corpo. */
+.wf-side-drawer .stage-config-modal-head { border-bottom: none; height: 64px; align-items: center; padding-top: 0; padding-bottom: 0; }
+.wfp-drawer-head-ident { display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1; }
+.wfp-drawer-head-ident .wfp-drawer-policy { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 400 13px/18px Inter, sans-serif; color: #4E607A; }
+.wfp-drawer-rule-name { margin: 4px 0 8px; font: 600 20px/28px Inter, sans-serif; letter-spacing: -0.45px; color: #171717; text-wrap: pretty; }
+.wf-side-drawer .wfp-drawer-status { border-top: none; }
+.wfp-drawer-status-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.wfp-drawer-status-hint { font-size: 12px; color: var(--fg-3); }
+/* Títulos de bloco do drawer = título de seção do canvas (.pd-card-title):
+   14/600 preto, sem caixa alta. */
+.wf-side-drawer .wfp-block-label { font: 600 14px/20px Inter, sans-serif; letter-spacing: -0.14px; text-transform: none; color: #171717; }
+
+/* Nota de somente leitura + atalho para o chat. */
+.wfp-drawer-readonly {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 12px;
+  padding: 0; border: none; border-radius: 0;
+  background: none; font: 400 13px/18px Inter, sans-serif; color: #4E607A;
+}
+.wfp-drawer-readonly span { flex: 1; min-width: 0; }
+.wfp-drawer-readonly .pd-edit-btn svg { width: 14px; height: 14px; }
+/* Botão secundário em escala menor: h28, r12, 600 12px, cinza de interação. */
+.wfp-drawer-readonly .pd-edit-btn {
+  flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  height: 28px; padding: 0 12px; border: none; border-radius: 12px;
+  background: rgba(29,44,67,.05); color: #2A3F5E;
+  font: 600 12px/16px Inter, sans-serif; letter-spacing: -0.12px; cursor: pointer;
+}
+.wfp-drawer-readonly .pd-edit-btn:hover { background: rgba(29,44,67,.10); color: #1D2C43; }
+.wfp-drawer-readonly .pd-edit-btn:active { background: rgba(29,44,67,.15); color: #142032; }
+
+/* Ações do drawer: ícone em disco 28px, tipo 14/600 preto, descrição
+   13/400 cinza, dentro de um container --bg-soft r4. */
+.wfp-task-list { display: flex; flex-direction: column; gap: 10px; }
+.wfp-drawer-block .wfp-task-row--stacked {
+  display: grid; grid-template-columns: 28px 1fr; gap: 0 12px; align-items: start;
+  padding: 8px 10px; margin: 0; border: 0;
+  background: var(--bg-soft); border-radius: var(--sl-radius-1);
+}
+.wfp-task-icon {
+  display: grid; place-items: center; width: 28px; height: 28px; border-radius: 9999px;
+  background: rgba(29,44,67,.10); color: #2A3F5E;
+}
+.wfp-task-icon .material-symbols-outlined { font-size: 16px; line-height: 16px; }
+.wfp-task-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.wfp-task-kind { font: 600 14px/20px Inter, sans-serif; letter-spacing: -0.14px; color: #171717; }
+.wfp-task-row--stacked .wfp-task-label { font: 400 13px/18px Inter, sans-serif; color: #4E607A; }

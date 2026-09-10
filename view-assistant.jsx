@@ -1,4 +1,4 @@
-/* global React, Icon, AIWData, MessageComposer, ChatEngine, Dropdown, TaskCanvas, InitiativesTable, occurrenceQueue, Mode1Trigger, Mode1Launcher, Mode1ToPolicy */
+/* global React, Icon, AIWData, MessageComposer, ChatEngine, Dropdown, TaskCanvas, InitiativesTable, occurrenceQueue, Mode1Trigger, Mode1Launcher, Mode1ToPolicy, AgentConfigLoader */
 const { useState, useEffect, useRef } = React;
 
 /* ------- Overview metric sparkline (v3 port: OverviewMetricChart) ------- */
@@ -430,6 +430,32 @@ function AssistantView({ onOpenTask, onGotoResource, onOpenOrder }) {
   const mode1ScriptRef = useRef(null);
   const chatScrollRef = useRef(null);
 
+  /* Convite proativo (agent-behavior.yaml, proactiveOnboarding) — mesmo
+     chip do Assistente de políticas e de My Assistant, disponível aqui
+     também. Esta tela não tem chip-row própria (só o composer simples),
+     então o botão é montado abaixo, reaproveitando as classes CSS já
+     usadas pela chip-row de chat.jsx (.composer-chips/.chip-row/
+     .suggest-chip) — mesma aparência, sem CSS novo. */
+  const onboardingConfigRef = useRef(null);
+  const [onboardingChip, setOnboardingChip] = useState(null);
+  /* Catálogo de ações/sugestões (agent-behavior.yaml, agentActions) —
+     mesmos chips do Assistente de políticas e de My Assistant. A lógica
+     real mora em WorkflowPoliciesView; clicar aqui só navega pra lá com
+     a intenção certa (initialIntent). */
+  const [agentActionChips, setAgentActionChips] = useState([]);
+  useEffect(() => {
+    AgentConfigLoader.load().then((config) => {
+      const oc = config && config.proactiveOnboarding;
+      if (oc && oc.enabled) {
+        onboardingConfigRef.current = oc;
+        setOnboardingChip({ icon: "graph", label: oc.chipLabel });
+      }
+      const actions = (config && config.agentActions) || [];
+      const ACTION_ICONS = { "policy-create": "plus", "policy-alter": "edit", "initiative-create": "sparkle", "task-create": "checklist" };
+      setAgentActionChips(actions.map((a) => ({ icon: ACTION_ICONS[a.id] || "sparkle", label: a.label, actionId: a.id })));
+    }).catch(() => {});
+  }, []);
+
   const openOccurrenceTask = (AIWData.tasks || []).find((t) => t.id === openOccurrenceId) || null;
 
   const TABS = [
@@ -463,6 +489,22 @@ function AssistantView({ onOpenTask, onGotoResource, onOpenOrder }) {
   const handleSend = (text) => {
     if (!text.trim()) return;
     setChatMsgs((m) => [...m, { from: "user", text }]);
+    /* Chip do convite proativo (agent-behavior.yaml, proactiveOnboarding):
+       só abre a pergunta — a resposta segue o roteamento normal daqui pra
+       baixo (Modo 1, ou o ChatEngine padrão desta tela). */
+    if (onboardingConfigRef.current && text === onboardingConfigRef.current.chipLabel) {
+      setChatMsgs((m) => [...m, { from: "agent", text: onboardingConfigRef.current.agentQuestion }]);
+      return;
+    }
+    /* Chips do catálogo agentActions: a lógica real mora em
+       WorkflowPoliciesView — aqui só avisa e navega pra lá com a
+       intenção certa (initialIntent). */
+    const clickedAction = agentActionChips.find((a) => a.label === text);
+    if (clickedAction) {
+      setChatMsgs((m) => [...m, { from: "agent", text: "Isso é configurado na tela de políticas — te levando para lá." }]);
+      setTimeout(() => onGotoResource && onGotoResource("workflow-policies", { initialIntent: clickedAction.actionId }), 700);
+      return;
+    }
     /* "Criar política" — botão do turno final do Modo 1: cria a Policy
        de verdade e leva o gerente para revisar em Orders Settings. */
     if (text === "Criar política" && mode1ScriptRef.current) {
@@ -698,10 +740,33 @@ function AssistantView({ onOpenTask, onGotoResource, onOpenOrder }) {
 
       {tab === "overview" &&
         <div className="aiw-composer-bar">
-          <MessageComposer
-            placeholder="Pergunte sobre pedidos, regras ou crie um workflow…"
-            onSend={handleSend}
-          />
+          {/* .aiw-composer-bar é flex-row (centraliza .composer sozinho) —
+              chip e composer precisam de um wrapper em coluna pra não
+              ficarem lado a lado espremendo o texto do botão. */}
+          <div style={{ display: "flex", flexDirection: "column", width: "min(640px, 100%)" }}>
+            {(onboardingChip || agentActionChips.length > 0) && (
+              <div className="composer-chips">
+                <div className="chip-row">
+                  {onboardingChip && (
+                    <button className="suggest-chip" onClick={() => handleSend(onboardingChip.label)}>
+                      <Icon name={onboardingChip.icon} size={16} />
+                      {onboardingChip.label}
+                    </button>
+                  )}
+                  {agentActionChips.map((c) => (
+                    <button key={c.actionId} className="suggest-chip" onClick={() => handleSend(c.label)}>
+                      <Icon name={c.icon} size={16} />
+                      {c.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            <MessageComposer
+              placeholder="Pergunte sobre pedidos, regras ou crie um workflow…"
+              onSend={handleSend}
+            />
+          </div>
         </div>
       }
 

@@ -99,5 +99,24 @@
     return { initiative: occurrenceTask, tasks: myTasksEntries };
   }
 
-  window.InitiativeFromPolicy = { createFromPolicy: createFromPolicy };
+  /* Usado pelo chip "Desejo gerar uma iniciativa/tarefas" (agent-behavior.yaml,
+     agentActions): mesma checagem de "já existe iniciativa para esta
+     política" que a oferta automática pós-criação já fazia, só que
+     consultando o dataset global em vez do ref local de um componente —
+     precisa funcionar vindo de qualquer tela, não só de onde a política
+     nasceu. */
+  function hasInitiative(policy) {
+    var title = 'Acompanhar política: ' + policy.name;
+    return (AIWData.tasks || []).some(function (t) { return t.title === title; });
+  }
+
+  function listPoliciesWithoutInitiative(policies) {
+    return (policies || []).filter(function (p) { return !hasInitiative(p); });
+  }
+
+  window.InitiativeFromPolicy = {
+    createFromPolicy: createFromPolicy,
+    hasInitiative: hasInitiative,
+    listPoliciesWithoutInitiative: listPoliciesWithoutInitiative,
+  };
 })();

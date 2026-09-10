@@ -1,4 +1,5 @@
-/* global React, ReactDOM, Icon, AIWData, ChatPanel, ResizableSplit, Toggle, Dropdown, IconButton, SidebarTooltip, Mode1Trigger, Mode1Launcher, Mode1ToPolicy, LLMClient, InitiativeFromPolicy, CanvasTopbar */
+/* global React, ReactDOM, Icon, AIWData, ChatPanel, ResizableSplit, Toggle, Dropdown, IconButton, SidebarTooltip, Mode1Trigger, Mode1Launcher, Mode1ToPolicy, LLMClient, InitiativeFromPolicy, CanvasTopbar, AgentConfigLoader */
+/* global React, ReactDOM, Icon, MSIcon, AIWData, ChatPanel, ResizableSplit, Toggle, Dropdown, IconButton, SidebarTooltip, Mode1Trigger, Mode1Launcher, Mode1ToPolicy, LLMClient, InitiativeFromPolicy, CanvasTopbar */
 const { useState, useRef, useEffect, useMemo, useCallback } = React;
 
 /* ══ Políticas do Workflow ══════════════════════════════════════════════
@@ -11,6 +12,13 @@ const { useState, useRef, useEffect, useMemo, useCallback } = React;
 const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
 
 const norm = (s) => (s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+/* Ícone Material Symbols por tipo de ação (lista "Então" do drawer). */
+const POLICY_ACTION_ICON = {
+  diagnose: "troubleshoot", notify: "notifications_active", workflow: "account_tree",
+  reprocess: "refresh", replan: "event_repeat", reallocate: "swap_horiz",
+  refund: "currency_exchange", cancel: "cancel", escalate: "north_east",
+};
 
 function kindOf(kindId) {
   return AIWData.policyActionKinds.find((k) => k.id === kindId)
@@ -82,19 +90,20 @@ function PolicyTaskChip({ task }) {
 /* ── Drawer de detalhe da regra ──────────────────────────────────────────
    Reaproveita o drawer lateral já existente no projeto (.wf-side-drawer):
    mesmo portal, mesma animação de entrada e mesmo header de navegação. */
-function PolicyRuleDrawer({ rule, policy, onToggle, onClose }) {
+function PolicyRuleDrawer({ rule, policy, onToggle, onClose, onEditInChat }) {
+  const escalation = rule.escalation || [];
   useEffect(() => {
     const handler = (e) => { if (e.key === "Escape") onClose(); };
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
   }, [onClose]);
 
-  /* Apresentação pura: lê os campos já normalizados na regra
-     (sourceEventLabel, conditions ricas, tasks em ordem, priority) e só
-     decide como exibir. Duas mudanças em relação à versão anterior:
-     (1) Origem do evento em linguagem natural, código como legenda.
-     (2) Ações numeradas na ordem real do array — nunca reagrupadas
-         por kind. */
+  /* Apresentação pura e somente leitura: lê os campos já normalizados na
+     regra (conditions ricas, tasks em ordem, escalation, priority) e só
+     decide como exibir. O Toggle de ativa/desligada é o único controle que
+     muda estado a partir do canvas — criar, alterar e excluir acontecem no
+     chat. Condições aparecem só em linguagem natural: o código técnico não
+     é exposto aqui. */
   return ReactDOM.createPortal(
     <div
       className="wf-side-drawer-backdrop"
@@ -103,31 +112,33 @@ function PolicyRuleDrawer({ rule, policy, onToggle, onClose }) {
       <div className="wf-side-drawer" role="dialog" aria-modal="true" aria-label={rule.name}>
         <div className="stage-config-modal-head">
           <IconButton icon={<Icon name="x" size={18} />} label="Fechar" variant="tertiary" onClick={onClose} />
-          <h2 className="stage-config-modal-title">{rule.name}</h2>
+          <div className="wfp-drawer-head-ident">
+            <PolicyCategoryTag categoryId={policy.category} />
+            <span className="wfp-drawer-policy">{policy.name}</span>
+            <span className="wfp-sid">{rule.id}</span>
+          </div>
         </div>
 
         <div className="wf-side-drawer-body">
-          <div className="wfp-drawer-ident">
-            <span className="wfp-drawer-breadcrumb">
-              <PolicyCategoryTag categoryId={policy.category} />
-              <span className="wfp-drawer-policy">{policy.name}</span>
-            </span>
-            <span className="wfp-sid">{rule.id}</span>
-          </div>
-
-          {rule.sourceEventLabel && (
-            <div className="wfp-drawer-block">
-              <span className="wfp-block-label">Origem</span>
-              <p className="detail-desc wfp-event-label">{rule.sourceEventLabel}</p>
-              {rule.sourceEventId && <code className="wfp-event-code">{rule.sourceEventId}</code>}
-            </div>
-          )}
-
-          <p className="detail-desc wfp-drawer-trigger">{rule.trigger}</p>
+          <h2 className="wfp-drawer-rule-name">{rule.name}</h2>
 
           <div className="wfp-drawer-status">
-            <span className="setting-row-desc">{rule.active ? "Ativa" : "Desligada"}</span>
+            <div className="wfp-drawer-status-text">
+              <span className="setting-row-desc">{rule.active ? "Ativa" : "Desligada"}</span>
+              <span className="wfp-drawer-status-hint">
+                {rule.active
+                  ? "O agente avalia esta regra continuamente."
+                  : "O agente ignora esta regra até ela ser ativada."}
+              </span>
+            </div>
             <Toggle on={rule.active} onChange={() => onToggle(policy.id, rule.id)} />
+          </div>
+
+          <div className="wfp-drawer-readonly">
+            <span>Alterações nesta regra são feitas com o assistente.</span>
+            <button className="pd-edit-btn" onClick={() => onEditInChat(rule)}>
+              <Icon name="chat-bubble-outline" size={14} /> Editar no chat
+            </button>
           </div>
 
           {rule.priority != null && rule.sourceEventLabel && (
@@ -147,12 +158,9 @@ function PolicyRuleDrawer({ rule, policy, onToggle, onClose }) {
               return (
                 <div key={i} className="wfp-cond-pair">
                   <p className="wfp-cond-natural">{c.natural}</p>
-                  {c.technical
-                    ? <code className="wfp-cond-code">{c.technical}</code>
-                    : c.needsEngineeringInput && (
-                        <span className="wfp-cond-pending">mapeamento técnico pendente</span>
-                      )
-                  }
+                  {!c.technical && c.needsEngineeringInput && (
+                    <span className="wfp-cond-pending">mapeamento técnico pendente</span>
+                  )}
                 </div>
               );
             })}
@@ -160,17 +168,34 @@ function PolicyRuleDrawer({ rule, policy, onToggle, onClose }) {
 
           <div className="wfp-drawer-block">
             <span className="wfp-block-label">Então — ações, em ordem</span>
-            {rule.tasks.map((t, i) => {
-              const k = kindOf(t.kind);
-              return (
-                <div key={i} className="wfp-task-row">
-                  <span className="wfp-task-num">{i + 1}</span>
-                  <span className="wfp-dot" style={{ background: k.dot }} />
-                  <span className="wfp-kind-label-inline">{k.label}</span>
-                  <span className="wfp-task-label">{t.label}</span>
-                </div>
-              );
-            })}
+            <div className="wfp-task-list">
+              {rule.tasks.map((t, i) => {
+                const k = kindOf(t.kind);
+                return (
+                  <div key={i} className="wfp-task-row wfp-task-row--stacked">
+                    <span className="wfp-task-icon" aria-hidden="true">
+                      <MSIcon name={POLICY_ACTION_ICON[t.kind] || "bolt"} size={16} />
+                    </span>
+                    <div className="wfp-task-text">
+                      <span className="wfp-task-kind">{k.label}</span>
+                      <span className="wfp-task-label">{t.label}</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="wfp-drawer-block">
+            <span className="wfp-block-label">Escalar quando — limite de autonomia</span>
+            {escalation.length === 0 && (
+              <p className="pd-col-empty">Nenhuma condição de escalação definida — o agente nunca escala esta regra.</p>
+            )}
+            {escalation.map((e, i) => (
+              <div key={i} className="wfp-cond-pair">
+                <p className="wfp-cond-natural">{e.field} {e.operator} {e.value}{e.unit ? " " + e.unit : ""}</p>
+              </div>
+            ))}
           </div>
         </div>
       </div>
@@ -180,33 +205,28 @@ function PolicyRuleDrawer({ rule, policy, onToggle, onClose }) {
 }
 
 /* ── Canvas ─────────────────────────────────────────────────────────────── */
+/* Somente leitura: nenhum campo editável, nenhum botão de adicionar ou
+   remover. Criar, alterar e excluir regra ou política acontecem no chat; o
+   canvas só reflete o estado resultante. A única exceção é o Toggle de
+   ativa/desligada dentro do drawer da regra. */
 function WorkflowPoliciesCanvas({
   policies, query, onQuery, category, onCategory, status, onStatus,
   selectedRuleId, onSelectRule, highlightId, highlightPolicyId, initialExpandedPolicyId, onNewRule,
-  onTogglePolicyActive, onEditObjective, onToggleRule, onRenameRule, onCreateRule, onDeleteRule,
-  onAddCondition, onRemoveCondition, onUpdateCondition,
-  onAddTask, onRemoveTask, onUpdateTask,
-  onAddEscalation, onRemoveEscalation, onUpdateEscalation,
   onBack, chatOpen, onToggleChat, onCloseCanvas,
 }) {
   const rowRefs = useRef({});
-  /* Acordeão de 2 níveis, só nesta tela: uma política aberta por vez, e
-     dentro dela uma regra aberta por vez — nunca navega para outra tela
-     (feedback direto do vídeo de review: "diminuir a quantidade de telas"). */
+  /* Acordeão de 1 nível: uma política aberta por vez — nunca navega para
+     outra tela (feedback direto do vídeo de review: "diminuir a quantidade
+     de telas"). O detalhe da regra abre no drawer lateral. */
   const [expandedPolicyId, setExpandedPolicyId] = useState(initialExpandedPolicyId || null);
-  const [expandedRuleId, setExpandedRuleId] = useState(null);
 
   /* Regra recém-criada ou aberta pelo chat ("abrir MON-005"): abre a
-     política dona da regra e a própria regra em sanfona, depois rola até
-     ela — sem isso, o elemento não existe no DOM (política ainda fechada)
-     e o scroll não teria o que fazer. */
+     política dona da regra e depois rola até ela — sem isso, o elemento não
+     existe no DOM (política ainda fechada) e o scroll não teria o que fazer. */
   useEffect(() => {
     if (!highlightId) return;
     const owner = policies.find((p) => p.rules.some((r) => r.id === highlightId));
-    if (owner) {
-      setExpandedPolicyId(owner.id);
-      setExpandedRuleId(highlightId);
-    }
+    if (owner) setExpandedPolicyId(owner.id);
   }, [highlightId, policies]);
 
   useEffect(() => {
@@ -228,6 +248,30 @@ function WorkflowPoliciesCanvas({
     const el = rowRefs.current[highlightPolicyId];
     if (el) el.scrollIntoView({ block: "start", behavior: "smooth" });
   }, [highlightPolicyId, expandedPolicyId]);
+
+  /* Abrir um collapse fecha o anterior (sanfona): o conteúdo acima encolhe e
+     o scroll "pula". Depois do render, ancora o topo do card recém-aberto no
+     topo do container de scroll. Só reage a abertura por clique — fechar não
+     mexe no scroll. */
+  const userOpenedRef = useRef(false);
+  useEffect(() => {
+    if (!userOpenedRef.current || !expandedPolicyId) return;
+    userOpenedRef.current = false;
+    const el = rowRefs.current[expandedPolicyId];
+    if (!el) return;
+    let sc = el.parentElement;
+    while (sc && sc !== document.body) {
+      const ov = getComputedStyle(sc).overflowY;
+      if ((ov === "auto" || ov === "scroll") && sc.scrollHeight > sc.clientHeight) break;
+      sc = sc.parentElement;
+    }
+    if (sc && sc !== document.body) {
+      const top = el.getBoundingClientRect().top - sc.getBoundingClientRect().top + sc.scrollTop;
+      sc.scrollTo({ top, behavior: "smooth" });
+    } else {
+      window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY, behavior: "smooth" });
+    }
+  }, [expandedPolicyId]);
 
   /* Chegou aqui já com uma política para abrir (ex.: "Transformar em
      política permanente" no Modo 2, via initialExpandedPolicyId) — rola
@@ -349,16 +393,6 @@ function WorkflowPoliciesCanvas({
 
       <div className="detail-scroll wfp-scroll">
         <div className="wfp-list">
-          {groups.length > 0 && (
-            <div className="pd-info-box">
-              <Icon name="info" size={18} />
-              <div className="pd-info-text">
-                <b>Sobre a execução das regras</b>
-                <p>As regras são avaliadas continuamente pelo agente. Quando uma condição é atendida, o agente executa as tarefas permitidas de forma autônoma, respeitando os limites de escalação definidos.</p>
-              </div>
-            </div>
-          )}
-
           {groups.map(({ policy, rules }) => {
             const active = rules.filter((r) => r.active).length;
             const isOpen = expandedPolicyId === policy.id;
@@ -370,14 +404,11 @@ function WorkflowPoliciesCanvas({
               >
                 <button
                   className="wfp-card-head wfp-card-head--toggle"
-                  onClick={() => setExpandedPolicyId(isOpen ? null : policy.id)}
+                  onClick={() => { userOpenedRef.current = !isOpen; setExpandedPolicyId(isOpen ? null : policy.id); }}
                 >
                   <Icon name={isOpen ? "expand-less" : "expand-more"} size={20} />
                   <div className="wfp-card-title">
                     <span className="wfp-card-name">{policy.name}</span>
-                    <span className="wfp-card-meta">
-                      {plural(rules.length, "regra", "regras")} · {plural(active, "ativa", "ativas")}
-                    </span>
                   </div>
                   <PolicyStateTag active={policy.active} />
                   <PolicyCategoryTag categoryId={policy.category} />
@@ -386,50 +417,35 @@ function WorkflowPoliciesCanvas({
                 {isOpen && (
                   <div className="wfp-card-body">
                     <div className="pd-header-title-row pd-header-title-row--compact">
-                      <Toggle on={policy.active} onChange={() => onTogglePolicyActive(policy.id)} />
                       <span className="pd-header-meta">
                         Criada em {policy.createdAt} por {policy.createdBy} · Atualizada em {policy.updatedAt}
                       </span>
                     </div>
 
-                    {policy.objective && (
-                      <PolicyObjectiveCard policy={policy} onEditObjective={(text) => onEditObjective(policy.id, text)} />
-                    )}
+                    {policy.objective && <PolicyObjectiveCard policy={policy} />}
 
                     <div className="pd-rules-headrow">
                       <h4 className="pd-card-title">
                         Regras da política
                         <span className="pd-rules-count">{plural(rules.length, "regra", "regras")} ({plural(active, "ativa", "ativas")})</span>
                       </h4>
-                      <button data-sl-button data-variant="primary" data-has-label
-                        onClick={() => setExpandedRuleId(onCreateRule(policy.id))}>
-                        <Icon name="plus" size={16} /> Criar regra
-                      </button>
                     </div>
 
-                    {rules.map((rule, i) => (
+                    {rules.map((rule) => (
                       <div key={rule.id} ref={(el) => { rowRefs.current[rule.id] = el; }} className={highlightId === rule.id ? "is-new" : ""}>
                         <PolicyRuleRow
                           rule={rule}
-                          index={i + 1}
-                          policyId={policy.id}
-                          expanded={expandedRuleId === rule.id}
-                          onExpand={() => setExpandedRuleId(expandedRuleId === rule.id ? null : rule.id)}
-                          onToggleActive={() => onToggleRule(policy.id, rule.id)}
-                          onRename={(name) => onRenameRule(policy.id, rule.id, name)}
-                          onDelete={() => onDeleteRule(policy.id, rule.id)}
-                          onAddCondition={() => onAddCondition(policy.id, rule.id)}
-                          onRemoveCondition={(i2) => onRemoveCondition(policy.id, rule.id, i2)}
-                          onUpdateCondition={(i2, patch) => onUpdateCondition(policy.id, rule.id, i2, patch)}
-                          onAddTask={() => onAddTask(policy.id, rule.id)}
-                          onRemoveTask={(i2) => onRemoveTask(policy.id, rule.id, i2)}
-                          onUpdateTask={(i2, patch) => onUpdateTask(policy.id, rule.id, i2, patch)}
-                          onAddEscalation={() => onAddEscalation(policy.id, rule.id)}
-                          onRemoveEscalation={(i2) => onRemoveEscalation(policy.id, rule.id, i2)}
-                          onUpdateEscalation={(i2, patch) => onUpdateEscalation(policy.id, rule.id, i2, patch)}
+                          selected={selectedRuleId === rule.id}
+                          onOpen={() => onSelectRule(rule.id)}
                         />
                       </div>
                     ))}
+
+                    {/* Criar regra é fluxo do chat — a linha tracejada leva ao
+                        mesmo lugar que o "Nova regra" do topbar. */}
+                    <button className="pd-new-rule" onClick={onNewRule}>
+                      <Icon name="plus" size={16} /> Criar regra pelo assistente
+                    </button>
                   </div>
                 )}
               </section>
@@ -445,195 +461,41 @@ function WorkflowPoliciesCanvas({
   );
 }
 
-/* ── Tela de detalhe de política ─────────────────────────────────────────
-   Substitui o canvas de lista quando o gerente clica no nome de uma
-   política. Layout: cabeçalho + objetivo do gerente + lista de regras,
-   cada uma expansível em 3 colunas (Quando / Tarefas / Escalar quando) —
-   modelo validado com o time de design (ver print de referência). */
-const CONDITION_OPERATORS = ["é igual a", "é diferente de", "é maior que", "é menor que", "é maior ou igual a", "é menor ou igual a"];
-const ESCALATION_OPERATORS = ["é maior que", "é menor que", "é igual a", "é diferente de"];
-
-function ConditionRow({ condition, onChange, onRemove }) {
-  const p = condition.param || { field: "Condição", operator: "verdadeiro quando", value: condition.natural || "" };
-  return (
-    <div className="pd-field-group">
-      <div className="pd-field-row">
-        <input className="pd-field-input pd-field-input--field" value={p.field}
-          onChange={(e) => onChange({ field: e.target.value })} placeholder="Campo" />
-        <button className="pd-field-remove" title="Remover condição" onClick={onRemove}><Icon name="x" size={14} /></button>
-      </div>
-      <div className="pd-field-row">
-        <select className="pd-field-select" value={p.operator} onChange={(e) => onChange({ operator: e.target.value })}>
-          {CONDITION_OPERATORS.map((op) => <option key={op} value={op}>{op}</option>)}
-        </select>
-        <input className="pd-field-input pd-field-input--value" value={p.value}
-          onChange={(e) => onChange({ value: e.target.value })} placeholder="Valor" />
-        {p.unit && <span className="pd-field-unit">{p.unit}</span>}
-      </div>
-    </div>
-  );
-}
-
-function EscalationRow({ esc, onChange, onRemove }) {
-  return (
-    <div className="pd-field-group">
-      <div className="pd-field-row">
-        <input className="pd-field-input pd-field-input--field" value={esc.field}
-          onChange={(e) => onChange({ field: e.target.value })} placeholder="Campo" />
-        <button className="pd-field-remove" title="Remover condição de escalação" onClick={onRemove}><Icon name="x" size={14} /></button>
-      </div>
-      <div className="pd-field-row">
-        <select className="pd-field-select" value={esc.operator} onChange={(e) => onChange({ operator: e.target.value })}>
-          {ESCALATION_OPERATORS.map((op) => <option key={op} value={op}>{op}</option>)}
-        </select>
-        <input className="pd-field-input pd-field-input--value" value={esc.value}
-          onChange={(e) => onChange({ value: e.target.value })} placeholder="Valor" />
-        {esc.unit && <span className="pd-field-unit">{esc.unit}</span>}
-      </div>
-    </div>
-  );
-}
-
-function TaskRow({ task, onChange, onRemove }) {
-  return (
-    <div className="pd-task-row">
-      <span className="wfp-dot" style={{ background: kindOf(task.kind).dot }} />
-      <input className="pd-task-input" value={task.label} onChange={(e) => onChange({ label: e.target.value })} />
-      <select className="pd-task-kind-select" value={task.kind} onChange={(e) => onChange({ kind: e.target.value })}>
-        {AIWData.policyActionKinds.map((k) => <option key={k.id} value={k.id}>{k.label}</option>)}
-      </select>
-      <button className="pd-field-remove" title="Remover tarefa" onClick={onRemove}><Icon name="x" size={14} /></button>
-    </div>
-  );
-}
-
-function PolicyRuleRow({
-  rule, index, policyId, expanded, onExpand, onToggleActive, onRename, onDelete,
-  onAddCondition, onRemoveCondition, onUpdateCondition,
-  onAddTask, onRemoveTask, onUpdateTask,
-  onAddEscalation, onRemoveEscalation, onUpdateEscalation,
-}) {
-  const [editingName, setEditingName] = useState(false);
-  const [confirmingDelete, setConfirmingDelete] = useState(false);
+/* ── Linha de regra (somente leitura) ────────────────────────────────────
+   Resumo em uma linha: nome, contagem de condições/ações/escalações e o
+   estado. O conteúdo completo abre no drawer lateral — não há edição inline
+   no canvas. */
+function PolicyRuleRow({ rule, selected, onOpen }) {
   const escalation = rule.escalation || [];
-
   return (
-    <div className={`pd-rule${expanded ? " is-expanded" : ""}${rule.active ? "" : " is-off"}`}>
-      <div className="pd-rule-headrow">
-        <span className="pd-rule-num">{index}</span>
-        {editingName ? (
-          <input
-            className="pd-rule-name-input"
-            autoFocus
-            defaultValue={rule.name}
-            onBlur={(e) => { onRename(e.target.value || rule.name); setEditingName(false); }}
-            onKeyDown={(e) => { if (e.key === "Enter") e.target.blur(); }}
-          />
-        ) : (
-          <button className="pd-rule-name" onClick={() => onExpand()}>{rule.name}</button>
-        )}
+    <div className={`pd-rule pd-rule--summary${selected ? " is-selected" : ""}${rule.active ? "" : " is-off"}`}>
+      <button className="pd-rule-headrow pd-rule-headrow--btn" onClick={onOpen}>
+        <span className="pd-rule-summary">
+          <span className="pd-rule-name">{rule.name}</span>
+          <span className="pd-rule-summary-meta">
+            <span className="pd-meta-unit"><b>{rule.conditions.length}</b> {rule.conditions.length === 1 ? "condição" : "condições"}</span>
+            <span className="pd-meta-unit"><b>{rule.tasks.length}</b> {rule.tasks.length === 1 ? "ação" : "ações"}</span>
+            <span className="pd-meta-unit">
+              {escalation.length === 0
+                ? "sem escalação"
+                : <><b>{escalation.length}</b> {escalation.length === 1 ? "limite" : "limites"} de escalação</>}
+            </span>
+          </span>
+        </span>
         <PolicyStateTag active={rule.active} />
-        <Toggle on={rule.active} onChange={onToggleActive} />
-        <button className="pd-rule-edit-btn" onClick={() => setEditingName(true)}>
-          <Icon name="edit" size={14} /> Editar
-        </button>
-        <Dropdown
-          align="right"
-          trigger={<button className="pd-rule-more-btn" aria-label="Mais ações da regra"><Icon name="more" size={16} /></button>}
-        >
-          <button className="dd-item dd-item--danger" onClick={() => setConfirmingDelete(true)}>
-            <Icon name="x-circle" size={16} /> Excluir regra
-          </button>
-        </Dropdown>
-        <button className="pd-rule-chevron" onClick={onExpand} aria-label={expanded ? "Recolher regra" : "Expandir regra"}>
-          <Icon name={expanded ? "expand-less" : "expand-more"} size={20} />
-        </button>
-      </div>
-
-      {confirmingDelete && (
-        <div className="pd-rule-delete-confirm">
-          <Icon name="warning-amber" size={16} />
-          <span>Excluir a regra <b>{rule.name}</b>? Essa ação não pode ser desfeita.</span>
-          <div className="pd-rule-delete-confirm-actions">
-            <button className="pd-rule-delete-cancel" onClick={() => setConfirmingDelete(false)}>Cancelar</button>
-            <button className="pd-rule-delete-confirm-btn" onClick={onDelete}>Excluir regra</button>
-          </div>
-        </div>
-      )}
-
-      {expanded && (
-        <div className="pd-rule-cols">
-          <div className="pd-col">
-            <h4 className="pd-col-title">Quando (condições)</h4>
-            {rule.conditions.map((c, i) => (
-              <React.Fragment key={i}>
-                {i > 0 && <span className="pd-cond-joiner">E</span>}
-                <ConditionRow
-                  condition={c}
-                  onChange={(patch) => onUpdateCondition(i, patch)}
-                  onRemove={() => onRemoveCondition(i)}
-                />
-              </React.Fragment>
-            ))}
-            <button className="pd-add-link" onClick={onAddCondition}>
-              <Icon name="plus" size={14} /> Adicionar condição
-            </button>
-          </div>
-
-          <div className="pd-col">
-            <h4 className="pd-col-title">
-              O agente pode executar (tarefas)
-              <span className="pd-col-info" title="Tarefas que o agente está autorizado a executar quando as condições forem verdadeiras."><Icon name="info" size={14} /></span>
-            </h4>
-            {rule.tasks.map((t, i) => (
-              <TaskRow key={i} task={t} onChange={(patch) => onUpdateTask(i, patch)} onRemove={() => onRemoveTask(i)} />
-            ))}
-            <button className="pd-add-link" onClick={onAddTask}>
-              <Icon name="plus" size={14} /> Adicionar tarefa
-            </button>
-          </div>
-
-          <div className="pd-col">
-            <h4 className="pd-col-title">Escalar quando (limite de autonomia)</h4>
-            {escalation.length === 0 && (
-              <p className="pd-col-empty">Nenhuma condição de escalação definida — o agente nunca escala esta regra.</p>
-            )}
-            {escalation.map((e, i) => (
-              <EscalationRow key={i} esc={e} onChange={(patch) => onUpdateEscalation(i, patch)} onRemove={() => onRemoveEscalation(i)} />
-            ))}
-            <button className="pd-add-link" onClick={onAddEscalation}>
-              <Icon name="plus" size={14} /> Adicionar condição de escalação
-            </button>
-          </div>
-        </div>
-      )}
+        <span className="pd-rule-chevron" aria-hidden="true"><Icon name="chevron-right" size={20} /></span>
+      </button>
     </div>
   );
 }
 
-function PolicyObjectiveCard({ policy, onEditObjective }) {
-  const [editing, setEditing] = useState(false);
+/* Objetivo da política em texto corrido, sem edição: alterar o objetivo é
+   conversa com o assistente. */
+function PolicyObjectiveCard({ policy }) {
   return (
-    <section className="pd-card">
-      <div className="pd-card-headrow">
-        <h4 className="pd-card-title"><Icon name="chat-bubble-outline" size={16} /> Objetivo descrito pelo gerente</h4>
-        {!editing && (
-          <button className="pd-edit-btn" onClick={() => setEditing(true)}>
-            <Icon name="edit" size={14} /> Editar objetivo
-          </button>
-        )}
-      </div>
-      {editing ? (
-        <textarea
-          className="pd-objective-input"
-          autoFocus
-          defaultValue={policy.objective}
-          onBlur={(e) => { onEditObjective(e.target.value || policy.objective); setEditing(false); }}
-        />
-      ) : (
-        <p className="pd-objective-text">&ldquo;{policy.objective}&rdquo;</p>
-      )}
-    </section>
+    <div className="pd-objective">
+      <p className="pd-objective-text">{policy.objective}</p>
+    </div>
   );
 }
 
@@ -1090,13 +952,13 @@ function policyDraftFor(phrase, eventMatch, allPolicies, params) {
   };
 }
 
-/* Chips da chip-row — atalhos persistentes, cada um com intent mapeado.
-   Digitar direto no composer já cobre o caminho por frase livre; o chip
-   é o atalho para o caminho guiado (NEED_TREE), quando o operador não
-   tem certeza do que precisa. */
+/* Chips da chip-row específicos desta tela — "criar política" e "alterar
+   política" saíram daqui: agora vêm do catálogo agentActions
+   (agent-behavior.yaml), carregado em runtime, junto com "gerar
+   iniciativa"/"gerar tarefas" (ver agentActionChips). Os dois abaixo
+   continuam fixos porque são específicos deste chat, não fazem parte do
+   catálogo de ações do agente. */
 const POLICY_CHIPS = [
-  { icon: "plus", label: "Desejo criar uma política", intent: "policy-create" },
-  { icon: "edit", label: "Desejo alterar uma política", intent: "policy-alter" },
   { icon: "search", label: "Desejo verificar quais pedidos afetam a política", intent: "policy-impact" },
   { icon: "sparkle", label: "Me guia com perguntas", intent: "policy-guided-tree" },
 ];
@@ -1549,10 +1411,37 @@ function matchTreeOption(currentNode, freeTextAnswer) {
 }
 
 /* ── View ───────────────────────────────────────────────────────────────── */
-function WorkflowPoliciesView({ onBack, initialExpandedPolicyId = null, initiativeAutoCreated = false } = {}) {
+function WorkflowPoliciesView({ onBack, initialExpandedPolicyId = null, initiativeAutoCreated = false, initialIntent = null } = {}) {
   /* Modos do shell (handoff §8). */
   const [chatOpen, setChatOpen] = useState(true);
   const [canvasOpen, setCanvasOpen] = useState(true);
+
+  /* Convite proativo (agent-behavior.yaml, proactiveOnboarding) e o
+     catálogo de ações/sugestões (agentActions) — carregados em runtime,
+     igual mode1/mode2/assistantChat. Guardados num ref (para handleSend
+     ler de forma síncrona) e num state (só para re-renderizar a
+     chip-row quando o config chegar). `agentActionsRef` fica indexado
+     por id — é como triggerAgentAction e o clique do chip se conectam
+     sem repetir a lista em cada lugar. */
+  const onboardingConfigRef = useRef(null);
+  const [onboardingChip, setOnboardingChip] = useState(null);
+  const agentActionsRef = useRef({});
+  const [agentActionChips, setAgentActionChips] = useState([]);
+  useEffect(() => {
+    AgentConfigLoader.load().then((config) => {
+      const oc = config && config.proactiveOnboarding;
+      if (oc && oc.enabled) {
+        onboardingConfigRef.current = oc;
+        setOnboardingChip({ icon: "graph", label: oc.chipLabel });
+      }
+      const actions = (config && config.agentActions) || [];
+      const byId = {};
+      actions.forEach((a) => { byId[a.id] = a; });
+      agentActionsRef.current = byId;
+      const ACTION_ICONS = { "policy-create": "plus", "policy-alter": "edit", "initiative-create": "sparkle", "task-create": "checklist" };
+      setAgentActionChips(actions.map((a) => ({ icon: ACTION_ICONS[a.id] || "sparkle", label: a.label, actionId: a.id })));
+    }).catch(() => {});
+  }, []);
   const [policies, setPolicies] = useState(() => {
     /* Backfill de `sourceEventId` a partir do EVENT_CATALOG: cada evento
        com `existingRuleIds` declara quais regras seed pertencem ao seu
@@ -1694,6 +1583,41 @@ function WorkflowPoliciesView({ onBack, initialExpandedPolicyId = null, initiati
     });
   };
 
+  /* Dispatcher único do catálogo agentActions (agent-behavior.yaml) — o
+     mesmo comportamento por trás de um clique no chip AQUI e de uma
+     navegação com `initialIntent` vinda de My Assistant/Orders (essas
+     telas não têm a lógica real de política/iniciativa, só o atalho
+     para chegar aqui já com a intenção certa). `policy-create` e
+     `policy-alter` reaproveitam exatamente o texto que os chips desta
+     tela já usavam; `initiative-create`/`task-create` convergem para o
+     mesmo fluxo (ver comentário em agent-behavior.yaml sobre por quê). */
+  const triggerAgentAction = (actionId) => {
+    if (actionId === "policy-create") {
+      setUnmatchedAttempts(0);
+      setAwaitingEventPhrase(true);
+      agentSay({ from: "agent", text: "Descreva o evento em uma frase — o que o OMS precisa detectar e o que deve acontecer em seguida." });
+      return;
+    }
+    if (actionId === "policy-alter") {
+      setAwaitingPolicyName("alter");
+      agentSay({ from: "agent", text: "Qual política você quer alterar? Pode escrever o nome completo ou só uma parte." });
+      return;
+    }
+    if (actionId === "initiative-create" || actionId === "task-create") {
+      const candidates = InitiativeFromPolicy.listPoliciesWithoutInitiative(policies);
+      if (candidates.length === 0) {
+        agentSay({ from: "agent", text: "Todas as políticas já têm uma iniciativa de acompanhamento — nada pendente por aqui." });
+        return;
+      }
+      setAwaitingPolicyName("initiative");
+      agentSay({
+        from: "agent",
+        text: "Para qual política você quer gerar a iniciativa (com tarefas de acompanhamento, uma por regra)?",
+        quickReplies: candidates.map((p) => p.name),
+      });
+    }
+  };
+
   /* Modo 1 (disparado em #/orders ou #/assistant) e Modo 2 sempre chegam
      nesta tela por navegação com openPolicyId, diferente do "Criar
      política" local em handleSend (já está aqui, oferece a iniciativa
@@ -1715,6 +1639,15 @@ function WorkflowPoliciesView({ onBack, initialExpandedPolicyId = null, initiati
       return;
     }
     offerInitiative(policy);
+    // eslint-disable-next-line
+  }, []);
+
+  /* Chegada por chip de agentActions clicado em My Assistant/Orders
+     (route.initialIntent → prop initialIntent aqui). Roda uma vez, no
+     mount — mesmo padrão do efeito acima. */
+  useEffect(() => {
+    if (!initialIntent) return;
+    triggerAgentAction(initialIntent);
     // eslint-disable-next-line
   }, []);
   const deleteRule = (policyId, ruleId) => {
@@ -2515,6 +2448,14 @@ function WorkflowPoliciesView({ onBack, initialExpandedPolicyId = null, initiati
       return;
     }
 
+    /* Chip do convite proativo (agent-behavior.yaml, proactiveOnboarding):
+       só abre a pergunta — a resposta do gerente segue o roteamento
+       normal daqui pra baixo (Modo 1, evento, LLM), sem nada especial. */
+    if (onboardingConfigRef.current && raw === onboardingConfigRef.current.chipLabel) {
+      agentSay({ from: "agent", text: onboardingConfigRef.current.agentQuestion });
+      return;
+    }
+
     /* "Criar política" — botão do turno final do Modo 1: como já estamos
        na tela de políticas, só precisa entrar no estado local e abrir —
        sem navegação. */
@@ -2603,26 +2544,16 @@ function WorkflowPoliciesView({ onBack, initialExpandedPolicyId = null, initiati
      parte porque o restante do roteamento síncrono original não pode
      ficar dentro do .then() acima sem duplicar todo o corpo. */
   const routeAfterDeleteCheck = (raw, n) => {
-    /* Modo 1 (Product Briefing "Criação de Políticas com Agente"): o
-       gerente pode descrever um cenário de política em qualquer chat do
-       agente, não só aqui — mas aqui também vale, é justamente onde
-       políticas se criam. */
-    if (Mode1Trigger.matches(raw)) {
-      Mode1Launcher.launch(
-        (msg) => setChatMsgs((m) => [...m, msg]),
-        setIsTyping,
-      ).then((result) => {
-        if (!result) return;
-        mode1EngineRef.current = result.engine;
-        mode1ScriptRef.current = result.script;
-      });
-      return;
-    }
-
     /* Chips "Desejo alterar uma política" / "...verificar quais pedidos
-       afetam a política": a frase livre é casada pelo NOME da política
-       (substring nos dois sentidos, tolera "detecção de risco" batendo
-       em "Detecção de Risco & SLA"), não por evento técnico. */
+       afetam a política" / "...gerar uma iniciativa": a frase livre é
+       casada pelo NOME da política (substring nos dois sentidos, tolera
+       "detecção de risco" batendo em "Detecção de Risco & SLA"), não por
+       evento técnico. Roda ANTES do Mode1Trigger de propósito — várias
+       políticas seed têm nome com "pickup"/"sla"/"retirada" (ex.:
+       "Pickup SLA Protection"), que também casam com o gatilho do Modo
+       1; sem essa prioridade, responder a "para qual política?" com
+       exatamente esse nome disparava o Modo 1 por engano em vez de
+       resolver a política esperada. */
     if (awaitingPolicyName) {
       const mode = awaitingPolicyName;
       setAwaitingPolicyName(null);
@@ -2639,11 +2570,41 @@ function WorkflowPoliciesView({ onBack, initialExpandedPolicyId = null, initiati
         agentSay({ from: "agent", text: `Abri **${target.name}** para você editar.` });
         return;
       }
+      if (mode === "initiative") {
+        if (InitiativeFromPolicy.hasInitiative(target)) {
+          agentSay({ from: "agent", text: `Já existe uma iniciativa acompanhando a política **${target.name}** — nada a fazer.` });
+          return;
+        }
+        const { initiative, tasks: initiativeTasks } = InitiativeFromPolicy.createFromPolicy(target);
+        createdInitiativeForPolicyIdsRef.current.add(target.id);
+        setHighlightPolicyId(target.id);
+        agentSay({
+          from: "agent",
+          text: `Pronto — criei a iniciativa **${initiative.title}**, com ${initiativeTasks.length} tarefa(s) em "Em aberto". Você encontra ela em My Initiatives, na área de Iniciativas de Orders e no board de Tasks.`,
+        });
+        return;
+      }
       const activeCount = target.rules.filter((r) => r.active).length;
       setHighlightPolicyId(target.id);
       agentSay({
         from: "agent",
         text: `**${target.name}** tem ${plural(target.rules.length, "regra", "regras")}, ${plural(activeCount, "ativa", "ativas")}. Este protótipo ainda não vincula regras de política direto a uma lista de pedidos — esse cruzamento aparece hoje nas Iniciativas, quando um padrão já foi detectado num grupo de pedidos.`,
+      });
+      return;
+    }
+
+    /* Modo 1 (Product Briefing "Criação de Políticas com Agente"): o
+       gerente pode descrever um cenário de política em qualquer chat do
+       agente, não só aqui — mas aqui também vale, é justamente onde
+       políticas se criam. */
+    if (Mode1Trigger.matches(raw)) {
+      Mode1Launcher.launch(
+        (msg) => setChatMsgs((m) => [...m, msg]),
+        setIsTyping,
+      ).then((result) => {
+        if (!result) return;
+        mode1EngineRef.current = result.engine;
+        mode1ScriptRef.current = result.script;
       });
       return;
     }
@@ -2774,14 +2735,23 @@ function WorkflowPoliciesView({ onBack, initialExpandedPolicyId = null, initiati
       return;
     }
     if (/regra a partir de uma frase|criar outra regra|nova regra|desejo criar uma politica/.test(n)) {
-      setUnmatchedAttempts(0);
-      setAwaitingEventPhrase(true);
-      agentSay({ from: "agent", text: "Descreva o evento em uma frase — o que o OMS precisa detectar e o que deve acontecer em seguida." });
+      triggerAgentAction("policy-create");
       return;
     }
     if (/desejo alterar uma politica/.test(n)) {
-      setAwaitingPolicyName("alter");
-      agentSay({ from: "agent", text: "Qual política você quer alterar? Pode escrever o nome completo ou só uma parte." });
+      triggerAgentAction("policy-alter");
+      return;
+    }
+    /* Chips "Desejo gerar uma iniciativa..." / "...tarefas de
+       acompanhamento" (agentActions, agent-behavior.yaml): casados pelo
+       id, não por regex — rótulo livre no YAML, sem precisar decorar um
+       padrão de texto toda vez que ele mudar. */
+    if (agentActionsRef.current["initiative-create"] && raw === agentActionsRef.current["initiative-create"].label) {
+      triggerAgentAction("initiative-create");
+      return;
+    }
+    if (agentActionsRef.current["task-create"] && raw === agentActionsRef.current["task-create"].label) {
+      triggerAgentAction("task-create");
       return;
     }
     if (/desejo verificar quais pedidos afetam a politica/.test(n)) {
@@ -2857,7 +2827,7 @@ function WorkflowPoliciesView({ onBack, initialExpandedPolicyId = null, initiati
       <ResizableSplit screenLabel="Políticas do Workflow" initialWidth={400} chatOpen={chatOpen} canvasOpen={canvasOpen}>
         <ChatPanel
           title="Assistente de políticas"
-          chips={POLICY_CHIPS}
+          chips={[...(onboardingChip ? [onboardingChip] : []), ...agentActionChips, ...POLICY_CHIPS]}
           alwaysShowChips
           messages={chatMsgs}
           onSend={handleSend}
@@ -2881,21 +2851,6 @@ function WorkflowPoliciesView({ onBack, initialExpandedPolicyId = null, initiati
           highlightPolicyId={highlightPolicyId}
           initialExpandedPolicyId={initialExpandedPolicyId}
           onNewRule={startNewRule}
-          onTogglePolicyActive={togglePolicyActive}
-          onEditObjective={updatePolicyObjective}
-          onToggleRule={toggleRule}
-          onRenameRule={renameRule}
-          onCreateRule={createRule}
-          onDeleteRule={deleteRule}
-          onAddCondition={addCondition}
-          onRemoveCondition={removeCondition}
-          onUpdateCondition={updateConditionParam}
-          onAddTask={addTask}
-          onRemoveTask={removeTask}
-          onUpdateTask={updateTask}
-          onAddEscalation={addEscalation}
-          onRemoveEscalation={removeEscalation}
-          onUpdateEscalation={updateEscalation}
           onBack={onBack}
           chatOpen={chatOpen}
           onToggleChat={() => setChatOpen(o => !o)}
@@ -2903,12 +2858,22 @@ function WorkflowPoliciesView({ onBack, initialExpandedPolicyId = null, initiati
         />
       </ResizableSplit>
 
+      {/* "Editar no chat" no drawer: fecha o drawer, rola o canvas até a
+          política dona da regra e entrega o foco ao composer com a regra já
+          referenciada. O agente responde quando o gerente enviar, pelo
+          roteamento que já existe — nenhuma mensagem é injetada aqui. */}
       {selected && (
         <PolicyRuleDrawer
           rule={selected.rule}
           policy={selected.policy}
           onToggle={toggleRule}
           onClose={() => setSelectedRuleId(null)}
+          onEditInChat={(rule) => {
+            setSelectedRuleId(null);
+            setChatOpen(true);
+            setHighlightPolicyId(selected.policy.id);
+            composerRef.current?.append?.(`Alterar a regra ${rule.name} (${rule.id}): `);
+          }}
         />
       )}
     </React.Fragment>
