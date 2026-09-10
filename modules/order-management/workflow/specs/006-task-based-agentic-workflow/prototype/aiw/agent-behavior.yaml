@@ -48,6 +48,42 @@ mode2:
     slaImpactPct: 1.1
     riskMultiplier: 2.4
 
+# Convite proativo para o gerente contar uma preocupação da operação —
+# comportamento do agente, não copy de uma tela específica: um chip com
+# este texto fica disponível em toda área onde o agente conversa
+# (Assistente de políticas, My Assistant, Orders). Ao clicar, o agente faz
+# a pergunta; a resposta livre do gerente segue o roteamento normal de
+# cada tela (Modo 1, casamento de evento, chat com LLM real), sem lógica
+# nova — o chip só abre a conversa que já existia esperando uma frase.
+proactiveOnboarding:
+  enabled: true
+  chipLabel: "Quero contar o que me preocupa na operação"
+  agentQuestion: "O que você gostaria de monitorar na operação? O que tem te preocupado ultimamente?"
+
+# Catálogo das ações/sugestões que o agente oferece ao gerente — fonte
+# única de verdade para os rótulos, disponível como chip nas três áreas
+# onde o agente conversa (Assistente de políticas, My Assistant, Orders).
+# Comportamento do agente, não copy de uma tela: o rótulo muda aqui e
+# reflete nas três ao mesmo tempo. Fora da tela de políticas, clicar
+# navega para lá com a intenção certa (initialIntent em
+# WorkflowPoliciesView) — é onde a lógica real de política/iniciativa/
+# tarefa mora, sem duplicar em cada tela.
+#
+# `initiative-create` e `task-create` levam ao mesmo fluxo neste
+# protótipo: toda iniciativa já nasce com uma tarefa de acompanhamento
+# por regra (ver initiative-from-policy.js), não existe tarefa avulsa
+# sem iniciativa — por isso os dois rótulos convergem para "para qual
+# política?" em vez de dois fluxos técnicos diferentes.
+agentActions:
+  - id: policy-create
+    label: "Desejo criar uma política"
+  - id: policy-alter
+    label: "Desejo alterar uma política existente"
+  - id: initiative-create
+    label: "Desejo gerar uma iniciativa para acompanhar uma política"
+  - id: task-create
+    label: "Desejo gerar tarefas de acompanhamento"
+
 # Chat livre de "My Assistant" (#/assistant), fora dos roteiros fixos dos
 # Modos 1 e 2: conversa de verdade com o agente configurado pelo gerente,
 # via Responses API da OpenAI (a Assistants API — threads/runs, asst_...

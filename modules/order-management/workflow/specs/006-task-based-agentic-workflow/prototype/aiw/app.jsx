@@ -72,6 +72,28 @@ function App() {
      sozinha se a página recarregar, igual ao resto do protótipo. */
   const assistantResponseIdRef = useRef(null);
 
+  /* Convite proativo (agent-behavior.yaml, proactiveOnboarding) e o
+     catálogo de ações/sugestões (agentActions) — mesmos chips do
+     Assistente de políticas, disponíveis aqui também. A lógica real de
+     política/iniciativa/tarefa não mora aqui — clicar num chip de
+     agentActions só navega para #/workflow-policies com a intenção
+     certa (initialIntent), que é quem sabe o que fazer com ela. */
+  const onboardingConfigRef = useRef(null);
+  const [onboardingChip, setOnboardingChip] = useState(null);
+  const [agentActionChips, setAgentActionChips] = useState([]);
+  useEffect(() => {
+    AgentConfigLoader.load().then((config) => {
+      const oc = config && config.proactiveOnboarding;
+      if (oc && oc.enabled) {
+        onboardingConfigRef.current = oc;
+        setOnboardingChip({ icon: "graph", label: oc.chipLabel });
+      }
+      const actions = (config && config.agentActions) || [];
+      const ACTION_ICONS = { "policy-create": "plus", "policy-alter": "edit", "initiative-create": "sparkle", "task-create": "checklist" };
+      setAgentActionChips(actions.map((a) => ({ icon: ACTION_ICONS[a.id] || "sparkle", label: a.label, actionId: a.id })));
+    }).catch(() => {});
+  }, []);
+
   /* Rota anterior à entrada de um task — usada pelo "Voltar" do chat da task
      para retornar à última tela vista (Iniciativas, My Assistant, etc.) em
      vez de cair no default `orders`. */
@@ -216,6 +238,23 @@ function App() {
      engine só sabe tocar o roteiro, não criar dado no resto do app. */
   const handleAssistantSend = (text) => {
     setAssistantMsgs((m) => [...m, { from: "user", text }]);
+    /* Chip do convite proativo (agent-behavior.yaml, proactiveOnboarding):
+       só abre a pergunta — a resposta segue o roteamento normal daqui pra
+       baixo (Modo 1, ou a conversa livre via Responses API). */
+    if (onboardingConfigRef.current && text === onboardingConfigRef.current.chipLabel) {
+      setAssistantMsgs((m) => [...m, { from: "agent", text: onboardingConfigRef.current.agentQuestion }]);
+      return;
+    }
+    /* Chips do catálogo agentActions (agent-behavior.yaml): a lógica real
+       mora em WorkflowPoliciesView — aqui só avisa e navega pra lá com a
+       intenção certa (initialIntent), que dispara o mesmo comportamento
+       de quando o chip é clicado direto na tela de políticas. */
+    const clickedAction = agentActionChips.find((a) => a.label === text);
+    if (clickedAction) {
+      setAssistantMsgs((m) => [...m, { from: "agent", text: "Isso é configurado na tela de políticas — te levando para lá." }]);
+      setTimeout(() => setRoute({ name: "workflow-policies", initialIntent: clickedAction.actionId }), 700);
+      return;
+    }
     if (text === "Transformar em política permanente" && assistantScriptRef.current) {
       const newPolicy = Mode2ToPolicy.createFromScript(assistantScriptRef.current);
       AIWData.workflowPolicies.push(newPolicy);
@@ -356,6 +395,7 @@ function App() {
       <ChatPanel
         title="My Assistant"
         intro={assistantMsgs.length === 0 ? "Pergunte qualquer coisa. Este é o ponto de partida do seu assistente." : undefined}
+        chips={[...(onboardingChip ? [onboardingChip] : []), ...agentActionChips]}
         messages={assistantMsgs}
         onSend={handleAssistantSend}
         isTyping={assistantTyping}
@@ -384,7 +424,7 @@ function App() {
     // does not replace or affect #/home-preview or #/orders.
     view = <HomeQueueView onOpenTask={openTask} onGotoResource={gotoResource} />;
   } else if (route.name === "workflow-policies") {
-    view = <WorkflowPoliciesView onBack={() => setRoute({ name: "workflow-board" })} initialExpandedPolicyId={route.openPolicyId || null} initiativeAutoCreated={!!route.initiativeAutoCreated} />;
+    view = <WorkflowPoliciesView onBack={() => setRoute({ name: "workflow-board" })} initialExpandedPolicyId={route.openPolicyId || null} initiativeAutoCreated={!!route.initiativeAutoCreated} initialIntent={route.initialIntent || null} />;
   } else if (route.name === "task") {
     view = <TaskView taskId={route.id} onBack={goBackFromTask} onOpenOrder={openOrder} initialChatOpen={route.openChat} />;
   } else if (route.name === "workflow-board") {

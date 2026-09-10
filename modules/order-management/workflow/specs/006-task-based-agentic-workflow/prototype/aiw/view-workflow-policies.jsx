@@ -1,3 +1,4 @@
+/* global React, ReactDOM, Icon, AIWData, ChatPanel, ResizableSplit, Toggle, Dropdown, IconButton, SidebarTooltip, Mode1Trigger, Mode1Launcher, Mode1ToPolicy, LLMClient, InitiativeFromPolicy, CanvasTopbar, AgentConfigLoader */
 /* global React, ReactDOM, Icon, MSIcon, AIWData, ChatPanel, ResizableSplit, Toggle, Dropdown, IconButton, SidebarTooltip, Mode1Trigger, Mode1Launcher, Mode1ToPolicy, LLMClient, InitiativeFromPolicy, CanvasTopbar */
 const { useState, useRef, useEffect, useMemo, useCallback } = React;
 
@@ -951,13 +952,13 @@ function policyDraftFor(phrase, eventMatch, allPolicies, params) {
   };
 }
 
-/* Chips da chip-row — atalhos persistentes, cada um com intent mapeado.
-   Digitar direto no composer já cobre o caminho por frase livre; o chip
-   é o atalho para o caminho guiado (NEED_TREE), quando o operador não
-   tem certeza do que precisa. */
+/* Chips da chip-row específicos desta tela — "criar política" e "alterar
+   política" saíram daqui: agora vêm do catálogo agentActions
+   (agent-behavior.yaml), carregado em runtime, junto com "gerar
+   iniciativa"/"gerar tarefas" (ver agentActionChips). Os dois abaixo
+   continuam fixos porque são específicos deste chat, não fazem parte do
+   catálogo de ações do agente. */
 const POLICY_CHIPS = [
-  { icon: "plus", label: "Desejo criar uma política", intent: "policy-create" },
-  { icon: "edit", label: "Desejo alterar uma política", intent: "policy-alter" },
   { icon: "search", label: "Desejo verificar quais pedidos afetam a política", intent: "policy-impact" },
   { icon: "sparkle", label: "Me guia com perguntas", intent: "policy-guided-tree" },
 ];
@@ -1410,10 +1411,37 @@ function matchTreeOption(currentNode, freeTextAnswer) {
 }
 
 /* ── View ───────────────────────────────────────────────────────────────── */
-function WorkflowPoliciesView({ onBack, initialExpandedPolicyId = null, initiativeAutoCreated = false } = {}) {
+function WorkflowPoliciesView({ onBack, initialExpandedPolicyId = null, initiativeAutoCreated = false, initialIntent = null } = {}) {
   /* Modos do shell (handoff §8). */
   const [chatOpen, setChatOpen] = useState(true);
   const [canvasOpen, setCanvasOpen] = useState(true);
+
+  /* Convite proativo (agent-behavior.yaml, proactiveOnboarding) e o
+     catálogo de ações/sugestões (agentActions) — carregados em runtime,
+     igual mode1/mode2/assistantChat. Guardados num ref (para handleSend
+     ler de forma síncrona) e num state (só para re-renderizar a
+     chip-row quando o config chegar). `agentActionsRef` fica indexado
+     por id — é como triggerAgentAction e o clique do chip se conectam
+     sem repetir a lista em cada lugar. */
+  const onboardingConfigRef = useRef(null);
+  const [onboardingChip, setOnboardingChip] = useState(null);
+  const agentActionsRef = useRef({});
+  const [agentActionChips, setAgentActionChips] = useState([]);
+  useEffect(() => {
+    AgentConfigLoader.load().then((config) => {
+      const oc = config && config.proactiveOnboarding;
+      if (oc && oc.enabled) {
+        onboardingConfigRef.current = oc;
+        setOnboardingChip({ icon: "graph", label: oc.chipLabel });
+      }
+      const actions = (config && config.agentActions) || [];
+      const byId = {};
+      actions.forEach((a) => { byId[a.id] = a; });
+      agentActionsRef.current = byId;
+      const ACTION_ICONS = { "policy-create": "plus", "policy-alter": "edit", "initiative-create": "sparkle", "task-create": "checklist" };
+      setAgentActionChips(actions.map((a) => ({ icon: ACTION_ICONS[a.id] || "sparkle", label: a.label, actionId: a.id })));
+    }).catch(() => {});
+  }, []);
   const [policies, setPolicies] = useState(() => {
     /* Backfill de `sourceEventId` a partir do EVENT_CATALOG: cada evento
        com `existingRuleIds` declara quais regras seed pertencem ao seu
@@ -1555,6 +1583,41 @@ function WorkflowPoliciesView({ onBack, initialExpandedPolicyId = null, initiati
     });
   };
 
+  /* Dispatcher único do catálogo agentActions (agent-behavior.yaml) — o
+     mesmo comportamento por trás de um clique no chip AQUI e de uma
+     navegação com `initialIntent` vinda de My Assistant/Orders (essas
+     telas não têm a lógica real de política/iniciativa, só o atalho
+     para chegar aqui já com a intenção certa). `policy-create` e
+     `policy-alter` reaproveitam exatamente o texto que os chips desta
+     tela já usavam; `initiative-create`/`task-create` convergem para o
+     mesmo fluxo (ver comentário em agent-behavior.yaml sobre por quê). */
+  const triggerAgentAction = (actionId) => {
+    if (actionId === "policy-create") {
+      setUnmatchedAttempts(0);
+      setAwaitingEventPhrase(true);
+      agentSay({ from: "agent", text: "Descreva o evento em uma frase — o que o OMS precisa detectar e o que deve acontecer em seguida." });
+      return;
+    }
+    if (actionId === "policy-alter") {
+      setAwaitingPolicyName("alter");
+      agentSay({ from: "agent", text: "Qual política você quer alterar? Pode escrever o nome completo ou só uma parte." });
+      return;
+    }
+    if (actionId === "initiative-create" || actionId === "task-create") {
+      const candidates = InitiativeFromPolicy.listPoliciesWithoutInitiative(policies);
+      if (candidates.length === 0) {
+        agentSay({ from: "agent", text: "Todas as políticas já têm uma iniciativa de acompanhamento — nada pendente por aqui." });
+        return;
+      }
+      setAwaitingPolicyName("initiative");
+      agentSay({
+        from: "agent",
+        text: "Para qual política você quer gerar a iniciativa (com tarefas de acompanhamento, uma por regra)?",
+        quickReplies: candidates.map((p) => p.name),
+      });
+    }
+  };
+
   /* Modo 1 (disparado em #/orders ou #/assistant) e Modo 2 sempre chegam
      nesta tela por navegação com openPolicyId, diferente do "Criar
      política" local em handleSend (já está aqui, oferece a iniciativa
@@ -1576,6 +1639,15 @@ function WorkflowPoliciesView({ onBack, initialExpandedPolicyId = null, initiati
       return;
     }
     offerInitiative(policy);
+    // eslint-disable-next-line
+  }, []);
+
+  /* Chegada por chip de agentActions clicado em My Assistant/Orders
+     (route.initialIntent → prop initialIntent aqui). Roda uma vez, no
+     mount — mesmo padrão do efeito acima. */
+  useEffect(() => {
+    if (!initialIntent) return;
+    triggerAgentAction(initialIntent);
     // eslint-disable-next-line
   }, []);
   const deleteRule = (policyId, ruleId) => {
@@ -2376,6 +2448,14 @@ function WorkflowPoliciesView({ onBack, initialExpandedPolicyId = null, initiati
       return;
     }
 
+    /* Chip do convite proativo (agent-behavior.yaml, proactiveOnboarding):
+       só abre a pergunta — a resposta do gerente segue o roteamento
+       normal daqui pra baixo (Modo 1, evento, LLM), sem nada especial. */
+    if (onboardingConfigRef.current && raw === onboardingConfigRef.current.chipLabel) {
+      agentSay({ from: "agent", text: onboardingConfigRef.current.agentQuestion });
+      return;
+    }
+
     /* "Criar política" — botão do turno final do Modo 1: como já estamos
        na tela de políticas, só precisa entrar no estado local e abrir —
        sem navegação. */
@@ -2464,26 +2544,16 @@ function WorkflowPoliciesView({ onBack, initialExpandedPolicyId = null, initiati
      parte porque o restante do roteamento síncrono original não pode
      ficar dentro do .then() acima sem duplicar todo o corpo. */
   const routeAfterDeleteCheck = (raw, n) => {
-    /* Modo 1 (Product Briefing "Criação de Políticas com Agente"): o
-       gerente pode descrever um cenário de política em qualquer chat do
-       agente, não só aqui — mas aqui também vale, é justamente onde
-       políticas se criam. */
-    if (Mode1Trigger.matches(raw)) {
-      Mode1Launcher.launch(
-        (msg) => setChatMsgs((m) => [...m, msg]),
-        setIsTyping,
-      ).then((result) => {
-        if (!result) return;
-        mode1EngineRef.current = result.engine;
-        mode1ScriptRef.current = result.script;
-      });
-      return;
-    }
-
     /* Chips "Desejo alterar uma política" / "...verificar quais pedidos
-       afetam a política": a frase livre é casada pelo NOME da política
-       (substring nos dois sentidos, tolera "detecção de risco" batendo
-       em "Detecção de Risco & SLA"), não por evento técnico. */
+       afetam a política" / "...gerar uma iniciativa": a frase livre é
+       casada pelo NOME da política (substring nos dois sentidos, tolera
+       "detecção de risco" batendo em "Detecção de Risco & SLA"), não por
+       evento técnico. Roda ANTES do Mode1Trigger de propósito — várias
+       políticas seed têm nome com "pickup"/"sla"/"retirada" (ex.:
+       "Pickup SLA Protection"), que também casam com o gatilho do Modo
+       1; sem essa prioridade, responder a "para qual política?" com
+       exatamente esse nome disparava o Modo 1 por engano em vez de
+       resolver a política esperada. */
     if (awaitingPolicyName) {
       const mode = awaitingPolicyName;
       setAwaitingPolicyName(null);
@@ -2500,11 +2570,41 @@ function WorkflowPoliciesView({ onBack, initialExpandedPolicyId = null, initiati
         agentSay({ from: "agent", text: `Abri **${target.name}** para você editar.` });
         return;
       }
+      if (mode === "initiative") {
+        if (InitiativeFromPolicy.hasInitiative(target)) {
+          agentSay({ from: "agent", text: `Já existe uma iniciativa acompanhando a política **${target.name}** — nada a fazer.` });
+          return;
+        }
+        const { initiative, tasks: initiativeTasks } = InitiativeFromPolicy.createFromPolicy(target);
+        createdInitiativeForPolicyIdsRef.current.add(target.id);
+        setHighlightPolicyId(target.id);
+        agentSay({
+          from: "agent",
+          text: `Pronto — criei a iniciativa **${initiative.title}**, com ${initiativeTasks.length} tarefa(s) em "Em aberto". Você encontra ela em My Initiatives, na área de Iniciativas de Orders e no board de Tasks.`,
+        });
+        return;
+      }
       const activeCount = target.rules.filter((r) => r.active).length;
       setHighlightPolicyId(target.id);
       agentSay({
         from: "agent",
         text: `**${target.name}** tem ${plural(target.rules.length, "regra", "regras")}, ${plural(activeCount, "ativa", "ativas")}. Este protótipo ainda não vincula regras de política direto a uma lista de pedidos — esse cruzamento aparece hoje nas Iniciativas, quando um padrão já foi detectado num grupo de pedidos.`,
+      });
+      return;
+    }
+
+    /* Modo 1 (Product Briefing "Criação de Políticas com Agente"): o
+       gerente pode descrever um cenário de política em qualquer chat do
+       agente, não só aqui — mas aqui também vale, é justamente onde
+       políticas se criam. */
+    if (Mode1Trigger.matches(raw)) {
+      Mode1Launcher.launch(
+        (msg) => setChatMsgs((m) => [...m, msg]),
+        setIsTyping,
+      ).then((result) => {
+        if (!result) return;
+        mode1EngineRef.current = result.engine;
+        mode1ScriptRef.current = result.script;
       });
       return;
     }
@@ -2635,14 +2735,23 @@ function WorkflowPoliciesView({ onBack, initialExpandedPolicyId = null, initiati
       return;
     }
     if (/regra a partir de uma frase|criar outra regra|nova regra|desejo criar uma politica/.test(n)) {
-      setUnmatchedAttempts(0);
-      setAwaitingEventPhrase(true);
-      agentSay({ from: "agent", text: "Descreva o evento em uma frase — o que o OMS precisa detectar e o que deve acontecer em seguida." });
+      triggerAgentAction("policy-create");
       return;
     }
     if (/desejo alterar uma politica/.test(n)) {
-      setAwaitingPolicyName("alter");
-      agentSay({ from: "agent", text: "Qual política você quer alterar? Pode escrever o nome completo ou só uma parte." });
+      triggerAgentAction("policy-alter");
+      return;
+    }
+    /* Chips "Desejo gerar uma iniciativa..." / "...tarefas de
+       acompanhamento" (agentActions, agent-behavior.yaml): casados pelo
+       id, não por regex — rótulo livre no YAML, sem precisar decorar um
+       padrão de texto toda vez que ele mudar. */
+    if (agentActionsRef.current["initiative-create"] && raw === agentActionsRef.current["initiative-create"].label) {
+      triggerAgentAction("initiative-create");
+      return;
+    }
+    if (agentActionsRef.current["task-create"] && raw === agentActionsRef.current["task-create"].label) {
+      triggerAgentAction("task-create");
       return;
     }
     if (/desejo verificar quais pedidos afetam a politica/.test(n)) {
@@ -2718,7 +2827,7 @@ function WorkflowPoliciesView({ onBack, initialExpandedPolicyId = null, initiati
       <ResizableSplit screenLabel="Políticas do Workflow" initialWidth={400} chatOpen={chatOpen} canvasOpen={canvasOpen}>
         <ChatPanel
           title="Assistente de políticas"
-          chips={POLICY_CHIPS}
+          chips={[...(onboardingChip ? [onboardingChip] : []), ...agentActionChips, ...POLICY_CHIPS]}
           alwaysShowChips
           messages={chatMsgs}
           onSend={handleSend}
